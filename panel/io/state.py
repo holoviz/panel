@@ -1077,7 +1077,12 @@ class _state(param.Parameterized):
         """
         if not (self.curdoc and self.curdoc.session_context):
             return None
-        app_url = self.curdoc.session_context.server_context.application_context.url
+        session_context = self.curdoc.session_context
+        app_url = session_context.server_context.application_context.url
+        try:
+            app_url = session_context.token_payload.get('app_path', app_url)
+        except AssertionError:
+            pass
         app_url = app_url[1:] if app_url.startswith('/') else app_url
         return urljoin(self.base_url, app_url)
 
@@ -1261,6 +1266,19 @@ class _state(param.Parameterized):
         Returns the request arguments associated with the request that started the session.
         """
         return self.curdoc.session_context.request.arguments if self.curdoc and self.curdoc.session_context else {}
+
+    @property
+    def route_params(self) -> dict[str, str]:
+        """
+        Returns route parameters captured from wildcard routes.
+        """
+        if not (self.curdoc and self.curdoc.session_context):
+            return {}
+        try:
+            route_params = self.curdoc.session_context.token_payload.get('route_params', {})
+        except AssertionError:
+            return {}
+        return dict(route_params) if isinstance(route_params, dict) else {}
 
     @property
     def template(self) -> BaseTemplate | None:

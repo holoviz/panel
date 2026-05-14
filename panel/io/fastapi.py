@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 import asyncio
+import calendar
+import datetime as dt
 import socket
 import typing as t
 import uuid
 
 from functools import wraps
+
+import tornado
 
 from ..config import config
 from .application import build_applications
@@ -16,12 +20,20 @@ from .state import state
 from .threads import StoppableThread
 
 try:
+    from bokeh.util.token import (
+        generate_jwt_token, generate_session_id, get_session_id,
+        get_token_payload,
+    )
     from bokeh_fastapi import BokehFastAPI
-    from bokeh_fastapi.handler import DocHandler, WSHandler
+    from bokeh_fastapi.handler import (
+        DocHandler, SessionHandler as BkSessionHandler, WSHandler,
+    )
     from fastapi import (
         FastAPI, HTTPException, Query, Request,
     )
     from fastapi.responses import FileResponse
+    from tornado.httputil import HTTPHeaders, HTTPServerRequest
+    from tornado.ioloop import IOLoop
 except ImportError as e:
     if e.name == "bokeh_fastapi":
         msg = "bokeh_fastapi must be installed to use the panel.io.fastapi module."
@@ -42,6 +54,125 @@ if t.TYPE_CHECKING:
 #---------------------------------------------------------------------
 
 DocHandler.render_session = server_html_page_for_session
+
+
+def _route_context(
+    request_or_scope: Request | dict[str, t.Any], suffix: str = ''
+) -> tuple[dict[str, str], str | None]:
+    if isinstance(request_or_scope, dict):
+        path_params = request_or_scope.get('path_params') or {}
+        path = request_or_scope.get('path')
+    else:
+        path_params = request_or_scope.path_params
+        path = request_or_scope.url.path
+    if path and suffix and path.endswith(suffix):
+        path = path[:-len(suffix)] or '/'
+    route_params = {k: str(v) for k, v in path_params.items()}
+    return route_params, path
+
+
+async def _get_fastapi_session(self, request: Request, session_id: t.Any):
+    app = self.application
+    if session_id is None:
+        session_id = generate_session_id(
+            secret_key=app.secret_key, signed=app.sign_sessions
+        )
+
+    request_kwargs = {}
+    route_params, app_path = _route_context(request)
+    if tornado.version_info < (6, 5, 0):
+        # Compatibility with changes made in Tornado 6.5
+        # https://github.com/tornadoweb/tornado/pull/3487
+        request_kwargs["host"] = request.client.host
+
+    tornado_request = HTTPServerRequest(
+        method=request.method,
+        uri=f"{request.url.path}{f'?{request.url.query}' if request.url.query else ''}",
+        headers=HTTPHeaders(request.headers),
+        **request_kwargs,
+    )
+    tornado_request.pn_route_params = route_params
+    tornado_request.pn_app_path = app_path
+
+    headers = dict(tornado_request.headers)
+    cookies = {name: cookie.value for name, cookie in request.cookies.items()}
+
+    if app.include_headers is None:
+        excluded_headers = app.exclude_headers or []
+        allowed_headers = [
+            header for header in headers if header not in excluded_headers
+        ]
+    else:
+        allowed_headers = app.include_headers
+    headers = {k: v for k, v in headers.items() if k in allowed_headers}
+
+    if app.include_cookies is None:
+        excluded_cookies = app.exclude_cookies or []
+        allowed_cookies = [
+            cookie for cookie in cookies if cookie not in excluded_cookies
+        ]
+    else:
+        allowed_cookies = app.include_cookies
+    cookies = {k: v for k, v in cookies.items() if k in allowed_cookies}
+
+    if (
+        cookies
+        and "Cookie" in headers
+        and "Cookie" not in (app.include_headers or [])
+    ):
+        # Do not include Cookie header since cookies can be restored from cookies dict
+        del headers["Cookie"]
+
+    payload = {
+        "headers": headers,
+        "cookies": cookies,
+        "arguments": tornado_request.arguments,
+    }
+    payload.update(self.application_context.application.process_request(tornado_request))
+    token = generate_jwt_token(
+        session_id,
+        secret_key=app.secret_key,
+        signed=app.sign_sessions,
+        expiration=300,
+        extra_payload=payload,
+    )
+    if self.application_context.io_loop is None:
+        self.application_context._loop = IOLoop.current()
+    session = await self.application_context.create_session_if_needed(
+        session_id, tornado_request, token
+    )
+    return session
+
+
+_bk_fastapi_async_open = WSHandler._async_open
+
+
+async def _async_open_with_route_context(self, socket, token):
+    payload = get_token_payload(token)
+    route_params, app_path = _route_context(socket.scope, suffix='/ws')
+    if route_params or app_path:
+        payload = dict(payload)
+        if route_params:
+            payload['route_params'] = route_params
+        if app_path:
+            payload['app_path'] = app_path
+        expiry = int(payload.pop('session_expiry', 0))
+        expires_in = max(
+            1,
+            expiry - calendar.timegm(dt.datetime.now(tz=dt.timezone.utc).timetuple())
+        ) if expiry else 300
+        token = generate_jwt_token(
+            get_session_id(token),
+            secret_key=self.application.secret_key,
+            signed=self.application.sign_sessions,
+            expiration=expires_in,
+            extra_payload=payload,
+        )
+    return await _bk_fastapi_async_open(self, socket, token)
+
+
+BkSessionHandler.get_session = _get_fastapi_session
+WSHandler._async_open = _async_open_with_route_context
 
 
 def dispatch_fastapi(conn, events: list[DocumentPatchedEvent] | None = None, msg: Message | None = None):

@@ -105,6 +105,17 @@ def test_server_root_handler():
 
     assert 'href="./app"' in r.content.decode('utf-8')
 
+def test_server_root_handler_does_not_redirect_wildcard(port):
+    html = Markdown('# Title')
+
+    r = serve_and_request(
+        {'/user/([^/]+)': html}, port=port, use_index=True, index=INDEX_HTML, suffix='/'
+    )
+
+    assert not r.history
+    assert r.status_code == 200
+    assert 'href="./user/([^/]+)"' in r.content.decode('utf-8')
+
 @pytest.mark.parametrize('path', ["/app", "/nested/app"])
 def test_server_ico_handling(path, port):
     md = Markdown('# Favicon test')
@@ -571,6 +582,61 @@ def test_server_session_args(port, server_implementation):
     requests.get(f"http://localhost:{port}/?arg=bar")
 
     assert session_args == ["foo", "bar"]
+
+
+def test_server_route_params(port, server_implementation):
+    route_params = []
+    app_urls = []
+
+    def app():
+        route_params.append(state.route_params)
+        app_urls.append(state.app_url)
+        return 'route'
+
+    route = '/user/{name}' if server_implementation == 'fastapi' else '/user/([^/]+)'
+    serve_and_wait({route: app}, port=port)
+    requests.get(f"http://localhost:{port}/user/alice")
+    requests.get(f"http://localhost:{port}/user/bob")
+
+    if server_implementation == 'fastapi':
+        assert route_params == [{'name': 'alice'}, {'name': 'bob'}]
+    else:
+        assert route_params == [{'0': 'alice'}, {'0': 'bob'}]
+    assert app_urls == ['/user/alice', '/user/bob']
+
+
+def test_server_route_params_path_templates(port, server_implementation):
+    route_params = []
+    app_urls = []
+
+    def app():
+        route_params.append(state.route_params)
+        app_urls.append(state.app_url)
+        return 'route'
+
+    serve_and_wait({'/user/{name}': app}, port=port)
+    requests.get(f"http://localhost:{port}/user/alice")
+    requests.get(f"http://localhost:{port}/user/bob")
+
+    assert route_params == [{'name': 'alice'}, {'name': 'bob'}]
+    assert app_urls == ['/user/alice', '/user/bob']
+
+
+def test_server_route_params_path_converter_path(port, server_implementation):
+    route_params = []
+    app_urls = []
+
+    def app():
+        route_params.append(state.route_params)
+        app_urls.append(state.app_url)
+        return 'route'
+
+    serve_and_wait({'/files/{filepath:path}': app}, port=port)
+    requests.get(f"http://localhost:{port}/files/a/b/c.txt")
+
+    assert route_params == [{'filepath': 'a/b/c.txt'}]
+    assert app_urls == ['/files/a/b/c.txt']
+
 
 @pytest.mark.xdist_group(name="server")
 def test_server_reuse_sessions_with_session_key_func(port, reuse_sessions):

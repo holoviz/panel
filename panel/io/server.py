@@ -10,6 +10,7 @@ import inspect
 import logging
 import os
 import pathlib
+import re
 import signal
 import sys
 import threading
@@ -39,11 +40,15 @@ from bokeh.server.views.autoload_js_handler import (
     AutoloadJsHandler as BkAutoloadJsHandler,
 )
 from bokeh.server.views.doc_handler import DocHandler as BkDocHandler
+from bokeh.server.views.metadata_handler import (
+    MetadataHandler as BkMetadataHandler,
+)
 from bokeh.server.views.root_handler import RootHandler as BkRootHandler
 from bokeh.server.views.static_handler import StaticHandler
+from bokeh.server.views.ws import WSHandler as BkWSHandler
 from bokeh.util.serialization import make_id
 from bokeh.util.token import (
-    generate_jwt_token, generate_session_id, get_token_payload,
+    generate_jwt_token, generate_session_id, get_session_id, get_token_payload,
 )
 # Tornado imports
 from tornado.ioloop import IOLoop
@@ -100,6 +105,16 @@ if t.TYPE_CHECKING:
 
 INDEX_HTML = os.path.join(os.path.dirname(__file__), '..', '_templates', "index.html")
 DEFAULT_TITLE = "Panel Application"
+_PATH_TEMPLATE_PATTERN = re.compile(
+    r'^\{(?P<name>[A-Za-z_][A-Za-z0-9_]*)(?::(?P<converter>str|path|int|float|uuid))?\}$'
+)
+_PATH_TEMPLATE_CONVERTERS = {
+    'str': r'[^/]+',
+    'path': r'.*',
+    'int': r'[0-9]+',
+    'float': r'[0-9]+(?:\.[0-9]+)?',
+    'uuid': r'[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}',
+}
 
 def _origin_url(url: str) -> str:
     if url.startswith("http"):
@@ -111,6 +126,34 @@ def _server_url(url: str, port: int) -> str:
         return f"{url.rsplit(':', 1)[0]}:{port}/"
     else:
         return f"http://{url.split(':')[0]}:{port}/"
+
+
+def _path_template_to_tornado_route(route: str) -> str:
+    """
+    Convert FastAPI-style route templates into Tornado-compatible regex routes.
+    """
+    if route == '/' or '{' not in route:
+        return route
+    segments = route.lstrip('/').split('/')
+    converted_segments = []
+    found_template = False
+    for segment in segments:
+        match = _PATH_TEMPLATE_PATTERN.fullmatch(segment)
+        if match:
+            found_template = True
+            converter = match.group('converter') or 'str'
+            converted_segments.append(
+                f"(?P<{match.group('name')}>{_PATH_TEMPLATE_CONVERTERS[converter]})"
+            )
+            continue
+        if '{' in segment or '}' in segment:
+            raise ValueError(
+                f"Invalid path template segment {segment!r} in route {route!r}."
+            )
+        converted_segments.append(re.escape(segment))
+    if not found_template:
+        return route
+    return '/' + '/'.join(converted_segments)
 
 _tasks = set()
 
@@ -374,6 +417,31 @@ class LoginUrlMixin:
         raise RuntimeError('login_url or get_login_url() must be supplied when authentication hooks are enabled')
 
 
+def _normalize_app_path(path: str, prefix: str, suffix: str = '') -> str:
+    app_path = path
+    if prefix and app_path.startswith(prefix):
+        app_path = app_path[len(prefix):]
+    if suffix and app_path.endswith(suffix):
+        app_path = app_path[:-len(suffix)]
+    if not app_path:
+        app_path = '/'
+    if not app_path.startswith('/'):
+        app_path = '/' + app_path
+    return app_path
+
+
+def _route_params(args: tuple[t.Any, ...], kwargs: dict[str, t.Any]) -> dict[str, str]:
+    route_params = {str(i): str(value) for i, value in enumerate(args)}
+    route_params.update({str(key): str(value) for key, value in kwargs.items()})
+    return route_params
+
+
+def _set_request_route_context(handler: t.Any, *args, suffix: str = '', **kwargs) -> None:
+    request = handler.request
+    request.pn_route_params = _route_params(args, kwargs)
+    request.pn_app_path = _normalize_app_path(request.path, handler.application.prefix, suffix=suffix)
+
+
 class DocHandler(LoginUrlMixin, BkDocHandler):
 
     @authenticated  # type: ignore
@@ -485,6 +553,7 @@ class DocHandler(LoginUrlMixin, BkDocHandler):
             redirect_url = f'{prefix}/' + (f'?{query_string}' if query_string else '')
             self.redirect(redirect_url)
             return
+        _set_request_route_context(self, *args, **kwargs)
 
         # Run global authorization callback
         payload = self._generate_token_payload()
@@ -552,8 +621,6 @@ class DocHandler(LoginUrlMixin, BkDocHandler):
         self.set_header("Content-Type", 'text/html')
         self.write(page)
 
-per_app_patterns[0] = (r'/?', DocHandler)
-
 # Patch Bokeh Autoload handler
 class AutoloadJsHandler(BkAutoloadJsHandler):
     ''' Implements a custom Tornado handler for the autoload JS chunk
@@ -561,6 +628,7 @@ class AutoloadJsHandler(BkAutoloadJsHandler):
     '''
 
     async def get(self, *args, **kwargs) -> None:
+        _set_request_route_context(self, *args, suffix='/autoload.js', **kwargs)
         element_id = self.get_argument("bokeh-autoload-element", default=None)
         if not element_id:
             self.send_error(status_code=400, reason='No bokeh-autoload-element query parameter')
@@ -587,7 +655,35 @@ class AutoloadJsHandler(BkAutoloadJsHandler):
         self.set_header("Content-Type", 'application/javascript')
         self.write(js)
 
-per_app_patterns[3] = (r'/autoload.js', AutoloadJsHandler)
+
+class WSHandler(BkWSHandler):
+
+    def open(self, *args, **kwargs):
+        _set_request_route_context(self, *args, suffix='/ws', **kwargs)
+        return super().open()
+
+    async def _async_open(self, token: str) -> None:
+        payload = get_token_payload(token)
+        session_id = get_session_id(token)
+        payload.update(self.application_context.application.process_request(self.request))
+        payload.pop('session_expiry', None)
+        token = generate_jwt_token(
+            session_id,
+            secret_key=self.application.secret_key,
+            signed=self.application.sign_sessions,
+            expiration=self.application.session_token_expiration,
+            extra_payload=payload
+        )
+        return await super()._async_open(token)
+
+
+_metadata_handler = per_app_patterns[2][1] if len(per_app_patterns) > 2 else BkMetadataHandler
+per_app_patterns[:] = [
+    (r'/ws', WSHandler),
+    (r'/metadata', _metadata_handler),
+    (r'/autoload.js', AutoloadJsHandler),
+    (r'/?', DocHandler),
+]
 
 class RootHandler(LoginUrlMixin, BkRootHandler):
     """
@@ -595,9 +691,18 @@ class RootHandler(LoginUrlMixin, BkRootHandler):
     template variable.
     """
 
+    _regex_tokens = ('(', ')', '[', ']', '?', '+', '*', '|', '\\', '^', '$')
+
+    @classmethod
+    def _is_concrete_route(cls, route: str) -> bool:
+        return not any(token in route for token in cls._regex_tokens)
+
     @authenticated
     async def get(self, *args, **kwargs):
-        if self.use_redirect and len(self.applications) == 1:
+        if (
+            self.use_redirect and len(self.applications) == 1 and
+            self._is_concrete_route(next(iter(self.applications)))
+        ):
             app_names = list(self.applications.keys())
             redirect_to = f".{app_names[0]}"
             self.redirect(redirect_to)
@@ -670,7 +775,8 @@ def create_static_handler(prefix, key, app):
     key = '/__patchedroot' if key == '/' else key
 
     route = prefix
-    route += "/static/(.*)" if key == "/" else key + "/static/(.*)"
+    static_route = "/static/(?P<static_path>.*)" if "(?P<" in key else "/static/(.*)"
+    route += static_route if key == "/" else key + static_route
     if app.static_path is not None:
         return (route, StaticFileHandler, {"path" : app.static_path})
     return (route, StaticHandler, {})
@@ -1083,6 +1189,18 @@ def get_server(
     apps = build_applications(
         panel, title=title, location=location, admin=admin, custom_handlers=(flask_handler,)
     )
+    normalized_apps = {}
+    normalized_sources = {}
+    for endpoint, app in apps.items():
+        normalized_endpoint = _path_template_to_tornado_route(endpoint)
+        if normalized_endpoint in normalized_apps:
+            raise ValueError(
+                f"Application routes {endpoint!r} and {normalized_sources[normalized_endpoint]!r} "
+                "normalize to the same Tornado route."
+            )
+        normalized_apps[normalized_endpoint] = app
+        normalized_sources[normalized_endpoint] = endpoint
+    apps = normalized_apps
 
     if warm or config.autoreload:
         for endpoint, app in apps.items():
