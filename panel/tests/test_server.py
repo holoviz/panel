@@ -1123,6 +1123,28 @@ def test_server_ico_path_on_proxy(reverse_proxy):
     ico = requests.get(f"http://localhost:{proxy}/proxy/favicon.ico")
     assert ico.content == ico_path.read_bytes()
 
+
+def test_server_route_params_on_proxy(reverse_proxy, server_implementation):
+    route_params = []
+    app_urls = []
+
+    def app():
+        route_params.append(state.route_params)
+        app_urls.append(state.app_url)
+        return 'route'
+
+    port, proxy = reverse_proxy
+    serve_and_request(
+        {'/user/{name}': app},
+        port=port,
+        proxy=proxy,
+        suffix='/proxy/user/alice'
+    )
+
+    assert route_params == [{'name': 'alice'}]
+    assert app_urls == ['/user/alice']
+
+
 def test_server_template_custom_resources_with_prefix(port):
     template = CustomBootstrapTemplate()
 
