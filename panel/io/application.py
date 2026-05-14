@@ -133,15 +133,16 @@ class Application(BkApplication):
         if request is None:
             return
         app_context = session_context.server_context.application_context
-        app_path = app_context._url
-        try:
-            app_path = session_context.token_payload.get('app_path', app_path)
-        except AssertionError:
-            pass
+        app_path = getattr(request, 'app_path', None) or app_context._url
+        if app_path == app_context._url:
+            try:
+                app_path = session_context.token_payload.get('app_path', app_path)
+            except AssertionError:
+                pass
         if not app_path.startswith('/'):
             app_path = f'/{app_path}'
 
-        request_path = request.path
+        request_path = getattr(request, 'path', None) or app_path
         prefix = ''
         if app_path != '/' and request_path.endswith(app_path):
             prefix = request_path[:-len(app_path)]
@@ -188,10 +189,10 @@ class Application(BkApplication):
             the session context.
         '''
         request_data = super().process_request(request)
-        route_params = getattr(request, 'pn_route_params', None)
+        route_params = getattr(request, 'route_params', {})
         if route_params:
             request_data['route_params'] = route_params
-        app_path = getattr(request, 'pn_app_path', None)
+        app_path = getattr(request, 'app_path', None)
         if app_path:
             request_data['app_path'] = app_path
         user = request.cookies.get('user')

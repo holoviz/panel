@@ -34,6 +34,7 @@ from bokeh.embed.bundle import Script
 from bokeh.embed.elements import script_for_render_items
 from bokeh.embed.util import RenderItem
 from bokeh.embed.wrappers import wrap_in_script_tag
+from bokeh.server.contexts import _RequestProxy as BkRequestProxy
 from bokeh.server.server import Server as BokehServer
 from bokeh.server.urls import per_app_patterns, toplevel_patterns
 from bokeh.server.views.autoload_js_handler import (
@@ -419,6 +420,42 @@ class LoginUrlMixin:
         raise RuntimeError('login_url or get_login_url() must be supplied when authentication hooks are enabled')
 
 
+class RequestProxy(BkRequestProxy):
+
+    def __init__(self, request, *args, route_params=None, app_path=None, **kwargs):
+        super().__init__(request, *args, **kwargs)
+        if route_params is None:
+            route_params = getattr(request, 'route_params', None)
+            if route_params is None and isinstance(request, dict):
+                route_params = request.get('route_params')
+        if app_path is None:
+            app_path = getattr(request, 'app_path', None)
+            if app_path is None and isinstance(request, dict):
+                app_path = request.get('app_path')
+        self._route_params = {} if not isinstance(route_params, dict) else {
+            str(k): str(v) for k, v in route_params.items()
+        }
+        self._app_path = None if app_path is None else str(app_path)
+
+    @property
+    def route_params(self) -> dict[str, str]:
+        return self._route_params
+
+    @property
+    def app_path(self) -> str | None:
+        return self._app_path
+
+    def __getattr__(self, name: str) -> t.Any:
+        if not name.startswith("_") and isinstance(self._request, dict):
+            if name in self._request:
+                return self._request[name]
+            raise AttributeError(name)
+        return super().__getattr__(name)
+
+
+bokeh.server.contexts._RequestProxy = RequestProxy
+
+
 def _normalize_app_path(path: str, prefix: str, suffix: str = '') -> str:
     app_path = path
     if prefix and app_path.startswith(prefix):
@@ -440,8 +477,8 @@ def _route_params(args: tuple[t.Any, ...], kwargs: dict[str, t.Any]) -> dict[str
 
 def _set_request_route_context(handler: t.Any, *args, suffix: str = '', **kwargs) -> None:
     request = handler.request
-    request.pn_route_params = _route_params(args, kwargs)
-    request.pn_app_path = _normalize_app_path(request.path, handler.application.prefix, suffix=suffix)
+    request.route_params = _route_params(args, kwargs)
+    request.app_path = _normalize_app_path(request.path, handler.application.prefix, suffix=suffix)
 
 
 class DocHandler(LoginUrlMixin, BkDocHandler):

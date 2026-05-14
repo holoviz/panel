@@ -95,8 +95,8 @@ async def _get_fastapi_session(self, request: Request, session_id: t.Any):
             uri=uri,
             headers=HTTPHeaders(request.headers),
         )
-    tornado_request.pn_route_params = route_params
-    tornado_request.pn_app_path = app_path
+    tornado_request.route_params = route_params
+    tornado_request.app_path = app_path
 
     headers = dict(tornado_request.headers)
     cookies = {name: cookie.value for name, cookie in request.cookies.items()}
@@ -154,6 +154,8 @@ _bk_fastapi_async_open = WSHandler._async_open
 async def _async_open_with_route_context(self, socket, token):
     payload = get_token_payload(token)
     route_params, app_path = _route_context(socket.scope, suffix='/ws')
+    socket.scope['route_params'] = route_params
+    socket.scope['app_path'] = app_path
     if route_params or app_path:
         payload = dict(payload)
         if route_params:

@@ -1078,7 +1078,11 @@ class _state(param.Parameterized):
         if not (self.curdoc and self.curdoc.session_context):
             return None
         session_context = self.curdoc.session_context
-        app_url = session_context.server_context.application_context.url
+        request = session_context.request
+        app_url = (
+            getattr(request, 'app_path', None)
+            if request is not None else None
+        ) or session_context.server_context.application_context.url
         try:
             app_url = session_context.token_payload.get('app_path', app_url)
         except AssertionError:
@@ -1274,6 +1278,11 @@ class _state(param.Parameterized):
         """
         if not (self.curdoc and self.curdoc.session_context):
             return {}
+        request = self.curdoc.session_context.request
+        if request is not None:
+            route_params = getattr(request, 'route_params', None)
+            if isinstance(route_params, dict):
+                return {str(k): str(v) for k, v in route_params.items()}
         try:
             route_params = self.curdoc.session_context.token_payload.get('route_params', {})
         except AssertionError:
