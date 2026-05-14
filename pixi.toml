@@ -51,10 +51,6 @@ no-default-feature = true
 features = ["py314", "required", "test-core", "test-unit-task"]
 no-default-feature = true
 
-[environments.test-bokeh37]
-features = ["py310", "required", "test-core", "test-unit-task", "bokeh37"]
-no-default-feature = true
-
 [environments.test-bokeh38]
 features = ["py310", "required", "test-core", "test-unit-task", "bokeh38"]
 no-default-feature = true
@@ -86,7 +82,7 @@ nomkl = "*"
 pip = "*"
 # Required
 nh3 = "*"
-bokeh = ">=3.7.0,<3.10.0a0"
+bokeh = ">=3.8.0,<3.10.0a0"
 linkify-it-py = "*"
 markdown = "*"
 markdown-it-py = "*"
@@ -195,9 +191,6 @@ pytest-cov = "*"
 pytest-github-actions-annotate-failures = "*"
 pytest-rerunfailures = "*"
 pytest-xdist = "*"
-
-[feature.bokeh37.dependencies]
-bokeh = "3.7.*"
 
 [feature.bokeh38.dependencies]
 bokeh = "3.8.*"
