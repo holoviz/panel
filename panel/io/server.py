@@ -83,7 +83,9 @@ logger = logging.getLogger(__name__)
 if t.TYPE_CHECKING:
     from collections.abc import Callable, Mapping
 
-    from bokeh.application.application import SessionContext
+    from bokeh.application.application import (
+        Application as BkApplication, SessionContext,
+    )
     from bokeh.core.types import ID
     from bokeh.document.document import DocJson
     from bokeh.embed.bundle import Bundle
@@ -1189,8 +1191,8 @@ def get_server(
     apps = build_applications(
         panel, title=title, location=location, admin=admin, custom_handlers=(flask_handler,)
     )
-    normalized_apps = {}
-    normalized_sources = {}
+    normalized_apps: dict[str, BkApplication] = {}
+    normalized_sources: dict[str, str] = {}
     for endpoint, app in apps.items():
         normalized_endpoint = _path_template_to_tornado_route(endpoint)
         if normalized_endpoint in normalized_apps:

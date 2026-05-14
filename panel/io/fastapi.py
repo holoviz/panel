@@ -78,19 +78,23 @@ async def _get_fastapi_session(self, request: Request, session_id: t.Any):
             secret_key=app.secret_key, signed=app.sign_sessions
         )
 
-    request_kwargs = {}
     route_params, app_path = _route_context(request)
-    if tornado.version_info < (6, 5, 0):
+    uri = f"{request.url.path}{f'?{request.url.query}' if request.url.query else ''}"
+    if tornado.version_info < (6, 5, 0) and request.client is not None:
         # Compatibility with changes made in Tornado 6.5
         # https://github.com/tornadoweb/tornado/pull/3487
-        request_kwargs["host"] = request.client.host
-
-    tornado_request = HTTPServerRequest(
-        method=request.method,
-        uri=f"{request.url.path}{f'?{request.url.query}' if request.url.query else ''}",
-        headers=HTTPHeaders(request.headers),
-        **request_kwargs,
-    )
+        tornado_request = HTTPServerRequest(
+            method=request.method,
+            uri=uri,
+            headers=HTTPHeaders(request.headers),
+            host=request.client.host,
+        )
+    else:
+        tornado_request = HTTPServerRequest(
+            method=request.method,
+            uri=uri,
+            headers=HTTPHeaders(request.headers),
+        )
     tornado_request.pn_route_params = route_params
     tornado_request.pn_app_path = app_path
 
