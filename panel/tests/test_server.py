@@ -17,7 +17,9 @@ from bokeh.events import ButtonClick
 from panel.config import config
 from panel.io import state
 from panel.io.resources import DIST_DIR, JS_VERSION
-from panel.io.server import INDEX_HTML, get_server, set_curdoc
+from panel.io.server import (
+    INDEX_HTML, _path_template_to_tornado_route, get_server, set_curdoc,
+)
 from panel.layout import Row
 from panel.models import HTML as BkHTML
 from panel.models.tabulator import TableEditEvent
@@ -41,6 +43,42 @@ def test_get_server(html_server_session):
     root = session.document.roots[0]
     assert isinstance(root, BkHTML)
     assert root.text == '&lt;h1&gt;Title&lt;/h1&gt;'
+
+
+@pytest.mark.parametrize(
+    ('route', 'expected'),
+    [
+        ('/', '/'),
+        ('/app', '/app'),
+        ('/user/{name}', '/user/(?P<name>[^/]+)'),
+        ('/files/{filepath:path}', '/files/(?P<filepath>.*)'),
+        ('/measure/{value:int}', '/measure/(?P<value>[0-9]+)'),
+        ('/measure/{value:float}', '/measure/(?P<value>[0-9]+(?:\\.[0-9]+)?)'),
+        (
+            '/run/{uid:uuid}',
+            '/run/(?P<uid>[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})'
+        ),
+        ('/assets.v1/{name}', '/assets\\.v1/(?P<name>[^/]+)'),
+        ('/user/([^/]+)', '/user/([^/]+)'),
+    ]
+)
+def test_path_template_to_tornado_route_mapping(route, expected):
+    assert _path_template_to_tornado_route(route) == expected
+
+
+@pytest.mark.parametrize(
+    'route',
+    [
+        '/user/{name',
+        '/user/name}',
+        '/user/{name:bad}',
+        '/user/prefix-{name}',
+        '/user/{name}-suffix',
+    ]
+)
+def test_path_template_to_tornado_route_invalid_templates(route):
+    with pytest.raises(ValueError, match='Invalid path template segment'):
+        _path_template_to_tornado_route(route)
 
 @pytest.mark.xdist_group(name="server")
 def test_server_update(html_server_session):

@@ -134,7 +134,7 @@ def _path_template_to_tornado_route(route: str) -> str:
     """
     Convert FastAPI-style route templates into Tornado-compatible regex routes.
     """
-    if route == '/' or '{' not in route:
+    if route == '/' or ('{' not in route and '}' not in route):
         return route
     segments = route.lstrip('/').split('/')
     converted_segments = []
