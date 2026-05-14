@@ -815,8 +815,13 @@ def create_static_handler(prefix, key, app):
     key = '/__patchedroot' if is_root else key
 
     route = prefix
-    static_route = "/static/(?P<static_path>.*)" if "(?P<" in key else "/static/(.*)"
-    route += static_route if is_root else key + static_route
+    if is_root:
+        # Avoid matching /static/extensions/... here so Bokeh's top-level
+        # MultiRootStaticHandler route can serve extension assets.
+        route += "/static/(?!extensions/)(.*)"
+    else:
+        static_route = "/static/(?P<static_path>.*)" if "(?P<" in key else "/static/(.*)"
+        route += key + static_route
     if app.static_path is not None:
         return (route, StaticFileHandler, {"path" : app.static_path})
     return (route, StaticHandler, {})

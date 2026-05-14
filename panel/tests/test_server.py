@@ -236,6 +236,13 @@ def test_server_extensions_on_root(server_implementation):
     assert serve_and_request(md).ok
 
 
+def test_server_extension_static_on_root(server_implementation):
+    md = Markdown('# Title')
+    r = serve_and_request(md, suffix='/static/extensions/panel/panel.min.js')
+    assert r.ok
+    assert 'Bokeh' in r.content.decode('utf-8')
+
+
 def test_autoload_js(port):
     html = Markdown('# Title')
     app_name = 'test'
