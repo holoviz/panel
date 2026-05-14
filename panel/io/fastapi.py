@@ -57,7 +57,7 @@ DocHandler.render_session = server_html_page_for_session
 
 
 def _route_context(
-    request_or_scope: Request | dict[str, t.Any], suffix: str = ''
+    request_or_scope: Request | dict[str, t.Any], suffix: str = '', prefix: str = ''
 ) -> tuple[dict[str, str], str | None]:
     if isinstance(request_or_scope, dict):
         path_params = request_or_scope.get('path_params') or {}
@@ -65,10 +65,26 @@ def _route_context(
     else:
         path_params = request_or_scope.path_params
         path = request_or_scope.url.path
+    if path and prefix and path.startswith(prefix):
+        path = path[len(prefix):] or '/'
+        if not path.startswith('/'):
+            path = '/' + path
     if path and suffix and path.endswith(suffix):
         path = path[:-len(suffix)] or '/'
     route_params = {k: str(v) for k, v in path_params.items()}
     return route_params, path
+
+
+def _prefix_path(path: str, prefix: str) -> str:
+    if not prefix:
+        return path
+    if not path.startswith('/'):
+        path = '/' + path
+    if path == '/':
+        return prefix
+    if path.startswith(prefix + '/') or path == prefix:
+        return path
+    return f"{prefix}{path}"
 
 
 async def _get_fastapi_session(self, request: Request, session_id: t.Any):
@@ -78,7 +94,9 @@ async def _get_fastapi_session(self, request: Request, session_id: t.Any):
             secret_key=app.secret_key, signed=app.sign_sessions
         )
 
-    route_params, app_path = _route_context(request)
+    route_params, app_path = _route_context(
+        request, prefix=getattr(self.application, '_prefix', '')
+    )
     uri = f"{request.url.path}{f'?{request.url.query}' if request.url.query else ''}"
     if tornado.version_info < (6, 5, 0) and request.client is not None:
         # Compatibility with changes made in Tornado 6.5
@@ -153,7 +171,9 @@ _bk_fastapi_async_open = WSHandler._async_open
 
 async def _async_open_with_route_context(self, socket, token):
     payload = get_token_payload(token)
-    route_params, app_path = _route_context(socket.scope, suffix='/ws')
+    route_params, app_path = _route_context(
+        socket.scope, suffix='/ws', prefix=getattr(self.application, '_prefix', '')
+    )
     socket.scope['route_params'] = route_params
     socket.scope['app_path'] = app_path
     if route_params or app_path:
@@ -257,7 +277,15 @@ def add_applications(
     **kwargs:
         Additional keyword arguments to pass to the BokehFastAPI application
     """
+    prefix = kwargs.get('prefix', '') or ''
+    if prefix:
+        if not prefix.startswith('/'):
+            raise ValueError("prefix must start with '/'.")
+        prefix = prefix.rstrip('/') or '/'
+        kwargs['prefix'] = prefix
     apps = build_applications(panel, title=title, location=location, admin=admin)
+    if prefix:
+        apps = {_prefix_path(endpoint, prefix): app for endpoint, app in apps.items()}
     ws_origins = kwargs.pop('websocket_origin', None)
     if ws_origins and not isinstance(ws_origins, list):
         ws_origins = [ws_origins]
@@ -267,13 +295,16 @@ def add_applications(
     application = BokehFastAPI(apps, app=app, **kwargs)
     if session_history is not None:
         config.session_history = session_history
-        add_history_handler(application.app, endpoint='/session_info')
+        add_history_handler(application.app, endpoint=_prefix_path('/session_info', prefix))
     if liveness:
         liveness_endpoint = liveness if isinstance(liveness, str) else '/liveness'
-        add_liveness_handler(application.app, endpoint=liveness_endpoint, applications=apps)
+        add_liveness_handler(
+            application.app, endpoint=_prefix_path(liveness_endpoint, prefix), applications=apps
+        )
 
     @application.app.get(
-        f"/{COMPONENT_PATH.rstrip('/')}" + "/{path:path}", include_in_schema=False
+        _prefix_path(f"/{COMPONENT_PATH.rstrip('/')}" + "/{path:path}", prefix),
+        include_in_schema=False
     )
     def get_component_resource(path: str):
         # ComponentResourceHandler.parse_url_path only ever accesses

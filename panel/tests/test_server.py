@@ -683,6 +683,76 @@ def test_server_route_params_path_converter_path(port, server_implementation):
     assert app_urls == ['/files/a/b/c.txt']
 
 
+@pytest.mark.parametrize(
+    ('route', 'suffix', 'expected_app_url'),
+    [
+        ('/user/{name}', '/user/alice', '/user/alice'),
+        ('/nested/app/{name}', '/nested/app/alice', '/nested/app/alice'),
+    ]
+)
+def test_server_app_url_context(port, server_implementation, route, suffix, expected_app_url):
+    app_urls = []
+
+    def app():
+        app_urls.append(state.app_url)
+        return 'route'
+
+    serve_and_wait({route: app}, port=port)
+    requests.get(f"http://localhost:{port}{suffix}")
+
+    assert app_urls == [expected_app_url]
+
+
+def test_server_app_url_context_with_prefix(port, server_implementation):
+    app_urls = []
+
+    def app():
+        app_urls.append(state.app_url)
+        return 'route'
+
+    serve_and_wait({'/nested/app/{name}': app}, port=port, prefix='/prefix')
+    requests.get(f"http://localhost:{port}/prefix/nested/app/alice")
+
+    assert app_urls == ['/prefix/nested/app/alice']
+
+
+@pytest.mark.parametrize(
+    ('route', 'suffix', 'expected_app_url'),
+    [
+        ('/user/{name}', '/proxy/user/alice', '/user/alice'),
+        ('/nested/app/{name}', '/proxy/nested/app/alice', '/nested/app/alice'),
+    ]
+)
+def test_server_app_url_context_on_proxy(
+    reverse_proxy, server_implementation, route, suffix, expected_app_url
+):
+    app_urls = []
+
+    def app():
+        app_urls.append(state.app_url)
+        return 'route'
+
+    port, proxy = reverse_proxy
+    serve_and_wait({route: app}, port=port, proxy=proxy)
+    requests.get(f"http://localhost:{proxy}{suffix}")
+
+    assert app_urls == [expected_app_url]
+
+
+def test_server_app_url_context_on_proxy_with_prefix(reverse_proxy, server_implementation):
+    app_urls = []
+
+    def app():
+        app_urls.append(state.app_url)
+        return 'route'
+
+    port, proxy = reverse_proxy
+    serve_and_wait({'/nested/app/{name}': app}, port=port, proxy=proxy, prefix='/prefix')
+    requests.get(f"http://localhost:{proxy}/proxy/prefix/nested/app/alice")
+
+    assert app_urls == ['/prefix/nested/app/alice']
+
+
 @pytest.mark.xdist_group(name="server")
 def test_server_reuse_sessions_with_session_key_func(port, reuse_sessions):
     config.session_key_func = lambda r: (r.path, r.arguments.get('arg', [''])[0])
