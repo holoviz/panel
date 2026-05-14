@@ -116,11 +116,11 @@ async def _get_fastapi_session(self, request: Request, session_id: t.Any):
         )
     tornado_request.route_params = route_params
     tornado_request.app_path = app_path
-    # Preserve a tornado-compatible cookie mapping for Application.process_request.
     simple_cookies = SimpleCookie()
-    for name, value in request.cookies.items():
-        simple_cookies[name] = value
-    tornado_request._cookies = dict(simple_cookies.items())
+    for name, cookie in request.cookies.items():
+        cookie_value = cookie.value if hasattr(cookie, "value") else str(cookie)
+        simple_cookies[name] = cookie_value
+    tornado_request._cookies = simple_cookies
 
     headers = dict(tornado_request.headers)
     cookies = {
