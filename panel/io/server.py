@@ -54,7 +54,7 @@ from tornado.wsgi import WSGIContainer
 
 # Internal imports
 from ..config import config
-from ..util import edit_readonly, fullpath
+from ..util import HTML_SANITIZER, edit_readonly, fullpath
 from ..util.warnings import warn
 from .application import build_applications
 from .document import (  # noqa
@@ -474,7 +474,7 @@ class DocHandler(LoginUrlMixin, BkDocHandler):
             title='Panel: Authorization Error',
             error_type='Authorization Error',
             error='User is not authorized.',
-            error_msg=auth_error
+            error_msg=HTML_SANITIZER.clean(auth_error)
         )
 
     @authenticated
