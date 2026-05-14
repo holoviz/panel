@@ -550,11 +550,12 @@ def serve(
     if threaded:
         # To ensure that we have correspondence between state._threads and state._servers
         # we must provide a server_id here
-        kwargs['loop'] = loop = asyncio.new_event_loop() if loop is None else loop
+        owns_loop = loop is None
+        kwargs['loop'] = loop = asyncio.new_event_loop() if owns_loop else loop
         if 'server_id' not in kwargs:
             kwargs['server_id'] = uuid.uuid4().hex
         server = StoppableThread(
-            target=get_server, io_loop=loop, args=(panels,), kwargs=kwargs
+            target=get_server, io_loop=loop, args=(panels,), kwargs=kwargs, owns_loop=owns_loop
         )
         server_id = kwargs['server_id']
         state._threads[server_id] = server

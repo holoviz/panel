@@ -723,7 +723,6 @@ def test_server_dynamic_ws_endpoint_resolution(port, server_implementation):
         assert ws.status_code == 404
 
 
-@pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
 def test_server_dynamic_metadata_endpoint_resolution(port, server_implementation):
     if server_implementation == 'fastapi':
         pytest.skip("bokeh_fastapi does not expose a metadata endpoint.")
@@ -736,7 +735,6 @@ def test_server_dynamic_metadata_endpoint_resolution(port, server_implementation
     assert metadata.status_code == 200
 
 
-@pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
 def test_server_dynamic_static_file_route(port, server_implementation):
     if server_implementation == 'fastapi':
         pytest.skip("bokeh_fastapi does not expose per-app static endpoints.")
@@ -749,7 +747,6 @@ def test_server_dynamic_static_file_route(port, server_implementation):
     assert static.status_code == 404
 
 
-@pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
 def test_server_dynamic_routes_with_prefix_endpoint_access(port, server_implementation):
     def app():
         return 'route'

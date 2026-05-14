@@ -1014,14 +1014,15 @@ def serve(
         location=location, admin=admin
     ))
     if threaded:
-        kwargs['loop'] = loop = IOLoop(make_current=False) if loop is None else loop
+        owns_loop = loop is None
+        kwargs['loop'] = loop = IOLoop(make_current=False) if owns_loop else loop
         # To ensure that we have correspondence between state._threads and state._servers
         # we must provide a server_id here
         if 'server_id' not in kwargs:
             kwargs['server_id'] = uuid.uuid4().hex
 
         server = StoppableThread(
-            target=get_server, io_loop=loop, args=(panels,), kwargs=kwargs
+            target=get_server, io_loop=loop, args=(panels,), kwargs=kwargs, owns_loop=owns_loop
         )
         server_id = kwargs['server_id']
         state._threads[server_id] = server
