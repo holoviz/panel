@@ -16,6 +16,7 @@ from bokeh.events import ButtonClick
 
 from panel.config import config
 from panel.io import state
+from panel.io.application import Application
 from panel.io.resources import DIST_DIR, JS_VERSION
 from panel.io.server import (
     INDEX_HTML, _path_template_to_tornado_route, get_server, set_curdoc,
@@ -52,8 +53,11 @@ def test_get_server(html_server_session):
         ('/app', '/app'),
         ('/user/{name}', '/user/(?P<name>[^/]+)'),
         ('/files/{filepath:path}', '/files/(?P<filepath>.*)'),
-        ('/measure/{value:int}', '/measure/(?P<value>[0-9]+)'),
-        ('/measure/{value:float}', '/measure/(?P<value>[0-9]+(?:\\.[0-9]+)?)'),
+        ('/measure/{value:int}', '/measure/(?P<value>[+-]?[0-9]+)'),
+        (
+            '/measure/{value:float}',
+            '/measure/(?P<value>[+-]?(?:[0-9]+(?:\\.[0-9]*)?|\\.[0-9]+)(?:[eE][+-]?[0-9]+)?)'
+        ),
         (
             '/run/{uid:uuid}',
             '/run/(?P<uid>[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})'
@@ -681,6 +685,123 @@ def test_server_route_params_path_converter_path(port, server_implementation):
 
     assert route_params == [{'filepath': 'a/b/c.txt'}]
     assert app_urls == ['/files/a/b/c.txt']
+
+
+def test_server_route_params_autoload_js(port, server_implementation):
+    if server_implementation == 'fastapi':
+        pytest.skip("bokeh_fastapi does not expose an autoload.js endpoint.")
+    route_params = []
+    app_urls = []
+
+    def app():
+        route_params.append(state.route_params)
+        app_urls.append(state.app_url)
+        return 'route'
+
+    serve_and_wait({'/user/{name}': app}, port=port)
+    args = (
+        "bokeh-autoload-element=1002"
+        "&bokeh-app-path=/user/alice"
+        f"&bokeh-absolute-url=http://localhost:{port}/user/alice"
+    )
+    r = requests.get(f"http://localhost:{port}/user/alice/autoload.js?{args}")
+    assert r.status_code == 200
+    wait_until(lambda: route_params == [{'name': 'alice'}])
+    assert app_urls == ['/user/alice']
+
+
+def test_server_dynamic_ws_endpoint_resolution(port, server_implementation):
+    def app():
+        return 'route'
+
+    serve_and_wait({'/user/{name}': app}, port=port)
+    ws = requests.get(f"http://localhost:{port}/user/alice/ws")
+    if server_implementation == 'tornado':
+        assert ws.status_code == 400
+    else:
+        # FastAPI exposes websocket routes that are not accessible via HTTP GET.
+        assert ws.status_code == 404
+
+
+@pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
+def test_server_dynamic_metadata_endpoint_resolution(port, server_implementation):
+    if server_implementation == 'fastapi':
+        pytest.skip("bokeh_fastapi does not expose a metadata endpoint.")
+
+    def app():
+        return 'route'
+
+    serve_and_wait({'/user/{name}': app}, port=port)
+    metadata = requests.get(f"http://localhost:{port}/user/alice/metadata")
+    assert metadata.status_code == 200
+
+
+@pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
+def test_server_dynamic_static_file_route(port, server_implementation):
+    if server_implementation == 'fastapi':
+        pytest.skip("bokeh_fastapi does not expose per-app static endpoints.")
+
+    def app():
+        return 'route'
+
+    serve_and_wait({'/user/{name}': app}, port=port)
+    static = requests.get(f"http://localhost:{port}/user/alice/static/does-not-exist.css")
+    assert static.status_code == 404
+
+
+@pytest.mark.filterwarnings("ignore::pytest.PytestUnraisableExceptionWarning")
+def test_server_dynamic_routes_with_prefix_endpoint_access(port, server_implementation):
+    def app():
+        return 'route'
+
+    serve_and_wait({'/user/{name}': app}, port=port, prefix='/prefix')
+    app_page = requests.get(f"http://localhost:{port}/prefix/user/alice")
+    assert app_page.status_code == 200
+    duplicate_prefix = requests.get(f"http://localhost:{port}/prefix/prefix/user/alice")
+    assert duplicate_prefix.status_code == 404
+
+    if server_implementation == 'tornado':
+        metadata = requests.get(f"http://localhost:{port}/prefix/user/alice/metadata")
+        assert metadata.status_code == 200
+
+
+def test_fastapi_prefixed_route_registration_no_double_prefix():
+    fastapi = pytest.importorskip("fastapi")
+    from panel.io.fastapi import add_applications
+
+    app = fastapi.FastAPI()
+
+    def panel_app():
+        return 'route'
+
+    application = add_applications({'/user/{name}': panel_app}, app=app, prefix='/prefix')
+    paths = {route.path for route in application.app.router.routes if hasattr(route, "path")}
+    assert '/prefix/user/{name}' in paths
+    assert '/prefix/user/{name}/ws' in paths
+    assert '/prefix/prefix/user/{name}' not in paths
+    assert '/prefix/user/{name}/metadata' not in paths
+    assert '/prefix/user/{name}/autoload.js' not in paths
+
+
+def test_fastapi_synthetic_request_preserves_cookies(monkeypatch, port):
+    seen_cookie_values = []
+    original_process_request = Application.process_request
+
+    def wrapped_process_request(self, request):
+        user_cookie = request.cookies.get('user')
+        seen_cookie_values.append(None if user_cookie is None else user_cookie.value)
+        return original_process_request(self, request)
+
+    monkeypatch.setattr(Application, 'process_request', wrapped_process_request)
+
+    def app():
+        return 'route'
+
+    serve_and_wait({'/user/{name}': app}, port=port)
+    response = requests.get(f"http://localhost:{port}/user/alice", cookies={'user': 'alice'})
+    assert response.status_code == 200
+    wait_until(lambda: len(seen_cookie_values) > 0)
+    assert seen_cookie_values[-1] == 'alice'
 
 
 @pytest.mark.parametrize(

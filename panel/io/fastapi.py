@@ -8,6 +8,7 @@ import typing as t
 import uuid
 
 from functools import wraps
+from http.cookies import SimpleCookie
 
 import tornado
 
@@ -115,9 +116,17 @@ async def _get_fastapi_session(self, request: Request, session_id: t.Any):
         )
     tornado_request.route_params = route_params
     tornado_request.app_path = app_path
+    # Preserve a tornado-compatible cookie mapping for Application.process_request.
+    simple_cookies = SimpleCookie()
+    for name, value in request.cookies.items():
+        simple_cookies[name] = value
+    tornado_request._cookies = dict(simple_cookies.items())
 
     headers = dict(tornado_request.headers)
-    cookies = {name: cookie.value for name, cookie in request.cookies.items()}
+    cookies = {
+        name: cookie.value if hasattr(cookie, "value") else str(cookie)
+        for name, cookie in request.cookies.items()
+    }
 
     if app.include_headers is None:
         excluded_headers = app.exclude_headers or []

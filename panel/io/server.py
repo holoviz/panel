@@ -114,8 +114,8 @@ _PATH_TEMPLATE_PATTERN = re.compile(
 _PATH_TEMPLATE_CONVERTERS = {
     'str': r'[^/]+',
     'path': r'.*',
-    'int': r'[0-9]+',
-    'float': r'[0-9]+(?:\.[0-9]+)?',
+    'int': r'[+-]?[0-9]+',
+    'float': r'[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?',
     'uuid': r'[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}',
 }
 
@@ -730,7 +730,7 @@ class RootHandler(LoginUrlMixin, BkRootHandler):
     template variable.
     """
 
-    _regex_tokens = ('(', ')', '[', ']', '?', '+', '*', '|', '\\', '^', '$')
+    _regex_tokens = ('(', ')', '[', ']', '{', '}', '?', '+', '*', '|', '\\', '^', '$')
 
     @classmethod
     def _is_concrete_route(cls, route: str) -> bool:
@@ -807,6 +807,9 @@ class AuthenticatedStaticFileHandler(StaticFileHandler):
     async def get(self, *args, **kwargs):
         return await super().get(*args, **kwargs)
 
+def _to_non_capturing_groups(route: str) -> str:
+    route = re.sub(r'\(\?P<[^>]+>', '(?:', route)
+    return re.sub(r'(?<!\\)\((?!\?)', '(?:', route)
 
 # Copied from bokeh 2.4.0, to fix directly in bokeh at some point.
 def create_static_handler(prefix, key, app):
@@ -820,8 +823,7 @@ def create_static_handler(prefix, key, app):
         # MultiRootStaticHandler route can serve extension assets.
         route += "/static/(?!extensions/)(.*)"
     else:
-        static_route = "/static/(?P<static_path>.*)" if "(?P<" in key else "/static/(.*)"
-        route += key + static_route
+        route += _to_non_capturing_groups(key) + "/static/(.*)"
     if app.static_path is not None:
         return (route, StaticFileHandler, {"path" : app.static_path})
     return (route, StaticHandler, {})
