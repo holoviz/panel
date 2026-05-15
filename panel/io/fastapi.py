@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import asyncio
-import calendar
-import datetime as dt
 import socket
+import time
 import typing as t
 import uuid
 
@@ -116,10 +115,10 @@ async def _get_fastapi_session(self, request: Request, session_id: t.Any):
         )
     tornado_request.route_params = route_params
     tornado_request.app_path = app_path
-    simple_cookies = SimpleCookie()
-    for name, cookie in request.cookies.items():
-        cookie_value = cookie.value if hasattr(cookie, "value") else str(cookie)
-        simple_cookies[name] = cookie_value
+    simple_cookies = SimpleCookie({
+        name: cookie.value if hasattr(cookie, "value") else str(cookie)
+        for name, cookie in request.cookies.items()
+    })
     tornado_request._cookies = simple_cookies
 
     headers = dict(tornado_request.headers)
@@ -192,10 +191,7 @@ async def _async_open_with_route_context(self, socket, token):
         if app_path:
             payload['app_path'] = app_path
         expiry = int(payload.pop('session_expiry', 0))
-        expires_in = max(
-            1,
-            expiry - calendar.timegm(dt.datetime.now(tz=dt.timezone.utc).timetuple())
-        ) if expiry else 300
+        expires_in = max(1, expiry - int(time.time())) if expiry else 300
         token = generate_jwt_token(
             get_session_id(token),
             secret_key=self.application.secret_key,

@@ -104,8 +104,6 @@ Then `pn.state.route_params` contains the named captures:
   - Supports path-template syntax, which is normalized to Tornado-compatible patterns (for example `"/user/{name}"`).
 - **FastAPI (`panel.io.fastapi.serve`)**
   - Supports path-template syntax, e.g. `"/user/{name}"`, `"/files/{filepath:path}"`.
-  - Route parameters are available on `pn.state.route_params`.
-  - Concrete matched paths are reflected in `pn.state.app_url`.
 
 ## Best practices
 
@@ -113,3 +111,4 @@ Then `pn.state.route_params` contains the named captures:
 - If you use regex syntax, prefer non-greedy segment patterns such as `([^/]+)` for path segments.
 - Prefer explicit groups over very broad patterns like `(.*)` unless you specifically need to capture slashes.
 - Use `pn.state.app_url` when you need the concrete matched application URL for the current session.
+- Use `pn.state.route_params` to access the route parameters.
