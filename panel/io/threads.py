@@ -1,5 +1,6 @@
 import asyncio
 import threading
+import typing as t
 
 from .state import state
 
@@ -7,14 +8,15 @@ from .state import state
 class StoppableThread(threading.Thread):
     """Thread class with a stop() method."""
 
-    def __init__(self, io_loop, **kwargs):
+    def __init__(self, io_loop, owns_loop: bool = False, **kwargs):
         super().__init__(**kwargs)
         # Backward compatibility to handle Tornado IOLoop
         if hasattr(io_loop, 'asyncio_loop'):
             io_loop = io_loop.asyncio_loop
         self.asyncio_loop = io_loop
+        self._owns_loop = owns_loop
         self.server_id = kwargs.get('kwargs', {}).get('server_id')
-        self._shutdown_task = None
+        self._shutdown_task: t.Any | None = None
 
     def run(self) -> None:
         if hasattr(self, '_target'):
@@ -31,6 +33,11 @@ class StoppableThread(threading.Thread):
                 # Handle tornado server
                 try:
                     bokeh_server.stop()
+                except Exception:
+                    pass
+            if self._owns_loop and self.asyncio_loop and not self.asyncio_loop.is_closed():
+                try:
+                    self.asyncio_loop.close()
                 except Exception:
                     pass
             if hasattr(self, '_target'):

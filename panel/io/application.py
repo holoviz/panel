@@ -130,17 +130,34 @@ class Application(BkApplication):
         if not (session_context and session_context.server_context):
             return
         request = session_context.request
+        if request is None:
+            return
         app_context = session_context.server_context.application_context
-        prefix = request.uri.replace(app_context._url, '')
-        if not prefix.endswith('/'):
+        app_path = getattr(request, 'app_path', None) or app_context._url
+        if app_path == app_context._url:
+            try:
+                app_path = session_context.token_payload.get('app_path', app_path)
+            except AssertionError:
+                pass
+        if not app_path.startswith('/'):
+            app_path = f'/{app_path}'
+
+        request_path = getattr(request, 'path', None) or app_path
+        prefix = ''
+        if app_path != '/' and (request_path == app_path or request_path.endswith(app_path)):
+            prefix = request_path[:-len(app_path)]
+        elif app_path == '/' and request_path.endswith('/'):
+            prefix = request_path[:-1]
+
+        if prefix and not prefix.endswith('/'):
             prefix += '/'
-        base_url = urljoin('/', prefix)
-        rel_path = '/'.join(['..'] * app_context._url.strip('/').count('/'))
+        base_url = urljoin('/', prefix.lstrip('/'))
+        rel_path = '/'.join(['..'] * app_path.strip('/').count('/'))
 
         # Handle autoload.js absolute paths
         abs_url = request.arguments.get('bokeh-absolute-url')
         if abs_url:
-            rel_path = abs_url[0].decode('utf-8').replace(app_context._url, '')
+            rel_path = abs_url[0].decode('utf-8').replace(app_path, '')
 
         with set_curdoc(doc):
             state.base_url = base_url
@@ -172,6 +189,12 @@ class Application(BkApplication):
             the session context.
         '''
         request_data = super().process_request(request)
+        route_params = getattr(request, 'route_params', {})
+        if route_params:
+            request_data['route_params'] = route_params
+        app_path = getattr(request, 'app_path', None)
+        if app_path:
+            request_data['app_path'] = app_path
         user = request.cookies.get('user')
         if user and config.cookie_secret:
             from tornado.web import decode_signed_value
