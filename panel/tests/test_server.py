@@ -19,7 +19,8 @@ from panel.io import state
 from panel.io.application import Application
 from panel.io.resources import DIST_DIR, JS_VERSION
 from panel.io.server import (
-    INDEX_HTML, RootHandler, _path_template_to_tornado_route, get_server,
+    _MAX_APP_PATH_CHARS, _MAX_ROUTE_PARAM_VALUE_CHARS, INDEX_HTML, RootHandler,
+    _normalize_app_path, _path_template_to_tornado_route, get_server,
     set_curdoc,
 )
 from panel.layout import Row
@@ -84,6 +85,33 @@ def test_path_template_to_tornado_route_mapping(route, expected):
 def test_path_template_to_tornado_route_invalid_templates(route):
     with pytest.raises(ValueError, match='Invalid path template segment'):
         _path_template_to_tornado_route(route)
+
+
+def test_normalize_app_path_prefix_boundary():
+    assert _normalize_app_path('/pre/user/alice', '/pre') == '/user/alice'
+    assert _normalize_app_path('/prefix/user/alice', '/pre') == '/prefix/user/alice'
+    assert _normalize_app_path('/pre/user/alice/ws', '/pre', suffix='/ws') == '/user/alice'
+
+
+def test_fastapi_route_context_prefix_boundary():
+    fastapi = pytest.importorskip("fastapi")
+    from panel.io.fastapi import _route_context
+
+    request = fastapi.Request({
+        'type': 'http',
+        'method': 'GET',
+        'scheme': 'http',
+        'path': '/prefix/user/alice',
+        'query_string': b'',
+        'headers': [],
+        'client': ('127.0.0.1', 5000),
+        'server': ('127.0.0.1', 8000),
+        'path_params': {'name': 'alice'},
+    })
+    route_params, app_path = _route_context(request, prefix='/pre')
+    assert route_params == {'name': 'alice'}
+    assert app_path == '/prefix/user/alice'
+
 
 @pytest.mark.xdist_group(name="server")
 def test_server_update(html_server_session):
@@ -736,6 +764,23 @@ def test_server_route_params_path_converter_path(port, server_implementation):
 
     assert route_params == [{'filepath': 'a/b/c.txt'}]
     assert app_urls == ['/files/a/b/c.txt']
+
+
+def test_server_route_context_size_is_capped(port, server_implementation):
+    route_params = []
+    app_urls = []
+
+    def app():
+        route_params.append(state.route_params)
+        app_urls.append(state.app_url)
+        return 'route'
+
+    overlong = 'a' * (_MAX_ROUTE_PARAM_VALUE_CHARS + 300)
+    serve_and_wait({'/files/{filepath:path}': app}, port=port)
+    requests.get(f"http://localhost:{port}/files/{overlong}")
+
+    assert route_params == [{'filepath': overlong[:_MAX_ROUTE_PARAM_VALUE_CHARS]}]
+    assert app_urls == [f"/files/{overlong}"[:_MAX_APP_PATH_CHARS]]
 
 
 def test_server_route_params_autoload_js(port, server_implementation):

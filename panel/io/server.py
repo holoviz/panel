@@ -14,6 +14,7 @@ import re
 import signal
 import sys
 import threading
+import time
 import typing as t
 import uuid
 
@@ -49,7 +50,8 @@ from bokeh.server.views.static_handler import StaticHandler
 from bokeh.server.views.ws import WSHandler as BkWSHandler
 from bokeh.util.serialization import make_id
 from bokeh.util.token import (
-    generate_jwt_token, generate_session_id, get_session_id, get_token_payload,
+    check_token_signature, generate_jwt_token, generate_session_id,
+    get_session_id, get_token_payload,
 )
 # Tornado imports
 from tornado.ioloop import IOLoop
@@ -118,6 +120,53 @@ _PATH_TEMPLATE_CONVERTERS = {
     'float': r'[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?',
     'uuid': r'[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}',
 }
+_MAX_ROUTE_PARAMS = 32
+_MAX_ROUTE_PARAM_KEY_CHARS = 128
+_MAX_ROUTE_PARAM_VALUE_CHARS = 1024
+_MAX_APP_PATH_CHARS = 2048
+
+
+def _has_prefix_boundary(path: str, prefix: str) -> bool:
+    if path == prefix:
+        return True
+    if prefix == '/':
+        return path.startswith('/')
+    return path.startswith(prefix + '/')
+
+
+def _strip_prefixed_path(path: str, prefix: str) -> str:
+    if not prefix:
+        return path
+    if _has_prefix_boundary(path, prefix):
+        stripped = path[len(prefix):]
+        return stripped or '/'
+    return path
+
+
+def _sanitize_route_context(
+    route_params: dict[str, t.Any], app_path: str | None
+) -> tuple[dict[str, str], str | None]:
+    sanitized_params: dict[str, str] = {}
+    for i, (key, value) in enumerate(route_params.items()):
+        if i >= _MAX_ROUTE_PARAMS:
+            break
+        sanitized_key = str(key)[:_MAX_ROUTE_PARAM_KEY_CHARS]
+        sanitized_value = str(value)[:_MAX_ROUTE_PARAM_VALUE_CHARS]
+        sanitized_params[sanitized_key] = sanitized_value
+    sanitized_app_path = None if app_path is None else str(app_path)[:_MAX_APP_PATH_CHARS]
+    return sanitized_params, sanitized_app_path
+
+
+def _validate_token_for_resign(token: str, secret_key: bytes | None, signed: bool) -> tuple[dict[str, t.Any], str, int]:
+    if not check_token_signature(token, secret_key=secret_key, signed=signed):
+        raise RuntimeError("Token signature validation failed before websocket re-sign.")
+    payload = dict(get_token_payload(token))
+    expiry = int(payload.get('session_expiry', 0) or 0)
+    now = int(time.time())
+    if expiry and expiry <= now:
+        raise RuntimeError("Token expired before websocket re-sign.")
+    expires_in = max(1, expiry - now) if expiry else 300
+    return payload, get_session_id(token), expires_in
 
 def _origin_url(url: str) -> str:
     if url.startswith("http"):
@@ -432,10 +481,11 @@ class RequestProxy(BkRequestProxy):
             app_path = getattr(request, 'app_path', None)
             if app_path is None and isinstance(request, dict):
                 app_path = request.get('app_path')
-        self._route_params = {} if not isinstance(route_params, dict) else {
-            str(k): str(v) for k, v in route_params.items()
-        }
-        self._app_path = None if app_path is None else str(app_path)
+        sanitized_params, sanitized_app_path = _sanitize_route_context(
+            route_params if isinstance(route_params, dict) else {}, app_path
+        )
+        self._route_params = sanitized_params
+        self._app_path = sanitized_app_path
 
     @property
     def route_params(self) -> dict[str, str]:
@@ -449,7 +499,6 @@ class RequestProxy(BkRequestProxy):
         if not name.startswith("_") and isinstance(self._request, dict):
             if name in self._request:
                 return self._request[name]
-            raise AttributeError(name)
         return super().__getattr__(name)
 
 
@@ -457,9 +506,7 @@ bokeh.server.contexts._RequestProxy = RequestProxy
 
 
 def _normalize_app_path(path: str, prefix: str, suffix: str = '') -> str:
-    app_path = path
-    if prefix and app_path.startswith(prefix):
-        app_path = app_path[len(prefix):]
+    app_path = _strip_prefixed_path(path, prefix)
     if suffix and app_path.endswith(suffix):
         app_path = app_path[:-len(suffix)]
     if not app_path:
@@ -470,15 +517,17 @@ def _normalize_app_path(path: str, prefix: str, suffix: str = '') -> str:
 
 
 def _route_params(args: tuple[t.Any, ...], kwargs: dict[str, t.Any]) -> dict[str, str]:
-    route_params = {str(i): str(value) for i, value in enumerate(args)}
-    route_params.update({str(key): str(value) for key, value in kwargs.items()})
-    return route_params
+    route_params = {str(i): value for i, value in enumerate(args)}
+    route_params.update({str(key): value for key, value in kwargs.items()})
+    sanitized_params, _ = _sanitize_route_context(route_params, app_path=None)
+    return sanitized_params
 
 
 def _set_request_route_context(handler: t.Any, *args, suffix: str = '', **kwargs) -> None:
     request = handler.request
-    request.route_params = _route_params(args, kwargs)
-    request.app_path = _normalize_app_path(request.path, handler.application.prefix, suffix=suffix)
+    raw_route_params = _route_params(args, kwargs)
+    raw_app_path = _normalize_app_path(request.path, handler.application.prefix, suffix=suffix)
+    request.route_params, request.app_path = _sanitize_route_context(raw_route_params, raw_app_path)
 
 
 class DocHandler(LoginUrlMixin, BkDocHandler):
@@ -702,15 +751,24 @@ class WSHandler(BkWSHandler):
         return super().open()
 
     async def _async_open(self, token: str) -> None:
-        payload = get_token_payload(token)
-        session_id = get_session_id(token)
-        payload.update(self.application_context.application.process_request(self.request))
+        payload, session_id, expires_in = _validate_token_for_resign(
+            token, secret_key=self.application.secret_key, signed=self.application.sign_sessions
+        )
+        request_data = self.application_context.application.process_request(self.request)
+        route_params, app_path = _sanitize_route_context(
+            request_data.get('route_params', {}), request_data.get('app_path')
+        )
+        if route_params:
+            request_data['route_params'] = route_params
+        if app_path:
+            request_data['app_path'] = app_path
+        payload.update(request_data)
         payload.pop('session_expiry', None)
         token = generate_jwt_token(
-            session_id,
+            t.cast("ID", session_id),
             secret_key=self.application.secret_key,
             signed=self.application.sign_sessions,
-            expiration=self.application.session_token_expiration,
+            expiration=min(self.application.session_token_expiration, expires_in),
             extra_payload=payload
         )
         return await super()._async_open(token)

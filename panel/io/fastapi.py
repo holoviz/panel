@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import asyncio
 import socket
-import time
 import typing as t
 import uuid
 
@@ -15,15 +14,15 @@ from ..config import config
 from .application import build_applications
 from .document import _cleanup_doc, extra_socket_handlers
 from .resources import COMPONENT_PATH
-from .server import ComponentResourceHandler, server_html_page_for_session
+from .server import (
+    ComponentResourceHandler, _sanitize_route_context, _strip_prefixed_path,
+    _validate_token_for_resign, server_html_page_for_session,
+)
 from .state import state
 from .threads import StoppableThread
 
 try:
-    from bokeh.util.token import (
-        generate_jwt_token, generate_session_id, get_session_id,
-        get_token_payload,
-    )
+    from bokeh.util.token import generate_jwt_token, generate_session_id
     from bokeh_fastapi import BokehFastAPI
     from bokeh_fastapi.handler import (
         DocHandler, SessionHandler as BkSessionHandler, WSHandler,
@@ -65,14 +64,13 @@ def _route_context(
     else:
         path_params = request_or_scope.path_params
         path = request_or_scope.url.path
-    if path and prefix and path.startswith(prefix):
-        path = path[len(prefix):] or '/'
+    if path and prefix:
+        path = _strip_prefixed_path(path, prefix)
         if not path.startswith('/'):
             path = '/' + path
     if path and suffix and path.endswith(suffix):
         path = path[:-len(suffix)] or '/'
-    route_params = {k: str(v) for k, v in path_params.items()}
-    return route_params, path
+    return _sanitize_route_context(path_params, path)
 
 
 def _prefix_path(path: str, prefix: str) -> str:
@@ -178,7 +176,9 @@ _bk_fastapi_async_open = WSHandler._async_open
 
 
 async def _async_open_with_route_context(self, socket, token):
-    payload = get_token_payload(token)
+    payload, session_id, expires_in = _validate_token_for_resign(
+        token, secret_key=self.application.secret_key, signed=self.application.sign_sessions
+    )
     route_params, app_path = _route_context(
         socket.scope, suffix='/ws', prefix=getattr(self.application, '_prefix', '')
     )
@@ -190,10 +190,9 @@ async def _async_open_with_route_context(self, socket, token):
             payload['route_params'] = route_params
         if app_path:
             payload['app_path'] = app_path
-        expiry = int(payload.pop('session_expiry', 0))
-        expires_in = max(1, expiry - int(time.time())) if expiry else 300
+        payload.pop('session_expiry', None)
         token = generate_jwt_token(
-            get_session_id(token),
+            session_id,
             secret_key=self.application.secret_key,
             signed=self.application.sign_sessions,
             expiration=expires_in,

@@ -144,7 +144,7 @@ class Application(BkApplication):
 
         request_path = getattr(request, 'path', None) or app_path
         prefix = ''
-        if app_path != '/' and request_path.endswith(app_path):
+        if app_path != '/' and (request_path == app_path or request_path.endswith(app_path)):
             prefix = request_path[:-len(app_path)]
         elif app_path == '/' and request_path.endswith('/'):
             prefix = request_path[:-1]
