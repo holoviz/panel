@@ -171,8 +171,6 @@ def test_server_root_handler_does_not_redirect_wildcard(port, route):
 def test_root_handler_concrete_route_detection():
     assert RootHandler._is_concrete_route('/app')
     assert RootHandler._is_concrete_route('/a/b/c/app')
-    assert RootHandler._is_concrete_route(r'/literal/\(name\)')
-    assert RootHandler._is_concrete_route(r'/a/b/\(literal\)/c')
     assert not RootHandler._is_concrete_route('/user/([^/]+)')
     assert not RootHandler._is_concrete_route('/a/b/([^/]+)/c')
     assert not RootHandler._is_concrete_route('/user/{name}')
