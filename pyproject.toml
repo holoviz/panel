@@ -51,6 +51,7 @@ dependencies = [
     'bokeh >=3.7.0,<3.10.0',
     'param >=2.1.0,<3.0',
     'pyviz_comms >=2.0.0',
+    'panel-material-ui >=0.10.0',
     'markdown',
     'markdown-it-py',
     'linkify-it-py',
