@@ -2,10 +2,14 @@
 
 ## Version 1.9.0
 
+Panel 1.9.0 delivers full typing compatibility with Param 2.4.0, finally ensuring that all parameters are fully typed. Additionally this release makes it possible to provide wildcard routes to `pn.serve` making it possible to support dynamic routing. It also includes a significant modernization of the widget API, introducing `Widget.label` as the canonical display label parameter and renaming `button_type`/`button_style` to `color`/`variant` for better alignment with `panel-material-ui`, which will be integrated within Panel in upcoming releases. The release also includes a range of `Tabulator` improvements, chat enhancements, security updates, and numerous bug fixes. Lastly, this release drops support for Bokeh 3.7.
 
-Panel 1.9.0 delivers full typing compatibility with Param 2.4.0, finally ensuring that all parameters are fully typed. It also includes a significant modernization of the widget API, introducing `Widget.label` as the canonical display label parameter and renaming `button_type`/`button_style` to `color`/`variant` for better alignment with `panel-material-ui`, which will be integrated within Panel in upcoming releases. The release also includes a range of `Tabulator` improvements, chat enhancements, security updates, and numerous bug fixes.
+Many thanks to the contributors to this release including: @philippjfr, @hoxbro, @ghostiee-11, @ahuang11, @AtharvaJaiswal005, @SKlerk, @TheoMathurin, @chucklay, @zhangdomi, @mvanhorn, @nfomferra, and @buteom3.
 
-Many thanks to the contributors to this release including: @philippjfr, @hoxbro, @ghostiee-11, @ahuang11, @AtharvaJaiswal005, @SKlerk, @TheoMathurin, @chucklay, @zhangdomi, @mvanhorn, @SuMayaBee, @forman, and @omyaaa1.
+### 🚀 Features
+
+* Add type compatibility for param 2.4.0 ([#8573](https://github.com/holoviz/panel/pull/8573))
+* Add support for wildcard route handling ([#8588](https://github.com/holoviz/panel/pull/8588))
 
 ### ✨ Enhancements
 
@@ -14,13 +18,11 @@ Many thanks to the contributors to this release including: @philippjfr, @hoxbro,
 * Make `Feed` type configurable on `ChatFeed` ([#8582](https://github.com/holoviz/panel/pull/8582))
 * Add `selection` and `value_input` to `TextEditor` widget ([#8560](https://github.com/holoviz/panel/pull/8560))
 * Add dark theme support for `JSONEditor` widget ([#8444](https://github.com/holoviz/panel/pull/8444))
-* Add type compatibility for param 2.4.0 ([#8573](https://github.com/holoviz/panel/pull/8573))
-* Add Panel extensions to reference gallery ([#8541](https://github.com/holoviz/panel/pull/8541))
 
 ### 🐛 Bug Fixes
 
 * Fix `widget.disabled` getting stuck after rapid toggling ([#8507](https://github.com/holoviz/panel/pull/8507))
-* Fix trend indicator not working with `date_range` x-axis ([#8509](https://github.com/holoviz/panel/pull/8509))
+* Fix `Trend` indicator not working with `date_range` x-axis ([#8509](https://github.com/holoviz/panel/pull/8509))
 * Fix `ReactComponent` initialization issues ([#8552](https://github.com/holoviz/panel/pull/8552))
 * Fix `DataFrame` comparison in `Tabulator.from_param` ([#8539](https://github.com/holoviz/panel/pull/8539))
 * Fix `Tabulator` scroll reset when filtering on patch ([#8531](https://github.com/holoviz/panel/pull/8531))
@@ -37,8 +39,16 @@ Many thanks to the contributors to this release including: @philippjfr, @hoxbro,
 * Improve Pyodide badge appearance ([#8519](https://github.com/holoviz/panel/pull/8519))
 * General rendering and performance optimizations ([#8547](https://github.com/holoviz/panel/pull/8547))
 
-### 📚 Documentation
+### ⚠️ Deprecations
 
+* `Widget.name` was renamed to `Widget.label`
+* `Button.button_type` was renamed to `Button.color`
+* `Button.button_style` was renamed to `Button.variant`
+* Dropped support for Bokeh 3.7
+
+### 📚 Documentation
+* Update reference gallery to use `panel-material-ui` ([#8596](https://github.com/holoviz/panel/pull/8596))
+* Add Outerbounds deployment guide ([#8587](https://github.com/holoviz/panel/pull/8587))
 * Add Functions vs Classes explanation ([#8581](https://github.com/holoviz/panel/pull/8581))
 * Add Panel extensions documentation page ([#8529](https://github.com/holoviz/panel/pull/8529))
 * Document `pn.state.sync_busy` in the busy indicator how-to guide ([#8564](https://github.com/holoviz/panel/pull/8564))
