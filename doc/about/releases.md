@@ -2,7 +2,7 @@
 
 Panel 1.9.0 delivers full typing compatibility with Param 2.4.0, finally ensuring that all parameters are fully typed. Additionally this release makes it possible to provide wildcard routes to `pn.serve` making it possible to support dynamic routing. It also includes a significant modernization of the widget API, introducing `Widget.label` as the canonical display label parameter and renaming `button_type`/`button_style` to `color`/`variant` for better alignment with `panel-material-ui`, which will be integrated within Panel in upcoming releases. The release also includes a range of `Tabulator` improvements, chat enhancements, security updates, and numerous bug fixes. Lastly, this release drops support for Bokeh 3.7.
 
-Many thanks to the contributors to this release including: @philippjfr, @hoxbro, @ghostiee-11, @ahuang11, @AtharvaJaiswal005, @SKlerk, @TheoMathurin, @chucklay, @zhangdomi, @mvanhorn, @nfomferra, and @buteom3.
+Many thanks to the contributors to this release including: @philippjfr, @hoxbro, @ghostiee-11, @ahuang11, @AtharvaJaiswal005, @SKlerk, @TheoMathurin, @chucklay, @zhangdomi, @mvanhorn, @SuMayaBee, @forman, and @omyaaa1.
 
 ### 🚀 Features
 
