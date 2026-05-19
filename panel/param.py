@@ -649,7 +649,7 @@ class Param(Pane):
             elif change.what == 'step':
                 updates['step'] = p_obj.step
             elif change.what == 'label':
-                updates['name'] = p_obj.label
+                updates['label'] = p_obj.label
             elif p_key in updating or isinstance(p_obj, param.Event):
                 return
             elif isinstance(p_obj, param.Action):
