@@ -200,6 +200,26 @@ def test_widget_from_param_instance_with_kwargs():
     assert test.a == 4.3
 
 
+def test_widget_from_param_name_overrides_label():
+    class Test(param.Parameterized):
+
+        a = param.Number(default=3.14)
+
+    test = Test()
+    widget = FloatSlider.from_param(test.param.a, name='Custom Name')
+    assert widget.label == 'Custom Name'
+
+
+def test_widget_from_param_label_overrides_name():
+    class Test(param.Parameterized):
+
+        a = param.Number(default=3.14)
+
+    test = Test()
+    widget = FloatSlider.from_param(test.param.a, label='Custom Label')
+    assert widget.label == 'Custom Label'
+
+
 def test_infer_params_attribute_error():
     class MyComponent(param.Parameterized):
         name = param.String(default='World', doc="Name to greet")
