@@ -534,6 +534,8 @@ class Param(Pane):
         # Update kwargs
         onkeyup = kw_widget.pop('onkeyup', False)
         throttled = kw_widget.pop('throttled', False)
+        if 'name' in kw_widget and 'label' not in kw_widget:
+            kw_widget['label'] = kw_widget.pop('name')
         kw.update(kw_widget)
         kwargs = {k: v for k, v in kw.items() if k in widget_class.param}
         non_param_kwargs = {k: v for k, v in kw_widget.items() if k not in widget_class.param}
