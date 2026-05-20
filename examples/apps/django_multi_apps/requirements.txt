@@ -14,7 +14,7 @@ Django==4.2.30
 holoviews==1.13.2
 hvplot==0.5.2
 hyperlink==20.0.1
-idna==3.7
+idna==3.15
 incremental==21.3.0
 Jinja2==3.1.6
 Markdown==3.8.1
