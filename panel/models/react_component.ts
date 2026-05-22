@@ -97,6 +97,7 @@ export class ReactComponentView extends ReactiveESMView {
   mounted: boolean = false
 
   _force_update_callbacks: (() => void)[] = []
+  _mounted_resolve: (() => void) | null = null
   _scheduled_removals: DOMView[] = []
 
   override initialize(): void {
@@ -130,10 +131,13 @@ export class ReactComponentView extends ReactiveESMView {
       (this._lifecycle_handlers.get(lf) || []).splice(0)
     }
     this.model.disconnect_watchers(this)
-    const render_promise = this.model.render_module.then((mod: any) => {
+    const mounted_promise = new Promise<void>((resolve) => {
+      this._mounted_resolve = resolve
+    })
+    this.model.render_module.then((mod: any) => {
       this.react_root = mod.default.render(this.model.id)
     })
-    this._await_ready(render_promise)
+    this._await_ready(mounted_promise)
   }
 
   on_force_update(cb: () => void): void {
@@ -313,6 +317,11 @@ export class ReactComponentView extends ReactiveESMView {
       }
     }
     this._rendered = true
+    this._changing = false
+    if (this._mounted_resolve) {
+      this._mounted_resolve()
+      this._mounted_resolve = null
+    }
   }
 }
 
@@ -430,31 +439,29 @@ async function render(id) {
       const view = this.view
       this.render_callback = (new_views) => {
         const view = this.view
-        if (!view) {
+        if (!view || !new_views.includes(view)) {
           return
         }
         this.updateElement()
-        if (new_views.includes(view)) {
-          if (this.use_shadow_dom) {
+        if (this.use_shadow_dom) {
+          for (const view of this.props.parent._scheduled_removals) { view.remove() }
+          this.props.parent._scheduled_removals = []
+          this.props.parent.rerender_(view)
+          this.props.parent._child_rendered.set(view, true)
+        } else {
+          view.patch_container(this.containerRef.current)
+          view.model.render_module.then(async (mod) => {
             for (const view of this.props.parent._scheduled_removals) { view.remove() }
             this.props.parent._scheduled_removals = []
-            this.props.parent.rerender_(view)
-            this.props.parent._child_rendered.set(view, true)
-          } else {
-            view.patch_container(this.containerRef.current)
-            view.model.render_module.then(async (mod) => {
-              for (const view of this.props.parent._scheduled_removals) { view.remove() }
-              this.props.parent._scheduled_removals = []
-              this.setState(
-                {rendered: await mod.default.render(view.model.id)},
-                () => {
-                  this.props.parent.notify_mount(this.props.name, view.model.id)
-                  this.view.r_after_render()
-                  this.view.after_rendered()
-                }
-              )
-            })
-          }
+            this.setState(
+              {rendered: await mod.default.render(view.model.id)},
+              () => {
+                this.props.parent.notify_mount(this.props.name, view.model.id)
+                this.view.r_after_render()
+                this.view.after_rendered()
+              }
+            )
+          })
         }
       }
       this.props.parent.on_child_render(this.props.name, this.render_callback)
@@ -626,7 +633,6 @@ async function render(id) {
         ${init_code}
         this.forceUpdate()
       })
-      this.props.view._changing = false
       this.props.view.after_rendered()
     }
 
