@@ -225,10 +225,6 @@ class IconMixin(Widget):
 
     __abstract = True
 
-    def __init__(self, **params) -> None:
-        type(self)._rename = dict(self._rename, **IconMixin._rename)
-        super().__init__(**params)
-
     def _process_param_change(self, params):
         icon_size = params.pop('icon_size', self.icon_size)
         if params.get('icon') is not None:
@@ -329,8 +325,11 @@ class Button(_ButtonBase, _ClickButton, IconMixin, TooltipMixin):
         Toggles from False to True while the event is being processed.""")
 
     _rename: t.ClassVar[Mapping[str, str | None]] = {
-        **TooltipMixin._rename, 'clicks': None, 'value': None,
         **_ButtonBase._rename,
+        **IconMixin._rename,
+        **TooltipMixin._rename,
+        'clicks': None,
+        'value': None,
     }
 
     _source_transforms: t.ClassVar[Mapping[str, str | None]] = {
@@ -441,6 +440,8 @@ class Toggle(_ButtonBase, IconMixin):
         Whether the button is currently toggled.""")
 
     _rename: t.ClassVar[Mapping[str, str | None]] = {
+        **TooltipMixin._rename,
+        **IconMixin._rename,
         **_ButtonBase._rename,
         'value': 'active',
     }
@@ -487,8 +488,11 @@ class MenuButton(_ButtonBase, _ClickButton, IconMixin):
     _event: t.ClassVar[str] = 'menu_item_click'
 
     _rename: t.ClassVar[Mapping[str, str | None]] = {
+        **IconMixin._rename,
         **_ButtonBase._rename,
-        'items': 'menu', 'clicked': None, 'value': None
+        'clicked': None,
+        'items': 'menu',
+        'value': None
     }
 
     _widget_type: t.ClassVar[type[Model]] = _BkDropdown
