@@ -229,7 +229,7 @@ export class ReactiveESMView extends HTMLBoxView {
     })
     const child_props = this.model.children.map((child: string) => this.model.data.properties[child])
     for (const cp of child_props) {
-      cp.change.connect(() => this.update_children())
+      this.connect(cp.change, () => this.update_children())
     }
     this.on_change([], () => {
       if (this.model.render_policy !== "manual") {
@@ -677,11 +677,32 @@ export class ReactiveESM extends HTMLBox {
               check()
             })
           }
-          orig_cb()
           if (view && this.render_policy === "manual") {
+            let resolve_ready: () => void
+            ;(view.root as any)._await_ready(new Promise<void>((r) => { resolve_ready = r }))
+            orig_cb()
             view.render_children();
             (view as any)._update_children()
             view.invalidate_layout()
+            // Collect ready promises from all newly rendered descendants
+            const collect_ready = (v: any): Promise<void>[] => {
+              const promises: Promise<void>[] = [v.ready]
+	      for (const child of v.child_views || []) {
+                promises.push(...collect_ready(child))
+              }
+              return promises
+            }
+            const all_ready: Promise<void>[] = []
+            for (const child_view of view.child_views) {
+              all_ready.push(...collect_ready(child_view))
+            }
+            if (all_ready.length > 0) {
+              Promise.all(all_ready).then(() => resolve_ready!())
+            } else {
+	      resolve_ready!()
+	    }
+          } else {
+            orig_cb()
           }
         }
       }

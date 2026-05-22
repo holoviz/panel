@@ -319,8 +319,17 @@ export class ReactComponentView extends ReactiveESMView {
     this._rendered = true
     this._changing = false
     if (this._mounted_resolve) {
-      this._mounted_resolve()
+      const resolve = this._mounted_resolve
       this._mounted_resolve = null
+      const child_ready: Promise<void>[] = []
+      for (const child_view of this.child_views) {
+        child_ready.push(child_view.ready)
+      }
+      if (child_ready.length > 0) {
+        Promise.all(child_ready).then(() => resolve())
+      } else {
+        resolve()
+      }
     }
   }
 }
