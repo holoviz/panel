@@ -687,7 +687,7 @@ export class ReactiveESM extends HTMLBox {
             // Collect ready promises from all newly rendered descendants
             const collect_ready = (v: any): Promise<void>[] => {
               const promises: Promise<void>[] = [v.ready]
-	      for (const child of v.child_views || []) {
+              for (const child of v.child_views || []) {
                 promises.push(...collect_ready(child))
               }
               return promises
@@ -699,8 +699,8 @@ export class ReactiveESM extends HTMLBox {
             if (all_ready.length > 0) {
               Promise.all(all_ready).then(() => resolve_ready!())
             } else {
-	      resolve_ready!()
-	    }
+              resolve_ready!()
+            }
           } else {
             orig_cb()
           }
