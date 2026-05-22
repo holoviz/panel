@@ -170,8 +170,15 @@ class FileDownload(IconMixin):
     }
 
     _rename: t.ClassVar[Mapping[str, str | None]] = {
-        'callback': None, 'button_style': None, 'color': None, 'variant': None,
-        'file': None, '_clicks': 'clicks', 'value': None, 'label': 'label'
+        **IconMixin._rename,
+        '_clicks': 'clicks',
+        'button_style': None,
+        'callback': None,
+        'color': None,
+        'file': None,
+        'label': 'label',
+        'variant': None,
+        'value': None
     }
 
     _stylesheets: t.ClassVar[list[str]] = [f'{CDN_DIST}css/button.css']
