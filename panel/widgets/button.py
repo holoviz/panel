@@ -182,7 +182,7 @@ class _ButtonBase(Widget):
         **Widget._rename,
         'label': 'label',
         'button_style': None,
-        'color': None,
+        'color': 'button_type',
         'variant': None,
     }
 
@@ -203,9 +203,9 @@ class _ButtonBase(Widget):
     def _process_param_change(self, params):
         params = dict(params)
         _merge_button_appearance_aliases_in_param_change(params)
-        if 'button_style' in params or 'css_classes' in params:
+        if 'variant' in params or 'css_classes' in params:
             params['css_classes'] = [
-                params.pop('button_style', self.button_style)
+                params.pop('variant', self.variant)
             ] + params.get('css_classes', self.css_classes)
         return super()._process_param_change(params)
 
@@ -441,8 +441,7 @@ class Toggle(_ButtonBase, IconMixin):
         Whether the button is currently toggled.""")
 
     _rename: t.ClassVar[Mapping[str, str | None]] = {
-        **Widget._rename,
-        'label': 'label',
+        **_ButtonBase._rename,
         'value': 'active',
     }
 
@@ -488,8 +487,7 @@ class MenuButton(_ButtonBase, _ClickButton, IconMixin):
     _event: t.ClassVar[str] = 'menu_item_click'
 
     _rename: t.ClassVar[Mapping[str, str | None]] = {
-        **Widget._rename,
-        'label': 'label',
+        **_ButtonBase._rename,
         'items': 'menu', 'clicked': None, 'value': None
     }
 
