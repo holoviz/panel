@@ -125,3 +125,51 @@ def test_button_variant_alias_synced():
     assert button.variant == "solid"
     button.variant = "outline"
     assert button.button_style == "outline"
+
+
+def test_button_color_renders_to_bokeh_model(document, comm):
+    button = Button(label="x", color="primary")
+    widget = button.get_root(document, comm=comm)
+    assert widget.button_type == "primary"
+    button.color = "danger"
+    assert widget.button_type == "danger"
+
+
+def test_button_variant_renders_to_css_class(document, comm):
+    button = Button(label="x", variant="outline")
+    widget = button.get_root(document, comm=comm)
+    assert "outline" in widget.css_classes
+    button.variant = "solid"
+    assert "solid" in widget.css_classes
+
+
+def test_toggle_color_renders_to_bokeh_model(document, comm):
+    toggle = Toggle(label="x", color="primary")
+    widget = toggle.get_root(document, comm=comm)
+    assert widget.button_type == "primary"
+    toggle.color = "danger"
+    assert widget.button_type == "danger"
+
+
+def test_toggle_variant_renders_to_css_class(document, comm):
+    toggle = Toggle(label="x", variant="outline")
+    widget = toggle.get_root(document, comm=comm)
+    assert "outline" in widget.css_classes
+    toggle.variant = "solid"
+    assert "solid" in widget.css_classes
+
+
+def test_menu_button_color_renders_to_bokeh_model(document, comm):
+    menu_button = MenuButton(label="x", items=[("A", "a")], color="primary")
+    widget = menu_button.get_root(document, comm=comm)
+    assert widget.button_type == "primary"
+    menu_button.color = "danger"
+    assert widget.button_type == "danger"
+
+
+def test_menu_variant_renders_to_css_class(document, comm):
+    menu_button = MenuButton(label="x", items=[("A", "a")], variant="outline")
+    widget = menu_button.get_root(document, comm=comm)
+    assert "outline" in widget.css_classes
+    menu_button.variant = "solid"
+    assert "solid" in widget.css_classes
