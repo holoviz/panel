@@ -1325,3 +1325,245 @@ def test_esm_compile_shared(page, components):
 
     expect(page.locator(f'#{example[0].name}')).to_have_text('Rendered')
     expect(page.locator(f'#{example[1].name}')).to_have_text('Rendered')
+
+
+class JSReady(JSComponent):
+
+    _esm = """
+    export function render({ model, view }) {
+      const div = document.createElement('div')
+      div.id = 'ready-status'
+      div.textContent = 'waiting'
+      view.ready.then(() => { div.textContent = 'ready' })
+      return div
+    }
+    """
+
+class JSRootReady(JSComponent):
+
+    child = Child()
+
+    _esm = """
+    export function render({ model, view }) {
+      const div = document.createElement('div')
+      const status = document.createElement('div')
+      status.id = 'root-ready-status'
+      status.textContent = 'waiting'
+      view.root.ready.then(() => { status.textContent = 'ready' })
+      const child = model.get_child('child')
+      div.append(status, child)
+      return div
+    }
+    """
+
+
+class ReactReady(ReactComponent):
+
+    _esm = """
+    import {useEffect, useState} from "react"
+
+    export function render({ model, view }) {
+      const [status, setStatus] = useState("waiting")
+      useEffect(() => { view.ready.then(() => setStatus("ready")) }, [])
+      return <div id="ready-status">{status}</div>
+    }
+    """
+
+class ReactRootReady(ReactComponent):
+
+    child = Child()
+
+    _esm = """
+    import {useEffect, useState} from "react"
+
+    export function render({ model, view }) {
+      const [status, setStatus] = useState("waiting")
+      useEffect(() => { view.root.ready.then(() => setStatus("ready")) }, [])
+      return <div><div id="root-ready-status">{status}</div>{model.get_child('child')}</div>
+    }
+    """
+
+
+@pytest.mark.parametrize('component', [JSReady, ReactReady])
+def test_view_ready(page, component):
+    example = component()
+
+    serve_component(page, example)
+
+    expect(page.locator('#ready-status')).to_have_text('ready')
+
+
+@pytest.mark.parametrize('component', [JSRootReady, ReactRootReady])
+def test_view_root_ready_with_child(page, component):
+    example = component(child=Markdown('Hello'))
+
+    serve_component(page, example)
+
+    expect(page.locator('#root-ready-status')).to_have_text('ready')
+    expect(page.locator('.markdown')).to_have_count(1)
+
+
+class ReactReadyPartialChildren(ReactComponent):
+
+    items = Children()
+    active = param.Integer(default=0)
+
+    _esm = """
+    import {useEffect, useState} from "react"
+
+    export function render({ model, view }) {
+      const [status, setStatus] = useState("waiting")
+      const [active] = model.useState("active")
+      const children = model.get_child("items")
+      useEffect(() => { view.ready.then(() => setStatus("ready")) }, [])
+      return (
+        <div>
+          <div id="ready-status">{status}</div>
+          <div id="container">{children[active]}</div>
+        </div>
+      )
+    }
+    """
+
+
+class JSReadyPartialChildren(JSComponent):
+
+    items = Children()
+    active = param.Integer(default=0)
+
+    _esm = """
+    export function render({ model, view }) {
+      const div = document.createElement('div')
+      const status = document.createElement('div')
+      status.id = 'ready-status'
+      status.textContent = 'waiting'
+      view.ready.then(() => { status.textContent = 'ready' })
+      const container = document.createElement('div')
+      container.id = 'container'
+      const children = model.get_child('items')
+      if (children[model.active]) container.appendChild(children[model.active])
+      div.append(status, container)
+      return div
+    }
+    """
+
+
+@pytest.mark.parametrize('component', [JSReadyPartialChildren, ReactReadyPartialChildren])
+def test_view_ready_partial_children(page, component):
+    example = component(items=[Markdown('Tab 0'), Markdown('Tab 1'), Markdown('Tab 2')])
+
+    serve_component(page, example)
+
+    expect(page.locator('#ready-status')).to_have_text('ready')
+    expect(page.locator('#container')).to_have_text('Tab 0\n')
+
+
+class ReactReadyChildUpdate(ReactComponent):
+
+    child = Child()
+
+    _esm = """
+    import {useEffect, useState} from "react"
+
+    export function render({ model, view }) {
+      const [count, setCount] = useState(0)
+      useEffect(() => {
+        view.root.ready.then(() => setCount(c => c + 1))
+      }, [])
+      return (
+        <div>
+          <div id="ready-count">{count}</div>
+          {model.get_child('child')}
+        </div>
+      )
+    }
+    """
+
+
+class ReactChildInner(ReactComponent):
+
+    text = param.String(default="")
+
+    _esm = """
+    export function render({ model }) {
+      const [text] = model.useState("text")
+      return <div className="inner">{text}</div>
+    }
+    """
+
+
+def test_react_root_ready_after_child_update(page):
+    inner = ReactChildInner(text="first")
+    example = ReactReadyChildUpdate(child=inner)
+
+    serve_component(page, example)
+
+    expect(page.locator('#ready-count')).to_have_text('1')
+    expect(page.locator('.inner')).to_have_text('first')
+
+    example.child = ReactChildInner(text="second")
+
+    expect(page.locator('.inner')).to_have_text('second')
+
+    # After the child swap, re-check root.ready resolves
+    page.wait_for_function("""
+        () => {
+            const views = Object.values(Bokeh.index)
+            if (views.length === 0) return false
+            const root = views[0].root
+            let resolved = false
+            root.ready.then(() => { resolved = true })
+            return new Promise(r => setTimeout(() => r(resolved), 100))
+        }
+    """, timeout=10000)
+
+
+class ReactReadyChildrenAppend(ListLike, ReactComponent):
+
+    objects = Children()
+
+    _esm = """
+    import {useEffect, useState} from "react"
+
+    export function render({ model, view }) {
+      const [count, setCount] = useState(0)
+      useEffect(() => {
+        view.root.ready.then(() => setCount(c => c + 1))
+      }, [])
+      return (
+        <div>
+          <div id="ready-count">{count}</div>
+          <div id="container">{model.get_child("objects")}</div>
+        </div>
+      )
+    }
+    """
+
+
+def test_react_root_ready_after_children_append(page):
+    example = ReactReadyChildrenAppend(
+        objects=[ReactChildInner(text="child-0")]
+    )
+
+    serve_component(page, example)
+
+    expect(page.locator('#ready-count')).to_have_text('1')
+    expect(page.locator('.inner')).to_have_count(1)
+    expect(page.locator('.inner').first).to_have_text('child-0')
+
+    example.append(ReactChildInner(text="child-1"))
+
+    expect(page.locator('.inner')).to_have_count(2)
+    expect(page.locator('.inner').nth(1)).to_have_text('child-1')
+
+    # After appending, root.ready should resolve once the new child is mounted
+    page.wait_for_function("""
+        () => {
+            const views = Object.values(Bokeh.index)
+            if (views.length === 0) return false
+            const root = views[0].root
+            let resolved = false
+            root.ready.then(() => { resolved = true })
+            return new Promise(r => setTimeout(() => r(resolved), 100))
+        }
+    """, timeout=10000)

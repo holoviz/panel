@@ -411,7 +411,8 @@ export class ReactiveESMView extends HTMLBoxView {
       (this._lifecycle_handlers.get(lf) || []).splice(0)
     }
     this.model.disconnect_watchers(this)
-    this.model.render_module.then((mod: any) => mod.default.render(this.model.id))
+    const render_promise = this.model.render_module.then((mod: any) => mod.default.render(this.model.id))
+    this._await_ready(render_promise)
   }
 
   render_children() {

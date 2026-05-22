@@ -94,6 +94,7 @@ export class ReactComponentView extends ReactiveESMView {
   model_getter = model_getter
   model_setter = model_setter
   react_root: any = null
+  mounted: boolean = false
 
   _force_update_callbacks: (() => void)[] = []
   _scheduled_removals: DOMView[] = []
@@ -115,6 +116,7 @@ export class ReactComponentView extends ReactiveESMView {
     if (this.model.compiled === null || this.model.render_module === null) {
       return
     }
+    this._changing = true
     if (this.model.usesMui) {
       if (this.model.root_node) {
         this.style_cache = document.head
@@ -128,9 +130,10 @@ export class ReactComponentView extends ReactiveESMView {
       (this._lifecycle_handlers.get(lf) || []).splice(0)
     }
     this.model.disconnect_watchers(this)
-    this.model.render_module.then((mod: any) => {
+    const render_promise = this.model.render_module.then((mod: any) => {
       this.react_root = mod.default.render(this.model.id)
     })
+    this._await_ready(render_promise)
   }
 
   on_force_update(cb: () => void): void {
@@ -145,6 +148,7 @@ export class ReactComponentView extends ReactiveESMView {
 
   override remove(): void {
     this._force_update_callbacks = []
+    this.mounted = false
     if (this.react_root && this.use_shadow_dom) {
       super.remove()
       this.react_root.then((root: any) => root && root.unmount())
@@ -197,6 +201,7 @@ export class ReactComponentView extends ReactiveESMView {
       this.react_root.then((root: any) => root.unmount())
     }
     this._force_update_callbacks = []
+    this.mounted = false
     super.render()
   }
 
@@ -277,6 +282,17 @@ export class ReactComponentView extends ReactiveESMView {
 
   override _on_mounted(): void {
     this.invalidate_layout()
+    this.mounted = true
+  }
+
+  override has_finished(): boolean {
+    if (!super.has_finished()) {
+      return false
+    }
+    if (this._changing) {
+      return false
+    }
+    return true
   }
 
   patch_container(container: HTMLDivElement): void {
@@ -630,7 +646,6 @@ async function render(id) {
     return rendered
   }
   if (rendered) {
-    view._changing = true
     let container
     if (view.model.root_node) {
       container = document.querySelector(view.model.root_node)
