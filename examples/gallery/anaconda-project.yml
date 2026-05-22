@@ -4,12 +4,12 @@ description: An environment to serve all Panel gallery examples
 commands:
   prod:
     description: Serve the prod Panel gallery
-    unix: panel serve *.ipynb --static-dirs thumbnails=thumbnails --reuse-sessions --global-loading-spinner --liveness --num-procs 8
+    unix: panel serve *.ipynb --static-dirs thumbnails=thumbnails --reuse-sessions --liveness --num-procs 8
     supports_http_options: true
     env_spec: prod
   dev:
     description: Serve the dev Panel gallery
-    unix: panel serve *.ipynb --static-dirs thumbnails=thumbnails --reuse-sessions --global-loading-spinner --liveness --num-procs 2
+    unix: panel serve *.ipynb --static-dirs thumbnails=thumbnails --reuse-sessions --liveness --num-procs 2
     supports_http_options: true
     env_spec: dev
 
@@ -22,7 +22,8 @@ variables:
 
 packages: &pkgs
   - python >=3.12
-  - panel >=1.8.1
+  - panel >=1.9.0
+  - panel-material-ui >= 0.10
   - bokeh_sampledata >=2025.0
   - holoviews >=1.21.0
   - nbconvert >=7.16.6
