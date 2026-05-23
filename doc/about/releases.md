@@ -1,5 +1,22 @@
 # Releases
 
+## Version 1.9.1
+
+A quick patch release addressing regressions in 1.9.0, fixing `Button` color styling and resolves several issues with ESM and React component lifecycle handling. Many thanks to @philippjfr and @hoxbro for their contributions to this release.
+
+### 🐛 Bug Fixes
+
+* Fix `Button` color not being respected ([#8600](https://github.com/holoviz/panel/pull/8600))
+* Fix ESM component `ready` and `has_finished` compliance ([#8602](https://github.com/holoviz/panel/pull/8602))
+* Improve `ReactComponent` ready promise handling ([#8603](https://github.com/holoviz/panel/pull/8603))
+* Avoid hacky `IconMixin` rename override ([#8604](https://github.com/holoviz/panel/pull/8604))
+
+### 📚 Documentation
+
+* Update gallery environment ([#8601](https://github.com/holoviz/panel/pull/8601))
+
+## Version 1.9.0
+
 Panel 1.9.0 delivers full typing compatibility with Param 2.4.0, finally ensuring that all parameters are fully typed. Additionally this release makes it possible to provide wildcard routes to `pn.serve` making it possible to support dynamic routing. It also includes a significant modernization of the widget API, introducing `Widget.label` as the canonical display label parameter and renaming `button_type`/`button_style` to `color`/`variant` for better alignment with `panel-material-ui`, which will be integrated within Panel in upcoming releases. The release also includes a range of `Tabulator` improvements, chat enhancements, security updates, and numerous bug fixes. Lastly, this release drops support for Bokeh 3.7.
 
 Many thanks to the contributors to this release including: @philippjfr, @hoxbro, @ghostiee-11, @ahuang11, @AtharvaJaiswal005, @SKlerk, @TheoMathurin, @chucklay, @zhangdomi, @mvanhorn, @SuMayaBee, @forman, and @omyaaa1.
