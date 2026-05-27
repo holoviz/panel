@@ -1,5 +1,15 @@
 # Releases
 
+## Version 1.9.2
+
+A patch release addressing a small regression on `ReactComponent` causing the Document never to register as idle. Also fixes a memory leak related to tracking components in non-server contexts. Thank you to @philippjfr for his contributions to this release.
+
+### 🐛 Bug Fixes
+
+* Ensure ESM components mark view as finished ([#8606](https://github.com/holoviz/panel/pull/8606))
+* Ensure state._views does not leak memory ([#8607](https://github.com/holoviz/panel/pull/8607))
+
+
 ## Version 1.9.1
 
 A quick patch release addressing regressions in 1.9.0, fixing `Button` color styling and resolves several issues with ESM and React component lifecycle handling. Many thanks to @philippjfr and @hoxbro for their contributions to this release.
