@@ -172,7 +172,6 @@ export class ReactiveESMView extends HTMLBoxView {
   accessed_children: string[] = []
   compiled_module: any = null
   model_proxy: any
-  _changing: boolean = false
   _child_callbacks: Map<string, ((new_views: UIElementView[]) => void)[]>
   _child_rendered: Map<UIElementView, boolean> = new Map()
   _event_handlers: ((data: unknown) => void)[] = []
@@ -473,7 +472,7 @@ export class ReactiveESMView extends HTMLBoxView {
   }
 
   override after_resize(): void {
-    if (this._rendered && !this._changing) {
+    if (this._rendered) {
       super.after_resize()
       for (const cb of (this._lifecycle_handlers.get("resize") || [])) {
         cb()
@@ -483,7 +482,7 @@ export class ReactiveESMView extends HTMLBoxView {
 
   override after_layout(): void {
     super.after_layout()
-    if (this._rendered && !this._changing) {
+    if (this._rendered) {
       for (const cb of (this._lifecycle_handlers.get("after_layout") || [])) {
         cb()
       }
