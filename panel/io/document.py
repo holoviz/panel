@@ -107,8 +107,8 @@ def _cleanup_doc(doc, destroy=True):
 
     # Remove views
     from ..viewable import Viewable
-    views = {}
-    for ref, (pane, root, vdoc, comm) in list(state._views.items()):
+    to_remove = []
+    for ref, (pane, root, vdoc, _comm) in list(state._views.items()):
         if vdoc is doc:
             pane._cleanup(root)
             if isinstance(pane, Viewable):
@@ -121,9 +121,9 @@ def _cleanup_doc(doc, destroy=True):
             pane.param.watchers = {}
             pane._documents = {}
             pane._internal_callbacks = {}
-        else:
-            views[ref] = (pane, root, vdoc, comm)
-    state._views = views
+            to_remove.append(ref)
+    for ref in to_remove:
+        del state._views[ref]
 
     # When reusing sessions we must clean up the Panel state but we
     # must **not** destroy the template or the document
