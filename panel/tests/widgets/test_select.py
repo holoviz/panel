@@ -3,8 +3,7 @@ import pytest
 
 from panel.layout import Column, GridBox, Row
 from panel.pane import panel
-from panel.tests._deps import pd, pd_skip
-from panel.tests.util import mpl_available
+from panel.tests._deps import mpl_skip, pd, pd_skip
 from panel.widgets import (
     AutocompleteInput, ColorMap, CrossSelector, DiscreteSlider, MultiChoice,
     MultiSelect, NestedSelect, Select, ToggleGroup,
@@ -1219,7 +1218,7 @@ def test_colormap_set_value(document, comm):
     assert model.value == 'A'
     assert color_map.value == ['#ff0', '#0ff']
 
-@mpl_available
+@mpl_skip
 def test_colormap_mpl_cmap(document, comm):
     from matplotlib.cm import Set1, tab10
     color_map = ColorMap(options={'tab10': tab10, 'Set1': Set1}, value_name='Set1')

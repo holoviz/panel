@@ -14,8 +14,8 @@ from panel.layout import Column, Row
 from panel.pane.image import PNG, SVG, Image
 from panel.pane.markup import HTML, DataFrame, Markdown
 from panel.pane.media import Audio
-from panel.tests._deps import pd, pd_skip
-from panel.tests.util import mpl_available, mpl_figure
+from panel.tests._deps import mpl_skip, pd, pd_skip
+from panel.tests.util import mpl_figure
 from panel.widgets.button import Button
 from panel.widgets.input import (
     FileInput, IntInput, TextAreaInput, TextInput,
@@ -255,7 +255,7 @@ class TestChatMessage:
         message = ChatMessage(object=Row(Markdown("hello", css_classes=["custom"])))
         assert message.object.objects[0].css_classes == ["custom"]
 
-    @mpl_available
+    @mpl_skip
     async def test_can_display_any_python_object_that_panel_can_display(self):
         # For example matplotlib figures
         ChatMessage(object=mpl_figure())

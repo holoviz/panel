@@ -10,7 +10,7 @@ from panel.io.resources import CDN_DIST
 from panel.models.vega import VegaPlot
 from panel.pane import Alert, Vega
 from panel.template import BootstrapTemplate
-from panel.tests.util import hv_available
+from panel.tests._deps import hv_skip
 
 vega_example = {
     'config': {
@@ -60,7 +60,7 @@ def test_save_cdn_resources():
     assert re.findall('https://cdn.holoviz.org/panel/(.*)/dist/panel.min.js', html)
 
 
-@hv_available
+@hv_skip
 def test_static_path_in_holoviews_save(tmpdir):
     import holoviews as hv
     hv.Store.set_current_backend('bokeh')

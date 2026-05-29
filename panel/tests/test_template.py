@@ -21,10 +21,9 @@ from panel.template import (
     Template, VanillaTemplate,
 )
 from panel.template.base import BasicTemplate
+from panel.tests._deps import hv_skip
 from panel.util import _descendents
 from panel.widgets import FloatSlider
-
-from .util import hv_available
 
 TEMPLATES = [BootstrapTemplate, GoldenTemplate, MaterialTemplate, ReactTemplate, VanillaTemplate]
 LIST_TEMPLATES = [item for item in TEMPLATES if item is not ReactTemplate]
@@ -39,7 +38,7 @@ template = """
 """
 
 
-@hv_available
+@hv_skip
 def test_template_links_axes(document, comm):
     tmplt = Template(template)
 

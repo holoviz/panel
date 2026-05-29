@@ -15,7 +15,7 @@ from panel.custom import JSComponent
 from panel.layout import Row
 from panel.links import Callback, Link
 from panel.pane import Bokeh, HoloViews
-from panel.tests.util import hv_available
+from panel.tests._deps import hv_skip
 from panel.widgets import (
     Button, ColorPicker, DatetimeInput, FloatInput, FloatSlider, RangeSlider,
     TextInput,
@@ -137,7 +137,7 @@ def test_widget_link_no_target_transform_error():
     assert ("Cannot jslink 'value' parameter on TextInput object to 'value' parameter on DatetimeInput") in str(excinfo)
 
 
-@hv_available
+@hv_skip
 def test_pnwidget_hvplot_links(document, comm):
     size_widget = FloatSlider(value=5, start=1, end=10)
     points1 = hv.Points([1, 2, 3])
@@ -178,7 +178,7 @@ def test_pnwidget_hvplot_links(document, comm):
     assert link_customjs.code == code
 
 
-@hv_available
+@hv_skip
 def test_bkwidget_hvplot_links(document, comm):
     from bokeh.models import Slider
     bokeh_widget = Slider(value=5, start=1, end=10, step=1e-1)
@@ -360,7 +360,7 @@ def test_widget_jscallback_args_model(document, comm):
     assert customjs.code == "try { some_code } catch(err) { console.log(err) }"
 
 
-@hv_available
+@hv_skip
 def test_hvplot_jscallback(document, comm):
     points1 = hv.Points([1, 2, 3])
 
@@ -376,7 +376,7 @@ def test_hvplot_jscallback(document, comm):
     assert customjs.code == "try { some_code } catch(err) { console.log(err) }"
 
 
-@hv_available
+@hv_skip
 def test_link_with_customcode(document, comm):
     range_widget = RangeSlider(start=0., end=1.)
     curve = hv.Curve([])
