@@ -60,6 +60,7 @@ if find_spec("pandas") is None:
         "reference/chat/ChatMessage.ipynb",
         "reference/indicators/Tqdm.ipynb",
         "reference/indicators/Trend.ipynb",
+        "reference/layouts/GridSpec.ipynb",
         "reference/layouts/GridStack.ipynb",
         "reference/layouts/Swipe.ipynb",
         "reference/panes/Bokeh.ipynb",
