@@ -950,6 +950,7 @@ def test_editable_fixed_nosoftbounds_fixed_end(editableslider):
 
 
 def test_date_range_slider_start_end_explicit_conversion(document, comm):
+    pd = pytest.importorskip("pandas")
     min_val = pd.Timestamp('2024-04-03 12:43:00+0200')
     max_val = pd.Timestamp('2024-04-29 15:30:00+0200')
 
