@@ -19,9 +19,8 @@ from bokeh.models.widgets.tables import (
 from panel.depends import bind
 from panel.io.state import set_curdoc
 from panel.models.tabulator import CellClickEvent, TableEditEvent
-from panel.tests.util import (
-    async_wait_until, mpl_skip, serve_and_request, wait_until,
-)
+from panel.tests._deps import mpl_skip
+from panel.tests.util import async_wait_until, serve_and_request, wait_until
 from panel.widgets import Button, TextInput
 from panel.widgets.tables import DataFrame, Tabulator
 

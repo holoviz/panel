@@ -1,7 +1,6 @@
 import sys
 
 from copy import deepcopy
-from importlib.util import find_spec
 from typing import Any
 from unittest.mock import patch
 
@@ -25,6 +24,7 @@ from panel.models.vega import VegaPlot
 from panel.pane import PaneBase, Vega
 from panel.pane.image import PDF, SVG, Image
 from panel.pane.markup import HTML
+from panel.tests._deps import pd, pd_skip
 
 try:
     import vl_convert as vlc  # type: ignore[import-untyped]
@@ -53,8 +53,7 @@ vega_example = {
 }
 
 vega_df_example: dict[str, Any] | None
-if find_spec("pandas"):
-    import pandas as pd
+if pd:
     vega_df_example = {
         'config': {
             'mark': {'tooltip': None},
@@ -221,35 +220,6 @@ gdf_example = {
     }
 }
 
-datasets_example = {'$schema': 'https://vega.github.io/schema/vega-lite/v6.json',
-  'width': 700,
-  'height': 400,
-  'title': {'text': 'Total Admissions by State',
-   'subtitle': 'Illinois has the highest admissions by a large margin'},
-  'data': {'url': 'https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json',
-   'format': {'type': 'topojson', 'feature': 'states'}},
-  'transform': [{'lookup': 'properties.name',
-    'from': {'data': {'name': 'total_admissions_by_state_uiuc_students'},
-     'key': 'State',
-     'fields': ['Total_Admissions']}}],
-  'projection': {'type': 'albersUsa'},
-  'mark': 'geoshape',
-  'encoding': {'color': {'field': 'Total_Admissions',
-    'type': 'quantitative',
-    'scale': {'scheme': 'blues'},
-    'legend': {'title': 'Total Admissions'}},
-   'tooltip': [{'field': 'properties.name',
-     'type': 'nominal',
-     'title': 'State'},
-    {'field': 'Total_Admissions',
-     'type': 'quantitative',
-     'format': ',',
-     'title': 'Total Admissions'}]},
-  'datasets': {'total_admissions_by_state_uiuc_students': pd.DataFrame(
-      {'State': ['Alabama', 'Alaska', 'Arizona'],
-       'Total_Admissions': [1106.0, 328.0, 1438.0]}
-  )}
-}
 
 def test_get_vega_pane_type_from_dict():
     assert PaneBase.get_pane_type(vega_example) is Vega
@@ -378,7 +348,37 @@ def test_vega_can_instantiate_empty_with_sizing_mode(document, comm):
     pane.get_root(document, comm=comm)
 
 
+@pd_skip
 def test_vega_can_support_datasets_with_pandas(document, comm):
+    datasets_example = {'$schema': 'https://vega.github.io/schema/vega-lite/v6.json',
+      'width': 700,
+      'height': 400,
+      'title': {'text': 'Total Admissions by State',
+       'subtitle': 'Illinois has the highest admissions by a large margin'},
+      'data': {'url': 'https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json',
+       'format': {'type': 'topojson', 'feature': 'states'}},
+      'transform': [{'lookup': 'properties.name',
+        'from': {'data': {'name': 'total_admissions_by_state_uiuc_students'},
+         'key': 'State',
+         'fields': ['Total_Admissions']}}],
+      'projection': {'type': 'albersUsa'},
+      'mark': 'geoshape',
+      'encoding': {'color': {'field': 'Total_Admissions',
+        'type': 'quantitative',
+        'scale': {'scheme': 'blues'},
+        'legend': {'title': 'Total Admissions'}},
+       'tooltip': [{'field': 'properties.name',
+         'type': 'nominal',
+         'title': 'State'},
+        {'field': 'Total_Admissions',
+         'type': 'quantitative',
+         'format': ',',
+         'title': 'Total Admissions'}]},
+      'datasets': {'total_admissions_by_state_uiuc_students': pd.DataFrame(
+          {'State': ['Alabama', 'Alaska', 'Arizona'],
+           'Total_Admissions': [1106.0, 328.0, 1438.0]}
+      )}
+    }
     pane = Vega(datasets_example)
     pane.get_root(document, comm=comm)
 
