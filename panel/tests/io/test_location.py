@@ -5,6 +5,7 @@ import pytest
 
 from panel.io.location import Location, _get_location_params
 from panel.io.state import state
+from panel.tests._deps import pd, pd_skip
 from panel.tests.util import serve_and_request, wait_until
 from panel.util import edit_readonly
 
@@ -180,15 +181,15 @@ def test_location_sync_from_dataframe(location, dataframe):
     location.sync(p)
     assert location.search == "?dataframe=%5B%7B%22x%22%3A+1%7D%5D"
 
+@pd_skip
 def test_location_sync_to_dataframe(location, dataframe):
-    pd = pytest.importorskip("pandas")
     p = SyncParameterized()
     location.search = "?dataframe=%5B%7B%22x%22%3A+1%7D%5D"
     location.sync(p)
     pd.testing.assert_frame_equal(p.dataframe, dataframe)
 
+@pd_skip
 def test_location_sync_to_dataframe_with_initial_value(location, dataframe):
-    pd = pytest.importorskip("pandas")
     p = SyncParameterized(dataframe=pd.DataFrame({"y": [2]}))
     location.search = "?dataframe=%5B%7B%22x%22%3A+1%7D%5D"
     location.sync(p)

@@ -1,10 +1,11 @@
 """Tests for Param widget DataFrame synchronization"""
-import pandas as pd
 import param
 
+from panel.tests._deps import pd, pd_skip
 from panel.widgets import Tabulator
 
 
+@pd_skip
 def test_tabulator_from_param_dataframe_update():
     class MyObject(param.Parameterized):
         data = param.DataFrame()
@@ -16,6 +17,7 @@ def test_tabulator_from_param_dataframe_update():
     assert widget.value.equals(pd.DataFrame({"a": [1, 2, 5]}))
 
 
+@pd_skip
 def test_tabulator_from_param_no_spurious_updates():
     class MyObject(param.Parameterized):
         data = param.DataFrame()
@@ -30,6 +32,7 @@ def test_tabulator_from_param_no_spurious_updates():
     assert update_count[0] == 1, f"Expected 1 update, got {update_count[0]}"
 
 
+@pd_skip
 def test_tabulator_from_param_param_update_reflects_in_widget():
     class MyObject(param.Parameterized):
         data = param.DataFrame()

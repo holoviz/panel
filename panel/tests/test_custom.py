@@ -1,6 +1,5 @@
 import numpy as np
 import param
-import pytest
 
 from bokeh.plotting import figure
 
@@ -8,6 +7,7 @@ from panel.custom import PyComponent, ReactiveESM
 from panel.io.state import state
 from panel.layout import Row
 from panel.pane import Bokeh, Markdown
+from panel.tests._deps import pd, pd_skip
 from panel.util import edit_readonly
 from panel.viewable import Child, Children
 
@@ -50,8 +50,8 @@ def test_py_component_cleanup(document, comm):
     assert not spy._view__._models
 
 
+@pd_skip
 def test_reactive_esm_sync_dataframe(document, comm):
-    pd = pytest.importorskip("pandas")
 
     class ESMDataFrame(ReactiveESM):
 

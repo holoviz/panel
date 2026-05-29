@@ -1,12 +1,12 @@
 import numpy as np
 import param
-import pytest
 
 from param import rx
 
 from panel.layout import Row, WidgetBox
 from panel.pane.base import PaneBase
 from panel.param import ReactiveExpr
+from panel.tests._deps import pd, pd_skip
 from panel.widgets import IntSlider
 
 
@@ -50,8 +50,8 @@ def test_reactive_widget_order():
     expr = ReactiveExpr(rx(slider1) + rx(slider2))
     assert list(expr.widgets) == [slider1, slider2]
 
+@pd_skip
 def test_reactive_dataframe_method_chain(dataframe):
-    pd = pytest.importorskip("pandas")
     dfi = rx(dataframe).groupby('str')[['float']].mean().reset_index()
     pd.testing.assert_frame_equal(dfi.rx.value, dataframe.groupby('str')[['float']].mean().reset_index())
 
@@ -59,8 +59,8 @@ def test_reactive_dataframe_attribute_chain(dataframe):
     array = rx(dataframe).str.values.rx.value
     np.testing.assert_array_equal(array, dataframe.str.values)
 
+@pd_skip
 def test_reactive_dataframe_param_value_method_chain(dataframe):
-    pd = pytest.importorskip("pandas")
     P = Parameters(string='str')
     dfi = rx(dataframe).groupby(P.param.string)[['float']].mean().reset_index()
     pd.testing.assert_frame_equal(dfi.rx.value, dataframe.groupby('str')[['float']].mean().reset_index())

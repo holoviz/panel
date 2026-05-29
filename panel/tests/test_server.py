@@ -30,6 +30,7 @@ from panel.pane import Markdown
 from panel.param import ParamFunction
 from panel.reactive import ReactiveHTML
 from panel.template import BootstrapTemplate
+from panel.tests._deps import pd, pd_skip
 from panel.tests.util import (
     get_open_ports, serve_and_request, serve_and_wait, wait_until,
 )
@@ -1305,8 +1306,8 @@ def test_server_thread_pool_change_event(server_implementation, threads):
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
 
 
+@pd_skip
 def test_server_thread_pool_bokeh_event(server_implementation, threads):
-    pd = pytest.importorskip("pandas")
     df = pd.DataFrame([[1, 1], [2, 2]], columns=['A', 'B'])
 
     tabulator = Tabulator(df)

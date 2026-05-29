@@ -3,6 +3,7 @@ import pytest
 
 from panel.layout import Column, GridBox, Row
 from panel.pane import panel
+from panel.tests._deps import pd, pd_skip
 from panel.tests.util import mpl_available
 from panel.widgets import (
     AutocompleteInput, ColorMap, CrossSelector, DiscreteSlider, MultiChoice,
@@ -51,16 +52,16 @@ def test_select_from_array(document, comm):
     assert select.options == ['A', 'B', 'C']
     assert select.value == 'A'
 
+@pd_skip
 def test_select_from_index(document, comm):
-    pd = pytest.importorskip("pandas")
     select = Select.from_values(pd.Index(['A', 'B', 'A', 'B', 'C'], name='index'))
 
     assert select.options == ['A', 'B', 'C']
     assert select.value == 'A'
     assert select.label == 'index'
 
+@pd_skip
 def test_select_from_series(document, comm):
-    pd = pytest.importorskip("pandas")
     select = Select.from_values(pd.Series(['A', 'B', 'A', 'B', 'C'], name='Series'))
 
     assert select.options == ['A', 'B', 'C']
@@ -332,16 +333,16 @@ def test_nested_select_from_multi_index(df_multiindex):
     assert select._max_depth == 2
     assert select.levels == ['groups', 'subgroups']
 
+@pd_skip
 def test_nested_select_from_index():
-    pd = pytest.importorskip("pandas")
     select = NestedSelect.from_values(pd.Index(['A', 'B', 'A', 'B', 'C'], name='index'))
 
     assert select.options == ['A', 'B', 'C']
     assert select.value == {'index': 'A'}
     assert select._max_depth == 1
 
+@pd_skip
 def test_nested_select_from_series():
-    pd = pytest.importorskip("pandas")
     select = NestedSelect.from_values(pd.Series(['A', 'B', 'A', 'B', 'C'], name='Series'))
 
     assert select.options == ['A', 'B', 'C']
@@ -964,16 +965,16 @@ def test_multi_select_from_array():
     assert select.options == ['A', 'B', 'C']
     assert select.value == []
 
+@pd_skip
 def test_multi_select_from_index():
-    pd = pytest.importorskip("pandas")
     select = MultiSelect.from_values(pd.Index(['A', 'B', 'A', 'B', 'C'], name='index'))
 
     assert select.options == ['A', 'B', 'C']
     assert select.value == []
     assert select.label == 'index'
 
+@pd_skip
 def test_multi_select_from_series(document, comm):
-    pd = pytest.importorskip("pandas")
     select = MultiSelect.from_values(pd.Series(['A', 'B', 'A', 'B', 'C'], name='Series'))
 
     assert select.options == ['A', 'B', 'C']

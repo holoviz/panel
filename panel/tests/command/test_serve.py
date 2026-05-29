@@ -8,6 +8,7 @@ from textwrap import dedent
 import pytest
 import requests
 
+from panel.tests._deps import pd_skip
 from panel.tests.util import (
     NBSR, linux_only, run_panel_serve, unix_only, wait_for_port,
     wait_for_regex, write_file,
@@ -60,8 +61,8 @@ def test_autoreload_app_local_module(py_files):
 
 
 @linux_only
+@pd_skip # TODO: Investigate if we can remove this
 def test_serve_admin(py_file):
-    pytest.importorskip("pandas")  # TODO: Investigate if we can remove this
     app = "import panel as pn; pn.Row('# Example').servable(title='A')"
     write_file(app, py_file.file)
 
@@ -72,8 +73,8 @@ def test_serve_admin(py_file):
         assert "Admin" in r.content.decode('utf-8')
 
 @linux_only
+@pd_skip # TODO: Investigate if we can remove this
 def test_serve_admin_custom_endpoint(py_file):
-    pytest.importorskip("pandas")  # TODO: Investigate if we can remove this
     app = "import panel as pn; pn.Row('# Example').servable(title='A')"
     write_file(app, py_file.file)
 

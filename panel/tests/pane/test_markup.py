@@ -13,19 +13,20 @@ from panel import config
 from panel.pane import (
     HTML, JSON, DataFrame, Markdown, PaneBase, Str,
 )
+from panel.tests._deps import pd, pd_skip
 from panel.tests.util import not_windows, streamz_available
 
 
 def test_get_markdown_pane_type():
     assert PaneBase.get_pane_type("**Markdown**") is Markdown
 
+@pd_skip
 def test_get_dataframe_pane_type():
-    pd = pytest.importorskip("pandas")
     df = pd.DataFrame({"A": [1, 2, 3]})
     assert PaneBase.get_pane_type(df) is DataFrame
 
+@pd_skip
 def test_get_series_pane_type():
-    pd = pytest.importorskip("pandas")
     ser = pd.Series([1, 2, 3])
     assert PaneBase.get_pane_type(ser) is DataFrame
 
@@ -246,8 +247,8 @@ def test_html_pane_sanitize_html(document, comm):
 
     assert model.text.endswith('&lt;h1&gt;&lt;strong&gt;HTML&lt;/h1&gt;&lt;/strong&gt;&lt;script&gt;&lt;/script&gt;')
 
+@pd_skip
 def test_dataframe_pane_pandas(document, comm):
-    pd = pytest.importorskip("pandas")
     pane = DataFrame(pd.DataFrame({"A": [1, 2, 3]}))
 
     # Create pane
@@ -266,8 +267,8 @@ def test_dataframe_pane_pandas(document, comm):
     pane._cleanup(model)
     assert pane._models == {}
 
+@pd_skip
 def test_dataframe_pane_supports_escape(document, comm):
-    pd = pytest.importorskip("pandas")
     url = "<a href='https://panel.holoviz.org/'>Panel</a>"
     df = pd.DataFrame({"url": [url]})
     pane = DataFrame(df)
