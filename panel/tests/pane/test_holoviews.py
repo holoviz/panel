@@ -32,6 +32,7 @@ from panel.widgets import (
 @pytest.fixture(autouse=True)
 def no_pandas():
     if pd:
+        yield
         return
     orig = hv.Dataset.datatype
     try:
