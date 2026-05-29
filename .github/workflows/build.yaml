@@ -72,7 +72,7 @@ jobs:
       - name: anaconda setup
         run: |
           pipx install anaconda-client
-          binstar --version
+          binstar --version || binstar --help  # version broke with typer 0.26.0 and click 8.4.0
       - name: anaconda dev upload
         if: contains(github.ref_name, 'a') || contains(github.ref_name, 'b') || contains(github.ref_name, 'rc')
         run: |
