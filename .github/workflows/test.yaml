@@ -134,7 +134,8 @@ jobs:
         run: |
           MATRIX=$(jq -nsc '{
               "os": ["ubuntu-latest"],
-              "environment": ["test-310"]
+              "environment": ["test-310"],
+              "with_pandas": ["true"]
           }')
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
 
@@ -163,7 +164,7 @@ jobs:
           environments: ${{ matrix.environment }}
           opengl: true
       - name: Uninstall pandas
-        if: matrix.with_pandas == "false"
+        if: matrix.with_pandas == 'false'
         run: |
           pixi run -e "${ENV}" pip uninstall pandas -y
       - name: Test unit
