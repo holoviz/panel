@@ -55,6 +55,7 @@ html_theme_options = {
         "image_dark": "_static/logo_horizontal_dark_theme.png",
     },
     "github_url": "https://github.com/holoviz/panel",
+    "use_edit_page_button": True,
     "icon_links": [
         {
             "name": "Twitter",
@@ -233,6 +234,8 @@ html_context.update({
     "last_release": f"v{release}",
     "github_user": "holoviz",
     "github_repo": "panel",
+    "github_version": "main",
+    "doc_path": "doc",
     "default_mode": "light",
     "panelite_endpoint": jlite_url,
     "gallery_url": gallery_url,
