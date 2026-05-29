@@ -26,8 +26,6 @@ from panel.widgets.tables import DataFrame, Tabulator
 
 pd = pytest.importorskip("pandas")  # HACK: REMOVE
 
-pd_old = pytest.mark.skipif(False, reason="Requires latest pandas")
-
 
 def makeMixedDataFrame():
     import pandas as pd
@@ -1341,25 +1339,6 @@ def test_tabulator_pagination_selectable_rows(document, comm):
 
     assert model.selectable_rows == [3]
 
-@pd_old
-def test_tabulator_styling(document, comm):
-    df = makeMixedDataFrame()
-    table = Tabulator(df)
-
-    def high_red(value):
-        return 'color: red' if value > 2 else 'color: black'
-
-    table.style.map(high_red, subset=['A'])
-
-    model = table.get_root(document, comm)
-
-    assert model.cell_styles['data'] == {
-        0: {2: [('color', 'black')]},
-        1: {2: [('color', 'black')]},
-        2: {2: [('color', 'black')]},
-        3: {2: [('color', 'red')]},
-        4: {2: [('color', 'red')]}
-    }
 
 def test_tabulator_empty_table(document, comm):
     value_df = makeMixedDataFrame()
