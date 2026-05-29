@@ -11,7 +11,8 @@ import type {Attrs} from "@bokehjs/core/types"
 import type {LayoutDOM} from "@bokehjs/models/layouts/layout_dom"
 import {LayoutDOMView} from "@bokehjs/models/layouts/layout_dom"
 import {isArray} from "@bokehjs/core/util/types"
-import type {UIElement, UIElementView} from "@bokehjs/models/ui/ui_element"
+import {UIElementView} from "@bokehjs/models/ui/ui_element"
+import type {UIElement} from "@bokehjs/models/ui/ui_element"
 
 import {serializeEvent} from "./event-to-object"
 import {DOMEvent} from "./html"
@@ -420,11 +421,12 @@ export class ReactiveESMView extends HTMLBoxView {
       const children = isArray(child_model) ? child_model : [child_model]
       for (const subchild of children) {
         const view = this._child_views.get(subchild)
-        if (!view) {
+        if (!view || this._child_rendered.get(view)) {
           continue
         }
         const parent = view.el.parentNode
-        if (parent && !this._child_rendered.has(view)) {
+        if (parent) {
+          this._child_rendered.set(view, false)
           this.rerender_(view)
           this._child_rendered.set(view, true)
         }
@@ -435,7 +437,7 @@ export class ReactiveESMView extends HTMLBoxView {
   }
 
   override has_finished(): boolean {
-    if (!super.has_finished()) {
+    if (!UIElementView.prototype.has_finished.call(this)) {
       return false
     }
 

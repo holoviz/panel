@@ -508,6 +508,9 @@ async function render(id) {
 
     render() {
       const child = this.state.rendered
+      if  (this.view) {
+        this.props.parent._child_rendered.set(this.view, false)
+      }
       const class_name = (this.use_shadow_dom ?
         "child-wrapper" : this.view.model.class_name.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase()
       )
