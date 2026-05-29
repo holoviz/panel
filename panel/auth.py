@@ -1099,10 +1099,15 @@ class OAuthProvider(BasicAuthProvider):
                 expiry = None
 
             if expiry is None:
-                expiry = handler.get_secure_cookie('oauth_expiry', max_age_days=config.oauth_expiry)
-                if expiry is None:
+                expiry_cookie = handler.get_secure_cookie('oauth_expiry', max_age_days=config.oauth_expiry)
+                if expiry_cookie is None:
                     # Token does not have content and therefore does not expire
                     log.debug("access_token is not a valid JWT token. Expiry cannot be determined.")
+                    return user
+                try:
+                    expiry = float(expiry_cookie.decode('utf-8'))
+                except (ValueError, UnicodeDecodeError):
+                    log.debug("oauth_expiry cookie could not be parsed as a number.")
                     return user
 
             if user in state._oauth_user_overrides:
