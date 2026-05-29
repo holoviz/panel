@@ -26,7 +26,7 @@ import panel as pn
 
 pn.extension()
 
-button = pn.widgets.Button(name="Refresh", icon="refresh", button_type="primary")
+button = pn.widgets.Button(label="Refresh", icon="refresh", color="primary")
 
 data = pd.DataFrame(
     [
@@ -106,7 +106,7 @@ data = pd.DataFrame(
     ],
     columns=["Day", "Wind Speed (m/s)"],
 )
-button = pn.widgets.Button(name="Refresh", icon="refresh", button_type="primary")
+button = pn.widgets.Button(label="Refresh", icon="refresh", color="primary")
 component = pn.Column("# Wind Speed", data, button)
 print(component)
 component.servable()
@@ -118,7 +118,7 @@ The `print` statement will output something like:
 Column
     [0] Markdown(str)
     [1] DataFrame(DataFrame)
-    [2] Button(button_type='primary', icon='refresh', name='Refresh')
+    [2] Button(color='primary', icon='refresh', name='Refresh')
 ```
 
 Under the hood, the `Column` layout uses `pn.panel` to determine how to best display Python objects.
@@ -135,7 +135,7 @@ import panel as pn
 
 pn.extension()
 
-button = pn.widgets.Button(name="Refresh", icon="refresh", button_type="primary")
+button = pn.widgets.Button(label="Refresh", icon="refresh", color="primary")
 
 data = pd.DataFrame(
     [
@@ -167,7 +167,7 @@ import panel as pn
 
 pn.extension()
 
-button = pn.widgets.Button(name="Refresh", icon="refresh", button_type="primary")
+button = pn.widgets.Button(label="Refresh", icon="refresh", color="primary")
 
 data = pd.DataFrame(
     [
@@ -205,7 +205,7 @@ import hvplot.pandas
 
 pn.extension()
 
-button = pn.widgets.Button(name="Refresh", icon="refresh", button_type="primary")
+button = pn.widgets.Button(label="Refresh", icon="refresh", color="primary")
 data = pd.DataFrame(
     [
         ("Monday", 7),

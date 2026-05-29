@@ -74,13 +74,13 @@ def get_power_output(wind_speed):
 ## View Data
 
 wind_speed_view = pn.indicators.Number(
-    name="Wind Speed",
+    label="Wind Speed",
     value=wind_speed,
     format="{value} m/s",
     colors=[(10, "green"), (100, "red")],
 )
 power_output_view = pn.indicators.Number(
-    name="Power Output",
+    label="Power Output",
     value=wind_speed.rx.pipe(get_power_output),
     format="{value} MW",
     colors=[(10, "green"), (100, "red")],

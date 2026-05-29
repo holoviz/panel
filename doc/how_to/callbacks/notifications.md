@@ -15,7 +15,7 @@ pn.extension(
     template='bootstrap'
 )
 
-slider = pn.widgets.IntSlider(name='Number', start=1, end=10, value=7)
+slider = pn.widgets.IntSlider(label='Number', start=1, end=10, value=7)
 
 pn.Column(
     slider,

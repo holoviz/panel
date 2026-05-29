@@ -34,7 +34,7 @@ class Input(param.Parameterized):
     ready = param.Boolean(default=False)
 
     def panel(self):
-        button = pn.widgets.Button(name='Go', button_type='success')
+        button = pn.widgets.Button(label='Go', color='success')
         button.on_click(lambda event: setattr(self, 'ready', True)) # allows auto-advance to proceed
         widgets = pn.Row(self.param.value1, self.param.operator, self.param.value2)
         for w in widgets:
@@ -119,7 +119,7 @@ class Input(param.Parameterized):
     ready = param.Boolean(default=False)
 
     def panel(self):
-        button = pn.widgets.Button(name='Go', button_type='success')
+        button = pn.widgets.Button(label='Go', color='success')
         button.on_click(lambda event: setattr(self, 'ready', True)) # allows auto-advance to proceed
         widgets = pn.Row(self.param.value1, self.param.operator, self.param.value2)
         for w in widgets:

@@ -1,5 +1,305 @@
 # Releases
 
+## Version 1.9.2
+
+A patch release addressing a small regression on `ReactComponent` causing the Document never to register as idle. Also fixes a memory leak related to tracking components in non-server contexts. Thank you to @philippjfr for his contributions to this release.
+
+### 🐛 Bug Fixes
+
+* Ensure ESM components mark view as finished ([#8606](https://github.com/holoviz/panel/pull/8606))
+* Ensure state._views does not leak memory ([#8607](https://github.com/holoviz/panel/pull/8607))
+
+
+## Version 1.9.1
+
+A quick patch release addressing regressions in 1.9.0, fixing `Button` color styling and resolves several issues with ESM and React component lifecycle handling. Many thanks to @philippjfr and @hoxbro for their contributions to this release.
+
+### 🐛 Bug Fixes
+
+* Fix `Button` color not being respected ([#8600](https://github.com/holoviz/panel/pull/8600))
+* Fix ESM component `ready` and `has_finished` compliance ([#8602](https://github.com/holoviz/panel/pull/8602))
+* Improve `ReactComponent` ready promise handling ([#8603](https://github.com/holoviz/panel/pull/8603))
+* Avoid hacky `IconMixin` rename override ([#8604](https://github.com/holoviz/panel/pull/8604))
+
+### 📚 Documentation
+
+* Update gallery environment ([#8601](https://github.com/holoviz/panel/pull/8601))
+
+
+## Version 1.9.0
+
+Panel 1.9.0 delivers full typing compatibility with Param 2.4.0, finally ensuring that all parameters are fully typed. Additionally this release makes it possible to provide wildcard routes to `pn.serve` making it possible to support dynamic routing. It also includes a significant modernization of the widget API, introducing `Widget.label` as the canonical display label parameter and renaming `button_type`/`button_style` to `color`/`variant` for better alignment with `panel-material-ui`, which will be integrated within Panel in upcoming releases. The release also includes a range of `Tabulator` improvements, chat enhancements, security updates, and numerous bug fixes. Lastly, this release drops support for Bokeh 3.7.
+
+Many thanks to the contributors to this release including: @philippjfr, @hoxbro, @ghostiee-11, @ahuang11, @AtharvaJaiswal005, @SKlerk, @TheoMathurin, @chucklay, @zhangdomi, @mvanhorn, @SuMayaBee, @forman, and @omyaaa1.
+
+### 🚀 Features
+
+* Add type compatibility for param 2.4.0 ([#8573](https://github.com/holoviz/panel/pull/8573))
+* Add support for wildcard route handling ([#8588](https://github.com/holoviz/panel/pull/8588))
+
+### ✨ Enhancements
+
+* Introduce `Widget.label` parameter and treat `name` as an alias ([#8328](https://github.com/holoviz/panel/pull/8328))
+* Rename `button_type` -> `color` and `button_style` -> `variant` ([#8577](https://github.com/holoviz/panel/pull/8577))
+* Make `Feed` type configurable on `ChatFeed` ([#8582](https://github.com/holoviz/panel/pull/8582))
+* Add `selection` and `value_input` to `TextEditor` widget ([#8560](https://github.com/holoviz/panel/pull/8560))
+* Add dark theme support for `JSONEditor` widget ([#8444](https://github.com/holoviz/panel/pull/8444))
+
+### 🐛 Bug Fixes
+
+* Fix `widget.disabled` getting stuck after rapid toggling ([#8507](https://github.com/holoviz/panel/pull/8507))
+* Fix `Trend` indicator not working with `date_range` x-axis ([#8509](https://github.com/holoviz/panel/pull/8509))
+* Fix `ReactComponent` initialization issues ([#8552](https://github.com/holoviz/panel/pull/8552))
+* Fix `DataFrame` comparison in `Tabulator.from_param` ([#8539](https://github.com/holoviz/panel/pull/8539))
+* Fix `Tabulator` scroll reset when filtering on patch ([#8531](https://github.com/holoviz/panel/pull/8531))
+* Prevent `Tabulator` from overwriting scroll position on style update ([#8420](https://github.com/holoviz/panel/pull/8420))
+* Fix `Gauge`/`ECharts` crash when the ECharts library is not yet loaded ([#8515](https://github.com/holoviz/panel/pull/8515))
+* Make OAuth token refreshes more robust ([#8518](https://github.com/holoviz/panel/pull/8518))
+* Sanitize JavaScript string replacement tokens in Python code ([#8566](https://github.com/holoviz/panel/pull/8566))
+* Fix string formatting in `NotImplementedError` message ([#8536](https://github.com/holoviz/panel/pull/8536))
+
+### 🎨 UI Improvements
+
+* Update Tabulator to version 6.4 ([#8568](https://github.com/holoviz/panel/pull/8568))
+* Optimize `Tabulator` resize events ([#8528](https://github.com/holoviz/panel/pull/8528))
+* Improve Pyodide badge appearance ([#8519](https://github.com/holoviz/panel/pull/8519))
+* General rendering and performance optimizations ([#8547](https://github.com/holoviz/panel/pull/8547))
+
+### ⚠️ Deprecations
+
+* `Widget.name` was renamed to `Widget.label`
+* `Button.button_type` was renamed to `Button.color`
+* `Button.button_style` was renamed to `Button.variant`
+* Dropped support for Bokeh 3.7
+
+### 📚 Documentation
+* Update reference gallery to use `panel-material-ui` ([#8596](https://github.com/holoviz/panel/pull/8596))
+* Add Outerbounds deployment guide ([#8587](https://github.com/holoviz/panel/pull/8587))
+* Add Functions vs Classes explanation ([#8581](https://github.com/holoviz/panel/pull/8581))
+* Add Panel extensions documentation page ([#8529](https://github.com/holoviz/panel/pull/8529))
+* Document `pn.state.sync_busy` in the busy indicator how-to guide ([#8564](https://github.com/holoviz/panel/pull/8564))
+
+### 🔒 Security
+
+* Switch HTML sanitization from `bleach` to `nh3` ([#8503](https://github.com/holoviz/panel/pull/8503))
+* Add `zizmor` for GitHub Actions security scanning ([#8584](https://github.com/holoviz/panel/pull/8584))
+* Validate `next_url` for basic auth and raise an error if invalid ([#8575](https://github.com/holoviz/panel/pull/8575))
+
+
+## Version 1.8.10
+
+Panel 1.8.10 focuses on stability improvements across widgets, plotting integrations, and server behavior. It includes fixes for Tabulator serialization, Param widget updates, Plotly and Vega regressions, and several UI issues. This release also improves compatibility with **Bokeh 3.9**, enhances error reporting when serving apps, and addresses a security issue in `panel.js`.
+
+Many thanks to the contributors to this release including:
+@philippjfr, @SuMayaBee, @AtharvaJaiswal005, @hoxbro, @ghostiee-11, and @tmoulignier.
+
+### ✨ Enhancements
+
+- Improve Python error messages displayed when serving apps ([#8478](https://github.com/holoviz/panel/pull/8478))
+- Improve `state.busy` logic to avoid mismatches in busy state tracking ([#8498](https://github.com/holoviz/panel/pull/8498))
+- Allow configuring the Panel CDN with the PANEL_CDN_ROOT environment variable or `pn.config.cdn_root` ([#8512](https://github.com/holoviz/panel/pull/8512))
+
+### 🐛 Bug Fixes
+
+- Prevent spacebar in `Card` header inputs from toggling collapse ([#8442](https://github.com/holoviz/panel/pull/8442))
+- Fix `DateRangeSlider` incorrectly modifying both values with timezone-aware timestamps ([#8455](https://github.com/holoviz/panel/pull/8455))
+- Preserve slider bar color when `Accordion` panels are collapsed or expanded ([#8460](https://github.com/holoviz/panel/pull/8460))
+- Fix datetime axis type mismatch in `link_axes` after scroll and plot update ([#8468](https://github.com/holoviz/panel/pull/8468))
+- Fix JSON serialization errors in `Tabulator` when using mixed `NaT` datetime columns ([#8491](https://github.com/holoviz/panel/pull/8491))
+- Fix Param widget values not updating when changed inside their own callback ([#8492](https://github.com/holoviz/panel/pull/8492))
+- Fix missing validation in `_imgshape` for image panes ([#8485](https://github.com/holoviz/panel/pull/8485))
+- Fix Vega pane not updating when using inline data ([#8495](https://github.com/holoviz/panel/pull/8495))
+- Fix Plotly regressions introduced in earlier 1.8 releases ([#8471](https://github.com/holoviz/panel/pull/8471), [#8476](https://github.com/holoviz/panel/pull/8476))
+- Ensure all `ReactiveESM` children render correctly ([#8473](https://github.com/holoviz/panel/pull/8473))
+- Ensure `CodeEditor` annotations are not overridden ([#8505](https://github.com/holoviz/panel/pull/8505))
+- Fix Modal objects update rendering inline instead of in dialog ([#8508](https://github.com/holoviz/panel/pull/8508))
+- Prevent ValueError when `EditableFloatSlider` input is cleared ([#8511](https://github.com/holoviz/panel/pull/8511))
+
+### 🔒 Security
+
+- Address XSS and prototype overwrite issues in `panel.js` ([#8501](https://github.com/holoviz/panel/pull/8501))
+
+### 📦 Compatibility & Dependency Updates
+
+- Add compatibility with **Bokeh 3.9** ([#8475](https://github.com/holoviz/panel/pull/8475))
+
+### 📚 Documentation
+
+- Recommend using bound function references instead of `watch=True` in the `bind_component` guide ([#8479](https://github.com/holoviz/panel/pull/8479))
+
+### 🧪 Tests & Maintenance
+
+- Improve test robustness ([#8502](https://github.com/holoviz/panel/pull/8502))
+- Fix JupyterLite CI workflow ([#8494](https://github.com/holoviz/panel/pull/8494), [#8496](https://github.com/holoviz/panel/pull/8496))
+
+
+## Version 1.8.9
+
+Many thanks to [@philippjfr](https://github.com/philippjfr) and [@hoxbro](https://github.com/hoxbro) for their contributions.
+
+### 🐛 Bug Fixes
+- Only serialize ESM model definition if session is already loaded ([#8462](https://github.com/holoviz/panel/pull/8462))
+
+### ⚙️ Compatibility
+- Compatibility with VTK 9.6.0 ([#8464](https://github.com/holoviz/panel/pull/8464))
+
+
+## Version 1.8.8
+
+Panel 1.8.8 focuses on stability, event handling correctness, Pyodide improvements, ESM robustness, and multiple UI fixes. It also introduces a new experimental `freeze` option for `hold()` to improve performance during batch updates.
+Many thanks to [@AR21SM](https://github.com/AR21SM) (first contribution), [@AtharvaJaiswal005](https://github.com/AtharvaJaiswal005) (first contribution), [@danielalanbates](https://github.com/danielalanbates) (first contribution), [@DevilSpecial](https://github.com/DevilSpecial) (first contribution), [@emunsing](https://github.com/emunsing) (first contribution), [@nojaf](https://github.com/nojaf) (first contribution), [@SimonHeybrock](https://github.com/SimonHeybrock) (first contribution), [@SuMayaBee](https://github.com/SuMayaBee) (first contribution), [@ahuang11](https://github.com/ahuang11), [@Coderambling](https://github.com/Coderambling), [@philippjfr](https://github.com/philippjfr), and [@hoxbro](https://github.com/hoxbro) for their contributions.
+
+### ✨ Enhancements
+
+* Allow list handling improvements ([#8405](https://github.com/holoviz/panel/pull/8405))
+* Add additional safety guards to custom models ([#8410](https://github.com/holoviz/panel/pull/8410))
+* **Experimental `freeze` support in `hold()`**
+  Add a `freeze=True` option to defer expensive Bokeh model graph recomputation until the hold context exits. This can significantly improve performance when batch-updating many models.
+  *(Marked experimental.)* ([#8417](https://github.com/holoviz/panel/pull/8417))
+* Add missing `Callback.unwatch()` method with tests ([#8453](https://github.com/holoviz/panel/pull/8453))
+* Ensure ESM model definitions can be loaded dynamically ([#8432](https://github.com/holoviz/panel/pull/8432))
+* Improve `widget.link()` to properly support HoloViews streams ([#8450](https://github.com/holoviz/panel/pull/8450))
+
+### 🐛 Bug Fixes
+
+* Ensure `ReactComponent` children render even when view initialization is slow ([#8406](https://github.com/holoviz/panel/pull/8406))
+* Fix CDN resolution issues in server mode for `loading.css` and `es-module-shims` ([#8408](https://github.com/holoviz/panel/pull/8408))
+* Fix `LaTeX` rendering in `Markdown` pane under Pyodide ([#8424](https://github.com/holoviz/panel/pull/8424))
+* Fix resource resolution when `pathname` changes ([#8433](https://github.com/holoviz/panel/pull/8433))
+* Ensure only param *value* events are deduplicated ([#8436](https://github.com/holoviz/panel/pull/8436))
+* Fix OAuth user data being overwritten during updates ([#8447](https://github.com/holoviz/panel/pull/8447))
+* Fix pipeline "Next" button disabled state when navigating back ([#8443](https://github.com/holoviz/panel/pull/8443))
+* Fix `Video` pane rejecting URLs with query parameters ([#8440](https://github.com/holoviz/panel/pull/8440))
+* Fix `Number` and `String` indicators defaulting to black in dark theme ([#8441](https://github.com/holoviz/panel/pull/8441))
+* Ensure embedding works correctly with `.from_param()` ([#8445](https://github.com/holoviz/panel/pull/8445))
+
+### 📦 Dependency Updates
+
+* Bump `pyodide` to 0.29.3 ([#8446](https://github.com/holoviz/panel/pull/8446))
+
+### 📚 Documentation
+
+* Update ChatFeed OpenAI examples to SDK v1.0+ format ([#8426](https://github.com/holoviz/panel/pull/8426))
+* Documentation link updates (croniter README) ([#8401](https://github.com/holoviz/panel/pull/8401))
+
+### 🧪 Tests & Maintenance
+
+* Use direct `html.escape` import for clarity ([#8409](https://github.com/holoviz/panel/pull/8409))
+* Add tests for Button `on_click` parameter ([#8435](https://github.com/holoviz/panel/pull/8435))
+
+## Version 1.8.7
+
+This patch release reverts two changes that were made in 1.8.6 that turned out to be more disruptive than expected. Additionally it ensures that Tabulator automatically recalculates page sizes on resize and resolves issues with patched versions of Plotly.
+
+### 🐛 Bug fixes
+
+- Rerun Tabulator page size calculation on resize ([#8395](https://github.com/holoviz/panel/pull/8395))
+- Fix issues with monkey-patched versions of Plotly ([#8397]](https://github.com/holoviz/panel/pull/8397))
+
+### ⏪ Reverted
+
+- Ensure `edit_readonly` resets both class- and instance-level parameters ([#8371](https://github.com/holoviz/panel/pull/8371))
+- Validate ReactiveHTML missing id errors ([#8382](https://github.com/holoviz/panel/pull/8382))
+
+## Version 1.8.6
+
+This patch release includes several ESM and React-related fixes, UI behavior improvements, and enhanced robustness in form inputs and file handling. It also bumps key dependencies and improves support for custom deployments. Thanks to @philippjfr, @maximlt, @emunsing, @TheoMathurin, @dalthviz and @hoxbro for their contributions to this release!
+
+### ✨ Enhancements
+
+- Add `placeholder` parameter on `FloatInput` and `IntInput` ([#8360](https://github.com/holoviz/panel/pull/8360))
+- Support for file extensions in `FileDropper.accepted_filetypes` ([#8380](https://github.com/holoviz/panel/pull/8380))
+- Accept 2D arrays for stereo `Audio` ([#8381](https://github.com/holoviz/panel/pull/8381))
+
+### 🐛 Bug Fixes
+
+- Ensure collapsed `Card` still renders components to avoid child render issues ([#8274](https://github.com/holoviz/panel/pull/8274))
+- **ESM & React Components**:
+  - Fix errors when renamed parameters are linked on ESM components ([#8357](https://github.com/holoviz/panel/pull/8357))
+  - Fix `rel_path` resolution in ESM components ([#8375](https://github.com/holoviz/panel/pull/8375))
+  - Fix `autoreload` watcher setup for ESM apps ([#8361](https://github.com/holoviz/panel/pull/8361))
+  - Delay removal of `ReactComponent` children until new ones are mounted ([#8358](https://github.com/holoviz/panel/pull/8358))
+- Ensure `PathLike` is accepted for `requirements` in pyodide conversion calls ([#8366](https://github.com/holoviz/panel/pull/8366))
+- Ensure `edit_readonly` resets both class- and instance-level parameters ([#8371](https://github.com/holoviz/panel/pull/8371))
+- Fix `guest` endpoint validation at root path ([#8370](https://github.com/holoviz/panel/pull/8370))
+- Don't attempt to refresh access token if there is no active user session ([#8384](https://github.com/holoviz/panel/pull/8384))
+- Ensure OAuth state for user is reset after failing to refresh access token ([#8389](https://github.com/holoviz/panel/pull/8389))
+- Ensure `config.design` value is respected by `Template` ([#8388](https://github.com/holoviz/panel/pull/8388))
+- Improve robustness of `Tabulator.page_size` inference ([#8390](https://github.com/holoviz/panel/pull/8390))
+
+### ⚠️ Compatibility & Deprecations
+
+- Added compatibility for pandas 3.0 ([#8385](https://github.com/holoviz/panel/pull/8385))
+
+### 📚 Documentation
+
+- Update `Plotly` example to prevent flicker on load ([#8362](https://github.com/holoviz/panel/pull/8362))
+
+### 🧪 Maintenance
+
+- Bump `bokeh` to 3.8.2 in Django example app ([#8376](https://github.com/holoviz/panel/pull/8376))
+- Bump `preact` to 10.26.10 ([#8367](https://github.com/holoviz/panel/pull/8367))
+- Update pre-commit hooks ([#8363](https://github.com/holoviz/panel/pull/8363))
+
+## Version 1.8.5
+
+This release includes several fixes and enhancements for notebook stability, Tabulator behavior, ESM/ReactiveComponent handling, and Markdown rendering. It also adds documentation updates for FastAPI integration, app conversion guides, and the Panel roadmap.
+
+### 🐛 Bug Fixes
+
+- Fix error in notebook environments causing failure to run apps ([#8334](https://github.com/holoviz/panel/pull/8334))
+- Prevent `Tabulator` from unintentionally reverting `show_index=False` back to `True` ([#8333](https://github.com/holoviz/panel/pull/8333))
+- Ensure transformed param values are inherited by ESM components ([#8338](https://github.com/holoviz/panel/pull/8338))
+- Ensure DataFrame objects can be referenced in Vega `datasets` ([#8330](https://github.com/holoviz/panel/pull/8330))
+- Improve handling of code highlighting in `Markdown` pane ([#8331](https://github.com/holoviz/panel/pull/8331))
+- Allow replacing child models inside `ReactiveESM` components ([#8348](https://github.com/holoviz/panel/pull/8348))
+
+### 📚 Documentation
+
+* Add **how-to guides** for converting Panel apps to **desktop and mobile apps** ([#8349](https://github.com/holoviz/panel/pull/8349))
+* Update **FastAPI integration instructions** ([#8337](https://github.com/holoviz/panel/pull/8337))
+* Publish updated **Roadmap for Panel v2 and beyond** ([#8339](https://github.com/holoviz/panel/pull/8339))
+
+### 🧪 Maintenance & Build
+
+* Use **trusted publisher** setup for NPM release
+* Bump Node.js version used in build
+
+## Version 1.8.4
+
+Panel 1.8.4 includes key bug fixes and behavior improvements around event ordering, Tabulator interop, and Jupyter/Notebook usage. It also improves support for async usage, validation, and app routing—plus quality-of-life enhancements for both developers and users. Thanks to @philippjfr, @hoxbro, @maximlt, @ahuang11, @MarcSkovMadsen, @TheoMathurin, @ruoyu0088, and @dieterweber for your contributions to this release!
+
+### ✨ Enhancements
+
+- Add config toggle to disable Bokeh validation ([#8294](https://github.com/holoviz/panel/pull/8294))
+- Allow `Tabulator.row_content` to be an async function ([#8309](https://github.com/holoviz/panel/pull/8309))
+- Improve documentation and validation of `patch_value` ([#8312](https://github.com/holoviz/panel/pull/8312))
+- Propagate layout-related parameters to `NestedSelect` ([#8317](https://github.com/holoviz/panel/pull/8317))
+
+### 🐛 Bug Fixes
+
+- Fix crash when emptying a `DataFrame` ([#8256](https://github.com/holoviz/panel/pull/8256))
+- Ensure new Panel instance is always loaded ([#8293](https://github.com/holoviz/panel/pull/8293))
+- Improve robustness of Bokeh/Panel notebook integration ([#8289](https://github.com/holoviz/panel/pull/8289))
+- Fix notebook reading errors by explicitly using UTF-8 encoding ([#8304](https://github.com/holoviz/panel/pull/8304))
+- Ensure `param.Action` only triggers one event ([#8305](https://github.com/holoviz/panel/pull/8305))
+- Fix conflict when using both `ipywidgets` and `Tabulator` extensions ([#8308](https://github.com/holoviz/panel/pull/8308))
+- Ensure discrete events (e.g. button clicks) are scheduled after change events ([#8311](https://github.com/holoviz/panel/pull/8311), [#8319](https://github.com/holoviz/panel/pull/8319))
+- Reinstate application name as default index page title ([#8313](https://github.com/holoviz/panel/pull/8313))
+- Redirect requests to the prefixed root when `--prefix` is set ([#8321](https://github.com/holoviz/panel/pull/8321))
+- Ensure non-active `Tabs` are not clickable ([#8324](https://github.com/holoviz/panel/pull/8324))
+
+### 🧪 Maintenance & Infrastructure
+
+- Update Python/JS dependencies ([#8318](https://github.com/holoviz/panel/pull/8318))
+- Fix type checking errors ([#8314](https://github.com/holoviz/panel/pull/8314))
+- Pin `jupyterlite-core` temporarily ([#8315](https://github.com/holoviz/panel/pull/8315))
+- Clean up `pixi.toml` project config ([#8303](https://github.com/holoviz/panel/pull/8303))
+
+### ⚠️ Compatibility & Deprecations
+
+- Heads up: Starting with Panel 1.9.0, pandas will no longer be installed by default. If your code depends on pandas and you were relying on Panel to install it implicitly, you’ll need to add it as an explicit dependency in your environment or project configuration.
+
 ## Version 1.8.3
 
 This patch release brings targeted UI fixes, improves Python and Django compatibility, and enhances the developer and contributor experience. It also includes fixes for Tabulator, Pyodide, templates, and app interactivity, along with several documentation and robustness improvements. Many thanks to @ahuang11, @hoxbro, @maximlt, @MarcSkovMadsen, @Coderambling and  @philippjfr for their contributions to this release.

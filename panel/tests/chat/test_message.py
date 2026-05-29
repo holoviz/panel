@@ -364,7 +364,7 @@ class TestChatMessage:
     def test_serialize_nested_objects_in_container(self):
         message = ChatMessage(
             Row(
-                Column(IntInput(name='int val')),
+                Column(IntInput(label='int val')),
                 Column(Markdown("markdown"), HTML("html"))
             )
         )

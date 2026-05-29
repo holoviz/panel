@@ -45,8 +45,8 @@ def test_reactive_widget_method_kwarg():
     assert slider in expr.widgets
 
 def test_reactive_widget_order():
-    slider1 = IntSlider(name='Slider1')
-    slider2 = IntSlider(name='Slider2')
+    slider1 = IntSlider(label='Slider1')
+    slider2 = IntSlider(label='Slider2')
     expr = ReactiveExpr(rx(slider1) + rx(slider2))
     assert list(expr.widgets) == [slider1, slider2]
 

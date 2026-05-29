@@ -48,8 +48,8 @@ def plot(template, color):
 
 # Widget for template selection and color picker
 templates = sorted(pio.templates)
-template = pn.widgets.Select(value="plotly_dark", options=templates, name="Template")
-color = pn.widgets.ColorPicker(value="#F08080", name="Color")
+template = pn.widgets.Select(value="plotly_dark", options=templates, label="Template")
+color = pn.widgets.ColorPicker(value="#F08080", label="Color")
 
 # Display the plot and widgets
 pn.Column(

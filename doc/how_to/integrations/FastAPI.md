@@ -52,7 +52,7 @@ from panel.io.fastapi import add_application
 
 @add_application('/panel', app=app, title='My Panel App')
 def create_panel_app():
-    slider = pn.widgets.IntSlider(name='Slider', start=0, end=10, value=3)
+    slider = pn.widgets.IntSlider(label='Slider', start=0, end=10, value=3)
     return slider.rx() * '⭐'
 ```
 
@@ -74,7 +74,7 @@ async def read_root():
 
 @add_application('/panel', app=app, title='My Panel App')
 def create_panel_app():
-    slider = pn.widgets.IntSlider(name='Slider', start=0, end=10, value=3)
+    slider = pn.widgets.IntSlider(label='Slider', start=0, end=10, value=3)
     return slider.rx() * '⭐'
 ```
 
@@ -130,11 +130,11 @@ INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 ```
 
-If you visit `http://127.0.0.1:8000` you will see the Panel application.
+If you visit `http://127.0.0.1:8000/panel` you will see the Panel application.
 
 ## Adding multiple applications
 
-The `add_application` decorator is useful when server an application defined in a function, if you want to serve multiple applications, whether they are existing Panel objects, functions, or paths to Panel application scripts you can use the `add_applications` function instead, e.g.:
+The `add_application` decorator is useful when serving an application defined in a function, if you want to serve multiple applications, whether they are existing Panel objects, functions, or paths to Panel application scripts you can use the `add_applications` function instead, e.g.:
 
 ```python
 import panel as pn
@@ -149,7 +149,7 @@ async def read_root():
     return {"Hello": "World"}
 
 def create_panel_app():
-    slider = pn.widgets.IntSlider(name='Slider', start=0, end=10, value=3)
+    slider = pn.widgets.IntSlider(label='Slider', start=0, end=10, value=3)
     return slider.rx() * '⭐'
 
 add_applications({

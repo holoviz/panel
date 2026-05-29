@@ -39,7 +39,7 @@ The user profiling may also be used in an interactive session, e.g. we might dec
 ```python
 import time
 
-slider = pn.widgets.FloatSlider(name='Test')
+slider = pn.widgets.FloatSlider(label='Test')
 
 @pn.io.profile('formatting')
 def format_value(value):

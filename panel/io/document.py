@@ -10,12 +10,11 @@ import logging
 import sys
 import threading
 import time
+import typing as t
 import weakref
 
-from collections.abc import Callable, Iterator, Sequence
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from functools import partial, wraps
-from typing import TYPE_CHECKING, Any
 from weakref import WeakKeyDictionary
 
 from bokeh.application.application import SessionContext
@@ -29,12 +28,12 @@ from .loading import LOADING_INDICATOR_CSS_CLASS
 from .model import monkeypatch_events  # noqa: F401 API import
 from .state import state
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from asyncio.futures import Future
+    from collections.abc import Callable, Iterator, Sequence
 
     from bokeh.core.enums import HoldPolicyType
     from bokeh.core.has_props import HasProps
-    from bokeh.document import Document
     from bokeh.protocol.message import Message
     from bokeh.server.connection import ServerConnection
     from pyviz_comms import Comm
@@ -53,7 +52,7 @@ _WRITE_BLOCK: WeakKeyDictionary[Document, bool] = WeakKeyDictionary()
 _panel_last_cleanup = None
 _write_tasks: list[asyncio.Task] = []
 
-extra_socket_handlers: dict[type, Callable[[Any], None]] = {}
+extra_socket_handlers: dict[type, Callable[[t.Any], None]] = {}
 
 @dataclasses.dataclass
 class Request:
@@ -108,8 +107,8 @@ def _cleanup_doc(doc, destroy=True):
 
     # Remove views
     from ..viewable import Viewable
-    views = {}
-    for ref, (pane, root, vdoc, comm) in list(state._views.items()):
+    to_remove = []
+    for ref, (pane, root, vdoc, _comm) in list(state._views.items()):
         if vdoc is doc:
             pane._cleanup(root)
             if isinstance(pane, Viewable):
@@ -122,9 +121,9 @@ def _cleanup_doc(doc, destroy=True):
             pane.param.watchers = {}
             pane._documents = {}
             pane._internal_callbacks = {}
-        else:
-            views[ref] = (pane, root, vdoc, comm)
-    state._views = views
+            to_remove.append(ref)
+    for ref in to_remove:
+        del state._views[ref]
 
     # When reusing sessions we must clean up the Panel state but we
     # must **not** destroy the template or the document
@@ -539,7 +538,12 @@ def dispatch_events(events, doc: Document | None = None):
         doc.callbacks._held_events = events
 
 @contextmanager
-def hold(doc: Document | None = None, policy: HoldPolicyType = 'combine', comm: Comm | None = None):
+def hold(
+    doc: Document | None = None,
+    policy: HoldPolicyType = 'combine',
+    comm: Comm | None = None,
+    freeze: bool = False,
+):
     """
     Context manager that holds events on a particular Document
     allowing them all to be collected and dispatched when the context
@@ -556,39 +560,51 @@ def hold(doc: Document | None = None, policy: HoldPolicyType = 'combine', comm: 
         dispatched when the context manager exits.
     comm: Comm
         The Comm to dispatch events on when the context manager exits.
+    freeze: bool
+        **Experimental.** Whether to freeze the Document model
+        references for the duration of the hold. When True, defers
+        expensive model graph recomputation
+        (``doc.models.recompute()``) until the hold exits, which can
+        significantly speed up batch updates that modify many models.
+        Safe to nest with the per-model ``freeze_doc`` calls used
+        internally, since Bokeh's freeze mechanism is
+        reference-counted.
     """
     doc = doc or state.curdoc
     if doc is None:
         yield
         return
-    threaded = state._current_thread != state._thread_id
-    held = doc.callbacks.hold_value
-    try:
-        if policy is None:
-            doc.unhold()
-            yield
-        elif threaded:
-            doc.hold(policy)
-            yield
-        else:
-            with unlocked(policy=policy):
-                if not doc.callbacks.hold_value:
-                    doc.hold(policy)
+    with ExitStack() as stack:
+        if freeze and hasattr(doc, 'models'):
+            stack.enter_context(doc.models.freeze())
+        threaded = state._current_thread != state._thread_id
+        held = doc.callbacks.hold_value
+        try:
+            if policy is None:
+                doc.unhold()
                 yield
-    finally:
-        if held:
-            doc.callbacks._hold = held
-        elif comm is not None:
-            from .notebook import push
-            push(doc, comm)
-        elif not state._connected.get(doc):
-            doc.callbacks._hold = None
-        elif threaded:
-            doc.callbacks._hold = None
-            doc.add_next_tick_callback(doc.unhold)
-            doc.callbacks._hold = policy
-        else:
-            doc.unhold()
+            elif threaded:
+                doc.hold(policy)
+                yield
+            else:
+                with unlocked(policy=policy):
+                    if not doc.callbacks.hold_value:
+                        doc.hold(policy)
+                    yield
+        finally:
+            if held:
+                doc.callbacks._hold = held
+            elif comm is not None:
+                from .notebook import push
+                push(doc, comm)
+            elif not state._connected.get(doc):
+                doc.callbacks._hold = None
+            elif threaded:
+                doc.callbacks._hold = None
+                doc.add_next_tick_callback(doc.unhold)
+                doc.callbacks._hold = policy
+            else:
+                doc.unhold()
 
 @contextmanager
 def immediate_dispatch(doc: Document | None = None):
@@ -619,7 +635,7 @@ def immediate_dispatch(doc: Document | None = None):
     doc.callbacks._held_events = old_events
 
 @contextmanager
-def freeze_doc(doc: Document, model: HasProps, properties: dict[str, Any], force: bool = False):
+def freeze_doc(doc: Document, model: HasProps, properties: dict[str, t.Any], force: bool = False):
     """
     Freezes the document model references if any of the properties
     are themselves a model.

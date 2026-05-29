@@ -36,6 +36,13 @@ Discover how to launch and configure a Panel application programmatically.
 Discover how-to launch and configure multiple applications on the same server.
 :::
 
+:::{grid-item-card} {octicon}`git-branch;2.5em;sd-mr-1 sd-animate-grow50` Wildcard routes
+:link: wildcard_routes
+:link-type: doc
+
+Discover how to serve apps on dynamic URL patterns and access route parameters.
+:::
+
 :::{grid-item-card} {octicon}`stack;2.5em;sd-mr-1 sd-animate-grow50` Configure session re-connect
 :link: reconnect
 :link-type: doc
@@ -88,6 +95,7 @@ Discover how configure the web socket settings to enable larger data transfers
 commandline
 programmatic
 multiple
+wildcard_routes
 ssh
 reconnect
 proxy

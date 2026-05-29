@@ -1,15 +1,15 @@
 from __future__ import annotations
 
 import sys
+import typing as t
 
 from functools import partial
-from typing import Any
 from weakref import WeakKeyDictionary
 
-import bokeh
 import bokeh.core.properties as bp
 import param as pm
 
+from bokeh.core.property.bases import Property
 from bokeh.model import DataModel, Model
 from bokeh.models import ColumnDataSource
 
@@ -20,7 +20,7 @@ from .notebook import push
 from .state import set_curdoc, state
 
 
-class Parameterized(bokeh.core.property.bases.Property):
+class Parameterized(Property):
     """ Accept a Parameterized object.
 
     This property only exists to support type validation, e.g. for "accepts"
@@ -38,7 +38,7 @@ class Parameterized(bokeh.core.property.bases.Property):
         raise ValueError(msg)
 
 
-class PolarsDataFrame(bokeh.core.property.bases.Property):
+class PolarsDataFrame(Property):
     """ Accept Polars DataFrame values.
 
     This property only exists to support type validation, e.g. for "accepts"
@@ -47,7 +47,7 @@ class PolarsDataFrame(bokeh.core.property.bases.Property):
 
     """
 
-    def validate(self, value: Any, detail: bool = True) -> None:
+    def validate(self, value: t.Any, detail: bool = True) -> None:
         super().validate(value, detail)
 
         import polars as pl
@@ -58,7 +58,7 @@ class PolarsDataFrame(bokeh.core.property.bases.Property):
         raise ValueError(msg)
 
 
-class ParameterizedList(bokeh.core.property.bases.Property):
+class ParameterizedList(Property):
     """ Accept a list of Parameterized objects.
 
     This property only exists to support type validation, e.g. for "accepts"

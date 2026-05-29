@@ -51,7 +51,7 @@ When defining design variable overrides globally use the `:root` CSS selector, w
 ```{pyodide}
 pn.Tabs(
     ('Slider', pn.widgets.FloatSlider(start=0, end=7, value=3)),
-    ('Button', pn.widgets.Button(name='Click me!', button_type='primary'))
+    ('Button', pn.widgets.Button(label='Click me!', color='primary'))
 )
 ```
 
@@ -62,7 +62,7 @@ pn.Tabs(
     ('Slider', pn.widgets.FloatSlider(
 	    start=0, end=7, value=3, stylesheets=[':host { --design-primary-color: red; }']
 	)),
-    ('Button', pn.widgets.Button(name='Click me!', button_type='primary'))
+    ('Button', pn.widgets.Button(label='Click me!', color='primary'))
 )
 ```
 

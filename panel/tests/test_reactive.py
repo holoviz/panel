@@ -20,7 +20,7 @@ from panel.pane import Markdown
 from panel.reactive import Reactive, ReactiveHTML
 from panel.viewable import Viewable
 from panel.widgets import (
-    Checkbox, IntInput, IntSlider, StaticText, TextInput,
+    Button, Checkbox, IntInput, IntSlider, StaticText, TextInput,
 )
 
 
@@ -57,6 +57,23 @@ def test_link():
 
     assert obj.a == 1
     assert obj2.a == 1
+
+
+def test_link_holoviews_stream():
+    "Link a Reactive object to a HoloViews stream"
+    try:
+        import holoviews as hv
+    except ImportError:
+        pytest.skip("holoviews not available")
+
+    class ReactiveLink(Reactive):
+        selection = param.List(default=[])
+
+    obj = ReactiveLink()
+    stream = hv.streams.Selection1D()
+    obj.link(stream, selection='index')
+    obj.selection = [0, 1]
+    assert stream.index == [0, 1]
 
 
 def test_param_rename():
@@ -126,8 +143,8 @@ def test_text_input_controls():
     assert len(controls) == 2
     wb1, wb2 = controls
     assert isinstance(wb1, WidgetBox)
-    assert len(wb1) == 7
-    name, value, disabled, *(ws) = wb1
+    assert len(wb1) == 8
+    name, label, value, disabled, *(ws) = wb1
 
     assert isinstance(value, TextInput)
     text_input.value = "New value"
@@ -137,18 +154,22 @@ def test_text_input_controls():
 
     not_checked = []
     for w in ws:
-        if w.name == 'Value input':
+        if w.label == 'Value input':
             assert isinstance(w, TextInput)
-        elif w.name == 'Placeholder':
+        elif w.label == 'Placeholder':
             assert isinstance(w, TextInput)
             text_input.placeholder = "Test placeholder..."
             assert w.value == "Test placeholder..."
-        elif w.name == 'Max length':
+        elif w.label == 'Max length':
             assert isinstance(w, IntInput)
-        elif w.name == 'Description':
+        elif w.label == 'Description':
             assert isinstance(w, TextInput)
             text_input.description = "Test description..."
             assert w.value == "Test description..."
+        elif w.label == 'Label':
+            assert isinstance(w, TextInput)
+            text_input.description = "Test label..."
+            assert w.value == ""
         else:
             not_checked.append(w)
 
@@ -156,8 +177,8 @@ def test_text_input_controls():
 
     assert isinstance(wb2, WidgetBox)
 
-    params1 = {w.name.replace(" ", "_").lower() for w in wb2 if len(w.name)}
-    params2 = set(Viewable.param) - {"background", "design", "stylesheets", "loading"}
+    params1 = {w.label.replace(" ", "_").lower() for w in wb2 if len(w.label)}
+    params2 = set(Viewable.param) - {"background", "design", "stylesheets", "loading", "name"}
     # Background should be moved when Layoutable.background is removed.
 
     assert not len(params1 - params2)
@@ -248,8 +269,8 @@ async def test_pass_bind_multi_async_generator_by_reference():
     assert text_input.width == 121
 
 def test_pass_refs():
-    slider = IntSlider(value=5, start=1, end=10, name='Number')
-    size = IntSlider(value=12, start=6, end=24, name='Size')
+    slider = IntSlider(value=5, start=1, end=10, label='Number')
+    size = IntSlider(value=12, start=6, end=24, label='Size')
 
     def refs(number, size):
         return {
@@ -393,6 +414,63 @@ def test_in_process_change_event_cleaned_up(document, comm):
         checkbox._process_events({'active': True})
 
     assert document not in checkbox._in_process__events
+
+def test_rapid_toggle_disabled(document, comm):
+    button = Button(label="dummy")
+    model = button.get_root(document, comm)
+
+    assert model.disabled is False
+
+    # Rapid toggle: True then immediately False
+    button.disabled = True
+    button.disabled = False
+
+    assert model.disabled is False
+    assert button.disabled is False
+    assert 'disabled' not in button._events
+
+def test_rapid_toggle_disabled_repeated(document, comm):
+    button = Button(label="dummy")
+    model = button.get_root(document, comm)
+
+    for _ in range(5):
+        button.disabled = True
+        button.disabled = False
+
+    assert model.disabled is False
+    assert button.disabled is False
+    assert 'disabled' not in button._events
+
+def test_python_update_clears_stale_events(document, comm):
+    text_input = TextInput(value='A')
+    model = text_input.get_root(document, comm)
+
+    # Simulate stale frontend event contaminating _events
+    text_input._events['value'] = 'stale'
+
+    # Python sets a new value
+    text_input.value = 'C'
+
+    assert model.value == 'C'
+    assert text_input.value == 'C'
+    assert 'value' not in text_input._events
+
+def test_boomerang_value_is_skipped(document, comm):
+    # When the Python update matches the recorded frontend value
+    # it is a boomerang echo and must not be re-pushed to the model.
+    text_input = TextInput(value='A')
+    model = text_input.get_root(document, comm)
+
+    # Prime _events as if the frontend just pushed 'frontend'
+    text_input._events['value'] = 'frontend'
+
+    # Python sets the same value — treated as a boomerang echo
+    text_input.value = 'frontend'
+
+    # Model stays at its original value since the echo is skipped
+    assert model.value == 'A'
+    assert text_input.value == 'frontend'
+    assert 'value' not in text_input._events
 
 def test_reactive_html_basic():
 

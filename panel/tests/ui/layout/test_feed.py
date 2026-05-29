@@ -140,6 +140,7 @@ def test_feed_scroll_to_latest_within_limit(page):
 
     # assert auto scroll works; i.e. distance from bottom is 0
     feed.append(Spacer(styles=dict(background='yellow'), width=200, height=200))
+    page.wait_for_timeout(200)
     feed.scroll_to_latest(scroll_limit=1000)
 
     def assert_at_bottom():

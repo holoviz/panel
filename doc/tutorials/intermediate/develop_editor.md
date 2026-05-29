@@ -59,7 +59,7 @@ pn.extension(design="material")
 def handle_click(event):
     breakpoint()
 
-pn.widgets.Button(name="Click Me", on_click=handle_click, button_type="primary").servable()
+pn.widgets.Button(label="Click Me", on_click=handle_click, color="primary").servable()
 ```
 
 Serve the app with `panel serve app.py --dev`.

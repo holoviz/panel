@@ -58,9 +58,9 @@ This example demonstrates how APIs in Panel differ, to see the same app implemen
 The reactive programming model relies on the user (a) explicitly instantiating widgets, (b) declaring how those widgets relate to the function arguments (using the ``bind`` function), and (c) laying out the widgets and other components explicitly. In principle we could reuse the ``get_plot`` function from above here but for clarity we will repeat it:
 
 ```{pyodide}
-backend = pn.widgets.Select(name='Backend', options=plot_fns)
-ticker = pn.widgets.Select(name='Ticker', options=tickers)
-window = pn.widgets.IntSlider(name='Window Size', value=6, start=1, end=51, step=5)
+backend = pn.widgets.Select(label='Backend', options=plot_fns)
+ticker = pn.widgets.Select(label='Ticker', options=tickers)
+window = pn.widgets.IntSlider(label='Window Size', value=6, start=1, end=51, step=5)
 
 pn.Row(
     pn.Column(backend, ticker, window),

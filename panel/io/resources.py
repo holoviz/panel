@@ -13,19 +13,17 @@ import os
 import pathlib
 import re
 import textwrap
+import typing as t
 import uuid
 
 from contextlib import contextmanager
 from functools import lru_cache
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING, ClassVar, Literal, TypedDict,
-)
 
 import bokeh.embed.wrappers
 
 from bokeh.embed.bundle import (
-    CSS_RESOURCES as BkCSS_RESOURCES, URL, Bundle as BkBundle,
+    CSS_RESOURCES as BkCSS_RESOURCES, URL, Bundle as BkBundle, _any,
     _bundle_extensions, _use_mathjax, bundle_models, extension_dirs,
 )
 from bokeh.model import Model
@@ -40,16 +38,16 @@ from ..config import config, panel_extension as extension
 from ..util import _descendents, isurl, url_path
 from .state import state
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from bokeh.resources import Urls
 
-    class TarballType(TypedDict, total=False):
+    class TarballType(t.TypedDict, total=False):
         tar: str
         src: str
         dest: str
         exclude: list[str]
 
-    class ResourcesType(TypedDict, total=False):
+    class ResourcesType(t.TypedDict, total=False):
         css: dict[str, str]
         font: dict[str, str]
         js: dict[str, str]
@@ -58,11 +56,11 @@ if TYPE_CHECKING:
         tarball: dict[str, TarballType]
         bundle: bool
 
-    MODES = Literal['inline', 'cdn', 'server', 'relative', 'absolute', 'server-dev', 'relative-dev', 'absolute-dev']
+    MODES = t.Literal['inline', 'cdn', 'server', 'relative', 'absolute', 'server-dev', 'relative-dev', 'absolute-dev']
 
 logger = logging.getLogger(__name__)
 
-ResourceAttr = Literal["__css__", "__javascript__"]
+ResourceAttr = t.Literal["__css__", "__javascript__"]
 
 with open(Path(__file__).parent.parent / 'package.json') as f:
     package_json = json.load(f)
@@ -110,7 +108,7 @@ LOGOUT_TEMPLATE = _env.get_template('logout.html')
 BASIC_LOGIN_TEMPLATE = _env.get_template('basic_login.html')
 DEFAULT_TITLE = "Panel Application"
 JS_RESOURCES = _env.get_template('js_resources.html')
-CDN_ROOT = "https://cdn.holoviz.org/panel/"
+CDN_ROOT = config.cdn_root
 CDN_URL = f"{CDN_ROOT}{JS_VERSION}/"
 CDN_DIST = f"{CDN_URL}dist/"
 DOC_DIST = "https://panel.holoviz.org/_static/"
@@ -194,7 +192,7 @@ def set_resource_mode(mode: MODES | None):
 def use_cdn() -> bool:
     return _settings.resources(default="server") != 'server' or state._is_pyodide
 
-def get_dist_path(cdn: bool | Literal['auto'] = 'auto') -> str:
+def get_dist_path(cdn: bool | t.Literal['auto'] = 'auto') -> str:
     cdn = use_cdn() if cdn == 'auto' else cdn
     if cdn:
         dist_path = CDN_DIST
@@ -312,6 +310,8 @@ def patch_stylesheet(stylesheet, dist_url):
         patched_url = url.replace(CDN_DIST, dist_url)
     elif url.startswith(LOCAL_DIST) and dist_url.lstrip('./').startswith(LOCAL_DIST):
         patched_url = url.replace(LOCAL_DIST, dist_url)
+    elif url.startswith(LOCAL_DIST) and dist_url != LOCAL_DIST:
+        patched_url = url.replace(LOCAL_DIST, dist_url)
     else:
         return
     version_suffix = f'?v={JS_VERSION}'
@@ -415,11 +415,15 @@ def bundled_files(model: Model, file_type: str = 'javascript') -> list[str]:
     bdir = BUNDLE_DIR / name
     shared = list((JS_URLS if file_type == 'javascript' else CSS_URLS).values())
     files = []
+    npm_cdn_prefixes = (config.npm_cdn, 'https://cdn.jsdelivr.net/npm', 'https://unpkg.com')
     for url in raw_files:
         if url.startswith(CDN_DIST):
             filepath = url.replace(f'{CDN_DIST}bundled/', '')
-        elif url.startswith(config.npm_cdn):
-            filepath = url.replace(config.npm_cdn, '')[1:]
+        elif url.startswith(npm_cdn_prefixes):
+            for prefix in npm_cdn_prefixes:
+                if url.startswith(prefix):
+                    filepath = url.replace(prefix, '')[1:]
+                    break
         else:
             filepath = url_path(url)
         test_filepath = filepath.split('?')[0]
@@ -443,12 +447,18 @@ def bundled_files(model: Model, file_type: str = 'javascript') -> list[str]:
             files.append(url)
     return files
 
+def _panel_use_mathjax(roots) -> bool:
+    """Whether any model in roots is a Panel HTML model (may need MathJax)."""
+    from ..models.markup import HTML as PanelHTML
+    return _any(roots, lambda obj: isinstance(obj, PanelHTML))
+
+
 def bundle_resources(
     roots,
     resources: BkResources,
     notebook: bool = False,
     reloading: bool = False,
-    enable_mathjax: bool | Literal['auto'] = 'auto'
+    enable_mathjax: bool | t.Literal['auto'] = 'auto'
 ):
     from ..config import panel_extension as ext
     global RESOURCE_MODE
@@ -465,7 +475,11 @@ def bundle_resources(
     if isinstance(enable_mathjax, bool):
         use_mathjax = enable_mathjax
     elif roots:
-        use_mathjax = _use_mathjax(roots) or 'mathjax' in ext._loaded_extensions
+        use_mathjax = (
+            _use_mathjax(roots) or
+            _panel_use_mathjax(roots) or
+            'mathjax' in ext._loaded_extensions
+        )
     else:
         use_mathjax = 'mathjax' in ext._loaded_extensions
 
@@ -533,7 +547,7 @@ class ResourceComponent:
     that have to be resolved.
     """
 
-    _resources: ClassVar[ResourcesType] = {
+    _resources: t.ClassVar[ResourcesType] = {
         'css': {},
         'font': {},
         'js': {},
@@ -583,7 +597,7 @@ class ResourceComponent:
 
     def resolve_resources(
         self,
-        cdn: bool | Literal['auto'] = 'auto',
+        cdn: bool | t.Literal['auto'] = 'auto',
         extras: dict[str, dict[str, str]] | None = None
     ) -> ResourcesType:
         """
@@ -867,6 +881,13 @@ class Resources(BkResources):
         js_files = self.adjust_paths([
             js for js in files if self.mode != 'inline' or not is_cdn_url(js)
         ])
+
+        # Load requirejs last to avoid interfering with other libraries
+        require_index = [i for i, jsf in enumerate(js_files) if 'require' in jsf]
+        if require_index:
+            requirejs = js_files.pop(require_index[0])
+            js_files.append(requirejs)
+
         return js_files
 
     @property

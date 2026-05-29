@@ -25,7 +25,6 @@ from packaging.version import Version
 
 import panel as pn
 
-from panel.io.compile import check_cli_tool
 from panel.io.server import serve
 from panel.io.state import state
 
@@ -68,7 +67,6 @@ ON_POSIX = 'posix' in sys.builtin_module_names
 
 linux_only = pytest.mark.skipif(platform.system() != 'Linux', reason="Only supported on Linux")
 unix_only = pytest.mark.skipif(platform.system() == 'Windows', reason="Only supported on unix-like systems")
-reverse_proxy_available = pytest.mark.skipif(not check_cli_tool('caddy'), reason="No reverse proxy available")
 
 from panel.pane.alert import Alert
 from panel.pane.markup import Markdown
@@ -236,10 +234,10 @@ async def async_wait_until(fn, page=None, timeout=5000, interval=100):
     if page:
         await page.wait_for_load_state('networkidle')
 
-    start = time.time()
+    start = time.monotonic()
 
     def timed_out():
-        elapsed = time.time() - start
+        elapsed = time.monotonic() - start
         elapsed_ms = elapsed * 1000
         return elapsed_ms > timeout
 
@@ -263,7 +261,7 @@ async def async_wait_until(fn, page=None, timeout=5000, interval=100):
             # None is returned when the function has an assert
             if result is None:
                 return
-            # When the function returns True or False
+            # When the function returns True
             if result:
                 return
             if timed_out():

@@ -32,10 +32,9 @@ import os
 import pathlib
 import textwrap
 import time
+import typing as t
 
-from collections.abc import Awaitable
 from queue import Empty
-from typing import Any
 from urllib.parse import urljoin
 
 import tornado
@@ -56,9 +55,13 @@ from tornado.ioloop import PeriodicCallback
 from tornado.web import StaticFileHandler
 
 from ..config import config
+from ..util import HTML_SANITIZER
 from .resources import DIST_DIR, ERROR_TEMPLATE, _env
 from .server import COMPONENT_PATH, ComponentResourceHandler
 from .state import state
+
+if t.TYPE_CHECKING:
+    from collections.abc import Awaitable
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +70,7 @@ CONNECTION_TIMEOUT = 30 # Timeout for WS connection to open
 
 KERNEL_ERROR_TEMPLATE = _env.get_template('kernel_error.html')
 
-async def ensure_async(obj: Awaitable | Any) -> Any:
+async def ensure_async(obj: Awaitable | t.Any) -> t.Any:
     """Convert a non-awaitable object to a coroutine if needed,
     and await it if it was not already awaited.
     """
@@ -243,7 +246,7 @@ class PanelJupyterHandler(PanelBaseHandler):
         if self.request.arguments.get('kernel'):
             requested_kernel = self.request.arguments.pop('kernel')[0].decode('utf-8')
         elif notebook_path.suffix == '.ipynb':
-            with open(notebook_path) as f:
+            with open(notebook_path, encoding='utf-8') as f:
                 nb = json.load(f)
             requested_kernel = nb.get('metadata', {}).get('kernelspec', {}).get('name')
         else:
@@ -302,7 +305,7 @@ class PanelJupyterHandler(PanelBaseHandler):
                 base_url=f'{root_url}/',
                 error_type="Kernel Error",
                 error="Failed to start application",
-                error_msg=str(e),
+                error_msg=HTML_SANITIZER.clean(str(e)),
                 title="Panel: Kernel Error"
             )
             self.finish(html)
@@ -335,7 +338,7 @@ class PanelWSProxy(WSHandler, JupyterHandler):  # type: ignore
         # Note: tornado_app is stored as self.application
         kw['application_context'] = None
         super().__init__(tornado_app, *args, **kw)
-        self.kernel: Any = None
+        self.kernel: t.Any = None
         self.comm_id: str | None = None
         self.kernel_id: str | None = None
         self.session_id: str | None = None
@@ -354,7 +357,7 @@ class PanelWSProxy(WSHandler, JupyterHandler):  # type: ignore
     def get_current_user(self) -> str:
         return "default_user"
 
-    def check_origin(self, origin_to_satisfy_tornado: str | None = None) -> bool:
+    def check_origin(self, origin_to_satisfy_tornado: str = "") -> bool:
         return True
 
     @tornado.web.authenticated
@@ -397,7 +400,7 @@ class PanelWSProxy(WSHandler, JupyterHandler):  # type: ignore
             msg = f"Session ID '{self.session_id}' does not correspond to any active kernel."
             raise RuntimeError(msg)
 
-        kernel_info: tuple[Any, str, str, bool] = state._kernels[self.session_id]
+        kernel_info: tuple[t.Any, str, str, bool] = state._kernels[self.session_id]
         self.kernel, self.comm_id, self.kernel_id, _ = kernel_info
         state._kernels[self.session_id] = kernel_info[:-1] + (True,)
 

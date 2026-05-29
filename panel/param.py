@@ -13,13 +13,13 @@ import sys
 import textwrap
 import threading
 import types
+import typing as t
 
 from collections import defaultdict, namedtuple
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
 from functools import partial
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
 
@@ -39,9 +39,11 @@ from param.reactive import rx
 
 from .config import config
 from .io import state
+from .io.cache import is_equal
 from .layout import (
-    Column, HSpacer, ListLike, Panel, Row, Spacer, Tabs, WidgetBox,
+    Column, HSpacer, Row, Spacer, Tabs, WidgetBox,
 )
+from .layout.base import ListLike, NamedListLike
 from .pane import DataFrame as DataFramePane
 from .pane.base import Pane, ReplacementPane
 from .reactive import Reactive
@@ -60,9 +62,10 @@ from .widgets import (
 )
 from .widgets.button import _ButtonBase
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
+    from matplotlib.pyplot import Figure
     from pyviz_comms import Comm
 
 
@@ -88,7 +91,7 @@ def LiteralInputTyped(pobj: param.Parameter) -> type[Widget]:
     return LiteralInput
 
 
-def DataFrameWidget(pobj: param.DataFrame) -> type[Widget]:
+def DataFrameWidget(pobj: param.Parameter) -> type[WidgetBase]:
     if 'panel.models.tabulator' in sys.modules:
         return Tabulator
     else:
@@ -146,7 +149,7 @@ class Param(Pane):
     display_threshold = param.Number(default=0, precedence=-10, doc="""
         Parameters with precedence below this value are not displayed.""")
 
-    default_layout = param.ClassSelector(default=Column, class_=ListLike,
+    default_layout = param.ClassSelector(default=Column, class_=(ListLike, NamedListLike),
                                          is_instance=False)
 
     default_precedence = param.Number(default=1e-8, precedence=-10, doc="""
@@ -163,8 +166,8 @@ class Param(Pane):
     expand_button = param.Boolean(default=None, doc="""
         Whether to add buttons to expand and collapse sub-objects.""")
 
-    expand_layout = param.Parameter(default=Column, doc="""
-        Layout to expand sub-objects into.""")
+    expand_layout: ListLike | NamedListLike | type[ListLike] | type[NamedListLike] | Callable[..., ListLike | NamedListLike] = param.Parameter(
+        default=Column, doc="Layout to expand sub-objects into.")  # type: ignore[assignment, ty:invalid-assignment]
 
     height = param.Integer(default=None, bounds=(0, None), doc="""
         Height of widgetbox the parameter widgets are displayed in.""")
@@ -177,14 +180,14 @@ class Param(Pane):
         usually to update the default Parameter values of the
         underlying parameterized object.""")
 
-    name = param.String(default='', constant=False, doc="""
+    name = param.String(default='', constant=False, allow_None=True, doc="""
         Title of the pane.""")
 
     object = param.Parameter(default=None, allow_refs=False, doc="""
         The object being wrapped, which will be converted to a
         Bokeh model.""")
 
-    parameters = param.List(default=[], allow_None=True, doc="""
+    parameters = param.List(default=[], item_type=str, allow_None=True, doc="""
         If set this serves as a allowlist of parameters to display on
         the supplied Parameterized object.""")
 
@@ -194,11 +197,13 @@ class Param(Pane):
     show_name = param.Boolean(default=True, doc="""
         Whether to show the parameterized object's name""")
 
-    sort = param.ClassSelector(default=False, class_=(bool, Callable), doc="""
+    sort: bool | Callable[[t.Any], t.Any] = param.ClassSelector(
+        default=False, class_=(bool, Callable),  # type: ignore[arg-type]
+        doc="""
         If True the widgets will be sorted alphabetically by label.
         If a callable is provided it will be used to sort the Parameters,
         for example lambda x: x[1].label[::-1] will sort by the reversed
-        label.""")
+        label.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     width = param.Integer(default=None, allow_None=True, bounds=(0, None), doc="""
         Width of widgetbox the parameter widgets are displayed in.""")
@@ -207,7 +212,7 @@ class Param(Pane):
         Dictionary of widget overrides, mapping from parameter name
         to widget class.""")
 
-    mapping: ClassVar[dict[param.Parameter, type[WidgetBase] | Callable[[param.Parameter], type[WidgetBase]]]] = {
+    mapping: t.ClassVar[dict[type[param.Parameter], type[WidgetBase] | Callable[[param.Parameter], type[WidgetBase]]]] = {
         param.Action:            Button,
         param.Array:             ArrayInput,
         param.Boolean:           Checkbox,
@@ -234,7 +239,7 @@ class Param(Pane):
         param.String:            TextInput,
     }
 
-    input_widgets: ClassVar[dict[Any, type[WidgetBase] | Callable[[param.Parameter], type[WidgetBase]]]]  = {
+    input_widgets: t.ClassVar[dict[t.Any, type[WidgetBase] | Callable[[param.Parameter], type[WidgetBase]]]]  = {
         float: FloatInput,
         int: IntInput,
         "literal": LiteralInput,
@@ -243,13 +248,13 @@ class Param(Pane):
     if hasattr(param, 'Event'):
         mapping[param.Event] = Button
 
-    _ignored_refs: ClassVar[tuple[str,...]] = ('object',)
+    _ignored_refs: t.ClassVar[tuple[str,...]] = ('object',)
 
-    _linkable_properties: ClassVar[tuple[str,...]] = ()
+    _linkable_properties: t.ClassVar[tuple[str,...]] = ()
 
-    _rerender_params: ClassVar[list[str]] = []
+    _rerender_params: t.ClassVar[list[str]] = []
 
-    _unpack: ClassVar[bool] = True
+    _unpack: t.ClassVar[bool] = True
 
     def __init__(self, object=None, **params):
         if isinstance(object, param.Parameter):
@@ -277,12 +282,12 @@ class Param(Pane):
         self._widget_box = self.default_layout(**kwargs)
 
         layout = self.expand_layout
-        if isinstance(layout, Panel):
+        if isinstance(layout, (ListLike, NamedListLike)):
             self._expand_layout = layout
             self.layout = self._widget_box
         elif isinstance(self._widget_box, layout):
             self.layout = self._expand_layout = self._widget_box
-        elif isinstance(layout, type) and issubclass(layout, Panel):
+        elif isinstance(layout, type) and issubclass(layout, (ListLike, NamedListLike)):
             self.layout = self._expand_layout = layout(self._widget_box, **kwargs)
         else:
             raise ValueError('expand_layout expected to be a panel.layout.Panel'
@@ -437,7 +442,12 @@ class Param(Pane):
                     toggle_pane(namedtuple('Change', 'new')(True))
 
     @bothmethod
-    def widget(self_or_cls, p_name: str, parameterized: param.Parameterized | None = None, widget_spec: type[WidgetBase] | dict | None = None):
+    def widget(
+        self_or_cls,
+        p_name: str,
+        parameterized: param.Parameterized | None = None,
+        widget_spec: type[WidgetBase] | dict | None = None
+    ):
         """Get widget for param_name"""
         parameterized = self_or_cls.object if parameterized is None else parameterized
         p_obj = parameterized.param[p_name]
@@ -461,11 +471,10 @@ class Param(Pane):
         else:
             widget_class = widget_spec
 
-        if not self_or_cls.show_labels and not issubclass(widget_class, _ButtonBase):
-            label = ''
-        else:
-            label = p_obj.label
-        kw = dict(disabled=p_obj.constant, name=label)
+        label = ''
+        if self_or_cls.show_labels or issubclass(widget_class, _ButtonBase):
+            label = p_obj.label or ''
+        kw = dict(disabled=p_obj.constant, label=label)
         if self_or_cls.hide_constant:
             kw['visible'] = not p_obj.constant
 
@@ -513,10 +522,11 @@ class Param(Pane):
                         widget_class = widget_class(p_obj)
             if hasattr(widget_class, 'step') and getattr(p_obj, 'step', None):
                 kw['step'] = p_obj.step
-            if hasattr(widget_class, 'fixed_start') and getattr(p_obj, 'bounds', None):
-                kw['fixed_start'] = p_obj.bounds[0]
-            if hasattr(widget_class, 'fixed_end') and getattr(p_obj, 'bounds', None):
-                kw['fixed_end'] = p_obj.bounds[1]
+            pbounds = getattr(p_obj, 'bounds', None)
+            if hasattr(widget_class, 'fixed_start') and isinstance(pbounds, tuple) and len(pbounds) >= 1:
+                kw['fixed_start'] = pbounds[0]
+            if hasattr(widget_class, 'fixed_end') and isinstance(pbounds, tuple) and len(pbounds) >= 2:
+                kw['fixed_end'] = pbounds[1]
 
         if p_obj.doc:
             kw['description'] = textwrap.dedent(p_obj.doc).strip()
@@ -524,11 +534,13 @@ class Param(Pane):
         # Update kwargs
         onkeyup = kw_widget.pop('onkeyup', False)
         throttled = kw_widget.pop('throttled', False)
+        if 'name' in kw_widget and 'label' not in kw_widget:
+            kw_widget['label'] = kw_widget.pop('name')
         kw.update(kw_widget)
         kwargs = {k: v for k, v in kw.items() if k in widget_class.param}
         non_param_kwargs = {k: v for k, v in kw_widget.items() if k not in widget_class.param}
 
-        if isinstance(widget_class, type) and issubclass(widget_class, Button):
+        if isinstance(widget_class, type) and isinstance(widget_class.param.value, param.Event):
             kwargs.pop('value', None)
 
         if isinstance(widget_class, WidgetBase):
@@ -571,6 +583,11 @@ class Param(Pane):
                 updating.remove(p_key)
                 if reset:
                     widget.value = new
+                current_val = getattr(parameterized, p_name)
+                if not reset and not is_equal(current_val, new):
+                    is_w = isinstance(widget, Row) and len(widget) == 2
+                    target = widget[0] if is_w else widget
+                    target.param.update(value=current_val)
 
         if hasattr(param, 'Event') and isinstance(p_obj, param.Event):
             def event(change):
@@ -634,15 +651,16 @@ class Param(Pane):
             elif change.what == 'step':
                 updates['step'] = p_obj.step
             elif change.what == 'label':
-                updates['name'] = p_obj.label
+                updates['label'] = p_obj.label
             elif p_key in updating or isinstance(p_obj, param.Event):
                 return
             elif isinstance(p_obj, param.Action):
-                prev_watcher = watchers[0]
-                widget.param.unwatch(prev_watcher)
-                def action(event):
-                    change.new(parameterized)
-                watchers[0] = widget.param.watch(action, 'clicks')
+                if change.type == "changed":
+                    prev_watcher = watchers[0]
+                    widget.param.unwatch(prev_watcher)
+                    def action(event):
+                        change.new(parameterized)
+                    watchers[0] = widget.param.watch(action, 'clicks')
                 return
             elif throttled and hasattr(widget, 'value_throttled'):
                 updates['value_throttled'] = change.new
@@ -653,8 +671,12 @@ class Param(Pane):
             else:
                 updates['value'] = change.new
 
+            # Ensure we only de-duplicate value events since only
+            # the widget value can be controlled from the frontend
+            value_update = 'value' in updates or 'value_throttled' in updates
             try:
-                updating.append(p_key)
+                if value_update:
+                    updating.append(p_key)
                 if change.type == 'triggered':
                     with discard_events(widget):
                         widget.param.update(**updates)
@@ -665,7 +687,8 @@ class Param(Pane):
                 else:
                     widget.param.update(**updates)
             finally:
-                updating.remove(p_key)
+                if value_update:
+                    updating.remove(p_key)
 
         # Set up links to parameterized object
         watchers.append(parameterized.param.watch(link, p_name, 'constant'))
@@ -685,10 +708,14 @@ class Param(Pane):
         if ((is_parameterized(value) or any(is_parameterized(o) for o in options))
             and (self_or_cls.expand_button or (self_or_cls.expand_button is None and not self_or_cls.expand))):
             toggle = Toggle(
-                name='\u22EE', button_type='primary',
-                disabled=not is_parameterized(value), max_height=30,
-                max_width=20, height_policy='fit', align='end',
-                margin=(0, 0, 5, 10)
+                align='end',
+                color='primary',
+                disabled=not is_parameterized(value),
+                height_policy='fit',
+                label='\u22EE',
+                margin=(0, 0, 5, 10),
+                max_height=30,
+                max_width=20
             )
             width = widget.width
             widget.param.update(
@@ -778,20 +805,20 @@ class Param(Pane):
     #----------------------------------------------------------------
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
-        if isinstance(obj, param.parameterized.Parameters):
+    def applies(cls, object: t.Any) -> float | bool | None:
+        if isinstance(object, param.parameterized.Parameters):
             return 0.8
-        elif (is_parameterized(obj) or (isinstance(obj, param.Parameter) and obj.owner is not None)):
+        elif (is_parameterized(object) or (isinstance(object, param.Parameter) and object.owner is not None)):
             return 0.1
         return False
 
     @classmethod
     def widget_type(cls, pobj):
         ptype = type(pobj)
-        for t in classlist(ptype)[::-1]:
-            if t not in cls.mapping:
+        for wt in classlist(ptype)[::-1]:
+            if wt not in cls.mapping:
                 continue
-            wtype = cls.mapping[t]
+            wtype = cls.mapping[wt]
             if isinstance(wtype, types.FunctionType):
                 return wtype(pobj)
             return wtype
@@ -834,8 +861,9 @@ class ParamRef(ReplacementPane):
         Whether to defer load until after the page is rendered.
         Can be set as parameter or by setting panel.config.defer_load.""")
 
-    generator_mode = param.Selector(default='replace', objects=['append', 'replace'], doc="""
-        Whether generators should 'append' to or 'replace' existing output.""")
+    generator_mode: t.Literal['append', 'replace'] = param.Selector(
+        default='replace', objects=['append', 'replace'], doc="""
+        Whether generators should 'append' to or 'replace' existing output.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     lazy = param.Boolean(default=False, doc="""
         Whether to lazily evaluate the contents of the object
@@ -845,7 +873,7 @@ class ParamRef(ReplacementPane):
         Whether to show a loading indicator while the pane is updating.
         Can be set as parameter or by setting panel.config.loading_indicator.""")
 
-    priority: ClassVar[float | bool | None] = 0
+    priority: t.ClassVar[float | bool | None] = 0
 
     def __init__(self, object=None, **params):
         if 'defer_load' not in params:
@@ -862,8 +890,8 @@ class ParamRef(ReplacementPane):
                 self._replace_pane()
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
-        return bool(resolve_ref(obj))
+    def applies(cls, object: t.Any) -> float | bool | None:
+        return bool(resolve_ref(object))
 
     def _validate_object(self):
         return
@@ -1020,7 +1048,7 @@ class ParamMethod(ParamRef):
     return any object which itself can be rendered as a Pane.
     """
 
-    priority: ClassVar[float | bool | None] = 0.5
+    priority: t.ClassVar[float | bool | None] = 0.5
 
     @param.depends('object', watch=True)
     def _validate_object(self):
@@ -1085,8 +1113,8 @@ class ParamMethod(ParamRef):
     #----------------------------------------------------------------
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
-        return inspect.ismethod(obj) and isinstance(get_method_owner(obj), param.Parameterized)
+    def applies(cls, object: t.Any) -> float | bool | None:
+        return inspect.ismethod(object) and isinstance(get_method_owner(object), param.Parameterized)
 
     @classmethod
     def eval(cls, ref):
@@ -1102,9 +1130,9 @@ class ParamFunction(ParamRef):
     a widget to some other output.
     """
 
-    priority: ClassVar[float | bool | None] = 0.6
+    priority: t.ClassVar[float | bool | None] = 0.6
 
-    _applies_kw: ClassVar[bool] = True
+    _applies_kw: t.ClassVar[bool] = True
 
     @param.depends('object', watch=True)
     def _validate_object(self):
@@ -1127,14 +1155,14 @@ class ParamFunction(ParamRef):
     #----------------------------------------------------------------
 
     @classmethod
-    def applies(cls, obj: Any, **kwargs) -> float | bool | None:
-        if isinstance(obj, types.FunctionType):
-            if hasattr(obj, '_dinfo'):
+    def applies(cls, object: t.Any, **kwargs) -> float | bool | None:
+        if isinstance(object, types.FunctionType):
+            if hasattr(object, '_dinfo'):
                 return True
             if (
                 kwargs.get('defer_load') or cls.param.defer_load.default or
                 (cls.param.defer_load.default is None and config.defer_load) or
-                iscoroutinefunction(obj)
+                iscoroutinefunction(object)
             ):
                 return True
             return None
@@ -1165,14 +1193,18 @@ class ReactiveExpr(Pane):
         class_=ListLike, constant=True, is_instance=False, default=WidgetBox, doc="""
         The layout object to display the widgets in.""")
 
-    widget_location = param.Selector(default='left_top', objects=[
+    widget_location: t.Literal[
+        'left', 'right', 'top', 'bottom', 'top_left',
+        'top_right', 'bottom_left', 'bottom_right',
+        'left_top', 'right_top', 'right_bottom'
+    ] = param.Selector(default='left_top', objects=[
         'left', 'right', 'top', 'bottom', 'top_left',
         'top_right', 'bottom_left', 'bottom_right',
         'left_top', 'right_top', 'right_bottom'], doc="""
         The location of the widgets relative to the output
-        of the reactive expression.""")
+        of the reactive expression.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    priority: ClassVar[float | bool | None] = 1
+    priority: t.ClassVar[float | bool | None] = 1
 
     _layouts = {
         'left': (Row, ('start', 'center'), True),
@@ -1189,7 +1221,7 @@ class ReactiveExpr(Pane):
         'right_bottom': (Row, 'end', False)
     }
 
-    _unpack: ClassVar[bool] = False
+    _unpack: t.ClassVar[bool] = False
 
     def __init__(self, object=None, **params):
         super().__init__(object=object, **params)
@@ -1401,7 +1433,7 @@ Viewable._preprocessing_hooks.insert(0, link_param_method)
 
 class FigureWrapper(param.Parameterized):
 
-    figure = param.Parameter()
+    figure: Figure | None = param.Parameter()  # type: ignore[assignment, ty:invalid-assignment]
 
     def get_ax(self):
         from matplotlib.backends.backend_agg import FigureCanvas

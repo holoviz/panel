@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+import typing as t
 
 import param
 
@@ -8,13 +8,13 @@ from bokeh.models import CustomJS
 
 from ..config import config
 from ..reactive import ReactiveHTML
-from ..util import BOKEH_GE_3_8, classproperty
+from ..util import classproperty
 from .datamodel import _DATA_MODELS, construct_data_model
 from .document import create_doc_if_none_exists
 from .resources import CDN_DIST, CSS_URLS, bundled_files
 from .state import state
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
@@ -30,7 +30,7 @@ class Notification(param.Parameterized):
 
     message = param.String(default='', constant=True)
 
-    notification_area = param.Parameter(constant=True, precedence=-1)
+    notification_area: t.Any = param.Parameter(constant=True, precedence=-1)  # type: ignore[assignment, ty:invalid-assignment]
 
     notification_type = param.String(default=None, constant=True, label='type')
 
@@ -61,11 +61,15 @@ class NotificationAreaBase(param.Parameterized):
     notifications = param.List(item_type=Notification, doc="""
         A list of notifications to display in the notification area.""")
 
-    position = param.Selector(default='bottom-right', objects=[
+    position: t.Literal[
+        'bottom-right', 'bottom-left', 'bottom-center', 'top-left',
+        'top-right', 'top-center', 'center-center', 'center-left',
+        'center-right',
+    ] = param.Selector(default='bottom-right', objects=[
         'bottom-right', 'bottom-left', 'bottom-center', 'top-left',
         'top-right', 'top-center', 'center-center', 'center-left',
         'center-right'], doc="""
-        Position of the notification area on the screen (e.g., 'top-right', 'bottom-left').""")
+        Position of the notification area on the screen (e.g., 'top-right', 'bottom-left').""")  # type: ignore[assignment, ty:invalid-assignment]
 
     __abstract = True
 
@@ -175,7 +179,7 @@ class NotificationArea(NotificationAreaBase, ReactiveHTML):
           dismissible: true,
           position: {x: x, y: y},
           types: data.types
-        })""" + ("""
+        })
         const clear_timeout = () => {
           if (state.reconnect_timeout != null) {
              clearTimeout(state.reconnect_timeout)
@@ -233,7 +237,7 @@ class NotificationArea(NotificationAreaBase, ReactiveHTML):
               reconnectSpan.addEventListener('click', () => { clear_timeout(); event.reconnect() })
             }
           }
-        })""" if BOKEH_GE_3_8 else ""),
+        })""",
       "notifications": """
       for (notification of [...data.notifications]) {
           if (notification._destroyed || notification._rendered) {
@@ -295,7 +299,7 @@ class NotificationArea(NotificationAreaBase, ReactiveHTML):
         root = super().get_root(doc, comm, preprocess)
         root.tags = ['prompt'] if config.reconnect else []
         for event, notification in self.js_events.items():
-            if event == 'connection_lost' and BOKEH_GE_3_8:
+            if event == 'connection_lost':
                 continue
             doc.js_on_event(event, CustomJS(code=f"""
             const config = {{
@@ -331,14 +335,14 @@ class NotificationArea(NotificationAreaBase, ReactiveHTML):
             Button, ColorPicker, NumberInput, Select, TextInput,
         )
 
-        msg = TextInput(name='Message', value='This is a message', **params)
-        duration = NumberInput(name='Duration', value=0, end=10000, **params)
+        msg = TextInput(label='Message', value='This is a message', **params)
+        duration = NumberInput(label='Duration', value=0, end=10000, **params)
         ntype = Select(
-            name='Type', options=['info', 'warning', 'error', 'success', 'custom'],
+            label='Type', options=['info', 'warning', 'error', 'success', 'custom'],
             value='info', **params
         )
-        background = ColorPicker(name='Color', value='#000000', **params)
-        button = Button(name='Notify', **params)
+        background = ColorPicker(label='Color', value='#000000', **params)
+        button = Button(label='Notify', **params)
         notifications = cls()
         button.js_on_click(
             args={

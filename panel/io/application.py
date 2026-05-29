@@ -6,11 +6,10 @@ from __future__ import annotations
 import json
 import logging
 import os
+import typing as t
 
-from collections.abc import Callable, Sequence
 from functools import partial
 from types import FunctionType, MethodType
-from typing import TYPE_CHECKING, Any, TypeAlias
 from urllib.parse import urljoin
 
 import bokeh.command.util
@@ -31,7 +30,9 @@ from .loading import LOADING_INDICATOR_CSS_CLASS
 from .logging import LOG_SESSION_DESTROYED, LOG_SESSION_LAUNCHING
 from .state import set_curdoc, state
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
     from bokeh.application.application import SessionContext
     from bokeh.application.handlers.handler import Handler
     from bokeh.document.document import Document
@@ -40,8 +41,8 @@ if TYPE_CHECKING:
     from ..viewable import Viewable, Viewer
     from .location import Location
 
-    TViewable: TypeAlias = Viewable | Viewer | BaseTemplate
-    TViewableFuncOrPath: TypeAlias = TViewable | Callable[[], TViewable] | os.PathLike | str
+    TViewable: t.TypeAlias = Viewable | Viewer | BaseTemplate
+    TViewableFuncOrPath: t.TypeAlias = TViewable | Callable[[], TViewable] | os.PathLike | str
 
 
 logger = logging.getLogger('panel.io.application')
@@ -129,17 +130,34 @@ class Application(BkApplication):
         if not (session_context and session_context.server_context):
             return
         request = session_context.request
+        if request is None:
+            return
         app_context = session_context.server_context.application_context
-        prefix = request.uri.replace(app_context._url, '')
-        if not prefix.endswith('/'):
+        app_path = getattr(request, 'app_path', None) or app_context._url
+        if app_path == app_context._url:
+            try:
+                app_path = session_context.token_payload.get('app_path', app_path)
+            except AssertionError:
+                pass
+        if not app_path.startswith('/'):
+            app_path = f'/{app_path}'
+
+        request_path = getattr(request, 'path', None) or app_path
+        prefix = ''
+        if app_path != '/' and (request_path == app_path or request_path.endswith(app_path)):
+            prefix = request_path[:-len(app_path)]
+        elif app_path == '/' and request_path.endswith('/'):
+            prefix = request_path[:-1]
+
+        if prefix and not prefix.endswith('/'):
             prefix += '/'
-        base_url = urljoin('/', prefix)
-        rel_path = '/'.join(['..'] * app_context._url.strip('/').count('/'))
+        base_url = urljoin('/', prefix.lstrip('/'))
+        rel_path = '/'.join(['..'] * app_path.strip('/').count('/'))
 
         # Handle autoload.js absolute paths
         abs_url = request.arguments.get('bokeh-absolute-url')
         if abs_url:
-            rel_path = abs_url[0].decode('utf-8').replace(app_context._url, '')
+            rel_path = abs_url[0].decode('utf-8').replace(app_path, '')
 
         with set_curdoc(doc):
             state.base_url = base_url
@@ -159,7 +177,7 @@ class Application(BkApplication):
         doc.on_event('document_ready', partial(state._schedule_on_load, doc))
         doc.on_session_destroyed(_log_session_destroyed)
 
-    def process_request(self, request) -> dict[str, Any]:
+    def process_request(self, request) -> dict[str, t.Any]:
         ''' Processes incoming HTTP request returning a dictionary of
         additional data to add to the session_context.
 
@@ -171,6 +189,12 @@ class Application(BkApplication):
             the session context.
         '''
         request_data = super().process_request(request)
+        route_params = getattr(request, 'route_params', {})
+        if route_params:
+            request_data['route_params'] = route_params
+        app_path = getattr(request, 'app_path', None)
+        if app_path:
+            request_data['app_path'] = app_path
         user = request.cookies.get('user')
         if user and config.cookie_secret:
             from tornado.web import decode_signed_value
@@ -288,8 +312,9 @@ def build_applications(
             app = str(app) # enables serving apps from Paths
         if (isinstance(app, str) and app.endswith(('.py', '.ipynb', '.md'))
             and os.path.isfile(app)):
-            apps[slug] = app = build_single_handler_application(app)
-            app._admin = admin
+            built_app = build_single_handler_application(app)
+            apps[slug] = built_app
+            built_app._admin = admin
         elif isinstance(app, BkApplication):
             apps[slug] = app
         else:

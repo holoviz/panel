@@ -343,22 +343,22 @@ def test_button_icon_tooltip(page):
 
 
 def test_button_icon_name(page):
-    button = ButtonIcon(name="Like")
+    button = ButtonIcon(label="Like")
     serve_component(page, button)
 
-    assert button.name == "Like"
+    assert button.label == "Like"
     wait_until(lambda: page.locator(".bk-IconLabel").text_content() == "Like", page)
 
 
 def test_button_icon_name_dynamically(page):
-    button = ButtonIcon(name="Like")
+    button = ButtonIcon(label="Like")
     serve_component(page, button)
 
-    assert button.name == "Like"
+    assert button.label == "Like"
     assert page.locator(".bk-IconLabel").text_content() == "Like"
 
-    button.name = "Dislike"
-    assert button.name == "Dislike"
+    button.label = "Dislike"
+    assert button.label == "Dislike"
     wait_until(lambda: page.locator(".bk-IconLabel").text_content() == "Dislike", page)
 
     assert page.locator(".bk-IconLabel").bounding_box()["width"] < 40

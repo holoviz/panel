@@ -4,6 +4,7 @@ from panel.config import config
 from panel.io.notifications import NotificationArea
 from panel.io.state import set_curdoc, state
 from panel.template import VanillaTemplate
+from panel.theme import Material
 from panel.widgets import Button
 
 
@@ -34,6 +35,13 @@ def test_notification_explicit(document):
         assert state.notifications is tmpl.notifications
 
 
+def test_template_inherits_configured_design():
+    with config.set(design=Material):
+        tmpl = VanillaTemplate()
+
+    assert tmpl.design is Material
+
+
 def test_template_pass_config_params_constructor(document):
     custom_config = {
         'raw_css': ['html { background-color: purple; }'],
@@ -49,7 +57,7 @@ def test_template_pass_config_params_constructor(document):
 
 def test_template_multi_refs():
     tmpl = VanillaTemplate()
-    button = Button(name="Click me", button_type="primary")
+    button = Button(label="Click me", color="primary")
     tmpl.sidebar.append(button)
     tmpl.main.append(button)
 

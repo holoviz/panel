@@ -1,23 +1,28 @@
 name: downstream_tests
 
 on:
-  # Run this workflow after the build workflow has completed.
-  workflow_run:
+  workflow_run: # zizmor: ignore[dangerous-triggers]
     workflows: [packages]
     types: [completed]
-  # Or by triggering it manually via Github's UI
   workflow_dispatch:
-    inputs:
-      manual:
-        description: don't change me!
-        type: boolean
-        required: true
-        default: true
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   downstream_tests:
-    uses: holoviz-dev/holoviz_tasks/.github/workflows/run_downstream_tests.yaml@main
-    with:
-      downstream_repos_as_json: "{\"downstream_repo\":[\"holoviews\", \"lumen\"]}"
-    secrets:
-      ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+    name: Run downstream tests
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    strategy:
+      matrix:
+        downstream_repo: [holoviews, lumen]
+      fail-fast: false
+    steps:
+      - uses: holoviz-dev/holoviz_tasks/downstream-tests@ffddda04b2894fea39b407f64d3622d2f19e5a9f # v1
+        with:
+          downstream_repo: ${{ matrix.downstream_repo }}
+          github_token: ${{ secrets.ACCESS_TOKEN }}

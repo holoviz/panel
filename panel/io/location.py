@@ -4,10 +4,8 @@ Defines the Location  widget which allows changing the href of the window.
 from __future__ import annotations
 
 import json
+import typing as t
 import urllib.parse as urlparse
-
-from collections.abc import Callable, Mapping
-from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
 
@@ -18,7 +16,9 @@ from .cache import is_equal
 from .document import create_doc_if_none_exists
 from .state import state
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from collections.abc import Callable, Mapping
+
     from bokeh.document import Document
     from bokeh.model import Model
     from bokeh.server.contexts import BokehSessionContext
@@ -103,7 +103,7 @@ class Location(Syncable):
         should be set to False""")
 
     # Mapping from parameter name to bokeh model property name
-    _rename: ClassVar[Mapping[str, str | None]] = {"name": None}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {"name": None}
 
     @classmethod
     def from_request(cls, request):
@@ -136,6 +136,29 @@ class Location(Syncable):
         self._link_props(model, self._linked_properties, doc, root, comm)
         return model
 
+    @param.depends("pathname", watch=True)
+    def _sync_pathname(self):
+        """
+        When in a server context and the pathname is overridden dynamically
+        we need to keep the state.rel_path and the Document dist_url template
+        variable in sync to ensure that resources are resolved relative to the new URL.
+        Additionally we clear the stylesheets cache which holds now outdated URLs.
+        """
+        session_context = state.curdoc.session_context
+        if not (state._servers and session_context and session_context.server_context):
+            return
+        for server, _, _ in state._servers.values():
+            server_port = server.port if hasattr(server, 'port') else server.config.port
+            if self.port == str(server_port):
+                break
+        else:
+            return
+        prefix = getattr(server, 'prefix', '')
+        state.rel_path = rel_path = '/'.join(['..'] * self.pathname.replace(prefix, '').strip('/').count('/'))
+        if 'static/extensions/panel/' in state.curdoc._template_variables.get('dist_url', ''):
+            state.curdoc._template_variables['dist_url'] =  f"{rel_path}/static/extensions/panel/"
+        state._stylesheets.pop(state.curdoc, None)
+
     def get_root(
         self, doc: Document | None = None, comm: Comm | None = None,
         preprocess: bool = True
@@ -166,7 +189,7 @@ class Location(Syncable):
         if ref in state._views:
             del state._views[ref]
 
-    def _update_synced(self, event: param.parameterized.Event = None) -> None:
+    def _update_synced(self, event: param.parameterized.Event | None = None) -> None:
         if self._syncing:
             return
         query_params = self.query_params
@@ -195,7 +218,7 @@ class Location(Syncable):
                     on_error(mapped)
 
     def _update_query(
-        self, *events: param.parameterized.Event, query: dict[str, Any] | None = None
+        self, *events: param.parameterized.Event, query: dict[str, t.Any] | None = None
     ) -> None:
         if self._syncing:
             return
@@ -219,17 +242,17 @@ class Location(Syncable):
             self._syncing = False
 
     @property
-    def query_params(self) -> dict[str, Any]:
+    def query_params(self) -> dict[str, t.Any]:
         return parse_query(self.search)
 
-    def update_query(self, **kwargs: Mapping[str, Any]) -> None:
+    def update_query(self, **kwargs: Mapping[str, t.Any]) -> None:
         query = self.query_params
         query.update(kwargs)
         self.search = '?' + urlparse.urlencode(query)
 
     def sync(
         self, parameterized: param.Parameterized, parameters: list[str] | dict[str, str] | None = None,
-        on_error: Callable[[dict[str, Any]], None] | None = None
+        on_error: Callable[[dict[str, t.Any]], None] | None = None
     ) -> None:
         """
         Syncs the parameters of a Parameterized object with the query
