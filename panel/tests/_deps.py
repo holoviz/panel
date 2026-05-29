@@ -23,6 +23,7 @@ if TYPE_CHECKING:
     import jupyter_bokeh
     import matplotlib as mpl
     import pandas as pd
+    import plotly
     import polars as pl
     import streamz
 else:
@@ -30,6 +31,7 @@ else:
     jupyter_bokeh = optional_dependencies("jupyter_bokeh")
     mpl = optional_dependencies("matplotlib")
     pd = optional_dependencies("pandas")
+    plotly = optional_dependencies("plotly")
     pl = optional_dependencies("polars")
     streamz = optional_dependencies("streamz", "pandas")
 
@@ -39,6 +41,7 @@ hv_skip = _skip(hv, "holoviews")
 jupyter_bokeh_skip = _skip(jupyter_bokeh, "jupyter_bokeh")
 mpl_skip = _skip(mpl, "matplotlib")
 pd_skip = _skip(pd, "pandas")
+plotly_skip = _skip(plotly, "plotly")
 pl_skip = _skip(pl, "polars")
 streamz_skip = _skip(streamz, "streamz")
 

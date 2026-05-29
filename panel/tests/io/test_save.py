@@ -64,7 +64,7 @@ def test_save_cdn_resources():
 def test_static_path_in_holoviews_save(tmpdir):
     import holoviews as hv
     hv.Store.set_current_backend('bokeh')
-    plot = hv.Curve([])
+    plot = hv.Curve([], datatype=["dictionary"])
     res = Resources(mode='server', root_url='/')
     out_file = Path(tmpdir) / 'plot.html'
     hv.save(plot, out_file, resources=res)

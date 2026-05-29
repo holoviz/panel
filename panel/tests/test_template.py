@@ -3,11 +3,6 @@ These that verify Templates are working correctly.
 """
 import json
 
-try:
-    import holoviews as hv
-except Exception:
-    hv = None
-
 import param
 import pytest
 
@@ -21,7 +16,7 @@ from panel.template import (
     Template, VanillaTemplate,
 )
 from panel.template.base import BasicTemplate
-from panel.tests._deps import hv_skip
+from panel.tests._deps import hv, hv_skip
 from panel.util import _descendents
 from panel.widgets import FloatSlider
 
@@ -42,9 +37,9 @@ template = """
 def test_template_links_axes(document, comm):
     tmplt = Template(template)
 
-    p1 = HoloViews(hv.Curve([1, 2, 3]), backend='bokeh')
-    p2 = HoloViews(hv.Curve([1, 2, 3]), backend='bokeh')
-    p3 = HoloViews(hv.Curve([1, 2, 3]), backend='bokeh')
+    p1 = HoloViews(hv.Curve([1, 2, 3], datatype=["dictionary"]), backend='bokeh')
+    p2 = HoloViews(hv.Curve([1, 2, 3], datatype=["dictionary"]), backend='bokeh')
+    p3 = HoloViews(hv.Curve([1, 2, 3], datatype=["dictionary"]), backend='bokeh')
     row = Row(p2, p3)
 
     tmplt.add_panel('A', p1)

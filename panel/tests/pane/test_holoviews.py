@@ -4,17 +4,6 @@ import warnings
 import numpy as np
 import pytest
 
-try:
-    import holoviews as hv
-except Exception:
-    hv = None
-
-try:
-    import holoviews.plotting.plotly as hv_plotly
-except Exception:
-    hv_plotly = None
-plotly_available = pytest.mark.skipif(hv_plotly is None, reason="requires plotly backend")
-
 from bokeh.models import (
     Column as BkColumn, ColumnDataSource, GlyphRenderer, GridPlot, Line,
     Row as BkRow, Scatter, Select as BkSelect, Slider as BkSlider,
@@ -29,7 +18,9 @@ from panel.layout import (
     Column, FlexBox, HSpacer, Row,
 )
 from panel.pane import HoloViews, PaneBase, panel
-from panel.tests._deps import hv_skip, mpl_skip
+from panel.tests._deps import (
+    hv, hv_skip, mpl_skip, pd, plotly_skip,
+)
 from panel.theme import Native
 from panel.util.warnings import PanelDeprecationWarning
 from panel.widgets import (
@@ -37,6 +28,17 @@ from panel.widgets import (
     NumberInput, RadioBoxGroup, RadioButtonGroup, Select,
 )
 
+
+@pytest.fixture(autouse=True)
+def no_pandas():
+    if pd:
+        return
+    orig = hv.Dataset.datatype
+    try:
+        hv.Dataset.datatype = ["dictionary"]
+        yield
+    finally:
+        hv.Dataset.datatype = orig
 
 @hv_skip
 def test_get_holoviews_pane_type():
@@ -229,7 +231,7 @@ def test_holoviews_pane_reflect_responsive_bind_function(document, comm):
 
 @pytest.mark.usefixtures("hv_plotly")
 @hv_skip
-@plotly_available
+@plotly_skip
 def test_holoviews_pane_reflect_responsive_plotly(document, comm):
     curve = hv.Curve([1, 2, 3]).opts(responsive=True, backend='plotly')
     pane = HoloViews(curve, backend='plotly')
@@ -248,7 +250,7 @@ def test_holoviews_pane_reflect_responsive_plotly(document, comm):
 
 @pytest.mark.usefixtures("hv_plotly")
 @hv_skip
-@plotly_available
+@plotly_skip
 def test_holoviews_pane_inherits_design_stylesheets(document, comm):
     curve = hv.Curve([1, 2, 3]).opts(responsive=True, backend='plotly')
     pane = HoloViews(curve, backend='plotly')
