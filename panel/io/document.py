@@ -123,7 +123,7 @@ def _cleanup_doc(doc, destroy=True):
             pane._internal_callbacks = {}
             to_remove.append(ref)
     for ref in to_remove:
-        del state._views[ref]
+        state._views.pop(ref, None)
 
     # When reusing sessions we must clean up the Panel state but we
     # must **not** destroy the template or the document
