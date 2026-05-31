@@ -45,6 +45,7 @@ logger = logging.getLogger(__name__)
 #---------------------------------------------------------------------
 
 GC_DEBOUNCE = 5
+_HOLD_LOCK: WeakKeyDictionary[Document, threading.Lock] = WeakKeyDictionary()
 _WRITE_FUTURES: WeakKeyDictionary[Document, list[Future]] = WeakKeyDictionary()
 _WRITE_MSGS: WeakKeyDictionary[Document, dict[ServerConnection, list[Message]]] = WeakKeyDictionary()
 _WRITE_BLOCK: WeakKeyDictionary[Document, bool] = WeakKeyDictionary()
@@ -574,17 +575,25 @@ def hold(
     if doc is None:
         yield
         return
+    if doc not in _HOLD_LOCK:
+        _HOLD_LOCK[doc] = threading.Lock()
+    hold_lock = _HOLD_LOCK[doc]
     with ExitStack() as stack:
         if freeze and hasattr(doc, 'models'):
             stack.enter_context(doc.models.freeze())
         threaded = state._current_thread != state._thread_id
         held = doc.callbacks.hold_value
+        we_held = False
         try:
             if policy is None:
                 doc.unhold()
                 yield
             elif threaded:
-                doc.hold(policy)
+                with hold_lock:
+                    held = doc.callbacks.hold_value
+                    if not held:
+                        doc.hold(policy)
+                        we_held = True
                 yield
             else:
                 with unlocked(policy=policy):
@@ -592,17 +601,26 @@ def hold(
                         doc.hold(policy)
                     yield
         finally:
-            if held:
+            if policy is None:
+                pass
+            elif threaded:
+                if held and not we_held:
+                    pass
+                else:
+                    def _unhold(lock=hold_lock, doc=doc):
+                        with lock:
+                            doc.unhold()
+                    with hold_lock:
+                        doc.callbacks._hold = None
+                        doc.add_next_tick_callback(_unhold)
+                        doc.callbacks._hold = policy
+            elif held:
                 doc.callbacks._hold = held
             elif comm is not None:
                 from .notebook import push
                 push(doc, comm)
             elif not state._connected.get(doc):
                 doc.callbacks._hold = None
-            elif threaded:
-                doc.callbacks._hold = None
-                doc.add_next_tick_callback(doc.unhold)
-                doc.callbacks._hold = policy
             else:
                 doc.unhold()
 
