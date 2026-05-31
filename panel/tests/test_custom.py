@@ -229,7 +229,7 @@ def test_esm_parameter_override(document, comm):
 
 class ESMWithValue(ReactiveESM):
 
-    value = param.String(default='A')
+    value = param.String(default='A', doc="Test value")
 
 
 def test_esm_python_update_not_suppressed_by_stale_frontend_event(document, comm):
