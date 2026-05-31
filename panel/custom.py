@@ -602,15 +602,26 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         root: Model, model: Model, doc: Document, comm: Comm | None
     ) -> None:
         model_msg, data_msg, data_resets  = {}, {}, {}
-        for prop, v in list(msg.items()):
+        curdoc_events = self._in_process__events.get(doc, {})
+        for prop, value in list(msg.items()):
             if prop in list(Reactive.param)+['esm', 'importmap']:
-                model_msg[prop] = v
+                model_msg[prop] = value
+                continue
             elif prop in model.children:
                 continue
-            else:
-                data_msg[prop] = v
-                if prop in self.param and isinstance(self.param[prop], param.Event) and v:
-                    data_resets[prop] = False
+
+            if prop in curdoc_events:
+                try:
+                    is_boomerang = bool(value == curdoc_events[prop])
+                except Exception:
+                    is_boomerang = value is curdoc_events[prop]
+                if is_boomerang:
+                    continue
+
+            data_msg[prop] = value
+            if prop in self.param and isinstance(self.param[prop], param.Event) and value:
+                data_resets[prop] = False
+
         for name, event in events.items():
             if name not in model.children:
                 continue
