@@ -16,7 +16,7 @@ Consider a dashboard that filters a dataset by year range and manufacturer. With
 
 ### What classes give you: a single source of truth
 
-The class-based approach solves this by utilizing the declarative API (of Panel/param(?)), giving state a home. Instead of free-floating widget variables, you create a dedicated object whose job is to hold the current selection as `param.Parameter` attributes. Any part of the app that needs to know what the user has selected asks that object directly.
+The class-based approach solves this by declaratively expressing state as parameters, giving state a home. Instead of free-floating widget variables, you create a dedicated object whose job is to hold the current selection as `param.Parameter` attributes. Any part of the app that needs to know what the user has selected asks that object directly.
 
 Other objects can declare, using `@param.depends`, that they should recompute when those parameters change. The logic for what to do when state changes lives in one place, not spread across multiple `pn.bind` calls. Any number of views can all reference the same state-holding object, and when something changes they update automatically — without any view needing to know anything about the widgets that caused the change.
 
