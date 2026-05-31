@@ -135,7 +135,7 @@ def exec_with_return(
     ----------
     code: str
         The code to execute
-    global_context: Dict[str, Any]
+    global_context: dict[str, Any] | None
         The globals to inject into the execution context.
     stdout: io.StringIO
         The stream to redirect stdout to.
@@ -147,7 +147,7 @@ def exec_with_return(
 
     The return value of the executed code.
     """
-    global_context = global_context if global_context else globals()
+    global_context = global_context if global_context else {}
     global_context['display'] = _display
     code_ast = ast.parse(code)
 

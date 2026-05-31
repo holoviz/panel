@@ -627,7 +627,8 @@ def pyrender(
     code: str,
     stdout_callback: Callable[[str], None] | None,
     stderr_callback: Callable[[str], None] | None,
-    target: str
+    target: str,
+    global_context: dict[str, t.Any] | None = None
 ):
     """
     Executes Python code and returns a MIME representation of the
@@ -643,6 +644,8 @@ def pyrender(
         Callback executed with output written to stderr.
     target: str
         The ID of the DOM node to write the output into.
+    global_context: dict[str, Any] | None
+        The globals to inject into the execution context.
 
     Returns
     -------
@@ -654,7 +657,7 @@ def pyrender(
     PANES = (HoloViews, Interactive, ReactiveExpr)
     stdout = WriteCallbackStream(stdout_callback) if stdout_callback else None
     stderr = WriteCallbackStream(stderr_callback) if stderr_callback else None
-    out = exec_with_return(code, stdout=stdout, stderr=stderr)
+    out = exec_with_return(code, global_context=global_context, stdout=stdout, stderr=stderr)
     ret = {}
     if isinstance(out, (Model, Viewable, Viewer)) or any(pane.applies(out) for pane in PANES):
         doc, model_json = _model_json(as_panel(out), target)
