@@ -5,7 +5,7 @@ import param
 from bokeh.plotting import figure
 
 from panel.custom import PyComponent, ReactiveESM
-from panel.io.state import state
+from panel.io.state import set_curdoc, state
 from panel.layout import Row
 from panel.pane import Bokeh, Markdown
 from panel.util import edit_readonly
@@ -225,3 +225,56 @@ def test_esm_parameter_override(document, comm):
     esm.width = 84
 
     assert model.width == 84
+
+
+class ESMWithValue(ReactiveESM):
+
+    value = param.String(default='A', doc="Test value")
+
+
+def test_esm_python_update_not_suppressed_by_stale_frontend_event(document, comm):
+    esm = ESMWithValue(value='A')
+
+    model = esm.get_root(document, comm)
+
+    # Simulate a frontend event setting value to 'B'
+    with set_curdoc(document):
+        esm._process_events({'value': 'B'})
+
+    assert esm.value == 'B'
+
+    # Now a Python-side update sets a different value
+    esm.value = 'C'
+
+    # The model must reflect the Python update
+    assert model.data.value == 'C'
+
+
+def test_esm_boomerang_suppresses_model_update(document, comm):
+    esm = ESMWithValue(value='A')
+
+    model = esm.get_root(document, comm)
+
+    with set_curdoc(document):
+        esm._process_events({'value': 'B'})
+
+    assert esm.value == 'B'
+    assert model.data.value == 'A'
+
+
+def test_esm_python_update_different_from_frontend_is_applied(document, comm):
+    esm = ESMWithValue(value='A')
+
+    model = esm.get_root(document, comm)
+
+    # Frontend sends 'B'
+    with set_curdoc(document):
+        esm._process_events({'value': 'B'})
+
+    assert esm.value == 'B'
+
+    # Python sets a different value from what the frontend sent
+    esm.value = 'C'
+
+    # The model must reflect the Python update since 'C' != 'B'
+    assert model.data.value == 'C'
