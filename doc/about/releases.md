@@ -9,7 +9,7 @@ Panel 1.9.3 is a patch release addressing several bug fixes for ReactiveESM comp
 * Ensure property changes do not boomerang on `ReactiveESM` ([#8617](https://github.com/holoviz/panel/pull/8617))
 * Fix regression when cleaning up documents in dev mode ([#8616](https://github.com/holoviz/panel/pull/8616))
 * Ensure OAuth expiry value is cast to number ([#8611](https://github.com/holoviz/panel/pull/8611))
-* Mark ESM components as not ready during rendering ([#8609](https://github.com/holoviz/panel/pull/8609))
+* Ensure ESM components only check rendered children for readiness ([#8609](https://github.com/holoviz/panel/pull/8609))
 
 ### 📚 Documentation
 
