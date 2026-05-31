@@ -1,6 +1,6 @@
 ## Classes vs functions in Panel: understanding the tradeoff
 
-In Panel, there are two main ways to structure reactive code: binding functions with `pn.bind` (the reactive API), or building classes that extend `param.Parameterized` or `pn.viewable.Viewer` (the declarative API). Both are valid, and the right choice depends on what you're building.
+In Panel, there are two main ways to structure reactive code: binding functions with `pn.bind` and `pn.rx`(the [reactive API](../../explanation/api/reactive.md)), or building classes that extend `param.Parameterized` or `pn.viewable.Viewer` (the [declarative API](../../explanation/api/parameterized.md)). Both approacheas are valid, and the right choice depends on what you're building.
 
 ### Why functions feel natural at first
 
@@ -16,7 +16,7 @@ Consider a dashboard that filters a dataset by year range and manufacturer. With
 
 ### What classes give you: a single source of truth
 
-The class-based approach solves this by giving state a home. Instead of free-floating widget variables, you create a dedicated object whose job is to hold the current selection as `param.Parameter` attributes. Any part of the app that needs to know what the user has selected asks that object directly.
+The class-based approach solves this by declaratively expressing state as parameters, giving state a home. Instead of free-floating widget variables, you create a dedicated object whose job is to hold the current selection as `param.Parameter` attributes. Any part of the app that needs to know what the user has selected asks that object directly.
 
 Other objects can declare, using `@param.depends`, that they should recompute when those parameters change. The logic for what to do when state changes lives in one place, not spread across multiple `pn.bind` calls. Any number of views can all reference the same state-holding object, and when something changes they update automatically — without any view needing to know anything about the widgets that caused the change.
 
