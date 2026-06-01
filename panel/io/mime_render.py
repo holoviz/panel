@@ -29,10 +29,7 @@ from textwrap import dedent
 # Import API
 #---------------------------------------------------------------------
 
-# Global context for backward compatibility where all exec calls shared
-# the global context of this module (causing issues when overwriting
-# global variables.
-_GLOBAL_CONTEXT = {}
+_GLOBAL_CONTEXT_EXEC: dict[str, t.Any] = {}
 _STDLIBS = sys.stdlib_module_names
 _PACKAGE_MAP = {
     'sklearn': 'scikit-learn',
@@ -151,7 +148,7 @@ def exec_with_return(
 
     The return value of the executed code.
     """
-    global_context = global_context if global_context else _GLOBAL_CONTEXT
+    global_context = global_context if global_context else _GLOBAL_CONTEXT_EXEC
     global_context['display'] = _display
     code_ast = ast.parse(code)
 
