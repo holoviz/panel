@@ -51,7 +51,7 @@ _WRITE_MSGS: WeakKeyDictionary[Document, dict[ServerConnection, list[Message]]] 
 _WRITE_BLOCK: WeakKeyDictionary[Document, bool] = WeakKeyDictionary()
 
 _panel_last_cleanup = None
-_write_tasks: dict[Document, list[asyncio.Task]] = WeakKeyDictionary()
+_write_tasks: WeakKeyDictionary[Document, list[asyncio.Task]] = WeakKeyDictionary()
 
 extra_socket_handlers: dict[type, Callable[[t.Any], None]] = {}
 
