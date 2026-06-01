@@ -6,6 +6,8 @@ This page will walk you through using the `ReactiveHTML` class to craft custom c
 
 :::{admonition} warn
 `ReactiveHTML` was the recommended approach for building custom components before so called ESM components were added. Refer to the [custom component how-to guides](../../how_to/custom_components/index) for more details.
+
+We recommend using `JSComponent` over `ReactiveHTML` for new custom components.
 :::
 
 ## Why Use `ReactiveHTML`?

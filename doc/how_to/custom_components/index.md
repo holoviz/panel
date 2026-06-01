@@ -165,6 +165,10 @@ examples/esm_material_ui
 
 Build custom components using HTML, CSS and Javascript and without Javascript build tools.
 
+:::{admonition} warn
+We recommend using `JSComponent` over `ReactiveHTML` for new custom components.
+:::
+
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
