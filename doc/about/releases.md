@@ -12,6 +12,7 @@ Panel 1.9.3 is a patch release addressing several bug fixes for ReactiveESM comp
 * Ensure ESM components only check rendered children for readiness ([#8609](https://github.com/holoviz/panel/pull/8609))
 * Fix `hold` context manager in threaded mode ([#8619](https://github.com/holoviz/panel/pull/8619))
 * Ensure pyodide `pyrender` function does not use `globals()` as context potentially breaking itself during execution ([#8620](https://github.com/holoviz/panel/pull/8620))
+* Clean up dangling write tasks on session destroy ([#8621](https://github.com/holoviz/panel/issues/8621))
 
 ### 📚 Documentation
 
