@@ -170,6 +170,8 @@ async def _dispatch_msgs(doc):
     Writes messages to a socket, ensuring that the write_lock is not
     set, otherwise re-schedules the write task on the event loop.
     """
+    if doc not in _WRITE_BLOCK:
+        return
     from tornado.websocket import WebSocketHandler
     remaining = {}
     futures = []
@@ -243,6 +245,11 @@ def _destroy_document(self, session):
     # Clear periodic callbacks
     for cb in state._periodic.get(self, []):
         cb.stop()
+
+    # Cancel any pending write tasks for this document
+    _WRITE_MSGS.pop(self, None)
+    _WRITE_BLOCK.pop(self, None)
+    _WRITE_FUTURES.pop(self, None)
 
     # Clean up pn.state to avoid tasks getting executed on dead session
     for attr in dir(state):
