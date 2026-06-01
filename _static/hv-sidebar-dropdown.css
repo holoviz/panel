@@ -1,0 +1,43 @@
+/* Sidebar styling for the HoloViz dropdown section */
+.hv-sb-dd {
+  margin-bottom: 0.5em;
+}
+
+.hv-sb-dd .btn-group {
+  width: 100%;
+}
+
+.hv-sb-dd .hv-sb-dd-value {
+  text-align: start;
+  font-size: 0.9rem;
+}
+
+.hv-sb-dd .btn {
+  background-color: var(--pst-color-surface);
+  color: var(--pst-color-text-base);
+}
+
+.hv-sb-dd a.btn:hover {
+  color: var(--pst-color-link-hover);
+  text-decoration: underline;
+  text-decoration-thickness: max(3px, 0.1875rem, 0.12em);
+}
+
+.hv-sb-dd .dropdown-toggle-split {
+  border-left: solid 1px lightgray;
+}
+
+.hv-sb-dd .dropdown-menu {
+  width: 100%;
+  background-color: var(--pst-color-surface);
+  color: var(--pst-color-text-base);
+}
+
+.hv-sb-dd .dropdown-item {
+  font-size: 0.8rem;
+}
+
+.hv-sb-dd .hv-icon {
+  font-size: 0.75em;
+  margin-left: 0.3em;
+}

@@ -1,0 +1,102 @@
+:host,
+:root {
+  --background-color: var(
+    --design-background-color,
+    var(
+      --vscode-notebook-editorBackground,
+      var(
+        --jp-layout-color0,
+        var(--pst-color-background, var(--panel-background-color))
+      )
+    )
+  );
+  --background-text-color: var(
+    --design-background-text-color,
+    var(
+      --vscode-editor-foreground,
+      var(
+        --jp-widgets-label-color,
+        var(--pst-color-text-base, var(--panel-on-background-color))
+      )
+    )
+  );
+  --surface-color: var(
+    --design-surface-color,
+    var(
+      --vscode-notebook-cellEditorBackground,
+      var(
+        --jp-cell-editor-background,
+        var(--pst-color-surface, var(--panel-surface-color))
+      )
+    )
+  );
+  --surface-text-color: var(
+    --design-surface-text-color,
+    var(
+      --vscode-editor-foreground,
+      var(
+        --jp-ui-font-color1,
+        var(--pst-color-text-base, var(--panel-on-surface-color))
+      )
+    )
+  );
+  color: var(--background-text-color);
+}
+
+/* Help Icon */
+.bk-description > .bk-icon {
+  background-color: var(--background-text-color);
+  opacity: 0.4;
+}
+
+/* Input widgets */
+textarea.bk-input {
+  padding: 0.5em var(--padding-horizontal);
+}
+
+.bk-input {
+  background-color: var(--background-color);
+  color: var(--text-color);
+}
+
+.bk-input[disabled] {
+  background-color: var(--surface-color);
+  color: var(--surface-text-color);
+  opacity: 0.5;
+}
+
+/* Quill editor */
+.ql-editor,
+.ql-editor.ql-blank::before {
+  color: var(--background-text-color);
+}
+
+.ql-toolbar.ql-snow .ql-picker.ql-expanded .ql-picker-options {
+  color: var(--surface-text-color);
+  background-color: var(--surface-color);
+}
+
+:host(.card-title) h1,
+:host(.card-title) h2,
+:host(.card-title) h3,
+:host(.card-title) h4,
+:host(.card-title) h5,
+:host(.card-title) h6 {
+  margin-block-end: 0.2em;
+  margin-block-start: 0.2em;
+}
+
+/* Float panel */
+.jsPanel .jsPanel-content {
+  background-color: var(--background-color);
+  color: var(--background-text-color);
+}
+
+/* Copy Button */
+.copybtn {
+  background-color: #bbb;
+}
+
+.copybtn:active {
+  background-color: #bbb;
+}

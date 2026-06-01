@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en" >
+  <head>
+    <meta charset="utf-8">
+    <title>Streaming Bokeh</title>
+<link rel="apple-touch-icon" sizes="180x180" href="https://cdn.holoviz.org/panel/1.9.3/dist/images/apple-touch-icon.png">    <link rel="icon" href="./favicon.ico" type="">
+    <link rel="manifest" href="site.webmanifest">
+    <meta name="name" content="Streaming Bokeh">
+    <link rel="manifest" href="">
+    <style>
+      html, body {
+	display: flow-root;
+        box-sizing: border-box;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans" type="text/css" />
+
+<style type="text/css">
+
+:host(.pn-loading):before, .pn-loading:before {
+  background-color: #c3c3c3;
+  mask-size: auto calc(min(50%, 300px));
+  -webkit-mask-size: auto calc(min(50%, 300px));
+}
+</style>
+<script type="text/javascript">
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./serviceWorker.js').then(reg => {
+    reg.onupdatefound = () => {
+      const installingWorker = reg.installing;
+      installingWorker.onstatechange = () => {
+        if (installingWorker.state === 'installed' &&
+            navigator.serviceWorker.controller) {
+          // Reload page if service worker is replaced
+          location.reload();
+        }
+      }
+    }
+  })
+}
+</script>
+
+<script type="esms-options">{"shimMode": true}</script>
+
+<script type="text/javascript" src="https://cdn.holoviz.org/panel/1.9.3/dist/bundled/reactiveesm/es-module-shims@^1.10.0/dist/es-module-shims.min.js"></script>
+<script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-3.9.0.min.js"></script>
+<script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-gl-3.9.0.min.js"></script>
+<script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-3.9.0.min.js"></script>
+<script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-3.9.0.min.js"></script>
+<script type="text/javascript" src="https://cdn.bokeh.org/bokeh/release/bokeh-mathjax-3.9.0.min.js"></script>
+<script type="text/javascript" src="https://cdn.holoviz.org/panel/1.9.3/dist/panel.min.js"></script>
+
+<script type="module" src="https://cdn.holoviz.org/panel/1.9.3/dist/bundled/@microsoft/fast-components@2.30.6/dist/fast-components.js"></script>
+<script type="module" src="https://cdn.holoviz.org/panel/1.9.3/dist/bundled/fast/js/fast_design.js"></script>
+<script type="text/javascript">
+  Bokeh.set_log_level("info");
+</script>    <!-- Template CSS -->
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.9.3/dist/css/loadingspinner.css">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.9.3/dist/css/markdown.css">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.9.3/dist/css/listpanel.css">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.9.3/dist/css/button.css">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.9.3/dist/css/loading.css?v=1.9.3">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Open+Sans">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.9.3/dist/bundled/theme/default.css?v=1.9.3">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.9.3/dist/bundled/fastbasetemplate/fast.css?v=1.9.3">
+    <link rel="stylesheet" href="https://cdn.holoviz.org/panel/1.9.3/dist/bundled/fastlisttemplate/fast_list_template.css?v=1.9.3">
+
+<style>
+  :root {
+    --background-color: #ffffff;
+    --body-font: Open Sans, sans-serif;
+    --corner-radius: 3;
+    --header-background: #0072B5;
+    --header-color: #ffffff;
+    --sidebar-width: 330px;
+    --right-sidebar-width:  330px;
+  }
+  body {
+    color: #2B2B2B;
+    background-color: var(--background-color);
+    font-family: var(--body-font);
+  }
+  #header a {
+    color: currentColor;
+  }
+  #header-design-provider {
+    --neutral-fill-hover: var(--header-background);
+    --neutral-fill-rest: var(--header-background);
+    --neutral-foreground-rest: var(--header-color);
+    --design-background-text-color: var(--header-color);
+    --design-background-color: var(--header-background);
+    background: var(--header-background);
+    color: var(--header-color);
+  }
+  #sidebar {
+    min-width: var(--sidebar-width);
+    max-width: var(--sidebar-width);
+  }
+  #right-sidebar {
+    min-width: var(--right-sidebar-width);
+    max-width: var(--right-sidebar-width);
+  }
+</style>
+
+    <style type="text/css">
+    
+:host(.pn-loading):before, .pn-loading:before {
+  background-color: #c3c3c3;
+  mask-size: auto calc(min(50%, 300px));
+  -webkit-mask-size: auto calc(min(50%, 300px));
+}
+    </style>
+
+    <!-- Template JS -->
+    <script src="https://cdn.holoviz.org/panel/1.9.3/dist/bundled/fastbasetemplate/fast_template.js"></script>
+    <script src="https://cdn.holoviz.org/panel/1.9.3/dist/bundled/@microsoft/fast-components@2.30.6/dist/fast-components.js" type="module"></script>
+    <script src="https://cdn.holoviz.org/panel/1.9.3/dist/bundled/fast/js/fast_design.js" type="module"></script>
+
+<!-- Fast Script -->
+<script type="text/javascript">
+document.addEventListener('DOMContentLoaded', (event) => {
+  const header_design = new window.fastDesignProvider("#header-design-provider");
+  const body_design = window.bodyDesign = new window.fastDesignProvider("#body-design-provider");
+  body_design.setLuminance(1.0);
+  body_design.setAccentColor("#0072B5")
+  body_design.setNeutralColor("#000000");
+  header_design.setLuminance("0.23");
+  header_design.setAccentColor("#ffffff");
+  header_design.setNeutralColor("#0072B5");
+});
+</script>
+  </head>
+  <body class="pn-loading pn-arc">
+<fast-design-system-provider id="body-design-provider" use-defaults>
+  <div id="container">
+    <fast-design-system-provider id="header-design-provider">
+      <nav id="header" class="shadow" >
+	<div class="app-header">
+	  <a class="title" href="" >Streaming Bokeh</a>
+	</div>
+	<div id="header-items">
+	</div>
+	<div class="pn-toggle-theme">
+	  <fast-switch id="theme-switch" style="float: right;" onChange="toggleLightDarkTheme('default')" checked>
+	    <span slot="checked-message">
+              <svg class="theme-toggle-icon" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 25"><path d="M0 0h24v24H0z" fill="none"/><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.79 1.42-1.41zM4 10.5H1v2h3v-2zm9-9.95h-2V3.5h2V.55zm7.45 3.91l-1.41-1.41-1.79 1.79 1.41 1.41 1.79-1.79zm-3.21 13.7l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM20 10.5v2h3v-2h-3zm-8-5c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6zm-1 16.95h2V19.5h-2v2.95zm-7.45-3.91l1.41 1.41 1.79-1.8-1.41-1.41-1.79 1.8z"/></svg>
+	    </span>
+	    <span slot="unchecked-message">
+              <svg class="theme-toggle-icon" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 25 25"><path d="M0 0h24v24H0z" fill="none"/><path d="M10 2c-1.82 0-3.53.5-5 1.35C7.99 5.08 10 8.3 10 12s-2.01 6.92-5 8.65C6.47 21.5 8.18 22 10 22c5.52 0 10-4.48 10-10S15.52 2 10 2z"/></svg>
+	    </span>
+	  </fast-switch>
+	  <fast-tooltip anchor="theme-switch" position="bottom">
+	    Toggle the Theme
+	  </fast-tooltip>
+	</div>
+	<div class="pn-busy-container" id="busy-container">
+	  <div id="f9a45b62-1669-4f94-8bef-ed33da149ff1" data-root-id="p1068" style="display: contents;"></div>
+	</div>
+	<fast-tooltip anchor="busy-container" position="left">
+	  Busy Indicator
+	</fast-tooltip>
+      </nav>
+    </fast-design-system-provider>
+
+    <div class="row" id="content">
+
+      <div class="main" id="main">
+        <div class="card-margin None">
+	  <fast-card class="pn-wrapper">
+	    <span class="fullscreen-button" onclick="toggleFullScreen(this)">
+	      <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 18">
+		<path d="M4.5 11H3v4h4v-1.5H4.5V11zM3 7h1.5V4.5H7V3H3v4zm10.5 6.5H11V15h4v-4h-1.5v2.5zM11 3v1.5h2.5V7H15V3h-4z"/>
+	      </svg>
+	    </span>
+	    <div id="cb4aa164-b3ed-4650-aa3d-55d8f8f268cc" data-root-id="p1070" style="display: contents;"></div>
+	  </fast-card>
+	</div>
+        <div class="card-margin stretch_width">
+	  <fast-card class="pn-wrapper">
+	    <span class="fullscreen-button" onclick="toggleFullScreen(this)">
+	      <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 18">
+		<path d="M4.5 11H3v4h4v-1.5H4.5V11zM3 7h1.5V4.5H7V3H3v4zm10.5 6.5H11V15h4v-4h-1.5v2.5zM11 3v1.5h2.5V7H15V3h-4z"/>
+	      </svg>
+	    </span>
+	    <div id="aefead22-b197-429a-822e-ace3ce8ae19f" data-root-id="p1071" style="display: contents;"></div>
+	  </fast-card>
+	</div>
+      </div>
+      <fast-dialog id="pn-Modal" hidden>
+        <fast-button class="pn-modal-close" id="pn-closeModal">&times;</fast-button>
+        <div class="pn-modal-content">
+	</div>
+      </fast-dialog>
+    </div>
+  </div>
+</fast-design-system-provider>
+
+<script type="text/javascript">
+  
+</script>
+
+<script type="text/javascript">
+  function openNav() {
+    document.getElementById("sidebar").classList.remove("hidden");
+    document.getElementById("sidebar-button").onclick = closeNav;
+  }
+
+  function closeNav() {
+    document.getElementById("sidebar").classList.add("hidden");
+    document.getElementById("sidebar-button").onclick = openNav;
+  }
+
+  function openNavRight() {
+    document.getElementById("right-sidebar").classList.remove("hidden");
+    document.getElementById("right-sidebar-button").onclick = closeNavRight;
+  }
+
+  function closeNavRight() {
+    document.getElementById("right-sidebar").classList.add("hidden");
+    document.getElementById("right-sidebar-button").onclick = openNavRight;
+  }
+
+  var modal = document.getElementById("pn-Modal");
+  var span = document.getElementById("pn-closeModal");
+
+  span.onclick = function() {
+    modal.style.display = "none";
+  }
+
+  window.onclick = function(event) {
+    if (event.target == modal) {
+      modal.style.display = "none";
+    }
+  }
+</script>
+
+<div id="c7ca09e1-3ac7-4695-ad6a-5d9118f6b654" data-root-id="p1063" style="display: contents;"></div>
+<div id="d972d412-bc37-40ca-93b9-e39bcfcaac0a" data-root-id="p1065" style="display: contents;"></div>
+<div id="d0906244-704c-42e4-a4eb-84f3251d1a93" data-root-id="p1056" style="display: contents;"></div>
+<div id="dda89ac2-051a-45a5-b81e-09b985ff55a5" data-root-id="p1066" style="display: contents;"></div>
+
+
+  
+    <script>
+      const pyodideWorker = new Worker("./streaming_bokeh.js");
+      pyodideWorker.busy = false
+      pyodideWorker.queue = []
+      
+      let patching = 0
+      
+      function send_change(jsdoc, event) {
+        if ((event.setter_id != null && event.setter_id == 'py') || (patching > 0)) {
+          return
+        } else if (pyodideWorker.busy && event.model && event.attr) {
+          let events = []
+          for (const old_event of pyodideWorker.queue) {
+            if (!(old_event.model === event.model && old_event.attr === event.attr)) {
+              events.push(old_event)
+            }
+          }
+          events.push(event)
+          pyodideWorker.queue = events
+          return
+        }
+        const patch = jsdoc.create_json_patch([event])
+        pyodideWorker.busy = true
+        pyodideWorker.postMessage({type: 'patch', patch: patch})
+      }
+      
+      pyodideWorker.onmessage = async (event) => {
+        const msg = event.data
+      
+        const body = document.getElementsByTagName('body')[0]
+        const loading_msgs = document.getElementsByClassName('pn-loading-msg')
+        if (msg.type === 'idle') {
+          if (pyodideWorker.queue.length) {
+            const patch = pyodideWorker.jsdoc.create_json_patch(pyodideWorker.queue)
+            pyodideWorker.busy = true
+            pyodideWorker.queue = []
+            pyodideWorker.postMessage({type: 'patch', patch: patch})
+          } else {
+            pyodideWorker.busy = false
+          }
+        } else if (msg.type === 'status') {
+          let loading_msg
+          if (loading_msgs.length) {
+            loading_msg = loading_msgs[0]
+          } else if (body.classList.contains('pn-loading')) {
+            loading_msg = document.createElement('div')
+            loading_msg.classList.add('pn-loading-msg')
+            body.appendChild(loading_msg)
+          }
+          if (loading_msg != null) {
+            loading_msg.innerHTML = msg.msg
+          }
+        } else if (msg.type === 'render') {
+          const docs_json = JSON.parse(msg.docs_json)
+          const render_items = JSON.parse(msg.render_items)
+          const root_ids = JSON.parse(msg.root_ids)
+      
+          // Remap roots in message to element IDs
+          const root_els = document.querySelectorAll('[data-root-id]')
+          const data_roots = []
+          for (const el of root_els) {
+             el.innerHTML = ''
+             data_roots.push([el.getAttribute('data-root-id'), el.id])
+          }
+          data_roots.sort((a, b) => a[0]<b[0] ? -1: 1)
+          const roots = {}
+          for (let i=0; i<data_roots.length; i++) {
+            roots[root_ids[i]] = data_roots[i][1]
+          }
+          render_items[0]['roots'] = roots
+          render_items[0]['root_ids'] = root_ids
+      
+          // Clear pre-rendered contents
+          Bokeh.index.roots.map((v) => v.remove())
+      
+          // Embed content
+          const [views] = await Bokeh.embed.embed_items(docs_json, render_items)
+      
+          // Remove loading spinner and message
+          body.classList.remove("pn-loading", "arc")
+          for (const loading_msg of loading_msgs) {
+            loading_msg.remove()
+          }
+      
+          // Setup bi-directional syncing
+          pyodideWorker.jsdoc = jsdoc = [...views.roots.values()][0].model.document
+          jsdoc.on_change(send_change.bind(null, jsdoc), false)
+          pyodideWorker.postMessage({'type': 'rendered'})
+          pyodideWorker.postMessage({'type': 'location', location: JSON.stringify(window.location)})
+        } else if (msg.type === 'patch') {
+          try {
+            patching += 1
+            pyodideWorker.jsdoc.apply_json_patch(msg.patch, msg.buffers)
+          } finally {
+            patching -= 1
+          }
+        }
+      };
+    </script>
+    <script type="application/json" id="p1080">
+      {"fc524be7-6b96-4b01-a6c3-fadf4e4dfd63":{"version":"3.9.0","title":"Streaming Bokeh","config":{"type":"object","name":"DocumentConfig","id":"p1009","attributes":{"reconnect_session":false,"notify_connection_status":false,"notifications":null}},"roots":[{"type":"object","name":"panel.models.location.Location","id":"p1056","attributes":{"name":"location","reload":false}},{"type":"object","name":"panel.models.markup.HTML","id":"p1063","attributes":{"name":"js_area","stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"type":"object","name":"ImportedStyleSheet","id":"p1060","attributes":{"url":"https://cdn.holoviz.org/panel/1.9.3/dist/css/loading.css"}},{"type":"object","name":"ImportedStyleSheet","id":"p1059","attributes":{"url":"https://cdn.holoviz.org/panel/1.9.3/dist/bundled/theme/fast.css"}}],"width":0,"height":0,"margin":0,"sizing_mode":"fixed","align":"start","disable_math":true}},{"type":"object","name":"panel.models.reactive_html.ReactiveHTML","id":"p1065","attributes":{"name":"actions","subscribed_events":{"type":"set","entries":["dom_event"]},"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1060"},{"id":"p1059"}],"margin":0,"align":"start","data":{"type":"object","name":"TemplateActions1","id":"p1064","attributes":{"name":"TemplateActions00126","tags":["__ref:p1065"]}},"scripts":{"type":"map","entries":[["open_modal",["document.getElementById(&amp;#x27;pn-Modal&amp;#x27;).style.display = &amp;#x27;block&amp;#x27;\nwindow.dispatchEvent(new Event(&amp;#x27;resize&amp;#x27;));"]],["close_modal",["document.getElementById(&amp;#x27;pn-Modal&amp;#x27;).style.display = &amp;#x27;none&amp;#x27;"]]]}}},{"type":"object","name":"panel.models.browser.BrowserInfo","id":"p1066","attributes":{"name":"browser_info"}},{"type":"object","name":"panel.models.markup.HTML","id":"p1068","attributes":{"name":"busy_indicator","css_classes":["loader","light"],"stylesheets":[":host { --loading-spinner-size: 20px; }","\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1060"},{"type":"object","name":"ImportedStyleSheet","id":"p1067","attributes":{"url":"https://cdn.holoviz.org/panel/1.9.3/dist/css/loadingspinner.css"}},{"id":"p1059"}],"min_width":20,"min_height":20,"margin":[5,10],"align":"start","text":"&amp;lt;span&amp;gt;&amp;lt;b&amp;gt;&amp;lt;/b&amp;gt;&amp;lt;/span&amp;gt;"}},{"type":"object","name":"panel.models.markup.HTML","id":"p1070","attributes":{"name":"main-4520836880","tags":["main"],"css_classes":["markdown"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1060"},{"type":"object","name":"ImportedStyleSheet","id":"p1069","attributes":{"url":"https://cdn.holoviz.org/panel/1.9.3/dist/css/markdown.css"}},{"type":"object","name":"ImportedStyleSheet","id":"p1058","attributes":{"url":"https://cdn.holoviz.org/panel/1.9.3/dist/bundled/theme/default.css"}},{"id":"p1059"}],"margin":[5,10],"align":"start","text":"&amp;lt;p&amp;gt;This example demonstrates how to use &amp;lt;code&amp;gt;add_periodic_callback&amp;lt;/code&amp;gt; to stream data to a Bokeh plot.&amp;lt;/p&amp;gt;\n"}},{"type":"object","name":"panel.models.layout.Column","id":"p1071","attributes":{"name":"main-4523151504","tags":["main"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1060"},{"type":"object","name":"ImportedStyleSheet","id":"p1061","attributes":{"url":"https://cdn.holoviz.org/panel/1.9.3/dist/css/listpanel.css"}},{"id":"p1058"},{"id":"p1059"}],"margin":0,"sizing_mode":"stretch_width","align":"start","children":[{"type":"object","name":"Row","id":"p1072","attributes":{"name":"Row00147","stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1060"},{"id":"p1061"},{"id":"p1058"},{"id":"p1059"}],"margin":0,"align":"start","children":[{"type":"object","name":"Spinner","id":"p1075","attributes":{"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1060"},{"id":"p1058"},{"id":"p1059"}],"width":300,"min_width":300,"margin":[5,10],"align":"start","title":"Period","description":{"type":"object","name":"Tooltip","id":"p1074","attributes":{"syncable":false,"stylesheets":[":host { white-space: initial; max-width: 300px; }"],"position":"right","content":{"type":"object","name":"bokeh.models.dom.HTML","id":"p1073","attributes":{"html":["&lt;p&gt;Period in milliseconds at which the callback is executed.&lt;/p&gt;\n"]}}}},"value":100,"mode":"int"}},{"type":"object","name":"Toggle","id":"p1077","attributes":{"css_classes":["solid"],"stylesheets":["\n:host(.pn-loading):before, .pn-loading:before {\n  background-color: #c3c3c3;\n  mask-size: auto calc(min(50%, 300px));\n  -webkit-mask-size: auto calc(min(50%, 300px));\n}",{"id":"p1060"},{"type":"object","name":"ImportedStyleSheet","id":"p1076","attributes":{"url":"https://cdn.holoviz.org/panel/1.9.3/dist/css/button.css"}},{"id":"p1058"},{"id":"p1059"}],"margin":[5,10],"align":"end","label":"Running","active":true}}]}},{"type":"object","name":"Figure","id":"p1011","attributes":{"sizing_mode":"stretch_width","x_range":{"type":"object","name":"DataRange1d","id":"p1012"},"y_range":{"type":"object","name":"DataRange1d","id":"p1013"},"x_scale":{"type":"object","name":"LinearScale","id":"p1021"},"y_scale":{"type":"object","name":"LinearScale","id":"p1022"},"title":{"type":"object","name":"Title","id":"p1014","attributes":{"text":"Bokeh streaming example","text_color":"#2B2B2B","text_font":"Open Sans, sans-serif","text_font_size":"1.15em"}},"outline_line_color":"#888888","outline_line_alpha":0.5,"outline_line_width":1,"renderers":[{"type":"object","name":"GlyphRenderer","id":"p1052","attributes":{"data_source":{"type":"object","name":"ColumnDataSource","id":"p1046","attributes":{"selected":{"type":"object","name":"Selection","id":"p1047","attributes":{"indices":[],"line_indices":[]}},"selection_policy":{"type":"object","name":"UnionRenderers","id":"p1048"},"data":{"type":"map","entries":[["x",{"type":"ndarray","array":{"type":"bytes","data":"H4sIAAEAAAAA/xXW0xYYBgBEwdi2bdu2bdu2bdu2bdu2bRtt0nTyMJ9wz26AAAECBCQQgQlCUIIRnBCEJBShCUNYwhGeCEQkEpGJQlSiEZ0YxCQWsYlDXOIRnwQkJBGJSUJSkpGcFKQkFalJQ1rSkZ4MZCQTmclCVrKRnRzkJBe5yUNe8pGfAhSkEIUpQlGKUZwSlKQUpSlDWcpRngpUpBKVqUJVqlGdGtSkFrWpQ13qUZ8GNKQRjWlCU5rRnBa0pBWtaUNb2tGeDnSkE53pQle60Z0e9KQXvelDX/rRnwEMZBCDGcJQhjGcEYxkFKMZw1jGMZ4JTGQSk5nCVKYxnRnMZBazmcNc5jGfBSxkEYtZwlKWsZwVrGQVq1nDWtaxng1sZBOb2cJWtrGdHexkF7vZw172sZ8DHOQQhznCUY5xnBOc5BSnOcNZznGeC1zkEpe5wlWucZ0b3OQWt7nDXe5xnwc85BGPecJTnvGcF7zkFa95w1ve8Z4PfOQTn/nCV77xnR/85B/+5Re/+Y8//I0/IIEITBCCEozghCAkoQhNGMISjvBEICKRiEwUohKN6MQgJrGITRziEo/4JCAhiUhMEpKSjOSkICWpSE0a0pKO9GQgI5nITBayko3s5CAnuchNHvKSj/wUoCCFKEwRilKM4pSgJKUoTRnKUo7yVKAilahMFapSjerUoCa1qE0d6lKP+jSgIY1oTBOa0ozmtKAlrWhNG9rSjvZ0oCOd6EwXutKN7vSgJ73oTR/60o/+DGAggxjMEIYyjOGMYCSjGM0YxjKO8UxgIpOYzBSmMo3pzGAms5jNHOYyj/ksYCGLWMwSlrKM5axgJatYzRrWso71bGAjm9jMFrayje3sYCe72M0e9rKP/RzgIIc4zBGOcozjnOAkpzjNGc5yjvNc4CKXuMwVrnKN69zgJre4zR3uco/7POAhj3jME57yjOe84CWveM0b3vKO93zgI5/4zBe+8o3v/OAn//Avv/jNf/zh7/AHJBCBCUJQghGcEIQkFKEJQ1jCEZ4IRCQSkYlCVKIRnRjEJBaxiUNc4hGfBCQkEYlJQlKSkZwUpCQVqUlDWtKRngxkJBOZyUJWspGdHOQkF7nJQ17ykZ8CFKQQhSlCUYpRnBKUpBSlKUNZylGeClSkEpWpQlWqUZ0a1KQWtalDXepRnwY0pBGNaUJTmtGcFrSkFa1pQ1va0Z4OdKQTnelCV7rRnR70pBe96UNf+tGfAQxkEIMZwlCGMZwRjGQUoxnDWMYxnglMZBKTmcJUpjGdGcxkFrOZw1zmMZ8FLGQRi1nCUpaxnBWsZBWrWcNa1rGeDWxkE5vZwla2sZ0d7GQXu9nDXvaxnwMc5BCHOcJRjnGcE5zkFKc5w1nOcZ4LXOQSl7nCVa5xnRvc5Ba3ucNd7nGfBzzkEY95wlOe8ZwXvOQVr3nDW97xng985BOf+cJXvvGdH/zkH/7lF7/5jz/8Pf0BCURgghCUYAQnBCEJRWjCEJZwhCcCEYlEZKIQlWhEJwYxiUVs4hCXeMQnAQlJRGKSkJRkJCcFKUlFatKQlnSkJwMZyURmspCVbGQnBznJRW7ykJd85KcABSlEYYpQlGIUpwQlKUVpylCWcpSnAhWpRGWqUJVqVKcGNalFbepQl3rUpwENaURjmtCUZjSnBS1pRWva0JZ2tKcDHelEZ7rQlW50pwc96UVv+tCXfvRnAAMZxGCGMJRhDGcEIxnFaMYwlnGMZwITmcRkpjCVaUxnBjOZxWzmMJd5zGcBC1nEYpawlGUsZwUrWcVq1rCWdaxnAxvZxGa2sJVtbGcHO9nFbvawl33s5wAHOcRhjnCUYxznBCc5xWnOcJZznOcCF7nEZa5wlWtc5wY3ucVt7nCXe9znAQ95xGOe8JRnPOd/xzpxGqAPAAA="},"shape":[1000],"dtype":"int32","order":"little"}],["y",{"type":"ndarray","array":{"type":"bytes","data":"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"},"shape":[1000],"dtype":"float64","order":"little"}]]}}},"view":{"type":"object","name":"CDSView","id":"p1053","attributes":{"filter":{"type":"object","name":"AllIndices","id":"p1054"}}},"glyph":{"type":"object","name":"Line","id":"p1049","attributes":{"x":{"type":"field","field":"x"},"y":{"type":"field","field":"y"},"line_color":"#1f77b4"}},"nonselection_glyph":{"type":"object","name":"Line","id":"p1050","attributes":{"x":{"type":"field","field":"x"},"y":{"type":"field","field":"y"},"line_color":"#1f77b4","line_alpha":0.1}},"muted_glyph":{"type":"object","name":"Line","id":"p1051","attributes":{"x":{"type":"field","field":"x"},"y":{"type":"field","field":"y"},"line_color":"#1f77b4","line_alpha":0.2}}}}],"toolbar":{"type":"object","name":"Toolbar","id":"p1020","attributes":{"tools":[{"type":"object","name":"PanTool","id":"p1033"},{"type":"object","name":"WheelZoomTool","id":"p1034","attributes":{"renderers":"auto"}},{"type":"object","name":"BoxZoomTool","id":"p1035","attributes":{"overlay":{"type":"object","name":"BoxAnnotation","id":"p1036","attributes":{"syncable":false,"line_color":"black","line_alpha":1.0,"line_width":2,"line_dash":[4,4],"fill_color":"lightgrey","fill_alpha":0.5,"level":"overlay","visible":false,"left":{"type":"number","value":"nan"},"right":{"type":"number","value":"nan"},"top":{"type":"number","value":"nan"},"bottom":{"type":"number","value":"nan"},"left_units":"canvas","right_units":"canvas","top_units":"canvas","bottom_units":"canvas","handles":{"type":"object","name":"BoxInteractionHandles","id":"p1042","attributes":{"all":{"type":"object","name":"AreaVisuals","id":"p1041","attributes":{"fill_color":"white","hover_fill_color":"lightgray"}}}}}}}},{"type":"object","name":"SaveTool","id":"p1043"},{"type":"object","name":"ResetTool","id":"p1044"},{"type":"object","name":"HelpTool","id":"p1045"}]}},"left":[{"type":"object","name":"LinearAxis","id":"p1028","attributes":{"ticker":{"type":"object","name":"BasicTicker","id":"p1029","attributes":{"mantissas":[1,2,5]}},"formatter":{"type":"object","name":"BasicTickFormatter","id":"p1030"},"axis_label_standoff":10,"axis_label_text_color":"#2B2B2B","axis_label_text_font":"Open Sans, sans-serif","axis_label_text_font_size":"1.25em","axis_label_text_font_style":"normal","major_label_policy":{"type":"object","name":"AllLabels","id":"p1031"},"major_label_text_color":"#2B2B2B","major_label_text_font":"Open Sans, sans-serif","major_label_text_font_size":"1.025em","axis_line_color":"#2B2B2B","axis_line_alpha":0.1,"major_tick_line_color":"#2B2B2B","major_tick_line_alpha":0.5,"minor_tick_line_color":"#2B2B2B","minor_tick_line_alpha":0.25}}],"below":[{"type":"object","name":"LinearAxis","id":"p1023","attributes":{"ticker":{"type":"object","name":"BasicTicker","id":"p1024","attributes":{"mantissas":[1,2,5]}},"formatter":{"type":"object","name":"BasicTickFormatter","id":"p1025"},"axis_label_standoff":10,"axis_label_text_color":"#2B2B2B","axis_label_text_font":"Open Sans, sans-serif","axis_label_text_font_size":"1.25em","axis_label_text_font_style":"normal","major_label_policy":{"type":"object","name":"AllLabels","id":"p1026"},"major_label_text_color":"#2B2B2B","major_label_text_font":"Open Sans, sans-serif","major_label_text_font_size":"1.025em","axis_line_color":"#2B2B2B","axis_line_alpha":0.1,"major_tick_line_color":"#2B2B2B","major_tick_line_alpha":0.5,"minor_tick_line_color":"#2B2B2B","minor_tick_line_alpha":0.25}}],"center":[{"type":"object","name":"Grid","id":"p1027","attributes":{"axis":{"id":"p1023"},"grid_line_color":"#888888","grid_line_alpha":0.25}},{"type":"object","name":"Grid","id":"p1032","attributes":{"dimension":1,"axis":{"id":"p1028"},"grid_line_color":"#888888","grid_line_alpha":0.25}}],"background_fill_color":"#ffffff","border_fill_color":"#F7F7F7","border_fill_alpha":0}}]}}],"defs":[{"type":"model","name":"ReactiveHTML1"},{"type":"model","name":"FlexBox1","properties":[{"name":"align_content","kind":"Any","default":"flex-start"},{"name":"align_items","kind":"Any","default":"flex-start"},{"name":"flex_direction","kind":"Any","default":"row"},{"name":"flex_wrap","kind":"Any","default":"wrap"},{"name":"gap","kind":"Any","default":""},{"name":"justify_content","kind":"Any","default":"flex-start"}]},{"type":"model","name":"FloatPanel1","properties":[{"name":"config","kind":"Any","default":{"type":"map"}},{"name":"contained","kind":"Any","default":true},{"name":"position","kind":"Any","default":"right-top"},{"name":"offsetx","kind":"Any","default":null},{"name":"offsety","kind":"Any","default":null},{"name":"theme","kind":"Any","default":"primary"},{"name":"status","kind":"Any","default":"normalized"}]},{"type":"model","name":"GridStack1","properties":[{"name":"ncols","kind":"Any","default":null},{"name":"nrows","kind":"Any","default":null},{"name":"allow_resize","kind":"Any","default":true},{"name":"allow_drag","kind":"Any","default":true},{"name":"state","kind":"Any","default":[]}]},{"type":"model","name":"drag1","properties":[{"name":"slider_width","kind":"Any","default":5},{"name":"slider_color","kind":"Any","default":"black"},{"name":"start","kind":"Any","default":0},{"name":"end","kind":"Any","default":100},{"name":"value","kind":"Any","default":50}]},{"type":"model","name":"click1","properties":[{"name":"terminal_output","kind":"Any","default":""},{"name":"debug_name","kind":"Any","default":""},{"name":"clears","kind":"Any","default":0}]},{"type":"model","name":"ReactiveESM1","properties":[{"name":"esm_constants","kind":"Any","default":{"type":"map"}}]},{"type":"model","name":"JSComponent1","properties":[{"name":"esm_constants","kind":"Any","default":{"type":"map"}}]},{"type":"model","name":"ReactComponent1","properties":[{"name":"use_shadow_dom","kind":"Any","default":true},{"name":"esm_constants","kind":"Any","default":{"type":"map"}}]},{"type":"model","name":"AnyWidgetComponent1","properties":[{"name":"use_shadow_dom","kind":"Any","default":true},{"name":"esm_constants","kind":"Any","default":{"type":"map"}}]},{"type":"model","name":"FastWrapper1","properties":[{"name":"object","kind":"Any","default":null},{"name":"style","kind":"Any","default":null}]},{"type":"model","name":"NotificationArea1","properties":[{"name":"js_events","kind":"Any","default":{"type":"map"}},{"name":"max_notifications","kind":"Any","default":5},{"name":"notifications","kind":"Any","default":[]},{"name":"position","kind":"Any","default":"bottom-right"},{"name":"_clear","kind":"Any","default":0},{"name":"types","kind":"Any","default":[{"type":"map","entries":[["type","warning"],["background","#ffc107"],["icon",{"type":"map","entries":[["className","fas fa-exclamation-triangle"],["tagName","i"],["color","white"]]}]]},{"type":"map","entries":[["type","info"],["background","#007bff"],["icon",{"type":"map","entries":[["className","fas fa-info-circle"],["tagName","i"],["color","white"]]}]]}]}]},{"type":"model","name":"Notification","properties":[{"name":"background","kind":"Any","default":null},{"name":"duration","kind":"Any","default":3000},{"name":"icon","kind":"Any","default":null},{"name":"message","kind":"Any","default":""},{"name":"notification_type","kind":"Any","default":null},{"name":"_rendered","kind":"Any","default":false},{"name":"_destroyed","kind":"Any","default":false}]},{"type":"model","name":"TemplateActions1","properties":[{"name":"open_modal","kind":"Any","default":0},{"name":"close_modal","kind":"Any","default":0}]},{"type":"model","name":"BootstrapTemplateActions1","properties":[{"name":"open_modal","kind":"Any","default":0},{"name":"close_modal","kind":"Any","default":0}]},{"type":"model","name":"TemplateEditor1","properties":[{"name":"layout","kind":"Any","default":[]}]},{"type":"model","name":"MaterialTemplateActions1","properties":[{"name":"open_modal","kind":"Any","default":0},{"name":"close_modal","kind":"Any","default":0}]},{"type":"model","name":"request_value1","properties":[{"name":"fill","kind":"Any","default":"none"},{"name":"_synced","kind":"Any","default":null},{"name":"_request_sync","kind":"Any","default":0}]}]}}
+    </script>
+    <script>
+      (function() {
+        const fn = function() {
+          Bokeh.safely(function() {
+            (function(root) {
+              function embed_document(root) {
+              const docs_json = document.getElementById('p1080').textContent;
+              const render_items = [{"docid":"fc524be7-6b96-4b01-a6c3-fadf4e4dfd63","roots":{"p1056":"d0906244-704c-42e4-a4eb-84f3251d1a93","p1063":"c7ca09e1-3ac7-4695-ad6a-5d9118f6b654","p1065":"d972d412-bc37-40ca-93b9-e39bcfcaac0a","p1066":"dda89ac2-051a-45a5-b81e-09b985ff55a5","p1068":"f9a45b62-1669-4f94-8bef-ed33da149ff1","p1070":"cb4aa164-b3ed-4650-aa3d-55d8f8f268cc","p1071":"aefead22-b197-429a-822e-ace3ce8ae19f"},"root_ids":["p1056","p1063","p1065","p1066","p1068","p1070","p1071"]}];
+              root.Bokeh.embed.embed_items(docs_json, render_items);
+              }
+              if (root.Bokeh !== undefined) {
+                embed_document(root);
+              } else {
+                let attempts = 0;
+                const timer = setInterval(function(root) {
+                  if (root.Bokeh !== undefined) {
+                    clearInterval(timer);
+                    embed_document(root);
+                  } else {
+                    attempts++;
+                    if (attempts > 100) {
+                      clearInterval(timer);
+                      console.log("Bokeh: ERROR: Unable to run BokehJS code because BokehJS library is missing");
+                    }
+                  }
+                }, 10, root)
+              }
+            })(window);
+          });
+        };
+        if (document.readyState != "loading") fn();
+      else document.addEventListener("DOMContentLoaded", fn, {once: true});
+      })();
+    </script>
+  </body>
+</html>

@@ -1,0 +1,32 @@
+{
+  "name": "Panel Applications",
+  "short_name": "Panel Applications",
+  "start_url": "index.html",
+  "icons": [
+    {
+      "src": "images/icon-vector.svg",
+      "type": "image/svg+xml",
+      "sizes": "512x512"
+    },
+    {
+      "src": "images/icon-32x32.png",
+      "type": "image/png",
+      "sizes": "32x32"
+    },
+    {
+      "src": "images/icon-192x192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "images/icon-512x512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "display": "standalone",
+  "scope": "/",
+  "background_color": "#fdfdfd",
+  "theme_color": "#0072B5",
+  "orientation": "any"
+}
