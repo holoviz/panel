@@ -1,5 +1,24 @@
 # Releases
 
+## Version 1.9.3
+
+Panel 1.9.3 is a patch release addressing several bug fixes for ReactiveESM components, OAuth handling, and dev mode document cleanup. Many thanks to @CodeRambling, @Hoxbro and @philippjfr for contributing to this release.
+
+### 🐛 Bug Fixes
+
+* Ensure property changes do not boomerang on `ReactiveESM` ([#8617](https://github.com/holoviz/panel/pull/8617))
+* Fix regression when cleaning up documents in dev mode ([#8616](https://github.com/holoviz/panel/pull/8616))
+* Ensure OAuth expiry value is cast to number ([#8611](https://github.com/holoviz/panel/pull/8611))
+* Ensure ESM components only check rendered children for readiness ([#8609](https://github.com/holoviz/panel/pull/8609))
+* Fix `hold` context manager in threaded mode ([#8619](https://github.com/holoviz/panel/pull/8619))
+* Ensure pyodide `pyrender` function does not use `globals()` as context potentially breaking itself during execution ([#8620](https://github.com/holoviz/panel/pull/8620))
+
+### 📚 Documentation
+
+* Add links to related API docs and include `pn.rx` in Functions vs. Classes guide ([#8592](https://github.com/holoviz/panel/pull/8592))
+* Enable edit button in docs ([#8612](https://github.com/holoviz/panel/pull/8612))
+
+
 ## Version 1.9.2
 
 A patch release addressing a small regression on `ReactComponent` causing the Document never to register as idle. Also fixes a memory leak related to tracking components in non-server contexts. Thank you to @philippjfr for his contributions to this release.
