@@ -103,7 +103,6 @@ async def test_dispatch_msgs_terminates_on_document_destroy():
     extra_socket_handlers[_FakeSocket] = lambda conn, msg=None: []
 
     try:
-        base_tasks = len(_write_tasks)
         doc = Document()
         conn = _FakeConn(lock_held=True)
         ref = weakref.ref(doc)
@@ -111,7 +110,7 @@ async def test_dispatch_msgs_terminates_on_document_destroy():
         schedule_write_events(doc, [conn], [object()])
         await asyncio.sleep(0.05)
 
-        assert len(_write_tasks) > base_tasks
+        assert doc in _write_tasks
         assert doc in _WRITE_BLOCK
 
         doc.destroy = partial(_destroy_document, doc)

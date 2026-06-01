@@ -51,7 +51,7 @@ _WRITE_MSGS: WeakKeyDictionary[Document, dict[ServerConnection, list[Message]]] 
 _WRITE_BLOCK: WeakKeyDictionary[Document, bool] = WeakKeyDictionary()
 
 _panel_last_cleanup = None
-_write_tasks: list[asyncio.Task] = []
+_write_tasks: dict[Document, list[asyncio.Task]] = WeakKeyDictionary()
 
 extra_socket_handlers: dict[type, Callable[[t.Any], None]] = {}
 
@@ -84,8 +84,10 @@ class MockSessionContext(SessionContext):
         return Request(headers={}, cookies={}, arguments={})
 
 def _cleanup_task(task):
-    if task in _write_tasks:
-        _write_tasks.remove(task)
+    for tasks in _write_tasks.values():
+        if task in tasks:
+            tasks.remove(task)
+            break
 
 def _dispatch_events(doc: Document, events: list[DocumentChangedEvent]) -> None:
     """
@@ -160,7 +162,7 @@ def _dispatch_write_task(doc, func, *args, **kwargs):
     """
     try:
         task = asyncio.ensure_future(func(*args, **kwargs))
-        _write_tasks.append(task)
+        _write_tasks.setdefault(doc, []).append(task)
         task.add_done_callback(_cleanup_task)
     except RuntimeError:
         doc.add_next_tick_callback(partial(func, *args, **kwargs))
@@ -249,7 +251,10 @@ def _destroy_document(self, session):
     # Cancel any pending write tasks for this document
     _WRITE_MSGS.pop(self, None)
     _WRITE_BLOCK.pop(self, None)
-    _WRITE_FUTURES.pop(self, None)
+    for future in _WRITE_FUTURES.pop(self, []):
+        future.cancel()
+    for task in _write_tasks.pop(self, []):
+        task.cancel()
 
     # Clean up pn.state to avoid tasks getting executed on dead session
     for attr in dir(state):
