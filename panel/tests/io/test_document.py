@@ -1,12 +1,21 @@
+import asyncio
+import gc
+import weakref
+
 from concurrent.futures import ThreadPoolExecutor
+from functools import partial
 
 import pytest
+import tornado.locks
 
 from bokeh.document import Document
 
 import panel as pn
 
-from panel.io.document import _cleanup_doc, hold, unlocked
+from panel.io.document import (
+    _WRITE_BLOCK, _cleanup_doc, _destroy_document, _write_tasks,
+    extra_socket_handlers, hold, schedule_write_events, unlocked,
+)
 from panel.io.state import _state, set_curdoc, state
 from panel.tests.util import serve_and_request, wait_until
 from panel.widgets import IntSlider
@@ -67,3 +76,49 @@ def test_hold_does_not_get_stuck_with_threaded_callbacks(threads):
             f.result()
 
     wait_until(lambda: not doc.callbacks.hold_value, timeout=5000)
+
+
+class _FakeProtocol:
+    def create(self, msgtype, events):
+        return object()
+
+
+class _FakeSocket:
+    def __init__(self, lock_held):
+        self.write_lock = tornado.locks.Lock()
+        if lock_held:
+            self.write_lock._block._value = 0
+        self.ws_connection = type("W", (), {"is_closing": lambda s: True})()
+
+
+class _FakeConn:
+    def __init__(self, lock_held):
+        self._socket = _FakeSocket(lock_held)
+        self.protocol = _FakeProtocol()
+
+
+@pytest.mark.asyncio
+async def test_dispatch_msgs_terminates_on_document_destroy():
+    """Pending _dispatch_msgs loop must stop after document is destroyed."""
+    extra_socket_handlers[_FakeSocket] = lambda conn, msg=None: []
+
+    try:
+        doc = Document()
+        conn = _FakeConn(lock_held=True)
+        ref = weakref.ref(doc)
+
+        schedule_write_events(doc, [conn], [object()])
+        await asyncio.sleep(0.05)
+
+        assert doc in _write_tasks
+        assert doc in _WRITE_BLOCK
+
+        doc.destroy = partial(_destroy_document, doc)
+        doc.destroy(None)
+        del doc, conn
+        await asyncio.sleep(0.05)
+        gc.collect()
+
+        assert ref() is None
+    finally:
+        extra_socket_handlers.pop(_FakeSocket, None)
