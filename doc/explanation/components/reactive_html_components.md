@@ -5,9 +5,9 @@ When you're working on custom applications and dashboards, there are times when 
 This page will walk you through using the `ReactiveHTML` class to craft custom components without the need for complex JavaScript build tools. You'll be able to leverage basic HTML, CSS, and JavaScript to tailor your components to your specific needs.
 
 :::{admonition} warn
-`ReactiveHTML` was the recommended approach for building custom components before so called ESM components were added. Refer to the [custom component how-to guides](../../how_to/custom_components/index) for more details.
+`ReactiveHTML` was the recommended approach for building custom components before so-called [ESM components](../../how_to/custom_components/index#esm-components) were added to Panel. Refer to the [custom component how-to guides](../../how_to/custom_components/index) for more details.
 
-We recommend using `JSComponent` over `ReactiveHTML` for new custom components.
+We recommend using [`JSComponent`](../../how_to/custom_components/index#esm-examples) over `ReactiveHTML` for new custom components.
 :::
 
 ## Why Use `ReactiveHTML`?
