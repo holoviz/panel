@@ -604,9 +604,7 @@ def hold(
             if policy is None:
                 pass
             elif threaded:
-                if held and not we_held:
-                    pass
-                else:
+                if not held or we_held:
                     def _unhold(lock=hold_lock, doc=doc):
                         with lock:
                             doc.unhold()

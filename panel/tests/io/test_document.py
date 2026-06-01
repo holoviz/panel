@@ -1,3 +1,7 @@
+from concurrent.futures import ThreadPoolExecutor
+
+import pytest
+
 from bokeh.document import Document
 
 import panel as pn
@@ -42,9 +46,8 @@ def test_document_hold():
     assert doc.callbacks._held_events
 
 
+@pytest.mark.xdist_group(name="server")
 def test_hold_does_not_get_stuck_with_threaded_callbacks(threads):
-    from concurrent.futures import ThreadPoolExecutor
-
     column = pn.FlexBox(*[pn.pane.Str('0') for _ in range(20)])
     layout = pn.Column(column)
 
