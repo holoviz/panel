@@ -48,7 +48,7 @@ def run_compile(
     file_loaders = file_loaders or []
     errors = 0
     for bundle, components in bundles.items():
-        component_names = '\n- '.join(c.name for c in components)
+        component_names = '\n- '.join([cn for c in components if (cn := c.name) is not None])
         print(f"Building {bundle} containing the following components:\n\n- {component_names}\n")  # noqa
         out = compile_components(
             components,

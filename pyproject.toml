@@ -258,6 +258,7 @@ explicit_package_bases = true
 disable_error_code = "attr-defined"
 mypy_path = ""
 exclude = []
+plugins = ["param.mypy_plugin"]
 
 [[tool.mypy.overrides]]
 module = [

@@ -207,7 +207,7 @@ def _path_template_to_tornado_route(route: str) -> str:
         return route
     return '/' + '/'.join(converted_segments)
 
-_tasks = set()
+_tasks: set = set()
 
 def async_execute(func: Callable[..., None]) -> None:
     """
