@@ -445,3 +445,46 @@ def test_pipeline_ready_parameter_preserved_on_back_navigation():
 
     # The next button must be enabled immediately (not disabled)
     assert not pipeline.next_button.disabled
+
+
+def test_previous_sets_lower_stage():
+    """
+    Non regression test for https://github.com/holoviz/panel/issues/5687
+
+    When navigating back from stage N to stage N-1, and then hitting previous once
+    again, make sure current state is stage N-2 and not stage N.
+    """
+    pipeline = Pipeline()
+
+    class Stage1(param.Parameterized):
+
+        def panel(self):
+            return "Stage 1"
+
+    class Stage2(param.Parameterized):
+
+        def panel(self):
+            return "Stage 2"
+
+    class Stage3(param.Parameterized):
+
+        def panel(self):
+            return "Stage 3"
+
+    pipeline.add_stage("Stage 1", Stage1)
+    pipeline.add_stage("Stage 2", Stage2)
+    pipeline.add_stage("Stage 3", Stage3)
+
+    pipeline._next()
+    pipeline._next()
+
+    assert pipeline._stage == "Stage 3"
+    assert pipeline._route == ["Stage 1", "Stage 2", "Stage 3"]
+
+    pipeline._previous()
+    assert pipeline._stage == "Stage 2"
+    assert pipeline._route == ["Stage 1", "Stage 2"]
+    pipeline._previous()
+
+    assert pipeline._stage == "Stage 1"
+    assert pipeline._route == ["Stage 1"]
