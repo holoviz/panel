@@ -456,24 +456,9 @@ def test_previous_sets_lower_stage():
     """
     pipeline = Pipeline()
 
-    class Stage1(param.Parameterized):
-
-        def panel(self):
-            return "Stage 1"
-
-    class Stage2(param.Parameterized):
-
-        def panel(self):
-            return "Stage 2"
-
-    class Stage3(param.Parameterized):
-
-        def panel(self):
-            return "Stage 3"
-
-    pipeline.add_stage("Stage 1", Stage1)
-    pipeline.add_stage("Stage 2", Stage2)
-    pipeline.add_stage("Stage 3", Stage3)
+    pipeline.add_stage("Stage 1", DummyStage())
+    pipeline.add_stage("Stage 2", DummyStage())
+    pipeline.add_stage("Stage 3", DummyStage())
 
     pipeline._next()
     pipeline._next()
