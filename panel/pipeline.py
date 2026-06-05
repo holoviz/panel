@@ -352,21 +352,24 @@ class Pipeline(Viewer):
 
     def _update_button(self):
         stage, kwargs = self._stages[self._stage]
-        options = list(self._graph.get(self._stage, []))
+        next_options = list(self._graph.get(self._stage, []))
         next_param = kwargs.get('next_parameter', self.next_parameter)
-        option = getattr(self._state, next_param) if next_param and next_param in stage.param else None
-        if option is None:
-            option = options[0] if options else None
-        self.next_selector.options = options
-        self.next_selector.value = option
-        self.next_selector.disabled = not bool(options)
-        previous = []
+        next_option = getattr(self._state, next_param) if next_param and next_param in stage.param else None
+        if next_option is None:
+            next_option = next_options[0] if next_options else None
+        self.next_selector.options = next_options
+        self.next_selector.value = next_option
+        self.next_selector.disabled = not bool(next_options)
+        previous_options = []
+        previous_option = None
         for src, tgts in self._graph.items():
             if self._stage in tgts:
-                previous.append(src)
-        self.prev_selector.options = previous
-        self.prev_selector.value = self._route[-1] if previous else None
-        self.prev_selector.disabled = not bool(previous)
+                previous_options.append(src)
+                if src in self._route:
+                    previous_option = src
+        self.prev_selector.options = previous_options
+        self.prev_selector.value = previous_option
+        self.prev_selector.disabled = not bool(previous_options)
 
         # Disable previous button
         if self._prev_stage is None:
