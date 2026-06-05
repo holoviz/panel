@@ -44,7 +44,7 @@ The `REDIRECT_URI` should be included in the list of Web Redirect URIs:
 ## Handling multiple accounts
 
 Users who are signed into more than one Microsoft account in the same browser (for
-example a corporate and a personal account) may be logged in with the wrong account,
+example a corporate, corporate admin and/ or a personal account) may be logged in with the wrong account,
 or be confused about which account is used. You can control this by forwarding a
 `prompt` parameter to the Azure authorization endpoint via `oauth_extra_params`:
 
@@ -65,15 +65,3 @@ panel serve app.py \
 
 Restricting `tenant` to your directory ID (rather than `common`) additionally ensures
 that only accounts from your organization are accepted.
-
-```{note}
-Forwarding arbitrary authorization parameters such as `prompt` requires the Panel
-release that includes [#8635](https://github.com/holoviz/panel/pull/8635).
-```
-
-```{warning}
-Multiple accounts are sometimes mistaken for the cause of a `Could not open websocket`
-error. That error is almost always a request-header **size** problem rather than an
-account problem — see [Troubleshooting OAuth](../trouble_shooting) for the diagnosis
-and fixes.
-```
