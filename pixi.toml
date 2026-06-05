@@ -267,6 +267,7 @@ types-psutil = "*"
 types-requests = "*"
 types-tqdm = "*"
 typing-extensions = "*"
+param = ">=2.4.1rc1"
 
 [feature.type.tasks]
 test-type = 'mypy panel'
