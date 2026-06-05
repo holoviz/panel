@@ -157,6 +157,16 @@ def test_server_prefix_root_redirect():
     assert response.status_code == 200
     assert response.url.endswith('/foo/')
 
+def test_server_doc_page_is_not_cached():
+    # The document page embeds a short-lived Bokeh session token, so it must
+    # not be cached by the browser (a stale token breaks the WebSocket).
+    html = Markdown('# Title')
+
+    r = serve_and_request(html)
+
+    assert r.status_code == 200
+    assert r.headers.get('Cache-Control') == 'no-store'
+
 def test_server_static_dirs_index():
     html = Markdown('# Title')
 

@@ -635,6 +635,11 @@ class DocHandler(LoginUrlMixin, BkDocHandler):
 
     @authenticated
     async def get(self, *args, **kwargs):
+        # Prevent the browser from caching the document page. The page embeds
+        # a short-lived Bokeh session token; a cached page served after a
+        # logout/login cycle would carry a stale token and the subsequent
+        # WebSocket connection would fail (see e.g. holoviz/panel#8634).
+        self.set_header("Cache-Control", "no-store")
         prefix = self.application.prefix
         if prefix and self.request.path == prefix and not prefix.endswith('/'):
             query_string = self.request.query if self.request.query else ''
