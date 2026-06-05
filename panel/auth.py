@@ -36,6 +36,18 @@ log = logging.getLogger(__name__)
 STATE_COOKIE_NAME = 'panel-oauth-state'
 CODE_COOKIE_NAME = 'panel-oauth-code'
 
+# Keys in ``config.oauth_extra_params`` that the provider implementations
+# consume internally (to build provider URLs, scopes, etc.) and which must
+# therefore NOT be forwarded as query parameters to the OAuth2/OIDC
+# authorization endpoint.
+RESERVED_OAUTH_PARAMS = {
+    'scope',  # forwarded as a top-level param via _SCOPE, not in extra_params
+    'tenant',  # Azure AD
+    'subdomain',  # Auth0
+    'url', 'server',  # Okta / GitLab
+    'TOKEN_URL', 'AUTHORIZE_URL', 'USER_URL', 'LOGOUT_URL', 'USER_KEY',  # Generic
+}
+
 
 def decode_response_body(response):
     """
@@ -184,12 +196,15 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
                 'state': state,
             }
         }
-        if 'audience' in config.oauth_extra_params:
-            params['extra_params']['audience'] = config.oauth_extra_params['audience']
+        # Forward any additional user-provided OAuth parameters (e.g. prompt,
+        # login_hint, domain_hint, audience) to the authorization endpoint.
+        # Keys the providers consume internally are skipped (see
+        # RESERVED_OAUTH_PARAMS); scope is applied separately below via _SCOPE.
+        for key, value in config.oauth_extra_params.items():
+            if key not in RESERVED_OAUTH_PARAMS:
+                params['extra_params'][key] = value
         if self._SCOPE is not None:
             params['scope'] = self._SCOPE
-        if 'scope' in config.oauth_extra_params:
-            params['scope'] = config.oauth_extra_params['scope']
         log.debug("%s making authorize request", type(self).__name__)
         self.authorize_redirect(**params)
 
