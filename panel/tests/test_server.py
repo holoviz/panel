@@ -167,6 +167,32 @@ def test_server_doc_page_is_not_cached():
     assert r.status_code == 200
     assert r.headers.get('Cache-Control') == 'no-store'
 
+def test_warn_if_ws_token_too_large():
+    from unittest.mock import patch
+
+    from panel.io import server as _server
+
+    _server._ws_token_size_warned.clear()
+    path = "/big-token-app"
+    small = "x" * 100
+    big = "x" * (_server.WS_TOKEN_SIZE_WARNING_THRESHOLD + 1)
+
+    try:
+        with patch.object(_server, "logger") as mock_logger:
+            # A small token does not warn.
+            _server._warn_if_ws_token_too_large(path, small)
+            assert mock_logger.warning.call_count == 0
+
+            # A large token warns once.
+            _server._warn_if_ws_token_too_large(path, big)
+            assert mock_logger.warning.call_count == 1
+
+            # The same app path does not warn again.
+            _server._warn_if_ws_token_too_large(path, big)
+            assert mock_logger.warning.call_count == 1
+    finally:
+        _server._ws_token_size_warned.clear()
+
 def test_server_static_dirs_index():
     html = Markdown('# Title')
 
