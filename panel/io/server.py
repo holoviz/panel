@@ -751,6 +751,21 @@ class AutoloadJsHandler(BkAutoloadJsHandler):
 
 class WSHandler(BkWSHandler):
 
+    async def prepare(self):
+        await super().prepare()
+        # A WebSocket upgrade cannot be redirected to a login page, so the
+        # @authenticated check on Bokeh's open() (which runs after the
+        # handshake) raises an uncaught RuntimeError ("Method not supported for
+        # Web Sockets") for unauthenticated connections. Reject the handshake
+        # cleanly with a 403 here instead, before it is performed.
+        if self.current_user is None:
+            logger.debug(
+                "Rejecting unauthenticated WebSocket connection to %r with 403.",
+                self.request.path
+            )
+            self.set_status(403)
+            self.finish()
+
     def open(self, *args, **kwargs):
         _set_request_route_context(self, *args, suffix='/ws', **kwargs)
         return super().open()
