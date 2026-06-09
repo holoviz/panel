@@ -501,17 +501,17 @@ class Pipeline(Viewer):
             tap = plot.state.select_one(TapTool)
             tap.renderers = [gr]
 
-        nodes = hv.Nodes(nodes, ['x', 'y', 'Stage'], 'State').opts(
+        nodes = hv.Nodes(nodes, ['x', 'y', 'Stage'], 'State', datatype=["dictionary"]).opts(
             alpha=0, default_tools=['tap'], hooks=[tap_renderer],
             hover_alpha=0, selection_alpha=0, nonselection_alpha=0,
             axiswise=True, size=10, backend='bokeh'
         )
         self._progress_sel.source = nodes
-        graph = hv.Graph((edges, nodes)).opts(
+        graph = hv.Graph((edges, nodes), datatype=["dictionary"]).opts(
             edge_hover_line_color='black', node_color='State', cmap=cmap,
             tools=[], default_tools=['hover'], selection_policy=None,
             node_hover_fill_color='gray', axiswise=True, backend='bokeh')
-        labels = hv.Labels(nodes, ['x', 'y'], 'Stage').opts(
+        labels = hv.Labels(nodes, ['x', 'y'], 'Stage', datatype=["dictionary"]).opts(
             yoffset=-.30, default_tools=[], axiswise=True, backend='bokeh'
         )
         plot = (graph * labels * nodes) if self._linear else (graph * nodes)

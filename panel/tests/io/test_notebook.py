@@ -8,9 +8,8 @@ from panel.config import config, panel_extension
 from panel.io.notebook import ipywidget
 from panel.io.resources import CDN_ROOT, set_resource_mode
 from panel.pane import Str
+from panel.tests._deps import jupyter_bokeh_skip
 from panel.widgets import TextEditor
-
-from ..util import jb_available
 
 
 @pytest.fixture
@@ -23,7 +22,7 @@ def nb_loaded():
         panel_extension._loaded = old
 
 
-@jb_available
+@jupyter_bokeh_skip
 def test_ipywidget(document):
     pane = Str('A')
     widget = ipywidget(pane, doc=document)

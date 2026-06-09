@@ -1,6 +1,7 @@
 import sys
 
 from copy import deepcopy
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -16,7 +17,6 @@ except Exception:
 altair_available = pytest.mark.skipif(alt is None, reason="requires altair")
 
 import numpy as np
-import pandas as pd
 
 import panel as pn
 
@@ -24,6 +24,7 @@ from panel.models.vega import VegaPlot
 from panel.pane import PaneBase, Vega
 from panel.pane.image import PDF, SVG, Image
 from panel.pane.markup import HTML
+from panel.tests._deps import pd, pd_skip
 
 try:
     import vl_convert as vlc  # type: ignore[import-untyped]
@@ -51,17 +52,21 @@ vega_example = {
     '$schema': 'https://vega.github.io/schema/vega-lite/v3.2.1.json'
 }
 
-vega_df_example = {
-    'config': {
-        'mark': {'tooltip': None},
-        'view': {'height': 300, 'width': 400}
-    },
-    'data': {'values': pd.DataFrame({'x': ['A', 'B', 'C', 'D', 'E'], 'y': [5, 3, 6, 7, 2]})},
-    'mark': 'bar',
-    'encoding': {'x': {'type': 'ordinal', 'field': 'x'},
-                 'y': {'type': 'quantitative', 'field': 'y'}},
-    '$schema': 'https://vega.github.io/schema/vega-lite/v3.2.1.json'
-}
+vega_df_example: dict[str, Any] | None
+if pd:
+    vega_df_example = {
+        'config': {
+            'mark': {'tooltip': None},
+            'view': {'height': 300, 'width': 400}
+        },
+        'data': {'values': pd.DataFrame({'x': ['A', 'B', 'C', 'D', 'E'], 'y': [5, 3, 6, 7, 2]})},
+        'mark': 'bar',
+        'encoding': {'x': {'type': 'ordinal', 'field': 'x'},
+                     'y': {'type': 'quantitative', 'field': 'y'}},
+        '$schema': 'https://vega.github.io/schema/vega-lite/v3.2.1.json'
+    }
+else:
+    vega_df_example = None
 
 vega4_selection_example = {
     'config': {'view': {'continuousWidth': 300, 'continuousHeight': 300}},
@@ -215,35 +220,6 @@ gdf_example = {
     }
 }
 
-datasets_example = {'$schema': 'https://vega.github.io/schema/vega-lite/v6.json',
-  'width': 700,
-  'height': 400,
-  'title': {'text': 'Total Admissions by State',
-   'subtitle': 'Illinois has the highest admissions by a large margin'},
-  'data': {'url': 'https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json',
-   'format': {'type': 'topojson', 'feature': 'states'}},
-  'transform': [{'lookup': 'properties.name',
-    'from': {'data': {'name': 'total_admissions_by_state_uiuc_students'},
-     'key': 'State',
-     'fields': ['Total_Admissions']}}],
-  'projection': {'type': 'albersUsa'},
-  'mark': 'geoshape',
-  'encoding': {'color': {'field': 'Total_Admissions',
-    'type': 'quantitative',
-    'scale': {'scheme': 'blues'},
-    'legend': {'title': 'Total Admissions'}},
-   'tooltip': [{'field': 'properties.name',
-     'type': 'nominal',
-     'title': 'State'},
-    {'field': 'Total_Admissions',
-     'type': 'quantitative',
-     'format': ',',
-     'title': 'Total Admissions'}]},
-  'datasets': {'total_admissions_by_state_uiuc_students': pd.DataFrame(
-      {'State': ['Alabama', 'Alaska', 'Arizona'],
-       'Total_Admissions': [1106.0, 328.0, 1438.0]}
-  )}
-}
 
 def test_get_vega_pane_type_from_dict():
     assert PaneBase.get_pane_type(vega_example) is Vega
@@ -251,6 +227,8 @@ def test_get_vega_pane_type_from_dict():
 
 @pytest.mark.parametrize('example', [vega_example, vega_df_example])
 def test_vega_pane(document, comm, example):
+    if example is None:
+        pytest.skip("pandas not installed")
     pane = pn.panel(example)
 
     # Create pane
@@ -261,8 +239,8 @@ def test_vega_pane(document, comm, example):
 
     assert dict(model.data, **blank_schema) == dict(expected, **blank_schema)
     cds_data = model.data_sources['data'].data
-    assert np.array_equal(cds_data['x'], np.array(['A', 'B', 'C', 'D', 'E']))
-    assert np.array_equal(cds_data['y'], np.array([5, 3, 6, 7, 2]))
+    np.testing.assert_array_equal(cds_data['x'], np.array(['A', 'B', 'C', 'D', 'E']))
+    np.testing.assert_array_equal(cds_data['y'], np.array([5, 3, 6, 7, 2]))
 
     point_example = dict(deepcopy(vega_example), mark='point')
     point_example['data']['values'][0]['x'] = 'C'
@@ -270,8 +248,8 @@ def test_vega_pane(document, comm, example):
     point_example = dict(point_example, data={})
     assert model.data == point_example
     cds_data = model.data_sources['data'].data
-    assert np.array_equal(cds_data['x'], np.array(['C', 'B', 'C', 'D', 'E']))
-    assert np.array_equal(cds_data['y'], np.array([5, 3, 6, 7, 2]))
+    np.testing.assert_array_equal(cds_data['x'], np.array(['C', 'B', 'C', 'D', 'E']))
+    np.testing.assert_array_equal(cds_data['y'], np.array([5, 3, 6, 7, 2]))
 
     pane._cleanup(model)
     assert pane._models == {}
@@ -370,7 +348,37 @@ def test_vega_can_instantiate_empty_with_sizing_mode(document, comm):
     pane.get_root(document, comm=comm)
 
 
+@pd_skip
 def test_vega_can_support_datasets_with_pandas(document, comm):
+    datasets_example = {'$schema': 'https://vega.github.io/schema/vega-lite/v6.json',
+      'width': 700,
+      'height': 400,
+      'title': {'text': 'Total Admissions by State',
+       'subtitle': 'Illinois has the highest admissions by a large margin'},
+      'data': {'url': 'https://cdn.jsdelivr.net/npm/us-atlas@3/states-10m.json',
+       'format': {'type': 'topojson', 'feature': 'states'}},
+      'transform': [{'lookup': 'properties.name',
+        'from': {'data': {'name': 'total_admissions_by_state_uiuc_students'},
+         'key': 'State',
+         'fields': ['Total_Admissions']}}],
+      'projection': {'type': 'albersUsa'},
+      'mark': 'geoshape',
+      'encoding': {'color': {'field': 'Total_Admissions',
+        'type': 'quantitative',
+        'scale': {'scheme': 'blues'},
+        'legend': {'title': 'Total Admissions'}},
+       'tooltip': [{'field': 'properties.name',
+         'type': 'nominal',
+         'title': 'State'},
+        {'field': 'Total_Admissions',
+         'type': 'quantitative',
+         'format': ',',
+         'title': 'Total Admissions'}]},
+      'datasets': {'total_admissions_by_state_uiuc_students': pd.DataFrame(
+          {'State': ['Alabama', 'Alaska', 'Arizona'],
+           'Total_Admissions': [1106.0, 328.0, 1438.0]}
+      )}
+    }
     pane = Vega(datasets_example)
     pane.get_root(document, comm=comm)
 

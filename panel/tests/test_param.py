@@ -2,7 +2,6 @@ import asyncio
 import os
 import typing as t
 
-import pandas as pd
 import param
 import pytest
 
@@ -25,7 +24,8 @@ from panel.pane import (
 from panel.param import (
     JSONInit, Param, ParamFunction, ParamMethod, Skip,
 )
-from panel.tests.util import async_wait_until, mpl_available, mpl_figure
+from panel.tests._deps import mpl_skip, pd, pd_skip
+from panel.tests.util import async_wait_until, mpl_figure
 from panel.widgets import (
     AutocompleteInput, Button, Checkbox, DatePicker, DatetimeInput,
     EditableFloatSlider, EditableRangeSlider, LiteralInput, NumberInput,
@@ -1481,8 +1481,7 @@ def test_param_method_pane_subobject(document, comm):
     assert pane._models == {}
     assert inner_pane._models == {}
 
-
-@mpl_available
+@mpl_skip
 def test_param_method_pane_mpl(document, comm):
     test = View()
     pane = panel(test.mpl_view)
@@ -1510,8 +1509,7 @@ def test_param_method_pane_mpl(document, comm):
     assert pane._models == {}
     assert inner_pane._models == {}
 
-
-@mpl_available
+@mpl_skip
 def test_param_method_pane_changing_type(document, comm):
     test = View()
     pane = panel(test.mixed_view)
@@ -1791,6 +1789,7 @@ def test_param_editablefloatslider_with_bounds():
     assert w.value == 1
 
 
+@pd_skip
 def test_param_function_inplace_dataframe_update(document, comm):
     number = NumberInput(value=0)
 
