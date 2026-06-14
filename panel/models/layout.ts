@@ -3,10 +3,14 @@ import type {DOMView} from "@bokehjs/core/dom_view"
 import {isArray} from "@bokehjs/core/util/types"
 import {unreachable} from "@bokehjs/core/util/assert"
 import {WidgetView} from "@bokehjs/models/widgets/widget"
+import type {MathJaxProvider} from "@bokehjs/models/text/providers"
+import {BundleProvider, default_provider} from "@bokehjs/models/text/providers"
 import type {Markup} from "@bokehjs/models/widgets/markup"
 import {LayoutDOM, LayoutDOMView} from "@bokehjs/models/layouts/layout_dom"
 import type {UIElement} from "@bokehjs/models/ui/ui_element"
 import type * as p from "@bokehjs/core/properties"
+
+let custom_provider: BundleProvider | null = null
 
 export class PanelMarkupView extends WidgetView {
   declare model: Markup
@@ -25,14 +29,35 @@ export class PanelMarkupView extends WidgetView {
 
   override async lazy_initialize() {
     await super.lazy_initialize()
-
     if (this.provider.status == "not_started" || this.provider.status == "loading") {
       this.provider.ready.connect(() => {
         if (this.contains_tex_string(this.model.text)) {
           this.render()
         }
       })
+    } else if (default_provider.status == "failed") {
+      await new Promise<void>((resolve) => {
+        let attempts = 0
+        function tryFetch() {
+          custom_provider = new BundleProvider()
+          custom_provider.fetch().then(() => {
+            if (custom_provider && custom_provider.status != "failed") {
+              resolve()
+            } else if (attempts < 2) {
+              attempts++
+              setTimeout(tryFetch, 100)
+            } else {
+              resolve()
+            }
+          })
+        }
+        tryFetch()
+      })
     }
+  }
+
+  override get provider(): MathJaxProvider {
+    return custom_provider ?? default_provider
   }
 
   watch_stylesheets(): void {
