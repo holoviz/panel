@@ -8,8 +8,9 @@ from playwright.sync_api import expect
 import panel as pn
 
 from panel.tests.util import serve_component, wait_until
+from panel.theme import Fast
 from panel.widgets import TooltipIcon
-from panel.widgets.indicators import Gauge
+from panel.widgets.indicators import Gauge, Progress
 
 pytestmark = pytest.mark.ui
 
@@ -133,3 +134,23 @@ def test_gauge_value_update(page):
 
     # Canvas should still be present after update
     expect(page.locator("canvas")).to_have_count(1, timeout=5000)
+
+
+def test_fast_progress_indicator_height(page):
+    progress = Progress(value=20, design=Fast)
+
+    serve_component(page, progress)
+
+    progress_el = page.locator("progress")
+    expect(progress_el).to_have_count(1)
+    expect(progress_el).to_have_css("height", "20px")
+
+
+def test_fast_progress_indicator_explicit_height(page):
+    progress = Progress(value=20, height=32, design=Fast)
+
+    serve_component(page, progress)
+
+    progress_el = page.locator("progress")
+    expect(progress_el).to_have_count(1)
+    expect(progress_el).to_have_css("height", "32px")
