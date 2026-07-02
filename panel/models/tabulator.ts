@@ -840,6 +840,9 @@ export class DataTabulatorView extends HTMLBoxView {
           break
         }
       }
+      if (heights.length === 0) {
+        return
+      }
       if (height < table_height) {
         page_size = table.children.length
         const remaining = table_height - height
