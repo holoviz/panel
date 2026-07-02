@@ -170,6 +170,29 @@ def test_server_doc_page_is_not_cached():
     assert r.status_code == 200
     assert r.headers.get('Cache-Control') == 'no-store'
 
+def test_unauthenticated_websocket_returns_403(port):
+    # An unauthenticated WebSocket upgrade cannot be redirected to a login page,
+    # so it must be rejected with a clean 403 rather than raising server-side.
+    import asyncio
+
+    from tornado.httpclient import HTTPClientError
+    from tornado.websocket import websocket_connect
+
+    html = Markdown('# Title')
+    serve_and_wait(
+        html, port=port, basic_auth="secret-password", cookie_secret="cookie-secret"
+    )
+
+    async def _connect():
+        url = f"ws://localhost:{port}/ws"
+        try:
+            await websocket_connect(url, connect_timeout=10)
+            return None  # handshake unexpectedly succeeded
+        except HTTPClientError as e:
+            return e.code
+
+    assert asyncio.run(_connect()) == 403
+
 def test_server_static_dirs_index():
     html = Markdown('# Title')
 
