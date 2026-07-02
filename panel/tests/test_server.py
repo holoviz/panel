@@ -13,6 +13,7 @@ import pytest
 import requests
 
 from bokeh.events import ButtonClick
+from packaging.version import Version
 
 from panel.config import config
 from panel.io import state
@@ -36,6 +37,8 @@ from panel.tests.util import (
 from panel.widgets import (
     Button, Tabulator, Terminal, TextInput,
 )
+
+PYTEST_VERSION = Version(pytest.__version__).release
 
 
 @pytest.mark.xdist_group(name="server")
@@ -551,7 +554,9 @@ def test_server_periodic_callback_error_logged(caplog, server_implementation, th
     try:
         config.nthreads = threadpool
         for l in loggers_to_check:
-            l.propagate = True
+            if PYTEST_VERSION < (9, 1, 0):
+                # https://github.com/pytest-dev/pytest/issues/14603
+                l.propagate = True
             l.setLevel(logging.WARNING)
 
         def app():
