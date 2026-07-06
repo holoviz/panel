@@ -94,6 +94,20 @@ def test_location_sync_query(location):
     assert location._synced == []
     assert location.search == ""
 
+def test_location_sync_same_object_multiple_calls(location):
+    p = SyncParameterized(integer=1, string='abc')
+    location.sync(p, ['integer'])
+    location.sync(p, ['string'])
+
+    p.string = 'def'
+    assert location.search == "?integer=1&string=def"
+    p.integer = 2
+    assert location.search == "?integer=2&string=def"
+
+    location.unsync(p)
+    assert location._synced == []
+    assert location.search == ""
+
 def test_location_sync_param_init(location):
     p = SyncParameterized()
     location.search = "?integer=1&string=abc"
