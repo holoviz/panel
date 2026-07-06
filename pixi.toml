@@ -237,7 +237,7 @@ test-example = 'pytest -n logical --dist loadscope --nbval-lax examples'
 nbval = "*"
 
 [feature.test-ui.dependencies]
-playwright = ">=1.52.0"
+playwright = "*"
 pytest-playwright = "*"
 pytest-asyncio = "*"
 jupyter_server = "*"
