@@ -39,9 +39,7 @@ class Feed(Column):
     load_buffer = param.Integer(default=50, bounds=(0, None), doc="""
         The number of objects loaded on each side of the visible objects.
         When scrolled halfway into the buffer, the feed will automatically
-        load additional objects while unloading objects on the opposite side.
-        Has no effect when scroll=False, in which case all objects are
-        rendered and visibility is tracked against the page viewport.""")
+        load additional objects while unloading objects on the opposite side.""")
 
     scroll: t.Literal[
         False, True, "both-auto", "y-auto", "x-auto", "both", "x", "y"
@@ -72,15 +70,17 @@ class Feed(Column):
     }
 
     def __init__(self, *objects, **params):
-        # A scrolling Feed virtualizes by only rendering objects near the visible
-        # range, so it needs a bounding height (height or max_height) to clip its
-        # viewport; min_height only sets a floor and lets it grow, so everything
-        # ends up loaded (#8661). A non-scrolling Feed renders all of its objects
-        # (see _synced_range) and needs no default height.
-        scroll = params.get('scroll', type(self).param.scroll.default)
-        if scroll and 'height' not in params and 'max_height' not in params:
-            # sets a default height to prevent infinite load
-            params['height'] = 300
+        # Only a scrolling Feed clips a viewport to virtualize against, so it
+        # needs a bounding height to avoid loading everything (#8661). A
+        # non-scrolling Feed renders all its objects (see _synced_range) and must
+        # not get a height, which would clip it rather than let the page scroll.
+        if params.get('scroll', type(self).param.scroll.default):
+            for height_param in ["height", "min_height", "max_height"]:
+                if height_param in params:
+                    break
+            else:
+                # sets a default height to prevent infinite load
+                params["height"] = 300
 
         super().__init__(*objects, **params)
         self._last_synced = None
