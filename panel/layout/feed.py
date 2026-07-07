@@ -39,7 +39,9 @@ class Feed(Column):
     load_buffer = param.Integer(default=50, bounds=(0, None), doc="""
         The number of objects loaded on each side of the visible objects.
         When scrolled halfway into the buffer, the feed will automatically
-        load additional objects while unloading objects on the opposite side.""")
+        load additional objects while unloading objects on the opposite side.
+        Has no effect when scroll=False, in which case all objects are
+        rendered and visibility is tracked against the page viewport.""")
 
     scroll: t.Literal[
         False, True, "both-auto", "y-auto", "x-auto", "both", "x", "y"
@@ -70,12 +72,15 @@ class Feed(Column):
     }
 
     def __init__(self, *objects, **params):
-        for height_param in ["height", "min_height", "max_height"]:
-            if height_param in params:
-                break
-        else:
+        # A scrolling Feed virtualizes by only rendering objects near the visible
+        # range, so it needs a bounding height (height or max_height) to clip its
+        # viewport; min_height only sets a floor and lets it grow, so everything
+        # ends up loaded (#8661). A non-scrolling Feed renders all of its objects
+        # (see _synced_range) and needs no default height.
+        scroll = params.get('scroll', type(self).param.scroll.default)
+        if scroll and 'height' not in params and 'max_height' not in params:
             # sets a default height to prevent infinite load
-            params["height"] = 300
+            params['height'] = 300
 
         super().__init__(*objects, **params)
         self._last_synced = None
@@ -83,7 +88,9 @@ class Feed(Column):
 
     @param.depends("visible_range", "load_buffer", watch=True)
     def _trigger_get_objects(self):
-        if self.visible_range is None:
+        # A non-scrolling Feed renders every object up front (see _synced_range),
+        # so there is nothing further to load as visible_range changes.
+        if self.visible_range is None or not self.scroll:
             return
 
         # visible start, end / synced start, end
@@ -110,6 +117,11 @@ class Feed(Column):
     @property
     def _synced_range(self):
         n = len(self.objects)
+        if not self.scroll:
+            # A non-scrolling Feed cannot clip a viewport to virtualize against,
+            # so it renders every object; the frontend measures visible_range
+            # against the page viewport instead (#8661).
+            return (0, n)
         if self.visible_range:
             return (
                 max(self.visible_range[0] - self.load_buffer, 0),
