@@ -36,10 +36,10 @@ def test_feed_load_entries(page):
     wait_until(lambda: feed_el.locator('.bk-panel-models-markup-HTML').count() >= 50, page)
 
 def test_feed_scroll_false_reports_visible_subset(page):
-    # Regression test for #8661: a Feed embedded in a scrolling page
-    # (scroll=False) renders all of its objects but must report only the
-    # on-screen objects in visible_range, instead of expanding it to cover
-    # every rendered object.
+    """Regression test for #8661: a Feed embedded in a scrolling page
+    (scroll=False) renders all of its objects but must report only the on-screen
+    objects in visible_range, instead of expanding it to cover every rendered
+    object."""
     feed = Feed(*list(range(ITEMS)), scroll=False)
     serve_component(page, feed)
 
