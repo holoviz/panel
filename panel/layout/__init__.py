@@ -39,6 +39,7 @@ from .float import FloatPanel  # noqa
 from .grid import GridBox, GridSpec  # noqa
 from .gridstack import GridStack  # noqa
 from .modal import Modal
+from .overlay import Overlay  # noqa
 from .spacer import (  # noqa
     Divider, HSpacer, Spacer, VSpacer,
 )
@@ -60,6 +61,7 @@ __all__ = (
     "ListLike",
     "ListPanel",
     "Modal",
+    "Overlay",
     "Panel",
     "Row",
     "Spacer",
