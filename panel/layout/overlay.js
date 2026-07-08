@@ -25,6 +25,19 @@ export function render({ model }) {
   el.classList.add("overlay")
   Object.assign(el.style, {position: "relative"})
 
+  // Bokeh already stretches its own wrapper around `el` to 100%/100%
+  // whenever sizing_mode is definite, but that only gives `el` a
+  // definite WIDTH for free -- a block-level element's height doesn't
+  // inherit from its container the same way. Without this, `el` (and
+  // anything inside it sized via height:100%, like a stretch_both
+  // base) collapses to zero height even though the outer component
+  // correctly fills the page. Mirrors the same isDefinite check used
+  // for the base below.
+  if (isDefinite(model)) {
+    el.style.width = "100%"
+    el.style.height = "100%"
+  }
+
   let baseNode = null
   let panelBoxes = []
 
