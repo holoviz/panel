@@ -81,6 +81,80 @@ def test_overlay_wraps_bare_python_objects():
 
 
 #-----------------------------------------------------------------------------
+# sizing_mode/margin are inherited from `base` unless set explicitly
+#-----------------------------------------------------------------------------
+
+def test_overlay_inherits_sizing_mode_and_margin_from_base():
+    base = Markdown('Map', sizing_mode='stretch_both', margin=7)
+    overlay = Overlay(('top-left', Markdown('Legend')), base=base)
+
+    assert overlay.sizing_mode == 'stretch_both'
+    assert overlay.margin == 7
+
+
+def test_overlay_explicit_sizing_mode_and_margin_win_over_base():
+    base = Markdown('Map', sizing_mode='stretch_both', margin=7)
+    overlay = Overlay(
+        ('top-left', Markdown('Legend')), base=base,
+        sizing_mode='fixed', margin=3,
+    )
+
+    assert overlay.sizing_mode == 'fixed'
+    assert overlay.margin == 3
+
+
+def test_overlay_no_base_keeps_own_defaults():
+    overlay = Overlay(('top-left', Markdown('Legend')))
+
+    assert overlay.sizing_mode is None
+    assert overlay.margin == 0
+
+
+def test_overlay_base_sizing_mode_none_does_not_force_fixed():
+    # Only inherit an actual value -- a base with sizing_mode=None
+    # (the common case) shouldn't push the Overlay to some other mode.
+    base = Markdown('Map', margin=9)
+    overlay = Overlay(('top-left', Markdown('Legend')), base=base)
+
+    assert overlay.sizing_mode is None
+    assert overlay.margin == 9
+
+
+def test_overlay_base_swap_updates_uninherited_sizing():
+    base1 = Markdown('Map 1', sizing_mode='stretch_width', margin=2)
+    base2 = Markdown('Map 2', sizing_mode='stretch_height', margin=4)
+    overlay = Overlay(('top-left', Markdown('Legend')), base=base1)
+    assert overlay.sizing_mode == 'stretch_width'
+    assert overlay.margin == 2
+
+    overlay.base = base2
+
+    assert overlay.sizing_mode == 'stretch_height'
+    assert overlay.margin == 4
+
+
+def test_overlay_pinned_sizing_mode_survives_base_swap():
+    base1 = Markdown('Map 1', sizing_mode='stretch_width')
+    base2 = Markdown('Map 2', sizing_mode='stretch_height')
+    overlay = Overlay(('top-left', Markdown('Legend')), base=base1)
+
+    overlay.sizing_mode = 'fixed'  # user pins it explicitly
+    overlay.base = base2
+
+    assert overlay.sizing_mode == 'fixed'
+
+
+def test_overlay_pinned_margin_survives_base_swap():
+    base1 = Markdown('Map 1', margin=2)
+    base2 = Markdown('Map 2', margin=4)
+    overlay = Overlay(('top-left', Markdown('Legend')), base=base1, margin=1)
+
+    overlay.base = base2
+
+    assert overlay.margin == 1
+
+
+#-----------------------------------------------------------------------------
 # Validation
 #-----------------------------------------------------------------------------
 

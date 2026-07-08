@@ -60,6 +60,11 @@ class Overlay(NamedListLike, JSComponent):
     declare a placement explicitly -- a bare object (with no `where`)
     also raises a `ValueError`.
 
+    `sizing_mode` and `margin` default to whatever `base` declares, so
+    a responsive `base` (e.g. `sizing_mode="stretch_both"`) makes the
+    Overlay responsive too without repeating yourself. Pass either
+    explicitly to opt out of the inheritance for that parameter.
+
     Reference: https://panel.holoviz.org/reference/layouts/Overlay.html
 
     :Example:
@@ -68,22 +73,23 @@ class Overlay(NamedListLike, JSComponent):
     ...     ("top-left", legend),
     ...     ("top-right", pn.Column(search, layers)),
     ...     ("bottom-right", guide),
-    ...     base=deckgl_map,
-    ...     sizing_mode="stretch_both",
+    ...     base=deckgl_map,  # e.g. sizing_mode="stretch_both"
     ... )
     """
 
     base = Child(default=None, doc="""
         The underlay component that the panels float on top of.
         Determines the size of the Overlay unless overridden by
-        sizing_mode, width and/or height.""")
+        sizing_mode, width and/or height. Unless explicitly set,
+        sizing_mode and margin are inherited from base.""")
 
     margin = Margin(default=0, doc="""
         Allows to create additional space around the component. May
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left). Defaults to 0,
         unlike most other layouts, so that a full-bleed base has no
-        stray outer gap.""")
+        stray outer gap -- unless `base` is set and declares its own
+        margin, which then takes precedence over this default.""")
 
     # Index-aligned with `objects`. Mirrors each panel's anchor or
     # coordinate so the frontend can position it; read (read-only)
@@ -94,11 +100,59 @@ class Overlay(NamedListLike, JSComponent):
     _esm = "overlay.js"
 
     def __init__(self, *objects: t.Any, **params: t.Any):
+        # sizing_mode/margin default to whatever `base` declares,
+        # unless the caller passed them explicitly -- checked against
+        # the raw incoming kwargs, before any class defaults apply.
+        self._inherit_sizing_mode = 'sizing_mode' not in params
+        self._inherit_margin = 'margin' not in params
+        self._updating_from_base = False
+        base = params.get('base')
+        if base is not None:
+            if self._inherit_sizing_mode and base.sizing_mode is not None:
+                params['sizing_mode'] = base.sizing_mode
+            if self._inherit_margin:
+                params['margin'] = base.margin
         super().__init__(*objects, **params)
         # NamedListLike.__init__ sets the initial `_names` directly
         # (bypassing the 'objects' watcher below), so the first sync
         # has to happen explicitly here.
         self._sync_anchors()
+        self.param.watch(self._inherit_from_base, 'base')
+        self.param.watch(self._track_explicit_sizing, ['sizing_mode', 'margin'])
+
+    #----------------------------------------------------------------
+    # Sizing inheritance
+    #----------------------------------------------------------------
+
+    def _track_explicit_sizing(self, *events: param.parameterized.Event) -> None:
+        # Once the user sets sizing_mode/margin themselves -- whether
+        # at construction or later -- stop overriding that parameter
+        # on future base changes. Ignore changes we made ourselves in
+        # _inherit_from_base below.
+        if self._updating_from_base:
+            return
+        for event in events:
+            if event.name == 'sizing_mode':
+                self._inherit_sizing_mode = False
+            elif event.name == 'margin':
+                self._inherit_margin = False
+
+    def _inherit_from_base(self, event: param.parameterized.Event) -> None:
+        base = self.base
+        if base is None or not (self._inherit_sizing_mode or self._inherit_margin):
+            return
+        updates: dict[str, t.Any] = {}
+        if self._inherit_sizing_mode and base.sizing_mode is not None:
+            updates['sizing_mode'] = base.sizing_mode
+        if self._inherit_margin:
+            updates['margin'] = base.margin
+        if not updates:
+            return
+        self._updating_from_base = True
+        try:
+            self.param.update(**updates)
+        finally:
+            self._updating_from_base = False
 
     #----------------------------------------------------------------
     # NamedListLike API
