@@ -39,12 +39,6 @@ from .float import FloatPanel  # noqa
 from .grid import GridBox, GridSpec  # noqa
 from .gridstack import GridStack  # noqa
 from .modal import Modal
-from .spacer import (  # noqa
-    Divider, HSpacer, Spacer, VSpacer,
-)
-from .swipe import Swipe  # noqa
-from .tabs import Tabs  # noqa
-
 # NOTE: `overlay` must be imported last. It's the only layout module
 # that reaches into `..custom` (for `JSComponent`), which transitively
 # imports `..pane` (`panel.custom` -> `panel.pane.base` -> triggers all
@@ -55,6 +49,11 @@ from .tabs import Tabs  # noqa
 # after every other name here is already bound avoids the circular
 # ImportError.
 from .overlay import Overlay  # noqa
+from .spacer import (  # noqa
+    Divider, HSpacer, Spacer, VSpacer,
+)
+from .swipe import Swipe  # noqa
+from .tabs import Tabs  # noqa
 
 __all__ = (
     "Accordion",

@@ -16,7 +16,7 @@ TOL = 3  # pixel tolerance for bounding-box comparisons
 
 def _box(css_class, **kwargs):
     return HTML(
-        f'<div style="width:100%;height:100%"></div>',
+        '<div style="width:100%;height:100%"></div>',
         css_classes=[css_class], width=40, height=20, margin=0, **kwargs
     )
 
