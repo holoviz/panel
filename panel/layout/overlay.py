@@ -186,7 +186,7 @@ class Overlay(NamedListLike, JSComponent):
         seen = set()
         for where in self._names:
             if not _valid_where(where):
-                raise ValueError(f"invalid anchor: {where!r}")
+                raise ValueError(f"invalid anchor: {where!r}; must be one of {sorted(ANCHORS)} or an (x, y) coordinate")
             if where in ANCHORS:
                 if where in seen:
                     raise ValueError(f"duplicate anchor: {where!r}")
