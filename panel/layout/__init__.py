@@ -39,15 +39,15 @@ from .float import FloatPanel  # noqa
 from .grid import GridBox, GridSpec  # noqa
 from .gridstack import GridStack  # noqa
 from .modal import Modal
-# NOTE: `overlay` must be imported last. It's the only layout module
-# that reaches into `..custom` (for `JSComponent`), which transitively
-# imports `..pane` (`panel.custom` -> `panel.pane.base` -> triggers all
-# of `panel/pane/__init__.py`, e.g. `pane.holoviews` needs `HSpacer`,
-# `Row`, etc. back from `panel.layout`). Since `panel/__init__.py`'s
-# very first import is `layout`, that reach-back hits a
-# partially-initialized `panel.layout` module -- importing `overlay`
-# after every other name here is already bound avoids the circular
-# ImportError.
+# NOTE: `overlay` must be imported last, after every other name in this
+# module is bound. It's the only layout module that reaches into
+# `..custom` (for `JSComponent`), which transitively imports `..pane`
+# (`panel.custom` -> `panel.pane.base` -> triggers all of
+# `panel/pane/__init__.py`, e.g. `pane.holoviews` needs `HSpacer`, `Row`,
+# etc. back from `panel.layout`). Since `panel/__init__.py`'s very first
+# import is `layout`, that reach-back hits a partially-initialized
+# `panel.layout` module, so importing `overlay` before `spacer` (which
+# defines `HSpacer`) raises a circular ImportError.
 from .overlay import Overlay  # noqa
 from .spacer import (  # noqa
     Divider, HSpacer, Spacer, VSpacer,
