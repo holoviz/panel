@@ -16,8 +16,6 @@ from .base import NamedListLike
 if t.TYPE_CHECKING:
     from typing_extensions import Self
 
-    from ..viewable import Viewable
-
 ANCHORS = {
     "top-left", "top-center", "top-right",
     "center-left", "center", "center-right",
@@ -37,6 +35,15 @@ def _valid_where(where: t.Any) -> bool:
         isinstance(where, (tuple, list)) and len(where) == 2 and
         all(isinstance(v, (int, float, str)) for v in where)
     )
+
+
+def _validate_where(where: t.Any) -> None:
+    """Raise a ValueError with guidance if `where` is not a valid placement."""
+    if not _valid_where(where):
+        raise ValueError(
+            f"invalid anchor: {where!r}; must be one of {sorted(ANCHORS)} "
+            "or an (x, y) coordinate"
+        )
 
 
 class Overlay(NamedListLike, JSComponent):
@@ -91,11 +98,10 @@ class Overlay(NamedListLike, JSComponent):
         stray outer gap -- unless `base` is set and declares its own
         margin, which then takes precedence over this default.""")
 
-    # Index-aligned with `objects`. Mirrors each panel's anchor or
-    # coordinate so the frontend can position it; read (read-only)
-    # from Python via the `anchors` property.
-    _anchors = param.List(default=[], doc="""
-        Read-only, index-aligned with `objects`.""")
+    # Mirrors each panel's anchor/coordinate onto the model so the
+    # frontend can position it; exposed read-only via the `anchors`
+    # property and kept index-aligned with `objects`.
+    _anchors = param.List(default=[])
 
     _esm = "overlay.js"
 
@@ -158,7 +164,7 @@ class Overlay(NamedListLike, JSComponent):
     # NamedListLike API
     #----------------------------------------------------------------
 
-    def _to_object_and_name(self, item: t.Any) -> tuple[Viewable, t.Any]:
+    def _to_object_and_name(self, item: t.Any):
         if not (isinstance(item, tuple) and len(item) == 2):
             raise ValueError(
                 "Overlay items must be (anchor, object) tuples, e.g. "
@@ -166,8 +172,7 @@ class Overlay(NamedListLike, JSComponent):
                 f"{item!r}."
             )
         where, obj = item
-        if not _valid_where(where):
-            raise ValueError(f"invalid anchor: {where!r}")
+        _validate_where(where)
         from ..pane import panel
         return panel(obj), where
 
@@ -185,8 +190,7 @@ class Overlay(NamedListLike, JSComponent):
         """
         seen = set()
         for where in self._names:
-            if not _valid_where(where):
-                raise ValueError(f"invalid anchor: {where!r}; must be one of {sorted(ANCHORS)} or an (x, y) coordinate")
+            _validate_where(where)
             if where in ANCHORS:
                 if where in seen:
                     raise ValueError(f"duplicate anchor: {where!r}")
