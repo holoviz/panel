@@ -15,16 +15,17 @@ TOL = 3  # pixel tolerance for bounding-box comparisons
 
 
 def _box(css_class, **kwargs):
+    kwargs.setdefault('margin', 0)
     return HTML(
         '<div style="width:100%;height:100%"></div>',
-        css_classes=[css_class], width=40, height=20, margin=0, **kwargs
+        css_classes=[css_class], width=40, height=20, **kwargs
     )
 
 
 def _container_box(page):
-    # The Overlay's own root element -- the reference frame every
-    # panel is anchored against.
-    return page.locator('.overlay').bounding_box()
+    # The Overlay's inner element -- the reference frame every panel is
+    # anchored against (the outer host container is `.overlay`).
+    return page.locator('.overlay-container').bounding_box()
 
 
 def test_overlay_named_anchor_positions(page):
@@ -135,7 +136,7 @@ def test_overlay_panels_do_not_cover_base(page):
 
 def test_overlay_base_receives_clicks_outside_panels(page):
     clicks = []
-    base = Button(name='Base', sizing_mode='stretch_both')
+    base = Button(label='Base', sizing_mode='stretch_both')
     base.on_click(lambda e: clicks.append(e))
 
     overlay = Overlay(

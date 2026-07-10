@@ -22,7 +22,10 @@ const isDefinite = (model) => {
 
 export function render({ model }) {
   const el = document.createElement("div")
-  el.classList.add("overlay")
+  // NOTE: not "overlay" -- ReactiveESM already names the host container
+  // after the component's class_name ("Overlay" -> ".overlay"), so
+  // reusing it here would produce two nested `.overlay` elements.
+  el.classList.add("overlay-container")
   Object.assign(el.style, {position: "relative"})
 
   // Bokeh already stretches its own wrapper around `el` to 100%/100%
