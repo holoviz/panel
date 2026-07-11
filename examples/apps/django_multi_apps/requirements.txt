@@ -9,7 +9,7 @@ channels==2.4.0
 colorcet==2.0.5
 constantly==15.1.0
 cryptography==48.0.1
-daphne==2.4.1
+daphne==4.2.2
 Django==4.2.30
 holoviews==1.13.2
 hvplot==0.5.2
