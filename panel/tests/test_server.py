@@ -13,6 +13,7 @@ import pytest
 import requests
 
 from bokeh.events import ButtonClick
+from packaging.version import Version
 
 from panel.config import config
 from panel.io import state
@@ -36,6 +37,8 @@ from panel.tests.util import (
 from panel.widgets import (
     Button, Tabulator, Terminal, TextInput,
 )
+
+PYTEST_VERSION = Version(pytest.__version__).release
 
 
 @pytest.mark.xdist_group(name="server")
@@ -192,6 +195,29 @@ def test_warn_if_ws_token_too_large():
             assert mock_logger.warning.call_count == 1
     finally:
         _server._ws_token_size_warned.clear()
+
+def test_unauthenticated_websocket_returns_403(port):
+    # An unauthenticated WebSocket upgrade cannot be redirected to a login page,
+    # so it must be rejected with a clean 403 rather than raising server-side.
+    import asyncio
+
+    from tornado.httpclient import HTTPClientError
+    from tornado.websocket import websocket_connect
+
+    html = Markdown('# Title')
+    serve_and_wait(
+        html, port=port, basic_auth="secret-password", cookie_secret="cookie-secret"
+    )
+
+    async def _connect():
+        url = f"ws://localhost:{port}/ws"
+        try:
+            await websocket_connect(url, connect_timeout=10)
+            return None  # handshake unexpectedly succeeded
+        except HTTPClientError as e:
+            return e.code
+
+    assert asyncio.run(_connect()) == 403
 
 def test_server_static_dirs_index():
     html = Markdown('# Title')
@@ -554,7 +580,9 @@ def test_server_periodic_callback_error_logged(caplog, server_implementation, th
     try:
         config.nthreads = threadpool
         for l in loggers_to_check:
-            l.propagate = True
+            if PYTEST_VERSION < (9, 1, 0):
+                # https://github.com/pytest-dev/pytest/issues/14603
+                l.propagate = True
             l.setLevel(logging.WARNING)
 
         def app():
