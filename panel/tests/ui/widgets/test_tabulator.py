@@ -3889,6 +3889,22 @@ def test_tabulator_remote_pagination_auto_page_size_shrink(page, df_mixed):
     wait_until(lambda: widget.page_size == 3, page)
 
 
+def test_tabulator_local_pagination_page_size_preserved_on_value_none(page, df_mixed):
+    widget = Tabulator(df_mixed, pagination='local')
+
+    serve_component(page, widget)
+
+    expect(page.locator('.tabulator-row')).to_have_count(4)
+
+    widget.value = None
+    page.wait_for_timeout(200)
+    expect(page.locator('.tabulator-row')).to_have_count(0)
+
+    widget.value = df_mixed
+    page.wait_for_timeout(200)
+    expect(page.locator('.tabulator-row')).to_have_count(4)
+
+
 @pytest.mark.parametrize('pagination', ['local', 'remote', None])
 def test_selection_indices_on_paginated_and_filtered_data(page, df_strings, pagination):
     tbl = Tabulator(

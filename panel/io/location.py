@@ -224,7 +224,10 @@ class Location(Syncable):
             return
         serialized = query or {}
         for e in events:
-            matches = [ps for o, ps, _, _ in self._synced if o in (e.cls, e.obj)]
+            matches = [
+                ps for o, ps, _, _ in self._synced
+                if o in (e.cls, e.obj) and e.name in ps
+            ]
             if not matches:
                 continue
             owner = e.cls if e.obj is None else e.obj

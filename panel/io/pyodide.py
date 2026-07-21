@@ -127,7 +127,7 @@ if pyodide_http is None:
         return _read_json_original(*args, **kwargs)
     pandas.read_json = _read_json  # type: ignore
 
-_tasks = set()
+_tasks: set = set()
 
 def async_execute(func: t.Any):
     event_loop = asyncio.get_running_loop()
@@ -268,7 +268,7 @@ _dict_converter = pyodide.code.run_js("""
 })
 """)
 
-_current_buffers = []
+_current_buffers: list = []
 _patching = False
 
 def _bytes_converter(value, converter, other):
@@ -323,7 +323,7 @@ def _convert_json_patch(json_patch):
     return serialized
 
 # Holds proxied functions so they are not GCed
-_proxies = []
+_proxies: list = []
 
 def _link_docs(pydoc: Document, jsdoc: t.Any) -> None:
     """

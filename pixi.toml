@@ -237,7 +237,7 @@ test-example = 'pytest -n logical --dist loadscope --nbval-lax examples'
 nbval = "*"
 
 [feature.test-ui.dependencies]
-playwright = ">=1.52.0"
+playwright = "*"
 pytest-playwright = "*"
 pytest-asyncio = "*"
 jupyter_server = "*"
@@ -267,6 +267,7 @@ types-psutil = "*"
 types-requests = "*"
 types-tqdm = "*"
 typing-extensions = "*"
+param = ">=2.4.1rc1"
 
 [feature.type.tasks]
 test-type = 'mypy panel'

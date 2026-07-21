@@ -41,7 +41,7 @@ if t.TYPE_CHECKING:
 
 log = logging.getLogger('panel.io.handlers')
 
-CELL_DISPLAY = []
+CELL_DISPLAY: list = []
 
 
 @contextmanager

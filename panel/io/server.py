@@ -207,7 +207,7 @@ def _path_template_to_tornado_route(route: str) -> str:
         return route
     return '/' + '/'.join(converted_segments)
 
-_tasks = set()
+_tasks: set = set()
 
 def async_execute(func: Callable[..., None]) -> None:
     """
@@ -635,6 +635,11 @@ class DocHandler(LoginUrlMixin, BkDocHandler):
 
     @authenticated
     async def get(self, *args, **kwargs):
+        # Prevent the browser from caching the document page. The page embeds
+        # a short-lived Bokeh session token; a cached page served after a
+        # logout/login cycle would carry a stale token and the subsequent
+        # WebSocket connection would fail (see e.g. holoviz/panel#8634).
+        self.set_header("Cache-Control", "no-store")
         prefix = self.application.prefix
         if prefix and self.request.path == prefix and not prefix.endswith('/'):
             query_string = self.request.query if self.request.query else ''
@@ -745,6 +750,21 @@ class AutoloadJsHandler(BkAutoloadJsHandler):
 
 
 class WSHandler(BkWSHandler):
+
+    async def prepare(self):
+        await super().prepare()
+        # A WebSocket upgrade cannot be redirected to a login page, so the
+        # @authenticated check on Bokeh's open() (which runs after the
+        # handshake) raises an uncaught RuntimeError ("Method not supported for
+        # Web Sockets") for unauthenticated connections. Reject the handshake
+        # cleanly with a 403 here instead, before it is performed.
+        if self.current_user is None:
+            logger.debug(
+                "Rejecting unauthenticated WebSocket connection to %r with 403.",
+                self.request.path
+            )
+            self.set_status(403)
+            self.finish()
 
     def open(self, *args, **kwargs):
         _set_request_route_context(self, *args, suffix='/ws', **kwargs)
