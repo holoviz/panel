@@ -15,7 +15,6 @@ import sys
 import typing as t
 import warnings
 
-from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
 from weakref import WeakKeyDictionary
 
@@ -389,15 +388,16 @@ class _config(_base_config):
 
     @param.depends('_nthreads', watch=True, on_init=True)
     def _set_thread_pool(self):
+        from .io.state import _SharedThreadPoolExecutor
         if self.nthreads is None:
             if state._thread_pool is not None:
-                state._thread_pool.shutdown(wait=False)
+                state._thread_pool.shutdown(wait=False, _shared=False)
             state._thread_pool = None
             return
         if state._thread_pool:
             raise RuntimeError("Thread pool already running")
         threads = self.nthreads if self.nthreads else None
-        state._thread_pool = ThreadPoolExecutor(max_workers=threads)
+        state._thread_pool = _SharedThreadPoolExecutor(max_workers=threads)
 
     @param.depends('notifications', watch=True)
     def _setup_notifications(self):

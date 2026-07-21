@@ -172,11 +172,11 @@ class PeriodicCallback(param.Parameterized):
         self._start_time = time.time()
         if state.curdoc and state.curdoc.session_context and not state._is_pyodide and self.session_scoped:
             self._doc = state.curdoc
-            if state._unblocked(state.curdoc):
-                self._cb = self._doc.add_periodic_callback(self._periodic_callback, self.period)
-            else:
-                self._doc.add_next_tick_callback(self.start)
-        elif state._thread_id and state._thread_id != state._current_thread:
+            # Bokeh schedules periodic callbacks in a threadsafe manner so we
+            # can register directly even when initialization runs on a worker
+            # thread (Bokeh >=3.10) rather than the server event loop thread.
+            self._cb = self._doc.add_periodic_callback(self._periodic_callback, self.period)
+        elif not state._on_loop_thread:
             state.execute(self.start, schedule=True)
         else:
             try:

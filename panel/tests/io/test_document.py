@@ -1,5 +1,6 @@
 import asyncio
 import gc
+import threading
 import weakref
 
 from concurrent.futures import ThreadPoolExecutor
@@ -95,6 +96,52 @@ class _FakeConn:
     def __init__(self, lock_held):
         self._socket = _FakeSocket(lock_held)
         self.protocol = _FakeProtocol()
+
+
+@pytest.mark.xdist_group(name="server")
+def test_unlocked_dispatches_from_worker_thread():
+    """
+    A model change made inside unlocked() from a worker thread (as happens
+    when Bokeh >=3.10 runs a locked callback via asyncio.to_thread) must be
+    scheduled for write rather than silently dropped with an error.
+    """
+    slider = IntSlider()
+
+    serve_and_request(slider)
+    wait_until(lambda: bool(slider._documents))
+
+    doc, model = list(slider._documents.items())[0]
+    session = doc.session_context.session
+    asyncio_loop = doc.session_context.server_context.application_context.io_loop.asyncio_loop
+
+    seen = {}
+
+    def callback():
+        # On Bokeh >=3.10 the synchronous body of a locked callback runs on a
+        # worker thread via asyncio.to_thread. Previously unlocked() logged an
+        # error and dropped events when off the loop thread.
+        seen['thread'] = threading.get_ident()
+        seen['on_loop'] = state._on_loop_thread
+        with unlocked():
+            model.value = 3
+
+    async def trigger():
+        # with_document_locked routes through _needs_document_lock, the same
+        # wrapper Bokeh uses to dispatch protocol messages and session
+        # callbacks. Entered without already holding the document lock, as
+        # Bokeh does when handling an incoming message.
+        result = session.with_document_locked(callback)
+        if asyncio.iscoroutine(result):
+            await result
+
+    # Drive the locked callback from the server event loop thread.
+    future = asyncio.run_coroutine_threadsafe(trigger(), asyncio_loop)
+    future.result(timeout=5)
+
+    # The model change made inside unlocked() must land regardless of which
+    # thread the locked callback body ran on.
+    wait_until(lambda: model.value == 3)
+    assert 'on_loop' in seen
 
 
 @pytest.mark.asyncio

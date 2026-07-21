@@ -588,7 +588,9 @@ def test_server_schedule_at(server_implementation):
     # Check callback was executed within small margin of error
     wait_until(lambda: 'at' in state.cache)
     assert abs(state.cache['at'] - scheduled[0]) < dt.timedelta(seconds=0.2)
-    assert len(state._scheduled) == 0
+    # The one-shot task must clean itself up (other tasks such as the
+    # scheduled gc.collect may still be pending).
+    wait_until(lambda: 'periodic' not in {k.split('_', 1)[-1] for k in state._scheduled})
 
 
 def test_server_schedule_at_iterator(server_implementation):
@@ -615,7 +617,7 @@ def test_server_schedule_at_iterator(server_implementation):
     wait_until(lambda: len(state.cache['at']) == 2)
     assert abs(state.cache['at'][0] - scheduled[0]) < dt.timedelta(seconds=0.2)
     assert abs(state.cache['at'][1] - scheduled[1]) < dt.timedelta(seconds=0.2)
-    assert len(state._scheduled) == 0
+    wait_until(lambda: 'periodic' not in {k.split('_', 1)[-1] for k in state._scheduled})
 
 
 def test_server_schedule_at_callable(server_implementation):
@@ -645,7 +647,7 @@ def test_server_schedule_at_callable(server_implementation):
     converted = [s.replace(tzinfo=dt.timezone.utc).astimezone().replace(tzinfo=None) for s in scheduled]
     assert abs(state.cache['at'][0] - converted[0]) < dt.timedelta(seconds=0.2)
     assert abs(state.cache['at'][1] - converted[1]) < dt.timedelta(seconds=0.2)
-    assert len(state._scheduled) == 0
+    wait_until(lambda: 'periodic' not in {k.split('_', 1)[-1] for k in state._scheduled})
 
 
 @pytest.mark.xdist_group(name="server")
@@ -1354,6 +1356,47 @@ def test_server_thread_pool_periodic(server_implementation, threads):
 
     # Checks whether periodic callbacks were executed concurrently
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
+
+
+def test_server_thread_pool_is_loop_default_executor(threads):
+    """
+    With --num-threads set, the shared thread pool must be installed as the
+    server loop's default executor so Bokeh's asyncio.to_thread offloading is
+    bounded by the same pool.
+    """
+    executors = {}
+
+    def app():
+        loop = state.curdoc.session_context.server_context.application_context.io_loop
+        executors['default'] = loop.asyncio_loop._default_executor
+        return Button(label='Click')
+
+    serve_and_request(app)
+
+    wait_until(lambda: 'default' in executors)
+    assert executors['default'] is state._thread_pool
+
+
+def test_server_concurrent_session_init_isolated(threads):
+    """
+    Multiple sessions initializing concurrently on worker threads (Bokeh
+    >=3.10) must each observe their own curdoc, without cross-contamination
+    from the shared thread pool.
+    """
+    seen = []
+
+    def app():
+        doc = state.curdoc
+        # Hold in the init body so multiple sessions overlap on the pool.
+        time.sleep(0.2)
+        # curdoc must still be this session's document after the sleep.
+        seen.append(doc is state.curdoc and doc is not None)
+        return Button(label='Click')
+
+    serve_and_request(app, n=4)
+
+    wait_until(lambda: len(seen) == 4)
+    assert all(seen)
 
 
 def test_server_thread_pool_onload(threads):

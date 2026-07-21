@@ -465,15 +465,7 @@ def unlocked(policy: HoldPolicyType = 'combine') -> Iterator:
     curdoc = state.curdoc
     session_context = getattr(curdoc, 'session_context', None)
     session = getattr(session_context, 'session', None)
-    if state._current_thread != state._thread_id and state.loaded and session:
-        logger.error(
-            "Using the unlocked decorator when running inside a thread "
-            "is not safe! Ensure you check that pn.state._current_thread "
-            "matches the current thread id."
-        )
-        yield
-        return
-    elif (curdoc is None or session is None or not state.loaded or
+    if (curdoc is None or session is None or not state.loaded or
           state._jupyter_kernel_context):
         yield
         return
@@ -493,7 +485,13 @@ def unlocked(policy: HoldPolicyType = 'combine') -> Iterator:
         # by having bokeh dispatch them on calling unhold or by
         # scheduling them to be triggered later.
         connections = session._subscribed_connections
-        locked = curdoc in _WRITE_MSGS or curdoc in _WRITE_BLOCK
+        # When running off the server event loop thread (e.g. a callback
+        # dispatched to a worker thread by Bokeh >=3.10) we cannot write to
+        # the sockets directly. Route every event through the scheduled path
+        # which marshals the writes back onto the loop via a threadsafe
+        # next-tick callback.
+        on_loop = state._on_loop_thread
+        locked = curdoc in _WRITE_MSGS or curdoc in _WRITE_BLOCK or not on_loop
         for conn in connections:
             socket = conn._socket
             if hasattr(socket, 'write_lock') and socket.write_lock._block._value == 0:
@@ -593,7 +591,7 @@ def hold(
     with ExitStack() as stack:
         if freeze and hasattr(doc, 'models'):
             stack.enter_context(doc.models.freeze())
-        threaded = state._current_thread != state._thread_id
+        threaded = not state._on_loop_thread
         held = doc.callbacks.hold_value
         we_held = False
         try:
