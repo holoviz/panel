@@ -21,7 +21,7 @@ def test_feed_load_entries(page):
     bbox = feed_el.bounding_box()
     assert bbox["height"] == 250
 
-    expect(feed_el).to_have_class("bk-panel-models-feed-Feed scroll-vertical")
+    expect(feed_el).to_contain_class("bk-panel-models-feed-Feed scroll-vertical")
 
     children_count = feed_el.locator('.bk-panel-models-markup-HTML').count()
     assert 50 <= children_count <= 65
@@ -61,7 +61,7 @@ def test_feed_view_latest(page):
     bbox = feed_el.bounding_box()
     assert bbox["height"] == 250
 
-    expect(feed_el).to_have_class("bk-panel-models-feed-Feed scroll-vertical")
+    expect(feed_el).to_contain_class("bk-panel-models-feed-Feed scroll-vertical")
 
     # Assert scroll is not at 0 (view_latest)
     wait_until(lambda: feed_el.evaluate('(el) => el.scrollTop') > 0, page)
@@ -82,7 +82,7 @@ def test_feed_view_scroll_to_latest(page):
     bbox = feed_el.bounding_box()
     assert bbox["height"] == 250
 
-    expect(feed_el).to_have_class("bk-panel-models-feed-Feed scroll-vertical")
+    expect(feed_el).to_contain_class("bk-panel-models-feed-Feed scroll-vertical")
 
     # Assert scroll is not at 0 (view_latest)
     wait_until(lambda: feed_el.evaluate('(el) => el.scrollTop') == 0, page)

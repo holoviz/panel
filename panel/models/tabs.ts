@@ -29,9 +29,33 @@ export class TabsView extends BkTabsView {
     let view: any = this
     while (view != null) {
       if (view.model.type.endsWith("Tabs")) {
-        view.connect(view.model.properties.active.change, () => this.update_zindex())
+        view.connect(view.model.properties.active.change, () => this.update_active())
       }
       view = view.parent || view._parent // Handle ReactiveHTML
+    }
+  }
+
+  update_active(): void {
+    // Bokeh renders the active panel via a `.bk-active` CSS class, but Panel
+    // additionally toggles inline visibility on the child elements (see
+    // `_update_child_visibility`). Re-apply it whenever the active tab changes.
+    this._update_child_visibility()
+    this.update_zindex()
+  }
+
+  protected _update_child_visibility(): void {
+    const {child_views} = this
+    for (const child_view of child_views) {
+      if (child_view != null) {
+        hide(child_view.el)
+      }
+    }
+    const {active} = this.model
+    if (active in child_views) {
+      const tab = child_views[active]
+      if (tab != null) {
+        show(tab.el)
+      }
     }
   }
 
@@ -72,21 +96,7 @@ export class TabsView extends BkTabsView {
 
   override _after_layout(): void {
     (LayoutDOMView as any).prototype._after_layout.call(this)
-
-    const {child_views} = this
-    for (const child_view of child_views) {
-      if (child_view !== undefined) {
-        hide(child_view.el)
-      }
-    }
-
-    const {active} = this.model
-    if (active in child_views) {
-      const tab = child_views[active]
-      if (tab !== undefined) {
-        show(tab.el)
-      }
-    }
+    this._update_child_visibility()
   }
 
   override _update_layout(): void {
