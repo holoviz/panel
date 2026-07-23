@@ -27,6 +27,10 @@ def test_fast_list_template_no_console_errors(page):
         "document idle at",
         "items were rendered successfully",
         "Automatic fallback to software WebGL has been deprecated",
+        # Bokeh >=3.10 constructs a CSSStyleSheet for each ImportedStyleSheet
+        # which warns about the @import even though the stylesheet is actually
+        # applied via a <link> element (see holoviz/panel bokeh 3.10 migration).
+        "@import rules are not allowed here",
     ]
     assert len([
         msg for msg in msgs if not any(known in msg.text for known in known_messages)

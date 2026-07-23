@@ -51,18 +51,18 @@ def test_button_tooltip(page, button_fn, button_locator, description):
     button = page.locator(button_locator)
     expect(button).to_have_count(1)
     tooltip = page.locator(".bk-tooltip-content")
-    expect(tooltip).to_have_count(0)
+    expect(tooltip).not_to_be_visible()
 
     # Hovering over the button should show the tooltip
     page.hover(button_locator)
     tooltip = page.locator(".bk-tooltip-content")
-    expect(tooltip).to_have_count(1)
+    expect(tooltip).to_be_visible()
     expect(tooltip).to_have_text("Test")
 
     # Removing hover should hide the tooltip
     page.hover("body")
     tooltip = page.locator(".bk-tooltip-content")
-    expect(tooltip).to_have_count(0)
+    expect(tooltip).not_to_be_visible()
 
 
 @pytest.mark.parametrize(
@@ -85,27 +85,27 @@ def test_button_tooltip_with_delay(page, button_fn, button_locator):
     button = page.locator(button_locator)
     expect(button).to_have_count(1)
     tooltip = page.locator(".bk-tooltip-content")
-    expect(tooltip).to_have_count(0)
+    exp(tooltip).not_to_be_visible()
 
     # Hovering over the button should not show the tooltip
     page.hover(button_locator)
     tooltip = page.locator(".bk-tooltip-content")
-    exp(tooltip).to_have_count(0)
+    exp(tooltip).not_to_be_visible()
 
     # After 100 ms the tooltip should be visible
-    wait_until(lambda: exp(tooltip).to_have_count(1), page)
+    wait_until(lambda: exp(tooltip).to_be_visible(), page)
 
     # Removing hover should hide the tooltip
     page.hover("body")
     tooltip = page.locator(".bk-tooltip-content")
-    wait_until(lambda: exp(tooltip).to_have_count(0), page)
+    wait_until(lambda: exp(tooltip).not_to_be_visible(), page)
 
     # Hovering over the button for a short time should not show the tooltip
     page.hover(button_locator)
     page.wait_for_timeout(50)
     page.hover("body")
     page.wait_for_timeout(300)
-    exp(tooltip).to_have_count(0)
+    exp(tooltip).not_to_be_visible()
 
 
 def test_widget_disabled_toggle(page):
