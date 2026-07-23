@@ -51,8 +51,8 @@ no-default-feature = true
 features = ["py314", "required", "test-core", "test-unit-task"]
 no-default-feature = true
 
-[environments.test-bokeh38]
-features = ["py310", "required", "test-core", "test-unit-task", "bokeh38"]
+[environments.test-bokeh39]
+features = ["py310", "required", "test-core", "test-unit-task", "bokeh39"]
 no-default-feature = true
 
 [environments.test-type]
@@ -193,8 +193,8 @@ pytest-github-actions-annotate-failures = "*"
 pytest-rerunfailures = "*"
 pytest-xdist = "*"
 
-[feature.bokeh38.dependencies]
-bokeh = "3.8.*"
+[feature.bokeh39.dependencies]
+bokeh = "3.9.*"
 
 [feature.test.dependencies]
 # Optional dependencies - recommended
