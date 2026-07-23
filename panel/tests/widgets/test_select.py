@@ -1245,3 +1245,40 @@ def test_colormap_mpl_cmap(document, comm):
             'rgba(153, 153, 153, 1)'
         ])
     ]
+
+
+# value_label tests (issue #6274)
+
+def test_select_value_label_with_dict_options():
+    select = Select(options={'one': 1, 'two': 2, 'three': 3}, value=2)
+    assert select.value_label == 'two'
+
+def test_select_value_label_updates_on_value_change():
+    select = Select(options={'one': 1, 'two': 2, 'three': 3}, value=1)
+    assert select.value_label == 'one'
+    select.value = 3
+    assert select.value_label == 'three'
+
+def test_select_value_label_with_list_options():
+    select = Select(options=['A', 'B', 'C'], value='B')
+    assert select.value_label == 'B'
+
+def test_select_value_label_updates_on_options_change():
+    select = Select(options={'one': 1, 'two': 2}, value=1)
+    assert select.value_label == 'one'
+    select.options = {'x': 1, 'y': 2}
+    assert select.value_label == 'x'
+
+def test_select_value_label_auto_updates():
+    select = Select(options={'one': 1, 'two': 2}, value=1)
+    assert select.value_label == 'one'
+    # Changing value should auto-update value_label
+    select.value = 2
+    assert select.value_label == 'two'
+    # Changing back should also update
+    select.value = 1
+    assert select.value_label == 'one'
+
+def test_select_value_label_none_when_no_options():
+    select = Select(options=[], value=None)
+    assert select.value_label is None

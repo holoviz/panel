@@ -33,7 +33,7 @@ from ..models import (
     RadioButtonGroup as _BkRadioButtonGroup, SingleSelect as _BkSingleSelect,
 )
 from ..util import (
-    PARAM_NAME_PATTERN, indexOf, isIn, unique_iterator,
+    PARAM_NAME_PATTERN, edit_readonly, indexOf, isIn, unique_iterator,
 )
 from ._mixin import TooltipMixin
 from .base import CompositeWidget, Widget, WidgetBase
@@ -84,9 +84,17 @@ class SingleSelectBase(SelectBase):
 
     value = param.Parameter(default=None)
 
+    value_label = param.String(default=None, readonly=True, doc="""
+        The label corresponding to the currently selected value.
+        Read-only; automatically updated when ``value`` changes.""")
+
     _allows_values: t.ClassVar[bool] = True
 
     _allows_none: t.ClassVar[bool] = False
+
+    _rename: ClassVar[Mapping[str, str | None]] = {
+        'value_label': None,
+    }
 
     _supports_embed: bool = True
     _restrict: bool = True
@@ -98,6 +106,22 @@ class SingleSelectBase(SelectBase):
         values = self.values
         if self.value is None and None not in values and values and not self._allows_none:
             self.value = values[0]
+        self._internal_callbacks.append(
+            self.param.watch(self._update_value_label, ['value', 'options'])
+        )
+        self._update_value_label()
+
+    def _update_value_label(self, *events):
+        values = self.values
+        labels = self.labels
+        value = self.value
+        if value is not None and values and isIn(value, values):
+            idx = indexOf(value, values)
+            label = labels[idx]
+        else:
+            label = None
+        with edit_readonly(self):
+            self.value_label = label
 
     def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
         props = super()._process_param_change(params)
@@ -207,7 +231,7 @@ class Select(SingleSelectBase):
       or scale mode this will merely be used as a suggestion.""")
 
     _rename: t.ClassVar[Mapping[str, str | None]] = {
-        'groups': None,
+        'groups': None, 'value_label': None,
     }
 
     _source_transforms: t.ClassVar[Mapping[str, str | None]] = {
@@ -746,7 +770,7 @@ class ColorMap(SingleSelectBase):
 
     value_name = param.String(default=None, doc="Name of the selected colormap.")
 
-    _rename = {'options': 'items', 'value_name': None}
+    _rename = {'options': 'items', 'value_name': None, 'value_label': None}
 
     _widget_type: t.ClassVar[type[Model]] = PaletteSelect
 
@@ -1005,7 +1029,9 @@ class AutocompleteInput(SingleSelectBase):
 
     _allows_none: t.ClassVar[bool] = True
 
-    _rename: t.ClassVar[Mapping[str, str | None]] = {'label': 'title', 'options': 'completions'}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
+      'name': 'title', 'options': 'completions', 'value_label': None
+    }
 
     _widget_type: t.ClassVar[type[Model]] = _BkAutocompleteInput
 
@@ -1036,7 +1062,7 @@ class _RadioGroupBase(SingleSelectBase):
     _supports_embed = False
 
     _rename: t.ClassVar[Mapping[str, str | None]] = {
-        'label': None, 'options': 'labels', 'value': 'active'
+        'name': None, 'options': 'labels', 'value': 'active', 'value_label': None,
     }
 
     _source_transforms = {'value': "source.labels[value]"}
@@ -1154,7 +1180,9 @@ class _CheckGroupBase(SingleSelectBase):
 
     value = param.List(default=[])
 
-    _rename: t.ClassVar[Mapping[str, str | None]] = {'label': None, 'options': 'labels', 'value': 'active'}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
+      'label': None, 'options': 'labels', 'value': 'active', 'value_label': None
+    }
 
     _source_transforms = {'value': "value.map((index) => source.labels[index])"}
 
