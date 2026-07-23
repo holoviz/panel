@@ -320,17 +320,23 @@ class Layoutable(param.Parameterized):
         if 'design' not in params and self.param.design.default is None:
             params['design'] = config.design
         super().__init__(**params)
+        # Track dynamic (post-init) updates to the sizing parameters so
+        # that explicitly set values are honored rather than being
+        # overridden by values inferred from a layout's children. Child
+        # inference writes to the underlying model rather than the
+        # parameter, so it does not trigger this watcher.
+        watcher = self.param.watch(
+            self._update_explicit_sizing,
+            ['sizing_mode', 'width_policy', 'height_policy']
+        )
+        if not hasattr(self, '_internal_callbacks'):
+            self._internal_callbacks = []
+        self._internal_callbacks.append(watcher)
 
-    # Track dynamic (post-init) updates to the sizing parameters so that
-    # explicitly set values are honored rather than being overridden by
-    # values inferred from a layout's children. Child inference writes to
-    # the underlying model rather than the parameter, so it does not
-    # trigger this watcher.
-    @param.depends('sizing_mode', 'width_policy', 'height_policy', watch=True)
-    def _update_explicit_sizing(self):
-        self._explicit_sizing_mode = self.sizing_mode is not None
-        self._explicit_width_policy = self.width_policy != 'auto'
-        self._explicit_height_policy = self.height_policy != 'auto'
+    def _update_explicit_sizing(self, *events):
+        for event in events:
+            explicit = event.new is not None if event.name == 'sizing_mode' else event.new != 'auto'
+            setattr(self, f'_explicit_{event.name}', explicit)
 
 
 class ServableMixin:
