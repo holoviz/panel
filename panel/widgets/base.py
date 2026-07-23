@@ -216,7 +216,7 @@ class Widget(Reactive, WidgetBase):
                 parser = Markdown._get_parser('markdown-it', (), Markdown.hard_line_break, **renderer_options)
                 html = parser.render(description)
                 params['description'] = Tooltip(
-                    content=HTML(html), position='right',
+                    content=HTML(html), position='right',  # type: ignore[misc]
                     stylesheets=[':host { white-space: initial; max-width: 300px; }'],
                     syncable=False
                 )

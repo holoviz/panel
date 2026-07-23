@@ -254,7 +254,7 @@ def async_execute(func: Callable[..., None]) -> None:
                 state._handle_exception(e)
     if unlock:
         wrapped.nolock = True # type: ignore
-    state.curdoc.add_next_tick_callback(wrapped)
+    state.curdoc.add_next_tick_callback(wrapped) # type: ignore[arg-type]
 
 param.parameterized.async_executor = async_execute
 
