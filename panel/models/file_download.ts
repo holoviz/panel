@@ -1,4 +1,4 @@
-import type {IterViews} from "@bokehjs/core/build_views"
+import type {ChildView} from "@bokehjs/core/view"
 import {build_view} from "@bokehjs/core/build_views"
 import {ButtonType} from "@bokehjs/core/enums"
 import type * as p from "@bokehjs/core/properties"
@@ -45,11 +45,8 @@ export class FileDownloadView extends InputWidgetView {
   _prev_href: string | null = ""
   _prev_download: string | null = ""
 
-  override *children(): IterViews {
-    yield* super.children()
-    if (this.icon_view != null) {
-      yield this.icon_view
-    }
+  override _children_views(): ChildView[] {
+    return [...super._children_views(), this.icon_view]
   }
 
   override *controls() {

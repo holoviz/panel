@@ -26,33 +26,33 @@ def test_plaintext_tooltip(page, value):
     icon = page.locator(".bk-icon")
     expect(icon).to_have_count(1)
     tooltip = page.locator(".bk-tooltip-content")
-    expect(tooltip).to_have_count(0)
+    expect(tooltip).not_to_be_visible()
 
     # Hovering over the icon should show the tooltip
     page.hover(".bk-icon")
     tooltip = page.locator(".bk-tooltip-content")
-    expect(tooltip).to_have_count(1)
+    expect(tooltip).to_be_visible()
     expect(tooltip).to_have_text("Test")
 
     # Removing hover should hide the tooltip
     page.hover("body")
     tooltip = page.locator(".bk-tooltip-content")
-    expect(tooltip).to_have_count(0)
+    expect(tooltip).not_to_be_visible()
 
     # Clicking the icon should show the tooltip
     page.click(".bk-icon")
     tooltip = page.locator(".bk-tooltip-content")
-    expect(tooltip).to_have_count(1)
+    expect(tooltip).to_be_visible()
 
     # Removing the hover should keep the tooltip
     page.hover("body")
     tooltip = page.locator(".bk-tooltip-content")
-    expect(tooltip).to_have_count(1)
+    expect(tooltip).to_be_visible()
 
     # Clicking should remove the tooltip
     page.click("body")
     tooltip = page.locator(".bk-tooltip-content")
-    expect(tooltip).to_have_count(0)
+    expect(tooltip).not_to_be_visible()
 
 
 def test_tooltip_text_updates(page):
@@ -63,26 +63,26 @@ def test_tooltip_text_updates(page):
     icon = page.locator(".bk-icon")
     expect(icon).to_have_count(1)
     tooltip = page.locator(".bk-tooltip-content")
-    expect(tooltip).to_have_count(0)
+    expect(tooltip).not_to_be_visible()
 
     # Hovering over the icon should show the tooltip
     page.hover(".bk-icon")
     tooltip = page.locator(".bk-tooltip-content")
-    expect(tooltip).to_have_count(1)
+    expect(tooltip).to_be_visible()
     expect(tooltip).to_have_text("Test")
 
     tooltip_icon.value = "Updated"
 
     def hover():
         page.hover(".bk-icon")
-        visible = page.locator(".bk-tooltip-content").count() == 1
+        visible = page.locator(".bk-tooltip-content").is_visible()
         page.hover("body")
         return visible
     wait_until(hover, page)
 
     page.hover(".bk-icon")
     tooltip = page.locator(".bk-tooltip-content")
-    expect(tooltip).to_have_count(1)
+    expect(tooltip).to_be_visible()
     expect(tooltip).to_have_text("Updated")
 
 

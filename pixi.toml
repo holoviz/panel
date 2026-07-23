@@ -1,6 +1,6 @@
 [workspace]
 name = "panel"
-channels = ["pyviz/label/dev", "bokeh/label/rc", "conda-forge"]
+channels = ["pyviz/label/dev", "bokeh/label/dev", "conda-forge"]
 platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
 
 [activation.env]
@@ -51,8 +51,8 @@ no-default-feature = true
 features = ["py314", "required", "test-core", "test-unit-task"]
 no-default-feature = true
 
-[environments.test-bokeh38]
-features = ["py310", "required", "test-core", "test-unit-task", "bokeh38"]
+[environments.test-bokeh39]
+features = ["py310", "required", "test-core", "test-unit-task", "bokeh39"]
 no-default-feature = true
 
 [environments.test-type]
@@ -82,7 +82,7 @@ nomkl = "*"
 pip = "*"
 # Required
 nh3 = "*"
-bokeh = ">=3.8.0,<3.10.0a0"
+bokeh = ">=3.8.0,<3.11.0a0"
 panel-material-ui = ">=0.10.0"
 linkify-it-py = "*"
 markdown = "*"
@@ -109,18 +109,21 @@ python = "3.11.*"
 
 [feature.py312.dependencies]
 python = "3.12.*"
+bokeh = "==3.10.0.dev7"
 
 [feature.py312.activation.env]
 COVERAGE_CORE = "sysmon"
 
 [feature.py313.dependencies]
 python = "3.13.*"
+bokeh = "==3.10.0.dev7"
 
 [feature.py313.activation.env]
 COVERAGE_CORE = "sysmon"
 
 [feature.py314.dependencies]
 python = "3.14.*"
+bokeh = "==3.10.0.dev7"
 
 [feature.py314.activation.env]
 COVERAGE_CORE = "sysmon"
@@ -193,8 +196,8 @@ pytest-github-actions-annotate-failures = "*"
 pytest-rerunfailures = "*"
 pytest-xdist = "*"
 
-[feature.bokeh38.dependencies]
-bokeh = "3.8.*"
+[feature.bokeh39.dependencies]
+bokeh = "3.9.*"
 
 [feature.test.dependencies]
 # Optional dependencies - recommended

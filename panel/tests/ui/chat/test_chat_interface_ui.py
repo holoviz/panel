@@ -72,7 +72,7 @@ def test_chat_interface_show_button_tooltips(page):
     help_button = page.locator("button", has_text="send")
     help_button.hover()
 
-    expect(page.locator(".bk-Tooltip")).to_be_visible()
+    expect(page.locator(".bk-Tooltip", has_text="Click to send")).to_be_visible()
 
 
 def test_chat_interface_edit_message(page):
