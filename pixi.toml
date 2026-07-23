@@ -82,7 +82,7 @@ nomkl = "*"
 pip = "*"
 # Required
 nh3 = "*"
-bokeh = ">=3.8.0,<3.10.0a0"
+bokeh = "==3.10.0.dev7"
 panel-material-ui = ">=0.10.0"
 linkify-it-py = "*"
 markdown = "*"

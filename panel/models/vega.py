@@ -23,7 +23,7 @@ VEGA_EMBED_VERSION = "7.0.2"
 VegaThemeType = t.Literal[
         'excel', 'ggplot2', 'quartz', 'vox', 'fivethirtyeight', 'dark',
         'latimes', 'urbaninstitute', 'googlecharts', 'powerbi', 'carbonwhite', 'carbong10', 'carbong90', 'carbong100']
-VegaTheme = enumeration(VegaThemeType)
+VegaTheme = enumeration(*t.get_args(VegaThemeType))
 
 class VegaEvent(ModelEvent):
 

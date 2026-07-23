@@ -116,32 +116,6 @@ export class TabsView extends BkTabsView {
       delete this.layout
     }
   }
-
-  override update_active(): void {
-    const i = this.model.active
-
-    const {header_els} = this
-    for (const el of header_els) {
-      el.classList.remove(tabs.active)
-    }
-
-    if (i in header_els) {
-      header_els[i].classList.add(tabs.active)
-    }
-
-    const {child_views} = this
-    for (const child_view of child_views) {
-      hide(child_view.el)
-    }
-
-    if (i in child_views) {
-      const view: any = child_views[i]
-      show(view.el)
-      if (view.invalidate_render == null) {
-        view.invalidate_render()
-      }
-    }
-  }
 }
 
 export namespace Tabs {

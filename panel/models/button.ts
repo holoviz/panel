@@ -1,6 +1,6 @@
 import type {TooltipView} from "@bokehjs/models/ui/tooltip"
 import {Tooltip} from "@bokehjs/models/ui/tooltip"
-import type {IterViews} from "@bokehjs/core/build_views"
+import type {ChildView} from "@bokehjs/core/view"
 import {build_view} from "@bokehjs/core/build_views"
 import type * as p from "@bokehjs/core/properties"
 
@@ -11,11 +11,8 @@ export class ButtonView extends BkButtonView {
 
   protected tooltip: TooltipView | null
 
-  override *children(): IterViews {
-    yield* super.children()
-    if (this.tooltip != null) {
-      yield this.tooltip
-    }
+  override _children_views(): ChildView[] {
+    return [...super._children_views(), this.tooltip]
   }
 
   override connect_signals(): void {
