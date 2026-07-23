@@ -3,6 +3,7 @@
 ```{pyodide}
 import param
 import panel as pn
+import pandas as pd
 
 from bokeh.sampledata.iris import flowers
 from panel.viewable import Viewer

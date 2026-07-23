@@ -1,7 +1,6 @@
 from datetime import date, datetime
 
 import numpy as np
-import pandas as pd
 import pytest
 
 from bokeh.models import (
@@ -9,6 +8,7 @@ from bokeh.models import (
 )
 
 from panel import config
+from panel.tests._deps import pd, pd_skip
 from panel.widgets import (
     DateRangeSlider, DateSlider, DatetimeRangeSlider, DatetimeSlider,
     DiscreteSlider, EditableFloatSlider, EditableIntSlider,
@@ -30,6 +30,7 @@ def test_float_slider_from_array():
     assert slider.end == 2.2
     assert slider.value == 1.1
 
+@pd_skip
 def test_float_slider_from_series():
     slider = FloatSlider.from_values(pd.Series([1.1, 2.2], name='Series'))
 
@@ -122,6 +123,7 @@ def test_range_slider_from_array():
     assert slider.end == 2.2
     assert slider.value == (1.1, 2.2)
 
+@pd_skip
 def test_range_slider_from_series():
     slider = RangeSlider.from_values(pd.Series([1.1, 2.2], name='Series'))
 
@@ -948,6 +950,7 @@ def test_editable_fixed_nosoftbounds_fixed_end(editableslider):
     assert slider.end == end
 
 
+@pd_skip
 def test_date_range_slider_start_end_explicit_conversion(document, comm):
     min_val = pd.Timestamp('2024-04-03 12:43:00+0200')
     max_val = pd.Timestamp('2024-04-29 15:30:00+0200')
