@@ -681,3 +681,55 @@ def test_compute_sizing_mode_stretch_margin_four_tuple(dim, document, comm):
     new_props = col._compute_sizing_mode(root.children, {'margin': margin})
 
     assert new_props == {f'min_{dim}': 115, 'sizing_mode': f'stretch_{dim}'}
+
+def test_compute_sizing_mode_explicit_sizing_mode_not_inherited(document, comm):
+    md = Markdown('foo', sizing_mode='stretch_width')
+    col = Column(md, sizing_mode='fixed')
+
+    root = col.get_root(document, comm=comm)
+
+    assert root.sizing_mode == 'fixed'
+
+def test_compute_sizing_mode_explicit_width_policy_max_still_inherited(document, comm):
+    md = Markdown('foo', sizing_mode='stretch_width')
+    col = Column(md, width_policy='max')
+
+    root = col.get_root(document, comm=comm)
+
+    assert root.sizing_mode == 'stretch_width'
+    assert root.width_policy == 'max'
+
+def test_compute_sizing_mode_explicit_width_policy_not_max_not_inherited(document, comm):
+    md = Markdown('foo', sizing_mode='stretch_width')
+    col = Column(md, width_policy='fixed')
+
+    root = col.get_root(document, comm=comm)
+
+    assert root.sizing_mode is None
+    assert root.width_policy == 'fixed'
+
+def test_compute_sizing_mode_explicit_height_policy_not_max_not_inherited(document, comm):
+    md = Markdown('foo', sizing_mode='stretch_height')
+    col = Column(md, height_policy='fixed')
+
+    root = col.get_root(document, comm=comm)
+
+    assert root.sizing_mode is None
+    assert root.height_policy == 'fixed'
+
+def test_compute_sizing_mode_inherited_without_explicit_sizing(document, comm):
+    md = Markdown('foo', sizing_mode='stretch_width')
+    col = Column(md)
+
+    root = col.get_root(document, comm=comm)
+
+    assert root.sizing_mode == 'stretch_width'
+
+def test_compute_sizing_mode_dynamic_sizing_mode_not_inherited(document, comm):
+    md = Markdown('foo', sizing_mode='stretch_width')
+    col = Column(md)
+    col.sizing_mode = 'fixed'
+
+    root = col.get_root(document, comm=comm)
+
+    assert root.sizing_mode == 'fixed'

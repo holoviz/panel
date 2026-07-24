@@ -99,8 +99,14 @@ class SizingModeMixin:
 
             width_expanded = smode in ('stretch_width', 'stretch_both', 'scale_width', 'scale_both')
             height_expanded = smode in ('stretch_height', 'stretch_both', 'scale_height', 'scale_both')
-            expand_width |= width_expanded
-            expand_height |= height_expanded
+            # Only inherit a child's responsiveness along an axis if the
+            # corresponding policy was not explicitly set to a non-max
+            # value. An explicit width_policy/height_policy of "max"
+            # already forces expansion via the initializer above.
+            if not getattr(self, '_explicit_width_policy', False):
+                expand_width |= width_expanded
+            if not getattr(self, '_explicit_height_policy', False):
+                expand_height |= height_expanded
             if width_expanded:
                 width = child.min_width
             else:
@@ -135,14 +141,18 @@ class SizingModeMixin:
                     height += margin*2
                 heights.append(height)
 
-        # Infer new sizing mode based on children
+        # Infer new sizing mode based on children unless the user
+        # explicitly supplied a sizing_mode, in which case that setting is
+        # honored rather than inherited from the children.
         mode = 'scale' if scale else 'stretch'
         if self._direction == 'horizontal':
             allow_height_scale = all_expand_height
         else:
             allow_height_scale = True
 
-        if expand_width and expand_height and not self.width and not self.height:
+        if getattr(self, '_explicit_sizing_mode', False):
+            pass
+        elif expand_width and expand_height and not self.width and not self.height:
             if allow_height_scale or 'both' in (sizing_mode or ''):
                 sizing_mode = f'{mode}_both'
             else:

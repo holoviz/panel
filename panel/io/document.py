@@ -310,7 +310,7 @@ def write_events(
     if state._unblocked(doc):
         _dispatch_write_task(doc, _run_write_futures, doc)
     else:
-        doc.add_next_tick_callback(partial(_run_write_futures, doc))
+        doc.add_next_tick_callback(partial(_run_write_futures, doc))  # type: ignore[arg-type]
 
 def schedule_write_events(
     doc: Document,
