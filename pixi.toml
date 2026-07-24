@@ -283,6 +283,7 @@ SPHINX_APIDOC_OPTIONS = "members,show-inheritance"
 
 [feature.doc.dependencies]
 lxml = "*"
+nbconvert = ">=7"
 nbsite = ">=0.9.0a20"
 selenium = "*"
 numpydoc = "*"
@@ -296,6 +297,7 @@ _docs-generate = 'nbsite build --what=html --output=builtdocs --org holoviz --pr
 _docs-generate-parallel = 'nbsite build --what=html --output=builtdocs --org holoviz --project-name panel'
 _docs-copy-panel-dist = 'cp -r ./panel/dist ./builtdocs/panel_dist'
 _docs-pyodide = 'panel convert examples/gallery/*.ipynb doc/how_to/*/examples/*.md --to pyodide-worker --out ./builtdocs/pyodide/ --pwa --index --requirements doc/pyodide_dependencies.json --exclude examples/gallery/vtk*.ipynb'
+_docs-markdown = 'python scripts/build_markdown.py'
 docs-server = 'python -m http.server 5500 --directory ./builtdocs'
 
 [feature.doc.tasks.docs-build]
@@ -305,6 +307,7 @@ depends-on = [
     '_docs-generate',
     '_docs-copy-panel-dist',
     '_docs-pyodide',
+    '_docs-markdown',
 ]
 
 [feature.doc.tasks.docs-build-parallel]
@@ -314,6 +317,7 @@ depends-on = [
     '_docs-generate-parallel',
     '_docs-copy-panel-dist',
     '_docs-pyodide',
+    '_docs-markdown',
 ]
 
 # =============================================
