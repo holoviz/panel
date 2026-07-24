@@ -133,6 +133,13 @@ Deepen your understanding about Panel's built in components.
 Deepen your understanding about custom `ReactiveHTML` components
 :::
 
+:::{grid-item-card} {octicon}`code;2.5em;sd-mr-1 sd-animate-grow50` ESM components
+:link: ../how_to/custom_components/index.html#esm-components
+:link-type: url
+
+Deepen your understanding about custom ESM components, written in JavaScript, React, or AnyWidget.
+:::
+
 ::::
 
 ## Architecture
