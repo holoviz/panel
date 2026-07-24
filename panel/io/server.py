@@ -125,6 +125,43 @@ _MAX_ROUTE_PARAM_KEY_CHARS = 128
 _MAX_ROUTE_PARAM_VALUE_CHARS = 1024
 _MAX_APP_PATH_CHARS = 2048
 
+# The browser echoes the Bokeh session token back in the `Sec-WebSocket-Protocol`
+# request header when opening the WebSocket connection. Many proxies reject
+# request headers larger than 8 kB (e.g. nginx `large_client_header_buffers`),
+# which surfaces as a cryptic "Could not open websocket". Warn once per app when
+# the token approaches that size so the cause is discoverable. See
+# https://panel.holoviz.org/how_to/authentication/trouble_shooting.html
+WS_TOKEN_SIZE_WARNING_THRESHOLD = 7600
+_ws_token_size_warned: set[str] = set()
+
+
+def _warn_if_ws_token_too_large(path: str, token: str) -> None:
+    """
+    Warn (once per app path) when the session token is large enough to risk
+    rejection by a proxy's request-header size limit.
+
+    The browser sends this token in the ``Sec-WebSocket-Protocol`` header when
+    opening the WebSocket connection; proxies such as nginx reject request
+    headers larger than 8 kB by default, which surfaces as a cryptic
+    "Could not open websocket".
+    """
+    if len(token) <= WS_TOKEN_SIZE_WARNING_THRESHOLD or path in _ws_token_size_warned:
+        return
+    _ws_token_size_warned.add(path)
+    logger.warning(
+        "The Bokeh session token for %r is %d bytes. The browser sends this "
+        "token in the 'Sec-WebSocket-Protocol' header when opening the "
+        "WebSocket connection. Some proxies reject request headers larger than "
+        "8 kB (e.g. nginx 'large_client_header_buffers'); if yours does, the "
+        "connection will fail with 'Could not open websocket'. This is only a "
+        "problem if you actually see that error - if the app connects fine you "
+        "can ignore this message. Otherwise, raise the proxy's request-header "
+        "buffer or reduce the token size (e.g. `panel serve --exclude-cookies "
+        "...`). See "
+        "https://panel.holoviz.org/how_to/authentication/trouble_shooting.html",
+        path, len(token),
+    )
+
 
 def _has_prefix_boundary(path: str, prefix: str) -> bool:
     if path == prefix:
@@ -695,6 +732,7 @@ class DocHandler(LoginUrlMixin, BkDocHandler):
                 )
         else:
             token = session.token
+        _warn_if_ws_token_too_large(self.request.path, token)
         logger.info(LOG_SESSION_CREATED, id(session.document))
         with set_curdoc(session.document):
             resources = Resources.from_bokeh(self.application.resources())
