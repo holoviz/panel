@@ -404,10 +404,10 @@ export class DataTabulatorView extends HTMLBoxView {
     const {
       configuration, layout, columns, groupby, visible, download,
       children, expanded, cell_styles, hidden_columns, page_size,
-      page, max_page, frozen_rows, sorters, theme_classes,
+      page, max_page, frozen_rows, movable_columns, sorters, theme_classes,
     } = this.model.properties
 
-    this.on_change([configuration, layout, groupby], debounce(() => {
+    this.on_change([configuration, layout, groupby, movable_columns], debounce(() => {
       this.invalidate_render()
     }, 20, false))
 
@@ -910,7 +910,7 @@ export class DataTabulatorView extends HTMLBoxView {
       ...transformJsPlaceholders(this.model.configuration),
       index: "_index",
       nestedFieldSeparator: false,
-      movableColumns: false,
+      movableColumns: this.model.movable_columns,
       selectableRows,
       columns: this.getColumns(),
       initialSort: this.sorters,
@@ -1653,6 +1653,7 @@ export namespace DataTabulator {
     indexes: p.Property<string[]>
     layout: p.Property<typeof TableLayout["__type__"]>
     max_page: p.Property<number>
+    movable_columns: p.Property<boolean>
     page: p.Property<number>
     page_size: p.Property<number | null>
     pagination: p.Property<string | null>
@@ -1700,6 +1701,7 @@ export class DataTabulator extends HTMLBox {
       indexes:        [ List(Str),           [] ],
       layout:         [ TableLayout,     "fit_data" ],
       max_page:       [ Float,                   0 ],
+      movable_columns: [ Bool,               false ],
       pagination:     [ Nullable(Str),      null ],
       page:           [ Float,                   0 ],
       page_size:      [ Nullable(Float),       null ],
