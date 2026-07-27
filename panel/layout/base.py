@@ -16,6 +16,7 @@ import param
 from bokeh.models import Row as BkRow
 from param.parameterized import iscoroutinefunction, resolve_ref
 
+from ..config import config
 from ..io.document import freeze_doc, hold
 from ..io.resources import CDN_DIST
 from ..models.layout import Column as PnColumn, ScrollToEvent
@@ -92,6 +93,8 @@ class SizingModeMixin:
         heights, widths = [], []
         all_expand_height, expand_width, expand_height, scale = True, self.width_policy=="max", self.height_policy=="max", False
 
+        explicit_width = getattr(self, '_explicit_width_policy', False)
+        explicit_height = getattr(self, '_explicit_height_policy', False)
         for child in children:
             smode = child.sizing_mode
             if smode and 'scale' in smode:
@@ -99,13 +102,29 @@ class SizingModeMixin:
 
             width_expanded = smode in ('stretch_width', 'stretch_both', 'scale_width', 'scale_both')
             height_expanded = smode in ('stretch_height', 'stretch_both', 'scale_height', 'scale_both')
-            # Only inherit a child's responsiveness along an axis if the
-            # corresponding policy was not explicitly set to a non-max
-            # value. An explicit width_policy/height_policy of "max"
-            # already forces expansion via the initializer above.
-            if not getattr(self, '_explicit_width_policy', False):
+            if explicit_width and width_expanded:
+                if config.respect_explicit_sizing:
+                    pass
+                else:
+                    self.param.warning(
+                        f"width_policy={self.width_policy!r} on {type(self).__name__} is "
+                        "being overridden by a child's sizing. Set "
+                        "pn.config.respect_explicit_sizing=True to prevent this."
+                    )
+                    expand_width |= width_expanded
+            else:
                 expand_width |= width_expanded
-            if not getattr(self, '_explicit_height_policy', False):
+            if explicit_height and height_expanded:
+                if config.respect_explicit_sizing:
+                    pass
+                else:
+                    self.param.warning(
+                        f"height_policy={self.height_policy!r} on {type(self).__name__} is "
+                        "being overridden by a child's sizing. Set "
+                        "pn.config.respect_explicit_sizing=True to prevent this."
+                    )
+                    expand_height |= height_expanded
+            else:
                 expand_height |= height_expanded
             if width_expanded:
                 width = child.min_width
@@ -150,17 +169,31 @@ class SizingModeMixin:
         else:
             allow_height_scale = True
 
-        if getattr(self, '_explicit_sizing_mode', False):
-            pass
-        elif expand_width and expand_height and not self.width and not self.height:
+        # Infer what sizing_mode the children demand.
+        inferred_mode = None
+        if expand_width and expand_height and not self.width and not self.height:
             if allow_height_scale or 'both' in (sizing_mode or ''):
-                sizing_mode = f'{mode}_both'
+                inferred_mode = f'{mode}_both'
             else:
-                sizing_mode = f'{mode}_width'
+                inferred_mode = f'{mode}_width'
         elif expand_width and not self.width:
-            sizing_mode = f'{mode}_width'
+            inferred_mode = f'{mode}_width'
         elif expand_height and not self.height and allow_height_scale:
-            sizing_mode = f'{mode}_height'
+            inferred_mode = f'{mode}_height'
+
+        explicit_sizing = getattr(self, '_explicit_sizing_mode', False)
+        if explicit_sizing and inferred_mode and inferred_mode != sizing_mode:
+            if config.respect_explicit_sizing:
+                inferred_mode = None
+            else:
+                self.param.warning(
+                    f"sizing_mode={sizing_mode!r} on {type(self).__name__} is being "
+                    f"overridden to {inferred_mode!r} by a child's sizing. Set "
+                    "pn.config.respect_explicit_sizing=True to prevent this."
+                )
+
+        if inferred_mode:
+            sizing_mode = inferred_mode
         if sizing_mode is None:
             return {'sizing_mode': props.get('sizing_mode')}
 

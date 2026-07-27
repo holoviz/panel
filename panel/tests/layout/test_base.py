@@ -7,6 +7,7 @@ import pytest
 from bokeh.models import Column as BkColumn, Div, Row as BkRow
 
 from panel.chat import ChatInterface
+from panel.config import config
 from panel.layout import (
     Accordion, Card, Column, FlexBox, Row, Spacer, Tabs, WidgetBox,
 )
@@ -686,7 +687,8 @@ def test_compute_sizing_mode_explicit_sizing_mode_not_inherited(document, comm):
     md = Markdown('foo', sizing_mode='stretch_width')
     col = Column(md, sizing_mode='fixed')
 
-    root = col.get_root(document, comm=comm)
+    with config.set(respect_explicit_sizing=True):
+        root = col.get_root(document, comm=comm)
 
     assert root.sizing_mode == 'fixed'
 
@@ -694,7 +696,8 @@ def test_compute_sizing_mode_explicit_width_policy_max_still_inherited(document,
     md = Markdown('foo', sizing_mode='stretch_width')
     col = Column(md, width_policy='max')
 
-    root = col.get_root(document, comm=comm)
+    with config.set(respect_explicit_sizing=True):
+        root = col.get_root(document, comm=comm)
 
     assert root.sizing_mode == 'stretch_width'
     assert root.width_policy == 'max'
@@ -703,7 +706,8 @@ def test_compute_sizing_mode_explicit_width_policy_not_max_not_inherited(documen
     md = Markdown('foo', sizing_mode='stretch_width')
     col = Column(md, width_policy='fixed')
 
-    root = col.get_root(document, comm=comm)
+    with config.set(respect_explicit_sizing=True):
+        root = col.get_root(document, comm=comm)
 
     assert root.sizing_mode is None
     assert root.width_policy == 'fixed'
@@ -712,7 +716,8 @@ def test_compute_sizing_mode_explicit_height_policy_not_max_not_inherited(docume
     md = Markdown('foo', sizing_mode='stretch_height')
     col = Column(md, height_policy='fixed')
 
-    root = col.get_root(document, comm=comm)
+    with config.set(respect_explicit_sizing=True):
+        root = col.get_root(document, comm=comm)
 
     assert root.sizing_mode is None
     assert root.height_policy == 'fixed'
