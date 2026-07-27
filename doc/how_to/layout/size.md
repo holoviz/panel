@@ -80,6 +80,75 @@ pn.Column(
     ), height=400, width=500, styles={'background': '#f0f0f0'})
 ```
 
+## Constrain Responsive Sizes
+
+The `min_width`, `max_width`, `min_height`, and `max_height` parameters limit
+how far a responsive component can shrink or grow. A bound only affects an
+adjustable dimension, so pair `max_width` with a width-responsive sizing mode
+and `max_height` with a height-responsive sizing mode.
+
+For example, the pane below fills the available width until it reaches 500
+pixels, and never shrinks below 200 pixels:
+
+```{pyodide}
+pn.pane.Markdown(
+    "Resize the browser to see the width change.",
+    sizing_mode="stretch_width",
+    min_width=200,
+    max_width=500,
+    styles={"background": "#f0f0f0", "padding": "1rem"},
+)
+```
+
+The `width` and `height` parameters act as preferred sizes when the
+corresponding dimension is responsive. The minimum and maximum bounds still
+take precedence.
+
+## Set a Default Sizing Mode
+
+To avoid repeating the same `sizing_mode` on every component, set a default
+when loading Panel:
+
+```python
+pn.extension(sizing_mode="stretch_width")
+```
+
+The equivalent configuration setting is useful when Panel has already been
+loaded:
+
+```python
+pn.config.sizing_mode = "stretch_width"
+```
+
+These defaults apply to components created afterwards. A `sizing_mode`
+specified directly on a component takes precedence.
+
+## Fine-grained Width and Height Policies
+
+The `width_policy` and `height_policy` parameters provide lower-level control
+over each dimension. They take precedence over `sizing_mode` and accept the
+same policy choices for the horizontal and vertical axes:
+
+| Policy | Behavior |
+| --- | --- |
+| `"auto"` | Use the component's preferred policy. |
+| `"fixed"` | Use exactly `width` or `height`; the component may overflow its container. |
+| `"fit"` | Prefer `width` or `height`, but fit within the available space and any minimum or maximum bounds. |
+| `"min"` | Use as little space as possible without crossing the minimum bound. |
+| `"max"` | Use as much space as possible without crossing the maximum bound. |
+
+For example, `width_policy="max"` makes this row use the available horizontal
+space, while `max_width` prevents it from becoming wider than 600 pixels:
+
+```{pyodide}
+pn.Row(
+    pn.widgets.TextInput(name="Name", width_policy="max"),
+    pn.widgets.Button(name="Submit"),
+    width_policy="max",
+    max_width=600,
+)
+```
+
 ---
 
 ## Related Resources

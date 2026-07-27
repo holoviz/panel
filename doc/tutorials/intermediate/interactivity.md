@@ -343,7 +343,9 @@ class DataExplorer(Viewer):
             & dfrx.p_cap.between(p_cap_min, p_cap_max)
         ][self.param.columns]
 
-        self.number_of_rows = pn.rx("Rows: {len_df}").format(len_df=pn.rx(len)(dfrx))
+        self.number_of_rows = pn.rx("Rows: {len_df}").format(
+            len_df=pn.rx(len)(self.filtered_data)
+        )
 
     def __panel__(self):
         return pn.Column(
