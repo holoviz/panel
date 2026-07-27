@@ -116,7 +116,7 @@ class SizingModeMixin:
                     expand_width |= width_expanded
             else:
                 expand_width |= width_expanded
-            if explicit_height and height_expanded:
+            if explicit_height and height_expanded and self.height_policy != 'max':
                 if config.respect_explicit_sizing:
                     pass
                 else:
@@ -185,14 +185,29 @@ class SizingModeMixin:
 
         explicit_sizing = getattr(self, '_explicit_sizing_mode', False)
         if explicit_sizing and inferred_mode and inferred_mode != sizing_mode:
-            if config.respect_explicit_sizing:
-                inferred_mode = None
+            explicit_axes = set()
+            if sizing_mode and ('width' in sizing_mode or 'both' in sizing_mode):
+                explicit_axes.add('width')
+            if sizing_mode and ('height' in sizing_mode or 'both' in sizing_mode):
+                explicit_axes.add('height')
+            inferred_axes = set()
+            if 'width' in inferred_mode or 'both' in inferred_mode:
+                inferred_axes.add('width')
+            if 'height' in inferred_mode or 'both' in inferred_mode:
+                inferred_axes.add('height')
+            # Only a conflict when inference adds axes the explicit mode didn't request.
+            # If inference would downgrade (fewer axes), suppress it silently.
+            if not inferred_axes.issubset(explicit_axes):
+                if config.respect_explicit_sizing:
+                    inferred_mode = None
+                else:
+                    self.param.warning(
+                        f"sizing_mode={sizing_mode!r} on {type(self).__name__} is being "
+                        f"overridden to {inferred_mode!r} by a child's sizing. Set "
+                        "pn.config.respect_explicit_sizing=True to prevent this."
+                    )
             else:
-                self.param.warning(
-                    f"sizing_mode={sizing_mode!r} on {type(self).__name__} is being "
-                    f"overridden to {inferred_mode!r} by a child's sizing. Set "
-                    "pn.config.respect_explicit_sizing=True to prevent this."
-                )
+                inferred_mode = None
 
         if inferred_mode:
             sizing_mode = inferred_mode
