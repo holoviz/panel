@@ -102,7 +102,9 @@ class SizingModeMixin:
 
             width_expanded = smode in ('stretch_width', 'stretch_both', 'scale_width', 'scale_both')
             height_expanded = smode in ('stretch_height', 'stretch_both', 'scale_height', 'scale_both')
-            if explicit_width and width_expanded:
+            # 'max' already requests expansion so a child expanding the same
+            # axis is not a conflict. Only warn/block for restrictive policies.
+            if explicit_width and width_expanded and self.width_policy != 'max':
                 if config.respect_explicit_sizing:
                     pass
                 else:
