@@ -52,7 +52,7 @@ features = ["py314", "required", "test-core", "test-unit-task"]
 no-default-feature = true
 
 [environments.test-bokeh39]
-features = ["py310", "required", "test-core", "test-unit-task", "bokeh39"]
+features = ["py311", "required", "test-core", "test-unit-task", "bokeh39"]
 no-default-feature = true
 
 [environments.test-type]
@@ -76,6 +76,8 @@ features = ["py311", "required", "lite"]
 no-default-feature = true
 
 [feature.required.dependencies]
+hatchling = "*"
+hatch-vcs = "*"
 nodejs = ">=18"
 esbuild = "*"
 nomkl = "*"
@@ -99,7 +101,7 @@ tqdm = ">=4.48.0"
 typing_extensions = "*"
 
 [feature.required.tasks]
-install = 'python -m pip install --no-deps --disable-pip-version-check -e .'
+install = 'python -m pip install --no-deps --no-build-isolation --disable-pip-version-check -e .'
 
 [feature.py310.dependencies]
 python = "3.10.*"
