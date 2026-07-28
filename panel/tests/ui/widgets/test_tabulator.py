@@ -231,6 +231,15 @@ def test_tabulator_movable_columns(page):
         'B', 'A', 'C'
     ]
 
+    moved_cell = page.locator('[tabulator-field="A"][role=gridcell]').first
+    moved_cell.click()
+    editor = page.locator('input[type="number"]')
+    editor.fill('11')
+    editor.press('Enter')
+
+    wait_until(lambda: widget.value.at[0, 'A'] == 11, page)
+    assert widget.value.at[0, 'B'] == 2
+
     widget.movable_columns = False
 
     wait_until(
