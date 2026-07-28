@@ -52,7 +52,7 @@ features = ["py314", "required", "test-core", "test-unit-task"]
 no-default-feature = true
 
 [environments.test-bokeh39]
-features = ["py310", "required", "test-core", "test-unit-task", "bokeh39"]
+features = ["py311", "required", "test-core", "test-unit-task", "bokeh39"]
 no-default-feature = true
 
 [environments.test-type]
