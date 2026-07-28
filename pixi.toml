@@ -76,6 +76,8 @@ features = ["py311", "required", "lite"]
 no-default-feature = true
 
 [feature.required.dependencies]
+hatchling = "*"
+hatchling-vcs = "*"
 nodejs = ">=18"
 esbuild = "*"
 nomkl = "*"
