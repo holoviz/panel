@@ -77,7 +77,7 @@ no-default-feature = true
 
 [feature.required.dependencies]
 hatchling = "*"
-hatchling-vcs = "*"
+hatch-vcs = "*"
 nodejs = ">=18"
 esbuild = "*"
 nomkl = "*"
