@@ -234,6 +234,14 @@ class _config(_base_config):
         'scale_width', 'scale_height', 'scale_both', None], doc="""
         Specify the default sizing mode behavior of panels.""")  # type: ignore[assignment, ty:invalid-assignment]
 
+    respect_explicit_sizing = param.Boolean(default=False, doc="""
+        When enabled, explicitly set sizing_mode/width_policy/height_policy on a
+        layout are respected and never overridden by values inferred from the
+        layout's children. When disabled (the default) the legacy behaviour is
+        preserved: child-inferred values silently override explicit settings, but
+        a warning is emitted whenever such an override would occur so that the
+        incorrect specification can be corrected.""")
+
     template: str = param.Selector(default=None, doc="""
         The default template to render served applications into.""")  # type: ignore[assignment, ty:invalid-assignment]
 
