@@ -199,6 +199,57 @@ def test_tabulator_show_index_disabled(page, df_mixed):
     expect(page.locator('text="index"')).to_have_count(0)
 
 
+def test_tabulator_movable_columns(page):
+    widget = Tabulator(
+        pd.DataFrame({'A': [1], 'B': [2], 'C': [3]}),
+        movable_columns=True,
+        show_index=False,
+    )
+
+    serve_component(page, widget)
+
+    headers = page.locator(
+        '.tabulator-col[tabulator-field]:visible:not([tabulator-field="_index"])'
+    )
+    expect(headers).to_have_count(3)
+    assert [headers.nth(i).get_attribute('tabulator-field') for i in range(3)] == [
+        'A', 'B', 'C'
+    ]
+
+    assert page.evaluate(
+        "() => Object.values(Bokeh.index)[0].tabulator.options.movableColumns"
+    )
+
+    page.evaluate(
+        """() => {
+          const table = Object.values(Bokeh.index)[0].tabulator
+          table.moveColumn('A', 'B', true)
+        }"""
+    )
+
+    assert [headers.nth(i).get_attribute('tabulator-field') for i in range(3)] == [
+        'B', 'A', 'C'
+    ]
+
+    moved_cell = page.locator('[tabulator-field="A"][role=gridcell]').first
+    moved_cell.click()
+    editor = page.locator('input[type="number"]')
+    editor.fill('11')
+    editor.press('Enter')
+
+    wait_until(lambda: widget.value.at[0, 'A'] == 11, page)
+    assert widget.value.at[0, 'B'] == 2
+
+    widget.movable_columns = False
+
+    wait_until(
+        lambda: not page.evaluate(
+            "() => Object.values(Bokeh.index)[0].tabulator.options.movableColumns"
+        ),
+        page,
+    )
+
+
 def test_tabulator_titles(page, df_mixed):
     titles = {col: col.upper() for col in df_mixed.columns}
     widget = Tabulator(df_mixed, titles=titles)
@@ -3887,6 +3938,22 @@ def test_tabulator_remote_pagination_auto_page_size_shrink(page, df_mixed):
     expect(page.locator('.tabulator-table')).to_have_count(1)
 
     wait_until(lambda: widget.page_size == 3, page)
+
+
+def test_tabulator_local_pagination_page_size_preserved_on_value_none(page, df_mixed):
+    widget = Tabulator(df_mixed, pagination='local')
+
+    serve_component(page, widget)
+
+    expect(page.locator('.tabulator-row')).to_have_count(4)
+
+    widget.value = None
+    page.wait_for_timeout(200)
+    expect(page.locator('.tabulator-row')).to_have_count(0)
+
+    widget.value = df_mixed
+    page.wait_for_timeout(200)
+    expect(page.locator('.tabulator-row')).to_have_count(4)
 
 
 @pytest.mark.parametrize('pagination', ['local', 'remote', None])

@@ -8,8 +8,9 @@ from playwright.sync_api import expect
 import panel as pn
 
 from panel.tests.util import serve_component, wait_until
+from panel.theme import Fast
 from panel.widgets import TooltipIcon
-from panel.widgets.indicators import Gauge
+from panel.widgets.indicators import Gauge, Progress
 
 pytestmark = pytest.mark.ui
 
@@ -25,33 +26,33 @@ def test_plaintext_tooltip(page, value):
     icon = page.locator(".bk-icon")
     expect(icon).to_have_count(1)
     tooltip = page.locator(".bk-tooltip-content")
-    expect(tooltip).to_have_count(0)
+    expect(tooltip).not_to_be_visible()
 
     # Hovering over the icon should show the tooltip
     page.hover(".bk-icon")
     tooltip = page.locator(".bk-tooltip-content")
-    expect(tooltip).to_have_count(1)
+    expect(tooltip).to_be_visible()
     expect(tooltip).to_have_text("Test")
 
     # Removing hover should hide the tooltip
     page.hover("body")
     tooltip = page.locator(".bk-tooltip-content")
-    expect(tooltip).to_have_count(0)
+    expect(tooltip).not_to_be_visible()
 
     # Clicking the icon should show the tooltip
     page.click(".bk-icon")
     tooltip = page.locator(".bk-tooltip-content")
-    expect(tooltip).to_have_count(1)
+    expect(tooltip).to_be_visible()
 
     # Removing the hover should keep the tooltip
     page.hover("body")
     tooltip = page.locator(".bk-tooltip-content")
-    expect(tooltip).to_have_count(1)
+    expect(tooltip).to_be_visible()
 
     # Clicking should remove the tooltip
     page.click("body")
     tooltip = page.locator(".bk-tooltip-content")
-    expect(tooltip).to_have_count(0)
+    expect(tooltip).not_to_be_visible()
 
 
 def test_tooltip_text_updates(page):
@@ -62,26 +63,26 @@ def test_tooltip_text_updates(page):
     icon = page.locator(".bk-icon")
     expect(icon).to_have_count(1)
     tooltip = page.locator(".bk-tooltip-content")
-    expect(tooltip).to_have_count(0)
+    expect(tooltip).not_to_be_visible()
 
     # Hovering over the icon should show the tooltip
     page.hover(".bk-icon")
     tooltip = page.locator(".bk-tooltip-content")
-    expect(tooltip).to_have_count(1)
+    expect(tooltip).to_be_visible()
     expect(tooltip).to_have_text("Test")
 
     tooltip_icon.value = "Updated"
 
     def hover():
         page.hover(".bk-icon")
-        visible = page.locator(".bk-tooltip-content").count() == 1
+        visible = page.locator(".bk-tooltip-content").is_visible()
         page.hover("body")
         return visible
     wait_until(hover, page)
 
     page.hover(".bk-icon")
     tooltip = page.locator(".bk-tooltip-content")
-    expect(tooltip).to_have_count(1)
+    expect(tooltip).to_be_visible()
     expect(tooltip).to_have_text("Updated")
 
 
@@ -133,3 +134,23 @@ def test_gauge_value_update(page):
 
     # Canvas should still be present after update
     expect(page.locator("canvas")).to_have_count(1, timeout=5000)
+
+
+def test_fast_progress_indicator_height(page):
+    progress = Progress(value=20, design=Fast)
+
+    serve_component(page, progress)
+
+    progress_el = page.locator("progress")
+    expect(progress_el).to_have_count(1)
+    expect(progress_el).to_have_css("height", "20px")
+
+
+def test_fast_progress_indicator_explicit_height(page):
+    progress = Progress(value=20, height=32, design=Fast)
+
+    serve_component(page, progress)
+
+    progress_el = page.locator("progress")
+    expect(progress_el).to_have_count(1)
+    expect(progress_el).to_have_css("height", "32px")

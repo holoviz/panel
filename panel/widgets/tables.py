@@ -289,7 +289,7 @@ class BaseTable(ReactiveData, Widget):
                     editor = clone_model(editor)
 
             if col in indexes or editor is None:
-                editor = CellEditor()
+                editor = CellEditor() # type: ignore[abstract]
 
             if formatter is None or isinstance(formatter, (dict, str, JSCode)):
                 if kind == 'i':
@@ -1262,6 +1262,9 @@ class Tabulator(BaseTable):
 
     hidden_columns = param.List(default=[], item_type=str, nested_refs=True, doc="""
         List of columns to hide.""")  # type: ignore[assignment, ty:invalid-assignment]
+
+    movable_columns = param.Boolean(default=False, doc="""
+        Whether columns can be reordered by dragging their headers.""")
 
     layout: t.Literal[
         'fit_data', 'fit_data_fill', 'fit_data_stretch', 'fit_data_table',

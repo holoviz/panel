@@ -213,11 +213,14 @@ def process_raw_css(raw_css: list[str]) -> list[str]:
 
 @lru_cache(maxsize=None)
 def loading_css(loading_spinner: str, color: str, max_height: int):
+    size = f"calc(min(40px, {max_height}px))"
     return textwrap.dedent(f"""
     :host(.pn-loading):before, .pn-loading:before {{
       background-color: {color};
-      mask-size: auto calc(min(50%, {max_height}px));
-      -webkit-mask-size: auto calc(min(50%, {max_height}px));
+      width: {size};
+      height: {size};
+      mask-size: {size} {size};
+      -webkit-mask-size: {size} {size};
     }}""")
 
 def resolve_custom_path(

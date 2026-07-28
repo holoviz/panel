@@ -43,7 +43,7 @@ if t.TYPE_CHECKING:
 
 PROCESSES: dict[int, Process] = {}
 
-log_sessions = []
+log_sessions: list = []
 
 class LogFilter(logging.Filter):
 

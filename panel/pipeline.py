@@ -180,7 +180,6 @@ class Pipeline(Viewer):
         self._states = {}
         self._state = None
         self._linear = True
-        self._block = False
         self._error = None
         self._graph = {}
         self._route = []
@@ -248,18 +247,12 @@ class Pipeline(Viewer):
         return self._stages[index][0]
 
     def _unblock(self, event):
-        if self._state is not event.obj or self._block:
-            self._block = False
+        self.next_button.disabled = not event.new
+        if not event.new:
             return
 
-        button = self.next_button
-        if button.disabled and event.new:
-            button.disabled = False
-        elif not button.disabled and not event.new:
-            button.disabled = True
-
         stage_kwargs = self._stages[self._stage][-1]
-        if event.new and stage_kwargs.get('auto_advance', self.auto_advance):
+        if stage_kwargs.get('auto_advance', self.auto_advance):
             self._next()
 
     def _select_next(self, event):
@@ -444,7 +437,6 @@ class Pipeline(Viewer):
                 self.stage[0] = self._state.panel()
             else:
                 self.stage[0] = self._init_stage()
-            self._block = True
         except Exception as e:
             self.error[:] = [self._get_error_button(e)]
             self._error = self._stage

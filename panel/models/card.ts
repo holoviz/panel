@@ -77,12 +77,9 @@ export class CardView extends ColumnView {
       })
     }
 
-    this._update_stylesheets()
-    this._update_css_classes()
-    this._apply_styles()
+    this._apply_stylesheets()
+    this._apply_html_attributes()
     this._apply_visible()
-
-    this.class_list.add(...this.css_classes())
 
     const {button_css_classes, header_color, header_tag, header_css_classes} = this.model
 

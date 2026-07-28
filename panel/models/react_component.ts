@@ -2,14 +2,12 @@ import type {BuildResult, Options, ViewStorage} from "@bokehjs/core/build_views"
 import {build_views} from "@bokehjs/core/build_views"
 import type {HasProps} from "@bokehjs/core/has_props"
 import type {ViewOf} from "@bokehjs/core/view"
-import type {StyleSheetLike} from "@bokehjs/core/dom"
 import type {DOMView} from "@bokehjs/core/dom_view"
-import {ClassList, InlineStyleSheet, ImportedStyleSheet} from "@bokehjs/core/dom"
+import {ClassList, InlineStyleSheet} from "@bokehjs/core/dom"
 import type {CSSStyles, CSSStyleSheetDecl} from "@bokehjs/core/css"
 import type * as p from "@bokehjs/core/properties"
 import {difference} from "@bokehjs/core/util/array"
 import {assert} from "@bokehjs/core/util/assert"
-import {isString} from "@bokehjs/core/util/types"
 import type {UIElementView} from "@bokehjs/models/ui/ui_element"
 import type {Transform} from "sucrase"
 
@@ -20,8 +18,8 @@ import {
 export class HostedStyleSheet extends InlineStyleSheet {
   host_id: string
 
-  constructor(css?: string | CSSStyleSheetDecl, id?: string, override readonly persistent: boolean = false, host_id: string = "") {
-    super(css, id, persistent)
+  constructor(css?: string | CSSStyleSheetDecl, id?: string, host_id: string = "") {
+    super(css, id)
     this.host_id = host_id
   }
 
@@ -41,6 +39,10 @@ export class HostedStyleSheet extends InlineStyleSheet {
   }
 
 }
+
+// Tracks the CSS text of adopted native stylesheets so that sibling
+// components sharing a root can deduplicate identical inline stylesheets.
+const adopted_css = new WeakMap<CSSStyleSheet, string>()
 
 async function _build_view<T extends HasProps>(view_cls: T["default_view"], model: T, options: Options<ViewOf<T>>): Promise<ViewOf<T>> {
   assert(view_cls != null, "model doesn't implement a view")
@@ -103,9 +105,9 @@ export class ReactComponentView extends ReactiveESMView {
   override initialize(): void {
     super.initialize()
     if (!this.use_shadow_dom) {
-      (this as any).display = new HostedStyleSheet("", "display", false, this.model.id);
-      (this as any).style = new HostedStyleSheet("", "style", false, this.model.id);
-      (this as any).parent_style = new HostedStyleSheet("", "parent", true, this.model.id)
+      (this as any).display = new HostedStyleSheet("", "display", this.model.id);
+      (this as any).self_style = new HostedStyleSheet("", "style", this.model.id);
+      (this as any).parent_style = new HostedStyleSheet("", "parent", this.model.id)
     }
   }
 
@@ -159,13 +161,27 @@ export class ReactComponentView extends ReactiveESMView {
       for (const view of this._scheduled_removals) { view.remove() }
       this._scheduled_removals = []
     } else {
-      this._applied_stylesheets.forEach((stylesheet) => stylesheet.uninstall())
+      this._remove_stylesheets()
       for (const cb of (this._lifecycle_handlers.get("remove") || [])) {
         cb()
       }
       this._child_callbacks.clear()
       this._child_rendered.clear()
       this._mounted.clear()
+    }
+  }
+
+  protected _remove_stylesheets(): void {
+    const root = this.root_view.shadow_el
+    for (const el of this._applied_stylesheets) {
+      el.remove()
+    }
+    this._applied_stylesheets = []
+    if (this._adopted_stylesheets.length > 0) {
+      root.adoptedStyleSheets = root.adoptedStyleSheets.filter(
+        (sheet) => !this._adopted_stylesheets.includes(sheet),
+      )
+      this._adopted_stylesheets = []
     }
   }
 
@@ -180,24 +196,47 @@ export class ReactComponentView extends ReactiveESMView {
     return root
   }
 
-  protected override _apply_stylesheets(stylesheets: StyleSheetLike[]): void {
-    const resolved_stylesheets = stylesheets.map((style) => isString(style) ? new InlineStyleSheet(style) : style)
-    const styles = this.root_view.shadow_el.querySelectorAll("style")
-    const links = this.root_view.shadow_el.querySelectorAll("link")
-    resolved_stylesheets.forEach((stylesheet) => {
-      if (!this.use_shadow_dom) {
-        if (stylesheet instanceof InlineStyleSheet &&
-            Array.from(styles).some(style => style.innerHTML === stylesheet.css)) {
-          return
+  // Native stylesheets this view adopted into the (potentially shared) root.
+  protected _adopted_stylesheets: CSSStyleSheet[] = []
+
+  protected override _apply_stylesheets(): void {
+    const root = this.root_view.shadow_el
+
+    this._remove_stylesheets()
+
+    const applied: HTMLElement[] = []
+    const adopted: CSSStyleSheet[] = []
+    for (const stylesheet of this.resolved_stylesheets) {
+      if (stylesheet.is_global) {
+        const el = stylesheet.to_element()
+        document.head.append(el)
+        applied.push(el)
+      } else if (stylesheet.is_inline) {
+        // Adopt the reactive native stylesheet so that computed styles
+        // (display, self/parent style, css variables) keep updating.
+        const native = stylesheet.to_native()
+        if (!this.use_shadow_dom) {
+          const css = (stylesheet as InlineStyleSheet).css
+          if (root.adoptedStyleSheets.some((sheet) => adopted_css.get(sheet) === css)) {
+            continue
+          }
+          adopted_css.set(native, css)
         }
-        if (stylesheet instanceof ImportedStyleSheet &&
-            Array.from(links).some(link => link.href === (stylesheet as any).el.href)) {
-          return
+        adopted.push(native)
+      } else {
+        const el = stylesheet.to_element() as HTMLLinkElement
+        if (!this.use_shadow_dom &&
+            Array.from(root.querySelectorAll("link")).some((link) => link.href === el.href)) {
+          continue
         }
+        root.append(el)
+        applied.push(el)
       }
-      this._applied_stylesheets.push(stylesheet)
-      stylesheet.install(this.root_view.shadow_el)
-    })
+    }
+
+    root.adoptedStyleSheets = [...root.adoptedStyleSheets, ...adopted]
+    this._adopted_stylesheets = adopted
+    this._applied_stylesheets = applied
   }
 
   override render(): void {
@@ -295,7 +334,7 @@ export class ReactComponentView extends ReactiveESMView {
 
   patch_container(container: HTMLDivElement): void {
     this.el = this.container = container
-    this._update_stylesheets()
+    this._apply_stylesheets()
     this.class_list = new ClassList(this.container.classList)
     this._apply_html_attributes()
   }

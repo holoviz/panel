@@ -45,4 +45,6 @@ row.embed(states={slider: list(range(0, 12, 2))})
 
 As you might imagine if there are multiple widgets there can quickly be a combinatorial explosion of states so by default the output is limited to about 1000 states. For larger apps the states can also be exported to json files, e.g. if you want to serve the app on a website specify the ``save_path`` to declare where it will be stored and the ``load_path`` to declare where the JS code running on the website will look for the files.
 
+When the state is exported to json files, the generated HTML has to be served from an HTTP server rather than opened directly from disk. Browsers block access to local files (e.g. when the page is opened with a ``file://`` URL), so the embedded app cannot load its json files until it is served over HTTP, for example with ``python -m http.server``.
+
 ## Related Resources

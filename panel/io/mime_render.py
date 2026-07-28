@@ -112,7 +112,7 @@ def _convert_expr(expr: ast.Expr) -> ast.Expression:
     expr.lineno, expr.col_offset = 0, 0
     return ast.Expression(expr.value)
 
-_OUT_BUFFER = []
+_OUT_BUFFER: list = []
 
 def _display(*objs, **kwargs):
     """

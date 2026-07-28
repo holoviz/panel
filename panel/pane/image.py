@@ -24,7 +24,7 @@ if t.TYPE_CHECKING:
 
     from bokeh.model import Model
 
-_tasks = set()
+_tasks: set = set()
 
 
 class FileBase(HTMLBasePane):

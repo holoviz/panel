@@ -805,7 +805,6 @@ select:not([size]).bk-input {
 
 progress {
   border-radius: calc(var(--corner-radius) * 1px);
-  height: 5px;
   margin: 0 0 0.5em;
 }
 
@@ -831,7 +830,6 @@ progress:not([value])::-webkit-progress-bar {
 
 progress:not([value])::before {
   border-radius: calc(var(--corner-radius) * 1px);
-  height: 5px;
 }
 
 /* Panes */

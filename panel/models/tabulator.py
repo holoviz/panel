@@ -149,6 +149,8 @@ class DataTabulator(HTMLBox):
 
     layout = Enum('fit_data', 'fit_data_fill', 'fit_data_stretch', 'fit_data_table', 'fit_columns', default="fit_data")
 
+    movable_columns = Bool(default=False)
+
     source = Instance(ColumnDataSource)
 
     cell_styles = Dict(String, Either(String, Dict(Int, Dict(Int, List(Either(String, Tuple(String, String)))))))

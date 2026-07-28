@@ -8,7 +8,7 @@
     "url": "https://github.com/holoviz/panel.git"
   },
   "dependencies": {
-    "@bokeh/bokehjs": "^3.9.0",
+    "@bokeh/bokehjs": "^3.10.0-dev.7",
     "@types/debounce": "^1.2.0",
     "@types/gl-matrix": "^2.4.5",
     "ace-code": "^1.40.1",
@@ -24,7 +24,7 @@
     "@typescript-eslint/eslint-plugin": "^8.56.1",
     "@typescript-eslint/parser": "^8.56.1",
     "acorn": "^8.11.3",
-    "eslint": "^9.39.3",
+    "eslint": "^10.6.0",
     "flatpickr": "^4.6.9",
     "typescript-eslint": "^8.56.1"
   },
