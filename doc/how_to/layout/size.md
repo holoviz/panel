@@ -142,8 +142,8 @@ space, while `max_width` prevents it from becoming wider than 600 pixels:
 
 ```{pyodide}
 pn.Row(
-    pn.widgets.TextInput(name="Name", width_policy="max"),
-    pn.widgets.Button(name="Submit"),
+    pn.widgets.TextInput(label="Name", width_policy="max"),
+    pn.widgets.Button(label="Submit"),
     width_policy="max",
     max_width=600,
 )
