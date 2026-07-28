@@ -738,3 +738,65 @@ def test_compute_sizing_mode_dynamic_sizing_mode_not_inherited(document, comm):
     root = col.get_root(document, comm=comm)
 
     assert root.sizing_mode == 'fixed'
+
+def test_compute_sizing_mode_explicit_sizing_mode_override_warns(document, comm, caplog):
+    md = Markdown('foo', sizing_mode='stretch_width')
+    col = Column(md, sizing_mode='stretch_height')
+
+    root = col.get_root(document, comm=comm)
+
+    assert root.sizing_mode == 'stretch_width'
+    assert "sizing_mode='stretch_height' on Column is being overridden" in caplog.text
+
+@pytest.mark.parametrize('policy', ['fixed', 'min', 'max'])
+def test_compute_sizing_mode_explicit_width_policy_does_not_warn(policy, document, comm, caplog):
+    # width_policy takes precedence over sizing_mode so an inferred
+    # sizing_mode is not overriding the user's setting.
+    md = Markdown('foo', sizing_mode='stretch_width')
+    col = Column(md, width_policy=policy)
+
+    col.get_root(document, comm=comm)
+
+    assert 'being overridden' not in caplog.text
+
+@pytest.mark.parametrize('policy', ['fixed', 'min', 'max'])
+def test_compute_sizing_mode_explicit_height_policy_does_not_warn(policy, document, comm, caplog):
+    md = Markdown('foo', sizing_mode='stretch_height')
+    col = Column(md, height_policy=policy)
+
+    col.get_root(document, comm=comm)
+
+    assert 'being overridden' not in caplog.text
+
+def test_compute_sizing_mode_explicit_policy_suppresses_sizing_mode_warning(document, comm, caplog):
+    # The conflicting axis (width) is governed by the explicit width_policy,
+    # so the sizing_mode override is not reported as a conflict.
+    md = Markdown('foo', sizing_mode='stretch_width')
+    col = Column(md, sizing_mode='stretch_height', width_policy='fixed')
+
+    root = col.get_root(document, comm=comm)
+
+    assert root.width_policy == 'fixed'
+    assert 'being overridden' not in caplog.text
+
+def test_compute_sizing_mode_explicit_policy_respected_with_strict_config(document, comm, caplog):
+    md = Markdown('foo', sizing_mode='stretch_width')
+    col = Column(md, sizing_mode='stretch_height', width_policy='fixed')
+
+    with config.set(respect_explicit_sizing=True):
+        root = col.get_root(document, comm=comm)
+
+    assert root.sizing_mode == 'stretch_height'
+    assert root.width_policy == 'fixed'
+    assert 'being overridden' not in caplog.text
+
+def test_compute_sizing_mode_inference_downgrade_does_not_warn(document, comm, caplog):
+    # Children only expand width, which is narrower than the explicit
+    # stretch_both, so the explicit setting wins silently.
+    md = Markdown('foo', sizing_mode='stretch_width')
+    col = Column(md, sizing_mode='stretch_both')
+
+    root = col.get_root(document, comm=comm)
+
+    assert root.sizing_mode == 'stretch_both'
+    assert 'being overridden' not in caplog.text

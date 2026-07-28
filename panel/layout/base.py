@@ -102,32 +102,8 @@ class SizingModeMixin:
 
             width_expanded = smode in ('stretch_width', 'stretch_both', 'scale_width', 'scale_both')
             height_expanded = smode in ('stretch_height', 'stretch_both', 'scale_height', 'scale_both')
-            # 'max' already requests expansion so a child expanding the same
-            # axis is not a conflict. Only warn/block for restrictive policies.
-            if explicit_width and width_expanded and self.width_policy != 'max':
-                if config.respect_explicit_sizing:
-                    pass
-                else:
-                    self.param.warning(
-                        f"width_policy={self.width_policy!r} on {type(self).__name__} is "
-                        "being overridden by a child's sizing. Set "
-                        "pn.config.respect_explicit_sizing=True to prevent this."
-                    )
-                    expand_width |= width_expanded
-            else:
-                expand_width |= width_expanded
-            if explicit_height and height_expanded and self.height_policy != 'max':
-                if config.respect_explicit_sizing:
-                    pass
-                else:
-                    self.param.warning(
-                        f"height_policy={self.height_policy!r} on {type(self).__name__} is "
-                        "being overridden by a child's sizing. Set "
-                        "pn.config.respect_explicit_sizing=True to prevent this."
-                    )
-                    expand_height |= height_expanded
-            else:
-                expand_height |= height_expanded
+            expand_width |= width_expanded
+            expand_height |= height_expanded
             if width_expanded:
                 width = child.min_width
             else:
@@ -162,6 +138,17 @@ class SizingModeMixin:
                     height += margin*2
                 heights.append(height)
 
+        # An explicitly set width_policy/height_policy takes precedence over
+        # sizing_mode, so inferring expansion on that axis cannot change the
+        # rendered behavior. In strict mode we skip the inference entirely so
+        # the reported sizing_mode reflects what the user asked for; in either
+        # mode this is not a conflict and so is never warned about.
+        if config.respect_explicit_sizing:
+            if explicit_width and self.width_policy != 'max':
+                expand_width = False
+            if explicit_height and self.height_policy != 'max':
+                expand_height = False
+
         # Infer new sizing mode based on children unless the user
         # explicitly supplied a sizing_mode, in which case that setting is
         # honored rather than inherited from the children.
@@ -185,19 +172,24 @@ class SizingModeMixin:
 
         explicit_sizing = getattr(self, '_explicit_sizing_mode', False)
         if explicit_sizing and inferred_mode and inferred_mode != sizing_mode:
-            explicit_axes = set()
-            if sizing_mode and ('width' in sizing_mode or 'both' in sizing_mode):
-                explicit_axes.add('width')
-            if sizing_mode and ('height' in sizing_mode or 'both' in sizing_mode):
-                explicit_axes.add('height')
-            inferred_axes = set()
-            if 'width' in inferred_mode or 'both' in inferred_mode:
-                inferred_axes.add('width')
-            if 'height' in inferred_mode or 'both' in inferred_mode:
-                inferred_axes.add('height')
-            # Only a conflict when inference adds axes the explicit mode didn't request.
-            # If inference would downgrade (fewer axes), suppress it silently.
-            if not inferred_axes.issubset(explicit_axes):
+            explicit_axes = {
+                axis for axis in ('width', 'height')
+                if sizing_mode and (axis in sizing_mode or 'both' in sizing_mode)
+            }
+            inferred_axes = {
+                axis for axis in ('width', 'height')
+                if axis in inferred_mode or 'both' in inferred_mode
+            }
+            # Inference only conflicts on axes it adds on top of the explicit
+            # sizing_mode. width_policy/height_policy take precedence over
+            # sizing_mode, so an axis with an explicit policy stays under the
+            # user's control and is not being overridden.
+            conflicting_axes = inferred_axes - explicit_axes
+            if explicit_width:
+                conflicting_axes.discard('width')
+            if explicit_height:
+                conflicting_axes.discard('height')
+            if conflicting_axes:
                 if config.respect_explicit_sizing:
                     inferred_mode = None
                 else:
@@ -206,7 +198,9 @@ class SizingModeMixin:
                         f"overridden to {inferred_mode!r} by a child's sizing. Set "
                         "pn.config.respect_explicit_sizing=True to prevent this."
                     )
-            else:
+            elif inferred_axes.issubset(explicit_axes):
+                # Inference would downgrade the explicit sizing_mode; the
+                # explicit setting is a superset so it should win.
                 inferred_mode = None
 
         if inferred_mode:
