@@ -449,7 +449,7 @@ def load_notebook(
         'application/javascript': bokeh_js,
         LOAD_MIME: bokeh_js,
     })
-    bokeh.io.notebook.curstate().output_notebook()
+    bokeh.io.state.curstate().output_notebook()
 
     # Publish comm manager
     JS = '\n'.join([PYVIZ_PROXY, _JupyterCommManager.js_manager, nb_mime_js])
