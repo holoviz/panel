@@ -237,7 +237,11 @@ test-example = 'pytest -n logical --dist loadscope --nbval-lax examples'
 nbval = "*"
 
 [feature.test-ui.dependencies]
-playwright = "*"
+# The playwright CLI installs the browser build that the playwright-python
+# client speaks to, so the two must stay on the same minor version. A newer
+# CLI downloads a Chromium the client cannot drive, which hangs tests
+# indefinitely rather than failing them.
+playwright = "1.61.*"
 pytest-playwright = "*"
 pytest-asyncio = "*"
 jupyter_server = "*"
