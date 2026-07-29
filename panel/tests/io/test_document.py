@@ -78,6 +78,27 @@ def test_hold_does_not_get_stuck_with_threaded_callbacks(threads):
     wait_until(lambda: not doc.callbacks.hold_value, timeout=5000)
 
 
+@pytest.mark.xdist_group(name="server")
+def test_hold_in_app_callable_does_not_leak_hold():
+    build = {}
+
+    def app():
+        with hold():
+            pass
+        # A hold leaked here defers the unhold past ServerSession
+        # construction, which registers this callback a second time
+        # when the queued SessionCallbackAdded event is replayed.
+        pn.state.add_periodic_callback(lambda: None, period=10000)
+        build['thread_id'] = state._thread_id
+        build['hold'] = state.curdoc.callbacks.hold_value
+        return IntSlider()
+
+    serve_and_request(app)
+
+    assert build['thread_id'] is not None
+    assert build['hold'] is None
+
+
 class _FakeProtocol:
     def create(self, msgtype, events):
         return object()
