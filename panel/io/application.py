@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import threading
 import typing as t
 
 from functools import partial
@@ -165,6 +166,10 @@ class Application(BkApplication):
 
     def initialize_document(self, doc):
         logger.info(LOG_SESSION_LAUNCHING, id(doc))
+        # Claim the Document for the current thread before user code runs,
+        # so APIs that behave differently when invoked off the Document's
+        # thread (e.g. hold) can tell the two cases apart during the build.
+        state._thread_id_[doc] = threading.get_ident()
         self._set_session_prefix(doc)
         super().initialize_document(doc)
         if doc in state._templates and doc not in state._templates[doc]._documents:
