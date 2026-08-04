@@ -133,7 +133,8 @@ def _drain_unconnected_events(doc: Document, lock: threading.Lock) -> list[Docum
         doc.callbacks._held_events = []
         doc.callbacks._hold = None
 
-        dispatch, deferred = [], []
+        dispatch: list[DocumentChangedEvent] = []
+        deferred: list[DocumentChangedEvent] = []
         for event in events:
             if isinstance(event, SessionCallbackAdded | SessionCallbackRemoved):
                 dispatch.append(event)
