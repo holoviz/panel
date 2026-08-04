@@ -429,6 +429,13 @@ export class DataTabulatorView extends HTMLBoxView {
     this.on_change(children, () => this.renderChildren())
 
     this.on_change(expanded, () => {
+      // A view whose render() has not run, or which has been torn down, has no Tabulator
+      // instance. It can still be subscribed to the model, and throwing here aborts the whole
+      // emit chain, so a sibling view that *is* rendered never gets to draw the row content and
+      // the expand click appears to do nothing. Every other handler in this file guards this way.
+      if (this.tabulator == null) {
+        return
+      }
       // The first cell is the cell of the frozen _index column.
       for (const row of this.tabulator.rowManager.getRows()) {
         if (row.cells.length > 0) {
