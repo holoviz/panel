@@ -245,6 +245,66 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
+  # JupyterLab 4.4 / 4.5 / 4.6 Preview matrix (ubuntu only to control CI cost).
+  # Full OS UI coverage remains on test-ui above.
+  jupyterlab_version_matrix:
+    name: jupyter:${{ matrix.environment }}:${{ matrix.os }}
+    needs: [pre_commit, setup, pixi_lock]
+    runs-on: ${{ matrix.os }}
+    if: needs.setup.outputs.code_change == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-latest"]
+        environment: ["test-ui-jl44", "test-ui-jl45", "test-ui-jl46"]
+        include:
+          - environment: test-ui-jl44
+            expect_jl: "4.4"
+          - environment: test-ui-jl45
+            expect_jl: "4.5"
+          - environment: test-ui-jl46
+            expect_jl: "4.6"
+    timeout-minutes: 60
+    env:
+      PANEL_LOG_LEVEL: info
+      ENV: ${{ matrix.environment }}
+      EXPECT_JL: ${{ matrix.expect_jl }}
+    steps:
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@ffddda04b2894fea39b407f64d3622d2f19e5a9f # v1
+        with:
+          environments: ${{ matrix.environment }}
+        id: install
+      - name: Check JupyterLab stack
+        shell: pixi run -e ${{ matrix.environment }} bash -e {0}
+        run: |
+          python scripts/check_jupyterlab_stack.py --expect-jl "${EXPECT_JL}"
+      - name: Launch JupyterLab
+        shell: pixi run -e ${{ matrix.environment }} bash -e {0}
+        run: |
+          jupyter server extension enable panel.io.jupyter_server_extension --sys-prefix
+          python scripts/check_jupyterlab_stack.py --expect-jl "${EXPECT_JL}" --require-enabled
+          (jupyter lab --config panel/tests/ui/jupyter_server_test_config.py --port 8887 > /tmp/jupyterlab_server.log 2>&1) &
+          curl -fsS --retry 180 --retry-delay 1 --retry-connrefused http://localhost:8887/lab >/dev/null
+      - name: Test Jupyter Preview UI
+        run: |
+          echo "[run]\nconcurrency = greenlet" > .uicoveragerc
+          FAIL="--screenshot only-on-failure --full-page-screenshot --output ui_screenshots_jl --tracing retain-on-failure"
+          pixi run -e "${ENV}" test-ui --jupyter panel/tests/ui/io/test_jupyter_server_extension.py $COV --cov-config=.uicoveragerc $FAIL
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        if: always()
+        with:
+          name: ui_screenshots_jl_${{ matrix.expect_jl }}_${{ runner.os }}
+          path: ./ui_screenshots_jl
+          if-no-files-found: ignore
+      - name: Stop JupyterLab
+        if: always()
+        shell: pixi run -e ${{ matrix.environment }} bash -e {0}
+        run: |
+          jupyter lab stop 8887 || true
+      - uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2 # v6
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
   core_test_suite:
     name: core:${{ matrix.environment }}:${{ matrix.os }}
     needs: [pre_commit, setup, pixi_lock]

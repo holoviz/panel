@@ -236,6 +236,31 @@ UI tests can be run with the following task. This task is only available in the 
 pixi run test-ui
 ```
 
+### JupyterLab version matrix (4.4 / 4.5 / 4.6)
+
+Preview and Jupyter-marked UI tests can be run against pinned JupyterLab minors using dedicated environments:
+
+| Environment | JupyterLab pin |
+|-------------|----------------|
+| `test-ui-jl44` | `4.4.*` |
+| `test-ui-jl45` | `4.5.*` |
+| `test-ui-jl46` | `4.6.*` |
+
+Example workflow for JupyterLab 4.5:
+
+```bash
+pixi run -e test-ui-jl45 install
+pixi run -e test-ui-jl45 python scripts/check_jupyterlab_stack.py --expect-jl 4.5
+pixi run -e test-ui-jl45 bash -c '
+  jupyter server extension enable panel.io.jupyter_server_extension --sys-prefix
+  jupyter lab --config panel/tests/ui/jupyter_server_test_config.py --port 8887
+'
+# in another shell:
+pixi run -e test-ui-jl45 test-ui --jupyter panel/tests/ui/io/test_jupyter_server_extension.py
+```
+
+The Panel Preview server extension module is `panel.io.jupyter_server_extension`. Discovery uses `_jupyter_server_extension_points()` (with `_jupyter_server_extension_paths` as a legacy alias). See [JupyterLab support solution](../jupyterlab_4_support_solution.md).
+
 ## Documentation
 
 The documentation can be built with the command:

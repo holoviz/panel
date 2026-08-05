@@ -68,8 +68,16 @@ LOAD_MIME: str = 'application/vnd.holoviews_load.v0+json'
 EXEC_MIME: str = 'application/vnd.holoviews_exec.v0+json'
 HTML_MIME: str = 'text/html'
 
-def _jupyter_server_extension_paths() -> list[dict[str, str]]:
+def _jupyter_server_extension_points() -> list[dict[str, str]]:
+    """
+    jupyter_server discovery entry point (JupyterLab 4 / jupyter_server 2+).
+    """
     return [{"module": "panel.io.jupyter_server_extension"}]
+
+
+def _jupyter_server_extension_paths() -> list[dict[str, str]]:
+    """Legacy alias for `_jupyter_server_extension_points`."""
+    return _jupyter_server_extension_points()
 
 def push(doc: Document, comm: Comm, binary: bool = True, msg: Message | None = None) -> None:
     """

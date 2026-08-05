@@ -12,6 +12,13 @@ One of the main design goals for Panel was to make it seamless to work across de
 How to display output in Jupyter and non-Jupyter based notebook environments.
 :::
 
+:::{grid-item-card} {octicon}`checklist;2.5em;sd-mr-1 sd-animate-grow50` JupyterLab support matrix
+:link: jupyterlab_support
+:link-type: doc
+
+Supported JupyterLab 4.4–4.6 versions, required packages, and setup checks.
+:::
+
 :::{grid-item-card} {octicon}`moon;2.5em;sd-mr-1 sd-animate-grow50` Preview apps in JupyterLab
 :link: jupyterlabpreview
 :link-type: doc
@@ -41,6 +48,7 @@ How to develop apps in Google Colab, VSCode notebook, nteract, and other noteboo
 :maxdepth: 2
 
 notebook
+jupyterlab_support
 jupyterlabpreview
 layout_builder
 other_nb

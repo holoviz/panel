@@ -1,0 +1,52 @@
+# Extra dependencies required to run notebooks under examples/
+# (gallery, reference, homepage, etc.).
+#
+# Install Panel first, then this file, e.g. from the repo root:
+#   pip install -e .
+#   pip install -r examples/requirements.txt
+#
+# Packages already required by Panel (bokeh, param, pandas,
+# panel-material-ui, requests, …) are omitted here.
+
+# Plotting / HoloViz stack
+holoviews >=1.18.0
+hvplot
+matplotlib
+pillow
+plotly
+altair
+seaborn
+colorcet
+datashader
+
+# Pane / widget backends
+folium
+pydeck
+pyecharts
+pyvista
+vtk
+vega_datasets
+vl-convert-python
+streamz
+textual
+reacton
+
+# Jupyter / ipywidgets integration
+ipywidgets
+ipyleaflet
+ipyvolume
+jupyter_bokeh
+
+# Scientific / ML
+numpy
+scipy
+scikit-learn
+scikit-image
+xgboost
+
+# Data / sample datasets
+bokeh_sampledata
+s3fs
+
+# Notebook niceties (code highlighting in Markdown/Chat panes)
+pygments

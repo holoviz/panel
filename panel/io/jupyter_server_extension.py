@@ -377,7 +377,7 @@ class PanelWSProxy(WSHandler, JupyterHandler):  # type: ignore
             self.close()
             raise ProtocolError("No token received in subprotocol header")
 
-        now = calendar.timegm(dt.datetime.utcnow().utctimetuple())
+        now = calendar.timegm(dt.datetime.now(dt.timezone.utc).utctimetuple())
         payload = get_token_payload(token)
         if 'session_expiry' not in payload:
             self.close()
@@ -465,8 +465,8 @@ class PanelWSProxy(WSHandler, JupyterHandler):  # type: ignore
             del state._kernels[self.session_id]
         self._ping_job.stop()
         self._shutdown_futures = [
-            asyncio.ensure_future(self.kernel.shutdown(reply=True)),
-            asyncio.ensure_future(self.kernel_manager.shutdown_kernel(self.kernel_id, now=True))
+            asyncio.create_task(self.kernel.shutdown(reply=True)),
+            asyncio.create_task(self.kernel_manager.shutdown_kernel(self.kernel_id, now=True))
         ]
         self.kernel = None
 
