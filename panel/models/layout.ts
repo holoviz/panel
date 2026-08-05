@@ -13,6 +13,7 @@ export class PanelMarkupView extends WidgetView {
 
   container: HTMLDivElement
   protected _initialized_stylesheets: Map<string, boolean>
+  protected _stylesheets_watcher: AbortController | null = null
 
   override connect_signals(): void {
     super.connect_signals()
@@ -35,23 +36,48 @@ export class PanelMarkupView extends WidgetView {
     }
   }
 
+  /**
+   * Schedules `style_redraw` for when all applied stylesheets have settled.
+   *
+   * A stylesheet counts as settled once it has loaded *or* failed: views
+   * reveal their container from `style_redraw`, so a stylesheet that never
+   * arrives must not hide them forever. Listeners registered by a previous
+   * call are cancelled, since the elements they watch have been discarded.
+   */
   watch_stylesheets(): void {
+    this._stylesheets_watcher?.abort()
+    const {signal} = this._stylesheets_watcher = new AbortController()
     this._initialized_stylesheets = new Map()
     for (const stylesheet of this._applied_stylesheets) {
       // @ts-expect-error: 'el' is protected
       const style_el = stylesheet.el
       if (style_el instanceof HTMLLinkElement) {
         this._initialized_stylesheets.set(style_el.href, false)
-        style_el.addEventListener("load", () => {
+        const settled = () => {
           this._initialized_stylesheets.set(style_el.href, true)
           if ([...this._initialized_stylesheets.values()].every((v) => v)) {
             requestAnimationFrame(() => this.style_redraw())
           }
-        })
+        }
+        style_el.addEventListener("load", settled, {signal})
+        style_el.addEventListener("error", settled, {signal})
       }
     }
     if (this._initialized_stylesheets.size == 0) {
       this.style_redraw()
+    }
+  }
+
+  /**
+   * Bokeh recreates the stylesheet elements on every update, discarding the
+   * ones `watch_stylesheets` listens on, so the watcher has to be re-armed.
+   * Skipped until the view has armed it itself, as the update triggered from
+   * `super.render()` precedes the creation of `this.container`.
+   */
+  protected override _update_stylesheets(): void {
+    super._update_stylesheets()
+    if (this._stylesheets_watcher != null) {
+      this.watch_stylesheets()
     }
   }
 
@@ -210,9 +236,9 @@ export abstract class HTMLBoxView extends LayoutDOMView {
         })
       }
     }
-    if (Object.keys(this._initialized_stylesheets).length === 0) {
-      requestAnimationFrame(() => this.style_redraw())
-    }
+    // Unconditional: subclasses redraw (and reveal themselves) here even when
+    // the stylesheets never load, so this is their only guaranteed redraw.
+    requestAnimationFrame(() => this.style_redraw())
   }
 
   style_redraw(): void {}
