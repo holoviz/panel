@@ -114,7 +114,7 @@ export class ReactComponentView extends ReactiveESMView {
   }
 
   override render_esm(): void {
-    if (this.model.compiled === null || this.model.render_module === null) {
+    if (this.model.compiled === null || this.model.render_module === null || this.container == null) {
       return
     }
     this._rendered = false
@@ -135,9 +135,38 @@ export class ReactComponentView extends ReactiveESMView {
       this._mounted_resolve = resolve
     })
     this.model.render_module.then((mod: any) => {
+      if (this.container == null) {
+        // Nothing will mount, so the ready promise has to be settled here or
+        // the view never finishes and the document never goes idle.
+        this._resolve_mounted()
+        return
+      }
       this.react_root = mod.default.render(this.model.id)
+    }).catch((e: unknown) => {
+      this._resolve_mounted()
+      throw e
     })
     this._await_ready(mounted_promise)
+  }
+
+  override render_error(error: SyntaxError): void {
+    // A component that errored will never mount and so never settles its
+    // promise via `after_rendered`.
+    this._resolve_mounted()
+    super.render_error(error)
+  }
+
+  /**
+   * Settles the promise handed to `_await_ready` by `render_esm`. Safe to call
+   * more than once; only the first call has an effect.
+   */
+  _resolve_mounted(): void {
+    const resolve = this._mounted_resolve
+    if (resolve == null) {
+      return
+    }
+    this._mounted_resolve = null
+    resolve()
   }
 
   on_force_update(cb: () => void): void {
@@ -153,11 +182,13 @@ export class ReactComponentView extends ReactiveESMView {
   override remove(): void {
     this._force_update_callbacks = []
     this.mounted = false
+    // A view removed before it mounted still owes a resolution to the promise
+    // handed to `_await_ready`, otherwise the root never reaches idle.
+    this._resolve_mounted()
     if (this.react_root && this.use_shadow_dom) {
       super.remove()
       this.react_root.then((root: any) => root && root.unmount())
-      for (const view of this._scheduled_removals) { view.remove() }
-      this._scheduled_removals = []
+      this.flush_scheduled_removals()
     } else {
       this._applied_stylesheets.forEach((stylesheet) => stylesheet.uninstall())
       for (const cb of (this._lifecycle_handlers.get("remove") || [])) {
@@ -167,6 +198,7 @@ export class ReactComponentView extends ReactiveESMView {
       this._child_rendered.clear()
       this._mounted.clear()
     }
+    this.react_root = null
   }
 
   get root_view(): ReactComponentView {
@@ -206,6 +238,9 @@ export class ReactComponentView extends ReactiveESMView {
     }
     this._force_update_callbacks = []
     this.mounted = false
+    // `super.render()` calls `render_esm`, which installs a fresh promise, so
+    // settle any promise the previous render left outstanding first.
+    this._resolve_mounted()
     super.render()
   }
 
@@ -282,6 +317,20 @@ export class ReactComponentView extends ReactiveESMView {
       }
     }
     this._update_children()
+    // Removals are normally drained by the replacement child once it mounts,
+    // but a child that never mounts would leak the old views, so flush any
+    // that are still pending after React has had a chance to commit.
+    setTimeout(() => this.flush_scheduled_removals(), 0)
+  }
+
+  flush_scheduled_removals(): void {
+    const removals = this._scheduled_removals
+    this._scheduled_removals = []
+    for (const view of removals) {
+      if (!view.is_destroyed) {
+        view.remove()
+      }
+    }
   }
 
   override _on_mounted(): void {
@@ -312,16 +361,14 @@ export class ReactComponentView extends ReactiveESMView {
     }
     this._rendered = true
     if (this._mounted_resolve) {
-      const resolve = this._mounted_resolve
-      this._mounted_resolve = null
       const child_ready: Promise<void>[] = []
       for (const child_view of this.child_views) {
         child_ready.push(child_view.ready)
       }
       if (child_ready.length > 0) {
-        Promise.all(child_ready).then(() => resolve())
+        Promise.all(child_ready).then(() => this._resolve_mounted())
       } else {
-        resolve()
+        this._resolve_mounted()
       }
     }
     this.finish()
@@ -447,15 +494,13 @@ async function render(id) {
         }
         this.updateElement()
         if (this.use_shadow_dom) {
-          for (const view of this.props.parent._scheduled_removals) { view.remove() }
-          this.props.parent._scheduled_removals = []
+          this.props.parent.flush_scheduled_removals()
           this.props.parent.rerender_(view)
           this.props.parent._child_rendered.set(view, true)
         } else {
           view.patch_container(this.containerRef.current)
           view.model.render_module.then(async (mod) => {
-            for (const view of this.props.parent._scheduled_removals) { view.remove() }
-            this.props.parent._scheduled_removals = []
+            this.props.parent.flush_scheduled_removals()
             this.setState(
               {rendered: await mod.default.render(view.model.id)},
               () => {
@@ -469,8 +514,7 @@ async function render(id) {
       }
       this.props.parent.on_child_render(this.props.name, this.render_callback)
       if (view == null) { return }
-      for (const rview of this.props.parent._scheduled_removals) { rview.remove() }
-      this.props.parent._scheduled_removals = []
+      this.props.parent.flush_scheduled_removals()
       if (this.use_shadow_dom) {
         this.updateElement()
         this.props.parent.rerender_(view)
@@ -495,8 +539,11 @@ async function render(id) {
       if (this.render_callback) {
         this.props.parent.remove_on_child_render(this.props.name, this.render_callback)
       }
-      if (!this.use_shadow_dom && this.view._mounted.has(this.props.name)) {
-        this.view._mounted.get(this.props.name).delete(this.props.id)
+      // The mount bookkeeping lives on the parent, and the view may already be
+      // gone by the time React unmounts us, so fall back to the model id prop.
+      const id = this.view?.model.id ?? this.props.id
+      if (id != null) {
+        this.props.parent.notify_mount(this.props.name, id, true)
       }
     }
 
@@ -666,6 +713,9 @@ async function render(id) {
         container.id = view.model.root_node.replace("#", "")
         document.body.append(container)
       }
+    } else if (view.container == null) {
+      view._resolve_mounted()
+      return null
     } else {
       container = view.container
     }
@@ -673,6 +723,7 @@ async function render(id) {
     try {
       root.render(rendered)
     } catch(e) {
+      view._resolve_mounted()
       view.render_error(e)
     }
     return root
