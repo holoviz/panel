@@ -5,7 +5,7 @@ import {TablerIcon} from "@bokehjs/models/ui/icons/tabler_icon"
 import type {SVGIconView} from "@bokehjs/models/ui/icons/svg_icon"
 import {SVGIcon} from "@bokehjs/models/ui/icons/svg_icon"
 import {Control, ControlView} from "@bokehjs/models/widgets/control"
-import type {IterViews} from "@bokehjs/core/build_views"
+import type {ChildView} from "@bokehjs/core/view"
 import type * as p from "@bokehjs/core/properties"
 import {div} from "@bokehjs/core/dom"
 import {build_view} from "@bokehjs/core/build_views"
@@ -42,12 +42,8 @@ export class ClickableIconView extends ControlView {
     }
   }
 
-  override *children(): IterViews {
-    yield* super.children()
-    yield this.icon_view
-    if (this.tooltip != null) {
-      yield this.tooltip
-    }
+  override _children_views(): ChildView[] {
+    return [...super._children_views(), this.icon_view, this.tooltip]
   }
 
   is_svg_icon(icon: string): boolean {

@@ -4,6 +4,7 @@ Called __version.py as setuptools_scm will create a _version.py
 """
 
 import os.path
+import warnings
 
 PACKAGE = "panel"
 
@@ -17,7 +18,11 @@ try:
 
         # This will fail with LookupError if the package is not installed in
         # editable mode or if Git is not installed.
-        __version__ = get_version(root="..", relative_to=__file__, version_scheme="post-release")
+        with warnings.catch_warnings():
+            # Shallow clones (e.g. CI checkouts) warn but still resolve a usable
+            # version, and the warning would otherwise be fatal under -W error.
+            warnings.filterwarnings("ignore", message=".*is shallow and may cause errors")
+            __version__ = get_version(root="..", relative_to=__file__, version_scheme="post-release")
     else:
         raise FileNotFoundError
 except (ImportError, LookupError, FileNotFoundError):

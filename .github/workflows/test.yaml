@@ -256,7 +256,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ["ubuntu-latest"]
-        environment: ["test-core", "test-bokeh38"]
+        environment: ["test-core", "test-bokeh39"]
     timeout-minutes: 30
     steps:
       - uses: holoviz-dev/holoviz_tasks/pixi-install@ffddda04b2894fea39b407f64d3622d2f19e5a9f # v1

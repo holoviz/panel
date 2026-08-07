@@ -26,7 +26,7 @@ def test_column_scroll(page):
 
     assert bbox['width'] in (200, 215) # Ignore if browser hides empty scrollbar
     assert bbox['height'] == 420
-    expect(col_el).to_have_class('bk-panel-models-layout-Column scrollable-vertical')
+    expect(col_el).to_contain_class('bk-panel-models-layout-Column scrollable-vertical')
 
 
 @pytest.mark.parametrize('scroll', _SCROLL_MAPPING.keys())
@@ -44,7 +44,7 @@ def test_column_scroll_string(page, scroll):
 
     assert bbox['width'] in (200, 215) # Ignore if browser hides empty scrollbar
     assert bbox['height'] == 420
-    expect(col_el).to_have_class(f'bk-panel-models-layout-Column {_SCROLL_MAPPING[scroll]}')
+    expect(col_el).to_contain_class(f'bk-panel-models-layout-Column {_SCROLL_MAPPING[scroll]}')
 
 
 def test_column_auto_scroll_limit(page):
@@ -63,7 +63,7 @@ def test_column_auto_scroll_limit(page):
     assert bbox['height'] == 420
 
     expect(column.locator('div')).to_have_count(4)
-    expect(column).to_have_class('bk-panel-models-layout-Column scrollable-vertical')
+    expect(column).to_contain_class('bk-panel-models-layout-Column scrollable-vertical')
     expect(column).to_have_js_property('scrollTop', 0)
 
     # assert scroll location is still at top
@@ -100,7 +100,7 @@ def test_column_auto_scroll_limit_disabled(page):
     assert bbox['width'] in (200, 215) # Ignore if browser hides empty scrollbar
     assert bbox['height'] == 420
 
-    expect(column).to_have_class('bk-panel-models-layout-Column scrollable-vertical')
+    expect(column).to_contain_class('bk-panel-models-layout-Column scrollable-vertical')
     expect(column).to_have_js_property('scrollTop', 0)
 
     # assert scroll location is still at top
@@ -123,7 +123,7 @@ def test_column_scroll_button_threshold(page):
     assert bbox['width'] in (200, 215) # Ignore if browser hides empty scrollbar
     assert bbox['height'] == 420
 
-    expect(column).to_have_class('bk-panel-models-layout-Column scrollable-vertical')
+    expect(column).to_contain_class('bk-panel-models-layout-Column scrollable-vertical')
 
     # assert scroll button is visible on render
     scroll_arrow = page.locator(".scroll-button")
@@ -156,7 +156,7 @@ def test_column_scroll_button_threshold_disabled(page):
     assert bbox['width'] in (200, 215) # Ignore if browser hides empty scrollbar
     assert bbox['height'] == 420
 
-    expect(column).to_have_class('bk-panel-models-layout-Column scrollable-vertical')
+    expect(column).to_contain_class('bk-panel-models-layout-Column scrollable-vertical')
 
     # assert scroll button is invisible on render
     scroll_arrow = page.locator(".scroll-button")
@@ -186,7 +186,7 @@ def test_column_view_latest(page):
     assert bbox['width'] in (200, 215) # Ignore if browser hides empty scrollbar
     assert bbox['height'] == 420
 
-    expect(column).to_have_class('bk-panel-models-layout-Column scrollable-vertical')
+    expect(column).to_contain_class('bk-panel-models-layout-Column scrollable-vertical')
     expect(column).not_to_have_js_property('scrollTop', '0')
 
 

@@ -1,5 +1,6 @@
 import logging
 import os
+import typing as t
 
 from functools import partial
 
@@ -108,12 +109,14 @@ class MessageSentBuffers(TypedDict):
     msg_type: str
 
 
-class MessageSentEventPatched(MessageSentEvent):
+class MessageSentEventPatched(MessageSentEvent, kind="MessageSent"):
     """
     Patches MessageSentEvent with fix that ensures MessageSent event
     does not define msg_data (which is an assumption in BokehJS
     Document.apply_json_patch.)
     """
+
+    kind: t.ClassVar[Literal["MessageSent"]] = "MessageSent"
 
     def generate(self, references, buffers):
         if not isinstance(self.msg_data, bytes):
