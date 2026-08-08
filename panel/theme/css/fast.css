@@ -15,7 +15,7 @@
   --font-size: var(--type-ramp-base-font-size);
   --switch-size: 12px;
   --container-background: var(--panel-surface-color);
-  color: var(--neutral-foreground-rest);
+  color: var(--panel-on-surface-color, inherit);
   --panel-primary-color: var(--accent-foreground-rest);
   --panel-on-primary-color: var(--foreground-on-accent-rest);
 }
