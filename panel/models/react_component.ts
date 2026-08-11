@@ -459,6 +459,18 @@ async function render(id) {
       super(props)
       this.render_callback = null
       this.containerRef = React.createRef()
+      // Registers the child as tracked but not yet rendered. React's render
+      // phase has to stay free of side effects, since a render may be
+      // discarded without ever committing, so the flag is only ever flipped
+      // here and from getSnapshotBeforeUpdate.
+      this._mark_stale()
+    }
+
+    _mark_stale() {
+      const view = this.view
+      if (view) {
+        this.props.parent._child_rendered.set(view, false)
+      }
     }
 
     updateElement() {
@@ -547,6 +559,14 @@ async function render(id) {
       }
     }
 
+    getSnapshotBeforeUpdate() {
+      // Commit-phase equivalent of the constructor's registration: the view
+      // this Child renders may have been swapped out, so the incoming one is
+      // registered as stale here rather than during render.
+      this._mark_stale()
+      return null
+    }
+
     componentDidUpdate() {
       if (this.use_shadow_dom) {
         this.updateElement()
@@ -555,9 +575,6 @@ async function render(id) {
 
     render() {
       const child = this.state.rendered
-      if  (this.view) {
-        this.props.parent._child_rendered.set(this.view, false)
-      }
       const class_name = (this.use_shadow_dom ?
         "child-wrapper" : this.view.model.class_name.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase()
       )
