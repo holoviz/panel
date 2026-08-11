@@ -69,18 +69,12 @@ jobs:
         with:
           name: artifacts-conda
           path: dist/
-      - name: anaconda setup
-        run: |
-          pipx install anaconda-client
-          binstar --version || binstar --help  # version broke with typer 0.26.0 and click 8.4.0
-      - name: anaconda dev upload
-        if: contains(github.ref_name, 'a') || contains(github.ref_name, 'b') || contains(github.ref_name, 'rc')
-        run: |
-          binstar --token ${{ secrets.CONDA_UPLOAD_TOKEN }} upload --user pyviz --label=dev dist/*.conda
-      - name: anaconda upload
-        if: (!(contains(github.ref_name, 'a') || contains(github.ref_name, 'b') || contains(github.ref_name, 'rc')))
-        run: |
-          binstar --token ${{ secrets.CONDA_UPLOAD_TOKEN }} upload --user pyviz --label=dev --label=main dist/*.conda
+      - uses: anaconda/actions/upload-package@a6f488910b4a1e4f3fe01736241ca1b92b4b355a # v0.3.1
+        with:
+          token: ${{ secrets.CONDA_UPLOAD_TOKEN }}
+          channel: pyviz
+          packages: dist/*.conda
+          labels: ${{ (contains(github.ref_name, 'a') || contains(github.ref_name, 'b') || contains(github.ref_name, 'rc')) && 'dev' || 'main,dev' }}
 
   pip_build:
     name: Build PyPI
