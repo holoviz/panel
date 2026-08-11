@@ -1198,6 +1198,19 @@ def test_tabulator_frozen_cols(document, comm):
     ]
 
 
+def test_tabulator_movable_columns(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df, movable_columns=True)
+
+    model = table.get_root(document, comm)
+
+    assert model.movable_columns is True
+
+    table.movable_columns = False
+
+    assert model.movable_columns is False
+
+
 def test_tabulator_frozen_rows(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df, frozen_rows=[0, -1])

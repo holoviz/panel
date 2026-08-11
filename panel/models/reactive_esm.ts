@@ -5,6 +5,7 @@ import {ModelEvent, server_event} from "@bokehjs/core/bokeh_events"
 import {div} from "@bokehjs/core/dom"
 import type {StyleSheetLike} from "@bokehjs/core/dom"
 import {ImportedStyleSheet} from "@bokehjs/core/dom"
+import {DOMView} from "@bokehjs/core/dom_view"
 import {Enum} from "@bokehjs/core/kinds"
 import type * as p from "@bokehjs/core/properties"
 import type {Attrs} from "@bokehjs/core/types"
@@ -251,7 +252,38 @@ export class ReactiveESMView extends HTMLBoxView {
 
   _on_mounted(): void {}
 
-  notify_mount(child: string, id: string, remove: boolean): void {
+  /**
+   * Bokeh walks the whole view tree from `r_after_render`, but ESM components
+   * do not render their children themselves: the children are mounted later,
+   * by the component, once it commits. Recursing into a child that has not
+   * been mounted yet would run `after_render` (and with it style updates,
+   * measurement and layout) on a view that is still detached and therefore
+   * measures 0x0, which permanently poisons anything latching onto its first
+   * measurement. Such children are skipped here and walked when they mount.
+   */
+  override r_after_render(): void {
+    for (const child_view of this.children_views()) {
+      if (child_view instanceof DOMView && this._is_mountable(child_view)) {
+        child_view.r_after_render()
+      }
+    }
+    this.after_render();
+    (this as any)._was_built = true
+  }
+
+  /**
+   * Whether Bokeh's render walk may descend into a child view. Views this
+   * component owns are only walkable once mounted; anything else (e.g. a
+   * context menu) is not ours to defer.
+   */
+  protected _is_mountable(child_view: DOMView): boolean {
+    if (!this._child_views.has(child_view.model as UIElement)) {
+      return true
+    }
+    return child_view.el.isConnected
+  }
+
+  notify_mount(child: string, id: string, remove: boolean = false): void {
     if (!this._mounted.has(child)) {
       this._mounted.set(child, new Set())
     }

@@ -6,10 +6,11 @@ pytest.importorskip("playwright")
 
 from playwright.sync_api import expect
 
-from panel.layout import Row
+from panel.layout import Column, Row
 from panel.models import HTML
 from panel.pane import Markdown
 from panel.tests.util import serve_component, wait_until
+from panel.widgets import Button
 
 pytestmark = pytest.mark.ui
 
@@ -153,3 +154,47 @@ def test_anchor_scroll_on_init(page):
 
     expect(page.locator('#tag1')).not_to_be_in_viewport()
     expect(page.locator('#tag3')).to_be_in_viewport()
+
+
+def test_markdown_pane_visible_when_stylesheet_fails_to_load(page):
+    # Markup panes hide themselves until their stylesheets have loaded, so a
+    # stylesheet that never arrives must not hide them forever.
+    md = Markdown('Initial', stylesheets=['missing.css'])
+
+    serve_component(page, md)
+
+    expect(page.locator(".markdown").locator("div")).to_be_visible()
+
+
+def test_markdown_pane_visible_after_stylesheet_url_patched(page):
+    # A pane rendered after page load is handed CDN stylesheet URLs, which
+    # Panel patches to the locally served ones as soon as the model is
+    # attached. The patch recreates the <link> elements, discarding the load
+    # events the pane waits on before revealing itself (holoviz/panel#8696).
+    # Never answered, so the pane is still waiting when the URL is patched
+    page.route("**/pending.css", lambda route: None)
+
+    md = Markdown('Added', stylesheets=['pending.css'])
+
+    def app():
+        column = Column()
+        button = Button(label='Add')
+        button.on_click(lambda event: column.append(md))
+        return Column(column, button)
+
+    serve_component(page, app)
+
+    page.get_by_role("button", name="Add").click()
+
+    expect(page.locator(".markdown")).to_have_count(1)
+    expect(page.locator(".markdown").locator("div")).not_to_be_visible()
+
+    page.evaluate("""() => {  // Mimic Panel patching the stylesheet URLs
+      for (const model of Bokeh.documents[0].all_models) {
+        if (String(model.url).includes("pending.css")) {
+          model.url = "patched.css"
+        }
+      }
+    }""")
+
+    expect(page.locator(".markdown").locator("div")).to_be_visible()

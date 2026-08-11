@@ -14,17 +14,17 @@ repos:
         exclude: \.min\.js$
       - id: trailing-whitespace
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: 6fec9b7edb08fd9989088709d864a7826dc74e80  # frozen: v0.15.12
+    rev: c59bba8fb259db0fec2bbb77ad8ba51ea7341b56  # frozen: v0.15.20
     hooks:
       - id: ruff-check
         files: panel/
   - repo: https://github.com/pycqa/isort
-    rev: a333737ed43df02b18e6c95477ea1b285b3de15a  # frozen: 8.0.1
+    rev: dac090ce4d9ee313d086e2e89ab1acb8c2664fa1  # frozen: 9.0.0a3
     hooks:
       - id: isort
         name: isort (python)
   - repo: https://github.com/hoxbro/clean_notebook
-    rev: 2e6f506fab3cdfbe16bc18fd0d24e828db773b74  # frozen: v0.2.1
+    rev: ba97036e6f0408aa318165535665c35a9423c352  # frozen: v0.2.1
     hooks:
       - id: clean-notebook
         args: [-i, tags]
@@ -36,18 +36,18 @@ repos:
         additional_dependencies:
           - tomli
   - repo: https://github.com/hoxbro/prettier-pre-commit
-    rev: fb4fd26ea947350ec231580772317ec7261c8e21  # frozen: v3.8.3
+    rev: 723303adce45b84f96dc1d9f1c697dc9d993ff7e  # frozen: v3.9.4
     hooks:
       - id: prettier
         entry: prettier --write --ignore-unknown --no-error-on-unmatched-pattern
         types_or: [css]
   - repo: https://github.com/oxipng/oxipng
-    rev: 95d521c81b1f50a0ea1e1b74a6ccfb09cd8115f8  # frozen: v8.0.0
+    rev: 628e241e23f368097883807fa6e985ccf7c00357  # frozen: v10.1.1
     hooks:
       - id: oxipng
         stages: [manual]
   - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: 9158d5162f915488785c296b5d08d6d18be10d32  # frozen: v10.3.0
+    rev: 8763fc929b6232999d541a3d8eb49965a6b71afb  # frozen: v10.6.0
     hooks:
       - id: eslint
         args: ['--config', 'panel/eslint.config.js', 'panel/*.ts', 'panel/models/**/*.ts', '--fix']

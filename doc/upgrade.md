@@ -47,6 +47,18 @@ Let us walk through an example. Below we declare a responsive `Image` and a fixe
 To maintain backward compatibility Panel will still try to infer the appropriate sizing mode by inspecting the children of a container. It is, however, always best to be explicit.
 :::
 
+:::{admonition} Current behavior
+:class: important
+
+The rules above describe the behavior as of Panel 1.0 and have since been
+refined, e.g. `FlexBox` now derives its `sizing_mode` from its `flex_direction`
+rather than from its children. Panel also now warns when child inference
+overrides a `sizing_mode` you set on a layout yourself, and offers the
+`respect_explicit_sizing` config option to disable inference for explicitly
+sized layouts. See {ref}`sizing-mode-inference` for the current rules and how
+to opt out.
+:::
+
 #### Ambiguous configurations
 
 In the past, Panel would happily accept ambiguous layout configurations, e.g., providing a fixed width while also setting a responsive `sizing_mode` along the same dimension. As an example, take the following:

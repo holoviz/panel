@@ -452,6 +452,13 @@ class _state(param.Parameterized):
         if not doc:
             return
         self._connected[doc] = True
+
+        # Events held before the session connected which the full
+        # Document serialization cannot reproduce are dispatched now
+        # that there is a connection to write them to.
+        from .document import _dispatch_unconnected_events
+        _dispatch_unconnected_events(doc)
+
         if doc not in self._onload:
             self._loaded[doc] = True
             return
