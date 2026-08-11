@@ -214,21 +214,39 @@ export class ReactComponentView extends ReactiveESMView {
 
   protected override _apply_stylesheets(stylesheets: StyleSheetLike[]): void {
     const resolved_stylesheets = stylesheets.map((style) => isString(style) ? new InlineStyleSheet(style) : style)
-    const styles = this.root_view.shadow_el.querySelectorAll("style")
-    const links = this.root_view.shadow_el.querySelectorAll("link")
+    const root_view = this.root_view
+    const target = root_view.shadow_el
+    // When shadow DOM is disabled every component in the tree installs its
+    // stylesheets into the same root, so the existing CSS is indexed once and
+    // looked up by value. Scanning the root per stylesheet made this quadratic
+    // in the number of components times the number of stylesheets each.
+    const installed_css = new Set<string | null>()
+    const installed_hrefs = new Set<string>()
+    if (!this.use_shadow_dom) {
+      for (const style of target.querySelectorAll("style")) {
+        installed_css.add(style.textContent)
+      }
+      for (const link of target.querySelectorAll("link")) {
+        installed_hrefs.add(link.href)
+      }
+    }
     resolved_stylesheets.forEach((stylesheet) => {
       if (!this.use_shadow_dom) {
-        if (stylesheet instanceof InlineStyleSheet &&
-            Array.from(styles).some(style => style.innerHTML === stylesheet.css)) {
-          return
-        }
-        if (stylesheet instanceof ImportedStyleSheet &&
-            Array.from(links).some(link => link.href === (stylesheet as any).el.href)) {
-          return
+        if (stylesheet instanceof InlineStyleSheet) {
+          if (installed_css.has(stylesheet.css)) {
+            return
+          }
+          installed_css.add(stylesheet.css)
+        } else if (stylesheet instanceof ImportedStyleSheet) {
+          const {href} = (stylesheet as any).el
+          if (installed_hrefs.has(href)) {
+            return
+          }
+          installed_hrefs.add(href)
         }
       }
       this._applied_stylesheets.push(stylesheet)
-      stylesheet.install(this.root_view.shadow_el)
+      stylesheet.install(target)
     })
   }
 
