@@ -19,7 +19,10 @@ from weakref import WeakKeyDictionary
 
 from bokeh.application.application import SessionContext
 from bokeh.document.document import Document
-from bokeh.document.events import DocumentChangedEvent, DocumentPatchedEvent
+from bokeh.document.events import (
+    DocumentChangedEvent, DocumentPatchedEvent, MessageSentEvent,
+    SessionCallbackAdded, SessionCallbackRemoved,
+)
 from bokeh.model.util import visit_immediate_value_references
 from bokeh.models import CustomJS
 
@@ -49,6 +52,7 @@ _HOLD_LOCK: WeakKeyDictionary[Document, threading.Lock] = WeakKeyDictionary()
 _WRITE_FUTURES: WeakKeyDictionary[Document, list[Future]] = WeakKeyDictionary()
 _WRITE_MSGS: WeakKeyDictionary[Document, dict[ServerConnection, list[Message]]] = WeakKeyDictionary()
 _WRITE_BLOCK: WeakKeyDictionary[Document, bool] = WeakKeyDictionary()
+_UNCONNECTED_EVENTS: WeakKeyDictionary[Document, list[DocumentChangedEvent]] = WeakKeyDictionary()
 
 _panel_last_cleanup = None
 _write_tasks: WeakKeyDictionary[Document, list[asyncio.Task]] = WeakKeyDictionary()
@@ -96,6 +100,64 @@ def _dispatch_events(doc: Document, events: list[DocumentChangedEvent]) -> None:
     """
     for event in events:
         doc.callbacks.trigger_on_change(event)
+
+def _drain_unconnected_events(doc: Document, lock: threading.Lock) -> list[DocumentChangedEvent]:
+    """
+    Drains events collected by a hold that exited before the session
+    connected, sorting them into three groups, and returns the events
+    that have to be dispatched immediately.
+
+    Session callback events must be dispatched, since they are how
+    ``add_next_tick_callback`` and friends register the callback on the
+    IOLoop. Dropping them means the callback never runs at all, which
+    for a scheduled ``Reactive._update_model`` silently loses the update.
+
+    Events that carry no model state cannot be dispatched yet, since
+    there are no subscribed connections to write them to, so they are
+    deferred until the session connects. This currently means
+    MessageSentEvent, i.e. custom events sent via ``Reactive._send_event``
+    and ipywidgets comm messages.
+
+    Everything else is dropped, since the Document is serialized in full
+    once the session connects. Model property changes, title changes,
+    root additions/removals and ColumnDataSource stream/patch events are
+    all applied to the model before the event is emitted, so the
+    serialization reproduces them.
+
+    The events are returned rather than dispatched here so the caller can
+    dispatch them after releasing ``lock``, since a change callback may
+    itself enter ``hold``.
+    """
+    with lock:
+        events = list(doc.callbacks._held_events or [])
+        doc.callbacks._held_events = []
+        doc.callbacks._hold = None
+
+        dispatch: list[DocumentChangedEvent] = []
+        deferred: list[DocumentChangedEvent] = []
+        for event in events:
+            if isinstance(event, (SessionCallbackAdded, SessionCallbackRemoved)):
+                dispatch.append(event)
+            elif not isinstance(event, DocumentPatchedEvent) or isinstance(event, MessageSentEvent):
+                deferred.append(event)
+        if deferred:
+            _UNCONNECTED_EVENTS.setdefault(doc, []).extend(deferred)
+    return dispatch
+
+def _dispatch_unconnected_events(doc: Document) -> None:
+    """
+    Dispatches events deferred by ``_drain_unconnected_events`` now
+    that the session has connected. Scheduled on the Document to ensure
+    the events are dispatched on the Document's thread while it holds
+    its lock, since ``_on_load`` may run on the thread pool.
+    """
+    events = _UNCONNECTED_EVENTS.pop(doc, None)
+    if not events:
+        return
+    if doc.session_context:
+        doc.add_next_tick_callback(partial(retrigger_events, doc, events))
+    else:
+        retrigger_events(doc, events)
 
 def _cleanup_doc(doc, destroy=True):
     for callback in doc.session_destroyed_callbacks:
@@ -251,6 +313,7 @@ def _destroy_document(self, session):
     # Cancel any pending write tasks for this document
     _WRITE_MSGS.pop(self, None)
     _WRITE_BLOCK.pop(self, None)
+    _UNCONNECTED_EVENTS.pop(self, None)
     for future in _WRITE_FUTURES.pop(self, []):
         future.cancel()
     for task in _write_tasks.pop(self, []):
@@ -310,7 +373,7 @@ def write_events(
     if state._unblocked(doc):
         _dispatch_write_task(doc, _run_write_futures, doc)
     else:
-        doc.add_next_tick_callback(partial(_run_write_futures, doc))
+        doc.add_next_tick_callback(partial(_run_write_futures, doc))  # type: ignore[arg-type]
 
 def schedule_write_events(
     doc: Document,
@@ -617,20 +680,27 @@ def hold(
                 pass
             elif threaded:
                 if not held or we_held:
-                    def _unhold(lock=hold_lock, doc=doc):
-                        with lock:
-                            doc.unhold()
-                    with hold_lock:
-                        doc.callbacks._hold = None
-                        doc.add_next_tick_callback(_unhold)
-                        doc.callbacks._hold = policy
+                    if state._connected.get(doc):
+                        def _unhold(lock=hold_lock, doc=doc):
+                            with lock:
+                                doc.unhold()
+                        with hold_lock:
+                            # Clear the hold around scheduling the callback
+                            # so the SessionCallbackAdded event it emits is
+                            # dispatched rather than collected by the hold
+                            # it is releasing.
+                            doc.callbacks._hold = None
+                            doc.add_next_tick_callback(_unhold)
+                            doc.callbacks._hold = policy
+                    else:
+                        _dispatch_events(doc, _drain_unconnected_events(doc, hold_lock))
             elif held:
                 doc.callbacks._hold = held
             elif comm is not None:
                 from .notebook import push
                 push(doc, comm)
             elif not state._connected.get(doc):
-                doc.callbacks._hold = None
+                _dispatch_events(doc, _drain_unconnected_events(doc, hold_lock))
             else:
                 doc.unhold()
 

@@ -237,7 +237,15 @@ test-example = 'pytest -n logical --dist loadscope --nbval-lax examples'
 nbval = "*"
 
 [feature.test-ui.dependencies]
-playwright = "*"
+# The playwright CLI installs the browser build that the playwright-python
+# client speaks to, so the two must stay on the same minor version. A newer
+# CLI downloads a Chromium the client cannot drive, which hangs tests
+# indefinitely rather than failing them. conda-forge ships the driver
+# (playwright) and the bindings (playwright-python) as separate packages, so
+# both need pinning; a newer client against an older driver sends fields the
+# driver rejects, failing every test at BrowserType.launch.
+playwright = "1.61.*"
+playwright-python = "1.61.*"
 pytest-playwright = "*"
 pytest-asyncio = "*"
 jupyter_server = "*"
@@ -251,7 +259,7 @@ PLAYWRIGHT_BROWSERS_PATH = ".pixi/playwright-browsers"
 _install-ui = 'playwright install chromium'
 
 [feature.test-ui.tasks.test-ui]
-cmd = 'pytest panel/tests/ui --ui --browser chromium -n logical --dist loadgroup'
+cmd = 'pytest panel/tests/ui --ui --browser chromium -n logical --dist loadgroup -v'
 depends-on = ["_install-ui"]
 
 # =============================================

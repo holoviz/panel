@@ -1,5 +1,6 @@
 import asyncio
 import gc
+import threading
 import weakref
 
 from concurrent.futures import ThreadPoolExecutor
@@ -9,12 +10,13 @@ import pytest
 import tornado.locks
 
 from bokeh.document import Document
+from bokeh.document.events import MessageSentEvent
 
 import panel as pn
 
 from panel.io.document import (
-    _WRITE_BLOCK, _cleanup_doc, _destroy_document, _write_tasks,
-    extra_socket_handlers, hold, schedule_write_events, unlocked,
+    _UNCONNECTED_EVENTS, _WRITE_BLOCK, _cleanup_doc, _destroy_document,
+    _write_tasks, extra_socket_handlers, hold, schedule_write_events, unlocked,
 )
 from panel.io.state import _state, set_curdoc, state
 from panel.tests.util import serve_and_request, wait_until
@@ -76,6 +78,170 @@ def test_hold_does_not_get_stuck_with_threaded_callbacks(threads):
             f.result()
 
     wait_until(lambda: not doc.callbacks.hold_value, timeout=5000)
+
+
+def test_hold_before_connected_does_not_strand_events():
+    """
+    A hold exiting before the session connects must leave nothing queued
+    on the Document, and must not swallow the session callback events
+    that scheduled updates rely on to register on the IOLoop.
+    """
+    state_info, docs, ran = {}, [], []
+
+    def app():
+        md = pn.pane.Markdown("initial")
+        doc = state.curdoc
+        docs.append(doc)
+
+        def before_ready():
+            with hold(doc):
+                md.object = "changed"
+                doc.add_next_tick_callback(lambda: ran.append('scheduled'))
+            state_info['connected'] = state._connected.get(doc)
+            state_info['hold'] = doc.callbacks.hold_value
+            state_info['queued'] = list(doc.callbacks._held_events)
+
+        doc.add_next_tick_callback(before_ready)
+        return md
+
+    serve_and_request(app)
+    wait_until(lambda: 'queued' in state_info)
+
+    # The hold exited before the session was connected
+    assert state_info['connected'] is None
+    assert state_info['hold'] is None
+    # Nothing is left queued behind the hold
+    assert state_info['queued'] == []
+
+    doc = docs[0]
+    # The scheduled callback was registered and ran, so the model update
+    # that Reactive schedules pre-connect is not lost
+    wait_until(lambda: ran == ['scheduled'])
+    wait_until(lambda: docs[0].roots[0].text == '&lt;p&gt;changed&lt;/p&gt;\n')
+    assert not doc.callbacks._held_events
+
+
+def test_hold_before_connected_defers_message_sent():
+    """
+    MessageSentEvent carries a protocol message with no representation in
+    the model graph, so it cannot be dropped like a model change. It has
+    to be deferred until a connection exists to write it to.
+    """
+    docs, state_info = [], {}
+
+    def app():
+        doc = state.curdoc
+        docs.append(doc)
+
+        def before_ready():
+            with hold(doc):
+                doc.callbacks.trigger_on_change(
+                    MessageSentEvent(doc, "panel_test", "payload")
+                )
+            state_info['deferred'] = list(_UNCONNECTED_EVENTS.get(doc, []))
+            state_info['queued'] = list(doc.callbacks._held_events)
+
+        doc.add_next_tick_callback(before_ready)
+        return pn.pane.Markdown("initial")
+
+    serve_and_request(app)
+    wait_until(lambda: 'deferred' in state_info)
+
+    # Not dropped, and not left queued on the Document
+    assert len(state_info['deferred']) == 1
+    assert isinstance(state_info['deferred'][0], MessageSentEvent)
+    assert state_info['queued'] == []
+
+
+def test_hold_before_connected_drops_recoverable_events():
+    """
+    Model changes are dropped rather than deferred, since the Document is
+    serialized in full once the session connects.
+    """
+    docs, state_info = [], {}
+
+    def app():
+        doc = state.curdoc
+        docs.append(doc)
+        slider = IntSlider(value=1)
+        model = slider.get_root(doc)
+
+        def before_ready():
+            with hold(doc):
+                model.value = 3
+            state_info['deferred'] = list(_UNCONNECTED_EVENTS.get(doc, []))
+            state_info['queued'] = list(doc.callbacks._held_events)
+            state_info['value'] = model.value
+
+        doc.add_next_tick_callback(before_ready)
+        return slider
+
+    serve_and_request(app)
+    wait_until(lambda: 'queued' in state_info)
+
+    assert state_info['queued'] == []
+    assert state_info['deferred'] == []
+    # The change is on the model, so the full serialization reproduces it
+    assert state_info['value'] == 3
+
+
+def test_threaded_hold_before_connected_does_not_strand_events():
+    """
+    The threaded branch must apply the same policy as the non-threaded
+    one; previously it unconditionally scheduled an unhold, ignoring
+    whether the session was connected.
+    """
+    docs, state_info, ran = [], {}, []
+
+    def app():
+        md = pn.pane.Markdown("initial")
+        doc = state.curdoc
+        docs.append(doc)
+
+        def worker():
+            with hold(doc):
+                md.object = "changed"
+                doc.add_next_tick_callback(lambda: ran.append('scheduled'))
+            state_info['threaded'] = state._current_thread != state._thread_id
+            state_info['connected'] = state._connected.get(doc)
+            state_info['hold'] = doc.callbacks.hold_value
+            state_info['queued'] = list(doc.callbacks._held_events)
+
+        thread = threading.Thread(target=worker)
+        thread.start()
+        thread.join()
+        return md
+
+    serve_and_request(app)
+    wait_until(lambda: 'queued' in state_info)
+
+    # Confirm we exercised the threaded branch while unconnected
+    assert state_info['threaded']
+    assert state_info['connected'] is None
+    assert state_info['hold'] is None
+    assert state_info['queued'] == []
+    wait_until(lambda: ran == ['scheduled'])
+
+
+@pytest.mark.xdist_group(name="server")
+def test_hold_in_app_callable_does_not_leak_hold():
+    build = {}
+
+    def app():
+        with hold():
+            pass
+        # A hold leaked here defers the unhold past ServerSession
+        # construction, which registers this callback a second time
+        # when the queued SessionCallbackAdded event is replayed.
+        pn.state.add_periodic_callback(lambda: None, period=10000)
+        build['thread_id'] = state._thread_id
+        build['hold'] = state.curdoc.callbacks.hold_value
+        return IntSlider()
+
+    serve_and_request(app)
+
+    assert build['thread_id'] is not None
+    assert build['hold'] is None
 
 
 class _FakeProtocol:

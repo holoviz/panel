@@ -371,6 +371,17 @@ fully loaded.
 
 Default: '' | Type: String
 
+### `respect_explicit_sizing`
+
+When enabled, explicitly set sizing_mode/width_policy/height_policy on a
+layout are respected and never overridden by values inferred from the
+layout's children. When disabled (the default) the legacy behaviour is
+preserved: child-inferred values silently override explicit settings, but
+a warning is emitted whenever such an override would occur so that the
+incorrect specification can be corrected.
+
+Default: False | Type: Boolean
+
 ### `reuse_sessions`
 
 Whether to reuse a session for the initial request to speed up

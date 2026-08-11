@@ -70,12 +70,17 @@ class Feed(Column):
     }
 
     def __init__(self, *objects, **params):
-        for height_param in ["height", "min_height", "max_height"]:
-            if height_param in params:
-                break
-        else:
-            # sets a default height to prevent infinite load
-            params["height"] = 300
+        # Only a scrolling Feed clips a viewport to virtualize against, so it
+        # needs a bounding height to avoid loading everything (#8661). A
+        # non-scrolling Feed renders all its objects (see _synced_range) and must
+        # not get a height, which would clip it rather than let the page scroll.
+        if params.get('scroll', type(self).param.scroll.default):
+            for height_param in ["height", "min_height", "max_height"]:
+                if height_param in params:
+                    break
+            else:
+                # sets a default height to prevent infinite load
+                params["height"] = 300
 
         super().__init__(*objects, **params)
         self._last_synced = None
@@ -83,7 +88,9 @@ class Feed(Column):
 
     @param.depends("visible_range", "load_buffer", watch=True)
     def _trigger_get_objects(self):
-        if self.visible_range is None:
+        # A non-scrolling Feed renders every object up front (see _synced_range),
+        # so there is nothing further to load as visible_range changes.
+        if self.visible_range is None or not self.scroll:
             return
 
         # visible start, end / synced start, end
@@ -110,6 +117,11 @@ class Feed(Column):
     @property
     def _synced_range(self):
         n = len(self.objects)
+        if not self.scroll:
+            # A non-scrolling Feed cannot clip a viewport to virtualize against,
+            # so it renders every object; the frontend measures visible_range
+            # against the page viewport instead (#8661).
+            return (0, n)
         if self.visible_range:
             return (
                 max(self.visible_range[0] - self.load_buffer, 0),
