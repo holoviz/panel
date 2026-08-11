@@ -8,6 +8,36 @@ import {LayoutDOM, LayoutDOMView} from "@bokehjs/models/layouts/layout_dom"
 import type {UIElement} from "@bokehjs/models/ui/ui_element"
 import type * as p from "@bokehjs/core/properties"
 
+/**
+ * Re-renders a view, including its layout.
+ *
+ * Bokeh's own `rerender` runs the whole render walk before `update_layout`,
+ * which is wrong for anything that is positioned by the layout: `render`
+ * re-parents annotation elements into the canvas layers and it is
+ * `update_layout` that moves them into their side panels. Measuring in
+ * between therefore caches a bbox for the container the element is about to
+ * leave, e.g. a legend measuring the full canvas width instead of its side
+ * panel. `compute_layout` then sizes the panel from that stale bbox and can
+ * squeeze the frame to zero, which poisons everything derived from it (for
+ * tile-based plots, a division by zero width puts NaN into the ranges with no
+ * recovery path). Updating the layout first means `after_render` measures
+ * elements where they will actually live.
+ */
+export function rerender_view(view: DOMView): void {
+  if (view instanceof LayoutDOMView) {
+    view.render()
+    view.update_layout()
+    view.r_after_render()
+    view.compute_layout()
+  } else if (view.rerender) {
+    // Can be removed when Bokeh>3.7 (see https://github.com/holoviz/panel/pull/7815)
+    view.rerender()
+  } else {
+    view.render()
+    view.r_after_render()
+  }
+}
+
 export class PanelMarkupView extends WidgetView {
   declare model: Markup
 
@@ -52,7 +82,10 @@ export class PanelMarkupView extends WidgetView {
       // @ts-expect-error: 'el' is protected
       const style_el = stylesheet.el
       if (style_el instanceof HTMLLinkElement) {
-        this._initialized_stylesheets.set(style_el.href, false)
+        // A link served from cache may already have loaded, and `load` does
+        // not fire again for it, so seed from `sheet` instead of assuming
+        // every stylesheet is still pending.
+        this._initialized_stylesheets.set(style_el.href, style_el.sheet != null)
         const settled = () => {
           this._initialized_stylesheets.set(style_el.href, true)
           if ([...this._initialized_stylesheets.values()].every((v) => v)) {
@@ -63,7 +96,7 @@ export class PanelMarkupView extends WidgetView {
         style_el.addEventListener("error", settled, {signal})
       }
     }
-    if (this._initialized_stylesheets.size == 0) {
+    if ([...this._initialized_stylesheets.values()].every((v) => v)) {
       this.style_redraw()
     }
   }
@@ -82,14 +115,7 @@ export class PanelMarkupView extends WidgetView {
   }
 
   rerender_(view: DOMView | null = null): void {
-    // Can be removed when Bokeh>3.7 (see https://github.com/holoviz/panel/pull/7815)
-    view = view == null ? this : view
-    if (view.rerender) {
-      view.rerender()
-    } else {
-      view.render()
-      view.r_after_render()
-    }
+    rerender_view(view == null ? this : view)
   }
 
   style_redraw(): void {}
@@ -211,14 +237,7 @@ export abstract class HTMLBoxView extends LayoutDOMView {
   }
 
   rerender_(view: DOMView | null = null): void {
-    // Can be removed when Bokeh>3.7 (see https://github.com/holoviz/panel/pull/7815)
-    view = view == null ? this : view
-    if (view.rerender) {
-      view.rerender()
-    } else {
-      view.render()
-      view.r_after_render()
-    }
+    rerender_view(view == null ? this : view)
   }
 
   watch_stylesheets(): void {
