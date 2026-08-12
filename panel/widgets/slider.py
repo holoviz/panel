@@ -78,6 +78,21 @@ class _SliderBase(Widget):
         if 'orientation' == 'vertical':
             params['height'] = self.param.width.default
         super().__init__(**params)
+        if 'value_throttled' in self.param:
+            self._internal_callbacks.append(
+                self.param.watch(self._sync_value_throttled, 'value')
+            )
+
+    def _sync_value_throttled(self, event: param.parameterized.Event) -> None:
+        # Assigning `value` from Python is not a drag, so there is nothing to
+        # throttle and `value_throttled` should follow, the same way __init__
+        # already seeds it from `value`. Changes driven by the frontend arrive
+        # inside `_syncing`, and those must leave `value_throttled` pinned until
+        # the handle is released, which is the point of the parameter.
+        if 'value' in self._param__private.syncing:
+            return
+        with edit_readonly(self):
+            self.value_throttled = event.new
 
     def __repr__(self, depth=0):
         return '{cls}({params})'.format(cls=type(self).__name__,
