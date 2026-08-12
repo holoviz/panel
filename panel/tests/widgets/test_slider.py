@@ -10,9 +10,10 @@ from bokeh.models import (
 
 from panel import config
 from panel.widgets import (
-    DateRangeSlider, DateSlider, DatetimeRangeSlider, DatetimeSlider, DiscretePlayer,
-    DiscreteSlider, EditableFloatSlider, EditableIntSlider, EditableRangeSlider, FloatInput,
-    FloatSlider, IntInput, IntSlider, Player, RangeSlider, StaticText,
+    DateRangeSlider, DateSlider, DatetimeRangeSlider, DatetimeSlider,
+    DiscretePlayer, DiscreteSlider, EditableFloatSlider, EditableIntSlider,
+    EditableRangeSlider, FloatInput, FloatSlider, IntInput, IntSlider, Player,
+    RangeSlider, StaticText,
 )
 
 
