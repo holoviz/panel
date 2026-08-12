@@ -91,7 +91,11 @@ CONFIG = LlmsBuildConfig(
         ),
         LlmsSection(
             title="reference",
-            description="Detailed reference guides for panes, widgets, layouts, and other components.",
+            description=(
+                "Detailed reference galleries for every pane, widget, layout, template, "
+                "and other component.\n Each page documents construction and usage, all "
+                "available parameters, and how to customize appearance and behavior."
+            ),
             path_prefix=Path("reference"),
             path_filter=_MD_PAGE,
             url_pattern="/markdown/reference/{path}.md",
