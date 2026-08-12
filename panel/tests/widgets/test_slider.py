@@ -10,9 +10,9 @@ from bokeh.models import (
 
 from panel import config
 from panel.widgets import (
-    DateRangeSlider, DateSlider, DatetimeRangeSlider, DatetimeSlider,
-    DiscreteSlider, EditableFloatSlider, EditableIntSlider,
-    EditableRangeSlider, FloatSlider, IntSlider, RangeSlider, StaticText,
+    DateRangeSlider, DateSlider, DatetimeRangeSlider, DatetimeSlider, DiscretePlayer,
+    DiscreteSlider, EditableFloatSlider, EditableIntSlider, EditableRangeSlider, FloatInput,
+    FloatSlider, IntInput, IntSlider, Player, RangeSlider, StaticText,
 )
 
 
@@ -1011,3 +1011,18 @@ def test_slider_value_throttled_not_updated_while_dragging(document, comm):
 
     slider._process_events({'value_throttled': 4.0})
     assert slider.value_throttled == 4.0
+
+
+@pytest.mark.parametrize('widget, kwargs, new', [
+    (Player, dict(start=0, end=10, value=1), 4),
+    (DiscretePlayer, dict(options=[1, 2, 3], value=1), 3),
+    (IntInput, dict(value=1), 7),
+    (FloatInput, dict(value=1.0), 7.0),
+])
+def test_non_slider_value_throttled_follows_programmatic_value(widget, kwargs, new):
+    # PlayerBase and _SpinnerBase seed value_throttled from value in __init__ the
+    # same way _SliderBase does, so they had the same stale-forever bug. The sync
+    # lives on Widget so every family that declares value_throttled gets it.
+    w = widget(**kwargs)
+    w.value = new
+    assert w.value_throttled == new
