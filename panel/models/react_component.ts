@@ -305,7 +305,7 @@ export class ReactComponentView extends ReactiveESMView {
     return created
   }
 
-  override async update_children(): Promise<void> {
+  protected override async _update_children_pass(): Promise<void> {
     const created_children = new Set(await this.build_child_views())
 
     const new_views = new Map()

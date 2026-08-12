@@ -189,6 +189,7 @@ export class ReactiveESMView extends HTMLBoxView {
   _rendered: boolean = false
   _stale_children: boolean = false
   _mounted: Map<string, Set<string>> = new Map()
+  _update_children_chain: Promise<void> = Promise.resolve()
 
   override initialize(): void {
     super.initialize()
@@ -536,7 +537,24 @@ export class ReactiveESMView extends HTMLBoxView {
     return null
   }
 
+  /**
+   * A children property can trigger more than one update pass for the same
+   * change, e.g. the property change signal and the manual render policy path
+   * in `ReactiveESM.watch`. `build_child_views` is async, so two passes that
+   * overlap both create a view for the same model and only the last one is kept
+   * in `_child_views`; the other is dropped without `remove()`. An orphaned
+   * ReactComponent never mounts, so the promise it handed to `root._await_ready`
+   * is never settled and the root's ready chain stays pending for the rest of
+   * the session, which silently blocks anything waiting on it. Serializing the
+   * passes makes the later one a no-op instead of a competing build.
+   */
   override async update_children(): Promise<void> {
+    const run = this._update_children_chain.then(() => this._update_children_pass())
+    this._update_children_chain = run.then(() => undefined, () => undefined)
+    return run
+  }
+
+  protected async _update_children_pass(): Promise<void> {
     const created_children = new Set(await this.build_child_views())
 
     const all_views = this.child_views

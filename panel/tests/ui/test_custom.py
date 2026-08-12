@@ -1567,3 +1567,95 @@ def test_react_root_ready_after_children_append(page):
             return new Promise(r => setTimeout(() => r(resolved), 100))
         }
     """, timeout=10000)
+
+
+class ReactChildrenRace(ReactComponent):
+
+    views = Children()
+    editors = Children()
+
+    _esm = """
+    export function render({model}) {
+      return (
+        <div>
+          <div id="views">{model.get_child("views")}</div>
+          <div id="editors">{model.get_child("editors")}</div>
+        </div>
+      )
+    }"""
+
+
+# Wraps the host view instance (not the prototype) so only the host's own update
+# passes are counted and not the nested builds of its child views.
+COUNT_OVERLAPPING_BUILDS = """
+() => {
+    const find = (view) => {
+        if (view.model.type.startsWith('panel.models.esm.')) return view
+        for (const child of (view.child_views || [])) {
+            const found = find(child)
+            if (found) return found
+        }
+        return null
+    }
+    let host = null
+    for (const root of Object.values(Bokeh.index)) {
+        host = find(root)
+        if (host) break
+    }
+    if (host == null) throw new Error('no ESM view found')
+    window._overlaps = 0
+    window._completed = 0
+    let active = 0
+    const build = host.build_child_views.bind(host)
+    host.build_child_views = async () => {
+        active += 1
+        if (active > 1) window._overlaps += 1
+        try {
+            return await build()
+        } finally {
+            active -= 1
+            window._completed += 1
+        }
+    }
+}
+"""
+
+
+def test_children_updates_do_not_overlap(page):
+    example = ReactChildrenRace(
+        views=[Row(ReactChildInner(text="view-0"))],
+        editors=[ReactChildInner(text="editor-0")],
+    )
+
+    serve_component(page, example)
+
+    expect(page.locator('.inner')).to_have_count(2)
+
+    page.evaluate(COUNT_OVERLAPPING_BUILDS)
+
+    # Updating two children props in one event triggers one update pass each.
+    # Overlapping passes both build a view for the same model and only the last
+    # is kept, so the other is orphaned without `remove()` and never settles the
+    # promise it handed to `root._await_ready`.
+    example.param.update(
+        views=[*example.views, Row(ReactChildInner(text="view-1"))],
+        editors=[*example.editors, ReactChildInner(text="editor-1")],
+    )
+
+    expect(page.locator('.inner')).to_have_count(4)
+    expect(page.locator('#views .inner')).to_have_count(2)
+    expect(page.locator('#editors .inner')).to_have_count(2)
+
+    wait_until(lambda: page.evaluate('() => window._completed') >= 2, page)
+    assert page.evaluate('() => window._overlaps') == 0
+
+    page.wait_for_function("""
+        () => {
+            const views = Object.values(Bokeh.index)
+            if (views.length === 0) return false
+            const root = views[0].root
+            let resolved = false
+            root.ready.then(() => { resolved = true })
+            return new Promise(r => setTimeout(() => r(resolved), 100))
+        }
+    """, timeout=10000)
