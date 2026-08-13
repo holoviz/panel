@@ -314,6 +314,7 @@ depends-on = [
     '_docs-generate',
     '_docs-copy-panel-dist',
     '_docs-pyodide',
+    '_docs_markdown',
 ]
 
 [feature.doc.tasks.docs-build-parallel]
@@ -323,6 +324,7 @@ depends-on = [
     '_docs-generate-parallel',
     '_docs-copy-panel-dist',
     '_docs-pyodide',
+    '_docs_markdown',
 ]
 
 # =============================================
