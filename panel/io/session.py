@@ -11,7 +11,6 @@ from bokeh.util.token import generate_jwt_token, generate_session_id
 
 if t.TYPE_CHECKING:
     from bokeh.document.events import DocumentPatchedEvent
-    from bokeh.server.callbacks import SessionCallback
 
 
 log = logging.getLogger(__name__)
@@ -25,7 +24,9 @@ class ServerSessionStub(ServerSession):
     def _document_patched(self, event: DocumentPatchedEvent) -> None:
         return
 
-    def _session_callback_added(self, event: SessionCallback):
+    # Untyped: the event's type differs between Bokeh <3.10 (SessionCallback)
+    # and >=3.10 (SessionCallbackAdded).
+    def _session_callback_added(self, event) -> None:
         return
 
     def _session_callback_removed(self, event):

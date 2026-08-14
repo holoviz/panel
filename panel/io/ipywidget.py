@@ -23,11 +23,12 @@ from ipywidgets_bokeh.kernel import (
     BokehKernel, SessionWebsocket, WebsocketStream,
 )
 from ipywidgets_bokeh.widget import IPyWidget
+from packaging.version import Version
 from tornado.ioloop import IOLoop
 from traitlets import Any
 
 from ..config import __version__
-from ..util import classproperty
+from ..util import bokeh_version, classproperty
 from .state import set_curdoc, state
 
 try:
@@ -108,7 +109,12 @@ class MessageSentBuffers(TypedDict):
     msg_type: str
 
 
-class MessageSentEventPatched(MessageSentEvent):
+# Bokeh >=3.10 requires the event kind to be declared via a class
+# keyword argument rather than a plain class attribute.
+_message_sent_kwargs = {'kind': 'MessageSent'} if bokeh_version >= Version('3.10') else {}
+
+
+class MessageSentEventPatched(MessageSentEvent, **_message_sent_kwargs):
     """
     Patches MessageSentEvent with fix that ensures MessageSent event
     does not define msg_data (which is an assumption in BokehJS
