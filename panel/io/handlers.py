@@ -19,6 +19,8 @@ import bokeh.command.util
 from bokeh.application.handlers.code import CodeHandler
 from bokeh.application.handlers.code_runner import CodeRunner
 
+_hold_process_globals: Callable[[], t.ContextManager[None]] | None
+_patch_process_state: Callable[[PathLike, list[str]], t.ContextManager[None]] | None
 try:
     # Bokeh >=3.10 guards process-global mutations (sys.path/argv/cwd) with a
     # lock so code apps can be initialized concurrently on worker threads.
@@ -539,7 +541,7 @@ class PanelCodeRunner(CodeRunner):
         # XXX: self._code shouldn't be None at this point but types don't reflect this
         assert self._code is not None
 
-        if _hold_process_globals is not None:
+        if _hold_process_globals is not None and _patch_process_state is not None:
             # Bokeh >=3.10: reuse the process-globals lock and state patching so
             # concurrent code-app initialization on worker threads is safe.
             with _hold_process_globals(), _patch_process_state(self._path, self._argv):

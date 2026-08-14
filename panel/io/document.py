@@ -57,7 +57,7 @@ _UNCONNECTED_EVENTS: WeakKeyDictionary[Document, list[DocumentChangedEvent]] = W
 _panel_last_cleanup = None
 _write_tasks: WeakKeyDictionary[Document, list[asyncio.Task]] = WeakKeyDictionary()
 
-extra_socket_handlers: dict[type, Callable[[t.Any], None]] = {}
+extra_socket_handlers: dict[type, Callable[..., Sequence[Future]]] = {}
 
 @dataclasses.dataclass
 class Request:
@@ -462,6 +462,9 @@ def dispatch_tornado(
 ) -> Sequence[Future]:
     from tornado.websocket import WebSocketHandler
     socket = conn._socket
+    # Callers only invoke dispatch_tornado after checking
+    # isinstance(conn._socket, WebSocketHandler).
+    assert isinstance(socket, WebSocketHandler)
     ws_conn = getattr(socket, 'ws_connection', False)
     if not ws_conn or ws_conn.is_closing(): # type: ignore
         return []

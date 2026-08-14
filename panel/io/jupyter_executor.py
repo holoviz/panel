@@ -176,7 +176,7 @@ class PanelExecutor(WSHandler):
 
         runner = app._handlers[0]._runner
         loop = tornado.ioloop.IOLoop.current()
-        session = JupyterServerSession(self.session_id, doc, io_loop=loop, token=self.token)
+        session = JupyterServerSession(self.session_id, doc, io_loop=loop.asyncio_loop, token=self.token)
         session_context._set_session(session)
         return session, runner.error_detail
 
