@@ -89,6 +89,9 @@ def curdoc_locked() -> Document | None:
 class _Undefined: pass
 
 
+_tasks: set[asyncio.Task] = set()
+
+
 class _SharedThreadPoolExecutor(ThreadPoolExecutor):
     """
     Thread pool used both by Panel's ``state.execute(schedule='thread')`` and,
@@ -578,10 +581,13 @@ class _state(param.Parameterized):
             # on the running loop rather than IOLoop.current(), which may point
             # at a different/stale loop in multi-server (e.g. ASGI) contexts.
             loop = asyncio.get_running_loop()
-            loop.call_later(
-                call_time_seconds,
-                lambda: asyncio.ensure_future(self._scheduled_cb(name, threaded))
-            )
+
+            def _reschedule():
+                task = asyncio.ensure_future(self._scheduled_cb(name, threaded))
+                _tasks.add(task)
+                task.add_done_callback(_tasks.discard)
+
+            loop.call_later(call_time_seconds, _reschedule)
         try:
             self.execute(cb, schedule='thread' if threaded else 'auto')
         except Exception as e:
