@@ -547,6 +547,8 @@ def threads():
     try:
         yield 4
     finally:
+        if state._thread_pool is not None:
+            state._thread_pool.shutdown(wait=True, _shared=False)
         config.nthreads = None
 
 @pytest.fixture
