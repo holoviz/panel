@@ -35,7 +35,7 @@ export class TabsView extends BkTabsView {
     }
   }
 
-  update_active(): void {
+  override update_active(): void {
     // Bokeh renders the active panel via a `.bk-active` CSS class, but Panel
     // additionally toggles inline visibility on the child elements (see
     // `_update_child_visibility`). Re-apply it whenever the active tab changes.

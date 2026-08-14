@@ -5,8 +5,10 @@ pytest.importorskip("IPython")
 from bokeh.models import ImportedStyleSheet, InlineStyleSheet
 
 from panel.config import config, panel_extension
-from panel.io.notebook import ipywidget
-from panel.io.resources import CDN_ROOT, set_resource_mode
+from panel.io.notebook import ipywidget, replace_inline_css
+from panel.io.resources import (
+    CDN_DIST, CDN_ROOT, JS_VERSION, set_resource_mode,
+)
 from panel.pane import Str
 from panel.widgets import TextEditor
 
@@ -76,3 +78,12 @@ def test_notebook_inline_css_stylesheets(nb_loaded):
     model = list(widget._models.values())[0][0]
     for stylesheet in model.stylesheets[:len(model.__css__)]:
         assert isinstance(stylesheet, InlineStyleSheet)
+
+def test_replace_inline_css_ignores_version_query():
+    url = f'{CDN_DIST}css/loading.css'
+    unversioned = replace_inline_css(ImportedStyleSheet(url=url))
+    versioned = replace_inline_css(ImportedStyleSheet(url=f'{url}?v={JS_VERSION}'))
+
+    assert isinstance(unversioned, InlineStyleSheet)
+    assert isinstance(versioned, InlineStyleSheet)
+    assert versioned.css == unversioned.css

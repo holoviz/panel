@@ -45,8 +45,8 @@ export class FileDownloadView extends InputWidgetView {
   _prev_href: string | null = ""
   _prev_download: string | null = ""
 
-  override _children_views(): ChildView[] {
-    return [...super._children_views(), this.icon_view]
+  override children_views(): ChildView[] {
+    return [...super.children_views(), this.icon_view]
   }
 
   override *controls() {

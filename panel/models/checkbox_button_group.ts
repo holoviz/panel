@@ -14,8 +14,8 @@ export class CheckboxButtonGroupView extends bkCheckboxButtonGroupView {
 
   protected tooltip: TooltipView | null
 
-  override _children_views(): ChildView[] {
-    return [...super._children_views(), this.tooltip]
+  override children_views(): ChildView[] {
+    return [...super.children_views(), this.tooltip]
   }
 
   override connect_signals(): void {

@@ -3,11 +3,13 @@ import {build_views} from "@bokehjs/core/build_views"
 import type {HasProps} from "@bokehjs/core/has_props"
 import type {ViewOf} from "@bokehjs/core/view"
 import type {DOMView} from "@bokehjs/core/dom_view"
-import {ClassList, InlineStyleSheet} from "@bokehjs/core/dom"
+import type {StyleSheetLike} from "@bokehjs/core/dom"
+import {ClassList, ImportedStyleSheet, InlineStyleSheet} from "@bokehjs/core/dom"
 import type {CSSStyles, CSSStyleSheetDecl} from "@bokehjs/core/css"
 import type * as p from "@bokehjs/core/properties"
 import {difference} from "@bokehjs/core/util/array"
 import {assert} from "@bokehjs/core/util/assert"
+import {isString} from "@bokehjs/core/util/types"
 import type {UIElementView} from "@bokehjs/models/ui/ui_element"
 import type {Transform} from "sucrase"
 
@@ -39,10 +41,6 @@ export class HostedStyleSheet extends InlineStyleSheet {
   }
 
 }
-
-// Tracks the CSS text of adopted native stylesheets so that sibling
-// components sharing a root can deduplicate identical inline stylesheets.
-const adopted_css = new WeakMap<CSSStyleSheet, string>()
 
 async function _build_view<T extends HasProps>(view_cls: T["default_view"], model: T, options: Options<ViewOf<T>>): Promise<ViewOf<T>> {
   assert(view_cls != null, "model doesn't implement a view")
@@ -116,7 +114,7 @@ export class ReactComponentView extends ReactiveESMView {
   }
 
   override render_esm(): void {
-    if (this.model.compiled === null || this.model.render_module === null) {
+    if (this.model.compiled === null || this.model.render_module === null || this.container == null) {
       return
     }
     this._rendered = false
@@ -137,9 +135,38 @@ export class ReactComponentView extends ReactiveESMView {
       this._mounted_resolve = resolve
     })
     this.model.render_module.then((mod: any) => {
+      if (this.container == null) {
+        // Nothing will mount, so the ready promise has to be settled here or
+        // the view never finishes and the document never goes idle.
+        this._resolve_mounted()
+        return
+      }
       this.react_root = mod.default.render(this.model.id)
+    }).catch((e: unknown) => {
+      this._resolve_mounted()
+      throw e
     })
     this._await_ready(mounted_promise)
+  }
+
+  override render_error(error: SyntaxError): void {
+    // A component that errored will never mount and so never settles its
+    // promise via `after_rendered`.
+    this._resolve_mounted()
+    super.render_error(error)
+  }
+
+  /**
+   * Settles the promise handed to `_await_ready` by `render_esm`. Safe to call
+   * more than once; only the first call has an effect.
+   */
+  _resolve_mounted(): void {
+    const resolve = this._mounted_resolve
+    if (resolve == null) {
+      return
+    }
+    this._mounted_resolve = null
+    resolve()
   }
 
   on_force_update(cb: () => void): void {
@@ -155,11 +182,13 @@ export class ReactComponentView extends ReactiveESMView {
   override remove(): void {
     this._force_update_callbacks = []
     this.mounted = false
+    // A view removed before it mounted still owes a resolution to the promise
+    // handed to `_await_ready`, otherwise the root never reaches idle.
+    this._resolve_mounted()
     if (this.react_root && this.use_shadow_dom) {
       super.remove()
       this.react_root.then((root: any) => root && root.unmount())
-      for (const view of this._scheduled_removals) { view.remove() }
-      this._scheduled_removals = []
+      this.flush_scheduled_removals()
     } else {
       this._remove_stylesheets()
       for (const cb of (this._lifecycle_handlers.get("remove") || [])) {
@@ -169,20 +198,14 @@ export class ReactComponentView extends ReactiveESMView {
       this._child_rendered.clear()
       this._mounted.clear()
     }
+    this.react_root = null
   }
 
   protected _remove_stylesheets(): void {
-    const root = this.root_view.shadow_el
-    for (const el of this._applied_stylesheets) {
-      el.remove()
+    for (const stylesheet of this._applied_stylesheets) {
+      stylesheet.uninstall()
     }
     this._applied_stylesheets = []
-    if (this._adopted_stylesheets.length > 0) {
-      root.adoptedStyleSheets = root.adoptedStyleSheets.filter(
-        (sheet) => !this._adopted_stylesheets.includes(sheet),
-      )
-      this._adopted_stylesheets = []
-    }
   }
 
   get root_view(): ReactComponentView {
@@ -196,47 +219,42 @@ export class ReactComponentView extends ReactiveESMView {
     return root
   }
 
-  // Native stylesheets this view adopted into the (potentially shared) root.
-  protected _adopted_stylesheets: CSSStyleSheet[] = []
-
-  protected override _apply_stylesheets(): void {
-    const root = this.root_view.shadow_el
-
-    this._remove_stylesheets()
-
-    const applied: HTMLElement[] = []
-    const adopted: CSSStyleSheet[] = []
-    for (const stylesheet of this.resolved_stylesheets) {
-      if (stylesheet.is_global) {
-        const el = stylesheet.to_element()
-        document.head.append(el)
-        applied.push(el)
-      } else if (stylesheet.is_inline) {
-        // Adopt the reactive native stylesheet so that computed styles
-        // (display, self/parent style, css variables) keep updating.
-        const native = stylesheet.to_native()
-        if (!this.use_shadow_dom) {
-          const css = (stylesheet as InlineStyleSheet).css
-          if (root.adoptedStyleSheets.some((sheet) => adopted_css.get(sheet) === css)) {
-            continue
-          }
-          adopted_css.set(native, css)
-        }
-        adopted.push(native)
-      } else {
-        const el = stylesheet.to_element() as HTMLLinkElement
-        if (!this.use_shadow_dom &&
-            Array.from(root.querySelectorAll("link")).some((link) => link.href === el.href)) {
-          continue
-        }
-        root.append(el)
-        applied.push(el)
+  protected override _apply_stylesheets(stylesheets: StyleSheetLike[]): void {
+    const resolved_stylesheets = stylesheets.map((style) => isString(style) ? new InlineStyleSheet(style) : style)
+    const root_view = this.root_view
+    const target = root_view.shadow_el
+    // When shadow DOM is disabled every component in the tree installs its
+    // stylesheets into the same root, so the existing CSS is indexed once and
+    // looked up by value. Scanning the root per stylesheet made this quadratic
+    // in the number of components times the number of stylesheets each.
+    const installed_css = new Set<string | null>()
+    const installed_hrefs = new Set<string>()
+    if (!this.use_shadow_dom) {
+      for (const style of target.querySelectorAll("style")) {
+        installed_css.add(style.textContent)
+      }
+      for (const link of target.querySelectorAll("link")) {
+        installed_hrefs.add(link.href)
       }
     }
-
-    root.adoptedStyleSheets = [...root.adoptedStyleSheets, ...adopted]
-    this._adopted_stylesheets = adopted
-    this._applied_stylesheets = applied
+    resolved_stylesheets.forEach((stylesheet) => {
+      if (!this.use_shadow_dom) {
+        if (stylesheet instanceof InlineStyleSheet) {
+          if (installed_css.has(stylesheet.css)) {
+            return
+          }
+          installed_css.add(stylesheet.css)
+        } else if (stylesheet instanceof ImportedStyleSheet) {
+          const {href} = (stylesheet as any).el
+          if (installed_hrefs.has(href)) {
+            return
+          }
+          installed_hrefs.add(href)
+        }
+      }
+      this._applied_stylesheets.push(stylesheet)
+      stylesheet.install(target)
+    })
   }
 
   override render(): void {
@@ -245,6 +263,9 @@ export class ReactComponentView extends ReactiveESMView {
     }
     this._force_update_callbacks = []
     this.mounted = false
+    // `super.render()` calls `render_esm`, which installs a fresh promise, so
+    // settle any promise the previous render left outstanding first.
+    this._resolve_mounted()
     super.render()
   }
 
@@ -291,7 +312,7 @@ export class ReactComponentView extends ReactiveESMView {
     return created
   }
 
-  override async update_children(): Promise<void> {
+  protected override async _update_children_pass(): Promise<void> {
     const created_children = new Set(await this.build_child_views())
 
     const new_views = new Map()
@@ -321,6 +342,20 @@ export class ReactComponentView extends ReactiveESMView {
       }
     }
     this._update_children()
+    // Removals are normally drained by the replacement child once it mounts,
+    // but a child that never mounts would leak the old views, so flush any
+    // that are still pending after React has had a chance to commit.
+    setTimeout(() => this.flush_scheduled_removals(), 0)
+  }
+
+  flush_scheduled_removals(): void {
+    const removals = this._scheduled_removals
+    this._scheduled_removals = []
+    for (const view of removals) {
+      if (!view.is_destroyed) {
+        view.remove()
+      }
+    }
   }
 
   override _on_mounted(): void {
@@ -334,7 +369,7 @@ export class ReactComponentView extends ReactiveESMView {
 
   patch_container(container: HTMLDivElement): void {
     this.el = this.container = container
-    this._apply_stylesheets()
+    this._update_stylesheets()
     this.class_list = new ClassList(this.container.classList)
     this._apply_html_attributes()
   }
@@ -351,16 +386,14 @@ export class ReactComponentView extends ReactiveESMView {
     }
     this._rendered = true
     if (this._mounted_resolve) {
-      const resolve = this._mounted_resolve
-      this._mounted_resolve = null
       const child_ready: Promise<void>[] = []
       for (const child_view of this.child_views) {
         child_ready.push(child_view.ready)
       }
       if (child_ready.length > 0) {
-        Promise.all(child_ready).then(() => resolve())
+        Promise.all(child_ready).then(() => this._resolve_mounted())
       } else {
-        resolve()
+        this._resolve_mounted()
       }
     }
     this.finish()
@@ -451,6 +484,18 @@ async function render(id) {
       super(props)
       this.render_callback = null
       this.containerRef = React.createRef()
+      // Registers the child as tracked but not yet rendered. React's render
+      // phase has to stay free of side effects, since a render may be
+      // discarded without ever committing, so the flag is only ever flipped
+      // here and from getSnapshotBeforeUpdate.
+      this._mark_stale()
+    }
+
+    _mark_stale() {
+      const view = this.view
+      if (view) {
+        this.props.parent._child_rendered.set(view, false)
+      }
     }
 
     updateElement() {
@@ -486,15 +531,13 @@ async function render(id) {
         }
         this.updateElement()
         if (this.use_shadow_dom) {
-          for (const view of this.props.parent._scheduled_removals) { view.remove() }
-          this.props.parent._scheduled_removals = []
+          this.props.parent.flush_scheduled_removals()
           this.props.parent.rerender_(view)
           this.props.parent._child_rendered.set(view, true)
         } else {
           view.patch_container(this.containerRef.current)
           view.model.render_module.then(async (mod) => {
-            for (const view of this.props.parent._scheduled_removals) { view.remove() }
-            this.props.parent._scheduled_removals = []
+            this.props.parent.flush_scheduled_removals()
             this.setState(
               {rendered: await mod.default.render(view.model.id)},
               () => {
@@ -508,8 +551,7 @@ async function render(id) {
       }
       this.props.parent.on_child_render(this.props.name, this.render_callback)
       if (view == null) { return }
-      for (const rview of this.props.parent._scheduled_removals) { rview.remove() }
-      this.props.parent._scheduled_removals = []
+      this.props.parent.flush_scheduled_removals()
       if (this.use_shadow_dom) {
         this.updateElement()
         this.props.parent.rerender_(view)
@@ -534,9 +576,20 @@ async function render(id) {
       if (this.render_callback) {
         this.props.parent.remove_on_child_render(this.props.name, this.render_callback)
       }
-      if (!this.use_shadow_dom && this.view._mounted.has(this.props.name)) {
-        this.view._mounted.get(this.props.name).delete(this.props.id)
+      // The mount bookkeeping lives on the parent, and the view may already be
+      // gone by the time React unmounts us, so fall back to the model id prop.
+      const id = this.view?.model.id ?? this.props.id
+      if (id != null) {
+        this.props.parent.notify_mount(this.props.name, id, true)
       }
+    }
+
+    getSnapshotBeforeUpdate() {
+      // Commit-phase equivalent of the constructor's registration: the view
+      // this Child renders may have been swapped out, so the incoming one is
+      // registered as stale here rather than during render.
+      this._mark_stale()
+      return null
     }
 
     componentDidUpdate() {
@@ -547,9 +600,6 @@ async function render(id) {
 
     render() {
       const child = this.state.rendered
-      if  (this.view) {
-        this.props.parent._child_rendered.set(this.view, false)
-      }
       const class_name = (this.use_shadow_dom ?
         "child-wrapper" : this.view.model.class_name.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase()
       )
@@ -705,6 +755,9 @@ async function render(id) {
         container.id = view.model.root_node.replace("#", "")
         document.body.append(container)
       }
+    } else if (view.container == null) {
+      view._resolve_mounted()
+      return null
     } else {
       container = view.container
     }
@@ -712,6 +765,7 @@ async function render(id) {
     try {
       root.render(rendered)
     } catch(e) {
+      view._resolve_mounted()
       view.render_error(e)
     }
     return root

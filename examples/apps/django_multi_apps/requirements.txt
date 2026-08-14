@@ -8,9 +8,9 @@ cffi==1.13.2
 channels==2.4.0
 colorcet==2.0.5
 constantly==15.1.0
-cryptography==48.0.1
+cryptography==50.0.0
 daphne==4.2.2
-Django==4.2.30
+Django==5.2.16
 holoviews==1.13.2
 hvplot==0.5.2
 hyperlink==20.0.1
@@ -25,7 +25,7 @@ pandas==0.25.3
 panel==0.9.3
 param==1.9.3
 Pillow==12.3.0
-pyasn1==0.6.3
+pyasn1==0.6.4
 pyasn1-modules==0.2.7
 pycparser==2.19
 pyct==0.4.6

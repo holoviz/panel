@@ -77,7 +77,7 @@ export class CardView extends ColumnView {
       })
     }
 
-    this._apply_stylesheets()
+    this._update_stylesheets()
     this._apply_html_attributes()
     this._apply_visible()
 

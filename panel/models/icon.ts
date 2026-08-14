@@ -42,8 +42,8 @@ export class ClickableIconView extends ControlView {
     }
   }
 
-  override _children_views(): ChildView[] {
-    return [...super._children_views(), this.icon_view, this.tooltip]
+  override children_views(): ChildView[] {
+    return [...super.children_views(), this.icon_view, this.tooltip]
   }
 
   is_svg_icon(icon: string): boolean {
