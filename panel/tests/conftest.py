@@ -474,7 +474,11 @@ def server_cleanup():
     try:
         yield
     finally:
-        _PATCHED_CURDOCS.clear()
+        # _PATCHED_CURDOCS was a list in Bokeh <3.10 and is a ContextVar since
+        if hasattr(_PATCHED_CURDOCS, 'set'):
+            _PATCHED_CURDOCS.set(())
+        else:
+            _PATCHED_CURDOCS.clear()
         _STATE.document = Document()
         state.reset()
         _watched_files.clear()
