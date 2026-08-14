@@ -1353,12 +1353,14 @@ def test_server_thread_pool_bokeh_event(server_implementation, threads):
     tabulator = Tabulator(df)
 
     counts = []
+    completed = []
 
     def cb(event, count=[0]):
         count[0] += 1
         counts.append(count[0])
         time.sleep(0.5)
         count[0] -= 1
+        completed.append(1)
 
     tabulator.on_edit(cb)
 
@@ -1371,6 +1373,10 @@ def test_server_thread_pool_bokeh_event(server_implementation, threads):
 
     # Checks whether Tabulator on_edit callback was executed concurrently
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
+    # Ensure all dispatched events have fully finished processing before the
+    # server and thread pool are torn down, otherwise in-flight work can try
+    # to schedule a callback on the session's event loop after it is closed.
+    wait_until(lambda: len(completed) == 5, timeout=10000)
 
 
 def test_server_thread_pool_periodic(server_implementation, threads):
