@@ -574,8 +574,6 @@ def test_server_periodic_callback_error_logged(caplog, server_implementation, th
         for l,level_prop in zip(loggers_to_check,orig_level_propagate):
             l.setLevel(level_prop[0])
             l.propagate = level_prop[1]
-        if state._thread_pool is not None:
-            state._thread_pool.shutdown(wait=True, _shared=False)
         config.nthreads = orig_threads
 
 

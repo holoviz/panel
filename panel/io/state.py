@@ -984,7 +984,7 @@ class _state(param.Parameterized):
             self._busy_counter = []
         self._scheduled.clear()
         if self._thread_pool is not None:
-            self._thread_pool.shutdown(wait=False, _shared=False)
+            self._thread_pool.shutdown(wait=True, _shared=False)
             self._thread_pool = None
         self._sessions.clear()
         self._session_key_funcs.clear()
