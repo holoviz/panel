@@ -23,13 +23,13 @@ default = [
     "dev",
 ]
 
-[environments.test-310]
-features = ["py310", "required", "test-core", "test", "example", "test-example", "test-unit-task"]
-no-default-feature = true
-
-[environments.test-311]
-features = ["py311", "required", "test-core", "test", "example", "test-example", "test-unit-task"]
-no-default-feature = true
+# [environments.test-310]
+# features = ["py310", "required", "test-core", "test", "example", "test-example", "test-unit-task"]
+# no-default-feature = true
+#
+# [environments.test-311]
+# features = ["py311", "required", "test-core", "test", "example", "test-example", "test-unit-task"]
+# no-default-feature = true
 
 [environments.test-312]
 features = ["py312", "required", "test-core", "test", "example", "test-example", "test-unit-task"]
@@ -52,27 +52,27 @@ features = ["py314", "required", "test-core", "test-unit-task"]
 no-default-feature = true
 
 [environments.test-bokeh38]
-features = ["py310", "required", "test-core", "test-unit-task", "bokeh38"]
+features = ["py312", "required", "test-core", "test-unit-task", "bokeh38"]
 no-default-feature = true
 
 [environments.test-type]
-features = ["py311", "required", "type", "example", "test"]
+features = ["py312", "required", "type", "example", "test"]
 no-default-feature = true
 
 [environments.docs]
-features = ["py311", "required", "example", "doc"]
+features = ["py312", "required", "example", "doc"]
 no-default-feature = true
 
 [environments.build]
-features = ["py311", "required", "build"]
+features = ["py312", "required", "build"]
 no-default-feature = true
 
 [environments.lint]
-features = ["py311", "lint"]
+features = ["py312", "lint"]
 no-default-feature = true
 
 [environments.lite]
-features = ["py311", "required", "lite"]
+features = ["py312", "required", "lite"]
 no-default-feature = true
 
 [feature.required.dependencies]
@@ -101,11 +101,11 @@ typing_extensions = "*"
 [feature.required.tasks]
 install = 'python -m pip install --no-deps --disable-pip-version-check -e .'
 
-[feature.py310.dependencies]
-python = "3.10.*"
-
-[feature.py311.dependencies]
-python = "3.11.*"
+# [feature.py310.dependencies]
+# python = "3.10.*"
+#
+# [feature.py311.dependencies]
+# python = "3.11.*"
 
 [feature.py312.dependencies]
 python = "3.12.*"
