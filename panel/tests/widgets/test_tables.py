@@ -3073,14 +3073,10 @@ def test_header_filters_categorial_dtype():
     assert widget.current_view.size == 1
 
 
-@pytest.fixture
-def df_words():
-    return pd.DataFrame({'word': ['alpha', 'alphabet', 'beta', 'Alphanumeric']})
-
-
 @pytest.mark.parametrize('pagination', ['local', 'remote', None])
-def test_header_filter_starts(df_words, pagination):
-    widget = Tabulator(df_words, header_filters=True, pagination=pagination)
+def test_header_filter_starts(pagination):
+    df = pd.DataFrame({'word': ['alpha', 'alphabet', 'beta', 'Alphanumeric']})
+    widget = Tabulator(df, header_filters=True, pagination=pagination)
 
     widget.filters = [{'field': 'word', 'type': 'starts', 'value': 'bet'}]
 
@@ -3088,8 +3084,9 @@ def test_header_filter_starts(df_words, pagination):
 
 
 @pytest.mark.parametrize('pagination', ['local', 'remote', None])
-def test_header_filter_starts_is_case_insensitive(df_words, pagination):
-    widget = Tabulator(df_words, header_filters=True, pagination=pagination)
+def test_header_filter_starts_is_case_insensitive(pagination):
+    df = pd.DataFrame({'word': ['alpha', 'alphabet', 'beta', 'Alphanumeric']})
+    widget = Tabulator(df, header_filters=True, pagination=pagination)
 
     widget.filters = [{'field': 'word', 'type': 'starts', 'value': 'ALPHA'}]
 
@@ -3097,8 +3094,9 @@ def test_header_filter_starts_is_case_insensitive(df_words, pagination):
 
 
 @pytest.mark.parametrize('pagination', ['local', 'remote', None])
-def test_header_filter_ends(df_words, pagination):
-    widget = Tabulator(df_words, header_filters=True, pagination=pagination)
+def test_header_filter_ends(pagination):
+    df = pd.DataFrame({'word': ['alpha', 'alphabet', 'beta', 'Alphanumeric']})
+    widget = Tabulator(df, header_filters=True, pagination=pagination)
 
     widget.filters = [{'field': 'word', 'type': 'ends', 'value': 'a'}]
 
@@ -3106,8 +3104,9 @@ def test_header_filter_ends(df_words, pagination):
 
 
 @pytest.mark.parametrize('pagination', ['local', 'remote', None])
-def test_header_filter_ends_is_case_insensitive(df_words, pagination):
-    widget = Tabulator(df_words, header_filters=True, pagination=pagination)
+def test_header_filter_ends_is_case_insensitive(pagination):
+    df = pd.DataFrame({'word': ['alpha', 'alphabet', 'beta', 'Alphanumeric']})
+    widget = Tabulator(df, header_filters=True, pagination=pagination)
 
     widget.filters = [{'field': 'word', 'type': 'ends', 'value': 'IC'}]
 
