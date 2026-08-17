@@ -15,8 +15,8 @@ from .model import (  # noqa
     JSCode, add_to_doc, diff, remove_root,
 )
 from .notebook import (  # noqa
-    _jupyter_server_extension_paths, block_comm, ipywidget, load_notebook,
-    push, push_notebook,
+    _jupyter_server_extension_paths, _jupyter_server_extension_points,
+    block_comm, ipywidget, load_notebook, push, push_notebook,
 )
 from .profile import profile  # noqa
 from .resources import Resources  # noqa

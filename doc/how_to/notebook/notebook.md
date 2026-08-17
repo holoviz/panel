@@ -4,7 +4,15 @@ This guide addresses how to display output in Jupyter and non-Jupyter based note
 
 ---
 
-Once you have installed Panel it should automatically set up class Jupyter notebook and JupyterLab extensions for rendering Panel output and configuring communication channels to ensure the rendered output syncs bi-directionally with the Python process.
+Once you have installed Panel it should automatically set up Jupyter notebook and JupyterLab extensions for rendering Panel output and configuring communication channels to ensure the rendered output syncs bi-directionally with the Python process.
+
+Panel supports **JupyterLab 4.4–4.6** with `pyviz_comms >= 3.0.2`. See the [JupyterLab support matrix](jupyterlab_support) for the full version table.
+
+Recommended install for JupyterLab:
+
+```bash
+pip install "panel[jupyter]"
+```
 
 ## Run Panel in another notebook kernel
 
@@ -13,7 +21,7 @@ You generally have two ways to install JupyterLab/Jupyter Notebook:
 1. directly in your working environment that contains all the dependencies you need to run your project
 2. in another environment, maybe a central environment or an environment dedicated to Jupyter, in which case when you run a notebook you should pick the kernel of your project environment
 
-When in the second setup, you need to ensure that `pyviz_comms` is explicitly installed in the same environment as JupyterLab/Jupyter Notebook (with `conda install pyviz_comms` or `pip install pyviz-comms`) for bi-directional communication to be fully working.
+When in the second setup, you need to ensure that `pyviz_comms >= 3.0.2` is explicitly installed in the same environment as JupyterLab/Jupyter Notebook (with `conda install "pyviz_comms>=3.0.2"` or `pip install "pyviz-comms>=3.0.2"`) for bi-directional communication to be fully working.
 
 ## Loading the extension
 
@@ -86,22 +94,20 @@ from ipywidgets import Accordion
 Accordion(children=[pn.ipywidget(pane)])
 ```
 
-To use Panel's ipywidgets support in JupyterLab, the following extensions have to be installed:
+To use Panel's ipywidgets support in JupyterLab 4.x, install the Python packages (they ship prebuilt labextensions; you do **not** need `jupyter labextension install`):
 
-```
-jupyter labextension install @jupyter-widgets/jupyterlab-manager
-jupyter labextension install @bokeh/jupyter_bokeh
-```
-
-Additionally the `jupyter_bokeh` package should be installed using either pip:
-
-```
-pip install jupyter_bokeh
+```bash
+pip install jupyter_bokeh ipywidgets
 ```
 
 or using conda:
 
+```bash
+conda install -c conda-forge jupyter_bokeh ipywidgets
 ```
-conda install -c bokeh jupyter_bokeh
-```
+
 ## Related Resources
+
+- [JupyterLab support matrix](jupyterlab_support)
+- [Preview apps in JupyterLab](jupyterlabpreview)
+

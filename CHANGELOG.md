@@ -1,5 +1,18 @@
 # Releases
 
+## Next Release (Unreleased)
+
+### 📦 Compatibility
+
+* Require `pyviz_comms >= 3.0.2` for JupyterLab **4.x** support (JupyterLab 4.4–4.6). The previous `>=2.0.0` lower bound could resolve JupyterLab 3–only `pyviz_comms` 2.x packages.
+* Add `_jupyter_server_extension_points` for modern `jupyter_server` discovery (legacy `_jupyter_server_extension_paths` kept as an alias).
+* Add optional `panel[jupyter]` extra pinning `jupyterlab >=4.4,<5` and `pyviz_comms >=3.0.2`.
+* Add CI JupyterLab version matrix environments (`test-ui-jl44` / `jl45` / `jl46`) and `scripts/check_jupyterlab_stack.py`.
+
+### 📚 Documentation
+
+* Add JupyterLab support matrix and update notebook / Preview install docs for JupyterLab 4.4–4.6.
+
 ## Version 1.9.3
 
 Panel 1.9.3 is a patch release addressing several bug fixes for ReactiveESM components, OAuth handling, and dev mode document cleanup. Many thanks to @CodeRambling, @Hoxbro and @philippjfr for contributing to this release.

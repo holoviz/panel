@@ -4,6 +4,22 @@ This guide addresses how to use the *Preview* functionality in JupyterLab to rap
 
 ---
 
+## Prerequisites
+
+| Requirement | Version |
+|-------------|---------|
+| JupyterLab | 4.4–4.6 (`>=4.4,<5`) |
+| Panel | current (with jupyter_server extension) |
+| `pyviz_comms` | `>= 3.0.2` |
+
+Install with `pip install "panel[jupyter]"`, then ensure the server extension is enabled:
+
+```bash
+jupyter server extension enable panel.io.jupyter_server_extension --sys-prefix
+```
+
+See the [JupyterLab support matrix](jupyterlab_support) for details.
+
 With this functionality you can preview the app you are building in a JupyterLab tab right next to your code. This is a traditional setup for web developers, who like to  quickly visualize the effects of their code changes.
 
 The Preview in JupyterLab has two different modes depending on whether you marked any component as `.servable()` or not. In this guide we will focus on the explicit mode where you use code to declare which components to publish and how they should be laid out. If you are simply publishing a notebook with or without importing Panel, you will see the [layout builder](layout_builder).

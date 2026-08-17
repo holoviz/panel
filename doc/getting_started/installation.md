@@ -74,6 +74,14 @@ To incorporate highlighted code sections into your app, you'll need to install [
 Make sure Panel is installed in the same environment as JupyterLab/Jupyter Notebook (`pip install panel` or `conda install panel`) to ensure all features work correctly.
 :::
 
+For JupyterLab **4.4–4.6**, install the Jupyter extra (includes `jupyterlab>=4.4,<5` and requires `pyviz_comms>=3.0.2`):
+
+```bash
+pip install "panel[jupyter]"
+```
+
+See the [JupyterLab support matrix](../how_to/notebook/jupyterlab_support.md) for supported versions and split-environment notes.
+
 :::{seealso}
 If you plan to use Panel in a non-Jupyter notebook environment, such as Google Colab or VSCode, refer to the [relevant how-to section](../how_to/notebook/other_nb.md).
 :::

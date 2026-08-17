@@ -47,6 +47,20 @@ no-default-feature = true
 features = ["py313", "required", "test-core", "test", "test-ui"]
 no-default-feature = true
 
+# JupyterLab version matrix for Preview / Jupyter UI smoke (see doc/jupyterlab_4_support_solution.md).
+# Pin via dedicated features so `jupyterlab = "*"` from feature.test resolves to the intended minor.
+[environments.test-ui-jl44]
+features = ["py313", "required", "test-core", "test", "test-ui", "jl44"]
+no-default-feature = true
+
+[environments.test-ui-jl45]
+features = ["py313", "required", "test-core", "test", "test-ui", "jl45"]
+no-default-feature = true
+
+[environments.test-ui-jl46]
+features = ["py313", "required", "test-core", "test", "test-ui", "jl46"]
+no-default-feature = true
+
 [environments.test-core]
 features = ["py314", "required", "test-core", "test-unit-task"]
 no-default-feature = true
@@ -93,7 +107,7 @@ numpy = "*"
 packaging = "*"
 pandas = ">=1.2"
 param = ">=2.4.0rc3,<3.0"
-pyviz_comms = ">=2.0.0"
+pyviz_comms = ">=3.0.2"
 requests = "*"
 tqdm = ">=4.48.0"
 typing_extensions = "*"
@@ -261,6 +275,16 @@ _install-ui = 'playwright install chromium'
 [feature.test-ui.tasks.test-ui]
 cmd = 'pytest panel/tests/ui --ui --browser chromium -n logical --dist loadgroup -v'
 depends-on = ["_install-ui"]
+
+# JupyterLab minor pins for CI/local matrix (intersect with feature.test jupyterlab="*")
+[feature.jl44.dependencies]
+jupyterlab = "4.4.*"
+
+[feature.jl45.dependencies]
+jupyterlab = "4.5.*"
+
+[feature.jl46.dependencies]
+jupyterlab = "4.6.*"
 
 # =============================================
 # ================== TYPES ====================
