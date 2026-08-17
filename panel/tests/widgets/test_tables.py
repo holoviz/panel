@@ -2663,6 +2663,61 @@ def test_tabulator_download_menu_custom_kwargs():
     assert filename.label == 'Enter filename'
     assert button.label == 'Download table'
 
+def test_tabulator_value_event_old_preserves_inplace(dataframe):
+    df = dataframe.copy()
+    table = Tabulator(df)
+
+    events = []
+    table.param.watch(events.append, 'value')
+
+    table._process_events({'data': {'int': [5, 7, 9]}})
+
+    # The value is edited in place, i.e. the DataFrame the user passed in
+    # is mutated and remains the object held by the widget.
+    assert table.value is df
+    assert list(df['int']) == [5, 7, 9]
+
+    assert len(events) == 1
+    assert events[0].new is df
+    assert events[0].old is not df
+    assert list(events[0].old['int']) == [1, 2, 3]
+
+
+def test_tabulator_from_param_value_event_old(dataframe):
+    class Test(param.Parameterized):
+
+        df = param.DataFrame()
+
+    obj = Test(df=dataframe.copy())
+    table = Tabulator.from_param(obj.param.df)
+
+    events = []
+    obj.param.watch(events.append, 'df')
+
+    table._process_events({'data': {'int': [5, 7, 9]}})
+
+    assert len(events) == 1
+    assert events[0].old is not events[0].new
+    assert list(events[0].old['int']) == [1, 2, 3]
+    assert list(events[0].new['int']) == [5, 7, 9]
+
+
+def test_tabulator_value_event_old_with_filter(dataframe):
+    table = Tabulator(dataframe.copy())
+    table.add_filter('A', 'str')
+    assert len(table._processed) == 1
+
+    events = []
+    table.param.watch(events.append, 'value')
+
+    table._process_events({'data': {'int': [5]}})
+
+    assert len(events) == 1
+    # The old value must be the full pre-edit table, not the filtered view
+    pd.testing.assert_frame_equal(events[0].old, dataframe)
+    assert list(events[0].new['int']) == [5, 2, 3]
+
+
 def test_tabulator_patch_event():
     df = makeMixedDataFrame()
     table = Tabulator(df)
@@ -2698,6 +2753,34 @@ def test_server_edit_event():
     wait_until(lambda: len(events) == 1)
     assert events[0].value == 3.14
     assert events[0].old == 1
+
+
+def test_server_edit_event_from_param():
+    class Test(param.Parameterized):
+
+        df = param.DataFrame()
+
+    obj = Test(df=makeMixedDataFrame())
+    table = Tabulator.from_param(obj.param.df)
+
+    serve_and_request(table)
+
+    wait_until(lambda: bool(table._models))
+    ref, (model, _) = list(table._models.items())[0]
+    doc = list(table._documents.keys())[0]
+
+    events = []
+    obj.param.watch(events.append, 'df')
+
+    new_data = dict(model.source.data)
+    new_data['B'][1] = 3.14
+
+    table._server_change(doc, ref, None, 'data', model.source.data, new_data)
+
+    wait_until(lambda: len(events) == 1)
+    assert events[0].old is not events[0].new
+    assert events[0].old['B'].iloc[1] == 1
+    assert events[0].new['B'].iloc[1] == 3.14
 
 
 def test_edit_with_datetime_aware_column():

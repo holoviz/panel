@@ -1403,7 +1403,6 @@ class Tabulator(BaseTable):
         self._explicit_pagination = 'pagination' in params
         self._on_edit_callbacks = []
         self._on_click_callbacks = {}
-        self._old_value = None
         super().__init__(value=value, **params)
         self._configuration = configuration
         self.param.watch(self._update_children, self._content_params)
@@ -1542,10 +1541,6 @@ class Tabulator(BaseTable):
         # the new data and old data wrong. This extension replicates the
         # front-end filtering - if need be - to be able to correctly make the
         # comparison and update the data held by the backend.
-
-        # It also makes a copy of the value dataframe, to use it to obtain
-        # the old value in a table-edit event.
-        self._old_value = self.value.copy()
 
         import pandas as pd
         df = pd.DataFrame(data)
