@@ -3072,6 +3072,63 @@ def test_header_filters_categorial_dtype():
     widget.filters = [{'field': 'model', 'type': 'like', 'value': 'A'}]
     assert widget.current_view.size == 1
 
+
+@pytest.mark.parametrize('pagination', ['local', 'remote', None])
+def test_header_filter_starts(pagination):
+    df = pd.DataFrame({'word': ['alpha', 'alphabet', 'beta', 'Alphanumeric']})
+    widget = Tabulator(df, header_filters=True, pagination=pagination)
+
+    widget.filters = [{'field': 'word', 'type': 'starts', 'value': 'bet'}]
+
+    assert list(widget.current_view['word']) == ['beta']
+
+
+@pytest.mark.parametrize('pagination', ['local', 'remote', None])
+def test_header_filter_starts_is_case_insensitive(pagination):
+    df = pd.DataFrame({'word': ['alpha', 'alphabet', 'beta', 'Alphanumeric']})
+    widget = Tabulator(df, header_filters=True, pagination=pagination)
+
+    widget.filters = [{'field': 'word', 'type': 'starts', 'value': 'ALPHA'}]
+
+    assert list(widget.current_view['word']) == ['alpha', 'alphabet', 'Alphanumeric']
+
+
+@pytest.mark.parametrize('pagination', ['local', 'remote', None])
+def test_header_filter_ends(pagination):
+    df = pd.DataFrame({'word': ['alpha', 'alphabet', 'beta', 'Alphanumeric']})
+    widget = Tabulator(df, header_filters=True, pagination=pagination)
+
+    widget.filters = [{'field': 'word', 'type': 'ends', 'value': 'a'}]
+
+    assert list(widget.current_view['word']) == ['alpha', 'beta']
+
+
+@pytest.mark.parametrize('pagination', ['local', 'remote', None])
+def test_header_filter_ends_is_case_insensitive(pagination):
+    df = pd.DataFrame({'word': ['alpha', 'alphabet', 'beta', 'Alphanumeric']})
+    widget = Tabulator(df, header_filters=True, pagination=pagination)
+
+    widget.filters = [{'field': 'word', 'type': 'ends', 'value': 'IC'}]
+
+    assert list(widget.current_view['word']) == ['Alphanumeric']
+
+
+@pytest.mark.parametrize(('op', 'value', 'expected'), [
+    ('=', 2, [2]),
+    ('!=', 2, [1, 3, 4]),
+    ('<', 3, [1, 2]),
+    ('<=', 2, [1, 2]),
+    ('>', 2, [3, 4]),
+    ('>=', 3, [3, 4]),
+    ('in', [1, 3], [1, 3]),
+])
+def test_header_filter_comparison_operators(op, value, expected):
+    widget = Tabulator(pd.DataFrame({'n': [1, 2, 3, 4]}), header_filters=True)
+
+    widget.filters = [{'field': 'n', 'type': op, 'value': value}]
+
+    assert list(widget.current_view['n']) == expected
+
 @pytest.mark.parametrize('aggs', [{}, {'Country': 'sum'}, {'Country': {'Int': 'sum', 'Float': 'mean'}}])
 def test_tabulator_aggregators(document, comm, df_agg, aggs):
     tabulator = Tabulator(df_agg, hierarchical=True, aggregators=aggs)
