@@ -3072,6 +3072,47 @@ def test_header_filters_categorial_dtype():
     widget.filters = [{'field': 'model', 'type': 'like', 'value': 'A'}]
     assert widget.current_view.size == 1
 
+
+@pytest.fixture
+def df_words():
+    return pd.DataFrame({'word': ['alpha', 'alphabet', 'beta', 'Alphanumeric']})
+
+
+@pytest.mark.parametrize('pagination', ['local', 'remote', None])
+def test_header_filter_starts(df_words, pagination):
+    widget = Tabulator(df_words, header_filters=True, pagination=pagination)
+
+    widget.filters = [{'field': 'word', 'type': 'starts', 'value': 'bet'}]
+
+    assert list(widget.current_view['word']) == ['beta']
+
+
+@pytest.mark.parametrize('pagination', ['local', 'remote', None])
+def test_header_filter_starts_is_case_insensitive(df_words, pagination):
+    widget = Tabulator(df_words, header_filters=True, pagination=pagination)
+
+    widget.filters = [{'field': 'word', 'type': 'starts', 'value': 'ALPHA'}]
+
+    assert list(widget.current_view['word']) == ['alpha', 'alphabet', 'Alphanumeric']
+
+
+@pytest.mark.parametrize('pagination', ['local', 'remote', None])
+def test_header_filter_ends(df_words, pagination):
+    widget = Tabulator(df_words, header_filters=True, pagination=pagination)
+
+    widget.filters = [{'field': 'word', 'type': 'ends', 'value': 'a'}]
+
+    assert list(widget.current_view['word']) == ['alpha', 'beta']
+
+
+@pytest.mark.parametrize('pagination', ['local', 'remote', None])
+def test_header_filter_ends_is_case_insensitive(df_words, pagination):
+    widget = Tabulator(df_words, header_filters=True, pagination=pagination)
+
+    widget.filters = [{'field': 'word', 'type': 'ends', 'value': 'IC'}]
+
+    assert list(widget.current_view['word']) == ['Alphanumeric']
+
 @pytest.mark.parametrize('aggs', [{}, {'Country': 'sum'}, {'Country': {'Int': 'sum', 'Float': 'mean'}}])
 def test_tabulator_aggregators(document, comm, df_agg, aggs):
     tabulator = Tabulator(df_agg, hierarchical=True, aggregators=aggs)

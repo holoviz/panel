@@ -608,9 +608,9 @@ class BaseTable(ReactiveData, Widget):
             elif op == 'like':
                 filters.append(col.str.contains(val, case=False, regex=False))
             elif op == 'starts':
-                filters.append(col.str.startsWith(val))
+                filters.append(col.str.lower().str.startswith(val.lower()))
             elif op == 'ends':
-                filters.append(col.str.endsWith(val))
+                filters.append(col.str.lower().str.endswith(val.lower()))
             elif op == 'keywords':
                 match_all = filt_def.get(col_name, {}).get('matchAll', False)
                 sep = filt_def.get(col_name, {}).get('separator', ' ')
