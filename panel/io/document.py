@@ -68,7 +68,7 @@ class Request:
 
 class MockSessionContext(SessionContext):
 
-    def __init__(self, *args, document=None, **kwargs):
+    def __init__(self, *args, document: Document, **kwargs):
         self._document = document
         super().__init__(*args, server_context=None, session_id=None, **kwargs)
 
@@ -82,6 +82,10 @@ class MockSessionContext(SessionContext):
     @property
     def destroyed(self) -> bool:
         return False
+
+    @property
+    def document(self) -> Document:
+        return self._document
 
     @property
     def request(self):
