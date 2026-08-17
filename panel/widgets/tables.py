@@ -4,6 +4,7 @@ import datetime as dt
 import inspect
 import typing as t
 import uuid
+
 from collections.abc import Callable, Mapping, Sequence
 from contextlib import contextmanager
 from functools import partial
@@ -11,29 +12,15 @@ from types import FunctionType, MethodType
 
 import numpy as np
 import param
+
 from bokeh.core.serialization import Serializer
 from bokeh.model import Model
 from bokeh.models import ColumnDataSource, ImportedStyleSheet
 from bokeh.models.widgets.tables import (
-    AvgAggregator,
-    CellEditor,
-    CellFormatter,
-    CheckboxEditor,
-    DataCube,
-    DataTable,
-    DateEditor,
-    DateFormatter,
-    GroupingInfo,
-    IntEditor,
-    MaxAggregator,
-    MinAggregator,
-    NumberEditor,
-    NumberFormatter,
-    RowAggregator,
-    StringEditor,
-    StringFormatter,
-    SumAggregator,
-    TableColumn,
+    AvgAggregator, CellEditor, CellFormatter, CheckboxEditor, DataCube,
+    DataTable, DateEditor, DateFormatter, GroupingInfo, IntEditor,
+    MaxAggregator, MinAggregator, NumberEditor, NumberFormatter, RowAggregator,
+    StringEditor, StringFormatter, SumAggregator, TableColumn,
 )
 from bokeh.util.serialization import convert_datetime_array
 from param.parameterized import transform_reference
@@ -44,12 +31,8 @@ from ..io.resources import CDN_DIST, CSS_URLS
 from ..io.state import state
 from ..reactive import Reactive, ReactiveData
 from ..util import (
-    clone_model,
-    datetime_as_utctimestamp,
-    isdatetime,
-    lazy_load,
-    styler_update,
-    updating,
+    clone_model, datetime_as_utctimestamp, isdatetime, lazy_load,
+    styler_update, updating,
 )
 from ..util.dataframe import has_index, to_narwhals
 from ..util.warnings import warn
@@ -59,14 +42,13 @@ from .input import TextInput
 
 if t.TYPE_CHECKING:
     import pandas as pd
+
     from bokeh.document import Document
     from bokeh.models.sources import DataDict
     from pyviz_comms import Comm
 
     from ..models.tabulator import (
-        CellClickEvent,
-        SelectionEvent,
-        TableEditEvent,
+        CellClickEvent, SelectionEvent, TableEditEvent,
     )
     from ..reactive import TDataColumn
 
