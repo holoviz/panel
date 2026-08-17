@@ -1,0 +1,105 @@
+# VTKVolume
+---
+```python
+import panel as pn
+pn.extension('vtk')
+```
+
+The ``VTKVolume`` pane renders 3d volumetric data defined on regular grids. It may be constructed from a 3D NumPy array or a `vtkVolume`. The pane provides a number of interactive control which can be set either through callbacks from Python or Javascript callbacks.
+
+#### Parameters:
+
+For details on other options for customizing the component see the [layout](../../how_to/layout/index.md) and [styling](../../how_to/styling/index.md) how-to guides.
+
+* **``max_data_size``** (Number): Maximum data size (in MB) of the data array allowed to be passed through the websockets without subsampling. If the data exceeded this size data are downsampled using scipy if installed or by taking 1 sample on N (N chosen to have an array size smaller than max_data_size) in each dimension
+
+* **``object``** (ndarray or object): Can be a 3d numpy array or an instance of`vtkImageData` class
+
+* **``origin``** (3-tuple): Origin of the volume in the scene. By default value is (0,0,0)
+
+* **``spacing``** (3-tuple): Define the distance between 2 adjacent voxels in the 3 dimensions. By default the value is (1,1,1)
+
+* **``render_background``** (hexadecimal color string): Define the background color of the 3D rendering. By default value is '#52576e'
+
+* **``camera``** (dict): A dictionary reflecting the current state of the VTK camera
+
+* **``controller_expanded``** (bool): A boolean to expand/collapse the volume controller panel in the view. If True the controller is expanded else it is collapsed
+
+* **``orientation_widget``** (bool): A boolean to activate/deactivate the orientation widget in the 3D pane. This widget is clickable and allows to rotate the scene in one of the orthographic projections.
+
+* **``colormap``** (string): Name of the colormap used to transform pixel value in color. All allowed colormaps are referenced in `PRESET_CMAPS` in `panel.pane.vtk.enums`. By default the value is 'erdc_rainbow_bright'
+
+* **``rescale``** (boolean): If set to True the colormap is rescale between min and max value of the non transparent pixels else the full range of the data are used. By default the value is True
+
+* **``display_volume``** (boolean): If set to True, the 3D representation of the volume is displayed using ray casting. By default the value is True
+
+* **``display_slices``** (boolean): If set to true, the orthgonal slices in the three (X, Y, Z) directions are displayed. Position of each slice can be controlled using slice_(i,j,k) parameters. By default the value is False
+
+* **``mapper``** (dict): Parameter to store on python side information about the color mapper set through the javascript widget in the 3d view. The format is ` {low, high, palette}`.
+
+**Volume Rendering options**
+
+* **``sampling``** (Number): Parameter to adjust the distance between samples used for rendering. The lower the value is the more precise is the representation but it is more computationnaly intensive. By default the value is 0.4. The value bust be in (0, 1)
+
+* **``edge_gradient``** (Number): Parameter to adjust the opacity of the volume based on the gradient between voxels. By default the value is 0.4. The value bust be in (0, 1)
+
+* **``interpolation``** (String): Interpolation type for sampling a volume. `nearest` interpolation will snap to the closest voxel, `linear` will perform trilinear interpolation to compute a scalar value from surrounding voxels and `fast_linear` under WebGL 1 will perform bilinear interpolation on X and Y but use nearest for Z. This is slightly faster than full linear at the cost of no Z axis linear interpolation. By default the value is 'fast_linear'. The options are among 'fast_linear', 'linear', 'nearest'
+
+**Lighting options** (affect only the volume rendering, not the slices)
+
+* **``shadow``** (boolean): If set to false then the mapper for the volume will not perform shading computations, it is the same as setting `ambient`=1, `diffuse`=0, `specular`=0. By default the value is True
+
+* **``ambient``** (Number): Value to control the ambient lighting. It is the light an object gives even in the absence of strong light. It is constant in all directions. By default the value is 0.2
+
+* **``diffuse``** (Number): Value to control the diffuse Lighting. It relies on both the light direction and the object surface normal. By default the value is 0.7
+
+* **``specular``** (Number): Value to control specular lighting. It is the light reflects back toward the camera when hitting the object. By default the value is 0.3
+
+* **``specular_power``** (Number): Specular power refers to how much light is reflected in a mirror like fashion, rather than scattered randomly in a diffuse manner. By default the value is 8.0
+
+**Slices options**
+
+* **``slice_i``** (Integer): parameter to control the position of the slice normal to the X direction. By default the the value is computed to be in the middle of the data
+
+* **``slice_j``** (Integer): parameter to control the position of the slice normal to the Y direction. By default the the value is computed to be in the middle of the data
+
+* **``slice_k``** (Integer): parameter to control the position of the slice normal to the Z direction. By default the the value is computed to be in the middle of the data
+
+* **``nan_opacity``** (Number): parameter to control the opacity of NaN values in a slice. By default the the value is 1. The value must be in (0, 1)
+___
+
+The simplest way to create a VTKVolume pane is to use a 3d numpy array. The spacing is used to produced a
+rectangular parallelepiped instead of a cube.
+
+```python
+import numpy as np
+
+data_matrix = np.zeros([75, 75, 75], dtype=np.uint8)
+data_matrix[0:35, 0:35, 0:35] = 50
+data_matrix[25:55, 25:55, 25:55] = 100
+data_matrix[45:74, 45:74, 45:74] = 150
+
+pn.pane.VTKVolume(data_matrix, width=800, height=600, spacing=(3,2,1), interpolation='nearest', edge_gradient=0, sampling=0)
+```
+
+Alternatively the pane maybe constructed from a `vtkImageData` object. This type of object can be construct directly with vtk or pyvista module:
+
+```python
+import pyvista as pv
+from pyvista import examples
+
+# Download a volumetric dataset
+vol = examples.download_head()
+volume = pn.pane.VTKVolume(vol, height=600, sizing_mode='stretch_width', display_slices=True)
+volume
+```
+
+### Controls
+
+The `VTKVolume` pane exposes a number of options which can be changed from both Python and Javascript try out the effect of these parameters interactively:
+
+```python
+pn.Row(volume.controls(jslink=True), volume)
+```
+
+---

@@ -1,0 +1,53 @@
+# Apply a Design
+
+This guide addresses how to select a design system to apply to the components to achieve a consistent design language.
+
+The design feature was added in 1.0.0 and is actively being developed and improved.
+:::
+
+---
+
+Applying different design systems in Panel can be achieved globally or per component. To select a `design` globally set it via the extension:
+
+```python
+import panel as pn
+
+pn.extension(design='material')
+```
+
+Alternatively you can also explicitly import and set a `design` on the config:
+
+```python
+from panel.theme import Material
+
+pn.config.design = Material
+```
+
+Any component that is rendered will now inherit this design. However, alternatively we can also set a `design` explicitly on a particular component, e.g.:
+
+```python
+from panel.theme import Bootstrap, Material, Native
+
+def create_components(design):
+    return pn.Column(
+        pn.widgets.FloatSlider(label='Slider', design=design),
+        pn.widgets.TextInput(label='TextInput', design=design),
+        pn.widgets.Select(
+            label='Select', options=['Biology', 'Chemistry', 'Physics'], design=design
+        ),
+        pn.widgets.Button(
+            label='Click me!', icon='hand-click', color='primary', design=design
+        )
+    )
+
+pn.Tabs(
+    ('Bootstrap', create_components(Bootstrap)),
+    ('Material', create_components(Material)),
+    ('Native', create_components(Native)),
+)
+```
+
+## Related Resources
+
+- Discover `how to customize a design` next.
+- Discover `how to toggle between themes` next.

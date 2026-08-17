@@ -1,0 +1,66 @@
+# DatetimePicker
+---
+```python
+import datetime as dt
+
+import panel as pn
+
+pn.extension()
+```
+
+The `DatetimePicker` widget allows selecting selecting a datetime value using a text box and the browser's datetime-picking utility.
+
+Discover more on using widgets to add interactivity to your applications in the [how-to guides on interactivity](../../how_to/interactivity/index.md). Alternatively, learn [how to set up callbacks and (JS-)links between parameters](../../how_to/links/index.md) or [how to use them as part of declarative UIs with Param](../../how_to/param/index.md).
+
+#### Parameters:
+
+For details on other options for customizing the component see the [layout](../../how_to/layout/index.md) and [styling](../../how_to/styling/index.md) how-to guides.
+
+##### Core
+
+* **`value`** (datetime): The selected value as a datetime type
+* **`start`** (date or datetime): Inclusive lower bound of the allowed date selection.
+* **`end`** (date or datetime): Inclusive upper bound of the allowed date selection.
+* **`disabled_dates`** (list): Dates to make unavailable for selection; others will be available
+* **`enabled_dates`** (list): Dates to make available for selection; others will be unavailable
+* **`enable_time`** (boolean): Enable editing of the time in the widget, default is True
+* **`enable_seconds`** (boolean): Enable editing of seconds in the widget, default is True
+* **`military_time`** (boolean): Enable 24 hours time in the widget, default is True
+* **``allow_input``** (boolean): Whether the user can enter a date directly into the input field, default is False
+
+##### Display
+
+* **`disabled`** (boolean): Whether the widget is editable
+* **`label`** (str): The title of the widget
+* **`name`** (str): Deprecated alias for ``label``; use ``label`` instead.
+* **`visible`** (boolean): Whether the widget is visible
+
+___
+
+`DatetimePicker` uses a browser-dependent calendar widget to select the datetime:
+
+```python
+datetime_picker = pn.widgets.DatetimePicker(
+    label='Datetime Picker', value=dt.datetime(2021, 3, 2, 12, 10)
+)
+
+pn.Column(datetime_picker, height=400)
+```
+
+To ensure it is visible in a notebook we have placed it in a `Column` with a fixed height.
+
+`DatetimePicker.value` returns a datetime type that can be read out or set like other widgets:
+
+```python
+datetime_picker.value
+```
+
+### Controls
+
+The `DatetimePicker` widget exposes a number of options which can be changed from both Python and Javascript. Try out the effect of these parameters interactively:
+
+```python
+pn.Row(datetime_picker.controls(jslink=True), datetime_picker)
+```
+
+---

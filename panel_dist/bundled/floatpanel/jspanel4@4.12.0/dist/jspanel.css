@@ -1,0 +1,653 @@
+/**
+ * jsPanel - A JavaScript library to create highly configurable multifunctional floating panels that can also be used as modal, tooltip, hint or contextmenu
+ * @version v4.12.0
+ * @homepage https://jspanel.de/
+ * @license MIT
+ * @author Stefan Sträßer - info@jspanel.de
+ * @github https://github.com/Flyer53/jsPanel4.git
+ */
+.default-bg, .secondary-bg {
+  background-color: #b0bec5; }
+
+.primary-bg {
+  background-color: #01579b; }
+
+.info-bg {
+  background-color: #039be5; }
+
+.success-bg {
+  background-color: #2e7d32; }
+
+.warning-bg {
+  background-color: #f57f17; }
+
+.danger-bg {
+  background-color: #dd2c00; }
+
+.light-bg {
+  background-color: #e0e0e0; }
+
+.dark-bg {
+  background-color: #263238; }
+
+.jsPanel {
+  border: 0;
+  box-sizing: border-box;
+  vertical-align: baseline;
+  font-family: Roboto,"Open Sans",Lato,"Helvetica Neue",Arial,sans-serif;
+  font-weight: normal;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  overflow: visible;
+  position: absolute;
+  /* top: 0  do not remove, otherwise panel is at the very bottom of the page -> results in vertical scrollbars -> positioning at right incorrect */
+  z-index: 100; }
+  .jsPanel .jsPanel-hdr {
+    border: 0;
+    box-sizing: border-box;
+    vertical-align: baseline;
+    font-family: Roboto,"Open Sans",Lato,"Helvetica Neue",Arial,sans-serif;
+    font-weight: normal;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    line-height: normal; }
+  .jsPanel .jsPanel-content {
+    border: 0;
+    box-sizing: border-box;
+    vertical-align: baseline;
+    font-family: Roboto,"Open Sans",Lato,"Helvetica Neue",Arial,sans-serif;
+    font-weight: normal;
+    background: #ffffff;
+    color: #000000;
+    font-size: 1rem;
+    position: relative;
+    overflow-x: hidden;
+    overflow-y: auto;
+    flex-grow: 1; }
+    .jsPanel .jsPanel-content pre {
+      color: inherit; }
+  .jsPanel .jsPanel-ftr {
+    flex-direction: row;
+    justify-content: flex-end;
+    flex-wrap: nowrap;
+    align-items: center;
+    display: none;
+    box-sizing: border-box;
+    font-size: 1rem;
+    height: auto;
+    background: #f5f5f5;
+    font-weight: normal;
+    color: black;
+    overflow: hidden; }
+  .jsPanel .jsPanel-ftr.active {
+    display: flex;
+    flex-shrink: 0;
+    margin: 0;
+    padding: 3px 8px; }
+
+.jsPanel-hdr.jsPanel-hdr-dark .jsPanel-btn:hover {
+  background-color: rgba(255, 255, 255, 0.4); }
+
+.jsPanel-hdr.jsPanel-hdr-light .jsPanel-btn:hover {
+  background-color: rgba(0, 0, 0, 0.15); }
+
+.jsPanel-hdr-toolbar {
+  font-size: 1rem; }
+
+.jsPanel-headerbar {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center; }
+  .jsPanel-headerbar img {
+    vertical-align: middle;
+    max-height: 38px; }
+
+.jsPanel-titlebar {
+  display: flex;
+  align-items: center;
+  font-size: 1rem;
+  flex: 1 1 0;
+  cursor: move;
+  height: 100%;
+  overflow: hidden;
+  user-select: none; }
+  .jsPanel-titlebar .jsPanel-title {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-variant: small-caps;
+    font-weight: normal;
+    margin: 0 5px 0 8px;
+    min-width: 0; }
+
+.jsPanel-titlebar.jsPanel-rtl {
+  flex-direction: row-reverse; }
+
+.jsPanel-controlbar {
+  display: flex;
+  align-items: center;
+  align-self: start;
+  touch-action: none;
+  margin: 3px; }
+  .jsPanel-controlbar .jsPanel-btn {
+    cursor: pointer;
+    touch-action: none;
+    border-radius: 3px;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    background-color: transparent;
+    box-shadow: none; }
+    .jsPanel-controlbar .jsPanel-btn svg.jsPanel-icon, .jsPanel-controlbar .jsPanel-btn span, .jsPanel-controlbar .jsPanel-btn i {
+      vertical-align: middle; }
+    .jsPanel-controlbar .jsPanel-btn span.glyphicon {
+      padding: 0 2px; }
+    .jsPanel-controlbar .jsPanel-btn svg.svg-inline--fa {
+      margin: 2px 3px; }
+  .jsPanel-controlbar .jsPanel-btn-normalize {
+    display: none; }
+  .jsPanel-controlbar .jsPanel-btn.jsPanel-btn-xl svg:not(.svg-inline--fa), .jsPanel-controlbar .jsPanel-btn.jsPanel-btn-xl span:not(.material-icons) {
+    width: 2rem;
+    height: 2rem;
+    margin: 2px 3px; }
+  .jsPanel-controlbar .jsPanel-btn.jsPanel-btn-xl .svg-inline--fa {
+    font-size: 2rem; }
+  .jsPanel-controlbar .jsPanel-btn.jsPanel-btn-xl span.material-icons {
+    font-size: 2.2rem; }
+  .jsPanel-controlbar .jsPanel-btn.jsPanel-btn-xl span[class^=fa] {
+    width: auto;
+    height: auto;
+    font-size: 2rem;
+    margin: 0 4px; }
+  .jsPanel-controlbar .jsPanel-btn.jsPanel-btn-lg svg:not(.svg-inline--fa), .jsPanel-controlbar .jsPanel-btn.jsPanel-btn-lg span:not(.material-icons) {
+    width: 1.75rem;
+    height: 1.75rem;
+    margin: 2px 3px; }
+  .jsPanel-controlbar .jsPanel-btn.jsPanel-btn-lg .svg-inline--fa {
+    font-size: 1.75rem; }
+  .jsPanel-controlbar .jsPanel-btn.jsPanel-btn-lg span.material-icons {
+    font-size: 1.9rem; }
+  .jsPanel-controlbar .jsPanel-btn.jsPanel-btn-lg span[class^=fa] {
+    width: auto;
+    height: auto;
+    font-size: 1.75rem; }
+  .jsPanel-controlbar .jsPanel-btn.jsPanel-btn-md svg:not(.svg-inline--fa), .jsPanel-controlbar .jsPanel-btn.jsPanel-btn-md span:not(.material-icons) {
+    width: 1.5rem;
+    height: 1.5rem;
+    margin: 2px 3px; }
+  .jsPanel-controlbar .jsPanel-btn.jsPanel-btn-md .svg-inline--fa {
+    font-size: 1.5rem; }
+  .jsPanel-controlbar .jsPanel-btn.jsPanel-btn-md span.material-icons {
+    font-size: 1.6rem; }
+  .jsPanel-controlbar .jsPanel-btn.jsPanel-btn-md span[class^=fa] {
+    width: auto;
+    height: auto;
+    font-size: 1.5rem; }
+  .jsPanel-controlbar .jsPanel-btn.jsPanel-btn-sm svg:not(.svg-inline--fa), .jsPanel-controlbar .jsPanel-btn.jsPanel-btn-sm span:not(.material-icons) {
+    width: 1.25rem;
+    height: 1.25rem;
+    margin: 2px 3px; }
+  .jsPanel-controlbar .jsPanel-btn.jsPanel-btn-sm .svg-inline--fa {
+    font-size: 1.25rem; }
+  .jsPanel-controlbar .jsPanel-btn.jsPanel-btn-sm span.material-icons {
+    font-size: 1.3rem; }
+  .jsPanel-controlbar .jsPanel-btn.jsPanel-btn-sm span[class^=fa] {
+    width: auto;
+    height: auto;
+    font-size: 1.25rem; }
+  .jsPanel-controlbar .jsPanel-btn.jsPanel-btn-xs svg:not(.svg-inline--fa), .jsPanel-controlbar .jsPanel-btn.jsPanel-btn-xs span:not(.material-icons) {
+    width: 1rem;
+    height: 1rem;
+    margin: 1px 3px; }
+  .jsPanel-controlbar .jsPanel-btn.jsPanel-btn-xs .svg-inline--fa {
+    font-size: 1rem; }
+  .jsPanel-controlbar .jsPanel-btn.jsPanel-btn-xs span.material-icons {
+    font-size: 1rem; }
+  .jsPanel-controlbar .jsPanel-btn.jsPanel-btn-xs span[class^=fa] {
+    width: auto;
+    height: auto;
+    font-size: 1rem; }
+
+.jsPanel-hdr-toolbar {
+  display: none;
+  width: auto;
+  height: auto; }
+
+.jsPanel-hdr-toolbar.active {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  padding: 3px 8px; }
+
+/* styles for panels using option.rtl */
+.jsPanel-titlebar .jsPanel-title[dir=rtl] {
+  margin: 0 8px 0 5px; }
+
+.jsPanel-hdr-toolbar[dir=rtl].active {
+  padding: 0 8px 0 8px; }
+
+.jsPanel-content[dir=rtl] {
+  text-align: right; }
+
+.jsPanel-ftr[dir=rtl] {
+  flex-direction: row; }
+
+/* container that takes the minified jsPanels */
+#jsPanel-replacement-container, .jsPanel-minimized-box, .jsPanel-minimized-container {
+  display: flex;
+  flex-flow: row wrap-reverse;
+  background: transparent none repeat scroll 0 0;
+  bottom: 0;
+  height: auto;
+  left: 0;
+  position: fixed;
+  width: auto;
+  z-index: 9998; }
+
+.jsPanel-replacement {
+  font-family: Roboto,"Open Sans",Lato,"Helvetica Neue",Arial,sans-serif;
+  display: flex;
+  align-items: center;
+  width: 200px;
+  height: 34px;
+  margin: 1px 1px 0 0;
+  z-index: 9999; }
+  .jsPanel-replacement .jsPanel-hdr {
+    flex-grow: 1;
+    min-width: 0;
+    padding: 0;
+    height: 34px;
+    overflow: hidden; }
+    .jsPanel-replacement .jsPanel-hdr .jsPanel-headerlogo {
+      max-width: 50%;
+      overflow: hidden; }
+      .jsPanel-replacement .jsPanel-hdr .jsPanel-headerlogo img {
+        max-width: 100px;
+        max-height: 34px; }
+  .jsPanel-replacement .jsPanel-titlebar {
+    cursor: default;
+    min-width: 0; }
+  .jsPanel-replacement .jsPanel-btn.jsPanel-btn-normalize {
+    display: block; }
+
+.jsPanel-minimized-box, .jsPanel-minimized-container {
+  position: absolute;
+  width: 100%;
+  overflow: hidden; }
+
+/* helper classes to make .jsPanel-content a flex box */
+.flexOne {
+  display: flex;
+  flex-flow: row wrap; }
+
+/* css for resizeit handles -------------- */
+.jsPanel-resizeit-handle {
+  display: block;
+  font-size: 0.1px;
+  position: absolute;
+  touch-action: none; }
+
+.jsPanel-resizeit-handle.jsPanel-resizeit-n {
+  cursor: n-resize;
+  height: 12px;
+  left: 9px;
+  top: -5px;
+  width: calc(100% - 18px); }
+
+.jsPanel-resizeit-handle.jsPanel-resizeit-e {
+  cursor: e-resize;
+  height: calc(100% - 18px);
+  right: -9px;
+  top: 9px;
+  width: 12px; }
+
+.jsPanel-resizeit-handle.jsPanel-resizeit-s {
+  bottom: -9px;
+  cursor: s-resize;
+  height: 12px;
+  left: 9px;
+  width: calc(100% - 18px); }
+
+.jsPanel-resizeit-handle.jsPanel-resizeit-w {
+  cursor: w-resize;
+  height: calc(100% - 18px);
+  left: -9px;
+  top: 9px;
+  width: 12px; }
+
+.jsPanel-resizeit-handle.jsPanel-resizeit-ne {
+  cursor: ne-resize;
+  height: 18px;
+  right: -9px;
+  top: -9px;
+  width: 18px; }
+
+.jsPanel-resizeit-handle.jsPanel-resizeit-se {
+  bottom: -9px;
+  cursor: se-resize;
+  height: 18px;
+  right: -9px;
+  width: 18px; }
+
+.jsPanel-resizeit-handle.jsPanel-resizeit-sw {
+  bottom: -9px;
+  cursor: sw-resize;
+  height: 18px;
+  left: -9px;
+  width: 18px; }
+
+.jsPanel-resizeit-handle.jsPanel-resizeit-nw {
+  cursor: nw-resize;
+  height: 18px;
+  left: -9px;
+  top: -9px;
+  width: 18px; }
+
+.jsPanel-drag-overlay {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  left: 0;
+  top: 0; }
+
+/* Error panel ----------------- */
+.jsPanel-error .jsPanel-content {
+  border: 0 !important;
+  padding-top: 0 !important;
+  font-size: .9rem;
+  text-align: center; }
+  .jsPanel-error .jsPanel-content p {
+    margin: 0 0 10px 0; }
+  .jsPanel-error .jsPanel-content mark {
+    background: lavender;
+    border-radius: .33rem;
+    padding: 0 8px;
+    font-family: monospace; }
+  .jsPanel-error .jsPanel-content .jsPanel-error-content-separator {
+    width: 100%;
+    height: 1px;
+    background-image: linear-gradient(90deg, white 0%, rebeccapurple 50%, white 100%);
+    margin-bottom: 10px; }
+
+/* box-shadows -------------------------------------------------------- */
+.jsPanel-depth-1 {
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23); }
+
+.jsPanel-depth-2 {
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.19), 0 6px 6px rgba(0, 0, 0, 0.23); }
+
+.jsPanel-depth-3 {
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22); }
+
+.jsPanel-depth-4 {
+  box-shadow: 0 19px 38px rgba(0, 0, 0, 0.3), 0 15px 12px rgba(0, 0, 0, 0.22); }
+
+.jsPanel-depth-5 {
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.3), 0 20px 14px rgba(0, 0, 0, 0.22); }
+
+/* snap sensitive areas ------------------------------------------------ */
+.jsPanel-snap-area {
+  position: fixed;
+  background: black;
+  opacity: .2;
+  border: 1px solid silver;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.5), 0 10px 10px rgba(0, 0, 0, 0.5);
+  z-index: 9999; }
+
+.jsPanel-snap-area-lt, .jsPanel-snap-area-lc, .jsPanel-snap-area-lb, .jsPanel-snap-area-left-top, .jsPanel-snap-area-left-center, .jsPanel-snap-area-left-bottom {
+  left: 0; }
+
+.jsPanel-snap-area-ct, .jsPanel-snap-area-cb {
+  left: 37.5%; }
+
+.jsPanel-snap-area-rt, .jsPanel-snap-area-rc, .jsPanel-snap-area-rb, .jsPanel-snap-area-right-top, .jsPanel-snap-area-right-center, .jsPanel-snap-area-right-bottom {
+  right: 0; }
+
+.jsPanel-snap-area-lt, .jsPanel-snap-area-ct, .jsPanel-snap-area-rt, .jsPanel-snap-area-left-top, .jsPanel-snap-area-center-top, .jsPanel-snap-area-right-top {
+  top: 0; }
+
+.jsPanel-snap-area-lc, .jsPanel-snap-area-rc {
+  top: 37.5%; }
+
+.jsPanel-snap-area-lb, .jsPanel-snap-area-cb, .jsPanel-snap-area-rb, .jsPanel-snap-area-left-bottom, .jsPanel-snap-area-center-bottom, .jsPanel-snap-area-right-bottom {
+  bottom: 0; }
+
+.jsPanel-snap-area-ct, .jsPanel-snap-area-cb {
+  width: 25%; }
+
+.jsPanel-snap-area-lc, .jsPanel-snap-area-rc {
+  height: 25%; }
+
+.jsPanel-snap-area-lt, .jsPanel-snap-area-left-top {
+  border-bottom-right-radius: 100%; }
+
+.jsPanel-snap-area-rt, .jsPanel-snap-area-right-top {
+  border-bottom-left-radius: 100%; }
+
+.jsPanel-snap-area-rb, .jsPanel-snap-area-right-bottom {
+  border-top-left-radius: 100%; }
+
+.jsPanel-snap-area-lb, .jsPanel-snap-area-left-bottom {
+  border-top-right-radius: 100%; }
+
+/* tooltip and tooltip connectors */
+.jsPanel-connector-left-top-corner,
+.jsPanel-connector-right-top-corner,
+.jsPanel-connector-left-bottom-corner,
+.jsPanel-connector-right-bottom-corner {
+  width: 12px;
+  height: 12px;
+  position: absolute;
+  border-radius: 50%; }
+
+.jsPanel-connector-left-top-corner {
+  left: calc(100% - 6px);
+  top: calc(100% - 6px); }
+
+.jsPanel-connector-right-top-corner {
+  left: -6px;
+  top: calc(100% - 6px); }
+
+.jsPanel-connector-right-bottom-corner {
+  left: -6px;
+  top: -6px; }
+
+.jsPanel-connector-left-bottom-corner {
+  left: calc(100% - 6px);
+  top: -6px; }
+
+.jsPanel-connector-top,
+.jsPanel-connector-topleft,
+.jsPanel-connector-topright,
+.jsPanel-connector-bottom,
+.jsPanel-connector-bottomleft,
+.jsPanel-connector-bottomright,
+.jsPanel-connector-left,
+.jsPanel-connector-lefttop,
+.jsPanel-connector-leftbottom,
+.jsPanel-connector-right,
+.jsPanel-connector-righttop,
+.jsPanel-connector-rightbottom {
+  width: 0;
+  height: 0;
+  position: absolute;
+  border: 12px solid transparent; }
+
+.jsPanel-connector-top,
+.jsPanel-connector-topleft,
+.jsPanel-connector-topright {
+  top: 100%;
+  border-bottom-width: 0; }
+
+.jsPanel-connector-top {
+  left: calc(50% - 12px); }
+
+.jsPanel-connector-topleft {
+  left: 0px; }
+
+.jsPanel-connector-topright {
+  left: calc(100% - 24px); }
+
+.jsPanel-connector-bottom,
+.jsPanel-connector-bottomleft,
+.jsPanel-connector-bottomright {
+  top: -12px;
+  border-top-width: 0; }
+
+.jsPanel-connector-bottom {
+  left: calc(50% - 12px); }
+
+.jsPanel-connector-bottomleft {
+  left: 0px; }
+
+.jsPanel-connector-bottomright {
+  left: calc(100% - 24px); }
+
+.jsPanel-connector-left,
+.jsPanel-connector-lefttop,
+.jsPanel-connector-leftbottom {
+  left: 100%;
+  border-right-width: 0; }
+
+.jsPanel-connector-left {
+  top: calc(50% - 12px); }
+
+.jsPanel-connector-lefttop {
+  top: 0px; }
+
+.jsPanel-connector-leftbottom {
+  top: calc(100% - 24px); }
+
+.jsPanel-connector-right,
+.jsPanel-connector-righttop,
+.jsPanel-connector-rightbottom {
+  left: -12px;
+  border-left-width: 0; }
+
+.jsPanel-connector-right {
+  top: calc(50% - 12px); }
+
+.jsPanel-connector-righttop {
+  top: 0px; }
+
+.jsPanel-connector-rightbottom {
+  top: calc(100% - 24px); }
+
+/* IE11 CSS styles go here */
+@media all and (-ms-high-contrast: none), (-ms-high-contrast: active) {
+  .jsPanel-replacement .jsPanel-titlebar {
+    max-width: 105px; } }
+
+/* XXXXXXXXXXXXXXXXXXXXXXX */
+/* css3 animations */
+@keyframes jsPanelFadeIn {
+  from {
+    opacity: 0; }
+  to {
+    opacity: 1; } }
+
+.jsPanelFadeIn {
+  opacity: 0;
+  animation: jsPanelFadeIn ease-in 1;
+  animation-fill-mode: forwards;
+  animation-duration: 600ms; }
+
+@keyframes jsPanelFadeOut {
+  from {
+    opacity: 1; }
+  to {
+    opacity: 0; } }
+
+.jsPanelFadeOut {
+  animation: jsPanelFadeOut ease-in 1;
+  animation-fill-mode: forwards;
+  animation-duration: 600ms; }
+
+@keyframes modalBackdropFadeIn {
+  from {
+    opacity: 0; }
+  to {
+    opacity: 0.65; } }
+
+.jsPanel-modal-backdrop {
+  animation: modalBackdropFadeIn ease-in 1;
+  animation-fill-mode: forwards;
+  animation-duration: 750ms;
+  background: black;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%; }
+
+@keyframes modalBackdropFadeOut {
+  from {
+    opacity: 0.65; }
+  to {
+    opacity: 0; } }
+
+.jsPanel-modal-backdrop-out {
+  animation: modalBackdropFadeOut ease-in 1;
+  animation-fill-mode: forwards;
+  animation-duration: 400ms; }
+
+.jsPanel-modal-backdrop-multi {
+  background: rgba(0, 0, 0, 0.15); }
+
+.jsPanel-content .jsPanel-iframe-overlay {
+  position: absolute;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: transparent; }
+
+.jsPanel-addCloseCtrl {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: .8rem;
+  height: .8rem;
+  margin: 2px;
+  cursor: pointer;
+  line-height: .8rem;
+  padding: 0;
+  z-index: 100;
+  border: 0;
+  background-color: transparent; }
+
+.jsPanel-addCloseCtrl.rtl {
+  right: unset;
+  left: 0; }
+
+.jsPanel-progressbar {
+  position: relative;
+  width: 100%;
+  height: 0;
+  overflow: hidden; }
+  .jsPanel-progressbar .jsPanel-progressbar-slider {
+    position: absolute;
+    width: 0;
+    height: 3px;
+    background: lightgray;
+    right: 0; }
+
+.jsPanel-progressbar.active {
+  height: 3px; }
+
+@keyframes progressbar {
+  from {
+    width: 0; }
+  to {
+    width: 100%; } }
+
+.jsPanel-content.jsPanel-content-noheader {
+  border: none !important; }
+
+body {
+  -ms-overflow-style: scrollbar; }

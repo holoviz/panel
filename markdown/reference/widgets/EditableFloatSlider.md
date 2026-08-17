@@ -1,0 +1,78 @@
+# EditableFloatSlider
+---
+```python
+import panel as pn
+
+pn.extension()
+```
+
+The ``EditableFloatSlider`` widget allows selecting selecting a numeric floating-point value within a set bounds using a slider and for more precise control offers an editable number input box.
+
+Discover more on using widgets to add interactivity to your applications in the [how-to guides on interactivity](../../how_to/interactivity/index.md). Alternatively, learn [how to set up callbacks and (JS-)links between parameters](../../how_to/links/index.md) or [how to use them as part of declarative UIs with Param](../../how_to/param/index.md).
+
+#### Parameters:
+
+For details on other options for customizing the component see the [layout](../../how_to/layout/index.md) and [styling](../../how_to/styling/index.md) how-to guides.
+
+##### Core
+
+* **``start``** (float): The lower bound for the slider, can be overridden by a lower `value`.
+* **``end``** (float): The upper bound for the slider, can be overridden by a higher `value`.
+* **``fixed_start``** (float | None): A fixed lower bound for the slider and input, `value` cannot exceed this.
+* **``fixed_end``** (float | None): A fixed upper bound for the slider and input, `value` cannot exceed this.
+* **``step``** (float): The interval between values
+* **``value``** (float): The selected value as a float type
+* **``value_throttled``** (float): The selected value as a float type throttled until mouseup
+
+##### Display
+
+* **``bar_color``** (color): Color of the slider bar as a hexadecimal RGB value
+* **``direction``** (str): Whether the slider should go from left to right ('ltr') or right to left ('rtl')
+* **``disabled``** (boolean): Whether the widget is editable
+* **``format``** (str, bokeh.models.TickFormatter): Formatter to apply to the slider value
+* **``label``** (str): The title of the widget
+* **``name``** (str): Deprecated alias for ``label``; use ``label`` instead.
+* **``orientation``** (str): Whether the slider should be displayed in a 'horizontal' or 'vertical' orientation.
+* **``tooltips``** (boolean): Whether to display tooltips on the slider handle
+
+___
+
+```python
+float_slider = pn.widgets.EditableFloatSlider(label='Float Slider', start=0, end=3.141, step=0.01, value=1.57)
+
+float_slider
+```
+
+Here the `value` has no bounds and can exceed `end` and go below `start`. If `value` should be fixed to a certain range it can be set with `fixed_start` and `fixed_end`:
+
+```python
+float_slider.fixed_start = -3.14
+```
+
+The `value` of the widget is returned as a float and can be accessed and set like any other widget:
+
+```python
+float_slider.value
+```
+
+A custom format string or bokeh TickFormatter may be used to format the slider values:
+
+```python
+from bokeh.models.formatters import PrintfTickFormatter
+
+str_format = pn.widgets.EditableFloatSlider(label='Distance', format='1[.]00')
+
+tick_format = pn.widgets.EditableFloatSlider(label='Distance', format=PrintfTickFormatter(format='%.3f m'))
+
+pn.Column(str_format, tick_format)
+```
+
+### Controls
+
+Since the `EditableFloatSlider` widget is a composite widget its options can only be controlled from Python. Try out the effect of these parameters interactively:
+
+```python
+pn.Row(float_slider.controls(jslink=False), float_slider)
+```
+
+---

@@ -1,0 +1,52 @@
+# GridBox
+---
+```python
+import panel as pn
+pn.extension()
+```
+
+The ``GridBox`` is a list-like layout (unlike ``GridSpec``) that wraps objects into a grid according to the specified ``nrows`` and ``ncols`` parameters. It has a list-like API with methods to ``append``, ``extend``, ``clear``, ``insert``, ``pop``, ``remove`` and ``__setitem__``, which make it possible to interactively update and modify the layout.
+
+#### Parameters:
+
+For details on other options for customizing the component see the [layout](../../how_to/layout/index.md) and [styling](../../how_to/styling/index.md) how-to guides.
+
+* **``ncols``** (int): Number of columns after which to wrap
+* **``nrows``** (int): Number of rows after which to wrap
+* **``objects``** (list): The list of objects to display in the WidgetBox. Should not generally be modified directly except when replaced in its entirety.
+
+___
+
+A ``GridBox`` layout can either be instantiated as empty and populated after the fact or using a list of objects provided as positional arguments. If the objects are not already panel components they will each be converted to one using the ``pn.panel`` conversion method. Depending on the number of items and the specified ``ncols``/``nrows`` the layout will reflow the content:
+
+```python
+import random
+
+rcolor = lambda: "#%06x" % random.randint(0, 0xFFFFFF)
+
+box = pn.GridBox(*[pn.pane.HTML(styles=dict(background=rcolor()), width=50, height=50) for i in range(24)], ncols=6)
+box
+```
+
+In general it is preferred to modify layouts only through the provided methods and avoid modifying the ``objects`` parameter directly. The one exception is when replacing the list of ``objects`` entirely, otherwise it is recommended to use the methods on the ``WidgetBox`` itself to ensure that the rendered views of the ``GridBox`` are rerendered in response to the change. As a simple example we might add an additional widget to the ``box`` using the append method:
+
+```python
+color = pn.pane.HTML(styles=dict(background=rcolor()), width=50, height=50)
+box[5] = color
+```
+
+In addition to modifying the ``GridBox`` through methods and ``__setitem__`` syntax we can also dynamically reflow the contents by changing the ``ncols`` or ``nrows`` parameters:
+
+```python
+box.ncols = 4
+```
+
+To see the effect in a statically rendered page, we will display the box a second time:
+
+```python
+box
+```
+
+In general a ``GridBox`` does not have to be given a ``width``, ``height`` or ``sizing_mode``, allowing it to adapt to the size of its contents.
+
+---

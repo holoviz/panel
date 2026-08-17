@@ -1,0 +1,103 @@
+# Panel
+
+Panel is a Python library for building powerful interactive dashboards, apps, and data tools entirely in Python.
+This file lists the most important documentation pages for LLM-assisted development; not all generated doc links are shown.
+
+All documentation is available as markdown files under /markdown/.
+
+## Documentation
+
+### getting started
+> Install Panel and learn the core concepts.
+
+- [build app](/markdown/getting_started/build_app.md)
+- [core concepts](/markdown/getting_started/core_concepts.md)
+- [installation](/markdown/getting_started/installation.md)
+
+### tutorials
+> Basic, intermediate, and expert learning paths.
+
+Page URL pattern: `/markdown/tutorials/{path}.md` where {path} = {category}/{example}
+  e.g. `/markdown/tutorials/basic/align.md`
+  basic: align, build_animation, build_chatbot, build_crossfilter_dashboard, build_dashboard, build_image_classifier, build_monitoring_dashboard, build_report, build_streaming_dashboard, build_todo, caching, deploy, design, develop_editor, develop_notebook, indicators_activity, indicators_performance, layouts, panes, pn_bind, pn_panel, pn_rx, progressive_layouts, serve, size, style, templates, widgets
+  expert: custom_anywidget_components, custom_js_components
+  intermediate: advanced_layouts, build_server_video_stream, build_todo, create_form, develop_editor, interactivity, parameters, reusable_components, serve, structure_data_store, test_todo
+
+### how-to
+> Practical recipes for common Panel tasks.
+
+Page URL pattern: `/markdown/how_to/{path}.md` where {path} = {example} or {category}/{...}/{example}
+  e.g. `/markdown/how_to/authentication/access_tokens.md`
+  standalone: build_apps, extending_panel, manage_session_tasks, migrate_to_panel, prepare_to_develop, prepare_to_share, share_your_work, test_and_debug, use_specialized_uis
+  authentication: access_tokens, authorization, basic, configuration, guest_users, pam, providers/azure, templates, trouble_shooting, user_info
+  best_practices: dev_experience, user_experience
+  caching: manual, memoization
+  callbacks: async, defer_load, examples/streaming_bokeh, examples/streaming_indicator, examples/streaming_perspective, examples/streaming_tabulator, load, notifications, periodic, schedule, server, session
+  components: add_remove, construct_panes, pane_type, widget_from_values, widget_values
+  concurrency: dask, load_balancing, manual_threading, processes, sync_to_async, threading
+  custom_components: custom_viewer, esm/build, esm/callbacks, esm/custom_layout, esm/custom_panes, esm/custom_widgets, esm/dataframe, examples/canvas_draw, examples/esm_canvas, examples/esm_leaflet, examples/esm_material_ui, examples/leaflet, examples/material_ui, examples/plot_viewer, examples/table_viewer, examples/vue, publish_extension, python/create_custom_widget, reactive_html/reactive_html_callbacks, reactive_html/reactive_html_dataframe, reactive_html/reactive_html_indicators, reactive_html/reactive_html_layout, reactive_html/reactive_html_panes, reactive_html/reactive_html_styling, reactive_html/reactive_html_widgets
+  deployment: anaconda_notebooks, aws, azure, binder, gcp, heroku, huggingface, outerbounds, pycafe, pythonanywhere
+  desktop_or_mobile: pywebview, toga
+  distribute: uv
+  editor: markdown, pycharm_configure, vscode_configure
+  export: bokeh, embedding, saving
+  integrations: Django, FastAPI, FastAPI_Tornado, flask
+  interact: interact_abbreviations, interact_basics, interact_fix_values, interact_layout, interact_throttle
+  interactivity: bind_component, bind_function, bind_generators, hvplot_interactive
+  layout: align, examples/dynamic_tabs, size, spacing
+  links: examples/bokeh_property_editor, examples/deckgl, examples/holoviews_glyph_link, examples/plotly, examples/vega_link, jscallbacks, jslinks, link_plots, links, watchers
+  notebook: examples/hello_world, jupyterlabpreview, layout_builder, notebook, other_nb
+  param: custom, dependencies, examples/action_button, examples/loading, examples/precedence, examples/subobjects, subobjects, uis
+  performance: hold, reuse_sessions, throttling
+  pipeline: complex_pipeline, control_flow, pipeline_layout, simple_pipeline
+  profiling: admin, logs, profile
+  server: commandline, endpoints, multiple, programmatic, proxy, reconnect, ssh, static_files, websockets, wildcard_routes
+  state: busy, examples/sync_url, request, url
+  streamlit_migration: activity, caching, chat, get_started, interactivity, layouts, multipage_apps, panes, session_state, templates, widgets
+  styling: altair, apply_css, design, design_variables, echarts, load_icon, matplotlib, plotly, themes, vega, visibility
+  templates: template_arrange, template_custom, template_modal, template_set, template_theme
+  test: loadtests, pytest, uitests
+  wasm: convert, jupyterlite, sphinx, standalone
+
+### concepts
+> Background on APIs, dependencies, and components.
+
+Page URL pattern: `/markdown/explanation/{path}.md` where {path} = {example} or {category}/{...}/{example}
+  e.g. `/markdown/explanation/api/callbacks.md`
+  standalone: apis, comparisons, components, dependencies, develop_seamlessly
+  api: callbacks, examples/outliers_declarative, examples/stocks_callbacks, examples/stocks_declarative, examples/stocks_reactive, functions_vs_classes, param, parameterized, reactive, reactivity
+  architecture: comms
+  comparisons: compare_bokeh, compare_dash, compare_ipywidgets, compare_js, compare_streamlit, compare_voila
+  components: components_overview, reactive_html_components
+  dependencies: bokeh, param
+  styling: design, templates_overview
+
+### gallery
+> Representative example applications.
+
+Page URL pattern: `/markdown/gallery/{stem}.md`
+  e.g. `/markdown/gallery/altair_brushing.md`
+Available pages (18): altair_brushing, deckgl_game_of_life, gapminders, glaciers, hvplot_explorer, iris_kmeans, nyc_deckgl, penguin_crossfilter, penguin_kmeans, portfolio_analyzer, portfolio_optimizer, streaming_videostream, vtk_interactive, vtk_slicer, vtk_warp, webllm, windturbines, xgboost_classifier
+
+### reference
+> Detailed reference galleries for every pane, widget, layout, template, and other component.
+ Each page documents construction and usage, all available parameters, and how to customize appearance and behavior.
+
+Page URL pattern: `/markdown/reference/{path}.md` where {path} = {category}/{example}
+  e.g. `/markdown/reference/chat/ChatAreaInput.md`
+  chat: ChatAreaInput, ChatFeed, ChatInterface, ChatMessage, ChatStep, PanelCallbackHandler
+  custom_components: AnyWidgetComponent, JSComponent, PyComponent, ReactComponent, Viewer
+  global: Notifications
+  indicators: BooleanStatus, Dial, Gauge, LinearGauge, LoadingSpinner, Number, Progress, TooltipIcon, Tqdm, Trend
+  layouts: Accordion, Card, Column, Divider, Feed, FlexBox, FloatPanel, GridBox, GridSpec, GridStack, Modal, Row, Spacer, Swipe, Tabs, WidgetBox
+  panes: AVIF, Alert, Audio, Bokeh, DataFrame, DeckGL, ECharts, Folium, GIF, HTML, HoloViews, IPyWidget, Image, JPG, JSON, LaTeX, Markdown, Matplotlib, PDF, PNG, Param, Perspective, Placeholder, Plotly, ReactiveExpr, Reacton, SVG, Str, Streamz, Textual, VTK, VTKJS, VTKVolume, Vega, Video, Vizzu, WebP
+  templates: Bootstrap, EditableTemplate, FastGridTemplate, FastListTemplate, GoldenLayout, Material, React, Slides, Vanilla
+  widgets: ArrayInput, AutocompleteInput, Button, ButtonIcon, CheckBoxGroup, CheckButtonGroup, Checkbox, CodeEditor, ColorMap, ColorPicker, CrossSelector, DataFrame, DatePicker, DateRangePicker, DateRangeSlider, DateSlider, DatetimeInput, DatetimePicker, DatetimeRangeInput, DatetimeRangePicker, DatetimeRangeSlider, DatetimeSlider, Debugger, DiscretePlayer, DiscreteSlider, EditableFloatSlider, EditableIntSlider, EditableRangeSlider, FileDownload, FileDropper, FileInput, FileSelector, FloatInput, FloatSlider, IntInput, IntRangeSlider, IntSlider, JSONEditor, LiteralInput, MenuButton, MultiChoice, MultiSelect, NestedSelect, PasswordInput, Player, RadioBoxGroup, RadioButtonGroup, RangeSlider, Select, SpeechToText, StaticText, Switch, Tabulator, Terminal, TextAreaInput, TextEditor, TextInput, TextToSpeech, TimePicker, Toggle, ToggleGroup, ToggleIcon, VideoStream
+
+## API Reference
+
+Key API module reference pages.
+
+Page URL pattern: `/markdown/api/{stem}.md`
+  e.g. `/markdown/api/cheatsheet.md`
+Available pages (184): cheatsheet, config, modules, panel, panel.auth, panel.chat, panel.chat.feed, panel.chat.icon, panel.chat.input, panel.chat.interface, panel.chat.langchain, panel.chat.message, panel.chat.step, panel.chat.utils, panel.command, panel.command.bundle, panel.command.compile, panel.command.convert, panel.command.oauth_secret, panel.command.serve, panel.compiler, panel.config, panel.custom, panel.depends, panel.entry_points, panel.interact, panel.io, panel.io.admin, panel.io.application, panel.io.browser, panel.io.cache, panel.io.callbacks, panel.io.compile, panel.io.convert, panel.io.datamodel, panel.io.django, panel.io.document, panel.io.embed, panel.io.fastapi, panel.io.handlers, panel.io.ipywidget, panel.io.jupyter_executor, panel.io.jupyter_server_extension, panel.io.liveness, panel.io.loading, panel.io.location, panel.io.logging, panel.io.mime_render, panel.io.model, panel.io.notebook, panel.io.notifications, panel.io.profile, panel.io.pyodide, panel.io.reload, panel.io.resources, panel.io.rest, panel.io.save, panel.io.server, panel.io.session, panel.io.state, panel.io.threads, panel.layout, panel.layout.accordion, panel.layout.base, panel.layout.card, panel.layout.feed, panel.layout.flex, panel.layout.float, panel.layout.grid, panel.layout.gridstack, panel.layout.modal, panel.layout.spacer, panel.layout.swipe, panel.layout.tabs, panel.links, panel.models, panel.models.ace, panel.models.browser, panel.models.chatarea_input, panel.models.comm_manager, panel.models.datetime_picker, panel.models.datetime_slider, panel.models.deckgl, panel.models.echarts, panel.models.enums, panel.models.esm, panel.models.feed, panel.models.file_dropper, panel.models.icon, panel.models.ipywidget, panel.models.jsoneditor, panel.models.katex, panel.models.layout, panel.models.location, panel.models.markup, panel.models.mathjax, panel.models.modal, panel.models.perspective, panel.models.plotly, panel.models.quill, panel.models.reactive_html, panel.models.speech_to_text, panel.models.state, panel.models.tabs, panel.models.tabulator, panel.models.terminal, panel.models.text_to_speech, panel.models.time_picker, panel.models.trend, panel.models.vega, panel.models.vizzu, panel.models.vtk, panel.models.widgets, panel.pane, panel.pane.alert, panel.pane.base, panel.pane.deckgl, panel.pane.echarts, panel.pane.equation, panel.pane.holoviews, panel.pane.image, panel.pane.ipywidget, panel.pane.markup, panel.pane.media, panel.pane.perspective, panel.pane.placeholder, panel.pane.plot, panel.pane.plotly, panel.pane.streamz, panel.pane.textual, panel.pane.vega, panel.pane.vizzu, panel.pane.vtk, panel.pane.vtk.enums, panel.pane.vtk.synchronizable_deserializer, panel.pane.vtk.synchronizable_serializer, panel.pane.vtk.vtk, panel.param, panel.pipeline, panel.reactive, panel.template, panel.template.base, panel.template.bootstrap, panel.template.editable, panel.template.fast, panel.template.fast.base, panel.template.fast.grid, panel.template.fast.list, panel.template.golden, panel.template.material, panel.template.react, panel.template.slides, panel.template.vanilla, panel.theme, panel.theme.base, panel.theme.bootstrap, panel.theme.fast, panel.theme.material, panel.theme.native, panel.util, panel.util.checks, panel.util.parameters, panel.util.warnings, panel.viewable, panel.widgets, panel.widgets.base, panel.widgets.button, panel.widgets.codeeditor, panel.widgets.debugger, panel.widgets.file_selector, panel.widgets.icon, panel.widgets.indicators, panel.widgets.input, panel.widgets.misc, panel.widgets.player, panel.widgets.select, panel.widgets.slider, panel.widgets.speech_to_text, panel.widgets.tables, panel.widgets.terminal, panel.widgets.text_to_speech, panel.widgets.texteditor, panel.widgets.widget, state

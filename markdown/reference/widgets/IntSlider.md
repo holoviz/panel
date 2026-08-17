@@ -1,0 +1,70 @@
+# IntSlider
+---
+```python
+import panel as pn
+
+pn.extension()
+```
+
+The ``IntSlider`` widget allows selecting selecting an integer value within a set bounds using a slider.
+
+Discover more on using widgets to add interactivity to your applications in the [how-to guides on interactivity](../../how_to/interactivity/index.md). Alternatively, learn [how to set up callbacks and (JS-)links between parameters](../../how_to/links/index.md) or [how to use them as part of declarative UIs with Param](../../how_to/param/index.md).
+
+#### Parameters:
+
+For details on other options for customizing the component see the [layout](../../how_to/layout/index.md) and [styling](../../how_to/styling/index.md) how-to guides.
+
+##### Core
+
+* **``start``** (int): The range's lower bound
+* **``end``** (int): The range's upper bound
+* **``step``** (int): The interval between values
+* **``value``** (int): The selected value as an int type
+* **``value_throttled``** (int): The selected value as a int type throttled until mouseup
+
+##### Display
+
+* **``bar_color``** (color): Color of the slider bar as a hexadecimal RGB value
+* **``direction``** (str): Whether the slider should go from left to right ('ltr') or right to left ('rtl')
+* **``disabled``** (boolean): Whether the widget is editable
+* **``format``** (str, bokeh.models.TickFormatter): Formatter to apply to the slider value
+* **``label``** (str): The title of the widget
+* **``name``** (str): Deprecated alias for ``label``; use ``label`` instead.
+* **``orientation``** (str): Whether the slider should be displayed in a 'horizontal' or 'vertical' orientation.
+* **``tooltips``** (boolean): Whether to display tooltips on the slider handle
+
+___
+
+```python
+int_slider = pn.widgets.IntSlider(label='Integer Slider', start=0, end=8, step=2, value=4)
+
+int_slider
+```
+
+The ``IntSlider`` value is returned as a integer and can be accessed and set like any other widget:
+
+```python
+int_slider.value
+```
+
+A custom format string or bokeh TickFormatter may be used to format the slider values:
+
+```python
+from bokeh.models.formatters import PrintfTickFormatter
+
+str_format = pn.widgets.IntSlider(label='Rank', format='0o', start=0, end=100)
+
+tick_format = pn.widgets.IntSlider(label='Count', format=PrintfTickFormatter(format='%d ducks'), start=0, end=100)
+
+pn.Column(str_format, tick_format)
+```
+
+### Controls
+
+The `IntSlider` widget exposes a number of options which can be changed from both Python and Javascript. Try out the effect of these parameters interactively:
+
+```python
+pn.Row(int_slider.controls(jslink=True), int_slider)
+```
+
+---

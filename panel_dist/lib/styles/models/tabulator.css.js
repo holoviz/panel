@@ -1,0 +1,2 @@
+export const panel_models_markup_HTML = "bk-panel-models-markup-HTML"
+export default `.pnx-tabulator.tabulator{overflow:visible;}.tabulator-table{max-width:max-content;}.tabulator-table .tabulator-row .row-content .bk-panel-models-markup-HTML{white-space:normal;}.tabulator-table .tabulator-cell.empty{min-width:0px !important;width:0px !important;padding:0px !important;}.tabulator-header .tabulator-col.empty{min-width:0px !important;width:100% !important;border-right:unset !important;}.tabulator-header .tabulator-col.empty .tabulator-col-content{padding:0px !important;}`

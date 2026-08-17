@@ -1,0 +1,126 @@
+# VTKJS
+---
+```python
+import panel as pn
+pn.extension('vtk')
+```
+
+The ``VTK`` pane renders vtk.js files inside a panel, making it possible to load and interact with complex geometries in 3D.
+
+#### Parameters:
+
+For details on other options for customizing the component see the [layout](../../how_to/layout/index.md) and [styling](../../how_to/styling/index.md) how-to guides.
+
+* **``axes``** (dict): A dictionary with the parameters of the axes to construct in the 3D view.
+    Must contain at least ``xticker``, ``yticker`` and ``zticker``.
+    - ``[x|y|z]ticker`` is a dictionary which contains:
+        - ``ticks`` (array of numbers) - required. Positions in the scene coordinates
+        of the corresponding axis ticks
+        - ``labels`` (array of strings) - optional. Label displayed respectively to
+        the `ticks` positions.
+
+        If `labels` are not defined they are inferred from the `ticks` array.
+    - ``digits``: number of decimal digits when `ticks` are converted to `labels`.
+    - ``fontsize``: size in pts of the ticks labels.
+    - ``show_grid``: boolean. If true (default) the axes grid is visible.
+    - ``grid_opacity``: float between 0-1. Defines the grid opacity.
+    - ``axes_opacity``: float between 0-1. Defines the axes lines opacity.
+* **``camera``** (dict): A dictionary reflecting the current state of the VTK camera
+* **``enable_keybindings``** (bool): A boolean to activate/deactivate keybindings. Bound keys are:
+  - s: set representation of all actors to *surface*
+  - w: set representation of all actors to *wireframe*
+  - v: set representation of all actors to *vertex*
+  - r: center the actors and move the camera so that all actors are visible
+
+  The mouse must be over the pane to work.
+  <br>**Warning**: These keybindings may not work as expected in a notebook context, if they interact with already bound keys.
+* **``orientation_widget``** (bool): A boolean to activate/deactivate the orientation widget in the 3D pane.
+* **``interactive_orientation_widget``** (bool): If True the orientation widget is clickable and allows to rotate the scene in one of the orthographic projections.
+* **``object``** (str or object): Can be a string pointing to a local or remote file with a `.vtkjs` extension.
+___
+
+The simplest way to construct a ``VTK`` pane is to give it a vtk.js file which it will serialize and embed in the plot. The ``VTK`` pane also supports the regular sizing options provided by Bokeh, including responsive sizing modes:
+
+```python
+vtk_pane = pn.pane.VTK(
+    'https://raw.githubusercontent.com/Kitware/vtk-js/master/Data/StanfordDragon.vtkjs',
+    sizing_mode='stretch_width', height=400, enable_keybindings=True, orientation_widget=True
+)
+
+vtk_pane
+```
+
+The ``VTK`` pane can also be updated like all other pane objects by replacing the ``object``:
+
+```python
+vtk_pane.object = "https://raw.githubusercontent.com/Kitware/vtk-js-datasets/master/data/vtkjs/TBarAssembly.vtkjs"
+```
+
+## Camera control
+
+Once a VTK pane has been displayed it will automatically sync the camera state with the Pane object.
+The camera parameter is updated only at the end of the interaction.
+We can read the camera state on the corresponding parameter:
+
+```python
+> vtk_pane.camera
+
+{'position': [-21.490090356222225, 14.44963146483641, 26.581314468858984],
+ 'focalPoint': [0, 4.969950199127197, 0],
+ 'viewUp': [0.17670012087160802, 0.9635684210080306, -0.20078088883170594],
+ 'directionOfProjection': [0.605834463228546,
+  -0.2672449261957517,
+  -0.749362897791989],
+ 'parallelProjection': False,
+ 'useHorizontalViewAngle': False,
+ 'viewAngle': 30,
+ 'parallelScale': 9.180799381276024,
+ 'clippingRange': [26.442079567041056, 44.714416678555395],
+ 'thickness': 1000,
+ 'windowCenter': [0, 0],
+ 'useOffAxisProjection': False,
+ 'screenBottomLeft': [-0.5, -0.5, -0.5],
+ 'screenBottomRight': [0.5, -0.5, -0.5],
+ 'screenTopRight': [0.5, 0.5, -0.5],
+ 'freezeFocalPoint': False,
+ 'useScissor': False,
+ 'projectionMatrix': None,
+ 'viewMatrix': None,
+ 'physicalTranslation': [0, -4.969950199127197, 0],
+ 'physicalScale': 9.180799381276024,
+ 'physicalViewUp': [0, 1, 0],
+ 'physicalViewNorth': [0, 0, -1],
+ 'mtime': 2237,
+ 'distance': 35.47188491341284}
+```
+
+This technique also makes it possible to link the camera of two or more VTK panes together:
+
+```python
+dragon1 = pn.pane.VTK('https://raw.githubusercontent.com/Kitware/vtk-js/master/Data/StanfordDragon.vtkjs',
+                      height=400, sizing_mode='stretch_width')
+dragon2 = pn.pane.VTK('https://raw.githubusercontent.com/Kitware/vtk-js/master/Data/StanfordDragon.vtkjs',
+                      height=400, sizing_mode='stretch_width')
+
+dragon1.jslink(dragon2, camera='camera', bidirectional=True)
+
+pn.Row(dragon1, dragon2)
+```
+
+and to modify the camera state in Python and trigger an update:
+
+```python
+if dragon1.camera:
+    dragon1.camera['viewAngle'] = 50
+    dragon1.param.trigger('camera')
+```
+
+### Controls
+
+The ``VTKJS`` pane exposes a number of options which can be changed from both Python and JavaScript. Try out the effect of these parameters interactively:
+
+```python
+pn.Row(vtk_pane.controls(jslink=True), vtk_pane)
+```
+
+---

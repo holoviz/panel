@@ -1,0 +1,66 @@
+:host(.pn-loading),
+.pn-loading {
+  overflow: hidden;
+}
+
+:host(.pn-loading):after,
+.pn-loading:after {
+  content: '';
+  cursor: progress;
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+:host(.pn-loading):before,
+.pn-loading:before {
+  -webkit-mask-position: center;
+  -webkit-mask-repeat: no-repeat;
+  content: '';
+  cursor: progress;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1001;
+}
+
+:host(.pn-loading) .pn-loading-msg,
+.pn-loading .pn-loading-msg {
+  color: var(--panel-on-background-color, black);
+  font-size: 1.5em;
+  position: absolute;
+  top: calc(50% + 36px);
+  text-align: center;
+  width: 100%;
+  z-index: 1001;
+}
+
+:host(.pn-loading.pn-arc):before,
+.pn-loading.pn-arc:before {
+  -webkit-mask-image: url('../assets/arc_spinner.svg');
+}
+
+:host(.pn-loading.pn-arcs):before,
+.pn-loading.pn-arcs:before {
+  -webkit-mask-image: url('../assets/arcs_spinner.svg');
+}
+
+:host(.pn-loading.pn-petal):before,
+.pn-loading.pn-petal:before {
+  -webkit-mask-image: url('../assets/petal_spinner.svg');
+}
+
+:host(.pn-loading.pn-bar):before,
+.pn-loading.pn-bar:before {
+  -webkit-mask-image: url('../assets/bar_spinner.svg');
+}
+
+:host(.pn-loading.pn-dots):before,
+.pn-loading.pn-dots:before {
+  -webkit-mask-image: url('../assets/dots_spinner.svg');
+}

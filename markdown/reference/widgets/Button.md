@@ -1,0 +1,145 @@
+# Button
+---
+```python
+import panel as pn
+pn.extension()
+```
+
+The ``Button`` widget allows triggering events when the button is clicked. In addition to a `value` parameter, which will toggle from `False` to `True` while the click event is being processed an additional ``clicks`` parameter that can be watched to subscribe to click events.
+
+Discover more on using widgets to add interactivity to your applications in the [how-to guides on interactivity](../../how_to/interactivity/index.md). Alternatively, learn [how to set up callbacks and (JS-)links between parameters](../../how_to/links/index.md) or [how to use them as part of declarative UIs with Param](../../how_to/param/index.md).
+
+#### Parameters:
+
+For details on other options for customizing the component see the [layout](../../how_to/layout/index.md) and [styling](../../how_to/styling/index.md) how-to guides.
+
+##### Core
+
+* **``clicks``** (int): Number of clicks (can be listened to)
+* **``value``** (boolean): Toggles from `False` to `True` while the event is being processed.
+
+##### Display
+
+* **`variant`** (str): The button style, either 'solid' or 'outline'.
+* **``color``** (str): A button theme; should be one of ``'default'`` (white), ``'primary'`` (blue), ``'success'`` (green), ``'info'`` (yellow), ``'light'`` (light), or ``'danger'`` (red).
+* **``description``** (str | Bokeh Tooltip | pn.widgets.TooltipIcon): A description which is shown when the widget is hovered.
+* **`icon`** (str): An icon to render to the left of the button label. Either an SVG or an icon name which is loaded from [tabler-icons.io](https://tabler-icons.io).
+* **`icon_size`** (str): Size of the icon as a string, e.g. 12px or 1em.
+* **``disabled``** (boolean): Whether the widget is editable.
+* **``label``** (str): The title of the widget.
+* **``name``** (str): Deprecated alias for ``label``; use ``label`` instead.
+
+___
+
+```python
+button = pn.widgets.Button(label='Click me', color='primary')
+button
+```
+
+The ``clicks`` parameter will report the number of times the button has been pressed:
+
+```python
+button.clicks
+```
+
+You can `bind` to the `Button` to trigger actions when the `Button` is clicked.
+
+```python
+indicator = pn.indicators.LoadingSpinner(value=False, size=25)
+
+def update_indicator(event):
+    if not event:
+        return
+    
+    indicator.value = not indicator.value
+
+pn.bind(update_indicator, button, watch=True)
+
+pn.Column(button, indicator)
+```
+
+You can also `bind` to the `clicks` parameter
+
+```python
+def handle_click(clicks):
+    return f'You have clicked me {clicks} times'
+
+pn.Column(
+    button,
+    pn.bind(handle_click, button.param.clicks),
+)
+```
+
+Alternatively you can use the ``on_click`` method to trigger a function when the button is clicked:
+
+```python
+text = pn.widgets.TextInput(value='Ready')
+
+def b(event):
+    text.value = 'Clicked {0} times'.format(button.clicks)
+    
+button.on_click(b)
+pn.Row(button, text)
+```
+
+### Styles
+
+The style of the `Button` can be set by selecting one of the available `color` values and the `variant` values:
+
+```python
+colors = ('default', 'primary', 'success', 'warning', 'danger', 'light')
+variants = ("solid", "outline")
+
+pn.Row(
+    *(pn.Column(*(pn.widgets.Button(label=color, color=color, variant=variant) for color in colors))
+    for variant in variants)
+)
+```
+
+### Icons
+
+The ``Button`` name string may contain Unicode and Emoji characters, providing a convenient way to define common graphical buttons:
+
+```python
+backward = pn.widgets.Button(label='\u25c0', width=50)
+forward = pn.widgets.Button(label='\u25b6', width=50)
+search = pn.widgets.Button(label='🔍', width=100)
+save = pn.widgets.Button(label="💾 Save", width=100)
+copy = pn.widgets.Button(label="Copy ✂️", width=100)
+
+pn.Row(backward, forward, search, save, copy)
+```
+
+However you can also provide an explicit `icon`, either as a named icon loaded from [tabler-icons.io](https://tabler-icons.io)/:
+
+```python
+pn.Row(
+    pn.widgets.Button(icon='alert-triangle-filled', color='warning', label='WARNING'),
+    pn.widgets.Button(icon='bug', color='danger', label='Error')
+)
+```
+
+or as an explicit SVG:
+
+```python
+cash_icon = """
+<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-cash" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+  <path d="M7 9m0 2a2 2 0 0 1 2 -2h10a2 2 0 0 1 2 2v6a2 2 0 0 1 -2 2h-10a2 2 0 0 1 -2 -2z" />
+  <path d="M14 14m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+  <path d="M17 9v-2a2 2 0 0 0 -2 -2h-10a2 2 0 0 0 -2 2v6a2 2 0 0 0 2 2h2" />
+</svg>
+"""
+
+pn.widgets.Button(icon=cash_icon, color='success', label='Checkout', icon_size='2em')
+```
+
+### Controls
+
+The `Button` widget exposes a number of options which can be changed from both Python and Javascript. Try out the effect of these parameters interactively:
+
+```python
+pn.Row(button.controls, button)
+```
+
+---
