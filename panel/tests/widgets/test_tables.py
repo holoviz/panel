@@ -3113,6 +3113,23 @@ def test_header_filter_ends_is_case_insensitive(df_words, pagination):
 
     assert list(widget.current_view['word']) == ['Alphanumeric']
 
+
+@pytest.mark.parametrize(('op', 'value', 'expected'), [
+    ('=', 2, [2]),
+    ('!=', 2, [1, 3, 4]),
+    ('<', 3, [1, 2]),
+    ('<=', 2, [1, 2]),
+    ('>', 2, [3, 4]),
+    ('>=', 3, [3, 4]),
+    ('in', [1, 3], [1, 3]),
+])
+def test_header_filter_comparison_operators(op, value, expected):
+    widget = Tabulator(pd.DataFrame({'n': [1, 2, 3, 4]}), header_filters=True)
+
+    widget.filters = [{'field': 'n', 'type': op, 'value': value}]
+
+    assert list(widget.current_view['n']) == expected
+
 @pytest.mark.parametrize('aggs', [{}, {'Country': 'sum'}, {'Country': {'Int': 'sum', 'Float': 'mean'}}])
 def test_tabulator_aggregators(document, comm, df_agg, aggs):
     tabulator = Tabulator(df_agg, hierarchical=True, aggregators=aggs)
