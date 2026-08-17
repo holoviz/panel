@@ -35,8 +35,10 @@ if t.TYPE_CHECKING:
     from asyncio.futures import Future
     from collections.abc import Callable, Iterator, Sequence
 
+    from bokeh.application.application import ServerContext
     from bokeh.core.enums import HoldPolicyType
     from bokeh.core.has_props import HasProps
+    from bokeh.core.types import ID
     from bokeh.protocol.message import Message
     from bokeh.server.connection import ServerConnection
     from pyviz_comms import Comm
@@ -68,9 +70,11 @@ class Request:
 
 class MockSessionContext(SessionContext):
 
-    def __init__(self, *args, document: Document, **kwargs):
+    def __init__(self, document: Document):
         self._document = document
-        super().__init__(*args, server_context=None, session_id=None, **kwargs)
+        super().__init__(
+            t.cast('ServerContext', None), t.cast('ID', None)
+        )
 
     def with_locked_document(self, *args):
         return

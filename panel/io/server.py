@@ -787,7 +787,7 @@ class RequestProxy(BkRequestProxy):
         return super().__getattr__(name)
 
 
-bokeh.server.contexts._RequestProxy = RequestProxy
+bokeh.server.contexts._RequestProxy = RequestProxy  # type: ignore[misc]
 
 
 def _normalize_app_path(path: str, prefix: str, suffix: str = '') -> str:
@@ -1352,7 +1352,7 @@ def get_server(
     cookie_secret: str | None = None,
     oauth_encryption_key: str | None = None,
     oauth_jwt_user: str | None = None,
-    oauth_refresh_tokens: str | None = None,
+    oauth_refresh_tokens: bool | None = None,
     oauth_guest_endpoints: list[str] | None = None,
     oauth_optional: bool | None = None,
     root_path: str | None = None,

@@ -850,7 +850,7 @@ class _state(param.Parameterized):
 
     def execute(
         self,
-        callback: Callable[[], None | Coroutine[t.Any, t.Any, None]],
+        callback: Callable[[], None | Coroutine[t.Any, t.Any, t.Any]],
         schedule: bool | t.Literal['auto', 'thread'] = 'auto'
     ) -> None:
         """

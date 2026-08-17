@@ -300,7 +300,7 @@ class PanelASGI(BokehASGI):
         if self._autoreload_stop_event is not None:
             for event in state._watch_events:
                 event.set()
-            state._watch_events = []
+            state._watch_events.clear()
             self._autoreload_stop_event.set()
             if self._autoreload_task is not None:
                 await self._autoreload_task

@@ -110,11 +110,15 @@ def _run_coroutine_handler(func: Callable[[Document], t.Any]) -> Callable[[Docum
     scheduled on the server event loop and awaited from there.
     """
     def wrapper(doc: Document) -> None:
+        loop: asyncio.AbstractEventLoop | None
         try:
             asyncio.get_running_loop()
         except RuntimeError:
-            loop = state._document_loop(doc)
-            loop = getattr(loop, 'asyncio_loop', loop)
+            io_loop = state._document_loop(doc)
+            loop = t.cast(
+                'asyncio.AbstractEventLoop | None',
+                getattr(io_loop, 'asyncio_loop', io_loop)
+            )
         else:
             # Already on the event loop, so we cannot block on the coroutine.
             loop = None

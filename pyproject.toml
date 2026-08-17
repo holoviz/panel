@@ -245,6 +245,8 @@ filterwarnings = [
     "ignore:'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16::starlette",
     "ignore:'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16::fastapi",
     "ignore:Implicitly cleaning up <_TemporaryFileWrapper:ResourceWarning",
+    # 2026-08: `starlette.testclient` prefers `httpx2` over `httpx`
+    "ignore:Using .httpx. with .starlette.testclient. is deprecated",
 ]
 
 [tool.coverage.run]
@@ -269,6 +271,7 @@ module = [
     "cachecontrol.*",
     "cryptography.*",
     "diskcache.*",
+    "django.*",
     "flask.*",
     "fsspec.*",
     "holoviews.*",

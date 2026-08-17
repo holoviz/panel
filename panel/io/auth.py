@@ -359,7 +359,7 @@ def configure_auth(
     oauth_error_template: str | None = None,
     cookie_path: str = "/",
     cookie_secret: str | None = None,
-    oauth_encryption_key: str | None = None,
+    oauth_encryption_key: str | bytes | None = None,
     oauth_jwt_user: str | None = None,
     oauth_refresh_tokens: bool | None = None,
     oauth_guest_endpoints: list[str] | None = None,
@@ -410,9 +410,10 @@ def configure_auth(
     if cookie_secret:
         config.cookie_secret = cookie_secret # type: ignore
     if oauth_encryption_key:
-        key = oauth_encryption_key
-        if isinstance(key, str):
-            key = key.encode('ascii')
+        if isinstance(oauth_encryption_key, str):
+            key = oauth_encryption_key.encode('ascii')
+        else:
+            key = oauth_encryption_key
         config.oauth_encryption_key = key # type: ignore
         state.encryption = _fernet(key)
     if oauth_redirect_uri:
