@@ -2,9 +2,9 @@ import type {BuildResult, Options, ViewStorage} from "@bokehjs/core/build_views"
 import {build_views} from "@bokehjs/core/build_views"
 import type {HasProps} from "@bokehjs/core/has_props"
 import type {ViewOf} from "@bokehjs/core/view"
-import type {StyleSheetLike} from "@bokehjs/core/dom"
 import type {DOMView} from "@bokehjs/core/dom_view"
-import {ClassList, InlineStyleSheet, ImportedStyleSheet} from "@bokehjs/core/dom"
+import type {StyleSheetLike} from "@bokehjs/core/dom"
+import {ClassList, ImportedStyleSheet, InlineStyleSheet} from "@bokehjs/core/dom"
 import type {CSSStyles, CSSStyleSheetDecl} from "@bokehjs/core/css"
 import type * as p from "@bokehjs/core/properties"
 import {difference} from "@bokehjs/core/util/array"
@@ -20,8 +20,8 @@ import {
 export class HostedStyleSheet extends InlineStyleSheet {
   host_id: string
 
-  constructor(css?: string | CSSStyleSheetDecl, id?: string, override readonly persistent: boolean = false, host_id: string = "") {
-    super(css, id, persistent)
+  constructor(css?: string | CSSStyleSheetDecl, id?: string, host_id: string = "") {
+    super(css, id)
     this.host_id = host_id
   }
 
@@ -103,9 +103,9 @@ export class ReactComponentView extends ReactiveESMView {
   override initialize(): void {
     super.initialize()
     if (!this.use_shadow_dom) {
-      (this as any).display = new HostedStyleSheet("", "display", false, this.model.id);
-      (this as any).style = new HostedStyleSheet("", "style", false, this.model.id);
-      (this as any).parent_style = new HostedStyleSheet("", "parent", true, this.model.id)
+      (this as any).display = new HostedStyleSheet("", "display", this.model.id);
+      (this as any).self_style = new HostedStyleSheet("", "style", this.model.id);
+      (this as any).parent_style = new HostedStyleSheet("", "parent", this.model.id)
     }
   }
 
@@ -190,7 +190,7 @@ export class ReactComponentView extends ReactiveESMView {
       this.react_root.then((root: any) => root && root.unmount())
       this.flush_scheduled_removals()
     } else {
-      this._applied_stylesheets.forEach((stylesheet) => stylesheet.uninstall())
+      this._remove_stylesheets()
       for (const cb of (this._lifecycle_handlers.get("remove") || [])) {
         cb()
       }
@@ -199,6 +199,13 @@ export class ReactComponentView extends ReactiveESMView {
       this._mounted.clear()
     }
     this.react_root = null
+  }
+
+  protected _remove_stylesheets(): void {
+    for (const stylesheet of this._applied_stylesheets) {
+      stylesheet.uninstall()
+    }
+    this._applied_stylesheets = []
   }
 
   get root_view(): ReactComponentView {

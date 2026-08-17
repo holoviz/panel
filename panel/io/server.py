@@ -422,6 +422,10 @@ class Server(BokehServer):
 
     def start(self) -> None:
         super().start()
+        # Route Bokeh's asyncio.to_thread offloading (locked callbacks and
+        # eligible Document initialization) through Panel's bounded thread
+        # pool so --num-threads bounds it.
+        state._install_thread_pool(self._loop.asyncio_loop)
         if state._admin_context:
             self._loop.add_callback(state._admin_context.run_load_hook)
         if state._setup_module and state._setup_file_callback:

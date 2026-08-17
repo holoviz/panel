@@ -78,9 +78,7 @@ export class PanelMarkupView extends WidgetView {
     this._stylesheets_watcher?.abort()
     const {signal} = this._stylesheets_watcher = new AbortController()
     this._initialized_stylesheets = new Map()
-    for (const stylesheet of this._applied_stylesheets) {
-      // @ts-expect-error: 'el' is protected
-      const style_el = stylesheet.el
+    for (const style_el of this._applied_stylesheets) {
       if (style_el instanceof HTMLLinkElement) {
         // A link served from cache may already have loaded, and `load` does
         // not fire again for it, so seed from `sheet` instead of assuming
@@ -242,9 +240,7 @@ export abstract class HTMLBoxView extends LayoutDOMView {
 
   watch_stylesheets(): void {
     this._initialized_stylesheets = new Map()
-    for (const stylesheet of this._applied_stylesheets) {
-      // @ts-expect-error: 'el' is protected
-      const style_el = stylesheet.el
+    for (const style_el of this._applied_stylesheets) {
       if (style_el instanceof HTMLLinkElement) {
         this._initialized_stylesheets.set(style_el.href, false)
         style_el.addEventListener("load", () => {

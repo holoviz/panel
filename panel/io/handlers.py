@@ -18,6 +18,15 @@ import bokeh.command.util
 
 from bokeh.application.handlers.code import CodeHandler
 from bokeh.application.handlers.code_runner import CodeRunner
+
+try:
+    # Bokeh >=3.10 guards process-global mutations (sys.path/argv/cwd) with a
+    # lock so code apps can be initialized concurrently on worker threads.
+    from bokeh.application.handlers.code_runner import (
+        _hold_process_globals, _patch_process_state,
+    )
+except ImportError:  # Bokeh <3.10
+    _hold_process_globals = _patch_process_state = None
 from bokeh.application.handlers.function import (
     FunctionHandler as BokehFunctionHandler,
 )
@@ -527,14 +536,28 @@ class PanelCodeRunner(CodeRunner):
 
         See bokeh.application.handlers.code_runner for original implementation.
         """
+        # XXX: self._code shouldn't be None at this point but types don't reflect this
+        assert self._code is not None
+
+        if _hold_process_globals is not None:
+            # Bokeh >=3.10: reuse the process-globals lock and state patching so
+            # concurrent code-app initialization on worker threads is safe.
+            with _hold_process_globals(), _patch_process_state(self._path, self._argv):
+                try:
+                    exec(self._code, module.__dict__)
+                    if post_check:
+                        post_check()
+                except Exception as e:
+                    autoreload_handle_exception(self, module, e)
+                finally:
+                    self.ran = True
+            return
+
         _cwd = os.getcwd()
         _sys_path = list(sys.path)
         _sys_argv = list(sys.argv)
         sys.path.insert(0, os.path.dirname(self._path))
         sys.argv = [os.path.basename(self._path), *self._argv]
-
-        # XXX: self._code shouldn't be None at this point but types don't reflect this
-        assert self._code is not None
 
         try:
             exec(self._code, module.__dict__)
