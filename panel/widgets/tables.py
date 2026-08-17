@@ -251,33 +251,42 @@ class BaseTable(ReactiveData, Widget):
         df = self.value.reset_index() if len(indexes) > 1 else self.value
         return self._get_column_definitions(fields, df)
 
-    def _get_column_definitions(self, col_names: list[str], df: pd.DataFrame) -> list[TableColumn]:
+    def _get_column_values(self, col: str, df, nw_df) -> tuple[t.Any, str]:
+        """
+        The values behind a field and their numpy style dtype kind.
+
+        A frame without an index goes through narwhals, since every field is
+        then a real column and its dtype is not a numpy dtype.
+        """
+        if nw_df is not None:
+            data = nw_df[col]
+            return data, dtype_kind(data.dtype)
+
         import pandas as pd
+        if col in df.columns:
+            data = df[col]
+        elif col in self.indexes:
+            if len(self.indexes) == 1:
+                data = df.index
+            elif df.index.nlevels == 1:
+                # Look in the column with the tuple format
+                index_col = tuple([col[: -(df.columns.nlevels - 1)]] + [""] * (df.columns.nlevels - 1))
+                data = df[index_col]
+            else:
+                data = df.index.get_level_values(self.indexes.index(col))
+
+        if isinstance(data, pd.DataFrame):
+            raise ValueError("DataFrame contains duplicate column names.")
+        return data, data.dtype.kind
+
+    def _get_column_definitions(self, col_names: list[str], df: pd.DataFrame) -> list[TableColumn]:
         indexes = self.indexes
         columns = []
         # Without an index every field is a real column, and the dtype has to
         # be read through narwhals because it is not a numpy dtype.
         nw_df = None if has_index(df) else to_narwhals(df)
         for col in col_names:
-            if nw_df is not None:
-                data = nw_df[col]
-                kind = dtype_kind(data.dtype)
-            else:
-                if col in df.columns:
-                    data: pd.Series | pd.Index = df[col]
-                elif col in self.indexes:
-                    if len(self.indexes) == 1:
-                        data = df.index
-                    elif df.index.nlevels == 1:
-                        # Look in the column with the tuple format
-                        index_col = tuple([col[: -(df.columns.nlevels - 1)]] + [""] * (df.columns.nlevels - 1))
-                        data = df[index_col]
-                    else:
-                        data = df.index.get_level_values(self.indexes.index(col))
-
-                if isinstance(data, pd.DataFrame):
-                    raise ValueError("DataFrame contains duplicate column names.")
-                kind = data.dtype.kind
+            data, kind = self._get_column_values(col, df, nw_df)
 
             col_kwargs: dict[str, t.Any] = {}
             editor: CellEditor
