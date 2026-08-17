@@ -18,9 +18,22 @@ if t.TYPE_CHECKING:
     import narwhals.stable.v2 as nw
 
 __all__ = (
+    "has_index",
     "is_dataframe",
     "to_narwhals",
 )
+
+
+def has_index(obj: t.Any) -> bool:
+    """
+    Whether the frame carries a row index that can label rows.
+
+    pandas and the libraries that copy its API have one, Polars and PyArrow
+    do not. Code that addresses rows by label has to fall back to addressing
+    them by position for the latter.
+    """
+    import narwhals.stable.v2 as nw
+    return nw.dependencies.is_pandas_like_dataframe(obj)
 
 
 def is_dataframe(obj: t.Any) -> bool:
