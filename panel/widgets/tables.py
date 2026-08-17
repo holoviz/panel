@@ -34,7 +34,7 @@ from ..util import (
     clone_model, datetime_as_utctimestamp, isdatetime, lazy_load,
     styler_update, updating,
 )
-from ..util.dataframe import has_index, to_narwhals
+from ..util.dataframe import dtype_kind, has_index, to_narwhals
 from ..util.warnings import warn
 from .base import Widget
 from .button import Button
@@ -255,24 +255,31 @@ class BaseTable(ReactiveData, Widget):
         import pandas as pd
         indexes = self.indexes
         columns = []
+        # Without an index every field is a real column, and the dtype has to
+        # be read through narwhals because it is not a numpy dtype.
+        nw_df = None if has_index(df) else to_narwhals(df)
         for col in col_names:
-            if col in df.columns:
-                data: pd.Series | pd.Index = df[col]
-            elif col in self.indexes:
-                if len(self.indexes) == 1:
-                    data = df.index
-                elif df.index.nlevels == 1:
-                    # Look in the column with the tuple format
-                    index_col = tuple([col[: -(df.columns.nlevels - 1)]] + [""] * (df.columns.nlevels - 1))
-                    data = df[index_col]
-                else:
-                    data = df.index.get_level_values(self.indexes.index(col))
+            if nw_df is not None:
+                data = nw_df[col]
+                kind = dtype_kind(data.dtype)
+            else:
+                if col in df.columns:
+                    data: pd.Series | pd.Index = df[col]
+                elif col in self.indexes:
+                    if len(self.indexes) == 1:
+                        data = df.index
+                    elif df.index.nlevels == 1:
+                        # Look in the column with the tuple format
+                        index_col = tuple([col[: -(df.columns.nlevels - 1)]] + [""] * (df.columns.nlevels - 1))
+                        data = df[index_col]
+                    else:
+                        data = df.index.get_level_values(self.indexes.index(col))
 
-            if isinstance(data, pd.DataFrame):
-                raise ValueError("DataFrame contains duplicate column names.")
+                if isinstance(data, pd.DataFrame):
+                    raise ValueError("DataFrame contains duplicate column names.")
+                kind = data.dtype.kind
 
             col_kwargs: dict[str, t.Any] = {}
-            kind = data.dtype.kind
             editor: CellEditor
             formatter: CellFormatter | None = self.formatters.get(col)
             if kind == 'i':
@@ -302,10 +309,14 @@ class BaseTable(ReactiveData, Widget):
                 elif kind == 'f':
                     formatter = NumberFormatter(format='0,0.0[00000]', text_align='right')
                 elif isdatetime(data) or kind == 'M':
-                    if len(data) and isinstance(data.values[0], dt.date):
-                        date_format = '%Y-%m-%d'
+                    if nw_df is None:
+                        date_only = bool(len(data)) and isinstance(data.values[0], dt.date)
                     else:
-                        date_format = '%Y-%m-%d %H:%M:%S'
+                        # narwhals returns real datetimes, and datetime is a
+                        # subclass of date, so the two have to be told apart.
+                        first = data[0] if len(data) else None
+                        date_only = isinstance(first, dt.date) and not isinstance(first, dt.datetime)
+                    date_format = '%Y-%m-%d' if date_only else '%Y-%m-%d %H:%M:%S'
                     formatter = DateFormatter(format=date_format, text_align='right')
                 else:
                     formatter = StringFormatter(null_format='')
@@ -2167,16 +2178,18 @@ class Tabulator(BaseTable):
                 col_dict['titleFormatterParams'] = title_formatter
             if field in self.indexes:
                 if len(self.indexes) == 1:
-                    dtype = self.value.index.dtype
+                    kind = self.value.index.dtype.kind
                 else:
-                    dtype = self.value.index.get_level_values(self.indexes.index(field)).dtype
+                    kind = self.value.index.get_level_values(self.indexes.index(field)).dtype.kind
+            elif has_index(self.value):
+                kind = self.value.dtypes[index].kind
             else:
-                dtype = self.value.dtypes[index]
-            if dtype.kind == 'M':
+                kind = dtype_kind(to_narwhals(self.value).schema[index])
+            if kind == 'M':
                 col_dict['sorter'] = 'timestamp'
-            elif dtype.kind in 'iuf':
+            elif kind in 'iuf':
                 col_dict['sorter'] = 'number'
-            elif dtype.kind == 'b':
+            elif kind == 'b':
                 col_dict['sorter'] = 'boolean'
             if index in self.editables or field in self.editables:
                 col_dict['editable'] = _get_value_from_keys(self.editables, index, field)

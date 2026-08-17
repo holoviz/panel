@@ -7,6 +7,8 @@ pandas only. The entry point tests below record which combinations do not work
 yet as strict xfails, so a change that fixes one of them fails loudly instead
 of passing silently.
 """
+import datetime as dt
+
 import pandas as pd
 import pytest
 
@@ -17,20 +19,27 @@ from panel.util.dataframe import is_dataframe, to_narwhals
 from panel.widgets import DataFrame as DataFrameWidget, Tabulator
 
 DATA = {'a': [1, 2, 3], 'b': ['x', 'y', 'z']}
+TYPED_DATA = {
+    'i': [1, 2],
+    'f': [1.5, 2.5],
+    'b': [True, False],
+    's': ['x', 'y'],
+    'd': [dt.datetime(2020, 1, 1), dt.datetime(2020, 1, 2)],
+}
 
 
-def pandas_frame():
-    return pd.DataFrame(DATA)
+def pandas_frame(data=DATA):
+    return pd.DataFrame(data)
 
 
-def polars_frame():
+def polars_frame(data=DATA):
     pl = pytest.importorskip('polars')
-    return pl.DataFrame(DATA)
+    return pl.DataFrame(data)
 
 
-def pyarrow_frame():
+def pyarrow_frame(data=DATA):
     pa = pytest.importorskip('pyarrow')
-    return pa.table(DATA)
+    return pa.table(data)
 
 
 BACKENDS = [pandas_frame, polars_frame, pyarrow_frame]
@@ -85,14 +94,29 @@ def test_tabulator_accepts_frame(frame):
     assert Tabulator(frame()) is not None
 
 
-@pytest.mark.parametrize('frame', ENTRY_POINT_BACKENDS)
+@pytest.mark.parametrize('frame', TABLE_BACKENDS)
 def test_tabulator_renders_frame(frame):
-    """Rendering still needs backend neutral dtype and column definitions."""
     table = Tabulator(frame())
 
     table.server_doc(doc=Document(), title='t')
 
     assert set(table._data) >= {'a', 'b'}
+
+
+@pytest.mark.parametrize('frame', TABLE_BACKENDS)
+def test_tabulator_picks_editors_from_column_types(frame):
+    from bokeh.models.widgets.tables import (
+        CheckboxEditor, DateEditor, IntEditor, NumberEditor, StringEditor,
+    )
+
+    table = Tabulator(frame(TYPED_DATA))
+    columns = {c.field: c for c in table._get_columns()}
+
+    assert isinstance(columns['i'].editor, IntEditor)
+    assert isinstance(columns['f'].editor, NumberEditor)
+    assert isinstance(columns['b'].editor, CheckboxEditor)
+    assert isinstance(columns['s'].editor, StringEditor)
+    assert isinstance(columns['d'].editor, DateEditor)
 
 
 @pytest.mark.parametrize('frame', TABLE_BACKENDS)
