@@ -12,8 +12,8 @@ import pytest
 
 from bokeh.document import Document
 
-from panel._dataframe import is_dataframe, to_narwhals
 from panel.pane import DataFrame as DataFramePane, Perspective
+from panel.util.dataframe import is_dataframe, to_narwhals
 from panel.widgets import DataFrame as DataFrameWidget, Tabulator
 
 DATA = {'a': [1, 2, 3], 'b': ['x', 'y', 'z']}
@@ -48,7 +48,7 @@ TABLE_BACKENDS = [pytest.param(f, id=i) for f, i in zip(BACKENDS, BACKEND_IDS, s
 
 @pytest.mark.parametrize('frame', BACKENDS, ids=BACKEND_IDS)
 def test_has_index_is_true_only_for_pandas_like_frames(frame):
-    from panel._dataframe import has_index
+    from panel.util.dataframe import has_index
 
     assert has_index(frame()) is (frame is pandas_frame)
 
