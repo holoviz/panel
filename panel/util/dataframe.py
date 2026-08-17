@@ -18,10 +18,41 @@ if t.TYPE_CHECKING:
     import narwhals.stable.v2 as nw
 
 __all__ = (
+    "dtype_kind",
     "has_index",
     "is_dataframe",
     "to_narwhals",
 )
+
+
+def dtype_kind(dtype: t.Any) -> str:
+    """
+    The numpy style kind code for a Narwhals dtype.
+
+    Panel picks editors and formatters off numpy's single letter dtype kinds.
+    Narwhals describes types with predicates instead, so this translates
+    between the two. Only the kinds Panel actually branches on are produced,
+    everything else falls through to 'O' the way an unrecognised numpy kind
+    already does.
+
+    Parameters
+    ----------
+    dtype: Narwhals dtype
+      The dtype to classify, e.g. from `to_narwhals(df).schema[col]`.
+
+    Returns
+    -------
+    One of 'i', 'f', 'b', 'M' or 'O'.
+    """
+    if dtype.is_integer():
+        return 'i'
+    elif dtype.is_float():
+        return 'f'
+    elif dtype.is_boolean():
+        return 'b'
+    elif dtype.is_temporal():
+        return 'M'
+    return 'O'
 
 
 def has_index(obj: t.Any) -> bool:
