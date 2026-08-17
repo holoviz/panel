@@ -26,6 +26,7 @@ from bokeh.util.serialization import convert_datetime_array
 from param.parameterized import transform_reference
 from pyviz_comms import JupyterComm
 
+from .._dataframe import has_index, to_narwhals
 from ..io.model import JSCode
 from ..io.resources import CDN_DIST, CSS_URLS
 from ..io.state import state
@@ -225,14 +226,16 @@ class BaseTable(ReactiveData, Widget):
     def _validate(self, *events: param.parameterized.Event):
         if self.value is None:
             return
-        cols = self.value.columns
-        if len(cols) != len(cols.drop_duplicates()):
-            raise ValueError('Cannot display a pandas.DataFrame with '
+        # Not self.value.columns: on a PyArrow Table that is the column data,
+        # not the names.
+        cols = to_narwhals(self.value).columns
+        if len(cols) != len(set(cols)):
+            raise ValueError('Cannot display a DataFrame with '
                              'duplicate column names.')
 
     def _get_fields(self) -> list[str]:
         indexes = self.indexes
-        col_names = [] if self.value is None else list(self.value.columns)
+        col_names = [] if self.value is None else to_narwhals(self.value).columns
         if not self.hierarchical or len(indexes) == 1:
             col_names = indexes + col_names
         else:
@@ -384,6 +387,11 @@ class BaseTable(ReactiveData, Widget):
     def _update_index_mapping(self):
         if self._processed is None or isinstance(self._processed, list) and not self._processed:
             self._index_mapping = {}
+            return
+        if not has_index(self._processed):
+            # Without labels a row is only identified by where it sits, so the
+            # mapping from display position to row is the identity.
+            self._index_mapping = {i: i for i in range(len(self._processed))}
             return
         self._index_mapping = {
             i: index
@@ -721,6 +729,11 @@ class BaseTable(ReactiveData, Widget):
         df = self._filter_dataframe(df, header_filters=False)
         if df is None:
             return [], {}
+        if not has_index(df):
+            # Bokeh serializes any Narwhals compatible frame, and without an
+            # index there is nothing to flatten into columns first.
+            data = ColumnDataSource.from_df(df)
+            return df, {str(k): self._process_column(v, k, df) for k, v in data.items()}
         indexes: list[t.Any]
         if isinstance(self.value.index, pd.MultiIndex):
             indexes = [
@@ -752,7 +765,7 @@ class BaseTable(ReactiveData, Widget):
     @property
     def indexes(self):
         import pandas as pd
-        if self.value is None or not self.show_index:
+        if self.value is None or not self.show_index or not has_index(self.value):
             return []
         elif isinstance(self.value.index, pd.MultiIndex):
             indexes = [
@@ -1869,20 +1882,27 @@ class Tabulator(BaseTable):
         if self.value is not None:
             # Compute integer indexes of the selected rows
             # on the displayed page
-            index = self.value.iloc[self.selection].index
-            indices = []
-            for ind in index.values:
-                try:
-                    iloc = self._processed.index.get_loc(ind)
-                    self._validate_iloc(ind, iloc)
-                    indices.append((ind, iloc))
-                except KeyError:
-                    continue
+            if has_index(self.value):
+                index = self.value.iloc[self.selection].index
+                indices = []
+                for ind in index.values:
+                    try:
+                        iloc = self._processed.index.get_loc(ind)
+                        self._validate_iloc(ind, iloc)
+                        indices.append((ind, iloc))
+                    except KeyError:
+                        continue
+            else:
+                # Without labels a selected row is already its own position.
+                indices = [(i, i) for i in self.selection]
             if self.pagination == 'remote':
                 nrows = self.page_size or self.initial_page_size
                 start = (self.page - 1) * nrows
                 end = start+nrows
-                p_range = self._processed.index[start:end]
+                p_range = (
+                    self._processed.index[start:end] if has_index(self._processed)
+                    else range(start, end)
+                )
                 indices = [iloc - start for ind, iloc in indices
                            if ind in p_range]
             else:

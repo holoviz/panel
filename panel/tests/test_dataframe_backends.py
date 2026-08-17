@@ -10,6 +10,8 @@ of passing silently.
 import pandas as pd
 import pytest
 
+from bokeh.document import Document
+
 from panel._dataframe import is_dataframe, to_narwhals
 from panel.pane import DataFrame as DataFramePane, Perspective
 from panel.widgets import DataFrame as DataFrameWidget, Tabulator
@@ -40,6 +42,15 @@ ENTRY_POINT_BACKENDS = [
     pytest.param(polars_frame, id='polars', marks=_unsupported),
     pytest.param(pyarrow_frame, id='pyarrow', marks=_unsupported),
 ]
+# Tables read any backend; the panes do not yet.
+TABLE_BACKENDS = [pytest.param(f, id=i) for f, i in zip(BACKENDS, BACKEND_IDS, strict=True)]
+
+
+@pytest.mark.parametrize('frame', BACKENDS, ids=BACKEND_IDS)
+def test_has_index_is_true_only_for_pandas_like_frames(frame):
+    from panel._dataframe import has_index
+
+    assert has_index(frame()) is (frame is pandas_frame)
 
 
 @pytest.mark.parametrize('frame', BACKENDS, ids=BACKEND_IDS)
@@ -69,12 +80,29 @@ def test_to_narwhals_rejects_non_frames():
         to_narwhals('not tabular')
 
 
-@pytest.mark.parametrize('frame', ENTRY_POINT_BACKENDS)
+@pytest.mark.parametrize('frame', TABLE_BACKENDS)
 def test_tabulator_accepts_frame(frame):
     assert Tabulator(frame()) is not None
 
 
 @pytest.mark.parametrize('frame', ENTRY_POINT_BACKENDS)
+def test_tabulator_renders_frame(frame):
+    """Rendering still needs backend neutral dtype and column definitions."""
+    table = Tabulator(frame())
+
+    table.server_doc(doc=Document(), title='t')
+
+    assert set(table._data) >= {'a', 'b'}
+
+
+@pytest.mark.parametrize('frame', TABLE_BACKENDS)
+def test_tabulator_indexes_are_empty_for_index_less_backends(frame):
+    table = Tabulator(frame())
+
+    assert table.indexes == (['index'] if frame is pandas_frame else [])
+
+
+@pytest.mark.parametrize('frame', TABLE_BACKENDS)
 def test_dataframe_widget_accepts_frame(frame):
     assert DataFrameWidget(frame()) is not None
 
