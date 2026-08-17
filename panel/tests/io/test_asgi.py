@@ -20,10 +20,12 @@ from panel.pane import Markdown
 ASSETS = pathlib.Path(__file__).parent / 'assets'
 
 
-class CustomComponent(Markdown):
+class CustomComponent:
     """
     Declares a CSS resource so the component resource endpoint has something
-    it is allowed to serve.
+    it is allowed to serve. Deliberately not a Panel component, since a
+    component subclass declared in a test module registers itself in the
+    global pane and model registries for the rest of the session.
     """
 
     _css = ['./assets/custom.css']
