@@ -16,14 +16,14 @@ import typing as t
 
 from collections import Counter, defaultdict
 from collections.abc import (
-    Callable, Coroutine, Hashable, Iterator, Iterator as TIterator,
+    Awaitable, Callable, Coroutine, Hashable, Iterator, Iterator as TIterator,
 )
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager, suppress
 from contextvars import ContextVar
 from functools import partial, wraps
 from urllib.parse import urljoin
-from weakref import WeakKeyDictionary
+from weakref import WeakKeyDictionary, WeakSet
 
 import param
 
@@ -38,12 +38,13 @@ _state_logger = logging.getLogger('panel.state')
 
 if t.TYPE_CHECKING:
     from concurrent.futures import Future
+    from types import ModuleType
 
     from bokeh.application.application import SessionContext
     from bokeh.document import Document
     from bokeh.model import Model
     from bokeh.models import ImportedStyleSheet
-    from bokeh.server.contexts import BokehSessionContext
+    from bokeh.server.contexts import ApplicationContext, BokehSessionContext
     from bokeh.server.session import ServerSession
     from IPython.display import DisplayHandle
     from param.parameterized import Event, Parameterized
@@ -161,8 +162,11 @@ class _state(param.Parameterized):
     _thread_id_: t.ClassVar[WeakKeyDictionary[Document, int]] = WeakKeyDictionary()
     _thread_pool = None
 
+    # The event loops the thread pool was installed on as default executor
+    _executor_loops: t.ClassVar[WeakSet[asyncio.AbstractEventLoop]] = WeakSet()
+
     # Admin application (remove in Panel 1.0 / Bokeh 3.0)
-    _admin_context = None
+    _admin_context: ApplicationContext | None = None
 
     # Jupyter communication
     _comm_manager: type[_CommManager] = _CommManager
@@ -211,8 +215,10 @@ class _state(param.Parameterized):
     _loaded: t.ClassVar[WeakKeyDictionary[Document, bool]] = WeakKeyDictionary()
     _connected: t.ClassVar[WeakKeyDictionary[Document, bool]] = WeakKeyDictionary()
 
-    # Module that was run during setup
-    _setup_module = None
+    # Module that was run during setup and the callback that runs its
+    # server lifecycle hooks once the server is started
+    _setup_module: ModuleType | None = None
+    _setup_file_callback: Callable[[], None] | None = None
 
     # Scheduled callbacks
     _scheduled: t.ClassVar[dict[str, tuple[TIterator[int] | None, Callable[[], None]]]] = {}
@@ -333,6 +339,24 @@ class _state(param.Parameterized):
             except RuntimeError:
                 return
         loop.set_default_executor(self._thread_pool)
+        self._executor_loops.add(loop)
+
+    def _uninstall_thread_pool(self) -> None:
+        """
+        Detaches the shared thread pool from the loops it was installed on
+        before it is shut down, so that a callback scheduled after the
+        shutdown gets a fresh executor rather than raising.
+        """
+        for loop in list(self._executor_loops):
+            if loop.is_closed():
+                continue
+            try:
+                # Clearing the default executor makes asyncio create a new
+                # one lazily, which is what we want here.
+                loop.set_default_executor(None)  # type: ignore[arg-type]
+            except Exception:
+                pass
+        self._executor_loops.clear()
 
     @property
     def _extensions(self):
@@ -560,6 +584,32 @@ class _state(param.Parameterized):
                 self._profiles[(path+':on_load', config.profiler)] += sessions
                 self.param.trigger('_profiles')
         self._loaded[doc] = True
+
+    def _call_later(self, delay: float, callback: Callable[[], Awaitable[None]]) -> None:
+        """
+        Schedules a coroutine function on the server event loop after a
+        delay. Tornado IOLoops accept coroutine callbacks directly while
+        plain asyncio loops (which back the ASGI servers) do not, and may
+        be scheduled on from a worker thread.
+        """
+        loop = self._ioloop
+        if not isinstance(loop, asyncio.AbstractEventLoop):
+            loop.call_later(delay=delay, callback=callback)
+            return
+
+        def _run() -> None:
+            task = asyncio.ensure_future(callback())
+            _tasks.add(task)
+            task.add_done_callback(_tasks.discard)
+
+        try:
+            on_loop = asyncio.get_running_loop() is loop
+        except RuntimeError:
+            on_loop = False
+        if on_loop:
+            loop.call_later(delay, _run)
+        else:
+            loop.call_soon_threadsafe(loop.call_later, delay, _run)
 
     async def _scheduled_cb(self, name: str, threaded: bool = False) -> None:
         if name not in self._scheduled:
@@ -984,6 +1034,7 @@ class _state(param.Parameterized):
             self._busy_counter = []
         self._scheduled.clear()
         if self._thread_pool is not None:
+            self._uninstall_thread_pool()
             self._thread_pool.shutdown(wait=True, _shared=False)
             self._thread_pool = None
         self._sessions.clear()
@@ -1109,9 +1160,7 @@ class _state(param.Parameterized):
         except StopIteration:
             return
         self._scheduled[key] = (diter, callback)
-        self._ioloop.call_later(
-            delay=call_time_seconds, callback=partial(self._scheduled_cb, key, threaded)
-        )
+        self._call_later(call_time_seconds, partial(self._scheduled_cb, key, threaded))
 
     def sync_busy(self, indicator: BooleanIndicator) -> None:
         """

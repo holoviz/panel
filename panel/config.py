@@ -399,6 +399,7 @@ class _config(_base_config):
         from .io.state import _SharedThreadPoolExecutor
         if self.nthreads is None:
             if state._thread_pool is not None:
+                state._uninstall_thread_pool()
                 state._thread_pool.shutdown(wait=False, _shared=False)
             state._thread_pool = None
             return

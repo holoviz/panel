@@ -23,12 +23,17 @@ from bokeh.application.handlers.document_lifecycle import (
 )
 from bokeh.application.handlers.function import FunctionHandler
 from bokeh.command.subcommand import Argument
-from bokeh.command.subcommands.serve import Serve as _BkServe
-from bokeh.command.util import build_single_handler_applications
+from bokeh.command.subcommands.serve import (
+    Serve as _BkServe, log as bk_serve_log,
+)
+from bokeh.command.util import build_single_handler_applications, die
 from bokeh.core.validation import silence
 from bokeh.core.validation.warnings import EMPTY_LAYOUT
+from bokeh.resources import server_url
 from bokeh.server.contexts import ApplicationContext
+from bokeh.server.util import create_hosts_allowlist
 from bokeh.settings import settings
+from bokeh.util.logconfig import basicConfig
 from tornado.ioloop import PeriodicCallback
 from tornado.web import StaticFileHandler
 
@@ -84,6 +89,35 @@ def parse_vars(items):
     Parse a series of key-value pairs and return a dictionary
     """
     return dict(parse_var(item) for item in items)
+
+
+def _uvicorn_server(uv_config, on_started):
+    """
+    Builds the uvicorn server, invoking ``on_started`` once it is actually
+    accepting connections, i.e. once the port it bound is known.
+    """
+    import uvicorn
+
+    class PanelUvicornServer(uvicorn.Server):
+
+        async def startup(self, sockets=None):
+            await super().startup(sockets=sockets)
+            on_started(self)
+
+    return PanelUvicornServer(uv_config)
+
+
+def _bound_port(server) -> int | None:
+    """
+    The port the uvicorn server actually bound, which differs from the
+    requested port when serving on port 0.
+    """
+    for listener in server.servers:
+        for sock in listener.sockets:
+            address = sock.getsockname()
+            if isinstance(address, tuple) and len(address) >= 2:
+                return address[1]
+    return None
 
 
 class AdminApplicationContext(ApplicationContext):
@@ -318,10 +352,47 @@ class Serve(_BkServe):
             action  = 'store_true',
             help    = "Whether to add a global loading spinner to the application(s).",
         )),
+        ('--server', Argument(
+            action  = 'store',
+            type    = str,
+            default = 'tornado',
+            choices = ['tornado', 'fastapi', 'asgi'],
+            help    = (
+                "The server implementation to serve the application(s) with. "
+                "'tornado' serves on the Bokeh/Tornado server, 'asgi' and "
+                "'fastapi' serve the ASGI application on uvicorn."
+            )
+        )),
     )) # type: ignore[assignment, ty:invalid-assignment]
+
+    # Arguments which are implemented with Tornado request handlers and
+    # therefore cannot be served by the ASGI implementations.
+    _tornado_only_args: t.ClassVar[dict[str, str]] = {
+        'plugins': '--plugins',
+        'rest_provider': '--rest-provider',
+        'rest_session_info': '--rest-session-info',
+        'enable_xsrf_cookies': '--enable-xsrf-cookies',
+    }
+
+    # The server arguments the ASGI implementations understand, i.e. those
+    # accepted by BokehServerCore and PanelASGI.
+    _asgi_args: t.ClassVar[tuple[str, ...]] = (
+        'auth_provider', 'check_unused_sessions_milliseconds', 'exclude_cookies',
+        'exclude_headers', 'generate_session_ids', 'ico_path', 'include_cookies',
+        'include_headers', 'index', 'keep_alive_milliseconds',
+        'mem_log_frequency_milliseconds', 'prefix', 'secret_key',
+        'session_token_expiration', 'sign_sessions',
+        'stats_log_frequency_milliseconds',
+        'unused_session_lifetime_milliseconds',
+    )
 
     # Supported file extensions
     _extensions = ['.py', '.ipynb', '.md']
+
+    # State shared between _configure_panel and the route/server construction
+    _admin_path = '/admin'
+    _files: list[str] = []
+    _static_dirs: dict[str, str] = {}
 
     def customize_applications(self, args, applications):
         if args.index and not args.index.endswith('.html'):
@@ -362,21 +433,30 @@ class Serve(_BkServe):
 
         Should modify and return a copy of the ``server_kwargs`` dictionary.
         '''
+        kwargs = self._configure_panel(args, server_kwargs)
+        self._tornado_routes(args, kwargs)
+        return kwargs
+
+    def _configure_panel(self, args, server_kwargs):
+        '''Applies the transport neutral configuration.
+
+        Mutates ``pn.config`` and ``pn.state`` as requested on the
+        commandline and returns the server arguments every server
+        implementation understands. The Tornado request handlers Panel
+        serves alongside the applications are added by ``_tornado_routes``.
+        '''
         kwargs = dict(server_kwargs)
         if 'index' not in kwargs:
             kwargs['index'] = INDEX_HTML
         elif kwargs['index'].endswith('.html'):
             kwargs['index'] = os.path.abspath(kwargs['index'])
 
-        # Handle tranquilized functions in the supplied functions
-        kwargs['extra_patterns'] = patterns = kwargs.get('extra_patterns', [])
-
         if args.ico_path:
             settings.ico_path.set_value(args.ico_path)
         else:
             kwargs["ico_path"] = DIST_DIR / "images" / "favicon.ico"
-        static_dirs = parse_vars(args.static_dirs) if args.static_dirs else {}
-        patterns += get_static_routes(static_dirs)
+
+        self._static_dirs = parse_vars(args.static_dirs) if args.static_dirs else {}
 
         files = []
         for f in args.files:
@@ -384,6 +464,7 @@ class Serve(_BkServe):
                 files.extend(glob(f))
             else:
                 files.append(f)
+        self._files = files
 
         if args.index and not args.index.endswith('.html'):
             found = False
@@ -411,13 +492,6 @@ class Serve(_BkServe):
             for item in args.index_titles:
                 slug, title = item.split('=', 1)
                 config.index_titles[slug] = title
-
-        # Handle tranquilized functions in the supplied functions
-        if args.rest_provider in REST_PROVIDERS:
-            pattern = REST_PROVIDERS[args.rest_provider](files, args.rest_endpoint)
-            patterns.extend(pattern)
-        elif args.rest_provider is not None:
-            raise ValueError(f"rest-provider {args.rest_provider!r} not recognized.")
 
         config.global_loading_spinner = args.global_loading_spinner
         config.reuse_sessions = args.reuse_sessions
@@ -472,55 +546,27 @@ class Serve(_BkServe):
 
         # Disable Tornado's autoreload
         if args.dev:
-            del server_kwargs['autoreload']
-
-        if args.liveness:
-            argvs = {f: args.args for f in files}
-            applications = build_single_handler_applications(files, argvs)
-            patterns += [(rf"/{args.liveness_endpoint}", LivenessHandler, dict(applications=applications))]
+            server_kwargs.pop('autoreload', None)
 
         config.profiler = args.profiler
         if args.admin:
             from ..io.admin import admin_panel
-            from ..io.server import per_app_patterns
 
             # If `--admin-endpoint` is not set, then we default to the `/admin` path.
             admin_path = "/admin"
             if args.admin_endpoint:
                 admin_path = args.admin_endpoint
                 admin_path = admin_path if admin_path.startswith('/') else f'/{admin_path}'
+            self._admin_path = admin_path
 
             config._admin = True
             app = Application(FunctionHandler(admin_panel))
             unused_timeout = args.check_unused_sessions or 15000
-            state._admin_context = app_ctx = AdminApplicationContext(
+            state._admin_context = AdminApplicationContext(
                 app, unused_timeout=unused_timeout, url=admin_path
             )
             if all(not isinstance(handler, DocumentLifecycleHandler) for handler in app._handlers):
                 app.add(DocumentLifecycleHandler())
-            app_patterns = []
-            for p in per_app_patterns:
-                route = admin_path + p[0]
-                context = {"application_context": app_ctx}
-                app_patterns.append((route, p[1], context))
-
-            websocket_path = None
-            for r in app_patterns:
-                if r[0].endswith("/ws"):
-                    websocket_path = r[0]
-            if not websocket_path:
-                raise RuntimeError("Couldn't find websocket path")
-            for r in app_patterns:
-                r[2]["bokeh_websocket_path"] = websocket_path
-            try:
-                import snakeviz
-                SNAKEVIZ_PATH = os.path.join(os.path.dirname(snakeviz.__file__), 'static')
-                app_patterns.append(
-                    ('/snakeviz/static/(.*)', StaticFileHandler, dict(path=SNAKEVIZ_PATH))
-                )
-            except Exception:
-                pass
-            patterns.extend(app_patterns)
             if args.admin_log_level is not None:
                 if os.environ.get('PANEL_ADMIN_LOG_LEVEL'):
                     raise ValueError(
@@ -532,10 +578,6 @@ class Serve(_BkServe):
                     config.admin_log_level = args.admin_log_level.upper()
 
         config.session_history = args.session_history
-        if args.rest_session_info:
-            pattern = REST_PROVIDERS['param'](files, 'rest')
-            patterns.extend(pattern)
-            state.publish('session_info', state, ['session_info'])
 
         if args.num_threads is not None:
             if config.nthreads is not None:
@@ -626,25 +668,6 @@ class Serve(_BkServe):
                     "Supply OAuth provider either using environment variable "
                     "or via explicit argument, not both."
                 )
-
-        for plugin in (args.plugins or []):
-            try:
-                with add_sys_path('./'):
-                    plugin_module = importlib.import_module(plugin)
-            except ModuleNotFoundError as e:
-                raise Exception(
-                    f'Specified plugin module {plugin!r} could not be found. '
-                    'Ensure the module exists and is in the right path. '
-                ) from e
-            try:
-                routes = plugin_module.ROUTES
-            except AttributeError as e:
-                raise Exception(
-                    f'The plugin module {plugin!r} does not declare '
-                    'a ROUTES variable. Ensure that the module provides '
-                    'a list of ROUTES to serve.'
-                ) from e
-            patterns.extend(routes)
 
         if args.oauth_provider:
             config.oauth_provider = args.oauth_provider
@@ -768,6 +791,254 @@ class Serve(_BkServe):
 
         return kwargs
 
+    def _tornado_routes(self, args, kwargs):
+        '''Adds the Tornado request handlers Panel serves alongside the apps.
+
+        Everything registered here is implemented as a Tornado
+        ``RequestHandler`` and therefore only applies to
+        ``--server tornado``. The ASGI implementations serve the
+        equivalent endpoints from ``panel.io.asgi.PanelASGI``.
+        '''
+        kwargs['extra_patterns'] = patterns = kwargs.get('extra_patterns', [])
+        patterns += get_static_routes(self._static_dirs)
+
+        # Handle tranquilized functions in the supplied functions
+        if args.rest_provider in REST_PROVIDERS:
+            patterns.extend(REST_PROVIDERS[args.rest_provider](self._files, args.rest_endpoint))
+        elif args.rest_provider is not None:
+            raise ValueError(f"rest-provider {args.rest_provider!r} not recognized.")
+
+        if args.liveness:
+            argvs = {f: args.args for f in self._files}
+            applications = build_single_handler_applications(self._files, argvs)
+            patterns += [(rf"/{args.liveness_endpoint}", LivenessHandler, dict(applications=applications))]
+
+        if args.admin:
+            patterns.extend(self._admin_patterns())
+
+        if args.rest_session_info:
+            patterns.extend(REST_PROVIDERS['param'](self._files, 'rest'))
+            state.publish('session_info', state, ['session_info'])
+
+        for plugin in (args.plugins or []):
+            try:
+                with add_sys_path('./'):
+                    plugin_module = importlib.import_module(plugin)
+            except ModuleNotFoundError as e:
+                raise Exception(
+                    f'Specified plugin module {plugin!r} could not be found. '
+                    'Ensure the module exists and is in the right path. '
+                ) from e
+            try:
+                routes = plugin_module.ROUTES
+            except AttributeError as e:
+                raise Exception(
+                    f'The plugin module {plugin!r} does not declare '
+                    'a ROUTES variable. Ensure that the module provides '
+                    'a list of ROUTES to serve.'
+                ) from e
+            patterns.extend(routes)
+
+        return patterns
+
+    def _admin_patterns(self):
+        '''Replicates the per-application routes for the admin application.
+
+        On Tornado the admin application is not part of the applications the
+        server was constructed with, so its document, websocket and autoload
+        routes have to be registered by hand.
+        '''
+        from ..io.server import per_app_patterns
+
+        app_ctx = state._admin_context
+        admin_path = self._admin_path
+        app_patterns = []
+        for p in per_app_patterns:
+            route = admin_path + p[0]
+            context = {"application_context": app_ctx}
+            app_patterns.append((route, p[1], context))
+
+        websocket_path = None
+        for r in app_patterns:
+            if r[0].endswith("/ws"):
+                websocket_path = r[0]
+        if not websocket_path:
+            raise RuntimeError("Couldn't find websocket path")
+        for r in app_patterns:
+            r[2]["bokeh_websocket_path"] = websocket_path
+        try:
+            import snakeviz
+            SNAKEVIZ_PATH = os.path.join(os.path.dirname(snakeviz.__file__), 'static')
+            app_patterns.append(
+                ('/snakeviz/static/(.*)', StaticFileHandler, dict(path=SNAKEVIZ_PATH))
+            )
+        except Exception:
+            pass
+        return app_patterns
+
+    def _asgi_applications(self, args):
+        '''Builds the applications to serve, mirroring Bokeh's own invoke.'''
+        files = []
+        for f in args.files:
+            if args.glob:
+                files.extend(glob(f))
+            else:
+                files.append(f)
+        argvs = {f: args.args for f in files}
+        applications = build_single_handler_applications(files, argvs)
+        if not applications:
+            applications['/'] = Application()
+        return self.customize_applications(args, applications)
+
+    def _asgi_server_kwargs(self, args):
+        '''Builds the ``BokehServerCore`` arguments requested on the CLI.'''
+        # Rename the abbreviated arguments the same way Bokeh does
+        for short, long in (
+            ('keep_alive', 'keep_alive_milliseconds'),
+            ('check_unused_sessions', 'check_unused_sessions_milliseconds'),
+            ('unused_session_lifetime', 'unused_session_lifetime_milliseconds'),
+            ('stats_log_frequency', 'stats_log_frequency_milliseconds'),
+            ('mem_log_frequency', 'mem_log_frequency_milliseconds'),
+        ):
+            if (value := getattr(args, short, None)) is not None:
+                setattr(args, long, value)
+
+        server_kwargs = {
+            key: getattr(args, key) for key in (
+                'prefix', 'index', 'keep_alive_milliseconds',
+                'check_unused_sessions_milliseconds',
+                'unused_session_lifetime_milliseconds',
+                'stats_log_frequency_milliseconds',
+                'mem_log_frequency_milliseconds', 'include_cookies',
+                'include_headers', 'exclude_cookies', 'exclude_headers',
+                'session_token_expiration',
+            ) if getattr(args, key, None) is not None
+        }
+        server_kwargs['sign_sessions'] = settings.sign_sessions()
+        server_kwargs['secret_key'] = settings.secret_key_bytes()
+        server_kwargs['generate_session_ids'] = True
+        if args.session_ids == 'unsigned':
+            server_kwargs['sign_sessions'] = False
+        elif args.session_ids == 'signed':
+            server_kwargs['sign_sessions'] = True
+        elif args.session_ids == 'external-signed':
+            server_kwargs['sign_sessions'] = True
+            server_kwargs['generate_session_ids'] = False
+        if server_kwargs['sign_sessions'] and not server_kwargs['secret_key']:
+            die("To sign sessions, the BOKEH_SECRET_KEY environment variable must be set; "
+                "the `bokeh secret` command can be used to generate a new key.")
+        server_kwargs['ico_path'] = settings.ico_path(getattr(args, 'ico_path', None))
+        return server_kwargs
+
+    def _invoke_asgi(self, args: argparse.Namespace) -> None:
+        '''Serves the application(s) as an ASGI application on uvicorn.'''
+        try:
+            import uvicorn
+        except ImportError:
+            raise ImportError(
+                f"Serving with --server {args.server} requires uvicorn to be "
+                "installed. Install it with `pip install uvicorn` or "
+                "`conda install -c conda-forge uvicorn`."
+            ) from None
+
+        from ..io.asgi import PanelASGI
+
+        basicConfig(format=args.log_format, filename=args.log_file)
+        log_level = logging.INFO if (level := settings.py_log_level(args.log_level)) is None else level
+        logging.getLogger('bokeh').setLevel(log_level)
+        if args.use_config is not None:
+            log.info(f"Using override config file: {args.use_config}")
+            settings.load_config(args.use_config)
+
+        for arg, flag in self._tornado_only_args.items():
+            if getattr(args, arg, None):
+                die(f"{flag} is implemented with Tornado request handlers and "
+                    f"cannot be served with --server {args.server}. Use "
+                    "--server tornado to enable it.")
+        if args.num_procs != 1:
+            die(f"--num-procs is not supported with --server {args.server}. "
+                "Run multiple uvicorn worker processes behind a load balancer "
+                "instead.")
+
+        applications = self._asgi_applications(args)
+        kwargs = self._configure_panel(args, self._asgi_server_kwargs(args))
+        asgi_kwargs = {k: v for k, v in kwargs.items() if k in self._asgi_args}
+
+        port = None if args.unix_socket else args.port
+        ssl_certfile = settings.ssl_certfile(getattr(args, 'ssl_certfile', None))
+        ssl_keyfile = settings.ssl_keyfile(getattr(args, 'ssl_keyfile', None))
+        asgi_kwargs['extra_websocket_origins'] = create_hosts_allowlist(
+            args.allow_websocket_origin, port
+        )
+        asgi_kwargs['absolute_url'] = server_url(args.address, port, bool(ssl_certfile))
+
+        admin_context = state._admin_context if args.admin else None
+        if admin_context is not None:
+            applications[self._admin_path] = admin_context.application
+
+        asgi = PanelASGI(
+            applications,
+            index_enabled=not args.disable_index,
+            redirect_root=not args.disable_index_redirect,
+            static_dirs=self._static_dirs,
+            liveness=args.liveness_endpoint if args.liveness else False,
+            **asgi_kwargs
+        )
+        if admin_context is not None:
+            # Panel's AdminApplicationContext adds the periodic session
+            # cleanup the admin dashboard depends on, so it replaces the
+            # context BokehServerCore built for the admin application.
+            asgi.core._applications[self._admin_path] = admin_context
+
+        app: t.Any = asgi
+        if args.server == 'fastapi':
+            from ..io.fastapi import FastAPI, _install_panel_asgi
+            app = FastAPI()
+            _install_panel_asgi(app, asgi)
+
+        uvicorn_kwargs: dict[str, t.Any] = {}
+        if args.unix_socket:
+            uvicorn_kwargs['uds'] = args.unix_socket
+        else:
+            uvicorn_kwargs['host'] = args.address or '0.0.0.0'  # noqa: S104
+            uvicorn_kwargs['port'] = args.port
+        if args.root_path:
+            uvicorn_kwargs['root_path'] = args.root_path
+        if args.websocket_max_message_size:
+            uvicorn_kwargs['ws_max_size'] = args.websocket_max_message_size
+        if ssl_certfile:
+            uvicorn_kwargs['ssl_certfile'] = ssl_certfile
+        if ssl_keyfile:
+            uvicorn_kwargs['ssl_keyfile'] = ssl_keyfile
+        if (ssl_password := settings.ssl_password()):
+            uvicorn_kwargs['ssl_keyfile_password'] = ssl_password
+        if args.use_xheaders:
+            uvicorn_kwargs['proxy_headers'] = True
+            uvicorn_kwargs['forwarded_allow_ips'] = '*'
+
+        protocol = 'https' if ssl_certfile else 'http'
+        address_string = args.address or 'localhost'
+        prefix = asgi.core.prefix
+
+        def on_started(server):
+            # Log where Bokeh's own serve command logs. Panel's logger does not
+            # propagate and is filtered by config.log_level, which would hide
+            # the server startup messages.
+            urls = []
+            if (bound := _bound_port(server)) is not None:
+                for route in sorted(applications):
+                    url = f"{protocol}://{address_string}:{bound}{prefix}{route}"
+                    bk_serve_log.info(f"Bokeh app running at: {url}")
+                    urls.append(url)
+            bk_serve_log.info(f"Starting Bokeh server with process id: {os.getpid()}")
+            if args.show:
+                from bokeh.util.browser import view
+                for url in urls:
+                    view(url, new='tab')
+
+        uv_config = uvicorn.Config(app, **uvicorn_kwargs)
+        _uvicorn_server(uv_config, on_started).run()
+
     def invoke(self, args: argparse.Namespace):
         # Autoreload must be enabled before the application(s) are executed
         # to avoid erroring out
@@ -781,4 +1052,7 @@ class Serve(_BkServe):
         if "DASK_DISTRIBUTED__LOGGING__BOKEH" not in os.environ:
             os.environ["DASK_DISTRIBUTED__LOGGING__BOKEH"] = "info"
         args.dev = None
-        super().invoke(args)
+        if getattr(args, 'server', 'tornado') == 'tornado':
+            super().invoke(args)
+        else:
+            self._invoke_asgi(args)

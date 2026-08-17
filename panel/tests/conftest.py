@@ -626,7 +626,8 @@ def panel_test_cdn():
 @pytest.fixture(params=["tornado", "fastapi"])
 def server_implementation(request):
     if request.param == "fastapi":
-        pytest.importorskip("bokeh_fastapi", reason='bokeh_fastapi is not installed')
+        pytest.importorskip("fastapi", reason='fastapi is not installed')
+        pytest.importorskip("uvicorn", reason='uvicorn is not installed')
     old = serve_and_wait.server_implementation
     serve_and_wait.server_implementation = request.param
     try:
