@@ -1,5 +1,53 @@
 # Releases
 
+## Version 1.9.4
+
+Panel 1.9.4 is a patch release focused on rendering robustness for ESM/React components, several `Tabulator` and `Pipeline` fixes, OAuth hardening, and stylesheet/loading reliability improvements. It also adds support for movable `Tabulator` columns. Many thanks to @TheoMathurin, @rimsha152007-dotcom, @ebarkhordar, @SimonHeybrock, @ahuang11, @Kkkakania, @EltonChang1, @hoxbro, @MarcSkovMadsen, @Coderambling, @SuMayaBee, @youdie006, @kyo5uke, @ghostiee-11 and @philippjfr for contributing to this release.
+
+### 🚀 Features
+
+* Support movable `Tabulator` columns ([#8685](https://github.com/holoviz/panel/pull/8685))
+
+### 🎨 UI Improvements
+
+* Align loading spinner with `panel-material-ui` ([#8686](https://github.com/holoviz/panel/pull/8686))
+
+### 🐛 Bug Fixes
+
+* Report the pre-edit value on `Tabulator` value events ([#8714](https://github.com/holoviz/panel/pull/8714))
+* Raise a clear type error for unsupported `Perspective` objects ([#8720](https://github.com/holoviz/panel/pull/8720))
+* Fix `Tabulator` `starts` and `ends` header filters ([#8719](https://github.com/holoviz/panel/pull/8719))
+* Ensure ESM component child views aren't created concurrently ([#8713](https://github.com/holoviz/panel/pull/8713))
+* Inline versioned stylesheets on the notebook update path ([#8708](https://github.com/holoviz/panel/pull/8708))
+* Resolve invisible slider title font color in Fast theme's light mode ([#8704](https://github.com/holoviz/panel/pull/8704))
+* Various ESM component robustness fixes ([#8702](https://github.com/holoviz/panel/pull/8702))
+* Reveal markup panes when their stylesheets fail to load or are replaced ([#8700](https://github.com/holoviz/panel/pull/8700))
+* Drain held events once connected ([#8698](https://github.com/holoviz/panel/pull/8698))
+* Fix `Tabulator` `row_content` in `panel-material-ui` dynamic `Tabs` ([#8697](https://github.com/holoviz/panel/pull/8697))
+* Claim the Document thread before running app code ([#8693](https://github.com/holoviz/panel/pull/8693))
+* Ensure explicitly set sizing options are respected ([#8687](https://github.com/holoviz/panel/pull/8687))
+* Fix `Feed` rendering all objects at once ([#8667](https://github.com/holoviz/panel/pull/8667))
+* Fix repeated `Location` sync mappings ([#8660](https://github.com/holoviz/panel/pull/8660))
+* Fix `Tabulator` page size handling ([#8657](https://github.com/holoviz/panel/pull/8657))
+* Fix Fast theme `Progress` indicator height ([#8652](https://github.com/holoviz/panel/pull/8652))
+* Return a clean 403 for unauthenticated WebSocket connections ([#8639](https://github.com/holoviz/panel/pull/8639))
+* Set `Cache-Control: no-store` on the Bokeh document page ([#8636](https://github.com/holoviz/panel/pull/8636))
+* Forward additional `oauth_extra_params` to the OAuth authorization endpoint ([#8635](https://github.com/holoviz/panel/pull/8635))
+* Ensure `Pipeline` `ready` parameter and next button stay in sync after using the previous button ([#8633](https://github.com/holoviz/panel/pull/8633))
+* Ensure `Pipeline` previous button sets the correct stage in the graph ([#8630](https://github.com/holoviz/panel/pull/8630))
+
+### 📚 Documentation
+
+* Add `panel-live-server` to docs Extensions gallery ([#8703](https://github.com/holoviz/panel/pull/8703))
+* Clarify `FileDropper` upload progress indicator documentation ([#8684](https://github.com/holoviz/panel/pull/8684))
+* Fix reactive row count in interactivity tutorial ([#8683](https://github.com/holoviz/panel/pull/8683))
+* Expand layout sizing controls documentation ([#8682](https://github.com/holoviz/panel/pull/8682))
+* Add `Spacer` reference notebook ([#8681](https://github.com/holoviz/panel/pull/8681))
+* Add ESM components card to explanation Components section ([#8673](https://github.com/holoviz/panel/pull/8673))
+* Fix typo and optimize phrasing ([#8665](https://github.com/holoviz/panel/pull/8665))
+* Fix the "Could not open websocket" / multiple-accounts OAuth troubleshooting guide ([#8637](https://github.com/holoviz/panel/pull/8637))
+* Document that JSON embed files must be served over HTTP ([#8632](https://github.com/holoviz/panel/pull/8632))
+
 ## Version 1.9.3
 
 Panel 1.9.3 is a patch release addressing several bug fixes for ReactiveESM components, OAuth handling, and dev mode document cleanup. Many thanks to @CodeRambling, @Hoxbro and @philippjfr for contributing to this release.
