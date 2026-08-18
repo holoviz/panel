@@ -419,7 +419,7 @@ class Syncable(Renderable):
         if ref in self._models:
             model, _ = self._models.pop(ref, None)
             model._callbacks = {}
-            model._event_callbacks = {}
+            model._event_callbacks = defaultdict(list)
         if not self._models and self._watching_stylesheets:
             self._watching_stylesheets.set()
             if self._watching_stylesheets in state._watch_events:
