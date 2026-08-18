@@ -678,11 +678,14 @@ class BaseTable(ReactiveData, Widget):
         import narwhals.stable.v2 as nw
         exprs = []
         schema = nw_df.schema
+        # header_filters is either a bool or a per column config dict, and only
+        # the dict form carries options for the keywords filter.
+        header_filters = getattr(self, 'header_filters', None)
+        filt_def = header_filters if isinstance(header_filters, dict) else {}
         for filt in getattr(self, 'filters', []):
             col_name = filt['field']
             op = filt['type']
             val = filt['value']
-            filt_def = getattr(self, 'header_filters', {}) or {}
             if col_name not in nw_df.columns:
                 continue
             col = nw.col(col_name)
