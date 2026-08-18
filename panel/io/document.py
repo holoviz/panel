@@ -68,9 +68,9 @@ class Request:
 
 class MockSessionContext(SessionContext):
 
-    def __init__(self, *args, document: Document, **kwargs):
+    def __init__(self, document: Document):
         self._document = document
-        super().__init__(*args, server_context=None, session_id=None, **kwargs)
+        super().__init__(server_context=None, session_id=None)  # type: ignore[arg-type]
 
     def with_locked_document(self, *args):
         return
