@@ -6,6 +6,7 @@ import {Location} from "@bokehjs/core/enums"
 import {GridAlignmentLayout} from "@bokehjs/models/layouts/alignments"
 import {Tabs as BkTabs, TabsView as BkTabsView} from "@bokehjs/models/layouts/tabs"
 import {LayoutDOMView} from "@bokehjs/models/layouts/layout_dom"
+import type {UIElementView} from "@bokehjs/models/ui/ui_element"
 
 function show(element: HTMLElement): void {
   element.style.visibility = ""
@@ -36,11 +37,17 @@ export class TabsView extends BkTabsView {
   }
 
   override update_active(): void {
-    // Bokeh renders the active panel via a `.bk-active` CSS class, but Panel
-    // additionally toggles inline visibility on the child elements (see
-    // `_update_child_visibility`). Re-apply it whenever the active tab changes.
+    super.update_active()
     this._update_child_visibility()
     this.update_zindex()
+  }
+
+  protected _active_child_view(): UIElementView | undefined {
+    const tab = this.model.tabs[this.model.active]
+    if (tab == null) {
+      return undefined
+    }
+    return this.child_views.find((child_view) => child_view.model == tab.child)
   }
 
   protected _update_child_visibility(): void {
@@ -50,12 +57,9 @@ export class TabsView extends BkTabsView {
         hide(child_view.el)
       }
     }
-    const {active} = this.model
-    if (active in child_views) {
-      const tab = child_views[active]
-      if (tab != null) {
-        show(tab.el)
-      }
+    const active = this._active_child_view()
+    if (active != null) {
+      show(active.el)
     }
   }
 
@@ -64,7 +68,7 @@ export class TabsView extends BkTabsView {
     let current_view: any = this
     while (parent != null) {
       if (parent.model.type.endsWith("Tabs")) {
-        if (parent.child_views.indexOf(current_view) !== parent.model.active) {
+        if (parent._active_child_view() !== current_view) {
           return false
         }
       }
@@ -87,7 +91,7 @@ export class TabsView extends BkTabsView {
       }
     }
     if (this.is_visible) {
-      const active = child_views[this.model.active]
+      const active = this._active_child_view()
       if (active != null && active.el != null) {
         active.el.style.zIndex = "1"
       }
