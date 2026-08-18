@@ -190,6 +190,42 @@ def test_range_filters_apply_on_any_backend(frame):
     assert list(to_narwhals(table.current_view)['n']) == [2, 3]
 
 
+SORT_DATA = {'n': [2, 1, 3, 1], 'w': ['Gamma', 'alpha', 'Beta', 'alpha']}
+
+
+@pytest.mark.parametrize('frame', TABLE_BACKENDS)
+@pytest.mark.parametrize(('direction', 'expected'), [
+    ('asc', [1, 1, 2, 3]),
+    ('desc', [3, 2, 1, 1]),
+])
+def test_sorting_applies_on_any_backend(frame, direction, expected):
+    table = Tabulator(frame(SORT_DATA))
+
+    table.sorters = [{'field': 'n', 'dir': direction}]
+
+    assert list(to_narwhals(table.current_view)['n']) == expected
+
+
+@pytest.mark.parametrize('frame', TABLE_BACKENDS)
+def test_string_sorting_is_case_insensitive_on_any_backend(frame):
+    """Tabulator sorts strings case insensitively, so the server must too."""
+    table = Tabulator(frame(SORT_DATA))
+
+    table.sorters = [{'field': 'w', 'dir': 'asc'}]
+
+    assert list(to_narwhals(table.current_view)['w']) == ['alpha', 'alpha', 'Beta', 'Gamma']
+
+
+@pytest.mark.parametrize('frame', TABLE_BACKENDS)
+def test_sorting_breaks_ties_by_original_position(frame):
+    table = Tabulator(frame(SORT_DATA))
+
+    table.sorters = [{'field': 'n', 'dir': 'asc'}]
+
+    # The two rows with n == 1 must keep the order they arrived in.
+    assert list(to_narwhals(table.current_view)['w'])[:2] == ['alpha', 'alpha']
+
+
 @pytest.mark.parametrize('frame', TABLE_BACKENDS)
 def test_filter_callables_receive_their_own_backend(frame):
     seen = []

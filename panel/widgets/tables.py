@@ -490,9 +490,40 @@ class BaseTable(ReactiveData, Widget):
             else:
                 self._update_columns(event, model)
 
+    def _sort_frame_without_index(self, df):
+        """
+        Sort a frame that has no row index, using Narwhals.
+
+        Mirrors the pandas implementation: string columns sort case
+        insensitively to match Tabulator's own ordering, and the original
+        row position breaks ties so the sort stays stable.
+        """
+        import narwhals.stable.v2 as nw
+        nw_df = to_narwhals(df).with_row_index('_index_')
+        schema = nw_df.schema
+        keys, descending, helpers = [], [], []
+        for sorter in self.sorters:
+            field = self._renamed_cols.get(sorter['field'], sorter['field'])
+            if field not in nw_df.columns:
+                continue
+            if dtype_kind(schema[field]) == 'O':
+                helper = f'_sort_{field}_'
+                nw_df = nw_df.with_columns(nw.col(field).str.to_lowercase().alias(helper))
+                helpers.append(helper)
+                keys.append(helper)
+            else:
+                keys.append(field)
+            descending.append(sorter['dir'] != 'asc')
+        keys.append('_index_')
+        descending.append(False)
+        sorted_df = nw_df.sort(by=keys, descending=descending)
+        return sorted_df.drop('_index_', *helpers).to_native()
+
     def _sort_df(self, df: pd.DataFrame) -> pd.DataFrame:
         if not self.sorters:
             return df
+        if is_dataframe(df) and not has_index(df):
+            return self._sort_frame_without_index(df)
         fields = [self._renamed_cols.get(s['field'], s['field']) for s in self.sorters]
         ascending = [s['dir'] == 'asc' for s in self.sorters]
 
