@@ -34,7 +34,9 @@ from ..util import (
     clone_model, datetime_as_utctimestamp, isdatetime, lazy_load,
     styler_update, updating,
 )
-from ..util.dataframe import dtype_kind, has_index, to_narwhals
+from ..util.dataframe import (
+    dtype_kind, has_index, is_dataframe, to_narwhals,
+)
 from ..util.warnings import warn
 from .base import Widget
 from .button import Button
@@ -94,6 +96,20 @@ def _get_value_from_keys(d:dict, key1, key2, default=None):
         warn(msg, DeprecationWarning)
         return d[key2]
     return default
+
+def _coerce_filter_value(dtype, val):
+    """
+    Cast a header filter value to the column's own type.
+
+    Tabulator sends every filter value as a string, so a numeric column would
+    otherwise be compared against text.
+    """
+    if isinstance(val, str) and dtype.is_integer():
+        return int(val)
+    elif isinstance(val, str) and dtype.is_float():
+        return float(val)
+    return val
+
 
 @contextmanager
 def _stringdtype_error(df: pd.DataFrame, column: str, array):
@@ -537,6 +553,10 @@ class BaseTable(ReactiveData, Widget):
         DataFrame
             The filtered DataFrame
         """
+        # value may also be None or a dict, which the pandas path already
+        # handles, so this only diverts real frames that have no index.
+        if is_dataframe(df) and not has_index(df):
+            return self._filter_frame_without_index(df, header_filters, internal_filters)
         filters = []
         for col_name, filt in (self._filters if internal_filters else []):
             if col_name is not None and col_name not in df.columns:
@@ -591,6 +611,128 @@ class BaseTable(ReactiveData, Widget):
                 mask = mask | edited_mask
             df = df[mask]
         return df
+
+    def _filter_frame_without_index(self, df, header_filters: bool, internal_filters: bool):
+        """
+        Filter a frame that has no row index, using Narwhals expressions.
+
+        Kept separate from the pandas implementation rather than unified with
+        it: the two build masks in different ways, and the pandas path has
+        years of behaviour that a shared abstraction would put at risk. The
+        two must agree on results, which the backend parametrised tests check.
+        """
+        import narwhals.stable.v2 as nw
+        nw_df = to_narwhals(df)
+        exprs = []
+        for col_name, filt in (self._filters if internal_filters else []):
+            if col_name is not None and col_name not in nw_df.columns:
+                continue
+            if isinstance(filt, (FunctionType, MethodType, partial)):
+                # User code gets the native frame, never a Narwhals wrapper.
+                res = filt(nw_df.to_native())
+                if type(res) is type(df):
+                    nw_df = to_narwhals(res)
+                else:
+                    exprs.append(res)
+                continue
+            if isinstance(filt, param.Parameter):
+                if filt.name is None:
+                    continue
+                val = getattr(filt.owner, filt.name)
+            else:
+                val = filt
+            if val is None:
+                continue
+            col = nw.col(col_name)
+            if np.isscalar(val):
+                exprs.append(col == val)
+            elif isinstance(val, (list, set)):
+                if not val:
+                    continue
+                exprs.append(col.is_in(list(val)))
+            elif isinstance(val, tuple):
+                start, end = val
+                if start is None and end is None:
+                    continue
+                elif start is None:
+                    exprs.append(col <= end)
+                elif end is None:
+                    exprs.append(col >= start)
+                else:
+                    exprs.append((col >= start) & (col <= end))
+            else:
+                raise ValueError(f"'{col_name} filter value not "
+                                 "understood. Must be either a scalar, "
+                                 "tuple or list.")
+
+        if header_filters:
+            exprs.extend(self._get_header_filter_exprs(nw_df))
+
+        if not exprs:
+            return nw_df.to_native()
+        combined = exprs[0]
+        for expr in exprs[1:]:
+            combined = combined & expr
+        return nw_df.filter(combined).to_native()
+
+    def _get_header_filter_exprs(self, nw_df) -> list[t.Any]:
+        """Narwhals equivalents of the Tabulator header filters."""
+        import narwhals.stable.v2 as nw
+        exprs = []
+        schema = nw_df.schema
+        for filt in getattr(self, 'filters', []):
+            col_name = filt['field']
+            op = filt['type']
+            val = filt['value']
+            filt_def = getattr(self, 'header_filters', {}) or {}
+            if col_name not in nw_df.columns:
+                continue
+            col = nw.col(col_name)
+            if isinstance(val, list):
+                if len(val) == 1:
+                    val = val[0]
+                elif not val:
+                    continue
+            if not schema[col_name].is_temporal() and not isinstance(val, list):
+                # Tabulator sends filter values as strings; coerce to the
+                # column's own type so comparisons are not string comparisons.
+                val = _coerce_filter_value(schema[col_name], val)
+            if op == '=':
+                exprs.append(col == val)
+            elif op == '!=':
+                exprs.append(col != val)
+            elif op == '<':
+                exprs.append(col < val)
+            elif op == '>':
+                exprs.append(col > val)
+            elif op == '>=':
+                exprs.append(col >= val)
+            elif op == '<=':
+                exprs.append(col <= val)
+            elif op == 'in':
+                exprs.append(col.is_in(val if isinstance(val, list) else [val]))
+            elif op == 'like':
+                exprs.append(col.str.to_lowercase().str.contains(str(val).lower(), literal=True))
+            elif op == 'starts':
+                exprs.append(col.str.to_lowercase().str.starts_with(str(val).lower()))
+            elif op == 'ends':
+                exprs.append(col.str.to_lowercase().str.ends_with(str(val).lower()))
+            elif op == 'keywords':
+                sep = filt_def.get(col_name, {}).get('separator', ' ')
+                matches = [m.lower() for m in str(val).split(sep)]
+                lowered = col.str.to_lowercase()
+                if filt_def.get(col_name, {}).get('matchAll', False):
+                    exprs.extend(lowered.str.contains(m, literal=True) for m in matches)
+                else:
+                    keyword_expr = lowered.str.contains(matches[0], literal=True)
+                    for match in matches[1:]:
+                        keyword_expr = keyword_expr | lowered.str.contains(match, literal=True)
+                    exprs.append(keyword_expr)
+            elif op == 'regex':
+                raise ValueError("Regex filtering not supported.")
+            else:
+                raise ValueError(f"Filter type {op!r} not recognized.")
+        return exprs
 
     def _get_header_filters(self, df: pd.DataFrame) -> list[pd.Series | np.ndarray]:
         filters = []

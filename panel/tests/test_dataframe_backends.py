@@ -19,6 +19,7 @@ from panel.util.dataframe import is_dataframe, to_narwhals
 from panel.widgets import DataFrame as DataFrameWidget, Tabulator
 
 DATA = {'a': [1, 2, 3], 'b': ['x', 'y', 'z']}
+FILTER_DATA = {'n': [1, 2, 3], 'w': ['alpha', 'beta', 'gamma']}
 TYPED_DATA = {
     'i': [1, 2],
     'f': [1.5, 2.5],
@@ -139,6 +140,67 @@ def test_dataframe_pane_accepts_frame(frame):
 @pytest.mark.parametrize('frame', ENTRY_POINT_BACKENDS)
 def test_perspective_accepts_frame(frame):
     assert Perspective(frame()) is not None
+
+
+@pytest.mark.parametrize('frame', TABLE_BACKENDS)
+@pytest.mark.parametrize(('op', 'value', 'expected'), [
+    ('=', 2, [2]),
+    ('!=', 2, [1, 3]),
+    ('<', 3, [1, 2]),
+    ('>=', 2, [2, 3]),
+    ('in', [1, 3], [1, 3]),
+])
+def test_header_filters_apply_on_any_backend(frame, op, value, expected):
+    table = Tabulator(frame(FILTER_DATA), header_filters=True)
+
+    table.filters = [{'field': 'n', 'type': op, 'value': value}]
+
+    assert list(to_narwhals(table.current_view)['n']) == expected
+
+
+@pytest.mark.parametrize('frame', TABLE_BACKENDS)
+@pytest.mark.parametrize(('op', 'value', 'expected'), [
+    ('like', 'ph', ['alpha']),
+    ('starts', 'be', ['beta']),
+    ('ends', 'MA', ['gamma']),
+])
+def test_string_header_filters_apply_on_any_backend(frame, op, value, expected):
+    table = Tabulator(frame(FILTER_DATA), header_filters=True)
+
+    table.filters = [{'field': 'w', 'type': op, 'value': value}]
+
+    assert list(to_narwhals(table.current_view)['w']) == expected
+
+
+@pytest.mark.parametrize('frame', TABLE_BACKENDS)
+def test_constant_filters_apply_on_any_backend(frame):
+    table = Tabulator(frame(FILTER_DATA))
+
+    table.add_filter(2, 'n')
+
+    assert list(to_narwhals(table.current_view)['n']) == [2]
+
+
+@pytest.mark.parametrize('frame', TABLE_BACKENDS)
+def test_range_filters_apply_on_any_backend(frame):
+    table = Tabulator(frame(FILTER_DATA))
+
+    table.add_filter((2, 3), 'n')
+
+    assert list(to_narwhals(table.current_view)['n']) == [2, 3]
+
+
+@pytest.mark.parametrize('frame', TABLE_BACKENDS)
+def test_filter_callables_receive_their_own_backend(frame):
+    seen = []
+    native = frame(FILTER_DATA)
+    table = Tabulator(native)
+
+    table.add_filter(lambda df: seen.append(type(df)) or df)
+    view = table.current_view
+
+    assert seen == [type(native)]
+    assert len(view) == 3
 
 
 def test_filter_callables_receive_the_native_frame():
