@@ -4,6 +4,8 @@ from importlib.util import find_spec
 
 import pytest
 
+from panel.tests._deps import pd, pd_skip
+
 try:
     import plotly
     import plotly.express as px
@@ -16,7 +18,6 @@ except Exception:
 plotly_available = pytest.mark.skipif(plotly is None, reason="requires plotly")
 
 import numpy as np
-import pandas as pd
 
 from panel.models.plotly import PlotlyPlot
 from panel.pane import PaneBase, Plotly
@@ -215,6 +216,7 @@ def test_clean_relayout_data():
 
 @pytest.mark.skipif(not find_spec("scipy"), reason="requires scipy")
 @plotly_available
+@pd_skip
 def test_plotly_swap_traces(document, comm):
     data_bar = pd.DataFrame({'Count': [1, 2, 3, 4], 'Category': ["A", "B", "C", "D"]})
     data_cts = np.random.randn(1000)
@@ -245,6 +247,7 @@ def test_plotly_swap_traces(document, comm):
 
 
 @plotly_available
+@pd_skip
 def test_plotly_shape_datetime_converted(document, comm):
     # see https://github.com/holoviz/panel/issues/5252
     start = pd.Timestamp('2022-05-11 0:00:00', tz=dt.timezone.utc)
@@ -266,6 +269,7 @@ def test_plotly_shape_datetime_converted(document, comm):
 
 
 @plotly_available
+@pd_skip
 def test_plotly_datetime_converted_2d_array(document, comm):
     # see https://github.com/holoviz/panel/issues/7309
     n_points = 3

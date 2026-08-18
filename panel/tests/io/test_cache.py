@@ -4,12 +4,16 @@ import pathlib
 import time
 
 from collections import Counter
+from typing import Any
 
 import numpy as np
-import pandas as pd
 import param
 import pytest
 import requests
+
+from panel.tests._deps import (
+    pd, pd_skip, pl, pl_skip,
+)
 
 try:
     import diskcache
@@ -137,6 +141,7 @@ def test_ndarray_hash():
         np.array([2, 1, 0])
     )
 
+@pd_skip
 def test_dataframe_hash():
     data = {
         "A": [0.0, 1.0, 2.0, 3.0, 4.0],
@@ -149,6 +154,7 @@ def test_dataframe_hash():
     df2['A'] = df2['A'].values[::-1]
     assert not hashes_equal(df1, df2)
 
+@pd_skip
 def test_series_hash():
     series1 = pd.Series([0.0, 1.0, 2.0, 3.0, 4.0])
     series2 = series1.copy()
@@ -156,8 +162,8 @@ def test_series_hash():
     series2.iloc[0] = 3.14
     assert not hashes_equal(series1, series2)
 
+@pl_skip
 def test_polars_dataframe_hash():
-    pl = pytest.importorskip("polars")
     data = {
         "A": [0.0, 1.0, 2.0, 3.0, 4.0],
         "B": [0.0, 1.0, 0.0, 1.0, 0.0],
@@ -175,8 +181,8 @@ def test_polars_dataframe_hash():
     df2 = df2.with_columns(A=pl.col("A").sort(descending=True))
     assert not hashes_equal(df1, df2)
 
+@pl_skip
 def test_polars_series_hash():
-    pl = pytest.importorskip("polars")
     ser1 = pl.Series([0.0, 1.0, 2.0, 3.0, 4.0])
     ser2 = ser1.clone()
 
@@ -383,20 +389,30 @@ def test_cache_on_undecorated_parameterized_method():
 
     assert model.executions == 2
 
-DF1 = pd.DataFrame({"x": [1]})
-DF2 = pd.DataFrame({"y": [1]})
-
-def test_hash_on_simple_dataframes():
-    assert _generate_hash(DF1)!=_generate_hash(DF2)
-
-@pytest.mark.parametrize(["value", "other", "expected"], [
+is_equal_parameterized: list[tuple[Any, Any, bool]] = [
     (None, None, True),
     (True, False, False), (False, True, False), (False, False, True), (True, True, True),
     (None, 1, False), (1, None, False), (1, 1, True), (1,2,False),
     (None, "a", False), ("a", None, False), ("a", "a", True), ("a","b",False),
     (1,"1", False),
-    (None, DF1, False), (DF1, None, False), (DF1, DF1, True), (DF1, DF1.copy(), True), (DF1,DF2,False),
-])
+]
+
+if pd is not None:
+    DF1 = pd.DataFrame({"x": [1]})
+    DF2 = pd.DataFrame({"y": [1]})
+    is_equal_parameterized.extend([
+        (None, DF1, False,),
+        (DF1, None, False,),
+        (DF1, DF1, True,),
+        (DF1, DF1.copy(), True,),
+        (DF1, DF2, False,),
+    ])
+
+@pd_skip
+def test_hash_on_simple_dataframes():
+    assert _generate_hash(DF1)!=_generate_hash(DF2)
+
+@pytest.mark.parametrize(["value", "other", "expected"], is_equal_parameterized)
 def test_is_equal(value, other, expected):
     assert is_equal(value, other)==expected
 

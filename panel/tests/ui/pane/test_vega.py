@@ -9,11 +9,10 @@ except Exception:
 
 altair_available = pytest.mark.skipif(alt is None, reason='Requires altair')
 
-import pandas as pd
-
 from playwright.sync_api import expect
 
 from panel.pane import Vega
+from panel.tests._deps import pd, pd_skip
 from panel.tests.util import serve_component, wait_until
 
 pytestmark = pytest.mark.ui
@@ -43,6 +42,7 @@ def test_vega_no_console_errors(page):
 
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
+@pd_skip
 def test_vega_update_inline_data(page):
     """
     Ensure new data is rendered when the Vega object is updated with new inline data.

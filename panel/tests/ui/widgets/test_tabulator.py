@@ -5,7 +5,6 @@ import datetime as dt
 from contextlib import contextmanager
 
 import numpy as np
-import pandas as pd
 import param
 import pytest
 
@@ -33,6 +32,7 @@ from panel.widgets import (
 
 pytestmark = pytest.mark.ui
 
+pd = pytest.importorskip("pandas")  # HACK: REMOVE
 
 @pytest.fixture(scope='session')
 def df_mixed_as_string():

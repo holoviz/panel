@@ -4,17 +4,6 @@ import warnings
 import numpy as np
 import pytest
 
-try:
-    import holoviews as hv
-except Exception:
-    hv = None
-
-try:
-    import holoviews.plotting.plotly as hv_plotly
-except Exception:
-    hv_plotly = None
-plotly_available = pytest.mark.skipif(hv_plotly is None, reason="requires plotly backend")
-
 from bokeh.models import (
     Column as BkColumn, ColumnDataSource, GlyphRenderer, GridPlot, Line,
     Row as BkRow, Scatter, Select as BkSelect, Slider as BkSlider,
@@ -29,7 +18,9 @@ from panel.layout import (
     Column, FlexBox, HSpacer, Row,
 )
 from panel.pane import HoloViews, PaneBase, panel
-from panel.tests.util import hv_available, mpl_available
+from panel.tests._deps import (
+    hv, hv_skip, mpl_skip, pd, plotly_skip,
+)
 from panel.theme import Native
 from panel.util.warnings import PanelDeprecationWarning
 from panel.widgets import (
@@ -38,15 +29,27 @@ from panel.widgets import (
 )
 
 
-@hv_available
+@pytest.fixture(autouse=True)
+def no_pandas():
+    if pd:
+        yield
+        return
+    orig = hv.Dataset.datatype
+    try:
+        hv.Dataset.datatype = ["dictionary"]
+        yield
+    finally:
+        hv.Dataset.datatype = orig
+
+@hv_skip
 def test_get_holoviews_pane_type():
     curve = hv.Curve([1, 2, 3])
     assert PaneBase.get_pane_type(curve) is HoloViews
 
 
 @pytest.mark.usefixtures("hv_mpl")
-@mpl_available
-@hv_available
+@mpl_skip
+@hv_skip
 def test_holoviews_pane_mpl_renderer(document, comm):
     curve = hv.Curve([1, 2, 3])
     pane = pn.panel(curve)
@@ -72,8 +75,8 @@ def test_holoviews_pane_mpl_renderer(document, comm):
 
 @pytest.mark.usefixtures("hv_mpl")
 @pytest.mark.usefixtures("hv_bokeh")
-@mpl_available
-@hv_available
+@mpl_skip
+@hv_skip
 def test_holoviews_pane_switch_backend(document, comm):
     curve = hv.Curve([1, 2, 3])
     pane = pn.panel(curve)
@@ -97,7 +100,7 @@ def test_holoviews_pane_switch_backend(document, comm):
 
 
 @pytest.mark.usefixtures("hv_bokeh")
-@hv_available
+@hv_skip
 def test_holoviews_pane_bokeh_renderer(document, comm):
     curve = hv.Curve([1, 2, 3])
     pane = pn.panel(curve)
@@ -128,7 +131,7 @@ def test_holoviews_pane_bokeh_renderer(document, comm):
     assert pane._models == {}
 
 @pytest.mark.usefixtures("hv_bokeh")
-@hv_available
+@hv_skip
 def test_holoviews_pane_initialize_empty(document, comm):
     pane = HoloViews()
 
@@ -145,7 +148,7 @@ def test_holoviews_pane_initialize_empty(document, comm):
     assert isinstance(model, figure)
 
 @pytest.mark.usefixtures("hv_bokeh")
-@hv_available
+@hv_skip
 def test_holoviews_pane_reflect_responsive(document, comm):
     curve = hv.Curve([1, 2, 3]).opts(responsive=True)
     pane = HoloViews(curve)
@@ -162,7 +165,7 @@ def test_holoviews_pane_reflect_responsive(document, comm):
     assert pane.sizing_mode == 'fixed'
 
 @pytest.mark.usefixtures("hv_bokeh")
-@hv_available
+@hv_skip
 def test_holoviews_pane_applies_visible(document, comm):
     curve = hv.Curve([1, 2, 3])
     pane = HoloViews(curve)
@@ -181,7 +184,7 @@ def test_holoviews_pane_applies_visible(document, comm):
     assert row.children[0].visible
 
 @pytest.mark.usefixtures("hv_bokeh")
-@hv_available
+@hv_skip
 def test_holoviews_pane_reflect_responsive_override(document, comm):
     curve = hv.Curve([1, 2, 3]).opts(responsive=True)
     pane = HoloViews(curve, sizing_mode='fixed')
@@ -201,7 +204,7 @@ def test_holoviews_pane_reflect_responsive_override(document, comm):
     assert pane.sizing_mode == 'stretch_both'
 
 @pytest.mark.usefixtures("hv_bokeh")
-@hv_available
+@hv_skip
 def test_holoviews_pane_reflect_responsive_interact_function(document, comm):
     curve_fn = lambda: hv.Curve([1, 2, 3]).opts(responsive=True)
     pane = panel(curve_fn)
@@ -212,7 +215,7 @@ def test_holoviews_pane_reflect_responsive_interact_function(document, comm):
     assert row.sizing_mode == 'stretch_both'
 
 @pytest.mark.usefixtures("hv_bokeh")
-@hv_available
+@hv_skip
 def test_holoviews_pane_reflect_responsive_bind_function(document, comm):
     checkbox = Checkbox(value=True)
     curve_fn = lambda responsive: hv.Curve([1, 2, 3]).opts(responsive=responsive)
@@ -228,8 +231,8 @@ def test_holoviews_pane_reflect_responsive_bind_function(document, comm):
     assert col.sizing_mode == 'fixed'
 
 @pytest.mark.usefixtures("hv_plotly")
-@hv_available
-@plotly_available
+@hv_skip
+@plotly_skip
 def test_holoviews_pane_reflect_responsive_plotly(document, comm):
     curve = hv.Curve([1, 2, 3]).opts(responsive=True, backend='plotly')
     pane = HoloViews(curve, backend='plotly')
@@ -247,8 +250,8 @@ def test_holoviews_pane_reflect_responsive_plotly(document, comm):
 
 
 @pytest.mark.usefixtures("hv_plotly")
-@hv_available
-@plotly_available
+@hv_skip
+@plotly_skip
 def test_holoviews_pane_inherits_design_stylesheets(document, comm):
     curve = hv.Curve([1, 2, 3]).opts(responsive=True, backend='plotly')
     pane = HoloViews(curve, backend='plotly')
@@ -262,7 +265,7 @@ def test_holoviews_pane_inherits_design_stylesheets(document, comm):
 
     assert len(plotly_model.stylesheets) == 6
 
-@hv_available
+@hv_skip
 def test_holoviews_widgets_from_dynamicmap(document, comm):
     range_dim = hv.Dimension('A', range=(0, 10.))
     range_step_dim = hv.Dimension('B', range=(0, 10.), step=0.2)
@@ -313,7 +316,7 @@ def test_holoviews_widgets_from_dynamicmap(document, comm):
     assert widgets[5].options == {str(v): v for v in value_numeric_dim.values}
     assert widgets[5].value == value_numeric_dim.default
 
-@hv_available
+@hv_skip
 def test_holoviews_widgets_from_dynamicmap_overrides(document, comm):
     range_dim = hv.Dimension('A', range=(0, 10.))
     range_step_dim = hv.Dimension('B', range=(0, 10.), step=0.2)
@@ -374,7 +377,7 @@ def test_holoviews_widgets_from_dynamicmap_overrides(document, comm):
     assert widgets[5].value == value_numeric_dim.default
 
 
-@hv_available
+@hv_skip
 def test_holoviews_with_widgets(document, comm):
     hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['X', 'Y'])
 
@@ -394,7 +397,7 @@ def test_holoviews_with_widgets(document, comm):
     assert hv_pane.widget_box.objects[1].label == 'B'
 
 
-@hv_available
+@hv_skip
 def test_holoviews_updates_widgets(document, comm):
     hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['X', 'Y'])
 
@@ -411,7 +414,7 @@ def test_holoviews_updates_widgets(document, comm):
     assert isinstance(layout.children[1].children[0].children[1], BkSlider)
 
 
-@hv_available
+@hv_skip
 def test_holoviews_widgets_update_plot(document, comm):
     hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['X', 'Y'])
 
@@ -425,7 +428,7 @@ def test_holoviews_widgets_update_plot(document, comm):
     assert cds.data['y'] == np.array([1])
 
 
-@hv_available
+@hv_skip
 def test_holoviews_dynamic_widgets_with_unit_updates_plot(document, comm):
     def function(f):
         return hv.Curve((x, np.sin(f*x)))
@@ -442,7 +445,7 @@ def test_holoviews_dynamic_widgets_with_unit_updates_plot(document, comm):
     np.testing.assert_array_equal(cds.data['y'], np.sin(3*x))
 
 
-@hv_available
+@hv_skip
 def test_holoviews_with_widgets_not_shown(document, comm):
     hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['X', 'Y'])
 
@@ -463,7 +466,7 @@ def test_holoviews_with_widgets_not_shown(document, comm):
     assert hv_pane.widget_box.objects[1].label == 'B'
 
 
-@hv_available
+@hv_skip
 def test_holoviews_center(document, comm):
     hv_pane = HoloViews(hv.Curve([1, 2, 3]), backend='bokeh', center=True)
 
@@ -475,7 +478,7 @@ def test_holoviews_center(document, comm):
     assert hv_pane is hv_out
     assert isinstance(hspacer2, HSpacer)
 
-@hv_available
+@hv_skip
 def test_holoviews_layouts(document, comm):
     hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['X', 'Y'])
 
@@ -543,7 +546,7 @@ def test_holoviews_layouts(document, comm):
             assert isinstance(boxmodel.children[1], BkSelect)
 
 
-@hv_available
+@hv_skip
 def test_holoviews_widgets_from_holomap():
     hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['X', 'Y'])
 
@@ -560,7 +563,7 @@ def test_holoviews_widgets_from_holomap():
     assert widgets[1].value == 'A'
 
 
-@hv_available
+@hv_skip
 def test_holoviews_date_slider_widgets_from_holomap():
     hmap = hv.HoloMap({dt.datetime(2016, 1, i+1): hv.Curve([i]) for i in range(3)}, kdims=['X'])
 
@@ -576,7 +579,7 @@ def test_holoviews_date_slider_widgets_from_holomap():
     assert widgets[0].value == dt.datetime(2016, 1, 1)
 
 
-@hv_available
+@hv_skip
 def test_holoviews_widgets_explicit_widget_type_override():
     hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['X', 'Y'])
 
@@ -588,7 +591,7 @@ def test_holoviews_widgets_explicit_widget_type_override():
     assert widgets[0].value == 0
 
 
-@hv_available
+@hv_skip
 def test_holoviews_widgets_invalid_widget_type_override():
     hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['X', 'Y'])
 
@@ -596,7 +599,7 @@ def test_holoviews_widgets_invalid_widget_type_override():
         HoloViews.widgets_from_dimensions(hmap, widget_types={'X': 1})
 
 
-@hv_available
+@hv_skip
 def test_holoviews_widgets_explicit_widget_instance_override():
     hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['X', 'Y'])
 
@@ -607,7 +610,7 @@ def test_holoviews_widgets_explicit_widget_instance_override():
 
 
 @pytest.mark.usefixtures("hv_bokeh")
-@hv_available
+@hv_skip
 def test_holoviews_linked_axes(document, comm):
     c1 = hv.Curve([1, 2, 3])
     c2 = hv.Curve([1, 2, 3])
@@ -623,7 +626,7 @@ def test_holoviews_linked_axes(document, comm):
 
 
 @pytest.mark.usefixtures("hv_bokeh")
-@hv_available
+@hv_skip
 def test_holoviews_linked_axes_flexbox(document, comm):
     c1 = hv.Curve([1, 2, 3])
     c2 = hv.Curve([1, 2, 3])
@@ -639,7 +642,7 @@ def test_holoviews_linked_axes_flexbox(document, comm):
 
 
 @pytest.mark.usefixtures("hv_bokeh")
-@hv_available
+@hv_skip
 def test_holoviews_linked_axes_merged_ranges(document, comm):
     c1 = hv.Curve([1, 2, 3])
     c2 = hv.Curve([0, 1, 2, 3, 4])
@@ -657,7 +660,7 @@ def test_holoviews_linked_axes_merged_ranges(document, comm):
 
 
 @pytest.mark.usefixtures("hv_bokeh")
-@hv_available
+@hv_skip
 def test_holoviews_linked_datetime_axes_after_scroll_and_update(document, comm):
     dates = [dt.datetime(2021, 1, 1), dt.datetime(2021, 6, 1), dt.datetime(2021, 12, 31)]
     c1 = hv.Curve((dates, [1, 2, 3]))
@@ -680,7 +683,7 @@ def test_holoviews_linked_datetime_axes_after_scroll_and_update(document, comm):
 
 
 @pytest.mark.usefixtures("hv_bokeh")
-@hv_available
+@hv_skip
 def test_holoviews_linked_x_axis(document, comm):
     c1 = hv.Curve([1, 2, 3])
     c2 = hv.Curve([1, 2, 3], vdims='y2')
@@ -696,7 +699,7 @@ def test_holoviews_linked_x_axis(document, comm):
 
 
 @pytest.mark.usefixtures("hv_bokeh")
-@hv_available
+@hv_skip
 def test_holoviews_axiswise_not_linked_axes(document, comm):
     c1 = hv.Curve([1, 2, 3])
     c2 = hv.Curve([1, 2, 3]).opts(axiswise=True, backend='bokeh')
@@ -712,7 +715,7 @@ def test_holoviews_axiswise_not_linked_axes(document, comm):
 
 
 @pytest.mark.usefixtures("hv_bokeh")
-@hv_available
+@hv_skip
 def test_holoviews_shared_axes_opt_not_linked_axes(document, comm):
     c1 = hv.Curve([1, 2, 3])
     c2 = hv.Curve([1, 2, 3]).opts(shared_axes=False, backend='bokeh')
@@ -728,7 +731,7 @@ def test_holoviews_shared_axes_opt_not_linked_axes(document, comm):
 
 
 @pytest.mark.usefixtures("hv_bokeh")
-@hv_available
+@hv_skip
 def test_holoviews_not_linked_axes(document, comm):
     c1 = hv.Curve([1, 2, 3])
     c2 = hv.Curve([1, 2, 3])
@@ -747,7 +750,7 @@ def test_holoviews_not_linked_axes(document, comm):
 
 
 @pytest.mark.usefixtures("hv_bokeh")
-@hv_available
+@hv_skip
 def test_holoviews_link_across_panes(document, comm):
     from bokeh.models.tools import RangeTool
     from holoviews.plotting.links import RangeToolLink
@@ -772,7 +775,7 @@ def test_holoviews_link_across_panes(document, comm):
 
 
 @pytest.mark.usefixtures("hv_bokeh")
-@hv_available
+@hv_skip
 def test_holoviews_link_after_adding_item(document, comm):
     from bokeh.models.tools import RangeTool
     from holoviews.plotting.links import RangeToolLink
@@ -801,7 +804,7 @@ def test_holoviews_link_after_adding_item(document, comm):
 
 
 @pytest.mark.usefixtures("hv_bokeh")
-@hv_available
+@hv_skip
 def test_holoviews_link_within_pane(document, comm):
     from bokeh.models.tools import RangeTool
     from holoviews.plotting.links import RangeToolLink
@@ -828,7 +831,7 @@ def test_holoviews_link_within_pane(document, comm):
     assert range_tool.x_range == p2.x_range
 
 
-@hv_available
+@hv_skip
 def test_holoviews_property_override_old_method(document, comm):
     c1 = hv.Curve([])
 
@@ -839,7 +842,7 @@ def test_holoviews_property_override_old_method(document, comm):
 
     assert model.children[0].css_classes == ['test_class']
 
-@hv_available
+@hv_skip
 def test_holoviews_property_override(document, comm):
     c1 = hv.Curve([])
 
@@ -852,7 +855,7 @@ def test_holoviews_property_override(document, comm):
     assert model.children[0].css_classes == ['test_class']
 
 
-@hv_available
+@hv_skip
 def test_holoviews_date_picker_widget(document, comm):
     ds = {
         "time": [np.datetime64("2000-01-01"), np.datetime64("2000-01-02")],
@@ -869,7 +872,7 @@ def test_holoviews_date_picker_widget(document, comm):
     assert isinstance(widget_box[0], pn.widgets.DatePicker)
 
 
-@hv_available
+@hv_skip
 def test_holoviews_datetime_picker_widget(document, comm):
     ds = {
         "time": [np.datetime64("2000-01-01"), np.datetime64("2000-01-02")],
@@ -886,7 +889,7 @@ def test_holoviews_datetime_picker_widget(document, comm):
     assert isinstance(widget_box[0], pn.widgets.DatetimePicker)
 
 
-@hv_available
+@hv_skip
 def test_single_datetime_value():
     ts = np.datetime64("2020-01-01T12:15:54.293837280")
     dmap = hv.DynamicMap(lambda x: hv.Curve([]), kdims=["timestamp"]).redim.values(

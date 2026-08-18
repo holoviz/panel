@@ -1,12 +1,12 @@
 import random
 
 import numpy as np
-import pandas as pd
 
 from panel import (
     Column, Param, Row, WidgetBox, state,
 )
 from panel.pane import HTML
+from panel.tests._deps import pd, pd_skip
 from panel.widgets import IntSlider, Trend
 
 
@@ -29,6 +29,7 @@ def test_trend_auto_value(document, comm):
     assert model.value_change == ((4000/3900) - 1)
 
 
+@pd_skip
 def test_trend_date_range_x_axis(document, comm):
     data = pd.DataFrame({
         "Date": pd.date_range(start="2020-01-01", periods=5, freq="ME"),

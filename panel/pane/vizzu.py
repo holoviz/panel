@@ -97,7 +97,7 @@ class Vizzu(ModelPane, SyncableData):
         return data, {str(k): v for k, v in cols.items()}
 
     def _get_columns(self):
-        import pandas as pd
+        pd = sys.modules.get("pandas")
 
         columns = []
         for col, array in self._data.items():
@@ -118,7 +118,7 @@ class Vizzu(ModelPane, SyncableData):
                     value = array[0]
                     if isinstance(value, dt.date):
                         columns.append({'name': col, 'type': 'datetime'})
-                    elif isdatetime(value) or isinstance(value, pd.Period):
+                    elif isdatetime(value) or pd and isinstance(value, pd.Period):
                         columns.append({'name': col, 'type': 'datetime'})
                     elif isinstance(value, str):
                         columns.append({'name': col, 'type': 'dimension'})

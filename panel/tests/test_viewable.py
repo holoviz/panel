@@ -5,12 +5,11 @@ from panel import config
 from panel.interact import interactive
 from panel.pane import Markdown, Str, panel as panel_fn
 from panel.param import ParamMethod
+from panel.tests._deps import jupyter_bokeh_skip
 from panel.util import _descendents
 from panel.viewable import (
     Child, Children, Viewable, Viewer, is_viewable_param,
 )
-
-from .util import jb_available
 
 all_viewables = [w for w in _descendents(Viewable, concrete=True)
                if not w.__name__.startswith('_') and
@@ -32,7 +31,7 @@ class ExampleViewerWithDeps(Viewer):
         return self.value
 
 
-@jb_available
+@jupyter_bokeh_skip
 def test_viewable_ipywidget():
     pane = Str('A')
     with config.set(comms='ipywidgets'):

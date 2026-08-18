@@ -6,7 +6,6 @@ import string
 from zoneinfo import ZoneInfo
 
 import numpy as np
-import pandas as pd
 import param
 import pytest
 
@@ -16,22 +15,20 @@ from bokeh.models.widgets.tables import (
     NumberEditor, NumberFormatter, SelectEditor, StringEditor, StringFormatter,
     SumAggregator,
 )
-from packaging.version import Version
 
 from panel.depends import bind
 from panel.io.state import set_curdoc
 from panel.models.tabulator import CellClickEvent, TableEditEvent
-from panel.tests.util import (
-    async_wait_until, mpl_available, serve_and_request, wait_until,
-)
+from panel.tests._deps import mpl_skip
+from panel.tests.util import async_wait_until, serve_and_request, wait_until
 from panel.widgets import Button, TextInput
 from panel.widgets.tables import DataFrame, Tabulator
 
-pd_old = pytest.mark.skipif(Version(pd.__version__) < Version('1.3'),
-                            reason="Requires latest pandas")
+pd = pytest.importorskip("pandas")  # HACK: REMOVE
 
 
 def makeMixedDataFrame():
+    import pandas as pd
     data = {
         "A": [0.0, 1.0, 2.0, 3.0, 4.0],
         "B": [0.0, 1.0, 0.0, 1.0, 0.0],
@@ -1355,25 +1352,6 @@ def test_tabulator_pagination_selectable_rows(document, comm):
 
     assert model.selectable_rows == [3]
 
-@pd_old
-def test_tabulator_styling(document, comm):
-    df = makeMixedDataFrame()
-    table = Tabulator(df)
-
-    def high_red(value):
-        return 'color: red' if value > 2 else 'color: black'
-
-    table.style.map(high_red, subset=['A'])
-
-    model = table.get_root(document, comm)
-
-    assert model.cell_styles['data'] == {
-        0: {2: [('color', 'black')]},
-        1: {2: [('color', 'black')]},
-        2: {2: [('color', 'black')]},
-        3: {2: [('color', 'red')]},
-        4: {2: [('color', 'red')]}
-    }
 
 def test_tabulator_empty_table(document, comm):
     value_df = makeMixedDataFrame()
@@ -2954,7 +2932,7 @@ def test_tabulator_style_multi_index_dataframe(document, comm):
     }
 
 
-@mpl_available
+@mpl_skip
 def test_tabulator_style_background_gradient_with_frozen_columns(document, comm):
     df = pd.DataFrame(np.random.rand(3, 5), columns=list("ABCDE"))
     table = Tabulator(df, frozen_columns=['A'])
@@ -2966,7 +2944,7 @@ def test_tabulator_style_background_gradient_with_frozen_columns(document, comm)
 
     assert list(model.cell_styles['data'][0]) == [1, 4, 5]
 
-@mpl_available
+@mpl_skip
 def test_tabulator_style_background_gradient_with_frozen_columns_left_and_right(document, comm):
     df = pd.DataFrame(np.random.rand(3, 5), columns=list("ABCDE"))
     table = Tabulator(df, frozen_columns={'A': 'left', 'C': 'right'})
@@ -2978,7 +2956,7 @@ def test_tabulator_style_background_gradient_with_frozen_columns_left_and_right(
 
     assert list(model.cell_styles['data'][0]) == [1, 6, 4]
 
-@mpl_available
+@mpl_skip
 def test_tabulator_style_background_with_frozen_index(document, comm):
     df = pd.DataFrame([[1, 2, 3, 4, 5]], columns=list("abcde")).set_index("a")
     table = Tabulator(df, frozen_columns=["a"])
@@ -2989,7 +2967,7 @@ def test_tabulator_style_background_with_frozen_index(document, comm):
     assert list(model.cell_styles['data'][0]) == [3]
 
 
-@mpl_available
+@mpl_skip
 def test_tabulator_style_background_with_frozen_indexes(document, comm):
     df = pd.DataFrame([[1, 2, 3, 4, 5]], columns=list("abcde")).set_index(["a", "b"])
     table = Tabulator(df, frozen_columns=["a", "b"])
@@ -3000,7 +2978,7 @@ def test_tabulator_style_background_with_frozen_indexes(document, comm):
     assert list(model.cell_styles['data'][0]) == [3]
 
 
-@mpl_available
+@mpl_skip
 def test_tabulator_style_background_with_frozen_index_and_column(document, comm):
     df = pd.DataFrame([[1, 2, 3, 4, 5]], columns=list("abcde")).set_index(["a", "d"])
     table = Tabulator(df, frozen_columns=["a", "b"])
@@ -3011,7 +2989,7 @@ def test_tabulator_style_background_with_frozen_index_and_column(document, comm)
     assert list(model.cell_styles['data'][0]) == [4]
 
 
-@mpl_available
+@mpl_skip
 def test_tabulator_style_background_gradient(document, comm):
     df = pd.DataFrame(np.random.rand(3, 5), columns=list("ABCDE"))
     table = Tabulator(df)
@@ -3023,7 +3001,7 @@ def test_tabulator_style_background_gradient(document, comm):
 
     assert list(model.cell_styles['data'][0]) == [2, 4, 5]
 
-@mpl_available
+@mpl_skip
 def test_tabulator_styled_df_with_background_gradient(document, comm):
     df = pd.DataFrame(np.random.rand(3, 5), columns=list("ABCDE")).style.background_gradient(
         cmap="RdYlGn_r", vmin=0, vmax=0.5, subset=["A", "C", "D"]

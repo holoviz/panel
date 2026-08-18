@@ -1,10 +1,9 @@
 import numpy as np
-import pandas as pd
 import pytest
 
 from panel.layout import Column, GridBox, Row
 from panel.pane import panel
-from panel.tests.util import mpl_available
+from panel.tests._deps import mpl_skip, pd, pd_skip
 from panel.widgets import (
     AutocompleteInput, ColorMap, CrossSelector, DiscreteSlider, MultiChoice,
     MultiSelect, NestedSelect, Select, ToggleGroup,
@@ -52,6 +51,7 @@ def test_select_from_array(document, comm):
     assert select.options == ['A', 'B', 'C']
     assert select.value == 'A'
 
+@pd_skip
 def test_select_from_index(document, comm):
     select = Select.from_values(pd.Index(['A', 'B', 'A', 'B', 'C'], name='index'))
 
@@ -59,6 +59,7 @@ def test_select_from_index(document, comm):
     assert select.value == 'A'
     assert select.label == 'index'
 
+@pd_skip
 def test_select_from_series(document, comm):
     select = Select.from_values(pd.Series(['A', 'B', 'A', 'B', 'C'], name='Series'))
 
@@ -331,6 +332,7 @@ def test_nested_select_from_multi_index(df_multiindex):
     assert select._max_depth == 2
     assert select.levels == ['groups', 'subgroups']
 
+@pd_skip
 def test_nested_select_from_index():
     select = NestedSelect.from_values(pd.Index(['A', 'B', 'A', 'B', 'C'], name='index'))
 
@@ -338,6 +340,7 @@ def test_nested_select_from_index():
     assert select.value == {'index': 'A'}
     assert select._max_depth == 1
 
+@pd_skip
 def test_nested_select_from_series():
     select = NestedSelect.from_values(pd.Series(['A', 'B', 'A', 'B', 'C'], name='Series'))
 
@@ -961,6 +964,7 @@ def test_multi_select_from_array():
     assert select.options == ['A', 'B', 'C']
     assert select.value == []
 
+@pd_skip
 def test_multi_select_from_index():
     select = MultiSelect.from_values(pd.Index(['A', 'B', 'A', 'B', 'C'], name='index'))
 
@@ -968,6 +972,7 @@ def test_multi_select_from_index():
     assert select.value == []
     assert select.label == 'index'
 
+@pd_skip
 def test_multi_select_from_series(document, comm):
     select = MultiSelect.from_values(pd.Series(['A', 'B', 'A', 'B', 'C'], name='Series'))
 
@@ -1213,7 +1218,7 @@ def test_colormap_set_value(document, comm):
     assert model.value == 'A'
     assert color_map.value == ['#ff0', '#0ff']
 
-@mpl_available
+@mpl_skip
 def test_colormap_mpl_cmap(document, comm):
     from matplotlib.cm import Set1, tab10
     color_map = ColorMap(options={'tab10': tab10, 'Set1': Set1}, value_name='Set1')

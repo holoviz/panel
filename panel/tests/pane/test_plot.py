@@ -3,7 +3,8 @@ from bokeh.models import Div, Row as BkRow
 import panel as pn
 
 from panel.pane import Bokeh, Matplotlib, PaneBase
-from panel.tests.util import mpl_available, mpl_figure
+from panel.tests._deps import mpl_skip
+from panel.tests.util import mpl_figure
 
 
 def test_get_bokeh_pane_type():
@@ -35,12 +36,12 @@ def test_bokeh_pane(document, comm):
     assert pane._models == {}
 
 
-@mpl_available
+@mpl_skip
 def test_get_matplotlib_pane_type():
     assert PaneBase.get_pane_type(mpl_figure()) is Matplotlib
 
 
-@mpl_available
+@mpl_skip
 def test_matplotlib_pane_initially_empty(document, comm):
     pane = pn.pane.Matplotlib()
     assert pane.object is None
@@ -53,7 +54,7 @@ def test_matplotlib_pane_initially_empty(document, comm):
     assert pane._models[model.ref['id']][0] is model
 
 
-@mpl_available
+@mpl_skip
 def test_matplotlib_pane(document, comm):
     pane = pn.pane.Matplotlib(mpl_figure())
 
@@ -73,13 +74,13 @@ def test_matplotlib_pane(document, comm):
     assert pane._models == {}
 
 
-@mpl_available
+@mpl_skip
 def test_matplotlib_pane_svg_render(document, comm):
     pane = pn.pane.Matplotlib(mpl_figure(), format='svg', encode=True)
     model = pane.get_root(document, comm=comm)
     assert model.text.startswith('&lt;img src=&quot;data:image/svg+xml;base64,')
 
-@mpl_available
+@mpl_skip
 def test_matplotlib_pane_svg_render_responsive(document, comm):
     pane = pn.pane.Matplotlib(mpl_figure(), format='svg', encode=False)
     model = pane.get_root(document, comm=comm)
@@ -87,7 +88,7 @@ def test_matplotlib_pane_svg_render_responsive(document, comm):
     assert model.text.count('width=&quot;100%&quot;')==1
     assert model.text.count('height=&quot;100%&quot;')==1
 
-@mpl_available
+@mpl_skip
 def test_matplotlib_pane_svg_render_not_fixed_aspect(document, comm):
     pane = pn.pane.Matplotlib(mpl_figure(), format='svg', encode=False, fixed_aspect=False)
     model = pane.get_root(document, comm=comm)

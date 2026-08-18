@@ -1,4 +1,3 @@
-import pandas as pd
 import pytest
 
 from panel.pane import Perspective
@@ -8,6 +7,7 @@ pytestmark = pytest.mark.ui
 
 @pytest.fixture
 def perspective_data():
+    pd = pytest.importorskip("pandas")
     data = {
         "A": [0.0, 1.0, 2.0, 3.0, 4.0],
         "B": [0.0, 1.0, 0.0, 1.0, 0.0],

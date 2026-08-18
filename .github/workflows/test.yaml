@@ -114,7 +114,9 @@ jobs:
         run: |
           MATRIX=$(jq -nsc '{
               "os": ["ubuntu-latest", "macos-latest", "windows-latest"],
-              "environment": ["test-310", "test-314"]
+              "environment": ["test-310", "test-314"],
+              "with_pandas": ["true"],
+              "include": [{"os": "ubuntu-latest", "environment": "test-314", "with_pandas": "false"}]
           }')
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
       - name: Set test matrix with 'full' option
@@ -123,6 +125,8 @@ jobs:
           MATRIX=$(jq -nsc '{
               "os": ["ubuntu-latest", "macos-latest", "windows-latest"],
               "environment": ["test-310", "test-311", "test-312", "test-313", "test-314"]
+              "with_pandas": ["true"],
+              "include": [{"os": "ubuntu-latest", "environment": "test-314", "with_pandas": "false"}]
           }')
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
       - name: Set test matrix with 'downstream' option
@@ -130,7 +134,8 @@ jobs:
         run: |
           MATRIX=$(jq -nsc '{
               "os": ["ubuntu-latest"],
-              "environment": ["test-310"]
+              "environment": ["test-310"],
+              "with_pandas": ["true"]
           }')
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
 
@@ -143,7 +148,7 @@ jobs:
           cache: ${{ github.event.inputs.cache == 'true' || github.event.inputs.cache == '' }}
 
   unit_test_suite:
-    name: unit:${{ matrix.environment }}:${{ matrix.os }}
+    name: unit:${{ matrix.environment }}:${{ matrix.os }}${{ matrix.with_pandas == 'false' && ':no-pandas' || '' }}
     needs: [pre_commit, setup, pixi_lock]
     runs-on: ${{ matrix.os }}
     if: needs.setup.outputs.code_change == 'true'
@@ -158,6 +163,10 @@ jobs:
         with:
           environments: ${{ matrix.environment }}
           opengl: true
+      - name: Uninstall pandas
+        if: matrix.with_pandas == 'false'
+        run: |
+          pixi run -e "${ENV}" pip uninstall pandas -y
       - name: Test unit
         run: |
           pixi run -e "${ENV}" test-unit $COV

@@ -18,6 +18,7 @@ from panel.io.state import set_curdoc
 from panel.layout import Tabs, WidgetBox
 from panel.pane import Markdown
 from panel.reactive import Reactive, ReactiveHTML
+from panel.tests._deps import hv, hv_skip
 from panel.viewable import Viewable
 from panel.widgets import (
     Button, Checkbox, IntInput, IntSlider, StaticText, TextInput,
@@ -59,12 +60,9 @@ def test_link():
     assert obj2.a == 1
 
 
+@hv_skip
 def test_link_holoviews_stream():
     "Link a Reactive object to a HoloViews stream"
-    try:
-        import holoviews as hv
-    except ImportError:
-        pytest.skip("holoviews not available")
 
     class ReactiveLink(Reactive):
         selection = param.List(default=[])

@@ -7,23 +7,25 @@ import sys
 from unittest.mock import patch
 
 import numpy as np
-import pandas as pd
 import pytest
 
 from panel import config
 from panel.pane import (
     HTML, JSON, DataFrame, Markdown, PaneBase, Str,
 )
-from panel.tests.util import not_windows, streamz_available
+from panel.tests._deps import pd, pd_skip, streamz_skip
+from panel.tests.util import not_windows
 
 
 def test_get_markdown_pane_type():
     assert PaneBase.get_pane_type("**Markdown**") is Markdown
 
+@pd_skip
 def test_get_dataframe_pane_type():
     df = pd.DataFrame({"A": [1, 2, 3]})
     assert PaneBase.get_pane_type(df) is DataFrame
 
+@pd_skip
 def test_get_series_pane_type():
     ser = pd.Series([1, 2, 3])
     assert PaneBase.get_pane_type(ser) is DataFrame
@@ -41,22 +43,22 @@ async def streamz_df():
     sdf.loop.asyncio_loop.close()
 
 @not_windows
-@streamz_available
+@streamz_skip
 def test_get_streamz_dataframe_pane_type(streamz_df):
     assert PaneBase.get_pane_type(streamz_df) is DataFrame
 
 @not_windows
-@streamz_available
+@streamz_skip
 def test_get_streamz_dataframes_pane_type(streamz_df):
     assert PaneBase.get_pane_type(streamz_df.groupby('y').sum()) is DataFrame
 
 @not_windows
-@streamz_available
+@streamz_skip
 def test_get_streamz_series_pane_type(streamz_df):
     assert PaneBase.get_pane_type(streamz_df.x) is DataFrame
 
 @not_windows
-@streamz_available
+@streamz_skip
 def test_get_streamz_seriess_pane_type(streamz_df):
     assert PaneBase.get_pane_type(streamz_df.groupby('y').sum().x) is DataFrame
 
@@ -245,6 +247,7 @@ def test_html_pane_sanitize_html(document, comm):
 
     assert model.text.endswith('&lt;h1&gt;&lt;strong&gt;HTML&lt;/h1&gt;&lt;/strong&gt;&lt;script&gt;&lt;/script&gt;')
 
+@pd_skip
 def test_dataframe_pane_pandas(document, comm):
     pane = DataFrame(pd.DataFrame({"A": [1, 2, 3]}))
 
@@ -264,6 +267,7 @@ def test_dataframe_pane_pandas(document, comm):
     pane._cleanup(model)
     assert pane._models == {}
 
+@pd_skip
 def test_dataframe_pane_supports_escape(document, comm):
     url = "<a href='https://panel.holoviz.org/'>Panel</a>"
     df = pd.DataFrame({"url": [url]})
@@ -283,7 +287,7 @@ def test_dataframe_pane_supports_escape(document, comm):
     assert pane._models == {}
 
 @not_windows
-@streamz_available
+@streamz_skip
 def test_dataframe_pane_streamz(streamz_df, document, comm):
     pane = DataFrame(streamz_df)
 
