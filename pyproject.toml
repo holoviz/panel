@@ -243,6 +243,10 @@ filterwarnings = [
     "ignore:'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16::starlette",
     "ignore:'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16::fastapi",
     "ignore:Implicitly cleaning up <_TemporaryFileWrapper:ResourceWarning",
+    # 2026-08: NumPy 2.5 deprecated assigning to ndarray.shape, which VTK still
+    # does in vtk_to_numpy. Scoped to that module so Panel's own code would
+    # still fail on it.
+    "ignore:Setting the shape on a NumPy array has been deprecated:DeprecationWarning:vtkmodules.util.numpy_support",
 ]
 
 [tool.coverage.run]
