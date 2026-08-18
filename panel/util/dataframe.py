@@ -18,11 +18,26 @@ if t.TYPE_CHECKING:
     import narwhals.stable.v2 as nw
 
 __all__ = (
+    "column_names",
     "dtype_kind",
     "has_index",
     "is_dataframe",
     "to_narwhals",
 )
+
+
+def column_names(obj: t.Any) -> list[t.Any]:
+    """
+    The column names of a frame, for any backend.
+
+    Not `obj.columns`: on a PyArrow Table that attribute holds the column data
+    rather than the names. pandas is read directly rather than through
+    Narwhals, which rejects duplicate names before the caller gets a chance to
+    report them in its own terms.
+    """
+    if has_index(obj):
+        return list(obj.columns)
+    return to_narwhals(obj).columns
 
 
 def dtype_kind(dtype: t.Any) -> str:

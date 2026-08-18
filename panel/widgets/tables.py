@@ -35,7 +35,7 @@ from ..util import (
     styler_update, updating,
 )
 from ..util.dataframe import (
-    dtype_kind, has_index, is_dataframe, to_narwhals,
+    column_names, dtype_kind, has_index, is_dataframe, to_narwhals,
 )
 from ..util.warnings import warn
 from .base import Widget
@@ -242,16 +242,14 @@ class BaseTable(ReactiveData, Widget):
     def _validate(self, *events: param.parameterized.Event):
         if self.value is None:
             return
-        # Not self.value.columns: on a PyArrow Table that is the column data,
-        # not the names.
-        cols = to_narwhals(self.value).columns
+        cols = column_names(self.value)
         if len(cols) != len(set(cols)):
             raise ValueError('Cannot display a DataFrame with '
                              'duplicate column names.')
 
     def _get_fields(self) -> list[str]:
         indexes = self.indexes
-        col_names = [] if self.value is None else to_narwhals(self.value).columns
+        col_names = [] if self.value is None else column_names(self.value)
         if not self.hierarchical or len(indexes) == 1:
             col_names = indexes + col_names
         else:
