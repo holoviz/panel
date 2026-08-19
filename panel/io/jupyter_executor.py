@@ -65,10 +65,16 @@ class JupyterServerSession(ServerSession):
         with patch_curdoc(event.document):
             message = connections[0].protocol.create('PATCH-DOC', [event])
             message.prepare()
-        for connection in connections:
-            task = asyncio.ensure_future(connection.send_message(message))
-            self._tasks.add(task)
-            task.add_done_callback(self._tasks.discard)
+
+        def schedule() -> None:
+            for connection in connections:
+                task = asyncio.ensure_future(connection.send_message(message))
+                self._tasks.add(task)
+                task.add_done_callback(self._tasks.discard)
+
+        assert self._loop is not None
+        loop = t.cast('asyncio.AbstractEventLoop', self._loop)
+        loop.call_soon_threadsafe(schedule)
 
 
 class PanelExecutor(WSHandler):
