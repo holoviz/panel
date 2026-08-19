@@ -71,11 +71,7 @@ pip = "*"
 # Required
 nh3 = "*"
 bokeh = ">=3.10.0,<3.11.0a0"
-# panel-material-ui pin temporarily dropped from the pixi env: conda-forge builds
-# still cap bokeh <3.10.0, conflicting with the pin above. Re-add once a
-# compatible panel-material-ui build is available. pyproject.toml keeps the
-# real dependency intact.
-# panel-material-ui = ">=0.10.0"
+panel-material-ui = ">=0.10.0"
 linkify-it-py = "*"
 markdown = "*"
 markdown-it-py = "*"
