@@ -23,14 +23,6 @@ default = [
     "dev",
 ]
 
-# [environments.test-310]
-# features = ["py310", "required", "test-core", "test", "example", "test-example", "test-unit-task"]
-# no-default-feature = true
-#
-# [environments.test-311]
-# features = ["py311", "required", "test-core", "test", "example", "test-example", "test-unit-task"]
-# no-default-feature = true
-
 [environments.test-312]
 features = ["py312", "required", "test-core", "test", "example", "test-example", "test-unit-task"]
 no-default-feature = true
@@ -49,10 +41,6 @@ no-default-feature = true
 
 [environments.test-core]
 features = ["py314", "required", "test-core", "test-unit-task"]
-no-default-feature = true
-
-[environments.test-bokeh38]
-features = ["py312", "required", "test-core", "test-unit-task", "bokeh38"]
 no-default-feature = true
 
 [environments.test-type]
@@ -82,7 +70,7 @@ nomkl = "*"
 pip = "*"
 # Required
 nh3 = "*"
-bokeh = ">=3.8.0,<3.11.0a0"
+bokeh = ">=3.10.0,<3.11.0a0"
 panel-material-ui = ">=0.10.0"
 linkify-it-py = "*"
 markdown = "*"
@@ -100,12 +88,6 @@ typing_extensions = "*"
 
 [feature.required.tasks]
 install = 'python -m pip install --no-deps --disable-pip-version-check -e .'
-
-# [feature.py310.dependencies]
-# python = "3.10.*"
-#
-# [feature.py311.dependencies]
-# python = "3.11.*"
 
 [feature.py312.dependencies]
 python = "3.12.*"
@@ -192,9 +174,6 @@ pytest-cov = "*"
 pytest-github-actions-annotate-failures = "*"
 pytest-rerunfailures = "*"
 pytest-xdist = "*"
-
-[feature.bokeh38.dependencies]
-bokeh = "3.8.*"
 
 [feature.test.dependencies]
 # Optional dependencies - recommended
