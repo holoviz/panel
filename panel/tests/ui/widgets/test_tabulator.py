@@ -3228,6 +3228,9 @@ def test_tabulator_edit_event_and_header_filters_same_column(page, show_index, i
     cell = page.locator('text="X"')
     cell.click()
     editable_cell = page.locator('input[type="text"]')
+    # For some reason there's sometimes an edit event sent with the old
+    # value as new value. Waiting here helps.
+    page.wait_for_timeout(200)
     editable_cell.fill("Y")
     editable_cell.press('Enter')
 
@@ -3240,6 +3243,9 @@ def test_tabulator_edit_event_and_header_filters_same_column(page, show_index, i
     cell = page.locator('text="B"')
     cell.click()
     editable_cell = page.locator('input[type="text"]')
+    # For some reason there's sometimes an edit event sent with the old
+    # value as new value. Waiting here helps.
+    page.wait_for_timeout(200)
     editable_cell.fill("Z")
     editable_cell.press('Enter')
 
@@ -3278,6 +3284,9 @@ def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pa
     cell = page.locator('text="B"').first
     cell.click()
     editable_cell = page.locator('input[type="text"]')
+    # For some reason there's sometimes an edit event sent with the old
+    # value as new value. Waiting here helps.
+    page.wait_for_timeout(200)
     editable_cell.fill("Q")
     editable_cell.press('Enter')
 
@@ -3296,6 +3305,9 @@ def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pa
     cell = page.locator('text="B"').nth(1)
     cell.click()
     editable_cell = page.locator('input[type="text"]')
+    # For some reason there's sometimes an edit event sent with the old
+    # value as new value. Waiting here helps.
+    page.wait_for_timeout(200)
     editable_cell.fill("X")
     editable_cell.press('Enter')
 
@@ -3309,6 +3321,9 @@ def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pa
     cell = page.locator('text="X"')
     cell.click()
     editable_cell = page.locator('input[type="text"]')
+    # For some reason there's sometimes an edit event sent with the old
+    # value as new value. Waiting here helps.
+    page.wait_for_timeout(200)
     editable_cell.fill("Y")
     editable_cell.press('Enter')
 
@@ -3321,6 +3336,9 @@ def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pa
     cell = page.locator('text="B"')
     cell.click()
     editable_cell = page.locator('input[type="text"]')
+    # For some reason there's sometimes an edit event sent with the old
+    # value as new value. Waiting here helps.
+    page.wait_for_timeout(200)
     editable_cell.fill("Z")
     editable_cell.press('Enter')
 
