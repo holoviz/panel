@@ -22,12 +22,12 @@ import {schedule_when, transformJsPlaceholders} from "./util"
 import tabulator_css from "styles/models/tabulator.css"
 
 export class TableEditEvent extends ModelEvent {
-  constructor(readonly column: string, readonly row: number, readonly pre: boolean) {
+  constructor(readonly column: string, readonly row: number, readonly pre: boolean, readonly value?: unknown, readonly old?: unknown) {
     super()
   }
 
   protected override get event_values(): Attrs {
-    return {model: this.origin, column: this.column, row: this.row, pre: this.pre}
+    return {model: this.origin, column: this.column, row: this.row, pre: this.pre, value: this.value, old: this.old}
   }
 
   static {
@@ -376,6 +376,7 @@ export class DataTabulatorView extends HTMLBoxView {
   columns: Map<string, any> = new Map()
   container: HTMLDivElement | null = null
   _tabulator_cell_updating: boolean=false
+  _pending_old_values: Map<string, any> = new Map()
   _updating_page: boolean = false
   _updating_expanded: boolean = false
   _updating_sort: boolean = false
@@ -1619,20 +1620,36 @@ export class DataTabulatorView extends HTMLBoxView {
     const column_def = this.columns.get(field)
     const index = cell.getData()._index
     const value = cell._cell.value
+    const key = `${field}:${index}`
     if (column_def.validator === "numeric" && value === "") {
+      // setValue below re-triggers cellEdited recursively for the actual
+      // (NaN) edit. By then cell._cell.oldValue has already been overwritten
+      // with this now-discarded "" attempt, so the true pre-edit value is
+      // stashed here and picked back up on that recursive call.
+      this._pending_old_values.set(key, cell._cell.oldValue)
       cell.setValue(NaN, true)
       return
     }
+    let old_value = cell._cell.oldValue
+    if (this._pending_old_values.has(key)) {
+      old_value = this._pending_old_values.get(key)
+      this._pending_old_values.delete(key)
+    }
     this._tabulator_cell_updating = true
     comm_settings.debounce = false
-    this.model.trigger_event(new TableEditEvent(field, index, true))
+    this.model.trigger_event(new TableEditEvent(field, index, true, value, old_value))
     try {
       this.model.source.patch({[field]: [[index, value]]})
     } finally {
       comm_settings.debounce = true
       this._tabulator_cell_updating = false
     }
-    this.model.trigger_event(new TableEditEvent(field, index, false))
+    // value/old are sent explicitly rather than read back from
+    // this.model.source.data or the Python-side value after the fact:
+    // the ColumnDataSource patch above and this event are dispatched via
+    // different server-side paths, so there is no guarantee the patch has
+    // been applied by the time the event is processed.
+    this.model.trigger_event(new TableEditEvent(field, index, false, value, old_value))
     this.tabulator.scrollToRow(index, "top", false)
   }
 }

@@ -1487,24 +1487,37 @@ class Tabulator(BaseTable):
         iloc = self.value.index.get_loc(idx)
         self._validate_iloc(idx, iloc)
         event.row = iloc
-        if event_col not in self.buttons:
+        if event.event_name == 'table-edit' and event_col in self.value.columns:
+            # value/old arrive as raw values straight from the frontend cell.
+            # Convert them to self.value's dtype instead of reading
+            # self.value/self._old_value: the ColumnDataSource patch for this
+            # same edit is applied via a different server-side dispatch path
+            # and is not guaranteed to have landed by the time this event is
+            # processed, so self.value may still reflect the pre-edit state.
+            old_col_values = self.value[event_col].values
+            event.value = self._convert_column(np.asarray([event.value]), old_col_values)[0]
+            if event.old is not None:
+                event.old = self._convert_column(np.asarray([event.old]), old_col_values)[0]
+        elif event_col not in self.buttons:
             if event_col in self.value.columns:
                 event.value = self.value[event_col].iloc[event.row]
             else:
                 event.value = self.value.index[event.row]
 
-        # Set the old attribute on a table edit event
         if event.event_name == 'table-edit':
             if event.pre:
                 import pandas as pd
                 filter_df = pd.DataFrame({event.column: [event.value]})
                 filters = self._get_header_filters(filter_df)
-                # Check if edited cell was filtered
-                if filters and filters[0].any():
+                # If the new value no longer passes the column's header
+                # filter, the row would otherwise be dropped from the masked
+                # data _process_data hands to _update_column, desyncing it
+                # from the row range _update_column assumes it is writing
+                # (the full column, or - for remote pagination - the full
+                # current page). Track it so the mask keeps it included.
+                if filters and not filters[0].any():
                     self._edited_indexes.append(idx)
             else:
-                if self._old_value is not None:
-                    event.old = self._old_value[event_col].iloc[event.row]
                 for cb in self._on_edit_callbacks:
                     state.execute(partial(cb, event), schedule=False)
                 self._update_style()
