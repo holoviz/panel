@@ -241,6 +241,8 @@ filterwarnings = [
     "ignore:'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16::starlette",
     "ignore:'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16::fastapi",
     "ignore:Implicitly cleaning up <_TemporaryFileWrapper:ResourceWarning",
+    # 2026-08
+    "ignore:Setting the shape on a NumPy array has been deprecated:DeprecationWarning:vtk.util.numpy_support", # https://gitlab.kitware.com/vtk/vtk/-/work_items/19900
 ]
 
 [tool.coverage.run]

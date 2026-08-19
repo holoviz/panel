@@ -1033,6 +1033,7 @@ class SyncableData(Reactive):
         super().__init__(**params)
         self._data = None
         self._processed = None
+        self._old_value = None
         callbacks = [self.param.watch(self._validate, self._data_params)]
         if self._data_params:
             callbacks.append(
@@ -1439,7 +1440,13 @@ class ReactiveData(SyncableData):
             return
         # Get old data to compare to
         old_raw, old_data = self._get_data()
+        # The pre-edit state reported on the value event and on Tabulator's
+        # table-edit event must be the unprocessed data, so a separate snapshot
+        # is only needed when old_raw was filtered, sorted or paginated.
+        value = getattr(self, self._data_params[0])
+        raw_is_value = old_raw is value
         old_raw = old_raw.copy()
+        self._old_value = old_value = old_raw if raw_is_value else value.copy()
         if hasattr(old_raw, 'columns'):
             columns = list(old_raw.columns) # type: ignore
         else:
@@ -1481,7 +1488,7 @@ class ReactiveData(SyncableData):
             if old_data is self.value: # type: ignore
                 with _syncing(self, ['value']):
                     with param.discard_events(self):
-                        self.value = old_raw
+                        self.value = old_value
                     self.value = old_data
             else:
                 self.param.trigger('value')
