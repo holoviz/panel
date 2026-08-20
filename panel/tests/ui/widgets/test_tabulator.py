@@ -2854,7 +2854,6 @@ def test_tabulator_configuration(page, df_mixed):
     expect(page.locator(".tabulator-sortable")).to_have_count(0)
 
 
-@pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3620')
 def test_tabulator_editor_datetime_nan(page, df_mixed):
     df_mixed.at['idx0', 'datetime'] = np.nan
     widget = Tabulator(df_mixed, configuration={'headerSort': False})

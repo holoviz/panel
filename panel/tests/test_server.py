@@ -1348,7 +1348,7 @@ def test_server_thread_pool_change_event(server_implementation, threads):
 def test_server_thread_pool_bokeh_event(server_implementation, threads):
     import pandas as pd
 
-    df = pd.DataFrame([[1, 1], [2, 2]], columns=['A', 'B'])
+    df = pd.DataFrame({'A': range(5), 'B': range(5)})
 
     tabulator = Tabulator(df)
 
@@ -1366,10 +1366,19 @@ def test_server_thread_pool_bokeh_event(server_implementation, threads):
 
     serve_and_request(tabulator)
 
-    model = list(tabulator._models.values())[0][0]
-    event = TableEditEvent(model, 'A', 0)
-    for _ in range(5):
-        tabulator._server_event(model.document, event)
+    ref, (model, _) = list(tabulator._models.items())[0]
+    doc = model.document
+    for row in range(5):
+        # on_edit only fires once the edit's value lands in tabulator.value,
+        # via the ColumnDataSource patch below - a distinct row is used per
+        # iteration so each is independently dispatched (and can overlap on
+        # the thread pool) rather than all firing from a single patch.
+        event = TableEditEvent(model, 'A', row, value=row + 10, old=row)
+        tabulator._server_event(doc, event)
+        wait_until(lambda row=row: ('A', row) in tabulator._pending_edits)
+        new_data = dict(model.source.data)
+        new_data['A'][row] = row + 10
+        tabulator._server_change(doc, ref, None, 'data', model.source.data, new_data)
 
     # Checks whether Tabulator on_edit callback was executed concurrently
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
