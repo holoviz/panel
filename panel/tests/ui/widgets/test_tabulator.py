@@ -17,7 +17,7 @@ from bokeh.models.widgets.tables import (
     ScientificFormatter, SelectEditor, StringEditor, StringFormatter,
     TextEditor,
 )
-from playwright.sync_api import expect
+from playwright.sync_api import Error, expect
 
 from panel import extension
 from panel.depends import bind
@@ -3602,7 +3602,14 @@ def test_tabulator_loading_no_horizontal_rescroll(page, df_mixed):
     cell = page.locator('text="target"').first
     # Scroll to the right
     page.wait_for_timeout(200)
-    cell.scroll_into_view_if_needed()
+
+    def _scroll_into_view():
+        try:
+            cell.scroll_into_view_if_needed(timeout=1000)
+        except Error as e:
+            raise AssertionError(str(e)) from e
+
+    wait_until(_scroll_into_view, page)
     page.wait_for_timeout(200)
     bb = page.locator('text="Target"').bounding_box()
 
@@ -3629,7 +3636,14 @@ def test_tabulator_loading_no_vertical_rescroll(page):
     # Scroll to the bottom, and give it a little extra time
     cell = page.locator('text="T"')
     page.wait_for_timeout(200)
-    cell.scroll_into_view_if_needed()
+
+    def _scroll_into_view():
+        try:
+            cell.scroll_into_view_if_needed(timeout=1000)
+        except Error as e:
+            raise AssertionError(str(e)) from e
+
+    wait_until(_scroll_into_view, page)
     page.wait_for_timeout(200)
 
     bb = page.locator('text="T"').bounding_box()
