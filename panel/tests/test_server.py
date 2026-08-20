@@ -1262,6 +1262,7 @@ def test_server_thread_pool_execute(server_implementation, threads):
 
 def test_server_thread_pool_defer_load(server_implementation, threads):
     counts = []
+    completed = []
 
     def cb(count=[0]):
         count[0] += 1
@@ -1269,6 +1270,7 @@ def test_server_thread_pool_defer_load(server_implementation, threads):
         time.sleep(0.5)
         value = counts[-1]
         count[0] -= 1
+        completed.append(1)
         return value
 
     def app():
@@ -1286,6 +1288,10 @@ def test_server_thread_pool_defer_load(server_implementation, threads):
 
     # Checks whether defer_load callback was executed concurrently
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
+    # Ensure both deferred callbacks have fully finished processing before the
+    # server and thread pool are torn down, otherwise in-flight work can try
+    # to schedule a callback on the session's event loop after it is closed.
+    wait_until(lambda: len(completed) == 2, timeout=10000)
 
 
 async def test_server_text_input_update_before_click_event(server_implementation):
