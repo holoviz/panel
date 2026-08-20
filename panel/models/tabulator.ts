@@ -22,12 +22,12 @@ import {schedule_when, transformJsPlaceholders} from "./util"
 import tabulator_css from "styles/models/tabulator.css"
 
 export class TableEditEvent extends ModelEvent {
-  constructor(readonly column: string, readonly row: number, readonly pre: boolean, readonly value?: unknown, readonly old?: unknown) {
+  constructor(readonly column: string, readonly row: number, readonly value?: unknown, readonly old?: unknown) {
     super()
   }
 
   protected override get event_values(): Attrs {
-    return {model: this.origin, column: this.column, row: this.row, pre: this.pre, value: this.value, old: this.old}
+    return {model: this.origin, column: this.column, row: this.row, value: this.value, old: this.old}
   }
 
   static {
@@ -1635,21 +1635,21 @@ export class DataTabulatorView extends HTMLBoxView {
       old_value = this._pending_old_values.get(key)
       this._pending_old_values.delete(key)
     }
+    // value/old are sent explicitly rather than left for Python to read back
+    // from self.value once the ColumnDataSource patch below lands: that
+    // patch is applied via a different, independently-scheduled server-side
+    // path than this event, so there is no ordering guarantee between them.
+    // The event is still sent first so the Python side can record it as a
+    // pending edit before the patch (which it keys off of) arrives.
+    this.model.trigger_event(new TableEditEvent(field, index, value, old_value))
     this._tabulator_cell_updating = true
     comm_settings.debounce = false
-    this.model.trigger_event(new TableEditEvent(field, index, true, value, old_value))
     try {
       this.model.source.patch({[field]: [[index, value]]})
     } finally {
       comm_settings.debounce = true
       this._tabulator_cell_updating = false
     }
-    // value/old are sent explicitly rather than read back from
-    // this.model.source.data or the Python-side value after the fact:
-    // the ColumnDataSource patch above and this event are dispatched via
-    // different server-side paths, so there is no guarantee the patch has
-    // been applied by the time the event is processed.
-    this.model.trigger_event(new TableEditEvent(field, index, false, value, old_value))
     this.tabulator.scrollToRow(index, "top", false)
   }
 }
