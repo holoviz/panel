@@ -1375,10 +1375,13 @@ def test_server_thread_pool_bokeh_event(server_implementation, threads):
         # the thread pool) rather than all firing from a single patch.
         event = TableEditEvent(model, 'A', row, value=row + 10, old=row)
         tabulator._server_event(doc, event)
-        wait_until(lambda row=row: ('A', row) in tabulator._pending_edits)
+    wait_until(lambda: len(tabulator._pending_edits) == 5)
+
+    for row in range(5):
         new_data = dict(model.source.data)
         new_data['A'][row] = row + 10
         tabulator._server_change(doc, ref, None, 'data', model.source.data, new_data)
+        wait_until(lambda row=row: ('A', row) not in tabulator._pending_edits)
 
     # Checks whether Tabulator on_edit callback was executed concurrently
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
