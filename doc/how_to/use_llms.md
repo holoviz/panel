@@ -31,15 +31,12 @@ uvx holoviz-skills@latest install
 :::{tab-item} pip
 ```bash
 pip install holoviz-skills
+holoviz-skills install
 ```
 
 :::
 
 ::::
-
-```bash
-holoviz-skills install
-```
 
 The `install` command auto-detects the AI tools on your machine. You can also target a specific tool, for example:
 
@@ -65,7 +62,6 @@ Panel publishes a machine-friendly index of its documentation that your assistan
 3. Ask your assistant to read the pages relevant to your task before writing code. For example, to create a dashboard you might have it read the Build a Dashboard tutorial and the reference page for the method you need.
 
 The Markdown pages are intentionally free of the navigation chrome, CSS, and JavaScript of the full HTML site, so they consume far fewer tokens and are easier for an assistant to parse.
-
 
 ## Which approach should I use?
 
