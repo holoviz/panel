@@ -1490,7 +1490,7 @@ class Tabulator(BaseTable):
         event.row = iloc
 
         if event.event_name == 'table-edit':
-            if event_col not in self.value.columns:
+            if event_col not in self.value.columns or event.value is None:
                 return
             # value/old arrive as raw values straight from the frontend cell.
             # Convert them to self.value's dtype instead of reading
