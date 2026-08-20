@@ -227,11 +227,16 @@ def _dispatch_write_task(doc, func, *args, **kwargs):
     Schedules tasks that write messages to the socket.
     """
     try:
-        task = asyncio.ensure_future(func(*args, **kwargs))
-        _write_tasks.setdefault(doc, []).append(task)
-        task.add_done_callback(_cleanup_task)
+        loop = asyncio.get_running_loop()
     except RuntimeError:
+        # No running loop on this thread (e.g. a callback offloaded to a
+        # worker thread by Bokeh >=3.10); avoid creating the coroutine here
+        # since there is nothing to await it, and reschedule instead.
         doc.add_next_tick_callback(partial(func, *args, **kwargs))
+        return
+    task = loop.create_task(func(*args, **kwargs))
+    _write_tasks.setdefault(doc, []).append(task)
+    task.add_done_callback(_cleanup_task)
 
 async def _dispatch_msgs(doc):
     """
