@@ -1635,12 +1635,6 @@ export class DataTabulatorView extends HTMLBoxView {
       old_value = this._pending_old_values.get(key)
       this._pending_old_values.delete(key)
     }
-    // value/old are sent explicitly rather than left for Python to read back
-    // from self.value once the ColumnDataSource patch below lands: that
-    // patch is applied via a different, independently-scheduled server-side
-    // path than this event, so there is no ordering guarantee between them.
-    // The event is still sent first so the Python side can record it as a
-    // pending edit before the patch (which it keys off of) arrives.
     this.model.trigger_event(new TableEditEvent(field, index, value, old_value))
     this._tabulator_cell_updating = true
     comm_settings.debounce = false
