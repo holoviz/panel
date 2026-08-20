@@ -1351,8 +1351,11 @@ def test_tabulator_frozen_rows(page):
     page.wait_for_timeout(200)
 
     # Check that the two frozen columns haven't moved after scrolling right
-    assert X_bb == x_cell.first.bounding_box()
-    assert Y_bb == y_cell.first.bounding_box()
+    def _frozen_rows_unchanged():
+        assert X_bb == x_cell.first.bounding_box()
+        assert Y_bb == y_cell.first.bounding_box()
+
+    wait_until(_frozen_rows_unchanged, page)
 
 
 @pytest.mark.flaky(reruns=3, reruns_delays=2)
