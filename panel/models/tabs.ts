@@ -6,6 +6,7 @@ import {Location} from "@bokehjs/core/enums"
 import {GridAlignmentLayout} from "@bokehjs/models/layouts/alignments"
 import {Tabs as BkTabs, TabsView as BkTabsView} from "@bokehjs/models/layouts/tabs"
 import {LayoutDOMView} from "@bokehjs/models/layouts/layout_dom"
+import type {UIElementView} from "@bokehjs/models/ui/ui_element"
 
 function show(element: HTMLElement): void {
   element.style.visibility = ""
@@ -29,9 +30,36 @@ export class TabsView extends BkTabsView {
     let view: any = this
     while (view != null) {
       if (view.model.type.endsWith("Tabs")) {
-        view.connect(view.model.properties.active.change, () => this.update_zindex())
+        view.connect(view.model.properties.active.change, () => this.update_active())
       }
       view = view.parent || view._parent // Handle ReactiveHTML
+    }
+  }
+
+  override update_active(): void {
+    super.update_active()
+    this._update_child_visibility()
+    this.update_zindex()
+  }
+
+  protected _active_child_view(): UIElementView | undefined {
+    const tab = this.model.tabs[this.model.active]
+    if (tab == null) {
+      return undefined
+    }
+    return this.child_views.find((child_view) => child_view.model == tab.child)
+  }
+
+  protected _update_child_visibility(): void {
+    const {child_views} = this
+    for (const child_view of child_views) {
+      if (child_view != null) {
+        hide(child_view.el)
+      }
+    }
+    const active = this._active_child_view()
+    if (active != null) {
+      show(active.el)
     }
   }
 
@@ -40,7 +68,7 @@ export class TabsView extends BkTabsView {
     let current_view: any = this
     while (parent != null) {
       if (parent.model.type.endsWith("Tabs")) {
-        if (parent.child_views.indexOf(current_view) !== parent.model.active) {
+        if (parent._active_child_view() !== current_view) {
           return false
         }
       }
@@ -63,7 +91,7 @@ export class TabsView extends BkTabsView {
       }
     }
     if (this.is_visible) {
-      const active = child_views[this.model.active]
+      const active = this._active_child_view()
       if (active != null && active.el != null) {
         active.el.style.zIndex = "1"
       }
@@ -72,21 +100,7 @@ export class TabsView extends BkTabsView {
 
   override _after_layout(): void {
     (LayoutDOMView as any).prototype._after_layout.call(this)
-
-    const {child_views} = this
-    for (const child_view of child_views) {
-      if (child_view !== undefined) {
-        hide(child_view.el)
-      }
-    }
-
-    const {active} = this.model
-    if (active in child_views) {
-      const tab = child_views[active]
-      if (tab !== undefined) {
-        show(tab.el)
-      }
-    }
+    this._update_child_visibility()
   }
 
   override _update_layout(): void {
@@ -114,32 +128,6 @@ export class TabsView extends BkTabsView {
       this.layout.set_sizing()
     } else {
       delete this.layout
-    }
-  }
-
-  override update_active(): void {
-    const i = this.model.active
-
-    const {header_els} = this
-    for (const el of header_els) {
-      el.classList.remove(tabs.active)
-    }
-
-    if (i in header_els) {
-      header_els[i].classList.add(tabs.active)
-    }
-
-    const {child_views} = this
-    for (const child_view of child_views) {
-      hide(child_view.el)
-    }
-
-    if (i in child_views) {
-      const view: any = child_views[i]
-      show(view.el)
-      if (view.invalidate_render == null) {
-        view.invalidate_render()
-      }
     }
   }
 }

@@ -289,7 +289,7 @@ class BaseTable(ReactiveData, Widget):
                     editor = clone_model(editor)
 
             if col in indexes or editor is None:
-                editor = CellEditor()
+                editor = CellEditor() # type: ignore[abstract]
 
             if formatter is None or isinstance(formatter, (dict, str, JSCode)):
                 if kind == 'i':

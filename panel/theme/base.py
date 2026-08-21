@@ -369,7 +369,9 @@ class Design(param.Parameterized, ResourceComponent):
         default_theme = self.theme.bokeh_theme if self.theme is not None else None
         theme = theme_override or default_theme
         if isinstance(theme, str):
-            theme = built_in_themes.get(theme)
+            # theme is an arbitrary string, not necessarily one of the
+            # built-in theme name literals.
+            theme = built_in_themes.get(theme)  # type: ignore[call-overload]
         if not theme:
             return
         for sm in model.references():
