@@ -301,6 +301,7 @@ How to convert AnyWidget widgets to Panel widgets.
 
 prepare_to_develop
 build_apps
+use_llms
 use_specialized_uis
 manage_session_tasks
 extending_panel
@@ -308,5 +309,4 @@ test_and_debug
 prepare_to_share
 share_your_work
 migrate_to_panel
-use_llms
 ```
