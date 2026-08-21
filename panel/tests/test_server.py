@@ -1441,9 +1441,9 @@ def test_server_thread_pool_is_loop_default_executor(threads):
 
 def test_server_concurrent_session_init_isolated(threads):
     """
-    Multiple sessions initializing concurrently on worker threads (Bokeh
-    >=3.10) must each observe their own curdoc, without cross-contamination
-    from the shared thread pool.
+    Multiple sessions initializing concurrently on worker threads must each
+    observe their own curdoc, without cross-contamination from the shared
+    thread pool.
     """
     seen = []
 

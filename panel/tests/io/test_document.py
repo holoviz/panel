@@ -267,7 +267,7 @@ class _FakeConn:
 def test_unlocked_dispatches_from_worker_thread():
     """
     A model change made inside unlocked() from a worker thread (as happens
-    when Bokeh >=3.10 runs a locked callback via asyncio.to_thread) must be
+    when Bokeh runs a locked callback via asyncio.to_thread) must be
     scheduled for write rather than silently dropped with an error.
     """
     slider = IntSlider()
@@ -282,7 +282,7 @@ def test_unlocked_dispatches_from_worker_thread():
     seen = {}
 
     def callback():
-        # On Bokeh >=3.10 the synchronous body of a locked callback runs on a
+        # On Bokeh the synchronous body of a locked callback runs on a
         # worker thread via asyncio.to_thread. Previously unlocked() logged an
         # error and dropped events when off the loop thread.
         seen['thread'] = threading.get_ident()
