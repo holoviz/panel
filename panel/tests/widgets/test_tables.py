@@ -2,6 +2,7 @@ import asyncio
 import datetime as dt
 import random
 import string
+import sys
 
 from zoneinfo import ZoneInfo
 
@@ -2847,11 +2848,13 @@ def test_server_cell_click_async_event():
     table = Tabulator(df)
 
     counts = []
+    done = [0]
     async def cb(event, count=[0]):
         count[0] += 1
         counts.append(count[0])
         await asyncio.sleep(1)
         count[0] -= 1
+        done[0] += 1
 
     table.on_click(cb)
 
@@ -2861,6 +2864,7 @@ def test_server_cell_click_async_event():
     doc = list(table._models.values())[0][0].document
 
     data = df.reset_index()
+    n_events = len(data.columns) * len(data)
     with set_curdoc(doc):
         for col in data.columns:
             for row in range(len(data)):
@@ -2869,6 +2873,12 @@ def test_server_cell_click_async_event():
 
     # Ensure multiple callbacks started concurrently
     wait_until(lambda: len(counts) >= 1 and max(counts) > 1)
+
+    if sys.platform == 'win32':
+        # On Windows stopping the server loop at teardown abandons any pending
+        # callbacks, leaking "coroutine 'async_execute.<locals>.wrapped' was
+        # never awaited" warnings. Drain all callbacks before returning.
+        wait_until(lambda: done[0] == n_events)
 
 def test_tabulator_pagination_remote_cell_click_event():
     df = makeMixedDataFrame()
