@@ -109,12 +109,7 @@ class MessageSentBuffers(TypedDict):
     msg_type: str
 
 
-# Bokeh >=3.10 requires the event kind to be declared via a class
-# keyword argument rather than a plain class attribute.
-_message_sent_kwargs = {'kind': 'MessageSent'} if bokeh_version >= Version('3.10') else {}
-
-
-class MessageSentEventPatched(MessageSentEvent, **_message_sent_kwargs):  # type: ignore[call-arg]
+class MessageSentEventPatched(MessageSentEvent, kind='MessageSent'):  # type: ignore[call-arg]
     """
     Patches MessageSentEvent with fix that ensures MessageSent event
     does not define msg_data (which is an assumption in BokehJS

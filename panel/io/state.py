@@ -283,7 +283,7 @@ class _state(param.Parameterized):
         Resolves the server event loop associated with a Document via its
         session context. Unlike ``IOLoop.current()`` this returns the loop
         the server is actually running on even when called from a worker
-        thread (e.g. when Bokeh >=3.10 initializes a Document off the event
+        thread (e.g. when Bokeh initializes a Document off the event
         loop).
         """
         if doc is None:
@@ -322,6 +322,22 @@ class _state(param.Parameterized):
         except RuntimeError:
             return False
 
+    @property
+    def _document_lock_held(self) -> bool:
+        """
+        Whether the calling thread is executing inside a locked Bokeh
+        session callback even though it is not the server event loop
+        thread itself. Bokeh dispatches such callbacks (e.g.
+        next-tick callbacks) via `loop.run_in_executor`, so the callback
+        body runs on a worker thread while the session's document lock
+        is held for the duration. Mutating Bokeh models is safe in that
+        case since no other code can be touching them concurrently, but
+        raw socket writes are NOT (see `_on_loop_thread`).
+        """
+        session = getattr(getattr(self.curdoc, 'session_context', None), 'session', None)
+        session_lock = getattr(session, '_lock', None)
+        return bool(session_lock is not None and session_lock.locked())
+
     def _install_thread_pool(self, loop: asyncio.AbstractEventLoop | None = None) -> None:
         """
         Installs the shared bounded thread pool (configured via
@@ -339,24 +355,6 @@ class _state(param.Parameterized):
             except RuntimeError:
                 return
         loop.set_default_executor(self._thread_pool)
-        self._executor_loops.add(loop)
-
-    def _uninstall_thread_pool(self) -> None:
-        """
-        Detaches the shared thread pool from the loops it was installed on
-        before it is shut down, so that a callback scheduled after the
-        shutdown gets a fresh executor rather than raising.
-        """
-        for loop in list(self._executor_loops):
-            if loop.is_closed():
-                continue
-            try:
-                # Clearing the default executor makes asyncio create a new
-                # one lazily, which is what we want here.
-                loop.set_default_executor(None)  # type: ignore[arg-type]
-            except Exception:
-                pass
-        self._executor_loops.clear()
 
     @property
     def _extensions(self):
@@ -405,7 +403,7 @@ class _state(param.Parameterized):
         """
         return bool(
             doc is self.curdoc and
-            self._on_loop_thread and
+            (self._on_loop_thread or self._document_lock_held) and
             (not (doc and doc.session_context and getattr(doc.session_context, 'session', None))
              or self._connected.get(doc))
         )

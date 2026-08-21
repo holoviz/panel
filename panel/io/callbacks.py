@@ -174,7 +174,7 @@ class PeriodicCallback(param.Parameterized):
             self._doc = state.curdoc
             # Bokeh schedules periodic callbacks in a threadsafe manner so we
             # can register directly even when initialization runs on a worker
-            # thread (Bokeh >=3.10) rather than the server event loop thread.
+            # thread rather than the server event loop thread.
             self._cb = self._doc.add_periodic_callback(self._periodic_callback, self.period)
         elif not state._on_loop_thread:
             state.execute(self.start, schedule=True)
