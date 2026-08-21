@@ -33,7 +33,9 @@ from .state import state
 
 if t.TYPE_CHECKING:
     from asyncio.futures import Future
-    from collections.abc import Callable, Iterator, Sequence
+    from collections.abc import (
+        Callable, Iterable, Iterator, Sequence,
+    )
 
     from bokeh.core.enums import HoldPolicyType
     from bokeh.core.has_props import HasProps
@@ -365,7 +367,7 @@ def retrigger_events(doc: Document, events: list[DocumentChangedEvent]):
 
 def write_events(
     doc: Document,
-    connections: list[ServerConnection],
+    connections: Iterable[ServerConnection],
     events: list[DocumentPatchedEvent],
     run: bool = True
 ) -> list[Future]:
@@ -380,6 +382,7 @@ def write_events(
     """
     from tornado.websocket import WebSocketHandler
 
+    connections = list(connections)
     if not connections or not events:
         return []
 
@@ -410,7 +413,7 @@ def write_events(
 
 def schedule_write_events(
     doc: Document,
-    connections: list[ServerConnection],
+    connections: Iterable[ServerConnection],
     events: list[DocumentPatchedEvent]
 ):
     """
