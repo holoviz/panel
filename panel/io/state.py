@@ -277,7 +277,7 @@ class _state(param.Parameterized):
         Resolves the server event loop associated with a Document via its
         session context. Unlike ``IOLoop.current()`` this returns the loop
         the server is actually running on even when called from a worker
-        thread (e.g. when Bokeh >=3.10 initializes a Document off the event
+        thread (e.g. when Bokeh initializes a Document off the event
         loop).
         """
         if doc is None:
@@ -321,7 +321,7 @@ class _state(param.Parameterized):
         """
         Whether the calling thread is executing inside a locked Bokeh
         session callback even though it is not the server event loop
-        thread itself. Bokeh (>=3.10) dispatches such callbacks (e.g.
+        thread itself. Bokeh dispatches such callbacks (e.g.
         next-tick callbacks) via `loop.run_in_executor`, so the callback
         body runs on a worker thread while the session's document lock
         is held for the duration. Mutating Bokeh models is safe in that

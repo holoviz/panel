@@ -230,7 +230,7 @@ def _dispatch_write_task(doc, func, *args, **kwargs):
         loop = asyncio.get_running_loop()
     except RuntimeError:
         # No running loop on this thread (e.g. a callback offloaded to a
-        # worker thread by Bokeh >=3.10); avoid creating the coroutine here
+        # worker thread by Bokeh); avoid creating the coroutine here
         # since there is nothing to await it, and reschedule instead.
         doc.add_next_tick_callback(partial(func, *args, **kwargs))
         return
@@ -561,7 +561,7 @@ def unlocked(policy: HoldPolicyType = 'combine') -> Iterator:
         # scheduling them to be triggered later.
         connections = session._subscribed_connections
         # When running off the server event loop thread (e.g. a callback
-        # dispatched to a worker thread by Bokeh >=3.10) we cannot write to
+        # dispatched to a worker thread by Bokeh) we cannot write to
         # the sockets directly. Route every event through the scheduled path
         # which marshals the writes back onto the loop via a threadsafe
         # next-tick callback.
