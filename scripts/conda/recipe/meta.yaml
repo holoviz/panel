@@ -31,22 +31,21 @@ requirements:
     - {{ dep }}
     {% endfor %}
 
-# TODO: Add back when we have release panel-core 1.10.0 on conda-forge
-# test:
-#   imports:
-#     - panel
-#     - panel.io
-#   requires:
-#     - pip
-#     - pytest-asyncio
-#     - pytest-rerunfailures <16
-#     - pytest-xdist
-#     - esbuild
-#     - python-gil
-#   commands:
-#     - pip check
-#     - panel --help
-#     - pytest --pyargs panel.tests -n logical --dist loadgroup
+test:
+  imports:
+    - panel
+    - panel.io
+  requires:
+    - pip
+    - pytest-asyncio
+    - pytest-rerunfailures <16
+    - pytest-xdist
+    - esbuild
+    - python-gil
+  commands:
+    - pip check
+    - panel --help
+    - pytest --pyargs panel.tests -n logical --dist loadgroup
 
 about:
   home: {{ project['urls']['Homepage'] }}
