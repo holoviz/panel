@@ -546,6 +546,26 @@ def dispatch_django(
         ])
     return futures
 
+def _suppress_property_callbacks(
+    events: list[DocumentChangedEvent]
+) -> list[DocumentChangedEvent]:
+    """
+    Clears the ``callback_invoker`` on patch events so that handing them
+    to bokeh only serializes and writes them.
+
+    A held ModelChangedEvent carries the invoker that runs the
+    property-level ``on_change`` callbacks, which bokeh defers until the
+    event is dispatched. Since the change originated on the Python side
+    inside a hold, ``Syncable._changing`` has already been torn down by
+    the time the dispatch happens, so letting the invoker run makes
+    ``Syncable._server_change`` treat the Python update as a frontend
+    change and boomerang it back into the parameter.
+    """
+    for event in events:
+        if isinstance(event, DocumentPatchedEvent):
+            event.callback_invoker = None
+    return events
+
 def _flush_events(curdoc: Document, session: ServerSession) -> None:
     """
     Dispatches the events held on a Document, either by writing them to
@@ -578,7 +598,7 @@ def _flush_events(curdoc: Document, session: ServerSession) -> None:
     # applies to by reference, reordering leaves the client
     # dereferencing models it has not been sent yet.
     if locked and not queued and session._pending_writes is not None:
-        curdoc.callbacks._held_events += events
+        curdoc.callbacks._held_events += _suppress_property_callbacks(events)
         try:
             curdoc.unhold()
         except RuntimeError:
