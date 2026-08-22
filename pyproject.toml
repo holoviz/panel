@@ -246,6 +246,7 @@ filterwarnings = [
     "ignore:Implicitly cleaning up <_TemporaryFileWrapper:ResourceWarning",
     # 2026-08
     "ignore:Setting the shape on a NumPy array has been deprecated:DeprecationWarning:vtk.util.numpy_support", # https://gitlab.kitware.com/vtk/vtk/-/work_items/19900
+    "ignore:Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead", # https://github.com/encode/starlette/pull/2905
 ]
 
 [tool.coverage.run]
