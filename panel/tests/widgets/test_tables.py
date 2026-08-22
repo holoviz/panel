@@ -3218,6 +3218,27 @@ def test_header_filter_ends_is_case_insensitive(pagination):
     assert list(widget.current_view['word']) == ['Alphanumeric']
 
 
+@pytest.mark.parametrize('header_filters', [True, {'word': {'type': 'input', 'func': 'keywords'}}])
+def test_header_filter_keywords_matches_any_keyword(header_filters):
+    df = pd.DataFrame({'word': ['alpha', 'alphabet', 'beta']})
+    widget = Tabulator(df, header_filters=header_filters)
+
+    widget.filters = [{'field': 'word', 'type': 'keywords', 'value': 'lph bet'}]
+
+    assert list(widget.current_view['word']) == ['alpha', 'alphabet', 'beta']
+
+
+def test_header_filter_keywords_match_all_needs_every_keyword():
+    df = pd.DataFrame({'word': ['alpha', 'alphabet', 'beta']})
+    widget = Tabulator(df, header_filters={
+        'word': {'type': 'input', 'func': 'keywords', 'matchAll': True}
+    })
+
+    widget.filters = [{'field': 'word', 'type': 'keywords', 'value': 'lph bet'}]
+
+    assert list(widget.current_view['word']) == ['alphabet']
+
+
 @pytest.mark.parametrize(('op', 'value', 'expected'), [
     ('=', 2, [2]),
     ('!=', 2, [1, 3, 4]),
