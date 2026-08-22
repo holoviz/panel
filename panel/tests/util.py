@@ -302,7 +302,6 @@ def serve_and_wait(app, page=None, prefix=None, port=None, proxy=None, **kwargs)
     server_id = kwargs.pop('server_id', uuid.uuid4().hex)
     if serve_and_wait.server_implementation == 'fastapi':
         from panel.io.fastapi import serve as serve_app
-        port = port or get_open_ports()[0]
     else:
         serve_app = serve
     if proxy:
@@ -310,12 +309,7 @@ def serve_and_wait(app, page=None, prefix=None, port=None, proxy=None, **kwargs)
     serve_app(app, port=port or 0, threaded=True, show=False, liveness=True, server_id=server_id, prefix=prefix or "", **kwargs)
     wait_until(lambda: server_id in state._servers, page)
     server = state._servers[server_id][0]
-    if proxy:
-        port = proxy
-    elif serve_and_wait.server_implementation == 'fastapi':
-        port = port
-    else:
-        port = server.port
+    port = proxy if proxy else server.port
     wait_for_server(port, prefix=prefix)
     if page:
         page.wait_for_function("document.readyState === 'complete'", timeout=5000)

@@ -1,58 +1,47 @@
-# Sample django + Panel apps
+# Panel in a Django project
 
-Demos showing how panel can be integrated with django, to varying
-degrees.
+Based on a standard Django project template, the sliders app shows how to embed
+a Panel application in a Django view.
 
-To install using `pip`
+![screenshot of sliders app](sliders.png)
+
+## Installation
 
 ```bash
 pip install -r requirements.txt
 ```
 
-and using `conda`:
-
+or with `conda`:
 
 ```bash
-conda install -c conda-forge bokeh-django django==5 django-channels panel
+conda install -c conda-forge django panel uvicorn
 ```
 
-## sliders
+## Running
 
-![screenshot of sliders app](sliders.png)
+Panel serves its applications on the ASGI application declared in
+`project/asgi.py`, so the project has to be run with an ASGI server. Note that
+`python manage.py runserver` is WSGI only and will therefore serve the Django
+views but not the Panel application:
 
-Based on a standard Django app template, the sliders app shows how to
-integrate panel with a Django view.
+```bash
+uvicorn project.asgi:application
+```
+
+Then visit http://localhost:8000/sliders in your browser.
+
+## How it works
+
+* `sliders/sinewave.py`: a Parameterized object, replace it with your own.
+* `sliders/pn_app.py`: the Panel application, a function that modifies the
+  Bokeh `Document` it is given.
+* `project/asgi.py`: declares the application with `autoload`, i.e. it is
+  served for embedding in a Django view, and composes it with the ASGI
+  application of the Django project.
+* `sliders/views.py` and `sliders/templates/base.html`: embed the application
+  in a Django view with `bokeh.embed.server_document`.
 
 :::{note}
-Currently there is no interaction between param and Django models.
+There is no interaction between Param and Django models. To update a Django
+model from a Panel application, call the ORM from the application itself.
 :::
-
-Additions/modifications to django2 app template:
-
-  * `sliders/sinewave.py`: a (pre-existing) parameterized object (to
-    replace with your own)
-
-  * `sliders/bk_sliders.py`: the panel/bokeh app (based on
-    https://github.com/bokeh/bokeh/blob/master/examples/app/sliders.py;
-    to replace with your own)
-
-  * sliders/apps.py: how a django app can import and use bokeh server
-
-  * sliders/views.py and templates/base.html: getting the bokeh app
-    into a django view
-
-To run: `python manage.py runserver`, then visit
-http://localhost:8000/sliders in your browser.
-
-## polls
-
-Based on https://docs.djangoproject.com/en/2.0/intro/tutorial01/, the
-polls app shows one possible way to update a django model from a
-parameterized object (displayed using panel in a django view).
-
-To run: `python manage.py migrate` (first time only, to create polls
-models); subsequently run `python manage.py runserver` then visit
-http://localhost:8000/polls
-
-In the future, we could provide a way for people to integrate param
-and django models.

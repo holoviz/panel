@@ -1,6 +1,10 @@
 # Add custom endpoints to the Panel Server
 
-The Panel server is built on top of Tornado, which is a general framework for building performant web applications. This means it is very straightforward to add custom endpoints to serve as API endpoints for the application or to perform anything else we might want to do.
+The default Panel server is built on top of Tornado, which is a general framework for building performant web applications. This means it is very straightforward to add custom endpoints to serve as API endpoints for the application or to perform anything else we might want to do.
+
+```{note}
+The `RequestHandler` based endpoints described here are specific to the Tornado server, so `--plugins` and `extra_patterns` are rejected by `panel serve --server fastapi` and `--server asgi`. If you are serving on an ASGI server, declare the endpoints with the framework itself, i.e. as FastAPI routes or Django views, and add the Panel applications to it as described in the [FastAPI](../integrations/FastAPI) and [Django](../integrations/Django) guides.
+```
 
 ## Declaring a new endpoint
 

@@ -2,6 +2,44 @@
 
 Welcome to the Upgrade Guide for Panel! When we make backward-incompatible changes, we will provide a detailed guide on how you can update your application to be compatible with the latest changes.
 
+## Version 1.9
+
+Panel 1.9.0 requires Bokeh 3.10 and serves its applications on its own [ASGI](https://asgi.readthedocs.io/) application in addition to the existing Tornado server. This means the FastAPI and Django integrations are now implemented in Panel itself, so the `bokeh-fastapi` and `bokeh-django` packages are no longer used and are no longer installed by `panel[fastapi]` or the new `panel[django]` extra. If your environment pins either of them you can remove them.
+
+### FastAPI
+
+The public API of `panel.io.fastapi` is unchanged, i.e. `add_application`, `add_applications`, `get_server` and `serve` behave as they did before, and you no longer have to install `bokeh-fastapi` alongside Panel. The applications are now dispatched by a middleware rather than a mount, which means it no longer matters whether you call `add_applications` before or after registering your own routes. See the [FastAPI how-to guide](how_to/integrations/FastAPI) for details.
+
+### Django
+
+The Django integration no longer relies on `channels`, `daphne` or `bokeh-django`. Instead Panel composes its own ASGI application with the one Django provides and hands every request it does not own to Django. Existing projects keep the `document`, `autoload`, `directory`, `with_request` and `with_url_args` helpers, but import them from `panel.io.django` and declare the applications in the project's `asgi.py`:
+
+```python
+import django
+
+django.setup()
+
+import myapp.pn_app as pn_app
+
+from panel.io.django import autoload, get_asgi_application
+
+application = get_asgi_application([
+    autoload('myapp', pn_app.app),
+])
+```
+
+The `routing.py` module, the `bokeh_apps` urlpatterns and `STATICFILES_DIRS = [bokehjsdir()]` are no longer needed, and the project has to be run with an ASGI server such as uvicorn because `manage.py runserver` is WSGI only. `RoutingConfiguration`, `DjangoBokehConfig` and the Channels consumers raise an error pointing at the new API. The [Django how-to guide](how_to/integrations/Django) has a full migration section.
+
+### Choosing a server from the command line
+
+`panel serve` gained a `--server` option to pick the implementation:
+
+```bash
+panel serve app.py --server fastapi
+```
+
+The choices are `tornado` (the default, unchanged), `fastapi` and `asgi`, the latter running Panel's ASGI application under uvicorn without importing FastAPI. The ASGI implementations support everything the Tornado server does apart from `--plugins`, `--rest-provider`, `--rest-session-info`, `--enable-xsrf-cookies` and `--num-procs`, each of which fails with an error naming the option. Authentication, including all the OAuth providers, works on either implementation and the cookies are interoperable, so you can move between them without invalidating existing sessions.
+
 ## Version 1.0
 
 The 1.0 release brings a wealth of improvements compared to the 0.x series, including significant changes to the layout engine and an improved approach to handling CSS for individual components. These improvements are thanks to the new Bokeh 3.x releases, which received a bottom-up rewrite of layouts and CSS handling. These updates not only boost the performance but also elevate the customizability of your Panel apps.

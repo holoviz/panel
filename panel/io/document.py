@@ -247,6 +247,39 @@ def _is_write_locked(conn: ServerConnection) -> bool:
     socket = conn._socket
     return hasattr(socket, 'write_lock') and socket.write_lock._block._value == 0
 
+def _socket_dispatcher(socket: t.Any) -> Callable[..., Sequence[Future]]:
+    """
+    Resolve the write dispatcher for a socket, matching the exact type
+    first and then walking the MRO so that subclasses of a registered
+    transport are also covered.
+    """
+    from tornado.websocket import WebSocketHandler
+    if isinstance(socket, WebSocketHandler):
+        return dispatch_tornado
+    for cls in type(socket).__mro__:
+        if cls in extra_socket_handlers:
+            return extra_socket_handlers[cls]
+    return dispatch_django
+
+
+def _is_write_blocked(socket: t.Any) -> bool:
+    """
+    Whether a socket currently holds its write lock.
+
+    Tornado's ``locks.Lock`` exposes the lock state as the value of an
+    internal semaphore while Bokeh's ASGI ``_WriteLock`` wraps an
+    ``asyncio.Lock``, so both have to be probed.
+    """
+    lock = getattr(socket, 'write_lock', None)
+    if lock is None:
+        return False
+    if (block := getattr(lock, '_block', None)) is not None:
+        return block._value == 0
+    if (inner := getattr(lock, '_lock', None)) is not None:
+        return inner.locked()
+    return False
+
+
 async def _dispatch_msgs(doc):
     """
     Serializes and writes batches of events to the sockets, ensuring

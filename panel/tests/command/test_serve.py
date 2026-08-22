@@ -1,5 +1,7 @@
 import os
 import re
+import subprocess
+import sys
 import tempfile
 import time
 
@@ -14,15 +16,27 @@ from panel.tests.util import (
 )
 
 
+@pytest.fixture(params=['tornado', 'fastapi', 'asgi'])
+def server(request):
+    """
+    The value of the --server argument to serve with.
+    """
+    if request.param != 'tornado':
+        pytest.importorskip('uvicorn')
+    if request.param == 'fastapi':
+        pytest.importorskip('fastapi')
+    return request.param
+
+
 @linux_only
-def test_autoreload_app(py_file):
+def test_autoreload_app(server, py_file):
     app = "import panel as pn; pn.Row('# Example').servable(title='A')"
     app2 = "import panel as pn; pn.Row('# Example 2').servable(title='B')"
     write_file(app, py_file.file)
 
     app_name = os.path.basename(py_file.name)[:-3]
 
-    with run_panel_serve(["--port", "0", '--autoreload', py_file.name]) as p:
+    with run_panel_serve(["--port", "0", "--server", server, '--autoreload', py_file.name]) as p:
         port = wait_for_port(p.stdout)
         r = requests.get(f"http://localhost:{port}/{app_name}")
         assert r.status_code == 200
@@ -60,22 +74,22 @@ def test_autoreload_app_local_module(py_files):
 
 
 @linux_only
-def test_serve_admin(py_file):
+def test_serve_admin(server, py_file):
     app = "import panel as pn; pn.Row('# Example').servable(title='A')"
     write_file(app, py_file.file)
 
-    with run_panel_serve(["--port", "0", '--admin', py_file.name]) as p:
+    with run_panel_serve(["--port", "0", "--server", server, '--admin', py_file.name]) as p:
         port = wait_for_port(p.stdout)
         r = requests.get(f"http://localhost:{port}/admin")
         assert r.status_code == 200
         assert "Admin" in r.content.decode('utf-8')
 
 @linux_only
-def test_serve_admin_custom_endpoint(py_file):
+def test_serve_admin_custom_endpoint(server, py_file):
     app = "import panel as pn; pn.Row('# Example').servable(title='A')"
     write_file(app, py_file.file)
 
-    with run_panel_serve(["--port", "0", '--admin', '--admin-endpoint', 'foo', py_file.name]) as p:
+    with run_panel_serve(["--port", "0", "--server", server, '--admin', '--admin-endpoint', 'foo', py_file.name]) as p:
         port = wait_for_port(p.stdout)
         r = requests.get(f"http://localhost:{port}/foo")
         assert r.status_code == 200
@@ -85,7 +99,7 @@ def test_serve_admin_custom_endpoint(py_file):
 
 @linux_only
 @pytest.mark.parametrize('relative', [True, False])
-def test_custom_html_index(relative, html_file):
+def test_custom_html_index(relative, server, html_file):
     index = '<html><body>Foo</body></html>'
     write_file(index, html_file.file)
     app = "import panel as pn; pn.Row('# Example').servable(title='A')"
@@ -102,7 +116,7 @@ def test_custom_html_index(relative, html_file):
         index_path = html_file.name
         cwd = None
 
-    with run_panel_serve(["--port", "0", "--index", index_path, py1.name, py2.name], cwd=cwd) as p:
+    with run_panel_serve(["--port", "0", "--server", server, "--index", index_path, py1.name, py2.name], cwd=cwd) as p:
         port = wait_for_port(p.stdout)
         r = requests.get(f"http://localhost:{port}/")
         assert r.status_code == 200
@@ -124,11 +138,11 @@ pn.Row('# Example').servable()
 """
 
 @linux_only
-def test_serve_markdown():
+def test_serve_markdown(server):
     md = tempfile.NamedTemporaryFile(mode='w', suffix='.md')
     write_file(md_app, md.file)
 
-    with run_panel_serve(["--port", "0", md.name]) as p:
+    with run_panel_serve(["--port", "0", "--server", server, md.name]) as p:
         port = wait_for_port(p.stdout)
         r = requests.get(f"http://localhost:{port}/")
         assert r.status_code == 200
@@ -164,7 +178,7 @@ def test_serve_num_procs_setup(tmp_path):
         assert pid1 != pid2
 
 
-def test_serve_setup(tmp_path):
+def test_serve_setup(server, tmp_path):
     app = "import panel as pn; pn.panel('Hello').servable()"
     py = tmp_path / "app.py"
     py.write_text(app)
@@ -174,12 +188,12 @@ def test_serve_setup(tmp_path):
     setup_py.write_text(setup_app)
 
     regex = re.compile('(Setup running before)')
-    with run_panel_serve(["--port", "0", py, "--setup", setup_py], cwd=tmp_path) as p:
+    with run_panel_serve(["--port", "0", "--server", server, py, "--setup", setup_py], cwd=tmp_path) as p:
         _, output = wait_for_regex(p.stdout, regex=regex, return_output=True)
         assert output[0].strip() == "Setup running before"
 
 
-def test_serve_authorize_callback_exception(tmp_path):
+def test_serve_authorize_callback_exception(server, tmp_path):
     app = "import panel as pn; pn.panel('Hello').servable()"
     py = tmp_path / "app.py"
     py.write_text(app)
@@ -193,9 +207,133 @@ def test_serve_authorize_callback_exception(tmp_path):
     setup_py.write_text(dedent(setup_app))
 
     regex = re.compile('(Authorization callback errored)')
-    with run_panel_serve(["--port", "0", py, "--setup", setup_py], cwd=tmp_path) as p:
+    with run_panel_serve(["--port", "0", "--server", server, py, "--setup", setup_py], cwd=tmp_path) as p:
         nsbr = NBSR(p.stdout)
         port = wait_for_port(nsbr)
         resp = requests.get(f"http://localhost:{port}/")
         wait_for_regex(nsbr, regex=regex)
         assert resp.status_code == 403
+
+
+@linux_only
+def test_serve_static_dirs(server, tmp_path):
+    app = "import panel as pn; pn.Row('# Example').servable(title='A')"
+    py = tmp_path / "app.py"
+    py.write_text(app)
+    assets = tmp_path / "assets"
+    assets.mkdir()
+    (assets / "file.txt").write_text("static content")
+
+    args = ["--port", "0", "--server", server, py, "--static-dirs", f"assets={assets}"]
+    with run_panel_serve(args, cwd=tmp_path) as p:
+        port = wait_for_port(p.stdout)
+        r = requests.get(f"http://localhost:{port}/assets/file.txt")
+        assert r.status_code == 200
+        assert r.content.decode('utf-8') == "static content"
+
+
+@linux_only
+def test_serve_liveness_endpoint(server, tmp_path):
+    app = "import panel as pn; pn.Row('# Example').servable(title='A')"
+    py = tmp_path / "app.py"
+    py.write_text(app)
+
+    args = ["--port", "0", "--server", server, py, "--liveness"]
+    with run_panel_serve(args, cwd=tmp_path) as p:
+        port = wait_for_port(p.stdout)
+        r = requests.get(f"http://localhost:{port}/liveness")
+        assert r.status_code == 200
+        assert r.json() == {'/liveness': True}
+        r = requests.get(f"http://localhost:{port}/liveness?endpoint=/app")
+        assert r.status_code == 200
+        assert r.json() == {'/app': True}
+        r = requests.get(f"http://localhost:{port}/liveness?endpoint=/other")
+        assert r.status_code == 400
+
+
+@linux_only
+def test_serve_prefix(server, tmp_path):
+    app = "import panel as pn; pn.Row('# Example').servable(title='A')"
+    py = tmp_path / "app.py"
+    py.write_text(app)
+
+    args = ["--port", "0", "--server", server, py, "--prefix", "sub/path"]
+    with run_panel_serve(args, cwd=tmp_path) as p:
+        port = wait_for_port(p.stdout)
+        r = requests.get(f"http://localhost:{port}/sub/path/app")
+        assert r.status_code == 200
+        assert "<title>A</title>" in r.content.decode('utf-8')
+        assert requests.get(f"http://localhost:{port}/app").status_code == 404
+
+
+@linux_only
+def test_serve_basic_auth(server, tmp_path, monkeypatch):
+    app = (
+        "import panel as pn\n"
+        "print(f'USER={pn.state.user}', flush=True)\n"
+        "pn.Row('# Example').servable(title='A')\n"
+    )
+    py = tmp_path / "app.py"
+    py.write_text(app)
+
+    # The CLI rejects a secret supplied both on the commandline and the environment
+    monkeypatch.delenv('PANEL_COOKIE_SECRET', raising=False)
+    monkeypatch.delenv('BOKEH_COOKIE_SECRET', raising=False)
+
+    args = [
+        "--port", "0", "--server", server, py, "--basic-auth", "my_password",
+        "--cookie-secret", "my_secret"
+    ]
+    with run_panel_serve(args, cwd=tmp_path) as p:
+        nsbr = NBSR(p.stdout)
+        port = wait_for_port(nsbr)
+        url = f"http://localhost:{port}"
+        session = requests.Session()
+
+        r = session.get(f"{url}/app", allow_redirects=False)
+        assert r.status_code == 302
+        assert r.headers['location'].endswith('login?next=%2Fapp')
+
+        r = session.get(f"{url}/login")
+        assert r.status_code == 200
+        assert 'name="username"' in r.content.decode('utf-8')
+
+        r = session.post(
+            f"{url}/login", data={'username': 'user', 'password': 'my_password'},
+            allow_redirects=False
+        )
+        assert r.status_code == 302
+
+        r = session.get(f"{url}/app")
+        assert r.status_code == 200
+        assert "<title>A</title>" in r.content.decode('utf-8')
+        wait_for_regex(nsbr, regex=re.compile('(USER=user)'))
+
+        r = session.get(f"{url}/logout", allow_redirects=False)
+        assert r.status_code in (200, 302)
+        assert session.get(f"{url}/app", allow_redirects=False).status_code == 302
+
+
+@linux_only
+@pytest.mark.parametrize('args', [
+    ['--plugins', 'some.module'],
+    ['--rest-provider', 'param'],
+    ['--rest-session-info'],
+    ['--enable-xsrf-cookies'],
+    ['--num-procs', '2'],
+])
+def test_serve_asgi_rejects_tornado_only_args(args, tmp_path):
+    pytest.importorskip('uvicorn')
+    app = "import panel as pn; pn.Row('# Example').servable(title='A')"
+    py = tmp_path / "app.py"
+    py.write_text(app)
+
+    cmd = [
+        sys.executable, "-m", "panel", "serve", "--port", "0", "--server",
+        "asgi", *args, str(py)
+    ]
+    proc = subprocess.run(cmd, cwd=tmp_path, capture_output=True, timeout=180, check=False)
+    output = (proc.stdout + proc.stderr).decode('utf-8')
+    assert proc.returncode != 0, output
+    assert args[0] in output
+    assert '--server tornado' in output or 'not supported' in output
