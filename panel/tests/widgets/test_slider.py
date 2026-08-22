@@ -11,8 +11,9 @@ from bokeh.models import (
 from panel import config
 from panel.widgets import (
     DateRangeSlider, DateSlider, DatetimeRangeSlider, DatetimeSlider,
-    DiscreteSlider, EditableFloatSlider, EditableIntSlider,
-    EditableRangeSlider, FloatSlider, IntSlider, RangeSlider, StaticText,
+    DiscretePlayer, DiscreteSlider, EditableFloatSlider, EditableIntSlider,
+    EditableRangeSlider, FloatInput, FloatSlider, IntInput, IntSlider, Player,
+    RangeSlider, StaticText,
 )
 
 
@@ -969,3 +970,60 @@ def test_date_range_slider_start_end_explicit_conversion(document, comm):
     assert widget.end == expected_end_ms
     assert widget.start == widget.value[0]
     assert widget.end == widget.value[1]
+
+
+@pytest.mark.parametrize('widget, initial, new', [
+    (FloatSlider, 0.1, 0.4),
+    (IntSlider, 1, 4),
+    (RangeSlider, (0, 1), (2, 3)),
+])
+def test_slider_value_throttled_follows_programmatic_value(widget, initial, new):
+    # Assigning value from Python is not a drag, so there is nothing to
+    # throttle and value_throttled must follow, the way __init__ already
+    # seeds it. See https://github.com/holoviz/panel/issues/2675.
+    slider = widget(start=0, end=10, value=initial)
+    assert slider.value_throttled == initial
+
+    slider.value = new
+    assert slider.value_throttled == new
+
+
+def test_slider_value_throttled_notifies_watchers():
+    # A callback bound to value_throttled never fired on a programmatic set.
+    seen = []
+    slider = IntSlider(start=0, end=10, value=0)
+    slider.param.watch(lambda event: seen.append(event.new), 'value_throttled')
+
+    slider.value = 7
+
+    assert seen == [7]
+
+
+def test_slider_value_throttled_not_updated_while_dragging(document, comm):
+    # The frontend sends `value` during a drag and `value_throttled` on
+    # release. Only the release may move value_throttled, otherwise the
+    # parameter would lose its purpose.
+    slider = FloatSlider(start=0, end=10, value=0)
+    slider.get_root(document, comm=comm)
+
+    slider._process_events({'value': 4.0})
+    assert slider.value == 4.0
+    assert slider.value_throttled == 0
+
+    slider._process_events({'value_throttled': 4.0})
+    assert slider.value_throttled == 4.0
+
+
+@pytest.mark.parametrize('widget, kwargs, new', [
+    (Player, dict(start=0, end=10, value=1), 4),
+    (DiscretePlayer, dict(options=[1, 2, 3], value=1), 3),
+    (IntInput, dict(value=1), 7),
+    (FloatInput, dict(value=1.0), 7.0),
+])
+def test_non_slider_value_throttled_follows_programmatic_value(widget, kwargs, new):
+    # PlayerBase and _SpinnerBase seed value_throttled from value in __init__ the
+    # same way _SliderBase does, so they had the same stale-forever bug. The sync
+    # lives on Widget so every family that declares value_throttled gets it.
+    w = widget(**kwargs)
+    w.value = new
+    assert w.value_throttled == new

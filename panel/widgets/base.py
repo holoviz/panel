@@ -184,6 +184,22 @@ class Widget(Reactive, WidgetBase):
             self.param.watch(self._sync__label, ['name']),
             self.param.watch(self._sync__name, ['label'])
         ])
+        if 'value_throttled' in self.param:
+            self._internal_callbacks.append(
+                self.param.watch(self._sync_value_throttled, 'value')
+            )
+
+    def _sync_value_throttled(self, event):
+        # Assigning `value` from Python is not a drag, so there is nothing to
+        # throttle and `value_throttled` should follow, the same way the sliders,
+        # players and spinners already seed it from `value` in their __init__.
+        # Changes driven by the frontend arrive inside param's `_syncing` context,
+        # and those must leave `value_throttled` pinned until the interaction
+        # finishes, which is the point of the parameter.
+        if 'value' in self._param__private.syncing:
+            return
+        with edit_readonly(self):
+            self.value_throttled = event.new
 
     def _sync__label(self, event):
         if self.label != self.name:
