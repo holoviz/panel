@@ -12,7 +12,6 @@ import urllib.parse as urlparse
 import uuid
 
 from base64 import urlsafe_b64encode
-from functools import partial
 
 import tornado
 
@@ -1229,7 +1228,15 @@ class OAuthProvider(BasicAuthProvider):
         now_ts = dt.datetime.now(dt.timezone.utc).timestamp()
         expiry_seconds = expiry_ts - now_ts - 60
         expiry_date = dt.datetime.now() + dt.timedelta(seconds=expiry_seconds) # schedule_task is in local TZ
-        refresh_cb = partial(self._scheduled_refresh, user, refresh_token, application, request)
+
+        async def refresh_cb():
+            # The task may have been scheduled while the user had an active
+            # session but only fire after they have since disconnected, so
+            # re-check liveness at execution time rather than schedule time.
+            if not state._active_users.get(user):
+                return
+            await self._scheduled_refresh(user, refresh_token, application, request)
+
         if expiry_seconds <= 0:
             log.debug("%s token expired unexpectedly, refreshing immediately.", type(self).__name__)
             state.execute(refresh_cb)
@@ -1244,8 +1251,6 @@ class OAuthProvider(BasicAuthProvider):
             state.schedule_task(task, refresh_cb, at=expiry_date)
 
     async def _scheduled_refresh(self, user, refresh_token, application, request, reschedule=True):
-        if not state._active_users.get(user):
-            return None, None, None
         await self._refresh_access_token(user, refresh_token, application, request)
         if user not in state._oauth_user_overrides:
             return None, None, None
