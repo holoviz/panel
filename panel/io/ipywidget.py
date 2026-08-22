@@ -23,12 +23,11 @@ from ipywidgets_bokeh.kernel import (
     BokehKernel, SessionWebsocket, WebsocketStream,
 )
 from ipywidgets_bokeh.widget import IPyWidget
-from packaging.version import Version
 from tornado.ioloop import IOLoop
 from traitlets import Any
 
 from ..config import __version__
-from ..util import bokeh_version, classproperty
+from ..util import classproperty
 from .state import set_curdoc, state
 
 try:

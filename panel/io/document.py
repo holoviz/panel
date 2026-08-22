@@ -37,10 +37,8 @@ if t.TYPE_CHECKING:
         Callable, Iterable, Iterator, Sequence,
     )
 
-    from bokeh.application.application import ServerContext
     from bokeh.core.enums import HoldPolicyType
     from bokeh.core.has_props import HasProps
-    from bokeh.core.types import ID
     from bokeh.protocol.message import Message
     from bokeh.server.connection import ServerConnection
     from bokeh.server.session import ServerSession
