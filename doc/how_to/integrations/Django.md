@@ -2,7 +2,7 @@
 
 Panel generally runs on the Bokeh server, which itself runs on [Tornado](https://tornadoweb.org/en/stable/). However, it is also often useful to embed a Panel app in a larger web application, such as a [Django](https://www.djangoproject.com/) project.
 
-Since Panel 1.9.0 Panel serves its applications on its own [ASGI](https://asgi.readthedocs.io/) application, which it composes with the ASGI application of the Django project. Panel handles the requests for the applications, their websockets and their resources and hands every other request to Django, so neither `channels` nor `bokeh-django` are needed anymore. If you are migrating from `bokeh-django` see the [migration section](#migrating-from-bokeh-django) below.
+Since Panel 1.10.0 Panel serves its applications on its own [ASGI](https://asgi.readthedocs.io/) application, which it composes with the ASGI application of the Django project. Panel handles the requests for the applications, their websockets and their resources and hands every other request to Django, so neither `channels` nor `bokeh-django` are needed anymore. If you are migrating from `bokeh-django` see the [migration section](#migrating-from-bokeh-django) below.
 
 ## Setup
 

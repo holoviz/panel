@@ -4,7 +4,7 @@ Welcome to the Upgrade Guide for Panel! When we make backward-incompatible chang
 
 ## Version 1.9
 
-Panel 1.9.0 requires Bokeh 3.10 and serves its applications on its own [ASGI](https://asgi.readthedocs.io/) application in addition to the existing Tornado server. This means the FastAPI and Django integrations are now implemented in Panel itself, so the `bokeh-fastapi` and `bokeh-django` packages are no longer used and are no longer installed by `panel[fastapi]` or the new `panel[django]` extra. If your environment pins either of them you can remove them.
+Panel 1.10.0 requires Bokeh 3.10 and serves its applications on its own [ASGI](https://asgi.readthedocs.io/) application in addition to the existing Tornado server. This means the FastAPI and Django integrations are now implemented in Panel itself, so the `bokeh-fastapi` and `bokeh-django` packages are no longer used and are no longer installed by `panel[fastapi]` or the new `panel[django]` extra. If your environment pins either of them you can remove them.
 
 ### FastAPI
 
