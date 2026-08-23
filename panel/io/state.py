@@ -909,11 +909,17 @@ class _state(param.Parameterized):
         for server_id in self._servers:
             if server_id in self._threads:
                 self._threads[server_id].stop()
-            else:
-                try:
-                    self._servers[server_id][0].stop()
-                except AssertionError:  # can't stop a server twice
-                    pass
+                continue
+            server = self._servers[server_id][0]
+            if hasattr(server, 'should_exit'):
+                # uvicorn.Server has no stop method, setting the exit flag is
+                # the only way to shut it down from the outside.
+                server.should_exit = True
+                continue
+            try:
+                server.stop()
+            except AssertionError:  # can't stop a server twice
+                pass
         self._servers.clear()
         self._threads.clear()
 

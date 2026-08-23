@@ -19,16 +19,21 @@ conda install -c conda-forge django panel uvicorn
 
 ## Running
 
+```bash
+python manage.py runserver
+```
+
+Then visit http://localhost:8000/sliders in your browser.
+
 Panel serves its applications on the ASGI application declared in
-`project/asgi.py`, so the project has to be run with an ASGI server. Note that
-`python manage.py runserver` is WSGI only and will therefore serve the Django
-views but not the Panel application:
+`project/asgi.py`, so the project has to be run with an ASGI server. Django's
+own development server is WSGI only, which is why `panel.io.django` is listed
+in the `INSTALLED_APPS`: it replaces `runserver` with a command that serves the
+ASGI application with uvicorn. To run it yourself instead, e.g. in production:
 
 ```bash
 uvicorn project.asgi:application
 ```
-
-Then visit http://localhost:8000/sliders in your browser.
 
 ## How it works
 

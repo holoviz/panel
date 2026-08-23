@@ -24,8 +24,20 @@ conda install -c conda-forge django uvicorn panel
 
 ::::
 
+and add `panel.io.django` to the `INSTALLED_APPS` in the project's `settings.py`:
+
+```python
+INSTALLED_APPS = [
+    'panel.io.django',
+    'django.contrib.admin',
+    ...
+]
+```
+
+Panel serves its applications on the project's ASGI application, but Django's own development server is WSGI only, so it would serve the Django views and 404 on everything the Panel applications need. The `panel.io.django` app exists to replace `runserver` with an equivalent command that runs the ASGI application under uvicorn. It has to be listed *before* `django.contrib.staticfiles`, which ships a `runserver` command of its own, because Django resolves management commands in `INSTALLED_APPS` order.
+
 ```{important}
-The Panel applications are served on the project's ASGI application, so the project has to be run with an ASGI server. `python manage.py runserver` is WSGI only and will serve the Django views but not the Panel applications.
+If you cannot add `panel.io.django` to the `INSTALLED_APPS`, run the project with an ASGI server directly, e.g. `uvicorn project.asgi:application`. Plain `python manage.py runserver` is WSGI only and will serve the Django views but not the Panel applications.
 ```
 
 ## Configuration
@@ -206,7 +218,23 @@ urlpatterns = [
 ]
 ```
 
-You should be able to run this app yourself by changing to the `examples/apps/django` directory and then running `uvicorn project.asgi:application`; then visit http://localhost:8000/sliders in your browser to try the app.
+## Running the project
+
+With `panel.io.django` in the `INSTALLED_APPS` the usual command runs the project:
+
+```bash
+python manage.py runserver
+```
+
+This is Django's `runserver` with its WSGI server swapped for uvicorn serving `ASGI_APPLICATION`, so the address argument, the system checks, `--noreload` and the autoreload on code changes all behave as they always did. Pass `--wsgi` to fall back to Django's own development server, which is occasionally useful to confirm that a problem is not in Panel, keeping in mind that the Panel applications are not served then.
+
+In production run the ASGI application with an ASGI server of your choice, e.g.:
+
+```bash
+uvicorn project.asgi:application
+```
+
+You should be able to run the sliders app yourself by changing to the `examples/apps/django` directory and running either command; then visit http://localhost:8000/sliders in your browser to try the app.
 
 ## Accessing the request and the URL parameters
 
@@ -263,18 +291,18 @@ application = get_asgi_application([
 ])
 ```
 
-To see a multi-app Django project have a look at ``examples/apps/django_multi_apps`` and launch it with `uvicorn django_multi_apps.asgi:application`.
+To see a multi-app Django project have a look at ``examples/apps/django_multi_apps`` and launch it with `python manage.py runserver`.
 
 ## Migrating from bokeh-django
 
 Projects that served Panel applications with `channels` and `bokeh-django` need the following changes:
 
-1. Remove `channels`, `daphne` and `bokeh_django` from the requirements and from `INSTALLED_APPS`.
+1. Remove `channels`, `daphne` and `bokeh_django` from the requirements and from `INSTALLED_APPS`, and add `panel.io.django` in their place. Like `channels` and `daphne` it takes over `runserver`, so it goes at the top of the list.
 2. Delete `routing.py`, i.e. the `ProtocolTypeRouter` and the `bokeh_app_config.routes` patterns, and declare the applications in `asgi.py` with `panel.io.django.get_asgi_application` as shown above. Point `ASGI_APPLICATION` at it.
 3. Import `document`, `autoload`, `directory`, `with_request` and `with_url_args` from `panel.io.django` instead of `bokeh_django`. Their signatures are unchanged, but `with_request` now hands the application the request of the session rather than the Django request, i.e. its `arguments`, `cookies` and `headers`, and `with_url_args` passes the captured route parameters as keyword arguments only.
 4. Remove the `bokeh_apps` list from `urls.py` as well as the `static_extensions()` urlpatterns and `STATICFILES_DIRS = [bokehjs_path()]`, since Panel serves the BokehJS and extension resources itself. `panel.io.django.static_extensions()` and the `PanelExtensionFinder` staticfiles finder are still available if you prefer Django to serve them, e.g. after a `collectstatic`.
 5. Declare routes that captured parameters as `{name}` templates rather than as regular expressions, e.g. `document(r'^user/(?P<name>[\w-]+)$', app)` becomes `document('user/{name}', app)`. The regular expression form still works but logs a warning.
-6. Run the project with an ASGI server, e.g. `uvicorn project.asgi:application`, since `manage.py runserver` does not serve the Panel applications.
+6. Deploy the project with an ASGI server, e.g. `uvicorn project.asgi:application`, rather than a WSGI one. `manage.py runserver` keeps working in development as long as `panel.io.django` is installed.
 
 `routing.RoutingConfiguration`, `DjangoBokehConfig` and the Channels consumers (`DocConsumer`, `AutoloadJsConsumer`, `WSConsumer`) no longer exist and raise an error pointing at the new API.
 

@@ -1,7 +1,7 @@
 """
 The ASGI application serving both the Django project and the Panel app.
 
-Run it with an ASGI server, e.g.:
+Run it with 'python manage.py runserver' or with an ASGI server directly:
 
     uvicorn project.asgi:application
 """

@@ -199,3 +199,23 @@ def test_fastapi_add_application_decorator():
     assert '<title>Decorated</title>' in r.text
     # The decorated function is still callable
     assert isinstance(declared(), Markdown)
+
+
+def test_kill_all_servers_stops_uvicorn_server():
+    """
+    ``uvicorn.Server`` has no ``stop`` method, so shutting it down has to go
+    through its exit flag rather than raising an AttributeError and leaving
+    the server running.
+    """
+    pytest.importorskip('uvicorn')
+    from panel.io.fastapi import get_server
+
+    server = get_server({'/app': markdown_app}, start=False, show=False)
+    try:
+        assert not server.should_exit
+        state.kill_all_servers()
+        assert server.should_exit
+        assert not state._servers
+    finally:
+        for asgi in list(state._server_config):
+            state._server_config.pop(asgi, None)

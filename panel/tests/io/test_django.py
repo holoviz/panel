@@ -3,6 +3,7 @@ Tests for the native Django integration, i.e. the composition of
 ``PanelASGI`` with Django's own ASGI application.
 """
 import asyncio
+import io
 
 import pytest
 
@@ -32,6 +33,7 @@ if not settings.configured:
 import django
 
 from django.http import HttpResponse
+from django.test import override_settings
 from django.urls import path, re_path
 from starlette.testclient import TestClient
 
@@ -378,3 +380,75 @@ def test_django_removed_channels_api():
         RoutingConfiguration({})
     with pytest.raises(RuntimeError, match='no longer available'):
         AutoloadJsConsumer()
+
+
+#---------------------------------------------------------------------
+# runserver management command
+#---------------------------------------------------------------------
+
+@pytest.fixture
+def runserver(monkeypatch):
+    """
+    Yields a factory invoking the runserver command with uvicorn stubbed out,
+    returning the arguments it was called with.
+    """
+    pytest.importorskip('uvicorn')
+    import uvicorn
+
+    from panel.io.django.management.commands.runserver import Command
+
+    calls = []
+    monkeypatch.setattr(uvicorn, 'run', lambda app, **kwargs: calls.append((app, kwargs)))
+
+    def invoke(*args, **options):
+        from django.core.management import call_command
+        stdout = io.StringIO()
+        call_command(Command(), *args, stdout=stdout, **options)
+        return calls, stdout.getvalue()
+
+    return invoke
+
+
+@override_settings(ASGI_APPLICATION='project.asgi.application')
+def test_django_runserver_serves_asgi_application(runserver):
+    calls, stdout = runserver('8123', use_reloader=False)
+    assert calls == [(
+        'project.asgi:application',
+        {'host': '127.0.0.1', 'port': 8123, 'reload': False, 'log_level': 'info'}
+    )]
+    assert 'Starting ASGI development server at http://127.0.0.1:8123/' in stdout
+
+
+@override_settings(ASGI_APPLICATION='project.asgi.application')
+def test_django_runserver_passes_the_address_and_reloader(runserver):
+    calls, _ = runserver('0.0.0.0:9000', use_reloader=True)
+    app, kwargs = calls[0]
+    assert kwargs['host'] == '0.0.0.0'
+    assert kwargs['port'] == 9000
+    assert kwargs['reload']
+
+
+@override_settings(ASGI_APPLICATION=None)
+def test_django_runserver_requires_an_asgi_application(runserver):
+    from django.core.management.base import CommandError
+    with pytest.raises(CommandError, match='ASGI_APPLICATION is not declared'):
+        runserver(use_reloader=False)
+
+
+@override_settings(ASGI_APPLICATION='application')
+def test_django_runserver_requires_a_dotted_path(runserver):
+    from django.core.management.base import CommandError
+    with pytest.raises(CommandError, match='not a dotted path'):
+        runserver(use_reloader=False)
+
+
+def test_django_runserver_wsgi_falls_back_to_django(runserver, monkeypatch):
+    from django.core.management.commands import runserver as django_runserver
+    served = []
+    monkeypatch.setattr(
+        django_runserver, 'run',
+        lambda addr, port, handler, **kwargs: served.append((addr, port))
+    )
+    calls, _ = runserver('8123', use_reloader=False, wsgi=True)
+    assert calls == []
+    assert served == [('127.0.0.1', 8123)]

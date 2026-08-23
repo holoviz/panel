@@ -11,6 +11,10 @@ longer needed. The ``document``, ``autoload``, ``directory``,
 ``static_extensions``, ``with_request`` and ``with_url_args`` helpers are kept
 so that an existing project only has to replace its Channels routing with
 :func:`panel.io.django.get_asgi_application`.
+
+This module is also a Django application. Adding it to the ``INSTALLED_APPS``,
+before ``'django.contrib.staticfiles'``, replaces the WSGI only ``runserver``
+command with one that serves the ASGI application with uvicorn.
 """
 from __future__ import annotations
 
@@ -31,11 +35,11 @@ from bokeh.command.util import build_single_handler_applications
 from bokeh.embed.bundle import extension_dirs
 from bokeh.settings import settings as bokeh_settings
 
-from .application import Application, build_single_handler_application
-from .asgi import PanelASGI
-from .auth import configure_auth, pop_auth_kwargs
-from .handlers import FunctionHandler
-from .state import set_curdoc, state
+from ..application import Application, build_single_handler_application
+from ..asgi import PanelASGI
+from ..auth import configure_auth, pop_auth_kwargs
+from ..handlers import FunctionHandler
+from ..state import set_curdoc, state
 
 try:
     from django.contrib.staticfiles.finders import BaseFinder
@@ -51,7 +55,7 @@ if t.TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.server.contexts import ApplicationContext
 
-    from .asgi import Receive, Scope, Send
+    from ..asgi import Receive, Scope, Send
 
     ApplicationLike: t.TypeAlias = BkApplication | Callable[[Document], t.Any] | os.PathLike | str
 
@@ -563,7 +567,9 @@ def get_asgi_application(
         application = get_asgi_application([document('sliders', pn_app.app)])
 
     and serve it with an ASGI server, e.g.
-    ``uvicorn project.asgi:application``.
+    ``uvicorn project.asgi:application``. Adding ``'panel.io.django'`` to the
+    ``INSTALLED_APPS`` makes ``manage.py runserver`` do that as well, since
+    Django's own development server is WSGI only.
 
     Parameters
     ----------

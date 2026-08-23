@@ -4,7 +4,7 @@ ASGI config for the django_multi_apps project.
 It exposes the ASGI callable as a module-level variable named ``application``,
 serving both the Django project and the Panel applications.
 
-Run it with an ASGI server, e.g.:
+Run it with 'python manage.py runserver' or with an ASGI server directly:
 
     uvicorn django_multi_apps.asgi:application
 """

@@ -14,16 +14,22 @@ pip install -r requirements.txt
 
 ## Running
 
+```bash
+python manage.py runserver
+```
+
+Then visit http://localhost:8000 in your browser.
+
 Panel serves its applications on the ASGI application declared in
 `django_multi_apps/asgi.py`, so the project has to be run with an ASGI server.
-Note that `python manage.py runserver` is WSGI only and will therefore serve the
-Django views but not the Panel applications:
+Django's own development server is WSGI only, which is why `panel.io.django` is
+listed in the `INSTALLED_APPS`: it replaces `runserver` with a command that
+serves the ASGI application with uvicorn. To run it yourself instead, e.g. in
+production:
 
 ```bash
 uvicorn django_multi_apps.asgi:application
 ```
-
-Then visit http://localhost:8000 in your browser.
 
 For details on how to configure the applications see the
 [Django how-to guide](https://panel.holoviz.org/how_to/integrations/Django.html).

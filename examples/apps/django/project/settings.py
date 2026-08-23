@@ -27,6 +27,11 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    # Replaces the WSGI only 'runserver' command with one serving the ASGI
+    # application, so that it also serves the Panel application. It has to
+    # come before 'django.contrib.staticfiles', which ships a 'runserver'
+    # command of its own.
+    'panel.io.django',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

@@ -28,7 +28,7 @@ application = get_asgi_application([
 ])
 ```
 
-The `routing.py` module, the `bokeh_apps` urlpatterns and `STATICFILES_DIRS = [bokehjsdir()]` are no longer needed, and the project has to be run with an ASGI server such as uvicorn because `manage.py runserver` is WSGI only. `RoutingConfiguration`, `DjangoBokehConfig` and the Channels consumers raise an error pointing at the new API. The [Django how-to guide](how_to/integrations/Django) has a full migration section.
+The `routing.py` module, the `bokeh_apps` urlpatterns and `STATICFILES_DIRS = [bokehjsdir()]` are no longer needed. The project is served by an ASGI server such as uvicorn rather than a WSGI one; in development, add `panel.io.django` to the top of the `INSTALLED_APPS` and `manage.py runserver` will serve the ASGI application with uvicorn, the same way `channels` and `daphne` used to take that command over. `RoutingConfiguration`, `DjangoBokehConfig` and the Channels consumers raise an error pointing at the new API. The [Django how-to guide](how_to/integrations/Django) has a full migration section.
 
 ### Choosing a server from the command line
 
