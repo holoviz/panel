@@ -505,7 +505,10 @@ class Serve(_BkServe):
                     '--root-path must start with a leading slash (`/`).'
                 )
             with edit_readonly(state):
-                state.base_url = args.root_path
+                # The base URL is resolved against relative paths, so it has
+                # to carry the trailing slash, i.e. --root-path /proxy must
+                # not turn /app into /proxyapp.
+                state.base_url = root_path
 
         if config.autoreload:
             for f in files:

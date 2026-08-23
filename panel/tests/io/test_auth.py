@@ -385,6 +385,34 @@ def oauth_client(auth_apps):
         del AUTH_PROVIDERS['stub']
         provider_param.objects = list(AUTH_PROVIDERS)
         state._oauth_user_overrides.clear()
+        state._active_users.clear()
+        state._scheduled.clear()
+
+
+@pytest.fixture
+def refreshes(monkeypatch):
+    """
+    Records the refresh token exchanges the stub provider performs, so that
+    a redundant refresh is distinguishable from a reused one.
+    """
+    calls = []
+    original = StubLoginHandler._fetch_access_token
+
+    async def counting(self, *args, **kwargs):
+        if kwargs.get('refresh_token'):
+            calls.append(kwargs['refresh_token'])
+        return await original(self, *args, **kwargs)
+
+    monkeypatch.setattr(StubLoginHandler, '_fetch_access_token', counting)
+    return calls
+
+
+def expire_access_token(client):
+    expired = dt.datetime.now(dt.timezone.utc).timestamp() - 10
+    client.cookies.set(
+        'oauth_expiry',
+        create_signed_value(COOKIE_SECRET, 'oauth_expiry', str(expired)).decode()
+    )
 
 
 def oauth_login(client, next='%2Fapp'):
@@ -466,3 +494,51 @@ def test_oauth_error_is_reported(oauth_client):
         )
     assert r.status_code == 401
     assert 'Nope' in r.text
+
+
+def test_oauth_refreshes_expired_access_token_on_websocket(oauth_client, refreshes):
+    """
+    A websocket upgrade cannot be redirected to a login page, so an expired
+    access token has to be refreshed while authenticating the connection.
+    """
+    with oauth_client(oauth_refresh_tokens=True) as client:
+        oauth_login(client)
+        token = _token(client)
+        expire_access_token(client)
+        # Ensure the connection has to refresh rather than pick up the
+        # tokens the document request already refreshed
+        state._oauth_user_overrides.clear()
+
+        with client.websocket_connect('/app/ws', subprotocols=['bokeh', token]) as ws:
+            assert 'ACK' in ws.receive_text()
+
+        assert refreshes == ['refresh-token']
+        assert state._oauth_user_overrides[OAUTH_USER]['access_token'] == (
+            'refreshed-access-token'
+        )
+
+
+def test_oauth_websocket_adopts_tokens_refreshed_over_http(oauth_client, refreshes):
+    """
+    A websocket cannot receive cookies, so tokens refreshed while serving the
+    document are handed over in the session token payload. Without that the
+    connection would refresh a second time and invalidate the tokens the
+    document page was served with.
+    """
+    with oauth_client(oauth_refresh_tokens=True) as client:
+        oauth_login(client)
+        expire_access_token(client)
+        token = _token(client)
+        assert refreshes == ['refresh-token']
+        # The refreshed tokens are only reachable through the token payload
+        state._oauth_user_overrides.clear()
+
+        with client.websocket_connect('/app/ws', subprotocols=['bokeh', token]) as ws:
+            assert 'ACK' in ws.receive_text()
+
+        assert refreshes == ['refresh-token']
+        assert state._oauth_user_overrides[OAUTH_USER] == {
+            'access_token': 'refreshed-access-token',
+            'refresh_token': 'refreshed-refresh-token',
+            'expiry': state._oauth_user_overrides[OAUTH_USER]['expiry'],
+        }

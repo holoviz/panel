@@ -244,8 +244,7 @@ def _dispatch_write_task(doc, func, *args, **kwargs):
     task.add_done_callback(_cleanup_task)
 
 def _is_write_locked(conn: ServerConnection) -> bool:
-    socket = conn._socket
-    return hasattr(socket, 'write_lock') and socket.write_lock._block._value == 0
+    return _is_write_blocked(conn._socket)
 
 def _socket_dispatcher(socket: t.Any) -> Callable[..., Sequence[Future]]:
     """
@@ -413,8 +412,6 @@ def write_events(
     serializing per connection would make all but the first message
     reference models the client was never sent.
     """
-    from tornado.websocket import WebSocketHandler
-
     connections = list(connections)
     if not connections or not events:
         return []
@@ -423,12 +420,7 @@ def write_events(
 
     futures: list[Future] = []
     for conn in connections:
-        if isinstance(conn._socket, WebSocketHandler):
-            futures += dispatch_tornado(conn, msg=msg)
-        elif (socket_type:= type(conn._socket)) in extra_socket_handlers:
-            futures += extra_socket_handlers[socket_type](conn, msg=msg)
-        else:
-            futures += dispatch_django(conn, msg=msg)
+        futures += _socket_dispatcher(conn._socket)(conn, msg=msg)
 
     if not run:
         return futures
@@ -530,8 +522,8 @@ def dispatch_tornado(
 ) -> Sequence[Future]:
     from tornado.websocket import WebSocketHandler
     socket = conn._socket
-    # Callers only invoke dispatch_tornado after checking
-    # isinstance(conn._socket, WebSocketHandler).
+    # _socket_dispatcher only resolves to dispatch_tornado for a socket
+    # that is a WebSocketHandler.
     assert isinstance(socket, WebSocketHandler)
     ws_conn = getattr(socket, 'ws_connection', False)
     if not ws_conn or ws_conn.is_closing(): # type: ignore
