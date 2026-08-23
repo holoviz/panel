@@ -172,7 +172,7 @@ def test_asgi_component_resource(asgi_client):
             '/_css/assets/custom.css'
         )
     assert r.status_code == 200
-    assert r.text == (ASSETS / 'custom.css').read_text()
+    assert r.text.replace('\r\n', '\n') == (ASSETS / 'custom.css').read_text()
 
 
 def test_asgi_component_resource_unlisted(asgi_client):
