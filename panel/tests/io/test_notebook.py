@@ -2,10 +2,12 @@ import pytest
 
 pytest.importorskip("IPython")
 
+from bokeh.core.serialization import Buffer
 from bokeh.models import ImportedStyleSheet, InlineStyleSheet
+from bokeh.protocol.message import Message
 
 from panel.config import config, panel_extension
-from panel.io.notebook import ipywidget, replace_inline_css
+from panel.io.notebook import ipywidget, replace_inline_css, send
 from panel.io.resources import (
     CDN_DIST, CDN_ROOT, JS_VERSION, set_resource_mode,
 )
@@ -87,3 +89,23 @@ def test_replace_inline_css_ignores_version_query():
     assert isinstance(unversioned, InlineStyleSheet)
     assert isinstance(versioned, InlineStyleSheet)
     assert versioned.css == unversioned.css
+
+
+def test_send_writes_envelope_before_binary_payloads():
+    class Comm:
+        def __init__(self):
+            self.fragments = []
+
+        def send(self, fragment=None, buffers=None):
+            self.fragments.append(buffers[0] if buffers else fragment)
+
+    comm = Comm()
+    message = Message(
+        Message.create_header("PATCH-DOC"),
+        {"events": [{"data": {"id": "buffer"}}]},
+        [Buffer("buffer", b"payload")],
+    )
+
+    send(comm, message)
+
+    assert comm.fragments == [message.envelope_json, b"payload"]

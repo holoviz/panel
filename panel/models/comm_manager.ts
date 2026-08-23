@@ -121,7 +121,7 @@ export class CommManager extends Model {
       }
     } else if (value instanceof Buffer) {
       const {buffer} = value
-      const id = buffers.length
+      const id = `${buffers.length}`
       buffers.push(buffer)
       return {id}
     } else if (isPlainObject(value)) {
@@ -140,13 +140,13 @@ export class CommManager extends Model {
     }
     const patch = this.document.create_json_patch(this._event_buffer)
     this._event_buffer = []
-    const message = {...Message.create("PATCH-DOC", {}, patch)}
+    const message = Message.create("PATCH-DOC", patch)
     const buffers: ArrayBuffer[] = []
     this._extract_buffers(message.content, buffers)
-    this._client_comm.send(message, {}, buffers)
+    this._client_comm.send({header: message.header, content: message.content}, {}, buffers)
     for (const view of this.ns.shared_views.get(this.plot_id)) {
       if (view !== this && view.document != null) {
-        view.document.apply_json_patch(patch, [], this.id)
+        view.document.apply_json_patch(patch)
       }
     }
   }

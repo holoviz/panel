@@ -52,10 +52,7 @@ def always_changed(enable):
 
 def record_events(doc):
     msg = diff(doc, binary=False)
-    if msg is None:
-        return {'header': '{}', 'metadata': '{}', 'content': '{}'}
-    return {'header': msg.header_json, 'metadata': msg.metadata_json,
-            'content': msg.content_json}
+    return {'envelope': '' if msg is None else msg.envelope_json}
 
 
 def save_dict(state, key=(), depth=0, max_depth=None, save_path='', load_path=None):
@@ -357,7 +354,7 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
         models = [m for v in values for m in v[1]]
         doc.callbacks._held_events = [e for e in doc.callbacks._held_events if e.model not in models]
         events = record_events(doc)
-        changes |= events['content'] != '{}'
+        changes |= bool(events['envelope'])
         if events:
             sub_dict.update(events)
 

@@ -1,8 +1,9 @@
 from bokeh.core.properties import (
     Int, Nullable, Required, String,
 )
+from bokeh.core.serialization import Buffer
 from bokeh.models import Model
-from bokeh.protocol import Protocol
+from bokeh.protocol.message import Message
 
 
 class CommManager(Model):
@@ -17,16 +18,8 @@ class CommManager(Model):
 
     timeout = Int(5000)
 
-    def __init__(self, **properties):
-        super().__init__(**properties)
-        self._protocol = Protocol()
-
     def assemble(self, msg):
         header = msg['header']
         buffers = msg.pop('_buffers') or {}
-        header['num_buffers'] = len(buffers)
-        cls = self._protocol._messages[header['msgtype']]
-        msg_obj = cls(header, msg['metadata'], msg['content'])
-        for (bid, buff) in buffers.items():
-            msg_obj.assemble_buffer({'id': bid}, buff.tobytes())
-        return msg_obj
+        payloads = [Buffer(str(bid), buff.tobytes()) for bid, buff in buffers.items()]
+        return Message(header, msg['content'], payloads)

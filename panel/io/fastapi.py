@@ -12,7 +12,7 @@ import tornado
 
 from ..config import config
 from .application import build_applications
-from .document import _cleanup_doc, extra_socket_handlers
+from .document import _cleanup_doc
 from .resources import COMPONENT_PATH
 from .server import (
     ComponentResourceHandler, _sanitize_route_context, _strip_prefixed_path,
@@ -41,8 +41,6 @@ except ImportError as e:
 
 if t.TYPE_CHECKING:
     from bokeh.application import Application as BkApplication
-    from bokeh.document.events import DocumentPatchedEvent
-    from bokeh.protocol.message import Message
     from uvicorn import Server
 
     from .application import TViewableFuncOrPath
@@ -203,14 +201,6 @@ async def _async_open_with_route_context(self, socket, token):
 
 BkSessionHandler.get_session = _get_fastapi_session
 WSHandler._async_open = _async_open_with_route_context
-
-
-def dispatch_fastapi(conn, events: list[DocumentPatchedEvent] | None = None, msg: Message | None = None):
-    if msg is None:
-        msg = conn.protocol.create("PATCH-DOC", events)
-    return [conn._socket.send_message(msg)]
-
-extra_socket_handlers[WSHandler] = dispatch_fastapi
 
 
 def add_liveness_handler(app, endpoint: str, applications: dict[str, BkApplication]):

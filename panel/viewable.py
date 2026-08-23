@@ -26,6 +26,7 @@ import param  # type: ignore
 from bokeh.core.serialization import DeserializationError
 from bokeh.document import Document
 from bokeh.models import UIElement
+from bokeh.protocol import apply_patch
 from param import Undefined
 from param.parameterized import instance_descriptor
 
@@ -526,7 +527,7 @@ class MimeRenderMixin:
         patch = manager.assemble(msg)
         doc.hold()
         try:
-            patch.apply_to_document(doc, comm.id if comm else None)
+            apply_patch(patch, doc, comm.id if comm else None)
         except DeserializationError:
             self.param.warning(
                 "Comm received message that could not be deserialized."
