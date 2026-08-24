@@ -6,9 +6,9 @@ import typing as t
 import uuid
 
 from functools import wraps
-from http.cookies import SimpleCookie
 
-import tornado
+from bokeh.server.asgi import BokehASGI
+from bokeh.server.core import SessionError
 
 from ..config import config
 from .application import build_applications
@@ -16,26 +16,20 @@ from .document import _cleanup_doc
 from .resources import COMPONENT_PATH
 from .server import (
     ComponentResourceHandler, _sanitize_route_context, _strip_prefixed_path,
-    _validate_token_for_resign, server_html_page_for_session,
+    server_html_page_for_session,
 )
-from .state import state
+from .state import set_curdoc, state
 from .threads import StoppableThread
 
 try:
-    from bokeh.util.token import generate_jwt_token, generate_session_id
-    from bokeh_fastapi import BokehFastAPI
-    from bokeh_fastapi.handler import (
-        DocHandler, SessionHandler as BkSessionHandler, WSHandler,
-    )
     from fastapi import (
         FastAPI, HTTPException, Query, Request,
     )
     from fastapi.responses import FileResponse
-    from tornado.httputil import HTTPHeaders, HTTPServerRequest
-    from tornado.ioloop import IOLoop
+    from starlette.routing import Route, WebSocketRoute
 except ImportError as e:
-    if e.name == "bokeh_fastapi":
-        msg = "bokeh_fastapi must be installed to use the panel.io.fastapi module."
+    if e.name in ("fastapi", "starlette"):
+        msg = "fastapi must be installed to use the panel.io.fastapi module."
         raise ImportError(msg) from None
     raise e
 
@@ -49,8 +43,6 @@ if t.TYPE_CHECKING:
 #---------------------------------------------------------------------
 # Private API
 #---------------------------------------------------------------------
-
-DocHandler.render_session = server_html_page_for_session
 
 
 def _route_context(
@@ -83,124 +75,96 @@ def _prefix_path(path: str, prefix: str) -> str:
     return f"{prefix}{path}"
 
 
-async def _get_fastapi_session(self, request: Request, session_id: t.Any):
-    app = self.application
-    if session_id is None:
-        session_id = generate_session_id(
-            secret_key=app.secret_key, signed=app.sign_sessions
+class _BokehRoute:
+
+    def __init__(self, application: _PanelBokehASGI, app_path: str | None = None, suffix: str = ''):
+        self.application = application
+        self.app_path = app_path
+        self.suffix = suffix
+
+    async def __call__(self, scope, receive, send):
+        if self.app_path is not None:
+            scope = dict(scope)
+            scope['_panel_app_path'] = self.app_path
+            scope['_panel_app_suffix'] = self.suffix
+        await self.application(scope, receive, send)
+
+
+class _PanelBokehASGI(BokehASGI):
+
+    def _route_path(self, scope):
+        app_path = scope.get('_panel_app_path')
+        if app_path is None:
+            return super()._route_path(scope)
+        suffix = scope.get('_panel_app_suffix', '')
+        base = '' if app_path == '/' else app_path
+        return f'{base}{suffix}' or '/'
+
+    def _request(self, scope):
+        request = super()._request(scope)
+        suffix = scope.get('_panel_app_suffix', '')
+        route_params, app_path = _route_context(
+            scope, suffix=suffix, prefix=self.core.prefix
+        )
+        request.route_params = route_params
+        request.app_path = app_path
+        return request
+
+    async def _document(self, context, request, send):
+        method = request.method.upper()
+        head = method == 'HEAD'
+        if method not in ('GET', 'HEAD'):
+            await self._method_not_allowed(send, ('GET', 'HEAD'))
+            return
+        if not await self._authenticate_http(request, send, head=head):
+            return
+        try:
+            session = await self.core.create_session(context, request)
+        except SessionError as error:
+            await self._response(
+                send, error.status, error.reason.encode(), 'text/plain', head=head
+            )
+            return
+        with set_curdoc(session.document):
+            resources = self.core.resources(root_path=request.root_path)
+            page = server_html_page_for_session(
+                session, resources=resources, title=session.document.title,
+                template=session.document.template,
+                template_variables=session.document.template_variables,
+            )
+        await self._response(
+            send, 200, page.encode(), 'text/html; charset=UTF-8', head=head
         )
 
-    route_params, app_path = _route_context(
-        request, prefix=getattr(self.application, '_prefix', '')
-    )
-    uri = f"{request.url.path}{f'?{request.url.query}' if request.url.query else ''}"
-    if tornado.version_info < (6, 5, 0) and request.client is not None:
-        # Compatibility with changes made in Tornado 6.5
-        # https://github.com/tornadoweb/tornado/pull/3487
-        tornado_request = HTTPServerRequest(
-            method=request.method,
-            uri=uri,
-            headers=HTTPHeaders(request.headers),
-            host=request.client.host,
-        )
-    else:
-        tornado_request = HTTPServerRequest(
-            method=request.method,
-            uri=uri,
-            headers=HTTPHeaders(request.headers),
-        )
-    tornado_request.route_params = route_params
-    tornado_request.app_path = app_path
-    simple_cookies = SimpleCookie({
-        name: cookie.value if hasattr(cookie, "value") else str(cookie)
-        for name, cookie in request.cookies.items()
-    })
-    tornado_request._cookies = simple_cookies
 
-    headers = dict(tornado_request.headers)
-    cookies = {
-        name: cookie.value if hasattr(cookie, "value") else str(cookie)
-        for name, cookie in request.cookies.items()
-    }
+class BokehFastAPI:
 
-    if app.include_headers is None:
-        excluded_headers = app.exclude_headers or []
-        allowed_headers = [
-            header for header in headers if header not in excluded_headers
-        ]
-    else:
-        allowed_headers = app.include_headers
-    headers = {k: v for k, v in headers.items() if k in allowed_headers}
-
-    if app.include_cookies is None:
-        excluded_cookies = app.exclude_cookies or []
-        allowed_cookies = [
-            cookie for cookie in cookies if cookie not in excluded_cookies
-        ]
-    else:
-        allowed_cookies = app.include_cookies
-    cookies = {k: v for k, v in cookies.items() if k in allowed_cookies}
-
-    if (
-        cookies
-        and "Cookie" in headers
-        and "Cookie" not in (app.include_headers or [])
+    def __init__(
+        self, applications: dict[str, BkApplication], app: FastAPI | None = None,
+        prefix: str = '', **kwargs
     ):
-        # Do not include Cookie header since cookies can be restored from cookies dict
-        del headers["Cookie"]
+        self.app = app or FastAPI()
+        self.asgi = _PanelBokehASGI(applications, prefix=prefix, **kwargs)
+        self.core = self.asgi.core
 
-    payload = {
-        "headers": headers,
-        "cookies": cookies,
-        "arguments": tornado_request.arguments,
-    }
-    payload.update(self.application_context.application.process_request(tornado_request))
-    token = generate_jwt_token(
-        session_id,
-        secret_key=app.secret_key,
-        signed=app.sign_sessions,
-        expiration=300,
-        extra_payload=payload,
-    )
-    if self.application_context.io_loop is None:
-        self.application_context._loop = IOLoop.current()
-    session = await self.application_context.create_session_if_needed(
-        session_id, tornado_request, token
-    )
-    return session
+        self.app.router.add_event_handler('startup', self.core.start)
+        self.app.router.add_event_handler('shutdown', self.core.stop)
 
+        static_path = _prefix_path('/static/{path:path}', prefix)
+        self.app.router.routes.append(Route(
+            static_path, _BokehRoute(self.asgi), methods=['GET'],
+            include_in_schema=False,
+        ))
 
-_bk_fastapi_async_open = WSHandler._async_open
-
-
-async def _async_open_with_route_context(self, socket, token):
-    payload, session_id, expires_in = _validate_token_for_resign(
-        token, secret_key=self.application.secret_key, signed=self.application.sign_sessions
-    )
-    route_params, app_path = _route_context(
-        socket.scope, suffix='/ws', prefix=getattr(self.application, '_prefix', '')
-    )
-    socket.scope['route_params'] = route_params
-    socket.scope['app_path'] = app_path
-    if route_params or app_path:
-        payload = dict(payload)
-        if route_params:
-            payload['route_params'] = route_params
-        if app_path:
-            payload['app_path'] = app_path
-        payload.pop('session_expiry', None)
-        token = generate_jwt_token(
-            session_id,
-            secret_key=self.application.secret_key,
-            signed=self.application.sign_sessions,
-            expiration=expires_in,
-            extra_payload=payload,
-        )
-    return await _bk_fastapi_async_open(self, socket, token)
-
-
-BkSessionHandler.get_session = _get_fastapi_session
-WSHandler._async_open = _async_open_with_route_context
+        for app_path in applications:
+            route = _prefix_path(app_path, prefix)
+            self.app.router.routes.append(WebSocketRoute(
+                f"{route.rstrip('/')}/ws", _BokehRoute(self.asgi, app_path, '/ws')
+            ))
+            self.app.router.routes.append(Route(
+                route, _BokehRoute(self.asgi, app_path), methods=['GET'],
+                include_in_schema=False,
+            ))
 
 
 def add_liveness_handler(app, endpoint: str, applications: dict[str, BkApplication]):
@@ -278,25 +242,15 @@ def add_applications(
         prefix = prefix.rstrip('/') or '/'
         kwargs['prefix'] = prefix
     apps = build_applications(panel, title=title, location=location, admin=admin)
-    if prefix:
-        apps = {_prefix_path(endpoint, prefix): app for endpoint, app in apps.items()}
     ws_origins = kwargs.pop('websocket_origin', None)
     if ws_origins and not isinstance(ws_origins, list):
         ws_origins = [ws_origins]
     if ws_origins:
-        kwargs['websocket_origins'] = ws_origins
+        kwargs['extra_websocket_origins'] = ws_origins
 
-    application = BokehFastAPI(apps, app=app, **kwargs)
-    if session_history is not None:
-        config.session_history = session_history
-        add_history_handler(application.app, endpoint=_prefix_path('/session_info', prefix))
-    if liveness:
-        liveness_endpoint = liveness if isinstance(liveness, str) else '/liveness'
-        add_liveness_handler(
-            application.app, endpoint=_prefix_path(liveness_endpoint, prefix), applications=apps
-        )
+    app = app or FastAPI()
 
-    @application.app.get(
+    @app.get(
         _prefix_path(f"/{COMPONENT_PATH.rstrip('/')}" + "/{path:path}", prefix),
         include_in_schema=False
     )
@@ -307,6 +261,16 @@ def add_applications(
         self_ = t.cast("ComponentResourceHandler", ComponentResourceHandler)
         resolved_path = ComponentResourceHandler.parse_url_path(self_, path)
         return FileResponse(resolved_path)
+
+    application = BokehFastAPI(apps, app=app, **kwargs)
+    if session_history is not None:
+        config.session_history = session_history
+        add_history_handler(application.app, endpoint=_prefix_path('/session_info', prefix))
+    if liveness:
+        liveness_endpoint = liveness if isinstance(liveness, str) else '/liveness'
+        add_liveness_handler(
+            application.app, endpoint=_prefix_path(liveness_endpoint, prefix), applications=apps
+        )
 
     return application
 
@@ -414,7 +378,7 @@ def get_server(
         port = sock.getsockname()[1]  # Get the dynamically assigned port
         sock.close()
 
-    loop = kwargs.pop('loop')
+    loop = kwargs.pop('loop', None)
     config_kwargs = {}
     if loop:
         config_kwargs['loop'] = loop

@@ -3,7 +3,7 @@ requires = [
     "hatchling",
     "hatch-vcs",
     "param >=2.1.0",
-    "bokeh >=3.10.0,<3.11.0",
+    "bokeh >=4.0.0.dev1,<4.1.0",
     "pyviz_comms >=0.7.4",
     "requests",
     "packaging",
@@ -46,7 +46,7 @@ classifiers = [
 ]
 
 dependencies = [
-    'bokeh >=3.10.0,<3.11.0',
+    'bokeh >=4.0.0.dev1,<4.1.0',
     'param >=2.1.0,<3.0',
     'pyviz_comms >=2.0.0',
     'panel-material-ui >=0.10.0',
@@ -77,7 +77,6 @@ recommended = [
     'plotly',
 ]
 fastapi = [
-    'bokeh-fastapi >= 0.1.5,<0.2.0',
     'fastapi[standard]',
 ]
 dev = [
@@ -264,7 +263,6 @@ plugins = ["param.mypy_plugin"]
 module = [
     "anywidget.*",
     "bokeh_django.*",
-    "bokeh_fastapi.*",
     "bokeh.*",
     "cachecontrol.*",
     "cryptography.*",
