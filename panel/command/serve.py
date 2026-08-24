@@ -337,9 +337,16 @@ class Serve(_BkServe):
             help    = "The endpoint for the liveness API.",
             default = "liveness"
         )),
-        ('--plugins', dict(
+        ('--plugins', Argument(
             action  = 'append',
-            type    = str
+            type    = str,
+            help    = (
+                "Module declaring additional endpoints to serve alongside the "
+                "application(s). On '--server tornado' the module must declare "
+                "a ROUTES variable holding Tornado request handlers, on "
+                "'--server fastapi' a ROUTER variable holding a FastAPI "
+                "APIRouter."
+            )
         )),
         ('--reuse-sessions', Argument(
             action  = 'store',
@@ -368,7 +375,6 @@ class Serve(_BkServe):
     # Arguments which are implemented with Tornado request handlers and
     # therefore cannot be served by the ASGI implementations.
     _tornado_only_args: t.ClassVar[dict[str, str]] = {
-        'plugins': '--plugins',
         'rest_provider': '--rest-provider',
         'rest_session_info': '--rest-session-info',
         'enable_xsrf_cookies': '--enable-xsrf-cookies',
@@ -822,6 +828,14 @@ class Serve(_BkServe):
             patterns.extend(REST_PROVIDERS['param'](self._files, 'rest'))
             state.publish('session_info', state, ['session_info'])
 
+        for name, module in self._load_plugins(args):
+            patterns.extend(self._plugin_routes(name, module))
+
+        return patterns
+
+    def _load_plugins(self, args) -> list[tuple[str, ModuleType]]:
+        '''Imports the modules requested with ``--plugins``.'''
+        plugins = []
         for plugin in (args.plugins or []):
             try:
                 with add_sys_path('./'):
@@ -831,17 +845,48 @@ class Serve(_BkServe):
                     f'Specified plugin module {plugin!r} could not be found. '
                     'Ensure the module exists and is in the right path. '
                 ) from e
-            try:
-                routes = plugin_module.ROUTES
-            except AttributeError as e:
-                raise Exception(
-                    f'The plugin module {plugin!r} does not declare '
-                    'a ROUTES variable. Ensure that the module provides '
-                    'a list of ROUTES to serve.'
-                ) from e
-            patterns.extend(routes)
+            plugins.append((plugin, plugin_module))
+        return plugins
 
-        return patterns
+    def _plugin_routes(self, name: str, module: ModuleType) -> list[t.Any]:
+        '''The Tornado routes declared by a plugin module.'''
+        if (routes := getattr(module, 'ROUTES', None)) is None:
+            hint = (
+                ' The module declares a ROUTER, which is served by '
+                '--server fastapi.' if hasattr(module, 'ROUTER') else ''
+            )
+            raise Exception(
+                f'The plugin module {name!r} does not declare '
+                'a ROUTES variable. Ensure that the module provides '
+                f'a list of ROUTES to serve.{hint}'
+            )
+        return list(routes)
+
+    def _plugin_routers(self, name: str, module: ModuleType) -> list[t.Any]:
+        '''The FastAPI routers declared by a plugin module.'''
+        from fastapi import APIRouter
+        if (router := getattr(module, 'ROUTER', None)) is None:
+            if hasattr(module, 'ROUTES'):
+                raise Exception(
+                    f'The plugin module {name!r} declares a ROUTES variable, '
+                    'which holds Tornado request handlers and can only be '
+                    'served with --server tornado. Declare a ROUTER holding '
+                    'a FastAPI APIRouter to serve it with --server fastapi.'
+                )
+            raise Exception(
+                f'The plugin module {name!r} does not declare a ROUTER '
+                'variable. Ensure that the module provides a FastAPI '
+                'APIRouter to serve.'
+            )
+        routers = list(router) if isinstance(router, (list, tuple)) else [router]
+        for r in routers:
+            if not isinstance(r, APIRouter):
+                raise Exception(
+                    f'The ROUTER declared by the plugin module {name!r} must be '
+                    'a fastapi.APIRouter, or a list of them, not '
+                    f'{type(r).__name__!r}.'
+                )
+        return routers
 
     def _admin_patterns(self):
         '''Replicates the per-application routes for the admin application.
@@ -957,6 +1002,13 @@ class Serve(_BkServe):
                 die(f"{flag} is implemented with Tornado request handlers and "
                     f"cannot be served with --server {args.server}. Use "
                     "--server tornado to enable it.")
+        # Only the ASGI implementations get here, on Tornado the plugin
+        # routes are added by _tornado_routes.
+        if args.plugins and args.server != 'fastapi':
+            die(f"--plugins is not supported with --server {args.server}. Use "
+                "--server fastapi to serve plugins declaring a FastAPI "
+                "APIRouter or --server tornado to serve plugins declaring "
+                "Tornado request handlers.")
         if args.num_procs != 1:
             die(f"--num-procs is not supported with --server {args.server}. "
                 "Run multiple uvicorn worker processes behind a load balancer "
@@ -996,6 +1048,9 @@ class Serve(_BkServe):
         if args.server == 'fastapi':
             from ..io.fastapi import FastAPI, _install_panel_asgi
             app = FastAPI()
+            for name, module in self._load_plugins(args):
+                for router in self._plugin_routers(name, module):
+                    app.include_router(router)
             _install_panel_asgi(app, asgi)
 
         uvicorn_kwargs: dict[str, t.Any] = {}

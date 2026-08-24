@@ -38,7 +38,9 @@ The `routing.py` module, the `bokeh_apps` urlpatterns and `STATICFILES_DIRS = [b
 panel serve app.py --server fastapi
 ```
 
-The choices are `tornado` (the default, unchanged), `fastapi` and `asgi`, the latter running Panel's ASGI application under uvicorn without importing FastAPI. The ASGI implementations support everything the Tornado server does apart from `--plugins`, `--rest-provider`, `--rest-session-info`, `--enable-xsrf-cookies` and `--num-procs`, each of which fails with an error naming the option. Authentication, including all the OAuth providers, works on either implementation and the cookies are interoperable, so you can move between them without invalidating existing sessions.
+The choices are `tornado` (the default, unchanged), `fastapi` and `asgi`, the latter running Panel's ASGI application under uvicorn without importing FastAPI. The ASGI implementations support everything the Tornado server does apart from `--rest-provider`, `--rest-session-info`, `--enable-xsrf-cookies` and `--num-procs`, each of which fails with an error naming the option. Authentication, including all the OAuth providers, works on either implementation and the cookies are interoperable, so you can move between them without invalidating existing sessions.
+
+`--plugins` is supported on `--server fastapi`, but since the endpoints are no longer Tornado request handlers the plugin module has to declare a FastAPI `APIRouter` in a `ROUTER` variable rather than a list of `ROUTES`. A module may declare both and then be served on either implementation. See [Add custom endpoints](how_to/server/endpoints) for the details.
 
 ## Version 1.0
 

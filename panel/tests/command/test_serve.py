@@ -232,6 +232,67 @@ def test_serve_static_dirs(server, tmp_path):
         assert r.content.decode('utf-8') == "static content"
 
 
+PLUGIN = """\
+    from fastapi import APIRouter
+    from tornado.web import RequestHandler
+
+    class SumHandler(RequestHandler):
+        def get(self):
+            values = [self.get_argument(arg) for arg in self.request.arguments]
+            self.write(str(sum(int(v) for v in values)))
+
+    ROUTES = [('/sum', SumHandler, {})]
+
+    ROUTER = APIRouter()
+
+    @ROUTER.get('/sum')
+    def sum_values(a: int = 0, b: int = 0):
+        return a + b
+"""
+
+
+@linux_only
+@pytest.mark.parametrize('server', ['tornado', 'fastapi'])
+def test_serve_plugin(server, tmp_path):
+    pytest.importorskip('fastapi')
+    if server == 'fastapi':
+        pytest.importorskip('uvicorn')
+    app = "import panel as pn; pn.Row('# Example').servable(title='A')"
+    py = tmp_path / "app.py"
+    py.write_text(app)
+    (tmp_path / "plugin.py").write_text(dedent(PLUGIN))
+
+    args = ["--port", "0", "--server", server, py, "--plugins", "plugin"]
+    with run_panel_serve(args, cwd=tmp_path) as p:
+        port = wait_for_port(p.stdout)
+        r = requests.get(f"http://localhost:{port}/sum?a=3&b=39")
+        assert r.status_code == 200
+        assert r.json() == 42
+        # The applications are still served alongside the plugin routes
+        assert requests.get(f"http://localhost:{port}/app").status_code == 200
+
+
+@linux_only
+def test_serve_tornado_plugin_without_routes(tmp_path):
+    pytest.importorskip('fastapi')
+    app = "import panel as pn; pn.Row('# Example').servable(title='A')"
+    py = tmp_path / "app.py"
+    py.write_text(app)
+    (tmp_path / "plugin.py").write_text(
+        "from fastapi import APIRouter\n\nROUTER = APIRouter()\n"
+    )
+
+    cmd = [
+        sys.executable, "-m", "panel", "serve", "--port", "0", "--plugins",
+        "plugin", str(py)
+    ]
+    proc = subprocess.run(cmd, cwd=tmp_path, capture_output=True, timeout=180, check=False)
+    output = (proc.stdout + proc.stderr).decode('utf-8')
+    assert proc.returncode != 0, output
+    assert 'does not declare a ROUTES variable' in output
+    assert '--server fastapi' in output
+
+
 @linux_only
 def test_serve_liveness_endpoint(server, tmp_path):
     app = "import panel as pn; pn.Row('# Example').servable(title='A')"

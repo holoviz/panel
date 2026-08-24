@@ -166,10 +166,10 @@ pip install uvicorn fastapi
 
 The ASGI implementations support the same options as the Tornado server, with the exception of a few options that are implemented as Tornado request handlers or rely on Tornado specific functionality, and will error out if you supply them:
 
-- `--plugins`
 - `--rest-provider` and `--rest-session-info`
 - `--enable-xsrf-cookies`
 - `--num-procs` (run multiple uvicorn processes behind a load balancer instead)
+- `--plugins` on `--server asgi`. On `--server fastapi` the plugin module must declare a FastAPI `APIRouter` instead of Tornado request handlers, see [Add custom endpoints](endpoints).
 
 The Tornado specific websocket tuning options (`--websocket-compression-level` and `--websocket-compression-mem-level`) are also ignored.
 

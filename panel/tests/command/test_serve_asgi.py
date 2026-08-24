@@ -5,6 +5,8 @@ the running server, so the mapping from commandline arguments onto the ASGI
 application and the uvicorn configuration is asserted here instead.
 """
 import argparse
+import importlib
+import sys
 
 import pytest
 
@@ -85,8 +87,23 @@ def _panel_asgi(uv_config):
     return app.state._panel_asgi_apps[0]
 
 
+@pytest.fixture
+def plugin(monkeypatch, tmp_path):
+    """
+    Writes a plugin module next to the application and makes it importable
+    the way ``--plugins`` resolves it, i.e. relative to the current directory.
+    """
+    def write(name, source):
+        (tmp_path / f'{name}.py').write_text(source)
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.delitem(sys.modules, name, raising=False)
+        # The finder for the relative './' path entry is cached across tests
+        importlib.invalidate_caches()
+        return name
+    return write
+
+
 @pytest.mark.parametrize('args', [
-    ['--plugins', 'some.module'],
     ['--rest-provider', 'param'],
     ['--rest-session-info'],
     ['--enable-xsrf-cookies'],
@@ -227,3 +244,123 @@ def test_serve_fastapi_wraps_panel_asgi(invoke_asgi):
 
     assert isinstance(uv_config.app, FastAPI)
     assert isinstance(_panel_asgi(uv_config), PanelASGI)
+
+
+SUM_PLUGIN = """
+from fastapi import APIRouter
+
+ROUTER = APIRouter()
+
+@ROUTER.get('/sum')
+def sum_values(a: int = 0, b: int = 0):
+    return a + b
+"""
+
+
+def test_serve_asgi_rejects_plugins(invoke_asgi, capsys):
+    with pytest.raises(SystemExit):
+        invoke_asgi('--plugins', 'some.module')
+    err = capsys.readouterr().err
+    assert '--plugins is not supported with --server asgi' in err
+    assert '--server fastapi' in err
+
+
+def test_serve_fastapi_plugin_router(invoke_asgi, plugin):
+    pytest.importorskip('fastapi')
+    pytest.importorskip('httpx')
+    from starlette.testclient import TestClient
+
+    name = plugin('sum_plugin', SUM_PLUGIN)
+    app = invoke_asgi('--plugins', name, server='fastapi').app
+
+    # The lifespan is not run, i.e. the Panel applications are not started,
+    # since the plugin route must be dispatched to FastAPI without them.
+    assert TestClient(app).get('/sum?a=3&b=39').json() == 42
+
+
+def test_serve_fastapi_plugin_routers_list(invoke_asgi, plugin):
+    pytest.importorskip('fastapi')
+    pytest.importorskip('httpx')
+    from starlette.testclient import TestClient
+
+    name = plugin('multi_plugin', """
+from fastapi import APIRouter
+
+first = APIRouter()
+second = APIRouter()
+
+@first.get('/first')
+def first_route():
+    return 1
+
+@second.get('/second')
+def second_route():
+    return 2
+
+ROUTER = [first, second]
+""")
+    client = TestClient(invoke_asgi('--plugins', name, server='fastapi').app)
+
+    assert client.get('/first').json() == 1
+    assert client.get('/second').json() == 2
+
+
+def test_serve_fastapi_plugin_route_wins_over_panel_index(invoke_asgi, plugin):
+    """
+    Panel serves the index page as a convenience, so a plugin declaring the
+    root route must take it over.
+    """
+    pytest.importorskip('fastapi')
+    pytest.importorskip('httpx')
+    from starlette.testclient import TestClient
+
+    name = plugin('index_plugin', """
+from fastapi import APIRouter
+
+ROUTER = APIRouter()
+
+@ROUTER.get('/')
+def index():
+    return 'plugin index'
+""")
+    app = invoke_asgi('--plugins', name, server='fastapi').app
+
+    assert TestClient(app).get('/').json() == 'plugin index'
+
+
+def test_serve_fastapi_plugin_module_not_found(invoke_asgi):
+    pytest.importorskip('fastapi')
+    with pytest.raises(Exception, match='could not be found'):
+        invoke_asgi('--plugins', 'not_a_module', server='fastapi')
+
+
+def test_serve_fastapi_plugin_without_router(invoke_asgi, plugin):
+    pytest.importorskip('fastapi')
+
+    name = plugin('empty_plugin', 'X = 1\n')
+    with pytest.raises(Exception, match='does not declare a ROUTER'):
+        invoke_asgi('--plugins', name, server='fastapi')
+
+
+def test_serve_fastapi_plugin_with_tornado_routes(invoke_asgi, plugin):
+    pytest.importorskip('fastapi')
+
+    name = plugin('tornado_plugin', """
+from tornado.web import RequestHandler
+
+class Handler(RequestHandler):
+    def get(self):
+        self.write('ok')
+
+ROUTES = [('/sum', Handler, {})]
+""")
+    with pytest.raises(Exception, match='can only be served with --server tornado'):
+        invoke_asgi('--plugins', name, server='fastapi')
+
+
+def test_serve_fastapi_plugin_router_wrong_type(invoke_asgi, plugin):
+    pytest.importorskip('fastapi')
+
+    name = plugin('invalid_plugin', 'ROUTER = object()\n')
+    with pytest.raises(Exception, match='must be a fastapi.APIRouter'):
+        invoke_asgi('--plugins', name, server='fastapi')
