@@ -466,9 +466,10 @@ class GridSpec(Panel):
             deleted = dict([list(o)[0] for o in subgrid.flatten()])
         else:
             deleted = [list(subgrid)[0][0]]
+        new_objects = dict(self.objects)
         for key in deleted:
-            del self.objects[key]
-        self.param.trigger('objects')
+            del new_objects[key]
+        self.objects = new_objects
 
     def __getitem__(self, index):
         if isinstance(index, tuple):
