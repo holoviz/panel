@@ -2,14 +2,12 @@ import type {BuildResult, Options, ViewStorage} from "@bokehjs/core/build_views"
 import {build_views} from "@bokehjs/core/build_views"
 import type {HasProps} from "@bokehjs/core/has_props"
 import type {ViewOf} from "@bokehjs/core/view"
-import type {StyleSheetLike} from "@bokehjs/core/dom"
 import type {DOMView} from "@bokehjs/core/dom_view"
-import {ClassList, InlineStyleSheet, ImportedStyleSheet} from "@bokehjs/core/dom"
+import {ClassList, InlineStyleSheet} from "@bokehjs/core/dom"
 import type {CSSStyles, CSSStyleSheetDecl} from "@bokehjs/core/css"
 import type * as p from "@bokehjs/core/properties"
 import {difference} from "@bokehjs/core/util/array"
 import {assert} from "@bokehjs/core/util/assert"
-import {isString} from "@bokehjs/core/util/types"
 import type {UIElementView} from "@bokehjs/models/ui/ui_element"
 import type {Transform} from "sucrase"
 
@@ -20,23 +18,29 @@ import {
 export class HostedStyleSheet extends InlineStyleSheet {
   host_id: string
 
-  constructor(css?: string | CSSStyleSheetDecl, id?: string, override readonly persistent: boolean = false, host_id: string = "") {
-    super(css, id, persistent)
+  constructor(css?: string | CSSStyleSheetDecl, id?: string, host_id: string = "") {
+    super(css, id)
     this.host_id = host_id
   }
 
   override replace(css: string, styles?: CSSStyles): void {
-    css = css.replace(/:host\b/g, `#${this.host_id}`)
+    if (this.host_id) {
+      css = css.replace(/:host\b/g, `#${this.host_id}`)
+    }
     super.replace(css, styles)
   }
 
   override prepend(css: string, styles?: CSSStyles): void {
-    css = css.replace(/:host\b/g, `#${this.host_id}`)
+    if (this.host_id) {
+      css = css.replace(/:host\b/g, `#${this.host_id}`)
+    }
     super.prepend(css, styles)
   }
 
   override append(css: string, styles?: CSSStyles): void {
-    css = css.replace(/:host\b/g, `#${this.host_id}`)
+    if (this.host_id) {
+      css = css.replace(/:host\b/g, `#${this.host_id}`)
+    }
     super.append(css, styles)
   }
 
@@ -91,6 +95,9 @@ async function build_views_no_remove<T extends HasProps>(
 export class ReactComponentView extends ReactiveESMView {
   declare model: ReactComponent
   declare style_cache: HTMLHeadElement
+  protected override readonly display = new HostedStyleSheet("", "display")
+  override readonly self_style = new HostedStyleSheet("", "style")
+  override readonly parent_style = new HostedStyleSheet("", "parent")
   model_getter = model_getter
   model_setter = model_setter
   react_root: any = null
@@ -103,9 +110,9 @@ export class ReactComponentView extends ReactiveESMView {
   override initialize(): void {
     super.initialize()
     if (!this.use_shadow_dom) {
-      (this as any).display = new HostedStyleSheet("", "display", false, this.model.id);
-      (this as any).style = new HostedStyleSheet("", "style", false, this.model.id);
-      (this as any).parent_style = new HostedStyleSheet("", "parent", true, this.model.id)
+      this.display.host_id = this.model.id
+      this.self_style.host_id = this.model.id
+      this.parent_style.host_id = this.model.id
     }
   }
 
@@ -141,7 +148,7 @@ export class ReactComponentView extends ReactiveESMView {
         this._resolve_mounted()
         return
       }
-      this.react_root = mod.default.render(this.model.id)
+      this.react_root = mod.default.render(this)
     }).catch((e: unknown) => {
       this._resolve_mounted()
       throw e
@@ -190,7 +197,7 @@ export class ReactComponentView extends ReactiveESMView {
       this.react_root.then((root: any) => root && root.unmount())
       this.flush_scheduled_removals()
     } else {
-      this._applied_stylesheets.forEach((stylesheet) => stylesheet.uninstall())
+      this._applied_stylesheets.forEach((stylesheet) => stylesheet.remove())
       for (const cb of (this._lifecycle_handlers.get("remove") || [])) {
         cb()
       }
@@ -212,8 +219,12 @@ export class ReactComponentView extends ReactiveESMView {
     return root
   }
 
-  protected override _apply_stylesheets(stylesheets: StyleSheetLike[]): void {
-    const resolved_stylesheets = stylesheets.map((style) => isString(style) ? new InlineStyleSheet(style) : style)
+  protected override _apply_stylesheets(): void {
+    for (const element of this._applied_stylesheets) {
+      element.remove()
+    }
+    this._applied_stylesheets = []
+
     const root_view = this.root_view
     const target = root_view.shadow_el
     // When shadow DOM is disabled every component in the tree installs its
@@ -230,23 +241,25 @@ export class ReactComponentView extends ReactiveESMView {
         installed_hrefs.add(link.href)
       }
     }
-    resolved_stylesheets.forEach((stylesheet) => {
+    this.resolved_stylesheets.forEach((stylesheet) => {
+      const destination = stylesheet.is_global ? document.head : target
+      const element = stylesheet.to_element()
       if (!this.use_shadow_dom) {
         if (stylesheet instanceof InlineStyleSheet) {
           if (installed_css.has(stylesheet.css)) {
             return
           }
           installed_css.add(stylesheet.css)
-        } else if (stylesheet instanceof ImportedStyleSheet) {
-          const {href} = (stylesheet as any).el
+        } else if (element instanceof HTMLLinkElement) {
+          const {href} = element
           if (installed_hrefs.has(href)) {
             return
           }
           installed_hrefs.add(href)
         }
       }
-      this._applied_stylesheets.push(stylesheet)
-      stylesheet.install(target)
+      this._applied_stylesheets.push(element)
+      destination.append(element)
     })
   }
 
@@ -362,7 +375,7 @@ export class ReactComponentView extends ReactiveESMView {
 
   patch_container(container: HTMLDivElement): void {
     this.el = this.container = container
-    this._update_stylesheets()
+    this._apply_stylesheets()
     this.class_list = new ClassList(this.container.classList)
     this._apply_html_attributes()
   }
@@ -461,12 +474,8 @@ import { CacheProvider } from "@emotion/react"`
     return `
 ${import_code}
 
-async function render(id) {
-  const view = Bokeh.index.find_one_by_id(id)
-  if (view == null) {
-    return null
-  }
-
+async function render(view) {
+  const id = view.model.id
   ${bundle_code}
 
   class Child extends React.PureComponent {
@@ -532,7 +541,7 @@ async function render(id) {
           view.model.render_module.then(async (mod) => {
             this.props.parent.flush_scheduled_removals()
             this.setState(
-              {rendered: await mod.default.render(view.model.id)},
+              {rendered: await mod.default.render(view)},
               () => {
                 this.props.parent.notify_mount(this.props.name, view.model.id)
                 this.view.r_after_render()
@@ -554,7 +563,7 @@ async function render(id) {
         view.patch_container(this.containerRef.current)
         view.model.render_module.then(async (mod) => {
           this.setState(
-            {rendered: await mod.default.render(view.model.id)},
+            {rendered: await mod.default.render(view)},
             () => {
               this.props.parent.notify_mount(this.props.name, view.model.id)
               this.view.r_after_render()

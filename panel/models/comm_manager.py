@@ -8,6 +8,9 @@ from bokeh.protocol.message import Message
 
 class CommManager(Model):
 
+    def __init__(self, **properties):
+        super().__init__(**properties)
+
     plot_id = Required(Nullable(String))
 
     comm_id = Required(Nullable(String))

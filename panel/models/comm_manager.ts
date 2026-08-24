@@ -188,12 +188,7 @@ export class CommManager extends Model {
         console.warn("Python failed with the following traceback:", metadata.traceback)
       }
     } else if (plot_id != null) {
-      let plot = null
-      if ((plot_id in this.ns.plot_index) && (this.ns.plot_index[plot_id] != null)) {
-        plot = this.ns.plot_index[plot_id]
-      } else if (((window as any).Bokeh !== undefined) && (plot_id in (window as any).Bokeh.index)) {
-        plot = (window as any).Bokeh.index[plot_id]
-      }
+      const plot = this.ns.plot_index?.[plot_id] ?? null
 
       if (plot == null) {
         return

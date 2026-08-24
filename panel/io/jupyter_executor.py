@@ -13,7 +13,7 @@ import tornado
 from bokeh.document import Document
 from bokeh.embed.bundle import extension_dirs
 from bokeh.io.doc import patch_curdoc
-from bokeh.protocol import patch_doc
+from bokeh.protocol.messages import patch_doc
 from bokeh.protocol.receiver import Receiver
 from bokeh.server.connection import ServerConnection
 from bokeh.server.contexts import BokehSessionContext
@@ -97,6 +97,7 @@ class PanelExecutor(WSHandler):
         self.receiver = Receiver()
         self.write_lock = tornado.locks.Lock()
         self._context = None
+        self.connection: ServerConnection | None = None
 
         resources = os.environ.get('BOKEH_RESOURCES', resources)
         root_url = self.root_url if resources == 'server' else None
@@ -142,7 +143,7 @@ class PanelExecutor(WSHandler):
             message = None
 
         try:
-            if message is not None:
+            if message is not None and self.connection is not None:
                 reply = await self.connection.handle(message)
                 if reply is not None:
                     await self.send_message(reply)

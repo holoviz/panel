@@ -30,16 +30,10 @@ export class TabsView extends BkTabsView {
     let view: any = this
     while (view != null) {
       if (view.model.type.endsWith("Tabs")) {
-        view.connect(view.model.properties.active.change, () => this.update_active())
+        view.connect(view.model.properties.active.change, () => this.update_zindex())
       }
       view = view.parent || view._parent // Handle ReactiveHTML
     }
-  }
-
-  override update_active(): void {
-    super.update_active()
-    this._update_child_visibility()
-    this.update_zindex()
   }
 
   protected _active_child_view(): UIElementView | undefined {

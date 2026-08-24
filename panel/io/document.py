@@ -24,7 +24,7 @@ from bokeh.document.events import (
 )
 from bokeh.model.util import visit_immediate_value_references
 from bokeh.models import CustomJS
-from bokeh.protocol import patch_doc
+from bokeh.protocol.messages import patch_doc
 
 from ..config import config
 from .loading import LOADING_INDICATOR_CSS_CLASS
@@ -359,7 +359,9 @@ def write_events(
 
     msg = patch_doc(events)
     msg.prepare()
-    futures = [asyncio.ensure_future(conn.send_message(msg)) for conn in connections]
+    futures: list[Future[None]] = [
+        asyncio.ensure_future(conn.send_message(msg)) for conn in connections
+    ]
 
     if not run:
         return futures
