@@ -28,7 +28,7 @@ try:
     from fastapi.responses import FileResponse
     from starlette.routing import Route, WebSocketRoute
 except ImportError as e:
-    if e.name in ("fastapi", "starlette"):
+    if e.name == "fastapi":
         msg = "fastapi must be installed to use the panel.io.fastapi module."
         raise ImportError(msg) from None
     raise e
