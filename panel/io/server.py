@@ -422,6 +422,10 @@ class Server(BokehServer):
 
     def start(self) -> None:
         super().start()
+        # Route Bokeh's asyncio.to_thread offloading (locked callbacks and
+        # eligible Document initialization) through Panel's bounded thread
+        # pool so --num-threads bounds it.
+        state._install_thread_pool(self._loop.asyncio_loop)
         if state._admin_context:
             self._loop.add_callback(state._admin_context.run_load_hook)
         if state._setup_module and state._setup_file_callback:
@@ -774,7 +778,7 @@ class WSHandler(BkWSHandler):
         payload, session_id, expires_in = _validate_token_for_resign(
             token, secret_key=self.application.secret_key, signed=self.application.sign_sessions
         )
-        request_data = self.application_context.application.process_request(self.request)
+        request_data = self.application_context.application.process_request(self.request)  # type: ignore[arg-type]
         route_params, app_path = _sanitize_route_context(
             request_data.get('route_params', {}), request_data.get('app_path')
         )

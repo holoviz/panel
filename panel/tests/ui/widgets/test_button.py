@@ -30,8 +30,12 @@ def test_button_click(page):
 
 
 @pytest.mark.parametrize(
-    "description",
-    ["Test", Tooltip(content="Test", position="right"), TooltipIcon(value="Test")],
+    "description_fn",
+    [
+        lambda: "Test",
+        lambda: Tooltip(content="Test", position="right"),
+        lambda: TooltipIcon(value="Test"),
+    ],
     ids=["str", "Tooltip", "TooltipIcon"],
 )
 @pytest.mark.parametrize(
@@ -43,8 +47,12 @@ def test_button_click(page):
     ],
     ids=["Button", "CheckButtonGroup", "RadioButtonGroup"],
 )
-def test_button_tooltip(page, button_fn, button_locator, description):
-    pn_button = button_fn(label="test", description=description, description_delay=0)
+def test_button_tooltip(page, button_fn, button_locator, description_fn):
+    # description_fn must build a fresh Tooltip/TooltipIcon per test - a bokeh
+    # Model shared across documents gets its property values wiped when the
+    # first document's session is destroyed (Model.destroy() clears
+    # _property_values), silently breaking every other user of that instance.
+    pn_button = button_fn(label="test", description=description_fn(), description_delay=0)
 
     serve_component(page, pn_button)
 

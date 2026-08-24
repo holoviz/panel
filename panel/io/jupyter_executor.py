@@ -12,6 +12,7 @@ import tornado
 
 from bokeh.document import Document
 from bokeh.embed.bundle import extension_dirs
+from bokeh.io.doc import patch_curdoc
 from bokeh.protocol import Protocol
 from bokeh.protocol.receiver import Receiver
 from bokeh.server.connection import ServerConnection
@@ -55,12 +56,25 @@ class JupyterServerSession(ServerSession):
 
     def _document_patched(self, event: DocumentPatchedEvent) -> None:
         may_suppress = event.setter is self
-        for connection in self._subscribed_connections:
-            if may_suppress and connection is self._current_patch_connection:
-                continue
-            task = asyncio.ensure_future(connection.send_patch_document(event))
-            self._tasks.add(task)
-            task.add_done_callback(self._tasks.discard)
+        connections = [
+            connection for connection in self._subscribed_connections
+            if not (may_suppress and connection is self._current_patch_connection)
+        ]
+        if not connections:
+            return
+        with patch_curdoc(event.document):
+            message = connections[0].protocol.create('PATCH-DOC', [event])
+            message.prepare()
+
+        def schedule() -> None:
+            for connection in connections:
+                task = asyncio.ensure_future(connection.send_message(message))
+                self._tasks.add(task)
+                task.add_done_callback(self._tasks.discard)
+
+        assert self._loop is not None
+        loop = t.cast('asyncio.AbstractEventLoop', self._loop)
+        loop.call_soon_threadsafe(schedule)
 
 
 class PanelExecutor(WSHandler):
@@ -176,7 +190,7 @@ class PanelExecutor(WSHandler):
 
         runner = app._handlers[0]._runner
         loop = tornado.ioloop.IOLoop.current()
-        session = JupyterServerSession(self.session_id, doc, io_loop=loop, token=self.token)
+        session = JupyterServerSession(self.session_id, doc, io_loop=loop.asyncio_loop, token=self.token)
         session_context._set_session(session)
         return session, runner.error_detail
 

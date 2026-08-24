@@ -17,7 +17,9 @@ from contextlib import contextmanager
 import bokeh.command.util
 
 from bokeh.application.handlers.code import CodeHandler
-from bokeh.application.handlers.code_runner import CodeRunner
+from bokeh.application.handlers.code_runner import (
+    CodeRunner, _hold_process_globals, _patch_process_state,
+)
 from bokeh.application.handlers.function import (
     FunctionHandler as BokehFunctionHandler,
 )
@@ -527,28 +529,18 @@ class PanelCodeRunner(CodeRunner):
 
         See bokeh.application.handlers.code_runner for original implementation.
         """
-        _cwd = os.getcwd()
-        _sys_path = list(sys.path)
-        _sys_argv = list(sys.argv)
-        sys.path.insert(0, os.path.dirname(self._path))
-        sys.argv = [os.path.basename(self._path), *self._argv]
-
         # XXX: self._code shouldn't be None at this point but types don't reflect this
         assert self._code is not None
 
-        try:
-            exec(self._code, module.__dict__)
-
-            if post_check:
-                post_check()
-        except Exception as e:
-            autoreload_handle_exception(self, module, e)
-        finally:
-            # undo sys.path, CWD fixups
-            os.chdir(_cwd)
-            sys.path = _sys_path
-            sys.argv = _sys_argv
-            self.ran = True
+        with _hold_process_globals(), _patch_process_state(self._path, self._argv):
+            try:
+                exec(self._code, module.__dict__)
+                if post_check:
+                    post_check()
+            except Exception as e:
+                autoreload_handle_exception(self, module, e)
+            finally:
+                self.ran = True
 
 
 class PanelCodeHandler(CodeHandler):

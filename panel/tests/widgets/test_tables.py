@@ -2,6 +2,7 @@ import asyncio
 import datetime as dt
 import random
 import string
+import sys
 
 from zoneinfo import ZoneInfo
 
@@ -2727,9 +2728,14 @@ def test_tabulator_patch_event():
 
     for col in df.columns:
         for row in range(len(df)):
-            event = TableEditEvent(model=None, column=col, row=row)
+            value = df[col].iloc[row]
+            event = TableEditEvent(model=None, column=col, row=row, value=value, old=value)
             table._process_event(event)
-            assert values[-1] == (col, row, df[col].iloc[row])
+            # on_edit only fires once the edit's value actually lands in
+            # self.value, so simulate that by re-applying the (unchanged)
+            # column - as the real ColumnDataSource patch would eventually do.
+            table._update_column(col, table.value[col].values)
+            assert values[-1] == (col, row, value)
 
 def test_server_edit_event():
     df = makeMixedDataFrame()
@@ -2747,8 +2753,14 @@ def test_server_edit_event():
     new_data = dict(model.source.data)
     new_data['B'][1] = 3.14
 
+    # The edit event is sent (and its pending edit registered) before the
+    # ColumnDataSource patch that carries the actual value change, matching
+    # what the frontend does - on_edit only fires once that patch lands.
+    # Both are dispatched asynchronously, so wait for the registration to
+    # actually land before triggering the patch that is meant to consume it.
+    table._server_event(doc, TableEditEvent(model, 'B', 1, value=3.14, old=1))
+    wait_until(lambda: bool(table._pending_edits))
     table._server_change(doc, ref, None, 'data', model.source.data, new_data)
-    table._server_event(doc, TableEditEvent(model, 'B', 1))
 
     wait_until(lambda: len(events) == 1)
     assert events[0].value == 3.14
@@ -2809,8 +2821,9 @@ def test_edit_with_datetime_aware_column():
     new_data = dict(model.source.data)
     new_data['A'][1] = 'new'
 
+    table._server_event(doc, TableEditEvent(model, 'A', 1, value='new', old='b'))
+    wait_until(lambda: bool(table._pending_edits))
     table._server_change(doc, ref, None, 'data', model.source.data, new_data)
-    table._server_event(doc, TableEditEvent(model, 'A', 1))
 
     wait_until(lambda: len(events) == 1)
     assert events[0].value == 'new'
@@ -2835,11 +2848,13 @@ def test_server_cell_click_async_event():
     table = Tabulator(df)
 
     counts = []
+    done = [0]
     async def cb(event, count=[0]):
         count[0] += 1
         counts.append(count[0])
         await asyncio.sleep(1)
         count[0] -= 1
+        done[0] += 1
 
     table.on_click(cb)
 
@@ -2849,6 +2864,7 @@ def test_server_cell_click_async_event():
     doc = list(table._models.values())[0][0].document
 
     data = df.reset_index()
+    n_events = len(data.columns) * len(data)
     with set_curdoc(doc):
         for col in data.columns:
             for row in range(len(data)):
@@ -2857,6 +2873,12 @@ def test_server_cell_click_async_event():
 
     # Ensure multiple callbacks started concurrently
     wait_until(lambda: len(counts) >= 1 and max(counts) > 1)
+
+    if sys.platform == 'win32':
+        # On Windows stopping the server loop at teardown abandons any pending
+        # callbacks, leaking "coroutine 'async_execute.<locals>.wrapped' was
+        # never awaited" warnings. Drain all callbacks before returning.
+        wait_until(lambda: done[0] == n_events)
 
 def test_tabulator_pagination_remote_cell_click_event():
     df = makeMixedDataFrame()
