@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import typing as t
 
 from contextlib import contextmanager
 
@@ -3988,6 +3989,29 @@ def test_tabulator_local_pagination_page_size_preserved_on_value_none(page, df_m
     widget.value = df_mixed
     page.wait_for_timeout(200)
     expect(page.locator('.tabulator-row')).to_have_count(4)
+
+
+def test_tabulator_local_pagination_auto_page_size_last_button(page):
+    # https://github.com/holoviz/panel/issues/8737
+    df = pd.DataFrame({'value': range(6401)})
+    widget = Tabulator(df, max_height=500, show_index=True)
+
+    serve_component(page, widget)
+
+    expect(page.locator('.tabulator-table')).to_have_count(1)
+
+    wait_until(lambda: bool(widget.page_size), page)
+    initial_page_size = t.cast("int", widget.page_size)
+    counts = count_per_page(len(df), initial_page_size)
+    last_page = len(counts)
+
+    page.locator('text="Last"').click()
+    page.wait_for_timeout(1000)
+
+    assert widget.page_size == initial_page_size
+    assert widget.page == last_page
+    expect(page.locator('.tabulator-row')).to_have_count(counts[-1])
+    expect(page.locator('.tabulator-row').last).to_contain_text(str(df['value'].iloc[-1]))
 
 
 @pytest.mark.parametrize('pagination', ['local', 'remote', None])
