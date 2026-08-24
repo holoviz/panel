@@ -256,7 +256,7 @@ class _FakeMessage:
 class _FakeConn:
 
     def __init__(self, block: bool = False):
-        self.messages = []
+        self.messages: list[_FakeMessage] = []
         self._block = block
         self.release = asyncio.Event()
 
@@ -320,7 +320,7 @@ async def test_write_events_shares_one_message_across_connections(monkeypatch):
     every connection but the first receives references to models it was
     never sent.
     """
-    messages = []
+    messages: list[_FakeMessage] = []
 
     def patch_doc(events):
         message = _FakeMessage()
