@@ -36,7 +36,7 @@ plugins = ["param.mypy_plugin"]
 Or, if you're using `mypy.ini` / `setup.cfg`:
 
 ```ini
-[mypy]s
+[mypy]
 plugins = param.mypy_plugin
 ```
 
@@ -44,7 +44,7 @@ With the plugin enabled, mypy correctly understands that assignments like `pn.ch
 
 ## Learn more
 
-Param's user guide has a full [Typing guide]https://param.holoviz.org/en/docs/latest/user_guide/Typing.html. covering:
+Param's user guide has a full [Typing guide](https://param.holoviz.org/en/latest/user_guide/Typing.html) covering:
 
 - Type inference from Parameter types
 - Choice of type checker (mypy, basedpyright)
