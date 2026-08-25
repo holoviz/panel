@@ -196,16 +196,6 @@ pre-commit run --all-files  # To run on all files
 
 :::
 
-## Type Checking
-
-If you use `mypy` for static type checking in projects built with Panel (especially when using Param >= 2.4.0), you should enable the Param mypy plugin in your project's configuration file (`pyproject.toml` or `mypy.ini`):
-
-```toml
-[tool.mypy]
-plugins = ["param_mypy_plugin"]
-```
-
-
 ## Testing
 
 To help keep Panel maintainable, all Pull Requests (PR) with code changes should typically be accompanied by relevant tests. While exceptions may be made for specific circumstances, the default assumption should be that a Pull Request without tests will not be merged.
