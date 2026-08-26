@@ -39,7 +39,7 @@ from .io.document import hold, unlocked
 from .io.notebook import push
 from .io.resources import (
     CDN_DIST, get_dist_path, loading_css, patch_stylesheet, process_raw_css,
-    resolve_stylesheet,
+    resolve_stylesheet, stylesheet_url,
 )
 from .io.state import set_curdoc, state
 from .models.reactive_html import (
@@ -233,9 +233,11 @@ class Syncable(Renderable):
                 if not stylesheet:
                     continue
                 if isinstance(stylesheet, str) and (stylesheet.split('?')[0].endswith('.css') or stylesheet.startswith('http')):
-                    if stylesheet in css_cache:
-                        conv_stylesheet = css_cache[stylesheet]
-                    else:
+                    conv_stylesheet = css_cache.get(stylesheet)
+                    # A cached stylesheet that lost its url was destroyed
+                    # along with the Document it was rendered into and
+                    # has to be recreated.
+                    if conv_stylesheet is None or stylesheet_url(conv_stylesheet) is None:
                         css_cache[stylesheet] = conv_stylesheet = ImportedStyleSheet(url=stylesheet)
                     stylesheet = conv_stylesheet
                 wrapped.append(stylesheet)
@@ -718,19 +720,15 @@ class Reactive(Syncable, Viewable):
         stylesheets = []
         for stylesheet in properties['stylesheets']:
             if isinstance(stylesheet, ImportedStyleSheet):
-                url = str(stylesheet.url)
-                if url in css_cache:
-                    cached = css_cache[url]
-                    # Confirm if stylesheet is valid, sometimes
-                    # the URL is seemingly set to None so we
-                    # replace the cached stylesheet if there is
-                    # a unset property error
-                    try:
-                        cached.url  # noqa
-                    except Exception:
-                        css_cache[url] = stylesheet
-                    else:
-                        stylesheet = cached
+                url = stylesheet_url(stylesheet)
+                if url is None:
+                    # The stylesheet was destroyed along with the Document
+                    # it was rendered into and its url cannot be recovered.
+                    # Adding it to the model would make the Document
+                    # unserializable so we have to drop it.
+                    continue
+                if url in css_cache and stylesheet_url(css_cache[url]) is not None:
+                    stylesheet = css_cache[url]
                 else:
                     css_cache[url] = stylesheet
                 patch_stylesheet(stylesheet, dist_url)
