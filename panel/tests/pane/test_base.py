@@ -3,9 +3,8 @@ import pytest
 import panel as pn
 
 from panel.chat import ChatMessage
-from panel.config import config
 from panel.interact import interactive
-from panel.io.loading import LOADING_INDICATOR_CSS_CLASS
+from panel.io.loading import LOADING_INDICATOR_CSS_CLASS, loading_css_classes
 from panel.layout import Row
 from panel.links import CallbackGenerator
 from panel.pane import (
@@ -74,7 +73,8 @@ def test_pane_loading_param(pane, document, comm):
 
     p.loading = True
 
-    css_classes = [LOADING_INDICATOR_CSS_CLASS, f'pn-{config.loading_spinner}']
+    css_classes = loading_css_classes()
+    assert css_classes[0] == LOADING_INDICATOR_CSS_CLASS
     assert all(cls in model.css_classes for cls in css_classes)
 
     p.loading = False

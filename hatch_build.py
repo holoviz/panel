@@ -13,18 +13,22 @@ BASE_DIR = Path(__file__).parent
 GREEN, RED, RESET = "\033[0;32m", "\033[0;31m", "\033[0m"
 
 
+def reset_stdout():
+    if sys.platform == "win32":
+        return
+    # npm can cause non-blocking stdout; so reset it just in case
+    import fcntl
+
+    flags = fcntl.fcntl(sys.stdout, fcntl.F_GETFL)
+    fcntl.fcntl(sys.stdout, fcntl.F_SETFL, flags & ~os.O_NONBLOCK)
+
 def build_models():
     from bokeh.ext import build
 
     print(f"{GREEN}[PANEL]{RESET} Starting building custom models", flush=True)
     panel_dir = BASE_DIR / "panel"
     success = build(panel_dir)
-    if sys.platform != "win32":
-        # npm can cause non-blocking stdout; so reset it just in case
-        import fcntl
-
-        flags = fcntl.fcntl(sys.stdout, fcntl.F_GETFL)
-        fcntl.fcntl(sys.stdout, fcntl.F_SETFL, flags & ~os.O_NONBLOCK)
+    reset_stdout()
 
     if success:
         print(f"{GREEN}[PANEL]{RESET} Finished building custom models", flush=True)
@@ -43,6 +47,43 @@ def bundle_resources():
     except Exception as e:
         print(f"{GREEN}[PANEL]{RESET} Failed bundling custom model resources", flush=True)
         raise e
+
+def build_ui_bundle():
+    if not (BASE_DIR / "panel" / "ui").is_dir():
+        return
+
+    sys.path.insert(0, str(BASE_DIR))
+    from panel.io.compile import compile_components, find_module_bundles
+
+    print(f"{GREEN}[PANEL]{RESET} Starting building panel.ui bundle", flush=True)
+    try:
+        bundles = find_module_bundles("panel.ui")
+    except RuntimeError:
+        bundles = {}
+    if not bundles:
+        # panel.ui declares no ESM components (yet), so there is nothing to bundle
+        print(f"{GREEN}[PANEL]{RESET} No panel.ui components to bundle", flush=True)
+        return
+    errors = 0
+    for bundle, components in bundles.items():
+        ret = compile_components(
+            components,
+            outfile=bundle,
+            file_loaders=["woff", "woff2"],
+        )
+        if ret != 0:
+            errors += 1
+        # compile_components reports some build failures on stdout without
+        # signalling them in its return value, so check the artifact itself.
+        if not (bundle.is_file() and bundle.stat().st_size):
+            print(f"{RED}[PANEL]{RESET} {bundle} was not written", flush=True)
+            errors += 1
+    reset_stdout()
+
+    if errors:
+        print(f"{RED}[PANEL]{RESET} Failed building panel.ui bundle", flush=True)
+        sys.exit(1)
+    print(f"{GREEN}[PANEL]{RESET} Finished building panel.ui bundle", flush=True)
 
 def clean_js_version(version):
     version = version.replace("-", "")
@@ -79,3 +120,5 @@ class BuildHook(BuildHookInterface):
         if "PANEL_LITE" not in os.environ:
             build_models()
             bundle_resources()
+            if "PANEL_SKIP_UI_BUNDLE" not in os.environ:
+                build_ui_bundle()

@@ -29,11 +29,10 @@ from bokeh.model import Model
 from bokeh.settings import settings as bk_settings
 from js import JSON, XMLHttpRequest
 
-from ..config import config
 from ..util import edit_readonly, isurl
 from . import resources
 from .document import MockSessionContext
-from .loading import LOADING_INDICATOR_CSS_CLASS
+from .loading import loading_css_classes
 from .mime_render import WriteCallbackStream, exec_with_return, format_mime
 from .state import state
 
@@ -559,7 +558,7 @@ def hide_loader() -> None:
     from js import document
 
     body = document.getElementsByTagName('body')[0]
-    body.classList.remove(LOADING_INDICATOR_CSS_CLASS, f'pn-{config.loading_spinner}')
+    body.classList.remove(*loading_css_classes())
 
 def sync_location():
     """
