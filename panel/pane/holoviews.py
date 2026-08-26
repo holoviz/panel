@@ -633,14 +633,18 @@ class HoloViews(Pane):
     def _resolve_widget(
         cls, key: str, dynamic: bool, default_widgets: WidgetMapping | None = None
     ) -> WidgetType:
+        from ..theme.base import resolve_component
         if default_widgets is None:
             default_widgets = {}
+        overridden = key in default_widgets
         widget_type = default_widgets.get(key, cls.default_widgets.get(key, None))
         if widget_type is None:
             raise ValueError("No valid {key} widget type found.")
         elif isinstance(widget_type, tuple):
             widget_type = widget_type[int(dynamic)]
-        return widget_type  # type: ignore
+        if overridden:
+            return widget_type  # type: ignore
+        return resolve_component(widget_type)  # type: ignore
 
     @classmethod
     def widgets_from_dimensions(

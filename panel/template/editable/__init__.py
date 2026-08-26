@@ -3,6 +3,7 @@ Editable template
 """
 from __future__ import annotations
 
+import json
 import pathlib
 import typing as t
 
@@ -122,7 +123,9 @@ class EditableTemplate(VanillaTemplate):
         self._render_variables['muuri_layout'] = list(layout.values())
         self._render_variables['editable'] = self.editable
         self._render_variables['local_save'] = self.local_save
-        self._render_variables['loading_spinner'] = config.loading_spinner
+        self._render_variables['loading_classes'] = json.dumps(
+            self._design.loading_css_classes()
+        )
         super()._update_vars()
 
     def _init_doc(

@@ -27,7 +27,7 @@ from .document import _destroy_document
 from .handlers import (
     FunctionHandler, MarkdownHandler, NotebookHandler, ScriptHandler,
 )
-from .loading import LOADING_INDICATOR_CSS_CLASS
+from .loading import loading_css_classes
 from .logging import LOG_SESSION_DESTROYED, LOG_SESSION_LAUNCHING
 from .state import set_curdoc, state
 
@@ -60,7 +60,7 @@ def _eval_panel(
         doc.js_on_event(
             'document_ready', CustomJS(code=f"""
             const body = document.getElementsByTagName('body')[0]
-            body.classList.remove({LOADING_INDICATOR_CSS_CLASS!r}, {config.loading_spinner!r})
+            body.classList.remove(...{json.dumps(loading_css_classes())})
             """)
         )
 

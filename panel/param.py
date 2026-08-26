@@ -512,6 +512,7 @@ class Param(Pane):
                 not isinstance(p_obj, (param.Date, param.CalendarDate))):
                 # Do not change widget class if mapping was overridden
                 if not widget_class_overridden:
+                    from .theme.base import resolve_component
                     if isinstance(p_obj, param.Number):
                         widget_class = self_or_cls.input_widgets[float]
                         if is_int:
@@ -520,6 +521,7 @@ class Param(Pane):
                         widget_class = self_or_cls.input_widgets['literal']
                     if isinstance(widget_class, FunctionType):
                         widget_class = widget_class(p_obj)
+                    widget_class = resolve_component(t.cast('type', widget_class))
             if hasattr(widget_class, 'step') and getattr(p_obj, 'step', None):
                 kw['step'] = p_obj.step
             pbounds = getattr(p_obj, 'bounds', None)
@@ -821,14 +823,18 @@ class Param(Pane):
 
     @classmethod
     def widget_type(cls, pobj):
+        from .theme.base import resolve_component, resolve_widget
+        designed = resolve_widget(pobj)
+        if designed is not None:
+            return designed
         ptype = type(pobj)
         for wt in classlist(ptype)[::-1]:
             if wt not in cls.mapping:
                 continue
             wtype = cls.mapping[wt]
             if isinstance(wtype, types.FunctionType):
-                return wtype(pobj)
-            return wtype
+                wtype = wtype(pobj)
+            return resolve_component(t.cast('type', wtype))
 
     def get_root(
         self, doc: Document | None = None, comm: Comm | None = None,

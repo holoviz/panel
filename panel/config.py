@@ -8,7 +8,6 @@ from __future__ import annotations
 import ast
 import builtins
 import copy
-import importlib
 import inspect
 import os
 import sys
@@ -169,9 +168,9 @@ class _config(_base_config):
         Whether a loading indicator is shown by default while panes are updating.""")
 
     loading_spinner: t.Literal[
-        'arc', 'arcs', 'bar', 'dots', 'petal'
+        'arc', 'arcs', 'bar', 'dots', 'material', 'petal'
     ] = param.Selector(default='arc', objects=[
-        'arc', 'arcs', 'bar', 'dots', 'petal'], doc="""
+        'arc', 'arcs', 'bar', 'dots', 'material', 'petal'], doc="""
         Loading indicator to use when component loading parameter is set.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     loading_color = param.Color(default='#c3c3c3', doc="""
@@ -423,6 +422,40 @@ class _config(_base_config):
         if self.disconnect_notification or self.ready_notification:
             self.notifications = True
 
+    def set_if_unset(self, **params) -> list[str]:
+        """
+        Sets config values only if they have not been modified from
+        their default, i.e. an explicit user setting always wins.
+
+        This allows extensions and design systems to declare the
+        defaults they prefer without clobbering the user's choices.
+
+        Parameters
+        ----------
+        params: dict[str, Any]
+            Mapping of config parameter names to the values to apply
+            if the parameter is still at its default.
+
+        Returns
+        -------
+        The names of the parameters that were applied.
+        """
+        applied = []
+        for k, v in params.items():
+            pname = k if k in self.param else f'_{k}'
+            if pname not in self.param:
+                raise AttributeError(f'{k!r} is not a valid config parameter.')
+            current, default = getattr(self, k), self.param[pname].default
+            try:
+                unset = bool(current == default)
+            except Exception:
+                unset = current is default
+            if not unset:
+                continue
+            setattr(self, k, v)
+            applied.append(k)
+        return applied
+
     @contextmanager
     def set(self, **kwargs):
         values = [(p, getattr(self, p)) for p in self.param if p != 'name']
@@ -524,6 +557,12 @@ class _config(_base_config):
     def _template_hook(self, value):
         if isinstance(value, str):
             return self.param.template.names[value]
+        return value
+
+    def _design_hook(self, value):
+        if isinstance(value, str):
+            from .theme import resolve_design
+            return resolve_design(value)
         return value
 
     @property
@@ -843,22 +882,7 @@ class panel_extension(_pyviz_extension):
                                    'will be skipped.')
 
         for k, v in params.items():
-            if k == 'design' and isinstance(v, str):
-                from .theme import Design
-                try:
-                    importlib.import_module(f'panel.theme.{self._design}')
-                except Exception:
-                    pass
-                designs = {
-                    t.__name__.lower(): t for t in _descendents(Design, concrete=True)
-                }
-                if v not in designs:
-                    raise ValueError(
-                        f'Design {v!r} was not recognized, available design '
-                        f'systems include: {list(designs)}.'
-                    )
-                setattr(config, k, designs[v])
-            elif k in ('css_files', 'raw_css', 'global_css'):
+            if k in ('css_files', 'raw_css', 'global_css'):
                 if not isinstance(v, list):
                     raise ValueError(f'{k} should be supplied as a list, '
                                      f'not as a {type(v).__name__} type.')

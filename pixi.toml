@@ -88,6 +88,10 @@ typing_extensions = "*"
 
 [feature.required.tasks]
 install = 'python -m pip install --no-deps --disable-pip-version-check -e .'
+# Rebuilds panel/dist/ui without a full reinstall; watch-ui additionally
+# recompiles on every JSX change for the `panel serve --dev` loop.
+build-ui = 'panel compile panel.ui --file-loaders woff woff2'
+watch-ui = 'panel compile panel.ui --file-loaders woff woff2 --unminified --watch'
 
 [feature.py312.dependencies]
 python = "3.12.*"
