@@ -902,15 +902,20 @@ def test_reactive_design_stylesheets_update(document, comm):
 
 def test_reactive_destroyed_stylesheet_dropped(document, comm):
     # Regression: https://github.com/holoviz/panel/issues/8106
-    class BrokenStylesheetMarkdown(Markdown):
+    widget = Markdown('foo')
 
-        def _process_param_change(self, params):
-            props = super()._process_param_change(params)
-            if 'stylesheets' in props:
-                props['stylesheets'] = [*props['stylesheets'], ImportedStyleSheet()]
-            return props
+    # Emulates a Design injecting a stylesheet that was destroyed along
+    # with the Document it was originally rendered into. Patched on the
+    # instance since subclassing a Pane would register a new pane type.
+    process_param_change = widget._process_param_change
 
-    widget = BrokenStylesheetMarkdown('foo')
+    def _process_param_change(params):
+        props = process_param_change(params)
+        if 'stylesheets' in props:
+            props['stylesheets'] = [*props['stylesheets'], ImportedStyleSheet()]
+        return props
+
+    widget._process_param_change = _process_param_change
 
     model = widget.get_root(document, comm)
 
