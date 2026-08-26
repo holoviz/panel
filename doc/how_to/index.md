@@ -21,6 +21,13 @@ How to effectively develop apps in a notebook environment.
 How to effectively develop apps in a Python or Markdown file.
 :::
 
+:::{grid-item-card} {octicon}`file-code;2.5em;sd-mr-1 sd-animate-grow50` Type check your code
+:link: typing/index
+:link-type: doc
+
+How to configure static type checkers like mypy to work with Param and Panel.
+:::
+
 ::::
 
 ## Build apps
