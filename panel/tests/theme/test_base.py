@@ -2,7 +2,8 @@ import pathlib
 
 from bokeh.models import ImportedStyleSheet
 
-from panel.io.resources import CDN_DIST
+from panel.io.resources import CDN_DIST, stylesheet_url
+from panel.io.state import state
 from panel.theme.base import BOKEH_DARK, Design, Inherit
 from panel.viewable import Viewable
 from panel.widgets import FloatSlider, IntSlider, TextInput
@@ -268,3 +269,32 @@ def test_design_apply_shared_stylesheet_models(document, comm):
     DesignTest().apply(widget2, model2)
 
     assert widget1.stylesheets == widget2.stylesheets
+
+def test_design_apply_recreates_destroyed_stylesheets(document, comm):
+    widget1 = TextInput()
+    model1 = widget1.get_root(document, comm=comm)
+    model1.document = document
+
+    DesignTest().apply(widget1, model1)
+
+    cache = state._stylesheets[document]
+    assert cache
+    stale = list(cache.values())
+
+    # Bokeh clears the property values of every model on a Document
+    # when the Document is destroyed at the end of a session
+    for stylesheet in stale:
+        stylesheet.destroy()
+
+    widget2 = TextInput()
+    model2 = widget2.get_root(document, comm=comm)
+    model2.document = document
+
+    DesignTest().apply(widget2, model2)
+
+    stale_ids = {id(stylesheet) for stylesheet in stale}
+    for stylesheet in model2.stylesheets:
+        if isinstance(stylesheet, ImportedStyleSheet):
+            assert stylesheet_url(stylesheet) is not None
+            assert id(stylesheet) not in stale_ids
+    assert all(stylesheet_url(sts) is not None for sts in cache.values())

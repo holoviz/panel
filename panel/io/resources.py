@@ -22,6 +22,7 @@ from pathlib import Path
 
 import bokeh.embed.wrappers
 
+from bokeh.core.property.descriptors import UnsetValueError
 from bokeh.embed.bundle import (
     CSS_RESOURCES as BkCSS_RESOURCES, URL, Bundle as BkBundle, _any,
     _bundle_extensions, _use_mathjax, bundle_models, extension_dirs,
@@ -302,10 +303,26 @@ def component_resource_path(component, attr: str, path: str | os.PathLike) -> st
     rel_path = os.fspath(custom_path).replace(os.path.sep, '/') if custom_path else path
     return f'{component_path}{component.__module__}/{component.__name__}/{attr}/{rel_path}'
 
-def patch_stylesheet(stylesheet, dist_url):
+def stylesheet_url(stylesheet: ImportedStyleSheet) -> str | None:
+    """
+    Returns the url of an ImportedStyleSheet or None if it is unset.
+
+    Bokeh clears the property values of every model on a Document when
+    the Document is destroyed at the end of a session. An
+    ImportedStyleSheet that outlives the Document it was rendered into,
+    e.g. because it is held in a cache, is therefore left without a url
+    and reading it raises an UnsetValueError. Such a stylesheet must
+    never be reused since it breaks both model creation and the
+    serialization of the Document it is added to.
+    """
     try:
-        url = stylesheet.url
-    except Exception:
+        return stylesheet.url
+    except UnsetValueError:
+        return None
+
+def patch_stylesheet(stylesheet, dist_url):
+    url = stylesheet_url(stylesheet)
+    if url is None:
         return
     if url.startswith(CDN_DIST+dist_url) and dist_url != CDN_DIST:
         patched_url = url.replace(CDN_DIST+dist_url, dist_url)

@@ -827,10 +827,20 @@ export class DataTabulatorView extends HTMLBoxView {
     if (!this.model.pagination || (this.model.page_size !== null && !this._automatic_page_size) || this._initializing || !this.tabulator) {
       return
     }
-    this._automatic_page_size = true
-    const responsive = this.model.sizing_mode && (this.model.sizing_mode.includes("height") || this.model.sizing_mode.includes("both"))
     const holder = this.shadow_el.querySelector(".tabulator-tableholder")
     const table = this.shadow_el.querySelector(".tabulator-table")
+    if (
+      this.model.page_size != null &&
+      this.model.page >= this.model.max_page &&
+      table != null &&
+      table.children.length < this.model.page_size
+    ) {
+      // Partial page: holder has shrunk to fit it, so its height doesn't
+      // reflect full-page capacity. See https://github.com/holoviz/panel/issues/8737
+      return
+    }
+    this._automatic_page_size = true
+    const responsive = this.model.sizing_mode && (this.model.sizing_mode.includes("height") || this.model.sizing_mode.includes("both"))
     if (table != null && holder != null) {
       const table_height = holder.clientHeight
       let height = 0
