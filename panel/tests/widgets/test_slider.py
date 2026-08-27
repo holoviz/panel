@@ -253,6 +253,18 @@ def test_datetime_slider(document, comm, value, start, end):
         assert widget.value == 1620777600000
 
 
+def test_datetime_slider_preserves_time_in_bounds(document, comm):
+    start = datetime(2026, 8, 21, 8, 45)
+    end = datetime(2026, 8, 21, 13, 30)
+    datetime_slider = DatetimeSlider(value=start, start=start, end=end)
+
+    widget = datetime_slider.get_root(document, comm=comm)
+
+    epoch = datetime(1970, 1, 1)
+    assert widget.start == (start - epoch).total_seconds() * 1000
+    assert widget.end == (end - epoch).total_seconds() * 1000
+
+
 def test_datetime_slider_np_datetime64(document, comm):
     start = np.datetime64('2018-09-01')
     end = np.datetime64('2018-09-10')
