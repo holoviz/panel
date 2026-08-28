@@ -120,7 +120,9 @@ class HTML(HTMLBasePane):
 class DataFrame(HTML):
     """
     The `DataFrame` pane renders pandas, dask and streamz DataFrame types using
-    their custom HTML repr.
+    their custom HTML repr. Other DataFrame-like objects supported by
+    Narwhals, e.g. polars and pyarrow, are rendered by converting them to
+    pandas first.
 
     In the case of a streamz DataFrame the rendered data will update
     periodically.
@@ -235,8 +237,25 @@ class DataFrame(HTML):
             name in ('DataFrame', 'Series', 'Random', 'DataFrames',
                      'Seriess', 'Styler', 'GeoDataFrame', 'GeoSeries')):
             return 0.3
+        elif cls._is_narwhals_compatible(object):
+            return 0.3
         else:
             return False
+
+    @staticmethod
+    def _is_narwhals_compatible(object: t.Any) -> bool:
+        import narwhals.stable.v2.dependencies as nwd
+        return nwd.is_into_dataframe(object) or nwd.is_into_series(object)
+
+    @staticmethod
+    def _narwhals_to_pandas(object: t.Any):
+        import narwhals.stable.v2 as nw
+        obj = nw.from_native(object, allow_series=True)
+        if isinstance(obj, nw.Series):
+            obj = obj.to_frame()
+        if isinstance(obj, nw.LazyFrame):
+            obj = obj.collect()
+        return obj.to_pandas()
 
     def _set_object(self, object):
         self._object = object
@@ -268,6 +287,9 @@ class DataFrame(HTML):
     def _transform_object(self, obj: t.Any) -> dict[str, t.Any]:
         if hasattr(obj, 'to_frame'):
             obj = obj.to_frame()
+
+        if not hasattr(obj, 'to_html') and self._is_narwhals_compatible(obj):
+            obj = self._narwhals_to_pandas(obj)
 
         module = getattr(obj, '__module__', '')
         if hasattr(obj, 'to_html'):

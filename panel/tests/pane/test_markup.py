@@ -13,7 +13,9 @@ from panel import config
 from panel.pane import (
     HTML, JSON, DataFrame, Markdown, PaneBase, Str,
 )
-from panel.tests.util import not_windows, streamz_available
+from panel.tests.util import (
+    not_windows, polars_available, pyarrow_available, streamz_available,
+)
 
 
 def test_get_markdown_pane_type():
@@ -26,6 +28,24 @@ def test_get_dataframe_pane_type():
 def test_get_series_pane_type():
     ser = pd.Series([1, 2, 3])
     assert PaneBase.get_pane_type(ser) is DataFrame
+
+@polars_available
+def test_get_polars_dataframe_pane_type():
+    import polars as pl
+    df = pl.DataFrame({"A": [1, 2, 3]})
+    assert PaneBase.get_pane_type(df) is DataFrame
+
+@polars_available
+def test_get_polars_series_pane_type():
+    import polars as pl
+    ser = pl.Series("A", [1, 2, 3])
+    assert PaneBase.get_pane_type(ser) is DataFrame
+
+@pyarrow_available
+def test_get_pyarrow_table_pane_type():
+    import pyarrow as pa
+    table = pa.table({"A": [1, 2, 3]})
+    assert PaneBase.get_pane_type(table) is DataFrame
 
 @pytest.fixture
 async def streamz_df():
@@ -262,6 +282,44 @@ def test_dataframe_pane_pandas(document, comm):
     # Cleanup
     pane._cleanup(model)
     assert pane._models == {}
+
+@polars_available
+def test_dataframe_pane_polars(document, comm):
+    import polars as pl
+    pane = DataFrame(pl.DataFrame({"A": [1, 2, 3]}))
+
+    model = pane.get_root(document, comm=comm)
+    assert pane._models[model.ref['id']][0] is model
+    assert model.text.startswith('&lt;table')
+    orig_text = model.text
+
+    pane.object = pl.DataFrame({"B": [1, 2, 3]})
+    assert pane._models[model.ref['id']][0] is model
+    assert model.text.startswith('&lt;table')
+    assert model.text != orig_text
+
+    pane._cleanup(model)
+    assert pane._models == {}
+
+@polars_available
+def test_dataframe_pane_polars_series(document, comm):
+    import polars as pl
+    pane = DataFrame(pl.Series("A", [1, 2, 3]))
+
+    model = pane.get_root(document, comm=comm)
+    assert model.text.startswith('&lt;table')
+
+    pane._cleanup(model)
+
+@pyarrow_available
+def test_dataframe_pane_pyarrow_table(document, comm):
+    import pyarrow as pa
+    pane = DataFrame(pa.table({"A": [1, 2, 3]}))
+
+    model = pane.get_root(document, comm=comm)
+    assert model.text.startswith('&lt;table')
+
+    pane._cleanup(model)
 
 def test_dataframe_pane_supports_escape(document, comm):
     url = "<a href='https://panel.holoviz.org/'>Panel</a>"
