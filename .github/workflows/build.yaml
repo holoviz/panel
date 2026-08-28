@@ -19,7 +19,7 @@ concurrency:
 env:
   NODE_VERSION: "24"
   PACKAGE: "panel"
-  PYTHON_VERSION: "3.10"
+  PYTHON_VERSION: "3.12"
 
 jobs:
   waiting_room:

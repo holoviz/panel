@@ -626,7 +626,9 @@ def test_server_schedule_at(server_implementation):
     # Check callback was executed within small margin of error
     wait_until(lambda: 'at' in state.cache)
     assert abs(state.cache['at'] - scheduled[0]) < dt.timedelta(seconds=0.2)
-    assert len(state._scheduled) == 0
+    # The one-shot task must clean itself up (other tasks such as the
+    # scheduled gc.collect may still be pending).
+    wait_until(lambda: 'periodic' not in {k.split('_', 1)[-1] for k in state._scheduled})
 
 
 def test_server_schedule_at_iterator(server_implementation):
@@ -653,7 +655,7 @@ def test_server_schedule_at_iterator(server_implementation):
     wait_until(lambda: len(state.cache['at']) == 2)
     assert abs(state.cache['at'][0] - scheduled[0]) < dt.timedelta(seconds=0.2)
     assert abs(state.cache['at'][1] - scheduled[1]) < dt.timedelta(seconds=0.2)
-    assert len(state._scheduled) == 0
+    wait_until(lambda: 'periodic' not in {k.split('_', 1)[-1] for k in state._scheduled})
 
 
 def test_server_schedule_at_callable(server_implementation):
@@ -683,7 +685,7 @@ def test_server_schedule_at_callable(server_implementation):
     converted = [s.replace(tzinfo=dt.timezone.utc).astimezone().replace(tzinfo=None) for s in scheduled]
     assert abs(state.cache['at'][0] - converted[0]) < dt.timedelta(seconds=0.2)
     assert abs(state.cache['at'][1] - converted[1]) < dt.timedelta(seconds=0.2)
-    assert len(state._scheduled) == 0
+    wait_until(lambda: 'periodic' not in {k.split('_', 1)[-1] for k in state._scheduled})
 
 
 @pytest.mark.xdist_group(name="server")
@@ -1260,6 +1262,7 @@ def test_server_thread_pool_execute(server_implementation, threads):
 
 def test_server_thread_pool_defer_load(server_implementation, threads):
     counts = []
+    completed = []
 
     def cb(count=[0]):
         count[0] += 1
@@ -1267,6 +1270,7 @@ def test_server_thread_pool_defer_load(server_implementation, threads):
         time.sleep(0.5)
         value = counts[-1]
         count[0] -= 1
+        completed.append(1)
         return value
 
     def app():
@@ -1284,6 +1288,10 @@ def test_server_thread_pool_defer_load(server_implementation, threads):
 
     # Checks whether defer_load callback was executed concurrently
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
+    # Ensure both deferred callbacks have fully finished processing before the
+    # server and thread pool are torn down, otherwise in-flight work can try
+    # to schedule a callback on the session's event loop after it is closed.
+    wait_until(lambda: len(completed) == 2, timeout=10000)
 
 
 async def test_server_text_input_update_before_click_event(server_implementation):
@@ -1346,29 +1354,47 @@ def test_server_thread_pool_change_event(server_implementation, threads):
 def test_server_thread_pool_bokeh_event(server_implementation, threads):
     import pandas as pd
 
-    df = pd.DataFrame([[1, 1], [2, 2]], columns=['A', 'B'])
+    df = pd.DataFrame({'A': range(5), 'B': range(5)})
 
     tabulator = Tabulator(df)
 
     counts = []
+    completed = []
 
     def cb(event, count=[0]):
         count[0] += 1
         counts.append(count[0])
         time.sleep(0.5)
         count[0] -= 1
+        completed.append(1)
 
     tabulator.on_edit(cb)
 
     serve_and_request(tabulator)
 
-    model = list(tabulator._models.values())[0][0]
-    event = TableEditEvent(model, 'A', 0)
-    for _ in range(5):
-        tabulator._server_event(model.document, event)
+    ref, (model, _) = list(tabulator._models.items())[0]
+    doc = model.document
+    for row in range(5):
+        # on_edit only fires once the edit's value lands in tabulator.value,
+        # via the ColumnDataSource patch below - a distinct row is used per
+        # iteration so each is independently dispatched (and can overlap on
+        # the thread pool) rather than all firing from a single patch.
+        event = TableEditEvent(model, 'A', row, value=row + 10, old=row)
+        tabulator._server_event(doc, event)
+    wait_until(lambda: len(tabulator._pending_edits) == 5)
+
+    for row in range(5):
+        new_data = dict(model.source.data)
+        new_data['A'][row] = row + 10
+        tabulator._server_change(doc, ref, None, 'data', model.source.data, new_data)
+        wait_until(lambda row=row: ('A', row) not in tabulator._pending_edits)
 
     # Checks whether Tabulator on_edit callback was executed concurrently
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
+    # Ensure all dispatched events have fully finished processing before the
+    # server and thread pool are torn down, otherwise in-flight work can try
+    # to schedule a callback on the session's event loop after it is closed.
+    wait_until(lambda: len(completed) == 5, timeout=10000)
 
 
 def test_server_thread_pool_periodic(server_implementation, threads):
@@ -1392,6 +1418,47 @@ def test_server_thread_pool_periodic(server_implementation, threads):
 
     # Checks whether periodic callbacks were executed concurrently
     wait_until(lambda: len(counts) > 0 and max(counts) > 1)
+
+
+def test_server_thread_pool_is_loop_default_executor(threads):
+    """
+    With --num-threads set, the shared thread pool must be installed as the
+    server loop's default executor so Bokeh's asyncio.to_thread offloading is
+    bounded by the same pool.
+    """
+    executors = {}
+
+    def app():
+        loop = state.curdoc.session_context.server_context.application_context.io_loop
+        executors['default'] = loop.asyncio_loop._default_executor
+        return Button(label='Click')
+
+    serve_and_request(app)
+
+    wait_until(lambda: 'default' in executors)
+    assert executors['default'] is state._thread_pool
+
+
+def test_server_concurrent_session_init_isolated(threads):
+    """
+    Multiple sessions initializing concurrently on worker threads must each
+    observe their own curdoc, without cross-contamination from the shared
+    thread pool.
+    """
+    seen = []
+
+    def app():
+        doc = state.curdoc
+        # Hold in the init body so multiple sessions overlap on the pool.
+        time.sleep(0.2)
+        # curdoc must still be this session's document after the sleep.
+        seen.append(doc is state.curdoc and doc is not None)
+        return Button(label='Click')
+
+    serve_and_request(app, n=4)
+
+    wait_until(lambda: len(seen) == 4)
+    assert all(seen)
 
 
 def test_server_thread_pool_onload(threads):

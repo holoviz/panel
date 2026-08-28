@@ -474,7 +474,7 @@ def server_cleanup():
     try:
         yield
     finally:
-        _PATCHED_CURDOCS.clear()
+        _PATCHED_CURDOCS.set(())
         _STATE.document = Document()
         state.reset()
         _watched_files.clear()

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import typing as t
 
 from contextlib import contextmanager
 
@@ -17,7 +18,7 @@ from bokeh.models.widgets.tables import (
     ScientificFormatter, SelectEditor, StringEditor, StringFormatter,
     TextEditor,
 )
-from playwright.sync_api import expect
+from playwright.sync_api import Error, expect
 
 from panel import extension
 from panel.depends import bind
@@ -1351,8 +1352,11 @@ def test_tabulator_frozen_rows(page):
     page.wait_for_timeout(200)
 
     # Check that the two frozen columns haven't moved after scrolling right
-    assert X_bb == x_cell.first.bounding_box()
-    assert Y_bb == y_cell.first.bounding_box()
+    def _frozen_rows_unchanged():
+        assert X_bb == x_cell.first.bounding_box()
+        assert Y_bb == y_cell.first.bounding_box()
+
+    wait_until(_frozen_rows_unchanged, page)
 
 
 @pytest.mark.flaky(reruns=3, reruns_delays=2)
@@ -2854,7 +2858,6 @@ def test_tabulator_configuration(page, df_mixed):
     expect(page.locator(".tabulator-sortable")).to_have_count(0)
 
 
-@pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3620')
 def test_tabulator_editor_datetime_nan(page, df_mixed):
     df_mixed.at['idx0', 'datetime'] = np.nan
     widget = Tabulator(df_mixed, configuration={'headerSort': False})
@@ -3228,6 +3231,9 @@ def test_tabulator_edit_event_and_header_filters_same_column(page, show_index, i
     cell = page.locator('text="X"')
     cell.click()
     editable_cell = page.locator('input[type="text"]')
+    # For some reason there's sometimes an edit event sent with the old
+    # value as new value. Waiting here helps.
+    page.wait_for_timeout(200)
     editable_cell.fill("Y")
     editable_cell.press('Enter')
 
@@ -3240,6 +3246,9 @@ def test_tabulator_edit_event_and_header_filters_same_column(page, show_index, i
     cell = page.locator('text="B"')
     cell.click()
     editable_cell = page.locator('input[type="text"]')
+    # For some reason there's sometimes an edit event sent with the old
+    # value as new value. Waiting here helps.
+    page.wait_for_timeout(200)
     editable_cell.fill("Z")
     editable_cell.press('Enter')
 
@@ -3278,6 +3287,9 @@ def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pa
     cell = page.locator('text="B"').first
     cell.click()
     editable_cell = page.locator('input[type="text"]')
+    # For some reason there's sometimes an edit event sent with the old
+    # value as new value. Waiting here helps.
+    page.wait_for_timeout(200)
     editable_cell.fill("Q")
     editable_cell.press('Enter')
 
@@ -3296,6 +3308,9 @@ def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pa
     cell = page.locator('text="B"').nth(1)
     cell.click()
     editable_cell = page.locator('input[type="text"]')
+    # For some reason there's sometimes an edit event sent with the old
+    # value as new value. Waiting here helps.
+    page.wait_for_timeout(200)
     editable_cell.fill("X")
     editable_cell.press('Enter')
 
@@ -3309,6 +3324,9 @@ def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pa
     cell = page.locator('text="X"')
     cell.click()
     editable_cell = page.locator('input[type="text"]')
+    # For some reason there's sometimes an edit event sent with the old
+    # value as new value. Waiting here helps.
+    page.wait_for_timeout(200)
     editable_cell.fill("Y")
     editable_cell.press('Enter')
 
@@ -3321,6 +3339,9 @@ def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pa
     cell = page.locator('text="B"')
     cell.click()
     editable_cell = page.locator('input[type="text"]')
+    # For some reason there's sometimes an edit event sent with the old
+    # value as new value. Waiting here helps.
+    page.wait_for_timeout(200)
     editable_cell.fill("Z")
     editable_cell.press('Enter')
 
@@ -3582,7 +3603,14 @@ def test_tabulator_loading_no_horizontal_rescroll(page, df_mixed):
     cell = page.locator('text="target"').first
     # Scroll to the right
     page.wait_for_timeout(200)
-    cell.scroll_into_view_if_needed()
+
+    def _scroll_into_view():
+        try:
+            cell.scroll_into_view_if_needed(timeout=1000)
+        except Error as e:
+            raise AssertionError(str(e)) from e
+
+    wait_until(_scroll_into_view, page)
     page.wait_for_timeout(200)
     bb = page.locator('text="Target"').bounding_box()
 
@@ -3609,7 +3637,14 @@ def test_tabulator_loading_no_vertical_rescroll(page):
     # Scroll to the bottom, and give it a little extra time
     cell = page.locator('text="T"')
     page.wait_for_timeout(200)
-    cell.scroll_into_view_if_needed()
+
+    def _scroll_into_view():
+        try:
+            cell.scroll_into_view_if_needed(timeout=1000)
+        except Error as e:
+            raise AssertionError(str(e)) from e
+
+    wait_until(_scroll_into_view, page)
     page.wait_for_timeout(200)
 
     bb = page.locator('text="T"').bounding_box()
@@ -3954,6 +3989,29 @@ def test_tabulator_local_pagination_page_size_preserved_on_value_none(page, df_m
     widget.value = df_mixed
     page.wait_for_timeout(200)
     expect(page.locator('.tabulator-row')).to_have_count(4)
+
+
+def test_tabulator_local_pagination_auto_page_size_last_button(page):
+    # https://github.com/holoviz/panel/issues/8737
+    df = pd.DataFrame({'value': range(6401)})
+    widget = Tabulator(df, max_height=500, show_index=True)
+
+    serve_component(page, widget)
+
+    expect(page.locator('.tabulator-table')).to_have_count(1)
+
+    wait_until(lambda: bool(widget.page_size), page)
+    initial_page_size = t.cast("int", widget.page_size)
+    counts = count_per_page(len(df), initial_page_size)
+    last_page = len(counts)
+
+    page.locator('text="Last"').click()
+    page.wait_for_timeout(1000)
+
+    assert widget.page_size == initial_page_size
+    assert widget.page == last_page
+    expect(page.locator('.tabulator-row')).to_have_count(counts[-1])
+    expect(page.locator('.tabulator-row').last).to_contain_text(str(df['value'].iloc[-1]))
 
 
 @pytest.mark.parametrize('pagination', ['local', 'remote', None])

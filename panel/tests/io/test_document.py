@@ -17,6 +17,7 @@ import panel as pn
 from panel.io.document import (
     _UNCONNECTED_EVENTS, _WRITE_BLOCK, _cleanup_doc, _destroy_document,
     _write_tasks, extra_socket_handlers, hold, schedule_write_events, unlocked,
+    write_events,
 )
 from panel.io.state import _state, set_curdoc, state
 from panel.tests.util import serve_and_request, wait_until
@@ -245,8 +246,13 @@ def test_hold_in_app_callable_does_not_leak_hold():
 
 
 class _FakeProtocol:
+    def __init__(self):
+        self.created = []
+
     def create(self, msgtype, events):
-        return object()
+        msg = object()
+        self.created.append(msg)
+        return msg
 
 
 class _FakeSocket:
@@ -261,6 +267,117 @@ class _FakeConn:
     def __init__(self, lock_held):
         self._socket = _FakeSocket(lock_held)
         self.protocol = _FakeProtocol()
+
+
+@pytest.mark.xdist_group(name="server")
+def test_unlocked_dispatches_from_worker_thread():
+    """
+    A model change made inside unlocked() from a worker thread (as happens
+    when Bokeh runs a locked callback via asyncio.to_thread) must be
+    scheduled for write rather than silently dropped with an error.
+    """
+    slider = IntSlider()
+
+    serve_and_request(slider)
+    wait_until(lambda: bool(slider._documents))
+
+    doc, model = list(slider._documents.items())[0]
+    session = doc.session_context.session
+    asyncio_loop = doc.session_context.server_context.application_context.io_loop.asyncio_loop
+
+    seen = {}
+
+    def callback():
+        # On Bokeh the synchronous body of a locked callback runs on a
+        # worker thread via asyncio.to_thread. Previously unlocked() logged an
+        # error and dropped events when off the loop thread.
+        seen['thread'] = threading.get_ident()
+        seen['on_loop'] = state._on_loop_thread
+        with unlocked():
+            model.value = 3
+
+    async def trigger():
+        # with_document_locked routes through _needs_document_lock, the same
+        # wrapper Bokeh uses to dispatch protocol messages and session
+        # callbacks. Entered without already holding the document lock, as
+        # Bokeh does when handling an incoming message.
+        result = session.with_document_locked(callback)
+        if asyncio.iscoroutine(result):
+            await result
+
+    # Drive the locked callback from the server event loop thread.
+    future = asyncio.run_coroutine_threadsafe(trigger(), asyncio_loop)
+    future.result(timeout=5)
+
+    # The model change made inside unlocked() must land regardless of which
+    # thread the locked callback body ran on.
+    wait_until(lambda: model.value == 3)
+    assert 'on_loop' in seen
+
+
+def test_write_events_shares_one_message_across_connections():
+    """
+    Serializing a patch marks the models it defines as synced on the
+    Document, so a message must be created once and shared, otherwise
+    every connection but the first receives references to models it was
+    never sent.
+    """
+    written = []
+    extra_socket_handlers[_FakeSocket] = lambda conn, msg=None: written.append((conn, msg)) or []
+
+    try:
+        doc = Document()
+        conns = [_FakeConn(lock_held=False) for _ in range(3)]
+
+        assert write_events(doc, conns, [object()], run=False) == []
+
+        assert len(conns[0].protocol.created) == 1
+        assert [conn for conn, _ in written] == conns
+        assert {id(msg) for _, msg in written} == {id(conns[0].protocol.created[0])}
+        assert not any(conn.protocol.created for conn in conns[1:])
+    finally:
+        extra_socket_handlers.pop(_FakeSocket, None)
+
+
+def test_write_events_with_nothing_to_write():
+    doc = Document()
+    conn = _FakeConn(lock_held=False)
+
+    assert write_events(doc, [conn], []) == []
+    assert write_events(doc, [], [object()]) == []
+    assert not conn.protocol.created
+
+
+@pytest.mark.asyncio
+async def test_schedule_write_events_defers_serialization():
+    """
+    Queued events must be serialized when they are written, not when they
+    are queued, otherwise a message serialized later can be written first
+    and reference models the client has not been sent yet.
+    """
+    written = []
+    extra_socket_handlers[_FakeSocket] = lambda conn, msg=None: written.append(msg) or []
+
+    try:
+        doc = Document()
+        conn = _FakeConn(lock_held=True)
+
+        schedule_write_events(doc, [conn], [object()])
+        await asyncio.sleep(0.05)
+
+        # The socket is being written to, so nothing has been serialized
+        assert conn.protocol.created == []
+        assert written == []
+
+        # Release the socket and let the write task drain the queue
+        conn._socket.write_lock._block._value = 1
+        await asyncio.sleep(0.05)
+
+        assert len(conn.protocol.created) == 1
+        assert written == conn.protocol.created
+    finally:
+        extra_socket_handlers.pop(_FakeSocket, None)
+        _WRITE_BLOCK.pop(doc, None)
 
 
 @pytest.mark.asyncio
