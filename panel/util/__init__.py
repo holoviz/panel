@@ -316,20 +316,20 @@ def lazy_load(module, model, notebook=False, root=None, ext=None):
         )
         return getattr(import_module(module), model)
 
-    log = param.main.param.warning
-
+    # Only reached when on-demand loading is unavailable, so these really are
+    # warnings about a component that may not render.
     if notebook:
-        log(
-            f'{model} was not imported on instantiation and will load the '
-            'resources it needs on demand. To load them up front pass the '
-            'extension explicitly:'
+        param.main.param.warning(
+            f'{model} was not imported on instantiation and may not '
+            'render in a notebook. Restart the notebook kernel and '
+            'ensure you load it as part of the extension using:'
             f'\n\npn.extension(\'{ext}\')\n'
         )
     elif not loaded and state._is_launching:
         # If we are still launching the application it is not too late
         # to automatically load the extension and therefore ensure it
         # is included in the resources added to the served page
-        log(
+        param.main.param.warning(
             f'pn.extension was initialized but {ext!r} extension was not '
             'loaded. Since the application is still launching the extension '
             'was loaded automatically but we strongly recommend you load '
@@ -341,17 +341,17 @@ def lazy_load(module, model, notebook=False, root=None, ext=None):
         else:
             loaded_extensions.append(ext_name)
     elif not loaded:
-        log(
+        param.main.param.warning(
             f'pn.extension was initialized but {ext!r} extension was not '
             'loaded. In order for the required resources to be initialized '
             'ensure the extension is loaded with the following argument(s):'
             f'\n\npn.extension({ext!r})\n'
         )
     elif root is not None and root.ref['id'] in state._views:
-        log(
-            f'{model} was not imported on instantiation and will load the '
-            'resources it needs on demand. To include them in the served '
-            'page add the following to the top of your application:'
+        param.main.param.warning(
+            f'{model} was not imported on instantiation and may not '
+            'render in the served application. Ensure you add the '
+            'following to the top of your application:'
             f'\n\npn.extension(\'{ext}\')\n'
         )
     return getattr(import_module(module), model)

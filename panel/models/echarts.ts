@@ -72,9 +72,6 @@ export class EChartsView extends HTMLBoxView {
   }
 
   _init_chart(): void {
-    if ((window as any).echarts == null) {
-      return
-    }
     const config = {width: this.model.width, height: this.model.height, renderer: this.model.renderer}
     this._chart = (window as any).echarts.init(
       this.container,
@@ -104,7 +101,7 @@ export class EChartsView extends HTMLBoxView {
   }
 
   _plot(): void {
-    if ((window as any).echarts == null || this._chart == null) {
+    if (this._chart == null) {
       return
     }
     const data = transformJsPlaceholders(this.model.data)
@@ -118,7 +115,7 @@ export class EChartsView extends HTMLBoxView {
   }
 
   _subscribe(): void {
-    if ((window as any).echarts == null || this._chart == null) {
+    if (this._chart == null) {
       return
     }
     for (const [event_type, callback] of this._callbacks) {

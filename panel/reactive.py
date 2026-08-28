@@ -2156,22 +2156,23 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
         )
         # See lazy_load: with lazy resource loading an undeclared component
         # still renders, so this only warns where that cannot work.
-        lazy = lazy_load_available(notebook=bool(comm))
-        log = partial(self.param.log, param.DEBUG) if lazy else self.param.warning
-        if comm and not self._loaded():
-            log(
-                f'{type(self).__name__} was not imported on instantiation and will '
-                'load the resources it needs on demand. To load them up front '
-                'ensure you load it as part of the extension using:'
-                f'\n\npn.extension(\'{self._extension_name}\')\n'
-            )
-        elif root is not None and not self._loaded() and root.ref['id'] in state._views:
-            log(
-                f'{type(self).__name__} was not imported on instantiation and will '
-                'load the resources it needs on demand. To include them in the '
-                'served page add the following to the top of your application:'
-                f'\n\npn.extension(\'{self._extension_name}\')\n'
-            )
+        if not self._loaded() and (comm or (root is not None and root.ref['id'] in state._views)):
+            if lazy_load_available(notebook=bool(comm)):
+                self.param.log(
+                    param.DEBUG,
+                    f'{type(self).__name__} was not imported on instantiation and will '
+                    'load the resources it needs on demand. To load them up front '
+                    'ensure you load it as part of the extension using:'
+                    f'\n\npn.extension(\'{self._extension_name}\')\n'
+                )
+            else:
+                where = 'a notebook' if comm else 'the served application'
+                self.param.warning(
+                    f'{type(self).__name__} was not imported on instantiation and may '
+                    f'not render in {where}. Ensure you load it as part of the '
+                    'extension using:'
+                    f'\n\npn.extension(\'{self._extension_name}\')\n'
+                )
         if self._extension_name:
             ReactiveMetaBase._loaded_extensions.add(self._extension_name)
 
