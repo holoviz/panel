@@ -257,6 +257,22 @@ class DataFrame(HTML):
             obj = obj.collect()
         return obj.to_pandas()
 
+    @staticmethod
+    def _narwhals_to_html(object: t.Any) -> str:
+        # Conversion to pandas may fail, e.g. because the backend
+        # (like polars) requires pyarrow for the conversion and it
+        # is not installed, so fall back to the backend's own HTML repr.
+        import narwhals.stable.v2 as nw
+        obj = nw.from_native(object, allow_series=True)
+        if isinstance(obj, nw.Series):
+            obj = obj.to_frame()
+        if isinstance(obj, nw.LazyFrame):
+            obj = obj.collect()
+        native = obj.to_native()
+        if hasattr(native, '_repr_html_'):
+            return native._repr_html_()
+        return f'<pre>{native!r}</pre>'
+
     def _set_object(self, object):
         self._object = object
 
@@ -288,11 +304,17 @@ class DataFrame(HTML):
         if hasattr(obj, 'to_frame'):
             obj = obj.to_frame()
 
+        narwhals_html = None
         if not hasattr(obj, 'to_html') and self._is_narwhals_compatible(obj):
-            obj = self._narwhals_to_pandas(obj)
+            try:
+                obj = self._narwhals_to_pandas(obj)
+            except Exception:
+                narwhals_html = self._narwhals_to_html(obj)
 
         module = getattr(obj, '__module__', '')
-        if hasattr(obj, 'to_html'):
+        if narwhals_html is not None:
+            html = narwhals_html
+        elif hasattr(obj, 'to_html'):
             classes = list(self.classes)
             if self.text_align:
                 classes.append(f'{self.text_align}-align')

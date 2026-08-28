@@ -311,6 +311,20 @@ def test_dataframe_pane_polars_series(document, comm):
 
     pane._cleanup(model)
 
+@polars_available
+def test_dataframe_pane_polars_pandas_conversion_failure_falls_back_to_repr_html(document, comm):
+    import polars as pl
+    df = pl.DataFrame({"A": [1, 2, 3]})
+    pane = DataFrame(df)
+
+    with patch.object(DataFrame, '_narwhals_to_pandas', side_effect=ModuleNotFoundError):
+        model = pane.get_root(document, comm=comm)
+
+    assert model.text.startswith('&lt;div&gt;&lt;style&gt;')
+    assert 'dataframe' in model.text
+
+    pane._cleanup(model)
+
 @pyarrow_available
 def test_dataframe_pane_pyarrow_table(document, comm):
     import pyarrow as pa
