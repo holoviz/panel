@@ -39,7 +39,7 @@ from .io.document import hold, unlocked
 from .io.notebook import push
 from .io.resources import (
     CDN_DIST, get_dist_path, loading_css, patch_stylesheet, process_raw_css,
-    resolve_stylesheet,
+    resolve_stylesheet, stylesheet_url,
 )
 from .io.state import set_curdoc, state
 from .models.reactive_html import (
@@ -233,9 +233,11 @@ class Syncable(Renderable):
                 if not stylesheet:
                     continue
                 if isinstance(stylesheet, str) and (stylesheet.split('?')[0].endswith('.css') or stylesheet.startswith('http')):
-                    if stylesheet in css_cache:
-                        conv_stylesheet = css_cache[stylesheet]
-                    else:
+                    conv_stylesheet = css_cache.get(stylesheet)
+                    # A cached stylesheet that lost its url was destroyed
+                    # along with the Document it was rendered into and
+                    # has to be recreated.
+                    if conv_stylesheet is None or stylesheet_url(conv_stylesheet) is None:
                         css_cache[stylesheet] = conv_stylesheet = ImportedStyleSheet(url=stylesheet)
                     stylesheet = conv_stylesheet
                 wrapped.append(stylesheet)
@@ -419,7 +421,7 @@ class Syncable(Renderable):
         if ref in self._models:
             model, _ = self._models.pop(ref, None)
             model._callbacks = {}
-            model._event_callbacks = {}
+            model._event_callbacks = defaultdict(list)
         if not self._models and self._watching_stylesheets:
             self._watching_stylesheets.set()
             if self._watching_stylesheets in state._watch_events:
@@ -718,19 +720,15 @@ class Reactive(Syncable, Viewable):
         stylesheets = []
         for stylesheet in properties['stylesheets']:
             if isinstance(stylesheet, ImportedStyleSheet):
-                url = str(stylesheet.url)
-                if url in css_cache:
-                    cached = css_cache[url]
-                    # Confirm if stylesheet is valid, sometimes
-                    # the URL is seemingly set to None so we
-                    # replace the cached stylesheet if there is
-                    # a unset property error
-                    try:
-                        cached.url  # noqa
-                    except Exception:
-                        css_cache[url] = stylesheet
-                    else:
-                        stylesheet = cached
+                url = stylesheet_url(stylesheet)
+                if url is None:
+                    # The stylesheet was destroyed along with the Document
+                    # it was rendered into and its url cannot be recovered.
+                    # Adding it to the model would make the Document
+                    # unserializable so we have to drop it.
+                    continue
+                if url in css_cache and stylesheet_url(css_cache[url]) is not None:
+                    stylesheet = css_cache[url]
                 else:
                     css_cache[url] = stylesheet
                 patch_stylesheet(stylesheet, dist_url)
@@ -1033,6 +1031,7 @@ class SyncableData(Reactive):
         super().__init__(**params)
         self._data = None
         self._processed = None
+        self._old_value = None
         callbacks = [self.param.watch(self._validate, self._data_params)]
         if self._data_params:
             callbacks.append(
@@ -1439,7 +1438,13 @@ class ReactiveData(SyncableData):
             return
         # Get old data to compare to
         old_raw, old_data = self._get_data()
+        # The pre-edit state reported on the value event and on Tabulator's
+        # table-edit event must be the unprocessed data, so a separate snapshot
+        # is only needed when old_raw was filtered, sorted or paginated.
+        value = getattr(self, self._data_params[0])
+        raw_is_value = old_raw is value
         old_raw = old_raw.copy()
+        self._old_value = old_value = old_raw if raw_is_value else value.copy()
         if hasattr(old_raw, 'columns'):
             columns = list(old_raw.columns) # type: ignore
         else:
@@ -1481,7 +1486,7 @@ class ReactiveData(SyncableData):
             if old_data is self.value: # type: ignore
                 with _syncing(self, ['value']):
                     with param.discard_events(self):
-                        self.value = old_raw
+                        self.value = old_value
                     self.value = old_data
             else:
                 self.param.trigger('value')

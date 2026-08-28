@@ -289,7 +289,7 @@ class BaseTable(ReactiveData, Widget):
                     editor = clone_model(editor)
 
             if col in indexes or editor is None:
-                editor = CellEditor()
+                editor = CellEditor() # type: ignore[abstract]
 
             if formatter is None or isinstance(formatter, (dict, str, JSCode)):
                 if kind == 'i':
@@ -608,9 +608,9 @@ class BaseTable(ReactiveData, Widget):
             elif op == 'like':
                 filters.append(col.str.contains(val, case=False, regex=False))
             elif op == 'starts':
-                filters.append(col.str.startsWith(val))
+                filters.append(col.str.lower().str.startswith(val.lower()))
             elif op == 'ends':
-                filters.append(col.str.endsWith(val))
+                filters.append(col.str.lower().str.endswith(val.lower()))
             elif op == 'keywords':
                 match_all = filt_def.get(col_name, {}).get('matchAll', False)
                 sep = filt_def.get(col_name, {}).get('separator', ' ')
@@ -1403,7 +1403,7 @@ class Tabulator(BaseTable):
         self._explicit_pagination = 'pagination' in params
         self._on_edit_callbacks = []
         self._on_click_callbacks = {}
-        self._old_value = None
+        self._pending_edits = {}
         super().__init__(value=value, **params)
         self._configuration = configuration
         self.param.watch(self._update_children, self._content_params)
@@ -1488,32 +1488,64 @@ class Tabulator(BaseTable):
         iloc = self.value.index.get_loc(idx)
         self._validate_iloc(idx, iloc)
         event.row = iloc
+
+        if event.event_name == 'table-edit':
+            if event_col not in self.value.columns or event.value is None:
+                return
+            # value/old arrive as raw values straight from the frontend cell.
+            # Convert them to self.value's dtype instead of reading
+            # self.value/self._old_value: the ColumnDataSource patch for this
+            # same edit is applied via a different, independently-scheduled
+            # server-side dispatch path and is not guaranteed to have landed
+            # by the time this event is processed, so self.value may still
+            # reflect the pre-edit state.
+            old_col_values = self.value[event_col].values
+            event.value = self._convert_column(np.asarray([event.value]), old_col_values)[0]
+            if event.old is not None:
+                event.old = self._convert_column(np.asarray([event.old]), old_col_values)[0]
+
+            import pandas as pd
+            filter_df = pd.DataFrame({event.column: [event.value]})
+            filters = self._get_header_filters(filter_df)
+            # If the new value no longer passes the column's header filter,
+            # the row would otherwise be dropped from the masked data
+            # _process_data hands to _update_column, desyncing it from the
+            # row range _update_column assumes it is writing (the full
+            # column, or - for remote pagination - the full current page).
+            # Track it so the mask keeps it included.
+            if filters and not filters[0].any():
+                self._edited_indexes.append(idx)
+
+            # Firing on_edit is deferred to _update_column, which is where
+            # this same edit's value actually lands in self.value once the
+            # corresponding ColumnDataSource patch is processed - guaranteeing
+            # on_edit only fires once self.value/current_view reflect it,
+            # without depending on the relative order these two independently
+            # dispatched messages (this event and that patch) are handled in.
+            self._pending_edits.setdefault((event_col, idx), []).append(event)
+            return
+
         if event_col not in self.buttons:
             if event_col in self.value.columns:
                 event.value = self.value[event_col].iloc[event.row]
             else:
                 event.value = self.value.index[event.row]
+        for cb in self._on_click_callbacks.get(None, []):
+            state.execute(partial(cb, event), schedule=False)
+        for cb in self._on_click_callbacks.get(event_col, []):
+            state.execute(partial(cb, event), schedule=False)
 
-        # Set the old attribute on a table edit event
-        if event.event_name == 'table-edit':
-            if event.pre:
-                import pandas as pd
-                filter_df = pd.DataFrame({event.column: [event.value]})
-                filters = self._get_header_filters(filter_df)
-                # Check if edited cell was filtered
-                if filters and filters[0].any():
-                    self._edited_indexes.append(idx)
-            else:
-                if self._old_value is not None:
-                    event.old = self._old_value[event_col].iloc[event.row]
+    def _fire_pending_edits(self, column: str, index) -> None:
+        if not self._pending_edits:
+            return
+        for ind in index:
+            events = self._pending_edits.pop((column, ind), None)
+            if not events:
+                continue
+            for event in events:
                 for cb in self._on_edit_callbacks:
                     state.execute(partial(cb, event), schedule=False)
-                self._update_style()
-        else:
-            for cb in self._on_click_callbacks.get(None, []):
-                state.execute(partial(cb, event), schedule=False)
-            for cb in self._on_click_callbacks.get(event_col, []):
-                state.execute(partial(cb, event), schedule=False)
+            self._update_style()
 
     def _get_theme(self, theme, resources=None):
         from ..models.tabulator import _TABULATOR_THEMES_MAPPING, THEME_PATH
@@ -1542,10 +1574,6 @@ class Tabulator(BaseTable):
         # the new data and old data wrong. This extension replicates the
         # front-end filtering - if need be - to be able to correctly make the
         # comparison and update the data held by the backend.
-
-        # It also makes a copy of the value dataframe, to use it to obtain
-        # the old value in a table-edit event.
-        self._old_value = self.value.copy()
 
         import pandas as pd
         df = pd.DataFrame(data)
@@ -1900,16 +1928,17 @@ class Tabulator(BaseTable):
 
             with pd.option_context('mode.chained_assignment', None):
                 self._processed[column] = array
-            return
-        nrows = self.page_size or self.initial_page_size
-        start = (self.page - 1) * nrows
-        end = start+nrows
-        index = self._processed.iloc[start:end].index.values
-        with _stringdtype_error(self.value, column, array):
-            self.value.loc[index, column] = array
+        else:
+            nrows = self.page_size or self.initial_page_size
+            start = (self.page - 1) * nrows
+            end = start+nrows
+            index = self._processed.iloc[start:end].index.values
+            with _stringdtype_error(self.value, column, array):
+                self.value.loc[index, column] = array
 
-        with pd.option_context('mode.chained_assignment', None):
-            self._processed.loc[index, column] = array
+            with pd.option_context('mode.chained_assignment', None):
+                self._processed.loc[index, column] = array
+        self._fire_pending_edits(column, index)
 
     def _map_indexes(self, indexes: list[int], existing: list[int] = [], add: bool = True) -> list[int]:
         if self.pagination == 'remote':

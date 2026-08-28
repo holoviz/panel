@@ -46,7 +46,7 @@ from .layout import (
 from .layout.base import ListLike, NamedListLike
 from .pane import DataFrame as DataFramePane
 from .pane.base import Pane, ReplacementPane
-from .reactive import Reactive
+from .reactive import Reactive, ReactiveData
 from .util import (
     abbreviated_repr, flatten, full_groupby, fullpath, is_parameterized,
     param_name, recursive_parameterized, to_async_gen,
@@ -578,6 +578,13 @@ class Param(Pane):
                     reset = True
             try:
                 updating.append(p_key)
+                if isinstance(widget, ReactiveData) and getattr(parameterized, p_name) is new:
+                    # Data widgets such as Tabulator edit the value in place,
+                    # so the Parameterized already holds the mutated object and
+                    # param would report old is new. Restore the pre-edit value
+                    # silently to ensure a correct event is emitted.
+                    with discard_events(parameterized):
+                        parameterized.param.update(**{p_name: change.old})
                 parameterized.param.update(**{p_name: new})
             finally:
                 updating.remove(p_key)

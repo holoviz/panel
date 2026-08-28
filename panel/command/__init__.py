@@ -95,7 +95,8 @@ def main(args: list[str] | None = None):
                     raise e
                 die("ERROR: " + str(e))
         else:
-            ret = bokeh_entry_point()
+            bokeh_entry_point()
+            ret = None
     else:
         parser.parse_args(sys.argv[1:])
         sys.exit(1)

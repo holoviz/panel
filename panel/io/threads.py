@@ -52,12 +52,12 @@ class StoppableThread(threading.Thread):
             server, _, _ = state._servers[self.server_id]
             if hasattr(server, 'should_exit'):
                 server.should_exit = True
-                while self.is_alive():
-                    continue
+                self.join()
                 return
         if self._shutdown_task:
             raise RuntimeError("Thread already stopping")
         self._shutdown_task = asyncio.run_coroutine_threadsafe(self._shutdown(), self.asyncio_loop)
+        self.join()
 
     async def _shutdown(self):
         cur_task = asyncio.current_task()

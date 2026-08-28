@@ -108,7 +108,7 @@ class MessageSentBuffers(TypedDict):
     msg_type: str
 
 
-class MessageSentEventPatched(MessageSentEvent):
+class MessageSentEventPatched(MessageSentEvent, kind='MessageSent'):  # type: ignore[call-arg]
     """
     Patches MessageSentEvent with fix that ensures MessageSent event
     does not define msg_data (which is an assumption in BokehJS

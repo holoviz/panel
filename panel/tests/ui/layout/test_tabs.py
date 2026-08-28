@@ -20,15 +20,13 @@ def test_tabs_toggle_visible(page):
     expect(tabs_root).to_have_count(1)
 
     tab_panels = tabs_root.locator(".bk-panel-models-markup-HTML")
-    expect(tab_panels).to_have_count(2)
+    expect(tab_panels).to_have_count(1)
 
-    expect(tab_panels.first).to_be_visible()
-    expect(tab_panels.last).not_to_be_visible()
+    expect(tab_panels.first).to_have_text("Foo")
 
-    tabs_root.locator('.bk-tab').last.click()
+    tabs_root.locator('.bk-tab').last.click(force=True)
 
-    expect(tab_panels.first).not_to_be_visible()
-    expect(tab_panels.last).to_be_visible()
+    expect(tab_panels.last).to_have_text("Bar")
 
 
 def test_tabs_toggle_clickable(page):
@@ -43,16 +41,16 @@ def test_tabs_toggle_clickable(page):
     expect(tabs_root).to_have_count(1)
 
     tab_panels = tabs_root.locator(".bk-panel-models-markup-HTML")
-    expect(tab_panels).to_have_count(2)
-
-    expect(tab_panels.first).not_to_be_visible()
+    expect(tab_panels).to_have_count(1)
     expect(tab_panels.last).to_be_visible()
 
     page.mouse.click(200, 200)
 
     assert page.url.startswith('http://localhost')
 
-    tabs_root.locator('.bk-tab').first.click()
+    tabs_root.locator('.bk-tab').first.click(force=True)
+
+    expect(tab_panels.first).to_be_visible()
 
     page.mouse.click(200, 200)
 

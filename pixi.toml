@@ -23,14 +23,6 @@ default = [
     "dev",
 ]
 
-[environments.test-310]
-features = ["py310", "required", "test-core", "test", "example", "test-example", "test-unit-task"]
-no-default-feature = true
-
-[environments.test-311]
-features = ["py311", "required", "test-core", "test", "example", "test-example", "test-unit-task"]
-no-default-feature = true
-
 [environments.test-312]
 features = ["py312", "required", "test-core", "test", "example", "test-example", "test-unit-task"]
 no-default-feature = true
@@ -51,28 +43,24 @@ no-default-feature = true
 features = ["py314", "required", "test-core", "test-unit-task"]
 no-default-feature = true
 
-[environments.test-bokeh38]
-features = ["py310", "required", "test-core", "test-unit-task", "bokeh38"]
-no-default-feature = true
-
 [environments.test-type]
-features = ["py311", "required", "type", "example", "test"]
+features = ["py312", "required", "type", "example", "test"]
 no-default-feature = true
 
 [environments.docs]
-features = ["py311", "required", "example", "doc"]
+features = ["py312", "required", "example", "doc"]
 no-default-feature = true
 
 [environments.build]
-features = ["py311", "required", "build"]
+features = ["py312", "required", "build"]
 no-default-feature = true
 
 [environments.lint]
-features = ["py311", "lint"]
+features = ["py312", "lint"]
 no-default-feature = true
 
 [environments.lite]
-features = ["py311", "required", "lite"]
+features = ["py312", "required", "lite"]
 no-default-feature = true
 
 [feature.required.dependencies]
@@ -82,7 +70,7 @@ nomkl = "*"
 pip = "*"
 # Required
 nh3 = "*"
-bokeh = ">=3.8.0,<3.10.0a0"
+bokeh = ">=3.10.0,<3.11.0a0"
 panel-material-ui = ">=0.10.0"
 linkify-it-py = "*"
 markdown = "*"
@@ -100,12 +88,6 @@ typing_extensions = "*"
 
 [feature.required.tasks]
 install = 'python -m pip install --no-deps --disable-pip-version-check -e .'
-
-[feature.py310.dependencies]
-python = "3.10.*"
-
-[feature.py311.dependencies]
-python = "3.11.*"
 
 [feature.py312.dependencies]
 python = "3.12.*"
@@ -148,7 +130,7 @@ ipympl = "*"
 ipyvolume = "*"
 ipyvuetify = "*"
 ipywidgets = "*"
-ipywidgets_bokeh = "*"
+ipywidgets_bokeh = ">=1.8.0"
 jupyter_bokeh = ">=3.0.7"
 networkx = ">=2.5"
 # pydeck = ">=0.8"  # Add back when it support ipywidgets 8.0
@@ -192,9 +174,6 @@ pytest-cov = "*"
 pytest-github-actions-annotate-failures = "*"
 pytest-rerunfailures = "*"
 pytest-xdist = "*"
-
-[feature.bokeh38.dependencies]
-bokeh = "3.8.*"
 
 [feature.test.dependencies]
 # Optional dependencies - recommended
@@ -291,17 +270,18 @@ SPHINX_APIDOC_OPTIONS = "members,show-inheritance"
 
 [feature.doc.dependencies]
 lxml = "*"
-nbsite = ">=0.9.0a20"
+nbsite = ">=0.10.0a0"
 selenium = "*"
 numpydoc = "*"
 pydeck = ">=0.8"  # Add back to examples, when it support ipywidgets 8.0
 sphinx = "<9"
 
 [feature.doc.tasks]
-_docs-refmanual = 'sphinx-apidoc -e -o doc/api/ panel/ --ext-autodoc --ext-intersphinx'
+_docs-refmanual = 'sphinx-apidoc -e -o doc/api/ panel/ panel/tests --ext-autodoc --ext-intersphinx'
 _docs-convert-gallery = 'python scripts/gallery/convert_gallery.py'
 _docs-generate = 'nbsite build --what=html --output=builtdocs --org holoviz --project-name panel --disable-parallel'
 _docs-generate-parallel = 'nbsite build --what=html --output=builtdocs --org holoviz --project-name panel'
+_docs_markdown = 'python -m nbsite build-llms --config scripts/llms_config.py'
 _docs-copy-panel-dist = 'cp -r ./panel/dist ./builtdocs/panel_dist'
 _docs-pyodide = 'panel convert examples/gallery/*.ipynb doc/how_to/*/examples/*.md --to pyodide-worker --out ./builtdocs/pyodide/ --pwa --index --requirements doc/pyodide_dependencies.json --exclude examples/gallery/vtk*.ipynb'
 docs-server = 'python -m http.server 5500 --directory ./builtdocs'
@@ -313,6 +293,7 @@ depends-on = [
     '_docs-generate',
     '_docs-copy-panel-dist',
     '_docs-pyodide',
+    '_docs_markdown',
 ]
 
 [feature.doc.tasks.docs-build-parallel]
@@ -322,6 +303,7 @@ depends-on = [
     '_docs-generate-parallel',
     '_docs-copy-panel-dist',
     '_docs-pyodide',
+    '_docs_markdown',
 ]
 
 # =============================================

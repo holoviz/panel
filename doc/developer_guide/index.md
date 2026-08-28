@@ -254,6 +254,17 @@ To be able to run cells interactively you need `pyodide` server, this can be run
 pixi run docs-server
 ```
 
+### Markdown docs and `llms.txt`
+
+As part of `docs-build`, Panel also generates clean Markdown versions of its documentation together with an `llms.txt` index file that points AI assistants at the most relevant pages.
+
+The build produces:
+
+- `builtdocs/markdown/` - a Markdown rendering of the documentation
+- `builtdocs/llms.txt` - an index of the most useful documentation pages for LLM-assisted development
+
+See [Using Panel with an AI assistant](../how_to/use_llms.md) for how to consume these docs with an AI assistant.
+
 ## Build
 
 Panel has four build tasks, for building packages for Pip, Conda, Pyodide, and NPM.
