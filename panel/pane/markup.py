@@ -122,7 +122,9 @@ class DataFrame(HTML):
     The `DataFrame` pane renders pandas, dask and streamz DataFrame types using
     their custom HTML repr. Other DataFrame-like objects supported by
     Narwhals, e.g. polars and pyarrow, are rendered by converting them to
-    pandas first.
+    pandas first, falling back to rendering the table directly if the
+    conversion is not possible, e.g. because pandas or pyarrow are not
+    installed.
 
     In the case of a streamz DataFrame the rendered data will update
     periodically.
@@ -248,30 +250,92 @@ class DataFrame(HTML):
         return nwd.is_into_dataframe(object) or nwd.is_into_series(object)
 
     @staticmethod
-    def _narwhals_to_pandas(object: t.Any):
+    def _to_narwhals_frame(object: t.Any):
         import narwhals.stable.v2 as nw
         obj = nw.from_native(object, allow_series=True)
         if isinstance(obj, nw.Series):
             obj = obj.to_frame()
         if isinstance(obj, nw.LazyFrame):
             obj = obj.collect()
-        return obj.to_pandas()
+        return obj
 
-    @staticmethod
-    def _narwhals_to_html(object: t.Any) -> str:
-        # Conversion to pandas may fail, e.g. because the backend
-        # (like polars) requires pyarrow for the conversion and it
-        # is not installed, so fall back to the backend's own HTML repr.
+    @classmethod
+    def _narwhals_to_pandas(cls, object: t.Any):
+        return cls._to_narwhals_frame(object).to_pandas()
+
+    def _format_narwhals_value(self, value: t.Any, formatter: t.Callable | None) -> str:
+        if value is None or (isinstance(value, float) and value != value):
+            return self.na_rep
+        if formatter is not None:
+            value = formatter(value)
+        elif isinstance(value, float) and self.float_format is not None:
+            value = self.float_format(value)
+        value = str(value)
+        return escape(value) if self.escape else value
+
+    def _narwhals_to_html(self, object: t.Any, classes: list[str]) -> str:
+        # Conversion to pandas may fail, e.g. because the backend (like
+        # polars) requires pyarrow for the conversion and it is not
+        # installed. The backends' own HTML reprs ship their own classes
+        # and styling, so we render the table ourselves to ensure the
+        # Panel dataframe stylesheet still applies.
         import narwhals.stable.v2 as nw
-        obj = nw.from_native(object, allow_series=True)
-        if isinstance(obj, nw.Series):
-            obj = obj.to_frame()
-        if isinstance(obj, nw.LazyFrame):
-            obj = obj.collect()
-        native = obj.to_native()
-        if hasattr(native, '_repr_html_'):
-            return native._repr_html_()
-        return f'<pre>{native!r}</pre>'
+
+        df = self._to_narwhals_frame(object)
+        nrows, ncols = df.shape
+
+        columns = list(df.columns)
+        if isinstance(self.formatters, dict):
+            formatters = [self.formatters.get(col) for col in columns]
+        elif isinstance(self.formatters, list):
+            formatters = list(self.formatters) + [None] * (ncols-len(self.formatters))
+        else:
+            formatters = [None] * ncols
+
+        ellipsis_col = None
+        if self.max_cols is not None and ncols > self.max_cols:
+            ellipsis_col = self.max_cols // 2 + self.max_cols % 2
+            keep = slice(ncols-(self.max_cols-ellipsis_col), None)
+            columns = columns[:ellipsis_col] + columns[keep]
+            formatters = formatters[:ellipsis_col] + formatters[keep]
+            df = df.select(columns)
+
+        ellipsis_row = None
+        if self.max_rows is not None and nrows > self.max_rows:
+            ellipsis_row = self.max_rows // 2 + self.max_rows % 2
+            tail = self.max_rows - ellipsis_row
+            df = nw.concat([df.head(ellipsis_row), df.tail(tail)]) if tail else df.head(ellipsis_row)
+
+        def with_ellipsis(cells: list[str]) -> list[str]:
+            if ellipsis_col is not None:
+                cells = cells[:ellipsis_col] + ['...'] + cells[ellipsis_col:]
+            return cells
+
+        thead = ''
+        if self.header:
+            labels = with_ellipsis([
+                escape(str(col)) if self.escape else str(col) for col in columns
+            ])
+            justify = f' style="text-align: {self.justify};"' if self.justify else ''
+            header = ''.join(f'<th>{label}</th>' for label in labels)
+            thead = f'<thead>\n<tr{justify}>{header}</tr>\n</thead>\n'
+
+        rows = []
+        for i, row in enumerate(df.rows()):
+            if i == ellipsis_row:
+                rows.append('<tr>' + '<td>...</td>' * len(with_ellipsis(list(columns))) + '</tr>')
+            cells = with_ellipsis([
+                self._format_narwhals_value(value, formatter)
+                for value, formatter in zip(row, formatters, strict=True)
+            ])
+            rows.append('<tr>' + ''.join(f'<td>{cell}</td>' for cell in cells) + '</tr>')
+        tbody = '<tbody>\n' + '\n'.join(rows) + '\n</tbody>'
+
+        class_string = ' '.join(classes)
+        html = f'<table border="{self.border}" class="{class_string}">\n{thead}{tbody}\n</table>'
+        if self.show_dimensions:
+            html += f'\n<p>{nrows} rows × {ncols} columns</p>'
+        return html
 
     def _set_object(self, object):
         self._object = object
@@ -304,20 +368,21 @@ class DataFrame(HTML):
         if hasattr(obj, 'to_frame'):
             obj = obj.to_frame()
 
-        narwhals_html = None
+        classes = list(self.classes)
+        if self.text_align:
+            classes.append(f'{self.text_align}-align')
+
+        narwhals_obj = None
         if not hasattr(obj, 'to_html') and self._is_narwhals_compatible(obj):
             try:
                 obj = self._narwhals_to_pandas(obj)
             except Exception:
-                narwhals_html = self._narwhals_to_html(obj)
+                narwhals_obj = obj
 
         module = getattr(obj, '__module__', '')
-        if narwhals_html is not None:
-            html = narwhals_html
+        if narwhals_obj is not None:
+            html = self._narwhals_to_html(narwhals_obj, classes)
         elif hasattr(obj, 'to_html'):
-            classes = list(self.classes)
-            if self.text_align:
-                classes.append(f'{self.text_align}-align')
             if 'dask' in module:
                 html = obj.to_html(max_rows=self.max_rows).replace('border="1"', '')
             elif 'style' in module:
