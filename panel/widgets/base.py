@@ -170,6 +170,9 @@ class Widget(Reactive, WidgetBase):
     # Declares the Bokeh model type of the widget
     _widget_type: t.ClassVar[type[Model] | None] = None
 
+    # Whether `value_throttled` should be auto-synced from `value`
+    _auto_sync_value_throttled: t.ClassVar[bool] = True
+
     __abstract = True
 
     def __init__(self, **params: t.Any):
@@ -184,7 +187,7 @@ class Widget(Reactive, WidgetBase):
             self.param.watch(self._sync__label, ['name']),
             self.param.watch(self._sync__name, ['label'])
         ])
-        if 'value_throttled' in self.param:
+        if 'value_throttled' in self.param and self._auto_sync_value_throttled:
             self._internal_callbacks.append(
                 self.param.watch(self._sync_value_throttled, 'value')
             )
@@ -297,6 +300,8 @@ class CompositeWidget(Widget):
     _composite_type: t.ClassVar[type[ListLike] | type[NamedListLike]] = Row
 
     _linked_properties: tuple[str, ...] = ()
+
+    _auto_sync_value_throttled: t.ClassVar[bool] = False
 
     __abstract = True
 
