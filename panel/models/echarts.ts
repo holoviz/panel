@@ -22,6 +22,38 @@ const events = [
 
 const all_events = mouse_events.concat(events)
 
+const ECHARTS_MAP_CDN = "https://cdn.jsdelivr.net/npm/echarts@4.9.0/map/json/{name}.json"
+const _geojson_cache: Map<string, Promise<unknown>> = new Map()
+
+function fetch_geojson(url: string): Promise<unknown> {
+  let p = _geojson_cache.get(url)
+  if (p == null) {
+    p = fetch(url).then((r) => {
+      if (!r.ok) {
+        throw new Error(`HTTP ${r.status}`)
+      }
+      return r.json()
+    })
+    _geojson_cache.set(url, p)
+  }
+  return p
+}
+
+function collect_map_names(data: any): Set<string> {
+  const names = new Set<string>()
+  const geo = data?.geo
+  if (geo != null) {
+    const arr = Array.isArray(geo) ? geo : [geo]
+    for (const g of arr) {
+      if (g?.map) { names.add(g.map) }
+    }
+  }
+  for (const s of (data?.series ?? [])) {
+    if (s?.type === "map" && s?.map) { names.add(s.map) }
+  }
+  return names
+}
+
 export class EChartsEvent extends ModelEvent {
   constructor(readonly type: string, readonly data: any, readonly query: string) {
     super()
@@ -39,23 +71,18 @@ export class EChartsEvent extends ModelEvent {
 export class EChartsView extends HTMLBoxView {
   declare model: ECharts
 
-  container: HTMLDivElement
+  container: Element
   _chart: any
   _callbacks: Array<any>[] = []
-  _loading_interval: ReturnType<typeof setInterval> | null = null
-  _loading_timeout: ReturnType<typeof setTimeout> | null = null
-  _loading_el: HTMLDivElement | null = null
 
   override connect_signals(): void {
     super.connect_signals()
-    const {width, height, renderer, theme, event_config, js_events, data} = this.model.properties
-    this.on_change(data, () => this._plot())
+    const {width, height, renderer, theme, event_config, js_events, data, geo_data} = this.model.properties
+    this.on_change([data, geo_data], () => this._plot())
     this.on_change([width, height], () => this._resize())
     this.on_change([theme, renderer], () => {
       this.render()
-      if (this._chart != null) {
-        this._chart.resize()
-      }
+      this._chart.resize()
     })
     this.on_change([event_config, js_events], () => this._subscribe())
   }
@@ -64,93 +91,10 @@ export class EChartsView extends HTMLBoxView {
     if (this._chart != null) {
       try {
         (window as any).echarts.dispose(this._chart)
-      } catch (e) {
-        // dispose may fail if echarts was never fully initialized
-      }
+      } catch (e) {}
     }
-    this._clear_loading_timer()
     super.render()
     this.container = div({style: {height: "100%", width: "100%"}})
-    this.shadow_el.append(this.container)
-
-    if ((window as any).echarts == null) {
-      this._show_loading()
-      this._await_echarts()
-      return
-    }
-    this._init_chart()
-  }
-
-  _show_loading(): void {
-    this._loading_el = div({
-      style: {
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        height: "100%",
-        width: "100%",
-        color: "#888",
-        fontSize: "14px",
-      },
-    })
-    this._loading_el.textContent = "Loading ECharts..."
-    this.container.append(this._loading_el)
-  }
-
-  _hide_loading(): void {
-    if (this._loading_el != null) {
-      this._loading_el.remove()
-      this._loading_el = null
-    }
-  }
-
-  _await_echarts(): void {
-    // Try script onload listener first (event-driven, not polling)
-    const script = document.querySelector("script[src*='echarts']")
-    if (script != null) {
-      const onLoad = () => {
-        script.removeEventListener("load", onLoad)
-        this._clear_loading_timer()
-        this._hide_loading()
-        this._init_chart()
-      }
-      script.addEventListener("load", onLoad)
-    }
-
-    // Polling fallback in case script tag isn't found or onload doesn't fire
-    this._loading_interval = setInterval(() => {
-      if ((window as any).echarts != null) {
-        this._clear_loading_timer()
-        this._hide_loading()
-        this._init_chart()
-      }
-    }, 50)
-    this._loading_timeout = setTimeout(() => {
-      this._clear_loading_timer()
-      this._hide_loading()
-      console.warn(
-        "ECharts library failed to load. Ensure you call pn.extension('echarts') " +
-        "before using Gauge or ECharts components.",
-      )
-    }, 10000)
-  }
-
-  _clear_loading_timer(): void {
-    if (this._loading_interval != null) {
-      clearInterval(this._loading_interval)
-      this._loading_interval = null
-    }
-    if (this._loading_timeout != null) {
-      clearTimeout(this._loading_timeout)
-      this._loading_timeout = null
-    }
-  }
-
-  _init_chart(): void {
-    if ((window as any).echarts == null) {
-      return
-    }
-    this._hide_loading()
     const config = {width: this.model.width, height: this.model.height, renderer: this.model.renderer}
     this._chart = (window as any).echarts.init(
       this.container,
@@ -159,17 +103,13 @@ export class EChartsView extends HTMLBoxView {
     )
     this._plot()
     this._subscribe()
+    this.shadow_el.append(this.container)
   }
 
   override remove(): void {
-    this._clear_loading_timer()
     super.remove()
     if (this._chart != null) {
-      try {
-        (window as any).echarts.dispose(this._chart)
-      } catch (e) {
-        // dispose may fail if echarts was never fully initialized
-      }
+      (window as any).echarts.dispose(this._chart)
     }
   }
 
@@ -180,22 +120,62 @@ export class EChartsView extends HTMLBoxView {
     }
   }
 
-  _plot(): void {
-    if ((window as any).echarts == null || this._chart == null) {
+  async _register_maps(): Promise<void> {
+    const echarts = (window as any).echarts
+    if (echarts == null) {
       return
     }
+    const geo_data = this.model.geo_data ?? {}
+    const tasks: Promise<unknown>[] = []
+    for (const [name, value] of Object.entries(geo_data)) {
+      if (typeof value === "string") {
+        tasks.push(
+          fetch_geojson(value)
+            .then((json) => echarts.registerMap(name, json as any))
+            .catch((e) => console.warn(
+              `ECharts: failed to fetch GeoJSON for map '${name}' from ${value}: ${e}`,
+            )),
+        )
+      } else {
+        echarts.registerMap(name, value as any)
+      }
+    }
+    const referenced = collect_map_names(this.model.data)
+    for (const name of referenced) {
+      if (name in geo_data) {
+        continue
+      }
+      const url = ECHARTS_MAP_CDN.replace("{name}", name)
+      tasks.push(
+        fetch_geojson(url)
+          .then((json) => echarts.registerMap(name, json as any))
+          .catch((e) => console.warn(
+            `ECharts config references map '${name}' but no GeoJSON ` +
+            `was provided and auto-fetch from ${url} failed: ${e}. ` +
+            `Pass geo_data={'${name}': geojson_dict} to register map data manually.`,
+          )),
+      )
+    }
+    if (tasks.length > 0) {
+      await Promise.all(tasks)
+    }
+  }
+
+  async _plot(): Promise<void> {
+    if ((window as any).echarts == null) {
+      return
+    }
+    await this._register_maps()
     const data = transformJsPlaceholders(this.model.data)
     this._chart.setOption(data, this.model.options)
   }
 
   _resize(): void {
-    if (this._chart != null) {
-      this._chart.resize({width: this.model.width, height: this.model.height})
-    }
+    this._chart.resize({width: this.model.width, height: this.model.height})
   }
 
   _subscribe(): void {
-    if ((window as any).echarts == null || this._chart == null) {
+    if ((window as any).echarts == null) {
       return
     }
     for (const [event_type, callback] of this._callbacks) {
@@ -248,6 +228,7 @@ export namespace ECharts {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
     data: p.Property<any>
+    geo_data: p.Property<any>
     options: p.Property<any>
     event_config: p.Property<any>
     js_events: p.Property<any>
@@ -272,6 +253,7 @@ export class ECharts extends HTMLBox {
 
     this.define<ECharts.Props>(({Any, Str}) => ({
       data:          [ Any,           {} ],
+      geo_data:      [ Any,           {} ],
       options:       [ Any,           {} ],
       event_config:  [ Any,           {} ],
       js_events:     [ Any,           {} ],
