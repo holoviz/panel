@@ -1027,3 +1027,73 @@ def test_non_slider_value_throttled_follows_programmatic_value(widget, kwargs, n
     w = widget(**kwargs)
     w.value = new
     assert w.value_throttled == new
+
+
+@pytest.mark.parametrize('widget, kwargs, new', [
+    (DiscreteSlider, dict(options=[1, 2, 3, 4, 5], value=1), 4),
+    (EditableFloatSlider, dict(start=0, end=10, value=1.0), 7.0),
+    (EditableIntSlider, dict(start=0, end=10, value=1), 7),
+    (EditableRangeSlider, dict(start=0, end=10, value=(1.0, 2.0)), (3.0, 4.0)),
+])
+def test_composite_slider_value_throttled_follows_programmatic_value(widget, kwargs, new):
+    # CompositeWidget subclasses relay value_throttled from their sub-widgets
+    # rather than deriving it generically, but a programmatic set of `value`
+    # must still be reflected in `value_throttled` immediately.
+    w = widget(**kwargs)
+    w.value = new
+    assert w.value_throttled == new
+
+
+@pytest.mark.parametrize('widget, kwargs, drag_value, released_value', [
+    (DiscreteSlider, dict(options=[1, 2, 3, 4, 5], value=1), 3, 4),
+    (EditableFloatSlider, dict(start=0, end=10, value=1.0), 5.0, 5.0),
+    (EditableIntSlider, dict(start=0, end=10, value=1), 5, 5),
+])
+def test_composite_slider_value_throttled_not_updated_while_dragging(
+    widget, kwargs, drag_value, released_value
+):
+    # Dragging the inner slider must not leak into the composite's own
+    # `value_throttled` until the drag is released, otherwise composite
+    # widgets like DiscreteSlider lose the point of the parameter for
+    # exactly the callbacks (e.g. DynamicMap redraws) it exists to protect.
+    w = widget(**kwargs)
+    initial_throttled = w.value_throttled
+
+    w._slider._process_events({'value': drag_value})
+    assert w.value_throttled == initial_throttled
+
+    w._slider._process_events({'value_throttled': drag_value})
+    assert w.value_throttled == released_value
+
+
+def test_editable_range_slider_value_throttled_not_updated_while_dragging():
+    w = EditableRangeSlider(start=0, end=10, value=(1.0, 2.0))
+
+    w._slider._process_events({'value': (1.0, 5.0)})
+    assert w.value == (1.0, 5.0)
+    assert w.value_throttled == (1.0, 2.0)
+
+    w._slider._process_events({'value_throttled': (1.0, 5.0)})
+    assert w.value_throttled == (1.0, 5.0)
+
+
+@pytest.mark.parametrize('widget, kwargs, sub_widget, drag_value, released_value, updated_value', [
+    (EditableFloatSlider, dict(start=0, end=10, value=1.0), '_value_edit', 3.0, 3.0, 3.0),
+    (EditableRangeSlider, dict(start=0, end=10, value=(1.0, 5.0)), '_start_edit', 2.0, 2.0, (2.0, 5.0)),
+])
+def test_editable_slider_value_throttled_not_updated_while_dragging_edit(
+    widget, kwargs, sub_widget, drag_value, released_value, updated_value
+):
+    # Dragging the numeric slider reflects `value` down into the text-input
+    # sub-widget for display, and vice versa; that reflection must not be
+    # mistaken by the *other* sub-widget for a fresh user-driven set of its
+    # own value, which would corrupt the composite's `value_throttled`.
+    w = widget(**kwargs)
+    initial_throttled = w.value_throttled
+    edit = getattr(w, sub_widget)
+
+    edit._process_events({'value': drag_value})
+    assert w.value_throttled == initial_throttled
+
+    edit._process_events({'value_throttled': released_value})
+    assert w.value_throttled == updated_value
