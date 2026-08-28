@@ -290,6 +290,7 @@ module = [
     "playwright.*",
     "plotly.*",
     "pydeck.*",
+    "pyarrow.*",
     "pyecharts.*",
     "pyodide_http.*",
     "pyodide.*",
