@@ -285,6 +285,11 @@ def require_components():
     """
     Returns JS snippet to load the required dependencies in the classic
     notebook using REQUIRE JS.
+
+    The ``__js_require__`` declarations this reads are deprecated and have
+    no effect outside the classic notebook. Components should declare
+    ``__javascript__``/``__javascript_modules__``/``__css__`` instead and
+    let panel.io.resource_spec derive the rest.
     """
     from ..config import config
 

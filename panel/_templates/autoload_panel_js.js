@@ -225,8 +225,25 @@ calls it with the rendered model.
     function(Bokeh) {} // ensure no trailing comma for IE
   ];
 
+  function declare_resources() {
+    // Tells the panel.js resource registry which component libraries this
+    // bundle has already satisfied, so nothing is fetched a second time.
+    // In inline mode the libraries have no URLs at all, which makes this
+    // the only way the registry can know about them.
+    const declared = {{ bundle.resource_declarations|default({})|json }};
+    if (!declared || !(declared.libs || declared.css)) {
+      return;
+    }
+    if (root.__panel_resources__ != null) {
+      root.__panel_resources__.declare(declared);
+    } else {
+      (root.__panel_resources_declared__ = root.__panel_resources_declared__ || []).push(declared);
+    }
+  }
+
   function run_inline_js() {
     if ((root.Bokeh !== undefined) || (force === true)) {
+      declare_resources();
       for (let i = 0; i < inline_js.length; i++) {
         try {
           inline_js[i].call(root, root.Bokeh);

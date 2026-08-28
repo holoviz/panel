@@ -6,11 +6,12 @@ from bokeh.models import Markup
 from ..config import config
 from ..io.resources import bundled_files
 from ..util import classproperty
+from .resource import ExternalResourcesMixin
 
 KATEX_VERSION = "0.16.22"
 
 
-class KaTeX(Markup):
+class KaTeX(Markup, ExternalResourcesMixin):
     """
     A bokeh model that renders text using KaTeX.
     """

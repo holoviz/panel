@@ -42,9 +42,6 @@ export class EChartsView extends HTMLBoxView {
   container: HTMLDivElement
   _chart: any
   _callbacks: Array<any>[] = []
-  _loading_interval: ReturnType<typeof setInterval> | null = null
-  _loading_timeout: ReturnType<typeof setTimeout> | null = null
-  _loading_el: HTMLDivElement | null = null
 
   override connect_signals(): void {
     super.connect_signals()
@@ -68,89 +65,16 @@ export class EChartsView extends HTMLBoxView {
         // dispose may fail if echarts was never fully initialized
       }
     }
-    this._clear_loading_timer()
     super.render()
     this.container = div({style: {height: "100%", width: "100%"}})
     this.shadow_el.append(this.container)
-
-    if ((window as any).echarts == null) {
-      this._show_loading()
-      this._await_echarts()
-      return
-    }
     this._init_chart()
-  }
-
-  _show_loading(): void {
-    this._loading_el = div({
-      style: {
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        height: "100%",
-        width: "100%",
-        color: "#888",
-        fontSize: "14px",
-      },
-    })
-    this._loading_el.textContent = "Loading ECharts..."
-    this.container.append(this._loading_el)
-  }
-
-  _hide_loading(): void {
-    if (this._loading_el != null) {
-      this._loading_el.remove()
-      this._loading_el = null
-    }
-  }
-
-  _await_echarts(): void {
-    // Try script onload listener first (event-driven, not polling)
-    const script = document.querySelector("script[src*='echarts']")
-    if (script != null) {
-      const onLoad = () => {
-        script.removeEventListener("load", onLoad)
-        this._clear_loading_timer()
-        this._hide_loading()
-        this._init_chart()
-      }
-      script.addEventListener("load", onLoad)
-    }
-
-    // Polling fallback in case script tag isn't found or onload doesn't fire
-    this._loading_interval = setInterval(() => {
-      if ((window as any).echarts != null) {
-        this._clear_loading_timer()
-        this._hide_loading()
-        this._init_chart()
-      }
-    }, 50)
-    this._loading_timeout = setTimeout(() => {
-      this._clear_loading_timer()
-      this._hide_loading()
-      console.warn(
-        "ECharts library failed to load. Ensure you call pn.extension('echarts') " +
-        "before using Gauge or ECharts components.",
-      )
-    }, 10000)
-  }
-
-  _clear_loading_timer(): void {
-    if (this._loading_interval != null) {
-      clearInterval(this._loading_interval)
-      this._loading_interval = null
-    }
-    if (this._loading_timeout != null) {
-      clearTimeout(this._loading_timeout)
-      this._loading_timeout = null
-    }
   }
 
   _init_chart(): void {
     if ((window as any).echarts == null) {
       return
     }
-    this._hide_loading()
     const config = {width: this.model.width, height: this.model.height, renderer: this.model.renderer}
     this._chart = (window as any).echarts.init(
       this.container,
@@ -162,7 +86,6 @@ export class EChartsView extends HTMLBoxView {
   }
 
   override remove(): void {
-    this._clear_loading_timer()
     super.remove()
     if (this._chart != null) {
       try {

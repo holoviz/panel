@@ -14,6 +14,9 @@ configuration in a Resources object.
 :param js_raw: a list of raw JS snippets to put between ``<script>`` tags
 :type js_raw: list[str]
 
+:param resource_declarations: resource specs already satisfied by the tags above
+:type resource_declarations: dict
+
 #}
 <script type="esms-options">{"shimMode": true}</script>
 
@@ -31,6 +34,22 @@ configuration in a Resources object.
   window.{{ name }} = {{ name }}
 </script>
 {%- endfor %}
+
+{%- if resource_declarations %}
+<script type="text/javascript">
+  // Tells the panel.js resource registry which component libraries the tags
+  // above have already satisfied, so nothing is fetched a second time. The
+  // queue covers the case where panel.js itself has not executed yet.
+  (function() {
+    const declared = {{ resource_declarations|json }};
+    if (window.__panel_resources__ != null) {
+      window.__panel_resources__.declare(declared);
+    } else {
+      (window.__panel_resources_declared__ = window.__panel_resources_declared__ || []).push(declared);
+    }
+  })();
+</script>
+{%- endif %}
 
 {%- for js in js_raw %}
 <script type="text/javascript">

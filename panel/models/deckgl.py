@@ -53,8 +53,12 @@ class DeckGLPlot(HTMLBox):
     @classproperty
     def __js_skip__(cls):
         return {
-            'deck': cls.__javascript__[:-1],
-            'mapboxgl': cls.__javascript__[-1:],
+            'h3': cls.__javascript__[:1],
+            'deck': cls.__javascript__[1:3],
+            'loaders': cls.__javascript__[3:6],
+            'mapboxgl': cls.__javascript__[6:7],
+            'maplibregl': cls.__javascript__[7:8],
+            'CartoLibrary': cls.__javascript__[8:],
         }
 
     __js_require__ = {

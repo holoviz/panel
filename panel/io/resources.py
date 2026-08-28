@@ -467,6 +467,21 @@ def bundled_files(model: Model, file_type: str = 'javascript') -> list[str]:
             files.append(url)
     return files
 
+def extension_declared(cls: type) -> bool:
+    """
+    Whether a model class' extension was declared in this session.
+
+    Classes that do not belong to an extension always pass, as does every
+    class when there is no session to ask (a notebook, or rendering
+    outside a document), which is what keeps those paths eager.
+    """
+    extensions = state._extensions
+    if extensions is None:
+        return True
+    ext = {module: name for name, module in extension._imports.items()}.get(cls.__module__)
+    return ext is None or ext in extensions
+
+
 def _panel_use_mathjax(roots) -> bool:
     """Whether any model in roots is a Panel HTML model (may need MathJax)."""
     from ..models.markup import HTML as PanelHTML
@@ -557,6 +572,7 @@ def bundle_resources(
         js_raw=js_raw,
         js_module_exports=resources.js_module_exports,
         js_modules=resources.js_modules,
+        resource_declarations=resources.resource_declarations,
         notebook=notebook,
     )
 
@@ -712,17 +728,9 @@ class Resources(BkResources):
         """ Collect external resources set on resource_attr attribute of all models."""
         external_resources: list[str] = []
 
-        if state._extensions is not None:
-            external_modules = {
-                module: ext for ext, module in extension._imports.items()
-            }
-        else:
-            external_modules = None
-
         for _, cls in sorted(Model.model_class_reverse_map.items(), key=lambda arg: arg[0]):
-            if external_modules is not None and cls.__module__ in external_modules:
-                if external_modules[cls.__module__] not in state._extensions:
-                    continue
+            if not extension_declared(cls):
+                continue
             external: list[str] | str | None = getattr(cls, resource_attr, None)
 
             if isinstance(external, str):
@@ -917,7 +925,7 @@ class Resources(BkResources):
 
         modules = list(config.js_modules.values())
         for model in Model.model_class_reverse_map.values():
-            if not hasattr(model, '__javascript_modules__'):
+            if not hasattr(model, '__javascript_modules__') or not extension_declared(model):
                 continue
             for module in model.__javascript_modules__:
                 if module not in modules:
@@ -950,7 +958,7 @@ class Resources(BkResources):
     def js_module_exports(self):
         modules = {}
         for model in Model.model_class_reverse_map.values():
-            if hasattr(model, '__javascript_module_exports__'):
+            if hasattr(model, '__javascript_module_exports__') and extension_declared(model):
                 modules.update(dict(zip(model.__javascript_module_exports__, model.__javascript_modules__)))
         return dict(zip(modules, self.adjust_paths(modules.values())))
 
@@ -987,11 +995,17 @@ class Resources(BkResources):
         return raw_js
 
     @property
+    def resource_declarations(self):
+        from .resource_spec import declared_specs
+        return declared_specs(self.mode)
+
+    @property
     def render_js(self):
         return JS_RESOURCES.render(
             js_raw=self.js_raw, js_files=self.js_files,
             js_modules=self.js_modules, hashes=self.hashes,
-            js_module_exports=self.js_module_exports
+            js_module_exports=self.js_module_exports,
+            resource_declarations=self.resource_declarations
         )
 
 
@@ -1000,6 +1014,7 @@ class Bundle(BkBundle):
     def __init__(self, notebook=False, **kwargs):
         self.js_modules = kwargs.pop("js_modules", [])
         self.js_module_exports = kwargs.pop("js_module_exports", {})
+        self.resource_declarations = kwargs.pop("resource_declarations", {})
         self.notebook = notebook
         super().__init__(**kwargs)
 
@@ -1026,5 +1041,6 @@ class Bundle(BkBundle):
             js_files=self.js_files,
             js_modules=self.js_modules,
             js_module_exports=self.js_module_exports,
+            resource_declarations=self.resource_declarations,
             hashes=self.hashes
         )

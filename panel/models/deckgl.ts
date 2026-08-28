@@ -9,6 +9,11 @@ import {debounce} from  "debounce"
 import {transform_cds_to_records} from "./data"
 import {set_size} from "./layout"
 import {GL} from "./lumagl"
+import type {ResourceSpec} from "./resources"
+import {
+  await_resources, define_external_resources, load_resources,
+  render_resource_error,
+} from "./resources"
 import {makeTooltip} from "./tooltips"
 
 function extractClasses() {
@@ -47,6 +52,14 @@ export class DeckGLPlotView extends LayoutDOMView {
   _layer_map: any
   _view_cb: any
   _initialized: boolean = false
+
+  override async lazy_initialize(): Promise<void> {
+    await super.lazy_initialize()
+    const error = await await_resources(this.model)
+    if (error != null) {
+      render_resource_error(this, error, LayoutDOMView.prototype.render)
+    }
+  }
 
   override connect_signals(): void {
     super.connect_signals()
@@ -321,6 +334,7 @@ export namespace DeckGLPlot {
     hoverState: p.Property<any>
     throttle: p.Property<any>
     viewState: p.Property<any>
+    external_resources: p.Property<ResourceSpec | null>
   }
 }
 
@@ -356,5 +370,12 @@ export class DeckGLPlot extends LayoutDOM {
       height: 400,
       width: 600,
     })
+
+    define_external_resources(this)
+  }
+
+  override initialize(): void {
+    super.initialize()
+    load_resources(this)
   }
 }

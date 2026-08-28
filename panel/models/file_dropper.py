@@ -7,6 +7,7 @@ from bokeh.models.widgets import InputWidget
 from ..config import config
 from ..io.resources import bundled_files
 from ..util import classproperty
+from .resource import ExternalResourcesMixin
 
 
 class UploadEvent(ModelEvent):
@@ -26,7 +27,7 @@ class DeleteEvent(ModelEvent):
         super().__init__(model=model)
 
 
-class FileDropper(InputWidget):
+class FileDropper(InputWidget, ExternalResourcesMixin):
 
     accepted_filetypes = List(String)
 
