@@ -4,7 +4,6 @@ inside the Jupyter notebook.
 """
 from __future__ import annotations
 
-import json
 import os
 import sys
 import typing as t
@@ -98,15 +97,11 @@ def send(comm: Comm, msg: Message):
     """
     # WARNING: CommManager model assumes that either JSON content OR a buffer
     #          is sent. Therefore we must NEVER(!!!) send both at once.
-    comm.send(msg.header_json)
-    comm.send(msg.metadata_json)
-    comm.send(msg.content_json)
-
-    for buffer in msg.buffers:
-        header = json.dumps(buffer.ref)
-        payload = buffer.to_bytes()
-        comm.send(header)
-        comm.send(buffers=[payload])
+    for fragment, binary in msg.fragments():
+        if binary:
+            comm.send(buffers=[fragment])
+        else:
+            comm.send(fragment)
 
 def push_on_root(ref: str):
     if ref not in state._views:

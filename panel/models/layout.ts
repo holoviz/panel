@@ -107,8 +107,8 @@ export class PanelMarkupView extends WidgetView {
    * Skipped until the view has armed it itself, as the update triggered from
    * `super.render()` precedes the creation of `this.container`.
    */
-  protected override _update_stylesheets(): void {
-    super._update_stylesheets()
+  protected override _apply_stylesheets(): void {
+    super._apply_stylesheets()
     if (this._stylesheets_watcher != null) {
       this.watch_stylesheets()
     }

@@ -21,7 +21,7 @@ from panel.widgets import Button
 
 from ..conftest import TEST_DIR
 
-bokeh_version = Version(bokeh.__version__)
+bokeh_version = Version(bokeh.__version__.split('+')[0])
 if bokeh_version.is_devrelease or bokeh_version.is_prerelease:
     bk_prefix = 'dev'
 else:

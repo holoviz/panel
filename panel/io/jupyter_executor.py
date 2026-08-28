@@ -13,11 +13,10 @@ import tornado
 from bokeh.document import Document
 from bokeh.embed.bundle import extension_dirs
 from bokeh.io.doc import patch_curdoc
-from bokeh.protocol import Protocol
+from bokeh.protocol.messages import patch_doc
 from bokeh.protocol.receiver import Receiver
 from bokeh.server.connection import ServerConnection
 from bokeh.server.contexts import BokehSessionContext
-from bokeh.server.protocol_handler import ProtocolHandler
 from bokeh.server.session import ServerSession
 from bokeh.server.views.static_handler import StaticHandler
 from bokeh.server.views.ws import WSHandler
@@ -63,7 +62,7 @@ class JupyterServerSession(ServerSession):
         if not connections:
             return
         with patch_curdoc(event.document):
-            message = connections[0].protocol.create('PATCH-DOC', [event])
+            message = patch_doc([event])
             message.prepare()
 
         def schedule() -> None:
@@ -95,11 +94,10 @@ class PanelExecutor(WSHandler):
         self.session_id = get_session_id(token)
         self.comm = Comm(target_name=self.session_id)
         self.comm.on_msg(self._receive_msg)
-        self.protocol = Protocol()
-        self.receiver = Receiver(self.protocol)
-        self.handler = ProtocolHandler()
+        self.receiver = Receiver()
         self.write_lock = tornado.locks.Lock()
         self._context = None
+        self.connection: ServerConnection | None = None
 
         resources = os.environ.get('BOKEH_RESOURCES', resources)
         root_url = self.root_url if resources == 'server' else None
@@ -110,7 +108,7 @@ class PanelExecutor(WSHandler):
         self._set_state()
         try:
             self.session, self._error = self._create_server_session()
-            self.connection = ServerConnection(self.protocol, self, None, self.session)
+            self.connection = ServerConnection(self, self.session)
         except Exception as e:
             self.exception = e
             self.session = None
@@ -145,10 +143,10 @@ class PanelExecutor(WSHandler):
             message = None
 
         try:
-            if message:
-                work = await self._handle(message)
-                if work:
-                    await self._schedule(work)
+            if message is not None and self.connection is not None:
+                reply = await self.connection.handle(message)
+                if reply is not None:
+                    await self.send_message(reply)
         except Exception as e:
             self._internal_error(f"server failed to handle a message: {e}")
 
@@ -210,6 +208,11 @@ class PanelExecutor(WSHandler):
                 self.comm.send({}, metadata=metadata, buffers=[message])
             else:
                 self.comm.send(message, metadata=metadata)
+
+    async def send_message(self, message) -> None:
+        with await self.write_lock.acquire():
+            for fragment, binary in message.fragments():
+                await self.write_message(fragment, binary=binary, locked=False)
 
     def render_mime(self) -> Mimebundle:
         """

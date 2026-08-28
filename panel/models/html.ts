@@ -190,17 +190,19 @@ export class HTMLView extends PanelMarkupView {
   override process_tex(): string {
     const decoded = html_decode(this.model.text)
     const text = decoded ?? this.model.text
-    if (this.model.disable_math || !this.contains_tex(text)) {
+    const {MathJax} = this.provider
+    if (this.model.disable_math || MathJax == null || !this.contains_tex(text)) {
       return text
     }
 
-    const tex_parts = this.provider.MathJax.find_tex(text)
+    const tex_parts = MathJax.find_tex(text)
     const processed_text: string[] = []
 
     let last_index: number | undefined = 0
     for (const part of tex_parts) {
       processed_text.push(text.slice(last_index, part.start.n))
-      processed_text.push(this.provider.MathJax.tex2svg(part.math, {display: part.display}).outerHTML)
+      const rendered = MathJax.tex2svg(part.math, {display: part.display})
+      processed_text.push(rendered.outerHTML)
 
       last_index = part.end.n
     }

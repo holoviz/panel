@@ -255,7 +255,7 @@ export class ReactiveHTMLView extends HTMLBoxView {
 
   override render(): void {
     this.empty()
-    this._update_stylesheets()
+    this._apply_stylesheets()
     this._update_css_classes()
     this._apply_styles()
     this._apply_visible()

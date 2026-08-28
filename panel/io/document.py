@@ -5,7 +5,6 @@ import dataclasses
 import datetime as dt
 import gc
 import inspect
-import json
 import logging
 import sys
 import threading
@@ -25,6 +24,7 @@ from bokeh.document.events import (
 )
 from bokeh.model.util import visit_immediate_value_references
 from bokeh.models import CustomJS
+from bokeh.protocol.messages import patch_doc
 
 from ..config import config
 from .loading import LOADING_INDICATOR_CSS_CLASS
@@ -33,13 +33,10 @@ from .state import state
 
 if t.TYPE_CHECKING:
     from asyncio.futures import Future
-    from collections.abc import (
-        Callable, Iterable, Iterator, Sequence,
-    )
+    from collections.abc import Callable, Iterable, Iterator
 
     from bokeh.core.enums import HoldPolicyType
     from bokeh.core.has_props import HasProps
-    from bokeh.protocol.message import Message
     from bokeh.server.connection import ServerConnection
     from bokeh.server.session import ServerSession
     from pyviz_comms import Comm
@@ -54,16 +51,13 @@ logger = logging.getLogger(__name__)
 
 GC_DEBOUNCE = 5
 _HOLD_LOCK: WeakKeyDictionary[Document, threading.Lock] = WeakKeyDictionary()
-_WRITE_FUTURES: WeakKeyDictionary[Document, list[Future]] = WeakKeyDictionary()
+_WRITE_FUTURES: WeakKeyDictionary[Document, list[Future[None]]] = WeakKeyDictionary()
 _WRITE_EVENTS: WeakKeyDictionary[Document, list[EventBatch]] = WeakKeyDictionary()
 _WRITE_BLOCK: WeakKeyDictionary[Document, bool] = WeakKeyDictionary()
 _UNCONNECTED_EVENTS: WeakKeyDictionary[Document, list[DocumentChangedEvent]] = WeakKeyDictionary()
 
 _panel_last_cleanup = None
 _write_tasks: WeakKeyDictionary[Document, list[asyncio.Task]] = WeakKeyDictionary()
-
-extra_socket_handlers: dict[type, Callable[..., Sequence[Future]]] = {}
-
 @dataclasses.dataclass
 class Request:
     headers : dict
@@ -243,48 +237,27 @@ def _dispatch_write_task(doc, func, *args, **kwargs):
     _write_tasks.setdefault(doc, []).append(task)
     task.add_done_callback(_cleanup_task)
 
-def _is_write_locked(conn: ServerConnection) -> bool:
-    socket = conn._socket
-    return hasattr(socket, 'write_lock') and socket.write_lock._block._value == 0
-
 async def _dispatch_msgs(doc):
     """
-    Serializes and writes batches of events to the sockets, ensuring
-    that the write_lock is not set, otherwise re-schedules the write
-    task on the event loop.
-
-    The events are serialized here, i.e. at write time, and not when
-    they were scheduled. Bokeh tracks which models a client has already
-    been sent as part of the Document, so serializing a patch declares
-    the models it defines as synced. Serializing eagerly and writing
-    later would therefore allow a message that was serialized after
-    ours (e.g. one Bokeh itself dispatches at the end of a locked
-    callback) to be written first, referencing models the client has
-    not been sent yet.
+    Serializes and writes queued event batches through their server
+    connections, preserving the order in which they were scheduled.
     """
     if doc not in _WRITE_BLOCK:
         return
-    futures: list[Future] = []
-    batches = _WRITE_EVENTS.pop(doc, [])
-    while batches:
-        connections, events = batches[0]
-        if any(_is_write_locked(conn) for conn in connections):
-            break
-        batches.pop(0)
-        futures += write_events(doc, connections, events, run=False)
-    if futures:
-        if doc in _WRITE_FUTURES:
-            _WRITE_FUTURES[doc] += futures
-        else:
-            _WRITE_FUTURES[doc] = futures
-        await _run_write_futures(doc)
-    if not batches:
-        if doc in _WRITE_BLOCK:
-            del _WRITE_BLOCK[doc]
-        return
-    _WRITE_EVENTS[doc] = batches + _WRITE_EVENTS.get(doc, [])
-    await asyncio.sleep(0.01)
-    _dispatch_write_task(doc, _dispatch_msgs, doc)
+    try:
+        while batches := _WRITE_EVENTS.pop(doc, []):
+            for connections, events in batches:
+                futures = write_events(doc, connections, events, run=False)
+                if futures:
+                    _WRITE_FUTURES.setdefault(doc, []).extend(futures)
+                    await _run_write_futures(doc)
+    finally:
+        _WRITE_BLOCK.pop(doc, None)
+        # A worker thread may queue a batch between the final empty check
+        # above and clearing the block. Ensure it still gets a dispatcher.
+        if doc in _WRITE_EVENTS and doc not in _WRITE_BLOCK:
+            _WRITE_BLOCK[doc] = True
+            _dispatch_write_task(doc, _dispatch_msgs, doc)
 
 def _garbage_collect():
     if (new_time:= time.monotonic()-_panel_last_cleanup) < GC_DEBOUNCE:
@@ -370,7 +343,7 @@ def write_events(
     connections: Iterable[ServerConnection],
     events: list[DocumentPatchedEvent],
     run: bool = True
-) -> list[Future]:
+) -> list[Future[None]]:
     """
     Serializes the events into a single protocol message and writes it
     to all the supplied connections.
@@ -380,22 +353,15 @@ def write_events(
     serializing per connection would make all but the first message
     reference models the client was never sent.
     """
-    from tornado.websocket import WebSocketHandler
-
     connections = list(connections)
     if not connections or not events:
         return []
 
-    msg = connections[0].protocol.create('PATCH-DOC', events)
-
-    futures: list[Future] = []
-    for conn in connections:
-        if isinstance(conn._socket, WebSocketHandler):
-            futures += dispatch_tornado(conn, msg=msg)
-        elif (socket_type:= type(conn._socket)) in extra_socket_handlers:
-            futures += extra_socket_handlers[socket_type](conn, msg=msg)
-        else:
-            futures += dispatch_django(conn, msg=msg)
+    msg = patch_doc(events)
+    msg.prepare()
+    futures: list[Future[None]] = [
+        asyncio.ensure_future(conn.send_message(msg)) for conn in connections
+    ]
 
     if not run:
         return futures
@@ -423,10 +389,12 @@ def schedule_write_events(
     are actually written.
     """
     # Set up write locks
+    blocked = doc in _WRITE_BLOCK
     _WRITE_BLOCK[doc] = True
     _WRITE_EVENTS[doc] = batches = _WRITE_EVENTS.get(doc, [])
     batches.append((list(connections), events))
-    _dispatch_write_task(doc, _dispatch_msgs, doc)
+    if not blocked:
+        _dispatch_write_task(doc, _dispatch_msgs, doc)
 
 def create_doc_if_none_exists(doc: Document | None) -> Document:
     curdoc = doc or state.curdoc
@@ -490,62 +458,6 @@ def with_lock(func: Callable) -> Callable:
     wrapper.lock = True # type: ignore
     return wrapper
 
-def dispatch_tornado(
-    conn: ServerConnection,
-    events: list[DocumentPatchedEvent] | None = None,
-    msg: Message | None = None
-) -> Sequence[Future]:
-    from tornado.websocket import WebSocketHandler
-    socket = conn._socket
-    # Callers only invoke dispatch_tornado after checking
-    # isinstance(conn._socket, WebSocketHandler).
-    assert isinstance(socket, WebSocketHandler)
-    ws_conn = getattr(socket, 'ws_connection', False)
-    if not ws_conn or ws_conn.is_closing(): # type: ignore
-        return []
-    elif msg is None:
-        if events:
-            msg = conn.protocol.create('PATCH-DOC', events)
-        else:
-            return []
-    futures = [
-        WebSocketHandler.write_message(socket, msg.header_json),
-        WebSocketHandler.write_message(socket, msg.metadata_json),
-        WebSocketHandler.write_message(socket, msg.content_json)
-    ]
-    for buffer in msg._buffers:
-        header = json.dumps(buffer.ref)
-        payload = buffer.to_bytes()
-        futures.extend([
-            WebSocketHandler.write_message(socket, header),
-            WebSocketHandler.write_message(socket, payload, binary=True)
-        ])
-    return futures
-
-def dispatch_django(
-    conn: ServerConnection,
-    events: list[DocumentPatchedEvent] | None = None,
-    msg: Message | None = None
-) -> Sequence[Future]:
-    socket = conn._socket
-    if msg is None:
-        if not events:
-            return []
-        msg = conn.protocol.create('PATCH-DOC', events)
-    futures = [
-        socket.send(text_data=msg.header_json),
-        socket.send(text_data=msg.metadata_json),
-        socket.send(text_data=msg.content_json)
-    ]
-    for buffer in msg._buffers:
-        header = json.dumps(buffer.ref)
-        payload = buffer.to_bytes()
-        futures.extend([
-            socket.send(text_data=header),
-            socket.send(binary_data=payload)
-        ])
-    return futures
-
 def _suppress_property_callbacks(
     events: list[DocumentChangedEvent]
 ) -> list[DocumentChangedEvent]:
@@ -575,16 +487,12 @@ def _flush_events(curdoc: Document, session: ServerSession) -> None:
     """
     connections = session._subscribed_connections
 
-    # Events may only be written to the sockets from the server event
-    # loop thread and only while nothing else is writing to them.
-    # Bokeh dispatches locked session callbacks on a worker
-    # thread, so this is frequently not the case.
+    # Events may only be scheduled for writing from the server event
+    # loop thread. Bokeh dispatches locked session callbacks on a worker
+    # thread, so this is frequently not the case. The transport serializes
+    # concurrent writes internally.
     queued = curdoc in _WRITE_EVENTS or curdoc in _WRITE_BLOCK
     locked = queued or not state._on_loop_thread
-    for conn in connections:
-        if _is_write_locked(conn):
-            locked = True
-            break
 
     events = list(curdoc.callbacks._held_events or [])
     curdoc.callbacks._held_events = []

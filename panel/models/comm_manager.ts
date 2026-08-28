@@ -121,7 +121,7 @@ export class CommManager extends Model {
       }
     } else if (value instanceof Buffer) {
       const {buffer} = value
-      const id = buffers.length
+      const id = `${buffers.length}`
       buffers.push(buffer)
       return {id}
     } else if (isPlainObject(value)) {
@@ -140,13 +140,13 @@ export class CommManager extends Model {
     }
     const patch = this.document.create_json_patch(this._event_buffer)
     this._event_buffer = []
-    const message = {...Message.create("PATCH-DOC", {}, patch)}
+    const message = Message.create("PATCH-DOC", patch)
     const buffers: ArrayBuffer[] = []
     this._extract_buffers(message.content, buffers)
-    this._client_comm.send(message, {}, buffers)
+    this._client_comm.send({header: message.header, content: message.content}, {}, buffers)
     for (const view of this.ns.shared_views.get(this.plot_id)) {
       if (view !== this && view.document != null) {
-        view.document.apply_json_patch(patch, [], this.id)
+        view.document.apply_json_patch(patch)
       }
     }
   }
@@ -188,12 +188,7 @@ export class CommManager extends Model {
         console.warn("Python failed with the following traceback:", metadata.traceback)
       }
     } else if (plot_id != null) {
-      let plot = null
-      if ((plot_id in this.ns.plot_index) && (this.ns.plot_index[plot_id] != null)) {
-        plot = this.ns.plot_index[plot_id]
-      } else if (((window as any).Bokeh !== undefined) && (plot_id in (window as any).Bokeh.index)) {
-        plot = (window as any).Bokeh.index[plot_id]
-      }
+      const plot = this.ns.plot_index?.[plot_id] ?? null
 
       if (plot == null) {
         return

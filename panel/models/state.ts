@@ -46,9 +46,10 @@ export class State extends Model {
   }
 
   apply_state(state: any): void {
-    this._receiver.consume(state.header)
-    this._receiver.consume(state.metadata)
-    this._receiver.consume(state.content)
+    if (state.envelope.length == 0) {
+      return
+    }
+    this._receiver.consume(state.envelope)
     if (this._receiver.message && this.document) {
       this.document.apply_json_patch(this._receiver.message.content as Patch)
     }

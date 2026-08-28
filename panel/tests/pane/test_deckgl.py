@@ -36,6 +36,8 @@ def test_pydeck_pane_deck(document, comm):
     }
     if 'tooltip' in model.data: # Handle pydeck 0.8.0b4
         expected['tooltip'] = True
+    if 'showError' in model.data:
+        expected['showError'] = False
     assert model.data == expected
     assert model.mapbox_api_key == deck.mapbox_key
     assert model.tooltip == deck._tooltip

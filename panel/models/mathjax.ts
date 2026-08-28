@@ -15,13 +15,19 @@ export class MathJaxView extends PanelMarkupView {
   override render(): void {
     super.render()
     const text = this.model.text
-    const tex_parts = this.provider.MathJax.find_tex(text)
+    const {MathJax} = this.provider
+    if (MathJax == null) {
+      this.container.textContent = text
+      return
+    }
+    const tex_parts = MathJax.find_tex(text)
     const processed_text: string[] = []
 
     let last_index: number | undefined = 0
     for (const part of tex_parts) {
       processed_text.push(text.slice(last_index, part.start.n))
-      processed_text.push(this.provider.MathJax.tex2svg(part.math, {display: part.display}).outerHTML)
+      const rendered = MathJax.tex2svg(part.math, {display: part.display})
+      processed_text.push(rendered.outerHTML)
       last_index = part.end.n
     }
     if (last_index! < text.length) {

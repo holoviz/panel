@@ -17,14 +17,12 @@ from bokeh.document.events import (
 from bokeh.document.json import PatchJson
 from bokeh.model import DataModel
 from bokeh.models import ColumnDataSource, FlexBox, Model
-from bokeh.protocol.messages.patch_doc import patch_doc
+from bokeh.protocol.message import Message
 
 from .state import state
 
 if t.TYPE_CHECKING:
     from collections.abc import Iterable, Sequence
-
-    from bokeh.protocol.message import Message
 
 #---------------------------------------------------------------------
 # Private API
@@ -89,13 +87,9 @@ def diff(
     monkeypatch_events(patch_events)
     serializer = Serializer(references=doc.models.synced_references, deferred=binary)
     patch_json = PatchJson(events=serializer.encode(patch_events))
-    header = patch_doc.create_header()
-    msg = patch_doc(header, {'use_buffers': binary}, patch_json)
+    msg = Message(Message.create_header("PATCH-DOC"), patch_json, serializer.buffers)
     doc.callbacks._held_events = [e for e in doc.callbacks._held_events if e not in patch_events]
     doc.models.flush_synced(lambda model: not serializer.has_ref(model))
-    if binary:
-        for buffer in serializer.buffers:
-            msg.add_buffer(buffer)
     return msg
 
 def remove_root(obj: Model, replace: Document | None = None, skip: set[Model] | None = None) -> set[Model]:

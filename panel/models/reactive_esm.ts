@@ -354,7 +354,7 @@ export class ReactiveESMView extends HTMLBoxView {
 
   override render(): void {
     this.empty()
-    this._update_stylesheets()
+    this._apply_stylesheets()
     this._update_css_classes()
     this._apply_styles()
     this._update_css_variables()
@@ -444,7 +444,7 @@ export class ReactiveESMView extends HTMLBoxView {
       (this._lifecycle_handlers.get(lf) || []).splice(0)
     }
     this.model.disconnect_watchers(this)
-    const render_promise = this.model.render_module.then((mod: any) => mod.default.render(this.model.id))
+    const render_promise = this.model.render_module.then((mod: any) => mod.default.render(this))
     this._await_ready(render_promise)
   }
 
@@ -884,12 +884,7 @@ export class ReactiveESM extends HTMLBox {
 
   protected _render_code(): string {
     return `
-function render(id) {
-  const view = Bokeh.index.find_one_by_id(id)
-  if (view == null) {
-    return null
-  }
-
+function render(view) {
   const output = view.render_fn({
     view: view, model: view.model_proxy, data: view.model.data, el: view.container
   })

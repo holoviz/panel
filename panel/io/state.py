@@ -1124,9 +1124,22 @@ class _state(param.Parameterized):
         except StopIteration:
             return
         self._scheduled[key] = (diter, callback)
-        self._ioloop.call_later(
-            delay=call_time_seconds, callback=partial(self._scheduled_cb, key, threaded)
-        )
+        loop = self._ioloop
+        scheduled_cb = partial(self._scheduled_cb, key, threaded)
+        if isinstance(loop, asyncio.AbstractEventLoop):
+            def schedule() -> None:
+                def create_task() -> None:
+                    task = loop.create_task(scheduled_cb())
+                    _tasks.add(task)
+                    task.add_done_callback(_tasks.discard)
+                loop.call_later(call_time_seconds, create_task)
+
+            if self._on_loop_thread:
+                schedule()
+            else:
+                loop.call_soon_threadsafe(schedule)
+        else:
+            loop.call_later(delay=call_time_seconds, callback=scheduled_cb)
 
     def sync_busy(self, indicator: BooleanIndicator) -> None:
         """

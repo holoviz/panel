@@ -40,7 +40,7 @@ from urllib.parse import urljoin
 import tornado
 
 from bokeh.embed.bundle import extension_dirs
-from bokeh.protocol import Protocol
+from bokeh.protocol import ack
 from bokeh.protocol.exceptions import ProtocolError
 from bokeh.protocol.receiver import Receiver
 from bokeh.server.tornado import DEFAULT_KEEP_ALIVE_MS
@@ -386,13 +386,7 @@ class PanelWSProxy(WSHandler, JupyterHandler):  # type: ignore
             self.close()
             raise ProtocolError("Token is expired.")
 
-        try:
-            protocol = Protocol()
-            self.receiver = Receiver(protocol)
-        except ProtocolError as e:
-            logger.error("Could not create new server session, reason: %s", e)
-            self.close()
-            raise e
+        self.receiver = Receiver()
 
         self.session_id = get_session_id(token)
         if self.session_id not in state._kernels:
@@ -404,8 +398,7 @@ class PanelWSProxy(WSHandler, JupyterHandler):  # type: ignore
         self.kernel, self.comm_id, self.kernel_id, _ = kernel_info
         state._kernels[self.session_id] = kernel_info[:-1] + (True,)
 
-        ack_msg = protocol.create('ACK')
-        await self.send_message(ack_msg)
+        await self.send_message(ack())
 
         self._ping_job.start()
         task = asyncio.create_task(self._check_for_message())

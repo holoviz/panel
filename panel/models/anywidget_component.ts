@@ -164,10 +164,7 @@ export class AnyWidgetComponent extends ReactiveESM {
 
   protected override _render_code(): string {
     return `
-function render(id) {
-  const view = Bokeh.index.find_one_by_id(id)
-  if (!view) { return }
-
+function render(view) {
   const out = Promise.resolve(view.render_fn({
     view, model: view.adapter, data: view.model.data, el: view.container
   }) || null)

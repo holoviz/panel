@@ -7,7 +7,6 @@ from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 
 import pytest
-import tornado.locks
 
 from bokeh.document import Document
 from bokeh.document.events import MessageSentEvent
@@ -15,8 +14,8 @@ from bokeh.document.events import MessageSentEvent
 import panel as pn
 
 from panel.io.document import (
-    _UNCONNECTED_EVENTS, _WRITE_BLOCK, _cleanup_doc, _destroy_document,
-    _write_tasks, extra_socket_handlers, hold, schedule_write_events, unlocked,
+    _UNCONNECTED_EVENTS, _WRITE_BLOCK, _WRITE_EVENTS, _cleanup_doc,
+    _destroy_document, _write_tasks, hold, schedule_write_events, unlocked,
     write_events,
 )
 from panel.io.state import _state, set_curdoc, state
@@ -245,28 +244,26 @@ def test_hold_in_app_callable_does_not_leak_hold():
     assert build['hold'] is None
 
 
-class _FakeProtocol:
+class _FakeMessage:
+
     def __init__(self):
-        self.created = []
+        self.prepared = False
 
-    def create(self, msgtype, events):
-        msg = object()
-        self.created.append(msg)
-        return msg
-
-
-class _FakeSocket:
-    def __init__(self, lock_held):
-        self.write_lock = tornado.locks.Lock()
-        if lock_held:
-            self.write_lock._block._value = 0
-        self.ws_connection = type("W", (), {"is_closing": lambda s: True})()
+    def prepare(self):
+        self.prepared = True
 
 
 class _FakeConn:
-    def __init__(self, lock_held):
-        self._socket = _FakeSocket(lock_held)
-        self.protocol = _FakeProtocol()
+
+    def __init__(self, block: bool = False):
+        self.messages: list[_FakeMessage] = []
+        self._block = block
+        self.release = asyncio.Event()
+
+    async def send_message(self, msg):
+        self.messages.append(msg)
+        if self._block:
+            await self.release.wait()
 
 
 @pytest.mark.xdist_group(name="server")
@@ -315,93 +312,110 @@ def test_unlocked_dispatches_from_worker_thread():
     assert 'on_loop' in seen
 
 
-def test_write_events_shares_one_message_across_connections():
+@pytest.mark.asyncio
+async def test_write_events_shares_one_message_across_connections(monkeypatch):
     """
     Serializing a patch marks the models it defines as synced on the
     Document, so a message must be created once and shared, otherwise
     every connection but the first receives references to models it was
     never sent.
     """
-    written = []
-    extra_socket_handlers[_FakeSocket] = lambda conn, msg=None: written.append((conn, msg)) or []
+    messages: list[_FakeMessage] = []
 
-    try:
-        doc = Document()
-        conns = [_FakeConn(lock_held=False) for _ in range(3)]
+    def patch_doc(events):
+        message = _FakeMessage()
+        messages.append(message)
+        return message
 
-        assert write_events(doc, conns, [object()], run=False) == []
-
-        assert len(conns[0].protocol.created) == 1
-        assert [conn for conn, _ in written] == conns
-        assert {id(msg) for _, msg in written} == {id(conns[0].protocol.created[0])}
-        assert not any(conn.protocol.created for conn in conns[1:])
-    finally:
-        extra_socket_handlers.pop(_FakeSocket, None)
-
-
-def test_write_events_with_nothing_to_write():
+    monkeypatch.setattr("panel.io.document.patch_doc", patch_doc)
     doc = Document()
-    conn = _FakeConn(lock_held=False)
+    conns = [_FakeConn() for _ in range(3)]
+
+    futures = write_events(doc, conns, [object()], run=False)
+    await asyncio.gather(*futures)
+
+    assert len(messages) == 1
+    assert messages[0].prepared
+    assert [conn.messages for conn in conns] == [[messages[0]]] * 3
+
+
+def test_write_events_with_nothing_to_write(monkeypatch):
+    messages = []
+    monkeypatch.setattr("panel.io.document.patch_doc", lambda events: messages.append(_FakeMessage()))
+    doc = Document()
+    conn = _FakeConn()
 
     assert write_events(doc, [conn], []) == []
     assert write_events(doc, [], [object()]) == []
-    assert not conn.protocol.created
+    assert not messages
+    assert not conn.messages
 
 
 @pytest.mark.asyncio
-async def test_schedule_write_events_defers_serialization():
+async def test_schedule_write_events_defers_and_orders_serialization(monkeypatch):
     """
     Queued events must be serialized when they are written, not when they
     are queued, otherwise a message serialized later can be written first
     and reference models the client has not been sent yet.
     """
-    written = []
-    extra_socket_handlers[_FakeSocket] = lambda conn, msg=None: written.append(msg) or []
+    serialized = []
 
-    try:
-        doc = Document()
-        conn = _FakeConn(lock_held=True)
+    def patch_doc(events):
+        message = _FakeMessage()
+        serialized.append((events, message))
+        return message
 
-        schedule_write_events(doc, [conn], [object()])
-        await asyncio.sleep(0.05)
+    monkeypatch.setattr("panel.io.document.patch_doc", patch_doc)
+    doc = Document()
+    conn = _FakeConn(block=True)
+    first, second = object(), object()
 
-        # The socket is being written to, so nothing has been serialized
-        assert conn.protocol.created == []
-        assert written == []
+    schedule_write_events(doc, [conn], [first])
+    assert serialized == []
+    for _ in range(10):
+        await asyncio.sleep(0.01)
+        if conn.messages:
+            break
 
-        # Release the socket and let the write task drain the queue
-        conn._socket.write_lock._block._value = 1
-        await asyncio.sleep(0.05)
+    assert [events for events, _ in serialized] == [[first]]
+    assert conn.messages == [serialized[0][1]]
 
-        assert len(conn.protocol.created) == 1
-        assert written == conn.protocol.created
-    finally:
-        extra_socket_handlers.pop(_FakeSocket, None)
-        _WRITE_BLOCK.pop(doc, None)
+    # This batch arrives while the first message is still being sent. It
+    # must be drained by the active dispatcher rather than left stranded.
+    schedule_write_events(doc, [conn], [second])
+    assert [events for events, _ in serialized] == [[first]]
+
+    conn.release.set()
+    for _ in range(10):
+        await asyncio.sleep(0.01)
+        if doc not in _WRITE_BLOCK:
+            break
+
+    assert [events for events, _ in serialized] == [[first], [second]]
+    assert conn.messages == [message for _, message in serialized]
+    assert all(message.prepared for _, message in serialized)
+    assert doc not in _WRITE_EVENTS
+    assert doc not in _WRITE_BLOCK
 
 
 @pytest.mark.asyncio
-async def test_dispatch_msgs_terminates_on_document_destroy():
+async def test_dispatch_msgs_terminates_on_document_destroy(monkeypatch):
     """Pending _dispatch_msgs loop must stop after document is destroyed."""
-    extra_socket_handlers[_FakeSocket] = lambda conn, msg=None: []
+    monkeypatch.setattr("panel.io.document.patch_doc", lambda events: _FakeMessage())
+    doc = Document()
+    conn = _FakeConn(block=True)
+    ref = weakref.ref(doc)
 
-    try:
-        doc = Document()
-        conn = _FakeConn(lock_held=True)
-        ref = weakref.ref(doc)
+    schedule_write_events(doc, [conn], [object()])
+    await asyncio.sleep(0.05)
 
-        schedule_write_events(doc, [conn], [object()])
-        await asyncio.sleep(0.05)
+    assert doc in _write_tasks
+    assert doc in _WRITE_BLOCK
 
-        assert doc in _write_tasks
-        assert doc in _WRITE_BLOCK
+    doc.destroy = partial(_destroy_document, doc)
+    doc.destroy(None)
+    del doc, conn
+    await asyncio.sleep(0.05)
+    gc.collect()
 
-        doc.destroy = partial(_destroy_document, doc)
-        doc.destroy(None)
-        del doc, conn
-        await asyncio.sleep(0.05)
-        gc.collect()
-
-        assert ref() is None
-    finally:
-        extra_socket_handlers.pop(_FakeSocket, None)
+    assert ref() is None

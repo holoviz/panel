@@ -19,6 +19,10 @@ from panel.widgets import (
 )
 
 
+def _state_content(state):
+    return json.loads(state['envelope'])['content']
+
+
 def test_embed_param_jslink(document, comm):
     select = Select(options=['A', 'B', 'C'])
     params = Param(select, parameters=['disabled']).layout
@@ -83,7 +87,7 @@ def test_embed_select_str_link(document, comm):
     _, state = document.roots
     assert set(state.state) == {'A', 'B', 'C'}
     for k, v in state.state.items():
-        content = json.loads(v['content'])
+        content = _state_content(v)
         assert 'events' in content
         events = content['events']
         assert len(events) == 1
@@ -107,7 +111,7 @@ def test_embed_float_slider_explicit_values(document, comm):
     assert set(state.state) == {0, 1, 2}
     states = {0: 0.1, 1: 0.7, 2: 1}
     for (k, v) in state.state.items():
-        content = json.loads(v['content'])
+        content = _state_content(v)
         assert 'events' in content
         events = content['events']
         assert len(events) == 2
@@ -136,7 +140,7 @@ def test_embed_editable_float_slider_explicit_values(document, comm):
     assert set(state.state) == {0, 1, 2}
     states = {0: 0.1, 1: 0.7, 2: 1}
     for (k, v) in state.state.items():
-        content = json.loads(v['content'])
+        content = _state_content(v)
         assert 'events' in content
         events = content['events']
         assert len(events) == 4
@@ -201,7 +205,7 @@ def test_embed_select_explicit_values(document, comm):
     _, state = document.roots
     assert set(state.state) == {'A', 'B'}
     for k, v in state.state.items():
-        content = json.loads(v['content'])
+        content = _state_content(v)
         assert 'events' in content
         events = content['events']
         assert len(events) == 1
@@ -251,7 +255,7 @@ def test_embed_select_str_link_two_steps(document, comm):
     _, state = document.roots
     assert set(state.state) == {'A', 'B', 'C'}
     for k, v in state.state.items():
-        content = json.loads(v['content'])
+        content = _state_content(v)
         assert 'events' in content
         events = content['events']
         assert len(events) == 2
@@ -280,7 +284,7 @@ def test_embed_select_str_link_with_secondary_watch(document, comm):
     _, state = document.roots
     assert set(state.state) == {'A', 'B', 'C'}
     for k, v in state.state.items():
-        content = json.loads(v['content'])
+        content = _state_content(v)
         assert 'events' in content
         events = content['events']
         assert len(events) == 1
@@ -357,7 +361,7 @@ def test_embed_checkbox_str_link(document, comm):
     _, state = document.roots
     assert set(state.state) == {False, True}
     for k, v in state.state.items():
-        content = json.loads(v['content'])
+        content = _state_content(v)
         assert 'events' in content
         events = content['events']
         assert len(events) == 1
@@ -435,7 +439,7 @@ def test_embed_slider_str_link(document, comm):
     assert set(state.state) == {0, 1, 2}
     values = [0, 5, 10]
     for k, v in state.state.items():
-        content = json.loads(v['content'])
+        content = _state_content(v)
         assert 'events' in content
         events = content['events']
         assert len(events) == 2
@@ -526,21 +530,21 @@ def test_embed_merged_sliders(document, comm):
     ref1, ref2 = model.children[2].ref['id'], model.children[3].ref['id']
     ref3 = model.children[0].children[0].ref['id']
     ref4 = model.children[1].children[0].ref['id']
-    state0 = json.loads(state_model.state[0]['content'])['events']
+    state0 = _state_content(state_model.state[0])['events']
     assert state0 == [
         {'attr': 'text', 'kind': 'ModelChanged', 'model': {'id': ref3}, 'new': 'A: <b>1</b>',},
         {"attr": "text", "kind": "ModelChanged", "model": {"id": ref1}, "new": "1"},
         {'attr': 'text', 'kind': 'ModelChanged', 'model': {'id': ref4}, 'new': 'A: <b>1</b>',},
         {"attr": "text", "kind": "ModelChanged", "model": {"id": ref2}, "new": "1"}
     ]
-    state1 = json.loads(state_model.state[1]['content'])['events']
+    state1 = _state_content(state_model.state[1])['events']
     assert state1 == [
         {'attr': 'text', 'kind': 'ModelChanged', 'model': {'id': ref3}, 'new': 'A: <b>5</b>'},
         {"attr": "text", "kind": "ModelChanged", "model": {"id": ref1}, "new": "5"},
         {'attr': 'text', 'kind': 'ModelChanged', 'model': {'id': ref4}, 'new': 'A: <b>5</b>'},
         {"attr": "text", "kind": "ModelChanged", "model": {"id": ref2}, "new": "5"}
     ]
-    state2 = json.loads(state_model.state[2]['content'])['events']
+    state2 = _state_content(state_model.state[2])['events']
     assert state2 == [
         {'attr': 'text', 'kind': 'ModelChanged', 'model': {'id': ref3}, 'new': 'A: <b>9</b>'},
         {"attr": "text", "kind": "ModelChanged", "model": {"id": ref1}, "new": "9"},
@@ -594,9 +598,10 @@ def test_save_embed_json(tmpdir):
     for jf, v in zip(json_files, ('False', 'True')):
         with open(jf) as f:
             state = json.load(f)
-        assert 'content' in state
-        assert 'events' in state['content']
-        events = json.loads(state['content'])['events']
+        assert 'envelope' in state
+        content = _state_content(state)
+        assert 'events' in content
+        events = content['events']
         assert len(events) == 1
         event = events[0]
         assert event['kind'] == 'ModelChanged'
