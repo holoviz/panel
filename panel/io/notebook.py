@@ -43,7 +43,7 @@ from .embed import embed_state
 from .model import add_to_doc, diff
 from .resources import (
     CDN_DIST, DIST_DIR, PANEL_DIR, Resources, _env, bundle_resources,
-    patch_model_css, set_resource_mode,
+    patch_model_css, set_default_resource_mode, set_resource_mode,
 )
 from .state import state
 
@@ -428,6 +428,13 @@ def load_notebook(
 
     resources = INLINE if inline and not state._is_pyodide else CDN
     nb_endpoint = not state._is_pyodide
+
+    # Components rendered in a later cell resolve their resources outside
+    # any set_resource_mode block, so the notebook mode has to become the
+    # default rather than being scoped to the bootstrap. Inline output has
+    # no urls to hand out after the fact, hence the CDN.
+    set_default_resource_mode('cdn' if resources.mode == 'inline' else resources.mode)
+
     with set_resource_mode(resources.mode):
         resources = Resources.from_bokeh(resources, notebook=nb_endpoint)
         bundle = bundle_resources(

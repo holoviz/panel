@@ -5,10 +5,14 @@ pytest.importorskip("IPython")
 from bokeh.models import ImportedStyleSheet, InlineStyleSheet
 
 from panel.config import config, panel_extension
-from panel.io.notebook import ipywidget, replace_inline_css
+from panel.io import resources as resources_module
+from panel.io.notebook import ipywidget, load_notebook, replace_inline_css
+from panel.io.resource_spec import resource_spec
 from panel.io.resources import (
     CDN_DIST, CDN_ROOT, JS_VERSION, set_resource_mode,
 )
+from panel.layout import Column
+from panel.models.tabulator import DataTabulator
 from panel.pane import Str
 from panel.widgets import TextEditor
 
@@ -23,6 +27,22 @@ def nb_loaded():
         yield
     finally:
         panel_extension._loaded = old
+
+
+@pytest.fixture
+def notebook_bootstrap():
+    """
+    Runs the notebook bootstrap, undoing the global state it sets.
+    """
+    from bokeh.io.state import curstate
+    state, mode = curstate(), resources_module.RESOURCE_MODE
+    notebook, notebook_type = state.notebook, state.notebook_type
+    try:
+        load_notebook(inline=True)
+        yield
+    finally:
+        resources_module.RESOURCE_MODE = mode
+        state._notebook, state._notebook_type = notebook, notebook_type
 
 
 @jb_available
@@ -78,6 +98,49 @@ def test_notebook_inline_css_stylesheets(nb_loaded):
     model = list(widget._models.values())[0][0]
     for stylesheet in model.stylesheets[:len(model.__css__)]:
         assert isinstance(stylesheet, InlineStyleSheet)
+
+@pytest.mark.parametrize('lazy_resources, waits', [(True, False), (False, True)])
+def test_notebook_embed_gate_only_polls_globals_without_lazy_resources(
+    nb_loaded, lazy_resources, waits
+):
+    loaded = panel_extension._loaded_extensions
+    panel_extension._loaded_extensions = ['tabulator']
+    try:
+        with config.set(lazy_resources=lazy_resources):
+            (bundle, _) = Str('A')._repr_mimebundle_()
+    finally:
+        panel_extension._loaded_extensions = loaded
+
+    assert ('root.Tabulator !== undefined' in bundle['text/html']) is waits
+
+
+def test_notebook_resources_resolve_absolutely(notebook_bootstrap):
+    """
+    A component rendered in a later cell builds its specification outside
+    any resource mode block, and the notebook page cannot resolve a url
+    into the static endpoint Panel serves for an application.
+    """
+    spec = resource_spec(DataTabulator)
+    urls = [url for lib in spec['libs'] for url in lib['js']] + spec['css']
+
+    assert urls
+    assert all(url.startswith('http') for url in urls)
+
+
+def test_notebook_dynamic_component_resources_resolve_absolutely(
+    nb_loaded, notebook_bootstrap
+):
+    column = Column()
+    column._repr_mimebundle_()
+    editor = TextEditor()
+    column.append(editor)
+
+    (model, _) = list(editor._models.values())[0]
+    urls = [url for lib in model.external_resources['libs'] for url in lib['js']]
+
+    assert urls
+    assert all(url.startswith('http') for url in urls)
+
 
 def test_replace_inline_css_ignores_version_query():
     url = f'{CDN_DIST}css/loading.css'

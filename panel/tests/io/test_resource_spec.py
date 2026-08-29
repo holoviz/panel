@@ -149,6 +149,16 @@ def test_resource_spec_custom_element_probe():
     ]
 
 
+@pytest.mark.parametrize('mode', MODES)
+def test_resource_spec_follows_active_mode(mode):
+    """
+    The active mode has to be read when the spec is built, not when the
+    module was imported, or every spec resolves for the module default.
+    """
+    with set_resource_mode(mode):
+        assert resource_spec(PlotlyPlot) == resource_spec(PlotlyPlot, mode)
+
+
 def test_resource_spec_server_mode_is_relative():
     spec = resource_spec(PlotlyPlot, 'server')
     assert _spec_urls(spec) == [

@@ -30,7 +30,7 @@ from bokeh.model import Model
 from ..config import config
 from ..util import isurl
 from .resources import (
-    RESOURCE_MODE, Resources, component_resource_path, extension_declared,
+    Resources, component_resource_path, extension_declared, get_resource_mode,
     resolve_resource_cdn, set_resource_mode,
 )
 from .state import state
@@ -75,7 +75,7 @@ def _spec_mode(mode: MODES | None = None) -> tuple[str, bool]:
     ``inline`` has no urls to hand out, so it falls back to the CDN form
     and flags the specification, which the loader reports at debug level.
     """
-    resolved = mode or RESOURCE_MODE
+    resolved = mode or get_resource_mode()
     if resolved == 'inline':
         return 'cdn', True
     return resolved, False
@@ -358,10 +358,9 @@ def lazy_load_available(notebook: bool = False) -> bool:
     and the component would silently fall back to the CDN. Notebooks are
     exempt from the latter: their output is never self-contained anyway.
     """
-    from .resources import RESOURCE_MODE
     if not config.lazy_resources:
         return False
-    return notebook or RESOURCE_MODE != 'inline'
+    return notebook or get_resource_mode() != 'inline'
 
 
 def _resource_classes() -> list[type]:

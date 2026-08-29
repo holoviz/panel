@@ -190,6 +190,31 @@ def set_resource_mode(mode: MODES | None):
         else:
             _settings.resources.set_value(old_resources)  # type: ignore
 
+def get_resource_mode() -> MODES:
+    """
+    The mode urls are currently being resolved for.
+
+    Has to be read through a function: ``set_resource_mode`` rebinds the
+    module global, so a module that imported the name would keep whatever
+    it happened to be at import time.
+    """
+    return RESOURCE_MODE
+
+def set_default_resource_mode(mode: MODES):
+    """
+    Sets the mode urls are resolved for outside a set_resource_mode block.
+
+    The module default is ``server``, i.e. relative urls into the static
+    endpoint Panel itself serves, which is the right guess for an
+    application but wrong for a notebook: the page is served by Jupyter
+    from an unrelated url, so ``static/extensions/panel/...`` resolves
+    against ``/lab/tree/<dir>/`` and 404s. It cannot be handled by a
+    context manager either, because components created in a later cell
+    resolve their resources long after ``pn.extension()`` returned.
+    """
+    global RESOURCE_MODE
+    RESOURCE_MODE = mode
+
 def use_cdn() -> bool:
     return _settings.resources(default="server") != 'server' or state._is_pyodide
 
