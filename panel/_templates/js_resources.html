@@ -30,8 +30,11 @@ configuration in a Resources object.
 
 {%- for name, file in js_module_exports.items() %}
 <script type="module">
-  import {{ name }} from "{% if not file.startswith('http') %}./{% endif %}{{ file }}";
-  window.{{ name }} = {{ name }}
+  // Namespace import rather than a default import, matching what the resource
+  // registry's module wrapper assigns, so a library that only has named
+  // exports resolves to its namespace instead of to undefined.
+  import * as ns from "{% if not file.startswith('http') %}./{% endif %}{{ file }}";
+  window.{{ name }} = ns.default ?? ns
 </script>
 {%- endfor %}
 

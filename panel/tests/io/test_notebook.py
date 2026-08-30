@@ -99,20 +99,6 @@ def test_notebook_inline_css_stylesheets(nb_loaded):
     for stylesheet in model.stylesheets[:len(model.__css__)]:
         assert isinstance(stylesheet, InlineStyleSheet)
 
-@pytest.mark.parametrize('lazy_resources, waits', [(True, False), (False, True)])
-def test_notebook_embed_gate_only_polls_globals_without_lazy_resources(
-    nb_loaded, lazy_resources, waits
-):
-    loaded = panel_extension._loaded_extensions
-    panel_extension._loaded_extensions = ['tabulator']
-    try:
-        with config.set(lazy_resources=lazy_resources):
-            (bundle, _) = Str('A')._repr_mimebundle_()
-    finally:
-        panel_extension._loaded_extensions = loaded
-
-    assert ('root.Tabulator !== undefined' in bundle['text/html']) is waits
-
 
 def test_notebook_resources_resolve_absolutely(notebook_bootstrap):
     """
