@@ -12,7 +12,6 @@ import urllib.parse as urlparse
 import uuid
 
 from base64 import urlsafe_b64encode
-from functools import partial
 
 import tornado
 
@@ -78,6 +77,20 @@ def extract_urlparam(args, key):
     Extracts a request argument from a urllib.parse.parse_qs dict.
     """
     return args.get(key, args.get(f'/?{key}', [None]))[0]
+
+
+def is_websocket(handler) -> bool:
+    """
+    Whether a request handler is serving a websocket connection.
+
+    On ASGI transports the handlers are run headlessly, so the type of the
+    request is declared with an ``_is_websocket`` attribute rather than
+    being implied by the handler class.
+    """
+    is_ws = getattr(handler, '_is_websocket', None)
+    if is_ws is not None:
+        return is_ws
+    return isinstance(handler, WebSocketHandler)
 
 
 def _serialize_state(state):
@@ -1022,10 +1035,10 @@ class BasicAuthProvider(AuthProvider):
             elif self._allow_guest(request_handler.request.uri):
                 user = "guest"
                 request_handler.request.cookies["is_guest"] = "1"
-                if not isinstance(request_handler, WebSocketHandler):
+                if not is_websocket(request_handler):
                     request_handler.set_cookie("is_guest", "1", expires_days=config.oauth_expiry, path=config.cookie_path)
 
-            if user and isinstance(request_handler, WebSocketHandler):
+            if user and is_websocket(request_handler):
                 state._active_users[user] += 1
             return user
         return get_user
@@ -1071,7 +1084,7 @@ class OAuthProvider(BasicAuthProvider):
 
             # Try to obtain user oauth overrides from WS headers
             # in case the HTTP handler refreshed tokens
-            is_ws = isinstance(handler, WebSocketHandler)
+            is_ws = is_websocket(handler)
             if is_ws and 'Sec-Websocket-Protocol' in handler.request.headers:
                 protocol_header = handler.request.headers['Sec-Websocket-Protocol']
                 _, token = protocol_header.split(', ')
@@ -1215,7 +1228,15 @@ class OAuthProvider(BasicAuthProvider):
         now_ts = dt.datetime.now(dt.timezone.utc).timestamp()
         expiry_seconds = expiry_ts - now_ts - 60
         expiry_date = dt.datetime.now() + dt.timedelta(seconds=expiry_seconds) # schedule_task is in local TZ
-        refresh_cb = partial(self._scheduled_refresh, user, refresh_token, application, request)
+
+        async def refresh_cb():
+            # The task may have been scheduled while the user had an active
+            # session but only fire after they have since disconnected, so
+            # re-check liveness at execution time rather than schedule time.
+            if not state._active_users.get(user):
+                return
+            await self._scheduled_refresh(user, refresh_token, application, request)
+
         if expiry_seconds <= 0:
             log.debug("%s token expired unexpectedly, refreshing immediately.", type(self).__name__)
             state.execute(refresh_cb)
@@ -1230,8 +1251,6 @@ class OAuthProvider(BasicAuthProvider):
             state.schedule_task(task, refresh_cb, at=expiry_date)
 
     async def _scheduled_refresh(self, user, refresh_token, application, request, reschedule=True):
-        if not state._active_users.get(user):
-            return None, None, None
         await self._refresh_access_token(user, refresh_token, application, request)
         if user not in state._oauth_user_overrides:
             return None, None, None

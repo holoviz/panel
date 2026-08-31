@@ -187,11 +187,11 @@ watchfiles = "*"
 # Test dependencies
 altair = "*"
 anywidget = "*"
-bokeh-fastapi = ">=0.1.8"
 bokeh_sampledata = "*"
 caddy = "*"
 cryptography = "*"
 diskcache = "*"
+django = "*"
 fastapi = "*"
 folium = "*"
 ipympl = "*"
@@ -203,6 +203,7 @@ pyarrow = "*"
 reacton = "*"
 scipy = "*"
 textual = "*"
+uvicorn = "*"
 vl-convert-python = "*"
 
 [feature.test-unit-task.tasks] # So it is not showing up in the test-ui environment
@@ -258,7 +259,7 @@ typing-extensions = "*"
 param = ">=2.4.1rc1"
 
 [feature.type.tasks]
-test-type = 'mypy panel'
+test-type = 'mypy --cache-dir=.mypy_cache/pixi-test-type panel'
 
 # =============================================
 # =================== DOCS ====================
