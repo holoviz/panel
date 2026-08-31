@@ -475,7 +475,6 @@ class _state(param.Parameterized):
             self.param.trigger('session_info')
         doc = session_context._document
 
-        # Cleanup periodic callbacks
         if doc in self._periodic:
             for cb in self._periodic[doc]:
                 try:
@@ -484,21 +483,21 @@ class _state(param.Parameterized):
                     pass
             del self._periodic[doc]
 
-        # Cleanup Locations
         if doc in self._locations:
             loc = state._locations[doc]
             loc._server_destroy(session_context)
             del state._locations[doc]
 
-        # Cleanup Notifications
         if doc in self._notifications:
             notification = self._notifications[doc]
             notification._server_destroy(session_context)
             del state._notifications[doc]
 
-        # Clean up templates
         if doc in self._templates:
             del self._templates[doc]
+
+        if doc in self._stylesheets:
+            del self._stylesheets[doc]
 
     @property
     def _current_stack(self):

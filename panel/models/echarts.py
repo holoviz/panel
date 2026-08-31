@@ -10,6 +10,7 @@ from bokeh.models import LayoutDOM
 from ..config import config
 from ..io.resources import bundled_files
 from ..util import classproperty
+from .resource import ExternalResourcesMixin
 
 ECHARTS_VERSION = "6.0.0"
 
@@ -25,7 +26,7 @@ class EChartsEvent(ModelEvent):
         super().__init__(model=model)
 
 
-class ECharts(LayoutDOM):
+class ECharts(LayoutDOM, ExternalResourcesMixin):
     """
     A Bokeh model that wraps around an ECharts plot and renders it
     inside a Bokeh.

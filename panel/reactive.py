@@ -37,9 +37,10 @@ from param.parameterized import (
 
 from .io.document import hold, unlocked
 from .io.notebook import push
+from .io.resource_spec import lazy_load_available, resource_spec
 from .io.resources import (
     CDN_DIST, get_dist_path, loading_css, patch_stylesheet, process_raw_css,
-    resolve_stylesheet,
+    resolve_stylesheet, stylesheet_url,
 )
 from .io.state import set_curdoc, state
 from .models.reactive_html import (
@@ -233,9 +234,11 @@ class Syncable(Renderable):
                 if not stylesheet:
                     continue
                 if isinstance(stylesheet, str) and (stylesheet.split('?')[0].endswith('.css') or stylesheet.startswith('http')):
-                    if stylesheet in css_cache:
-                        conv_stylesheet = css_cache[stylesheet]
-                    else:
+                    conv_stylesheet = css_cache.get(stylesheet)
+                    # A cached stylesheet that lost its url was destroyed
+                    # along with the Document it was rendered into and
+                    # has to be recreated.
+                    if conv_stylesheet is None or stylesheet_url(conv_stylesheet) is None:
                         css_cache[stylesheet] = conv_stylesheet = ImportedStyleSheet(url=stylesheet)
                     stylesheet = conv_stylesheet
                 wrapped.append(stylesheet)
@@ -718,19 +721,15 @@ class Reactive(Syncable, Viewable):
         stylesheets = []
         for stylesheet in properties['stylesheets']:
             if isinstance(stylesheet, ImportedStyleSheet):
-                url = str(stylesheet.url)
-                if url in css_cache:
-                    cached = css_cache[url]
-                    # Confirm if stylesheet is valid, sometimes
-                    # the URL is seemingly set to None so we
-                    # replace the cached stylesheet if there is
-                    # a unset property error
-                    try:
-                        cached.url  # noqa
-                    except Exception:
-                        css_cache[url] = stylesheet
-                    else:
-                        stylesheet = cached
+                url = stylesheet_url(stylesheet)
+                if url is None:
+                    # The stylesheet was destroyed along with the Document
+                    # it was rendered into and its url cannot be recovered.
+                    # Adding it to the model would make the Document
+                    # unserializable so we have to drop it.
+                    continue
+                if url in css_cache and stylesheet_url(css_cache[url]) is not None:
+                    stylesheet = css_cache[url]
                 else:
                     css_cache[url] = stylesheet
                 patch_stylesheet(stylesheet, dist_url)
@@ -2151,21 +2150,29 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
         self, doc: Document, root: Model | None = None,
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
-        model = _BkReactiveHTML(**self._get_properties(doc))
-        if comm and not self._loaded():
-            self.param.warning(
-                f'{type(self).__name__} was not imported on instantiation and may not '
-                'render in a notebook. Restart the notebook kernel and '
-                'ensure you load it as part of the extension using:'
-                f'\n\npn.extension(\'{self._extension_name}\')\n'
-            )
-        elif root is not None and not self._loaded() and root.ref['id'] in state._views:
-            self.param.warning(
-                f'{type(self).__name__} was not imported on instantiation may not '
-                'render in the served application. Ensure you add the '
-                'following to the top of your application:'
-                f'\n\npn.extension(\'{self._extension_name}\')\n'
-            )
+        model = _BkReactiveHTML(
+            external_resources=resource_spec(type(self)),
+            **self._get_properties(doc)
+        )
+        # See lazy_load: with lazy resource loading an undeclared component
+        # still renders, so this only warns where that cannot work.
+        if not self._loaded() and (comm or (root is not None and root.ref['id'] in state._views)):
+            if lazy_load_available(notebook=bool(comm)):
+                self.param.log(
+                    param.DEBUG,
+                    f'{type(self).__name__} was not imported on instantiation and will '
+                    'load the resources it needs on demand. To load them up front '
+                    'ensure you load it as part of the extension using:'
+                    f'\n\npn.extension(\'{self._extension_name}\')\n'
+                )
+            else:
+                where = 'a notebook' if comm else 'the served application'
+                self.param.warning(
+                    f'{type(self).__name__} was not imported on instantiation and may '
+                    f'not render in {where}. Ensure you load it as part of the '
+                    'extension using:'
+                    f'\n\npn.extension(\'{self._extension_name}\')\n'
+                )
         if self._extension_name:
             ReactiveMetaBase._loaded_extensions.add(self._extension_name)
 

@@ -62,6 +62,18 @@ except Exception:
     jupyter_bokeh = None  # type: ignore
 jb_available = pytest.mark.skipif(jupyter_bokeh is None, reason="requires jupyter_bokeh")
 
+try:
+    import polars
+except Exception:
+    polars = None  # type: ignore
+polars_available = pytest.mark.skipif(polars is None, reason="requires polars")
+
+try:
+    import pyarrow
+except Exception:
+    pyarrow = None  # type: ignore
+pyarrow_available = pytest.mark.skipif(pyarrow is None, reason="requires pyarrow")
+
 APP_PATTERN = re.compile(r'Bokeh app running at: http://localhost:(\d+)/')
 ON_POSIX = 'posix' in sys.builtin_module_names
 
