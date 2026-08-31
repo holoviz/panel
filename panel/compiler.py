@@ -7,19 +7,21 @@ import inspect
 import io
 import os
 import pathlib
+import re
 import shutil
 import tarfile
 import zipfile
 
 from concurrent.futures import ThreadPoolExecutor
 from functools import cache, partial
+from urllib.parse import urljoin
 
 import requests
 
 from bokeh.model import Model
 
 from .config import config, panel_extension
-from .io.resources import RESOURCE_URLS
+from .io.resources import CDN_DIST, RESOURCE_URLS
 from .models.tabulator import TABULATOR_VERSION
 from .reactive import ReactiveHTML
 from .template.base import BasicTemplate
@@ -54,6 +56,63 @@ def _download(url):
             response, error = None, e
     return response, error
 
+
+# Regex to search and replace the sourceMappingURL
+_SOURCE_MAP_RE = re.compile(
+    r'(?m)((?://|/\*)[#@][ \t]*sourceMappingURL=)([^\s"\'*]+?)([ \t]*(?:\*/)?[ \t\r]*)$'
+)
+
+_SCHEME_RE = re.compile(r'^[a-z][a-z0-9+.-]*:', re.I)
+
+# https://registry.npmjs.org/bootstrap/-/bootstrap-5.3.0-alpha1.tgz
+_NPM_TARBALL_RE = re.compile(
+    r'^https://registry\.npmjs\.org/(?P<package>(?:@[^/]+/)?[^/]+)/-/[^/]+-(?P<version>\d[^/]*)\.tgz$'
+)
+
+
+def _rewrite_source_map_url(content, base_url):
+    """
+    Repoints a bundled file's sourceMappingURL at its origin, or drops it.
+
+    Sourcemaps are only ever read with devtools open, so bundling them adds
+    ~9MB to the wheel that no deployment needs at runtime. Dropping the
+    files while leaving the comment alone is not an option either: the
+    browser then asks for a .map next to the bundled copy on every page
+    load and gets a 404. Rewriting the comment to the url the file was
+    fetched from keeps in-browser debugging working for anyone with network
+    access, and keeps the console quiet for everyone else.
+
+    ``base_url`` is None where a file came out of a tarball and there is no
+    per-file url to resolve against, in which case the comment is removed.
+    """
+    def rewrite(match):
+        prefix, url, suffix = match.groups()
+        if _SCHEME_RE.match(url):
+            # An inline data: uri carries the map itself, and an absolute
+            # url already resolves independently of where the file sits.
+            return match.group(0)
+        if base_url is None:
+            return ''
+        return prefix + urljoin(base_url, url) + suffix
+    return _SOURCE_MAP_RE.sub(rewrite, content)
+
+
+def _npm_cdn_dir(tarball):
+    """
+    The npm CDN directory an extracted npm tarball corresponds to.
+
+    Panel bundles a handful of libraries from the npm registry rather than
+    from a CDN, which loses the per-file url ``_rewrite_source_map_url``
+    needs. The registry url names the package and version, so for those the
+    CDN directory can be reconstructed.
+    """
+    match = _NPM_TARBALL_RE.match(tarball.get('tar', ''))
+    if match is None:
+        return None
+    src = tarball.get('src', '').removeprefix('package').strip('/')
+    package = f"{match['package']}@{match['version']}"
+    return '/'.join(part for part in (config.npm_cdn, package, src) if part) + '/'
+
 #---------------------------------------------------------------------
 # Public API
 #---------------------------------------------------------------------
@@ -74,13 +133,27 @@ def _write_bundled_files(name, files, explicit_dir=None, ext=None):
             continue
 
         bundle_file = bundle_file.split('?')[0]
+
+        # Resources pointing at Panel's own CDN (jQuery, Bootstrap and Font
+        # Awesome, referenced by the designs and templates) are put in place by
+        # bundle_resource_urls from npm, at the very path they resolve to.
+        # Fetching them back from the CDN mirrors a second copy under
+        # bundled/panel/<version>/dist/bundled/ that nothing ever serves, and
+        # requires the version being built to already have been published.
+        if bundle_file.startswith(CDN_DIST):
+            continue
+
         response, error = _download(bundle_file)
         if error:
             msg =  f"Failed to fetch {name} dependency: {bundle_file}. Errored with {error}."
             raise ConnectionError(msg) from error
-
-        map_file = f'{bundle_file}.map'
-        map_response, _ = _download(map_file)
+        if not response.ok:
+            # A CDN answers a missing file with an error document and a 4xx
+            # status, which written to disk becomes a library shaped like an
+            # error message, e.g. perspective shipped a fonts.css containing
+            # jsdelivr's "Couldn't find the requested file" for two releases.
+            msg = f"Failed to fetch {name} dependency: {bundle_file}. Responded with status {response.status_code}."
+            raise ConnectionError(msg)
 
         if bundle_file.startswith(config.npm_cdn):
             bundle_path = os.path.join(*bundle_file.replace(config.npm_cdn, '').split('/'))
@@ -96,12 +169,11 @@ def _write_bundled_files(name, files, explicit_dir=None, ext=None):
             with open(filename, 'wb') as f:
                 f.write(response.content)
         else:
-            content = response.content.decode('utf-8')
+            content = _rewrite_source_map_url(
+                response.content.decode('utf-8'), bundle_file
+            )
             with open(filename, 'w', encoding="utf-8") as f:
                 f.write(content)
-        if map_response:
-            with open(f'{filename}.map', 'w', encoding="utf-8") as f:
-                f.write(map_response.content.decode('utf-8'))
 
 def write_bundled_tarball(tarball, name=None, module=False, download_list=None):
     if download_list is None:
@@ -120,11 +192,17 @@ def _write_bundled_tarball(tarball, name=None, module=False):
     f.seek(0)
     tar_obj = tarfile.open(fileobj=f)
     exclude = tarball.get('exclude', [])
+    cdn_dir = _npm_cdn_dir(tarball)
     for tarf in tar_obj:
         if not tarf.name.startswith(tarball['src']) or not tarf.isfile():
             continue
         path = tarf.name.replace(tarball['src'], '')
         if any(fnmatch.fnmatch(tarf.name, exc) for exc in exclude):
+            continue
+        if path.endswith('.map'):
+            # Bootstrap ships its stylesheet maps inside the tarball, which
+            # is 9MB of the wheel; the comments referring to them are
+            # repointed at the CDN below.
             continue
         bundle_path = os.path.join(*path.split('/'))
         dest_path = tarball['dest'].replace('/', os.path.sep)
@@ -144,7 +222,8 @@ def _write_bundled_tarball(tarball, name=None, module=False):
             with open(filename, 'wb') as f:
                 f.write(content)
         else:
-            content = fobj.read().decode('utf-8')
+            base_url = None if cdn_dir is None else urljoin(cdn_dir, path.lstrip('/'))
+            content = _rewrite_source_map_url(fobj.read().decode('utf-8'), base_url)
             with open(filename, 'w', encoding="utf-8") as f:
                 f.write(content)
     tar_obj.close()
@@ -169,6 +248,8 @@ def _write_bundled_zip(name, resource):
         path = zipf.replace(resource['src'], '')
         if any(fnmatch.fnmatch(zipf, exc) for exc in exclude) or zipf.endswith('/'):
             continue
+        if path.endswith('.map'):
+            continue
         bundle_path = path.replace('/', os.path.sep)
         filename = BUNDLE_DIR.joinpath(name, bundle_path)
         filename.parent.mkdir(parents=True, exist_ok=True)
@@ -178,8 +259,11 @@ def _write_bundled_zip(name, resource):
             with open(filename, 'wb') as f:
                 f.write(fdata)
         else:
+            # A zip carries no url per file, so a dangling comment is
+            # stripped rather than repointed.
+            content = _rewrite_source_map_url(fdata.decode('utf-8'), None)
             with open(filename, 'w', encoding="utf-8") as f:
-                f.write(fdata.decode('utf-8'))
+                f.write(content)
     zip_obj.close()
 
 def write_component_resources(name, component, download_list=None):
