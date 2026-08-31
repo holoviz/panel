@@ -8,8 +8,8 @@ configuration in a Resources object.
 :param js_files: a list of URIs for JS files to include
 :type js_files: list[str]
 
-:param js_modules: a list of URIs for JS modules to include
-:type js_files: list[str]
+:param js_modules: a list of (URI, exported global name or None) pairs
+:type js_modules: list[tuple[str, str | None]]
 
 :param js_raw: a list of raw JS snippets to put between ``<script>`` tags
 :type js_raw: list[str]
@@ -24,19 +24,20 @@ configuration in a Resources object.
 <script type="text/javascript" src="{{ file }}"></script>
 {% endfor %}
 
-{% for file in js_modules %}
-<script type="module" src="{{ file }}"></script>
-{% endfor %}
-
-{%- for name, file in js_module_exports.items() %}
+{% for file, export in js_modules %}
+{%- if export %}
 <script type="module">
   // Namespace import rather than a default import, matching what the resource
   // registry's module wrapper assigns, so a library that only has named
-  // exports resolves to its namespace instead of to undefined.
+  // exports resolves to its namespace instead of to undefined. The import also
+  // loads the module, so it must not get a bare tag as well.
   import * as ns from "{% if not file.startswith('http') %}./{% endif %}{{ file }}";
-  window.{{ name }} = ns.default ?? ns
+  window.{{ export }} = ns.default ?? ns
 </script>
-{%- endfor %}
+{%- else %}
+<script type="module" src="{{ file }}"></script>
+{%- endif %}
+{% endfor %}
 
 {%- if resource_declarations %}
 <script type="text/javascript">

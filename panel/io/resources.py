@@ -507,6 +507,24 @@ def extension_declared(cls: type) -> bool:
     return ext is None or ext in extensions
 
 
+def module_tags(
+    js_modules: list[str], js_module_exports: dict[str, str]
+) -> list[tuple[str, str | None]]:
+    """
+    Pairs each module url with the global its namespace is exported as.
+
+    A module that has an export wrapper is loaded by that wrapper's ``import``,
+    so emitting a bare ``<script type="module" src>`` for it as well leaves two
+    tags for one url. Pairing them keeps every module in the order
+    ``js_modules`` gives, which is the order they execute in.
+    """
+    exports = {url: name for name, url in js_module_exports.items()}
+    tags: list[tuple[str, str | None]] = [
+        (url, exports.pop(url, None)) for url in js_modules
+    ]
+    return tags + list(exports.items())
+
+
 def _panel_use_mathjax(roots) -> bool:
     """Whether any model in roots is a Panel HTML model (may need MathJax)."""
     from ..models.markup import HTML as PanelHTML
@@ -1028,8 +1046,8 @@ class Resources(BkResources):
     def render_js(self):
         return JS_RESOURCES.render(
             js_raw=self.js_raw, js_files=self.js_files,
-            js_modules=self.js_modules, hashes=self.hashes,
-            js_module_exports=self.js_module_exports,
+            js_modules=module_tags(self.js_modules, self.js_module_exports),
+            hashes=self.hashes,
             resource_declarations=self.resource_declarations
         )
 
@@ -1054,6 +1072,10 @@ class Bundle(BkBundle):
             hashes=bk_bundle.hashes,
         )
 
+    @property
+    def js_module_tags(self):
+        return module_tags(self.js_modules, self.js_module_exports)
+
     def _render_css(self) -> str:
         return BkCSS_RESOURCES.render(
             css_files=self.css_files,
@@ -1064,8 +1086,7 @@ class Bundle(BkBundle):
         return JS_RESOURCES.render(
             js_raw=self.js_raw,
             js_files=self.js_files,
-            js_modules=self.js_modules,
-            js_module_exports=self.js_module_exports,
+            js_modules=module_tags(self.js_modules, self.js_module_exports),
             resource_declarations=self.resource_declarations,
             hashes=self.hashes
         )
