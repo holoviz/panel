@@ -308,11 +308,13 @@ class DateSlider(_SliderBase):
 
     def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
         props = super()._process_param_change(params)
-        if 'value' in props:
-            value = props['value']
+        for key in ('value', 'start', 'end'):
+            if key not in props:
+                continue
+            value = props[key]
             if isinstance(value, dt.datetime):
                 value = datetime_as_utctimestamp(value)
-            props['value'] = value
+            props[key] = value
         return props
 
     def _process_property_change(self, props: dict[str, t.Any]) -> dict[str, t.Any]:
