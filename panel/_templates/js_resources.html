@@ -30,8 +30,10 @@ configuration in a Resources object.
   // Namespace import rather than a default import, matching what the resource
   // registry's module wrapper assigns, so a library that only has named
   // exports resolves to its namespace instead of to undefined. The import also
-  // loads the module, so it must not get a bare tag as well.
-  import * as ns from "{% if not file.startswith('http') %}./{% endif %}{{ file }}";
+  // loads the module, so it must not get a bare tag as well. A path relative
+  // to the page needs the ./ prefix an import specifier requires, while a
+  // root-relative or absolute url has to be left alone.
+  import * as ns from "{% if not file.startswith(('http', '/', './', '../')) %}./{% endif %}{{ file }}";
   window.{{ export }} = ns.default ?? ns
 </script>
 {%- else %}

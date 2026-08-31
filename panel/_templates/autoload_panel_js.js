@@ -174,9 +174,12 @@ calls it with the rendered model.
         // Namespace import rather than a default import, matching what the
         // resource registry's module wrapper assigns, so a library that only
         // has named exports resolves to its namespace instead of to undefined.
-        // The import loads the module, so it gets no bare tag as well.
+        // The import loads the module, so it gets no bare tag as well. The url
+        // is absolutized because an import specifier resolves through the
+        // import map unless it starts with a scheme, / or ./, whereas a src
+        // resolves against the document.
         element.textContent = `
-        import * as ns from "${url}"
+        import * as ns from "${new URL(url, document.baseURI).href}"
         window.${name} = ns.default ?? ns
         window._bokeh_on_load()
         `

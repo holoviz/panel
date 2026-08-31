@@ -943,6 +943,9 @@ export default {render}`
       return
     }
     this.compiled = compiled
+    // Awaiting the import map here would leave compiled_module holding the
+    // previous module for a tick, and a view handling the same esm change
+    // awaits that property, so it has to be replaced synchronously.
     const declared = this._declare_importmap()
     let esm_module
     const use_cache = (!this.dev || this.bundle)
