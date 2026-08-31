@@ -182,6 +182,18 @@ def test_every_bundled_url_can_be_attributed(monkeypatch, tmp_path, registered_m
     inside the wheel without the terms it is licensed under.
     """
     monkeypatch.setattr(compiler, 'BUNDLE_DIR', tmp_path)
+    # Templates and designs defined by other test modules (e.g. test_server's
+    # CustomBootstrapTemplate) are BasicTemplate/Design subclasses too, and
+    # linger in the process for the rest of the session. They are not part of
+    # what Panel itself ships, and their relative asset paths are meant to be
+    # resolved by the server, not by the bundler, so they are filtered out.
+    _descendents = compiler._descendents
+    monkeypatch.setattr(
+        compiler, '_descendents',
+        lambda cls, **kw: [
+            c for c in _descendents(cls, **kw) if not c.__module__.startswith('panel.tests.')
+        ]
+    )
     download_list = []
     compiler.bundle_resource_urls(download_list=download_list)
     compiler.bundle_models(download_list=download_list)

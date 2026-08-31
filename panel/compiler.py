@@ -621,7 +621,7 @@ def bundle_resources(verbose=False, external=True):
     bundle_templates(verbose=verbose, external=external, download_list=download_list)
     bundle_themes(verbose=verbose, external=external, download_list=download_list)
     bundle_icons(verbose=verbose, external=external, download_list=download_list)
-    licenses = bundle_licenses(verbose=verbose, download_list=download_list)
+    licenses = bundle_licenses(verbose=verbose, download_list=download_list) if external else []
 
     with ThreadPoolExecutor() as executor:
         futures = executor.map(lambda x: x(), download_list)
