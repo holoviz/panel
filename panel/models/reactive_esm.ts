@@ -943,13 +943,14 @@ export default {render}`
       return
     }
     this.compiled = compiled
-    await this._declare_importmap()
+    const declared = this._declare_importmap()
     let esm_module
     const use_cache = (!this.dev || this.bundle)
     const cache_key = (this.bundle === "url") ? this.esm : (this.bundle || `${this.class_name}-${this.esm.length}`)
     let resolve: (value: any) => void
     if (use_cache && MODULE_CACHE.has(cache_key)) {
-      esm_module = Promise.resolve(MODULE_CACHE.get(cache_key))
+      const cached = MODULE_CACHE.get(cache_key)
+      esm_module = declared.then(() => cached)
     } else {
       if (use_cache) {
         MODULE_CACHE.set(cache_key, new Promise((res) => { resolve = res }))
@@ -960,7 +961,7 @@ export default {render}`
       } else {
         url = URL.createObjectURL(new Blob([this.compiled], {type: "text/javascript"}))
       }
-      esm_module = resources.import_module(url, this.external_resources?.shim)
+      esm_module = declared.then(() => resources.import_module(url, this.external_resources?.shim))
     }
     this.compiled_module = (esm_module).then((mod: any) => {
       if (resolve) {

@@ -39,3 +39,27 @@ def test_notebook_components_load_resources_on_demand(page, jupyter_preview):
     )
     duplicates = {url for url in urls if urls.count(url) > 1}
     assert not duplicates, f'resources loaded more than once: {sorted(duplicates)}'
+
+
+def test_notebook_declared_extensions_load_each_module_once(page, jupyter_preview):
+    """
+    ``eager.ipynb`` declares its extensions, so the autoload script loads the
+    libraries up front. A module that is imported for its exported global must
+    not get a bare module tag as well.
+    """
+    page.goto(f"{jupyter_preview}/eager.ipynb")
+    page.wait_for_load_state('networkidle')
+
+    expect(page.locator('perspective-viewer')).to_have_count(1, timeout=30000)
+    expect(page.locator('.filepond--root')).to_have_count(1, timeout=30000)
+
+    # A module with an exported global is imported by an inline script, so it
+    # has no src of its own; one without keeps its bare tag.
+    assert _script_count(page, 'perspective-viewer.js') == 0
+    assert _script_count(page, 'filepond.esm.min.js') == 0
+    assert _script_count(page, 'perspective-viewer-datagrid.js') == 1
+
+    globals_defined = page.evaluate(
+        """() => ({perspective: window.perspective != null, filepond: window.FilePond != null})"""
+    )
+    assert globals_defined == {'perspective': True, 'filepond': True}
