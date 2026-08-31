@@ -1,15 +1,18 @@
 import os
+import re
 
 from pathlib import Path
+from urllib.parse import urljoin
 
 import bokeh
+import pytest
 
 from packaging.version import Version
 
 from panel.config import config, panel_extension as extension
 from panel.custom import JSComponent
 from panel.io.resources import (
-    CDN_DIST, DIST_DIR, JS_VERSION, PANEL_DIR, Resources,
+    CDN_DIST, DIST_DIR, JS_RESOURCES, JS_VERSION, PANEL_DIR, Resources,
     component_resource_path, module_tags, resolve_custom_path,
     resolve_resource_cdn, resolve_stylesheet, set_resource_mode,
 )
@@ -73,6 +76,30 @@ def test_render_js_emits_one_tag_per_module(document):
         for url, name in tags:
             assert rendered.count(f'src="{url}"') == (0 if name else 1)
             assert rendered.count(f'from "{url}"') == (1 if name else 0)
+
+@pytest.mark.parametrize('url', [
+    'static/extensions/panel/bundled/filedropper/filepond.esm.min.js',
+    '../static/extensions/panel/bundled/filedropper/filepond.esm.min.js',
+    '/user/foo/panel-preview/static/extensions/panel/bundled/filedropper/filepond.esm.min.js',
+    'https://cdn.holoviz.org/panel/dist/bundled/filedropper/filepond.esm.min.js',
+])
+def test_module_import_specifier_resolves_like_a_src(url):
+    """
+    Panel emits resource urls relative to the page, which is what lets a
+    prefixed server or a reverse proxy work without being told the prefix. An
+    import specifier does not resolve like a ``src`` though: without a scheme,
+    ``/``, ``./`` or ``../`` it is a bare package name only an import map can
+    resolve. So the wrapper has to add ``./`` to the urls that lack one and to
+    no others, and must land where the equivalent ``src`` would.
+    """
+    rendered = JS_RESOURCES.render(
+        js_raw=[], js_files=[], js_modules=[(url, 'FilePond')], hashes={}
+    )
+    specifier = re.search(r'import \* as ns from "([^"]+)"', rendered).group(1)
+
+    assert re.match(r'[a-z][a-z0-9+.-]*:|/|\.\.?/', specifier)
+    page = 'http://localhost:5006/prefix/subpath/app'
+    assert urljoin(page, specifier) == urljoin(page, url)
 
 def test_resources_cdn():
     resources = Resources(mode='cdn', minified=True)

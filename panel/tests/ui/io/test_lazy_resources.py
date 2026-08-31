@@ -231,6 +231,74 @@ def test_esm_components_share_one_shim(page):
     assert _errors(msgs) == []
 
 
+def _prefixed(page, app):
+    """
+    Serves ``app`` the way a reverse proxy sees it: mounted under a prefix and
+    at a subpath, so every resource url is page-relative with a ``../`` in it.
+    Nothing about the deployment is communicated to the browser, so a url that
+    is resolved against anything other than the page lands outside the prefix.
+    """
+    return serve_component(
+        page, {'/subpath/app': app}, prefix='/prefix', suffix='/prefix/subpath/app'
+    )
+
+
+@pytest.mark.parametrize('name', ['filedropper', 'perspective', 'tabulator'])
+def test_undeclared_component_renders_behind_prefix(page, name):
+    factory, selector = COMPONENTS[name]
+
+    def app():
+        extension()
+        factory().servable()
+
+    msgs, _ = _prefixed(page, app)
+
+    expect(page.locator(selector).first).to_be_visible(timeout=20000)
+    assert _errors(msgs) == []
+
+
+def test_declared_extension_renders_behind_prefix(page):
+    """
+    The eager path's module wrapper imports the same page-relative url the
+    bare tag would have loaded, which needs a ``./`` to be a specifier at all
+    and must not get one when it already starts with ``../``.
+    """
+    def app():
+        extension('filedropper', 'perspective')
+        pn.Column(_filedropper(), _perspective()).servable()
+
+    msgs, _ = _prefixed(page, app)
+
+    expect(page.locator('.filepond--root')).to_have_count(1, timeout=20000)
+    expect(page.locator('perspective-viewer')).to_have_count(1, timeout=20000)
+    assert _script_count(page, 'filepond.esm.min.js') == 0
+    _assert_no_duplicates(page)
+    assert _errors(msgs) == []
+
+
+@pytest.mark.parametrize(
+    'extensions', [(), ('filedropper', 'perspective', 'tabulator')], ids=['lazy', 'eager']
+)
+def test_components_render_behind_reverse_proxy(page, reverse_proxy, extensions):
+    """
+    The case Panel cannot be configured for: a proxy strips a path prefix the
+    server never sees, so the only base a resource url can be resolved against
+    is the page the browser actually loaded.
+    """
+    port, proxy = reverse_proxy
+
+    def app():
+        extension(*extensions)
+        pn.Column(_filedropper(), _perspective(), _tabulator()).servable()
+
+    msgs, _ = serve_component(page, {'/app': app}, port=port, proxy=proxy, suffix='/proxy/app')
+
+    expect(page.locator('.filepond--root')).to_have_count(1, timeout=20000)
+    expect(page.locator('perspective-viewer')).to_have_count(1, timeout=20000)
+    expect(page.locator('.pnx-tabulator.tabulator')).to_have_count(1, timeout=20000)
+    assert _errors(msgs) == []
+
+
 def test_declared_extension_loads_scripts_once(page):
     def app():
         extension('tabulator')
