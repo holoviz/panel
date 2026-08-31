@@ -251,7 +251,7 @@ class Fast(Design):
             'opensans': f'https:{FONT_URL}',
         },
         'js_modules': {
-            'fast': f'{config.npm_cdn}/@microsoft/fast-components@2.30.6/dist/fast-components.js',
+            'fast': f'{config.npm_cdn}/@microsoft/fast-components@2.30.6/dist/fast-components.min.js',
             'fast-design': 'js/fast_design.js'
         },
         'bundle': True,
