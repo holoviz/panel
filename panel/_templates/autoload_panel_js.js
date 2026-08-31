@@ -8,11 +8,8 @@ calls it with the rendered model.
 :param js_urls: URLs of JS files making up Bokeh library
 :type js_urls: list
 
-:param js_modules: URLs of JS modules making up Bokeh library
+:param js_modules: (URL, exported global name or null) pairs of JS modules
 :type js_modules: list
-
-:param js_exports: URLs of JS modules to be exported
-:type js_exports: dict
 
 :param css_urls: CSS urls to inject
 :type css_urls: list
@@ -48,11 +45,10 @@ calls it with the rendered model.
     console.debug("Bokeh: all callbacks have finished");
   }
 
-  function load_libs(css_urls, js_urls, js_modules, js_exports, Bokeh, callback) {
+  function load_libs(css_urls, js_urls, js_modules, Bokeh, callback) {
     if (css_urls == null) css_urls = [];
     if (js_urls == null) js_urls = [];
     if (js_modules == null) js_modules = [];
-    if (js_exports == null) js_exports = {};
 
     root._bokeh_onload_callbacks.push(callback);
 
@@ -60,7 +56,7 @@ calls it with the rendered model.
       // Don't load bokeh if it is still initializing
       console.debug("Bokeh: BokehJS is being loaded, scheduling callback at", now());
       return null;
-    } else if (js_urls.length === 0 && js_modules.length === 0 && Object.keys(js_exports).length === 0) {
+    } else if (js_urls.length === 0 && js_modules.length === 0) {
       // There is nothing to load
       run_callbacks();
       return null;
@@ -93,7 +89,7 @@ calls it with the rendered model.
       {% endfor %}
       root._bokeh_is_loading = css_urls.length + {{ requirements|length }};
     } else {
-      root._bokeh_is_loading = css_urls.length + js_urls.length + js_modules.length + Object.keys(js_exports).length;
+      root._bokeh_is_loading = css_urls.length + js_urls.length + js_modules.length;
     }
 
     const existing_stylesheets = []
@@ -158,27 +154,10 @@ calls it with the rendered model.
       document.head.appendChild(element);
     }
     for (let i = 0; i < js_modules.length; i++) {
-      const url = js_modules[i];
+      const [url, name] = js_modules[i];
       const escaped = encodeURI(url)
-      if (skip.indexOf(escaped) !== -1 || existing_scripts.indexOf(escaped) !== -1) {
-        if (!window.requirejs) {
-          on_load();
-        }
-        continue;
-      }
-      var element = document.createElement('script');
-      element.onload = on_load;
-      element.onerror = on_error;
-      element.async = false;
-      element.src = url;
-      element.type = "module";
-      console.debug("Bokeh: injecting script tag for BokehJS library: ", url);
-      document.head.appendChild(element);
-    }
-    for (const name in js_exports) {
-      const url = js_exports[name];
-      const escaped = encodeURI(url)
-      if (skip.indexOf(escaped) >= 0 || root[name] != null) {
+      const loaded = name == null ? existing_scripts.indexOf(escaped) !== -1 : root[name] != null
+      if (skip.indexOf(escaped) !== -1 || loaded) {
         if (!window.requirejs) {
           on_load();
         }
@@ -188,12 +167,24 @@ calls it with the rendered model.
       element.onerror = on_error;
       element.async = false;
       element.type = "module";
+      if (name == null) {
+        element.onload = on_load;
+        element.src = url;
+      } else {
+        // Namespace import rather than a default import, matching what the
+        // resource registry's module wrapper assigns, so a library that only
+        // has named exports resolves to its namespace instead of to undefined.
+        // The import loads the module, so it gets no bare tag as well. The url
+        // is absolutized because an import specifier resolves through the
+        // import map unless it starts with a scheme, / or ./, whereas a src
+        // resolves against the document.
+        element.textContent = `
+        import * as ns from "${new URL(url, document.baseURI).href}"
+        window.${name} = ns.default ?? ns
+        window._bokeh_on_load()
+        `
+      }
       console.debug("Bokeh: injecting script tag for BokehJS library: ", url);
-      element.textContent = `
-      import ${name} from "${url}"
-      window.${name} = ${name}
-      window._bokeh_on_load()
-      `
       document.head.appendChild(element);
     }
     if (!js_urls.length && !js_modules.length) {
@@ -208,8 +199,7 @@ calls it with the rendered model.
   }
 
   const js_urls = {{ bundle.js_urls|json }};
-  const js_modules = {{ bundle.js_modules|json }};
-  const js_exports = {{ bundle.js_module_exports|json }};
+  const js_modules = {{ bundle.js_module_tags|json }};
   const css_urls = {{ bundle.css_urls|json }};
   const inline_js = [
     {%- for css in bundle.css_raw %}
@@ -225,8 +215,25 @@ calls it with the rendered model.
     function(Bokeh) {} // ensure no trailing comma for IE
   ];
 
+  function declare_resources() {
+    // Tells the panel.js resource registry which component libraries this
+    // bundle has already satisfied, so nothing is fetched a second time.
+    // In inline mode the libraries have no URLs at all, which makes this
+    // the only way the registry can know about them.
+    const declared = {{ bundle.resource_declarations|default({})|json }};
+    if (!declared || !(declared.libs || declared.css)) {
+      return;
+    }
+    if (root.__panel_resources__ != null) {
+      root.__panel_resources__.declare(declared);
+    } else {
+      (root.__panel_resources_declared__ = root.__panel_resources_declared__ || []).push(declared);
+    }
+  }
+
   function run_inline_js() {
     if ((root.Bokeh !== undefined) || (force === true)) {
+      declare_resources();
       for (let i = 0; i < inline_js.length; i++) {
         try {
           inline_js[i].call(root, root.Bokeh);
@@ -274,7 +281,7 @@ calls it with the rendered model.
         }
         console.debug("Bokeh: BokehJS not loaded, scheduling load and callback at", now());
       }
-      load_libs(css_urls, js_urls, js_modules, js_exports, Bokeh, function() {
+      load_libs(css_urls, js_urls, js_modules, Bokeh, function() {
         console.debug("Bokeh: BokehJS plotting callback run at", now());
         run_inline_js();
         if (Bokeh != undefined && !reloading) {

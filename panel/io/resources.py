@@ -190,6 +190,31 @@ def set_resource_mode(mode: MODES | None):
         else:
             _settings.resources.set_value(old_resources)  # type: ignore
 
+def get_resource_mode() -> MODES:
+    """
+    The mode urls are currently being resolved for.
+
+    Has to be read through a function: ``set_resource_mode`` rebinds the
+    module global, so a module that imported the name would keep whatever
+    it happened to be at import time.
+    """
+    return RESOURCE_MODE
+
+def set_default_resource_mode(mode: MODES):
+    """
+    Sets the mode urls are resolved for outside a set_resource_mode block.
+
+    The module default is ``server``, i.e. relative urls into the static
+    endpoint Panel itself serves, which is the right guess for an
+    application but wrong for a notebook: the page is served by Jupyter
+    from an unrelated url, so ``static/extensions/panel/...`` resolves
+    against ``/lab/tree/<dir>/`` and 404s. It cannot be handled by a
+    context manager either, because components created in a later cell
+    resolve their resources long after ``pn.extension()`` returned.
+    """
+    global RESOURCE_MODE
+    RESOURCE_MODE = mode
+
 def use_cdn() -> bool:
     return _settings.resources(default="server") != 'server' or state._is_pyodide
 
@@ -467,6 +492,39 @@ def bundled_files(model: Model, file_type: str = 'javascript') -> list[str]:
             files.append(url)
     return files
 
+def extension_declared(cls: type) -> bool:
+    """
+    Whether a model class' extension was declared in this session.
+
+    Classes that do not belong to an extension always pass, as does every
+    class when there is no session to ask (a notebook, or rendering
+    outside a document), which is what keeps those paths eager.
+    """
+    extensions = state._extensions
+    if extensions is None:
+        return True
+    ext = {module: name for name, module in extension._imports.items()}.get(cls.__module__)
+    return ext is None or ext in extensions
+
+
+def module_tags(
+    js_modules: list[str], js_module_exports: dict[str, str]
+) -> list[tuple[str, str | None]]:
+    """
+    Pairs each module url with the global its namespace is exported as.
+
+    A module that has an export wrapper is loaded by that wrapper's ``import``,
+    so emitting a bare ``<script type="module" src>`` for it as well leaves two
+    tags for one url. Pairing them keeps every module in the order
+    ``js_modules`` gives, which is the order they execute in.
+    """
+    exports = {url: name for name, url in js_module_exports.items()}
+    tags: list[tuple[str, str | None]] = [
+        (url, exports.pop(url, None)) for url in js_modules
+    ]
+    return tags + list(exports.items())
+
+
 def _panel_use_mathjax(roots) -> bool:
     """Whether any model in roots is a Panel HTML model (may need MathJax)."""
     from ..models.markup import HTML as PanelHTML
@@ -557,6 +615,7 @@ def bundle_resources(
         js_raw=js_raw,
         js_module_exports=resources.js_module_exports,
         js_modules=resources.js_modules,
+        resource_declarations=resources.resource_declarations,
         notebook=notebook,
     )
 
@@ -712,17 +771,9 @@ class Resources(BkResources):
         """ Collect external resources set on resource_attr attribute of all models."""
         external_resources: list[str] = []
 
-        if state._extensions is not None:
-            external_modules = {
-                module: ext for ext, module in extension._imports.items()
-            }
-        else:
-            external_modules = None
-
         for _, cls in sorted(Model.model_class_reverse_map.items(), key=lambda arg: arg[0]):
-            if external_modules is not None and cls.__module__ in external_modules:
-                if external_modules[cls.__module__] not in state._extensions:
-                    continue
+            if not extension_declared(cls):
+                continue
             external: list[str] | str | None = getattr(cls, resource_attr, None)
 
             if isinstance(external, str):
@@ -917,7 +968,7 @@ class Resources(BkResources):
 
         modules = list(config.js_modules.values())
         for model in Model.model_class_reverse_map.values():
-            if not hasattr(model, '__javascript_modules__'):
+            if not hasattr(model, '__javascript_modules__') or not extension_declared(model):
                 continue
             for module in model.__javascript_modules__:
                 if module not in modules:
@@ -950,7 +1001,7 @@ class Resources(BkResources):
     def js_module_exports(self):
         modules = {}
         for model in Model.model_class_reverse_map.values():
-            if hasattr(model, '__javascript_module_exports__'):
+            if hasattr(model, '__javascript_module_exports__') and extension_declared(model):
                 modules.update(dict(zip(model.__javascript_module_exports__, model.__javascript_modules__)))
         return dict(zip(modules, self.adjust_paths(modules.values())))
 
@@ -987,11 +1038,17 @@ class Resources(BkResources):
         return raw_js
 
     @property
+    def resource_declarations(self):
+        from .resource_spec import declared_specs
+        return declared_specs(self.mode)
+
+    @property
     def render_js(self):
         return JS_RESOURCES.render(
             js_raw=self.js_raw, js_files=self.js_files,
-            js_modules=self.js_modules, hashes=self.hashes,
-            js_module_exports=self.js_module_exports
+            js_modules=module_tags(self.js_modules, self.js_module_exports),
+            hashes=self.hashes,
+            resource_declarations=self.resource_declarations
         )
 
 
@@ -1000,6 +1057,7 @@ class Bundle(BkBundle):
     def __init__(self, notebook=False, **kwargs):
         self.js_modules = kwargs.pop("js_modules", [])
         self.js_module_exports = kwargs.pop("js_module_exports", {})
+        self.resource_declarations = kwargs.pop("resource_declarations", {})
         self.notebook = notebook
         super().__init__(**kwargs)
 
@@ -1014,6 +1072,10 @@ class Bundle(BkBundle):
             hashes=bk_bundle.hashes,
         )
 
+    @property
+    def js_module_tags(self):
+        return module_tags(self.js_modules, self.js_module_exports)
+
     def _render_css(self) -> str:
         return BkCSS_RESOURCES.render(
             css_files=self.css_files,
@@ -1024,7 +1086,7 @@ class Bundle(BkBundle):
         return JS_RESOURCES.render(
             js_raw=self.js_raw,
             js_files=self.js_files,
-            js_modules=self.js_modules,
-            js_module_exports=self.js_module_exports,
+            js_modules=module_tags(self.js_modules, self.js_module_exports),
+            resource_declarations=self.resource_declarations,
             hashes=self.hashes
         )
