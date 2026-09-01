@@ -139,7 +139,7 @@ def check_layoutable_properties(layoutable, model):
     assert model.height_policy == 'min'
 
 
-def wait_until(fn, page=None, timeout=10000, interval=100):
+def wait_until(fn, page=None, timeout=5000, interval=100):
     """
     Exercise a test function in a loop until it evaluates to True
     or times out.
