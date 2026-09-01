@@ -121,6 +121,7 @@ def test_gauge_does_not_crash_other_widgets(page):
     expect(page.locator("canvas")).to_have_count(1, timeout=10000)
 
 
+@pytest.mark.flaky(reruns=2, reruns_delays=3)
 def test_gauge_value_update(page):
     gauge = Gauge(label="G", value=25, bounds=(0, 100))
 

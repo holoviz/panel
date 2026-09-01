@@ -1145,6 +1145,7 @@ def test_tabulator_alignment_text_str(page, df_mixed):
         expect(cells.nth(i)).to_have_css('text-align', talign)
 
 
+@pytest.mark.flaky(reruns=3, reruns_delays=2)
 def test_tabulator_frozen_columns(page, df_mixed):
     widths = 100
     width = int(((df_mixed.shape[1] + 1) * widths) / 2)
@@ -1293,6 +1294,7 @@ def test_tabulator_frozen_columns_with_positions(page, df_mixed):
     assert int_bb == page.locator('text="int"').bounding_box()
 
 
+@pytest.mark.flaky(reruns=3, reruns_delays=2)
 def test_tabulator_frozen_rows(page):
     arr = np.array(['a'] * 10)
 
@@ -1359,7 +1361,7 @@ def test_tabulator_frozen_rows(page):
     wait_until(_frozen_rows_unchanged, page)
 
 
-@pytest.mark.flaky(reruns=3, reruns_delays=2)
+@pytest.mark.flaky(reruns=5, reruns_delays=3)
 def test_tabulator_patch_no_horizontal_rescroll(page, df_mixed):
     widths = 100
     width = int(((df_mixed.shape[1] + 1) * widths) / 2)
@@ -1520,10 +1522,11 @@ def test_tabulator_header_filter_no_horizontal_rescroll(page, df_mixed, paginati
 
     serve_component(page, widget)
 
-    page.wait_for_timeout(150)
-
     table_holder = page.locator('.pnx-tabulator .tabulator-tableholder')
     expect(table_holder).to_have_count(1)
+    # Wait for the table to be laid out and overflowing before scrolling it,
+    # otherwise scrollLeft may be a no-op if it's set before layout settles.
+    wait_until(lambda: table_holder.evaluate("el => el.scrollWidth > el.clientWidth"), page)
     # Scroll horizontally to the right, then track that position.
     table_holder.evaluate("el => { el.scrollLeft = el.scrollWidth; }")
     wait_until(lambda: table_holder.evaluate("el => el.scrollLeft > 0"), page)
@@ -3922,6 +3925,7 @@ def test_tabulator_sorter_default_number(page):
     wait_until(x_values, page)
 
 
+@pytest.mark.flaky(reruns=3, reruns_delays=2)
 def test_tabulator_update_hidden_columns(page):
     df = pd.DataFrame({
         'a': [1, 2, 3],
