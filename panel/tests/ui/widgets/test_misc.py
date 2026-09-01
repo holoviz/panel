@@ -5,12 +5,15 @@ import tempfile
 import param
 import pytest
 
+from packaging.version import Version
+
 pytest.importorskip("playwright")
 
 from playwright.sync_api import expect
 
 from panel.layout import Column, Tabs
 from panel.tests.util import serve_component
+from panel.util import bokeh_version
 from panel.widgets import FileDownload, TextInput
 
 pytestmark = pytest.mark.ui
@@ -30,6 +33,14 @@ def test_file_download_label_updates(page):
     expect(page.locator('.bk-btn a')).to_have_text('Download g.txt')
 
 @not_windows
+@pytest.mark.skipif(
+    bokeh_version < Version('3.10.1'),
+    reason=(
+        "Flaky: overlapping build_views() calls intermittently leave orphaned "
+        "child views, so the FileDownload callback is not re-run. Fixed by "
+        "bokeh/bokeh#15359, released in Bokeh 3.10.1."
+    ),
+)
 def test_file_download_updates_when_navigating_between_dynamic_tabs(page):
     text_input = TextInput(value='abc')
 
