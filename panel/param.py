@@ -54,11 +54,11 @@ from .util import (
 from .util.checks import is_dataframe, is_mpl_axes, is_series
 from .viewable import Layoutable, Viewable
 from .widgets import (
-    ArrayInput, Button, Checkbox, ColorPicker, DataFrame, DatePicker,
-    DateRangeSlider, DatetimeInput, DatetimeRangeSlider, DiscreteSlider,
-    FileInput, FileSelector, FloatInput, FloatSlider, IntInput, IntSlider,
-    LiteralInput, MultiSelect, RangeSlider, Select, StaticText, Tabulator,
-    TextInput, Toggle, Widget, WidgetBase,
+    ArrayInput, Button, Checkbox, ColorPicker, DatePicker, DateRangeSlider,
+    DatetimeInput, DatetimeRangeSlider, DiscreteSlider, FileInput,
+    FileSelector, FloatInput, FloatSlider, IntInput, IntSlider, LiteralInput,
+    MultiSelect, RangeSlider, Select, StaticText, Tabulator, TextInput, Toggle,
+    Widget, WidgetBase,
 )
 from .widgets.button import _ButtonBase
 
@@ -89,13 +89,6 @@ def LiteralInputTyped(pobj: param.Parameter) -> type[Widget]:
     elif isinstance(pobj, param.List):
         return type('ListInput', (LiteralInput,), {'type': list})
     return LiteralInput
-
-
-def DataFrameWidget(pobj: param.Parameter) -> type[WidgetBase]:
-    if 'panel.models.tabulator' in sys.modules:
-        return Tabulator
-    else:
-        return DataFrame
 
 
 @contextmanager
@@ -222,7 +215,7 @@ class Param(Pane):
         param.Date:              DatetimeInput,
         param.DateRange:         DatetimeRangeSlider,
         param.CalendarDateRange: DateRangeSlider,
-        param.DataFrame:         DataFrameWidget,
+        param.DataFrame:         Tabulator,
         param.Dict:              LiteralInputTyped,
         param.FileSelector:      SingleFileSelector,
         param.Filename:          TextInput,
