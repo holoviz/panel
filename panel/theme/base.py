@@ -638,7 +638,9 @@ THEMES = {
 # design systems that do not live in panel.theme, and designs whose class
 # name does not match the name they are referenced by, to be resolved,
 # e.g. in pn.extension(design=...).
-DESIGN_ALIASES: dict[str, str] = {}
+DESIGN_ALIASES: dict[str, str] = {
+    'material-ui': 'panel.ui.theme.MaterialUIDesign',
+}
 
 
 def resolve_design(design: str | type[Design]) -> type[Design]:

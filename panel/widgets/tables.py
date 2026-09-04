@@ -34,7 +34,7 @@ from ..util import (
     clone_model, datetime_as_utctimestamp, isdatetime, lazy_load,
     styler_update, updating,
 )
-from ..util.warnings import warn
+from ..util.warnings import deprecated, warn
 from .base import Widget
 from .button import Button
 from .input import TextInput
@@ -1033,9 +1033,9 @@ class DataFrame(BaseTable):
     Note that editing is not possible for multi-indexed DataFrames, in which
     case you will need to reduce the DataFrame to a single index.
 
-    Also note that the `DataFrame` widget will eventually be replaced with the
-    `Tabulator` widget, and so new code should be written to use `Tabulator`
-    instead.
+    .. deprecated:: 1.10.0
+        Use `Tabulator` instead. The `DataFrame` widget will be removed in
+        version 3.0.
 
     Reference: https://panel.holoviz.org/reference/widgets/DataFrame.html
 
@@ -1114,6 +1114,10 @@ class DataFrame(BaseTable):
     _rename: t.ClassVar[Mapping[str, str | None]] = {
         'selection': None, 'sorters': None, 'text_align': None
     }
+
+    def __init__(self, value=None, **params):
+        deprecated('3.0', 'DataFrame', 'Tabulator')
+        super().__init__(value=value, **params)
 
     @property
     def _widget_type(self) -> type[Model] | None:  # type: ignore[override]
