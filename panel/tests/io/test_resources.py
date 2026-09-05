@@ -274,17 +274,19 @@ def test_resolve_stylesheet_long_css():
     assert resolve_stylesheet(cls, stylesheet, "_stylesheets")==stylesheet
 
 def test_resources_global_loading_indicator_server():
+    nspinners = len(config.param['loading_spinner'].objects)
     resources = Resources(mode='server')
     with config.set(global_loading_spinner=True):
         assert len(resources.css_raw) == 2
-        assert resources.css_raw[0].count('static/extensions/panel/assets') == 5
+        assert resources.css_raw[0].count('static/extensions/panel/assets') == nspinners
 
 def test_resources_global_loading_indicator_cdn():
+    nspinners = len(config.param['loading_spinner'].objects)
     resources = Resources(mode='cdn')
     with config.set(global_loading_spinner=True):
         assert len(resources.css_raw) == 2
-        assert resources.css_raw[0].count('https://cdn.holoviz.org/panel/') == 5
-        assert resources.css_raw[0].count('/dist/assets/') == 5
+        assert resources.css_raw[0].count('https://cdn.holoviz.org/panel/') == nspinners
+        assert resources.css_raw[0].count('/dist/assets/') == nspinners
 
 def test_component_resource_path_ext_dir():
     assert component_resource_path(

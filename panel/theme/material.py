@@ -180,6 +180,10 @@ class Material(Design):
         }
     }
 
+    _loading_options = {
+        'spinner': 'material'
+    }
+
     _themes = {
         'default': MaterialDefaultTheme,
         'dark': MaterialDarkTheme

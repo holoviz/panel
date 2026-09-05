@@ -7,7 +7,8 @@ implement different color palettes (e.g. dark or default).
 """
 
 from .base import (  # noqa
-    THEMES, DarkTheme, DefaultTheme, Design, Inherit, Theme,
+    DESIGN_ALIASES, THEMES, DarkTheme, DefaultTheme, Design, Inherit, Theme,
+    resolve_component, resolve_design, resolve_widget,
 )
 from .bootstrap import Bootstrap
 from .fast import Fast
@@ -15,6 +16,7 @@ from .material import Material
 from .native import Native
 
 __all__ = (
+    "DESIGN_ALIASES",
     "THEMES",
     "Bootstrap",
     "DarkTheme",
@@ -24,5 +26,8 @@ __all__ = (
     "Inherit",
     "Material",
     "Native",
-    "Theme"
+    "Theme",
+    "resolve_component",
+    "resolve_design",
+    "resolve_widget"
 )

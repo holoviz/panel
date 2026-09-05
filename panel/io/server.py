@@ -70,7 +70,7 @@ from .document import (  # noqa
     _cleanup_doc, init_doc, unlocked, with_lock,
 )
 from .liveness import LivenessHandler
-from .loading import LOADING_INDICATOR_CSS_CLASS
+from .loading import loading_css_classes
 from .logging import LOG_SESSION_CREATED
 from .reload import record_modules
 from .resources import (
@@ -408,7 +408,7 @@ def server_html_page_for_session(
         )
         if config.global_loading_spinner:
             html = html.replace(
-                '<body>', f'<body class="{LOADING_INDICATOR_CSS_CLASS} pn-{config.loading_spinner}">'
+                '<body>', f'<body class="{" ".join(loading_css_classes())}">'
             )
     return html
 
