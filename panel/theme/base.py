@@ -102,6 +102,19 @@ class DarkTheme(Theme):
     _name: t.ClassVar[str] = 'dark'
 
 
+def _stylesheet_cache(doc: Document) -> dict[str, ImportedStyleSheet]:
+    """
+    Returns the ImportedStyleSheet cache scoped to a particular Document.
+
+    Stylesheets must never be shared between Documents since Bokeh
+    destroys all models on a Document once the session ends, leaving the
+    stylesheets it holds without a url.
+    """
+    if doc not in state._stylesheets:
+        state._stylesheets[doc] = {}
+    return state._stylesheets[doc]
+
+
 class Design(param.Parameterized, ResourceComponent):
 
     theme = param.ClassSelector(class_=Theme, constant=True)
@@ -173,13 +186,7 @@ class Design(param.Parameterized, ResourceComponent):
                 self._apply_modifiers(o, ref, theme, isolated, cache, document)
 
     def _apply_hooks(self, viewable: Viewable, root: Model, changed: Viewable, old_models=None) -> None:
-        from ..io.state import state
-        if root.document is None:
-            cache: dict[str, ImportedStyleSheet] = {}
-        elif root.document in state._stylesheets:
-            cache = state._stylesheets[root.document]
-        else:
-            state._stylesheets[root.document] = cache = {}
+        cache: dict[str, ImportedStyleSheet] = {} if root.document is None else _stylesheet_cache(root.document)
         if root.document:
             with root.document.models.freeze():
                 self._reapply(changed, root, old_models, isolated=False, cache=cache, document=root.document)
@@ -257,16 +264,20 @@ class Design(param.Parameterized, ResourceComponent):
 
     @classmethod
     def _patch_modifiers(cls, doc: Document | None, modifiers: dict[str, t.Any], cache: dict[str, ImportedStyleSheet]):
+        from ..io.resources import stylesheet_url
         if 'stylesheets' in modifiers:
             stylesheets = []
             for sts in modifiers['stylesheets']:
                 if sts.endswith('.css'):
-                    if cache and sts in cache:
-                        sts = cache[sts]
-                    else:
-                        sts = ImportedStyleSheet(url=sts)
+                    cached = cache.get(sts) if cache else None
+                    # A cached stylesheet that lost its url was destroyed
+                    # along with the Document it was rendered into and
+                    # has to be recreated.
+                    if cached is None or stylesheet_url(cached) is None:
+                        cached = ImportedStyleSheet(url=sts)
                         if cache is not None:
-                            cache[sts.url] = sts
+                            cache[sts] = cached
+                    sts = cached
                 stylesheets.append(sts)
             modifiers['stylesheets'] = stylesheets
 
@@ -277,11 +288,12 @@ class Design(param.Parameterized, ResourceComponent):
     ) -> None:
         if mref not in viewable._models:
             return
-        if cache is None:
-            cache = cls._cache
         model, _ = viewable._models[mref]
+        doc = model.document or document
+        if cache is None:
+            cache = cls._cache if doc is None else _stylesheet_cache(doc)
         modifiers, child_modifiers = cls._get_modifiers(viewable, theme, isolated)
-        cls._patch_modifiers(model.document or document, modifiers, cache)
+        cls._patch_modifiers(doc, modifiers, cache)
         if child_modifiers:
             for child in viewable:
                 cls._apply_params(child, mref, child_modifiers, document)
@@ -295,7 +307,7 @@ class Design(param.Parameterized, ResourceComponent):
         # e.g. stylesheets or sizing_mode, are not synced between the
         # Panel component and the model anyway however in certain edge cases
         # this may end up causing issues.
-        from ..io.resources import CDN_DIST, patch_stylesheet
+        from ..io.resources import CDN_DIST, patch_stylesheet, stylesheet_url
 
         if mref not in viewable._models:
             return
@@ -328,9 +340,11 @@ class Design(param.Parameterized, ResourceComponent):
                 if st1 == st2:
                     stylesheets.append(st1)
                     continue
-                elif type(st1) is type(st2) and isinstance(st1, ImportedStyleSheet) and st1.url == st2.url:
-                    stylesheets.append(st1)
-                    continue
+                elif type(st1) is type(st2) and isinstance(st1, ImportedStyleSheet):
+                    url1 = stylesheet_url(st1)
+                    if url1 is not None and url1 == stylesheet_url(st2):
+                        stylesheets.append(st1)
+                        continue
                 stylesheets.append(st2)
                 all_match = False
             if all_match:
@@ -513,11 +527,7 @@ class Design(param.Parameterized, ResourceComponent):
             self._reapply(viewable, root, isolated=isolated)
             return
 
-        from ..io.state import state
-        if doc in state._stylesheets:
-            cache = state._stylesheets[doc]
-        else:
-            state._stylesheets[doc] = cache = {}
+        cache = _stylesheet_cache(doc)
         with doc.models.freeze():
             self._reapply(viewable, root, isolated=isolated, cache=cache)
             if self.theme and self.theme.bokeh_theme and doc:
@@ -615,13 +625,7 @@ class Design(param.Parameterized, ResourceComponent):
             Dictionary of parameter values to apply to the children
             of the Viewable.
         """
-        from ..io.state import state
-        if doc is None:
-            cache = {}
-        elif doc in state._stylesheets:
-            cache = state._stylesheets[doc]
-        else:
-            state._stylesheets[doc] = cache = {}
+        cache: dict[str, ImportedStyleSheet] = {} if doc is None else _stylesheet_cache(doc)
         modifiers, child_modifiers = self._get_modifiers(viewable, theme=self.theme)
         self._patch_modifiers(doc, modifiers, cache)
         return modifiers, child_modifiers

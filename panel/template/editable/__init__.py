@@ -105,7 +105,7 @@ class EditableTemplate(VanillaTemplate):
     ]
 
     _resources = {
-        "css": {"lato": "https://fonts.googleapis.com/css?family=Lato&subset=latin,latin-ext"},
+        "font": {"lato": "https://fonts.googleapis.com/css?family=Lato&subset=latin,latin-ext"},
         "js": {
             "interactjs": f"{config.npm_cdn}/interactjs@1.10.19/dist/interact.min.js",
             "muuri": f"{config.npm_cdn}/muuri@0.9.5/dist/muuri.min.js",

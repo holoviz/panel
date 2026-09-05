@@ -11,8 +11,9 @@ from bokeh.models import (
 from panel import config
 from panel.widgets import (
     DateRangeSlider, DateSlider, DatetimeRangeSlider, DatetimeSlider,
-    DiscreteSlider, EditableFloatSlider, EditableIntSlider,
-    EditableRangeSlider, FloatSlider, IntSlider, RangeSlider, StaticText,
+    DiscretePlayer, DiscreteSlider, EditableFloatSlider, EditableIntSlider,
+    EditableRangeSlider, FloatInput, FloatSlider, IntInput, IntSlider, Player,
+    RangeSlider, StaticText,
 )
 
 
@@ -969,3 +970,130 @@ def test_date_range_slider_start_end_explicit_conversion(document, comm):
     assert widget.end == expected_end_ms
     assert widget.start == widget.value[0]
     assert widget.end == widget.value[1]
+
+
+@pytest.mark.parametrize('widget, initial, new', [
+    (FloatSlider, 0.1, 0.4),
+    (IntSlider, 1, 4),
+    (RangeSlider, (0, 1), (2, 3)),
+])
+def test_slider_value_throttled_follows_programmatic_value(widget, initial, new):
+    # Assigning value from Python is not a drag, so there is nothing to
+    # throttle and value_throttled must follow, the way __init__ already
+    # seeds it. See https://github.com/holoviz/panel/issues/2675.
+    slider = widget(start=0, end=10, value=initial)
+    assert slider.value_throttled == initial
+
+    slider.value = new
+    assert slider.value_throttled == new
+
+
+def test_slider_value_throttled_notifies_watchers():
+    # A callback bound to value_throttled never fired on a programmatic set.
+    seen = []
+    slider = IntSlider(start=0, end=10, value=0)
+    slider.param.watch(lambda event: seen.append(event.new), 'value_throttled')
+
+    slider.value = 7
+
+    assert seen == [7]
+
+
+def test_slider_value_throttled_not_updated_while_dragging(document, comm):
+    # The frontend sends `value` during a drag and `value_throttled` on
+    # release. Only the release may move value_throttled, otherwise the
+    # parameter would lose its purpose.
+    slider = FloatSlider(start=0, end=10, value=0)
+    slider.get_root(document, comm=comm)
+
+    slider._process_events({'value': 4.0})
+    assert slider.value == 4.0
+    assert slider.value_throttled == 0
+
+    slider._process_events({'value_throttled': 4.0})
+    assert slider.value_throttled == 4.0
+
+
+@pytest.mark.parametrize('widget, kwargs, new', [
+    (Player, dict(start=0, end=10, value=1), 4),
+    (DiscretePlayer, dict(options=[1, 2, 3], value=1), 3),
+    (IntInput, dict(value=1), 7),
+    (FloatInput, dict(value=1.0), 7.0),
+])
+def test_non_slider_value_throttled_follows_programmatic_value(widget, kwargs, new):
+    # PlayerBase and _SpinnerBase seed value_throttled from value in __init__ the
+    # same way _SliderBase does, so they had the same stale-forever bug. The sync
+    # lives on Widget so every family that declares value_throttled gets it.
+    w = widget(**kwargs)
+    w.value = new
+    assert w.value_throttled == new
+
+
+@pytest.mark.parametrize('widget, kwargs, new', [
+    (DiscreteSlider, dict(options=[1, 2, 3, 4, 5], value=1), 4),
+    (EditableFloatSlider, dict(start=0, end=10, value=1.0), 7.0),
+    (EditableIntSlider, dict(start=0, end=10, value=1), 7),
+    (EditableRangeSlider, dict(start=0, end=10, value=(1.0, 2.0)), (3.0, 4.0)),
+])
+def test_composite_slider_value_throttled_follows_programmatic_value(widget, kwargs, new):
+    # CompositeWidget subclasses relay value_throttled from their sub-widgets
+    # rather than deriving it generically, but a programmatic set of `value`
+    # must still be reflected in `value_throttled` immediately.
+    w = widget(**kwargs)
+    w.value = new
+    assert w.value_throttled == new
+
+
+@pytest.mark.parametrize('widget, kwargs, drag_value, released_value', [
+    (DiscreteSlider, dict(options=[1, 2, 3, 4, 5], value=1), 3, 4),
+    (EditableFloatSlider, dict(start=0, end=10, value=1.0), 5.0, 5.0),
+    (EditableIntSlider, dict(start=0, end=10, value=1), 5, 5),
+])
+def test_composite_slider_value_throttled_not_updated_while_dragging(
+    widget, kwargs, drag_value, released_value
+):
+    # Dragging the inner slider must not leak into the composite's own
+    # `value_throttled` until the drag is released, otherwise composite
+    # widgets like DiscreteSlider lose the point of the parameter for
+    # exactly the callbacks (e.g. DynamicMap redraws) it exists to protect.
+    w = widget(**kwargs)
+    initial_throttled = w.value_throttled
+
+    w._slider._process_events({'value': drag_value})
+    assert w.value_throttled == initial_throttled
+
+    w._slider._process_events({'value_throttled': drag_value})
+    assert w.value_throttled == released_value
+
+
+def test_editable_range_slider_value_throttled_not_updated_while_dragging():
+    w = EditableRangeSlider(start=0, end=10, value=(1.0, 2.0))
+
+    w._slider._process_events({'value': (1.0, 5.0)})
+    assert w.value == (1.0, 5.0)
+    assert w.value_throttled == (1.0, 2.0)
+
+    w._slider._process_events({'value_throttled': (1.0, 5.0)})
+    assert w.value_throttled == (1.0, 5.0)
+
+
+@pytest.mark.parametrize('widget, kwargs, sub_widget, drag_value, released_value, updated_value', [
+    (EditableFloatSlider, dict(start=0, end=10, value=1.0), '_value_edit', 3.0, 3.0, 3.0),
+    (EditableRangeSlider, dict(start=0, end=10, value=(1.0, 5.0)), '_start_edit', 2.0, 2.0, (2.0, 5.0)),
+])
+def test_editable_slider_value_throttled_not_updated_while_dragging_edit(
+    widget, kwargs, sub_widget, drag_value, released_value, updated_value
+):
+    # Dragging the numeric slider reflects `value` down into the text-input
+    # sub-widget for display, and vice versa; that reflection must not be
+    # mistaken by the *other* sub-widget for a fresh user-driven set of its
+    # own value, which would corrupt the composite's `value_throttled`.
+    w = widget(**kwargs)
+    initial_throttled = w.value_throttled
+    edit = getattr(w, sub_widget)
+
+    edit._process_events({'value': drag_value})
+    assert w.value_throttled == initial_throttled
+
+    edit._process_events({'value_throttled': released_value})
+    assert w.value_throttled == updated_value

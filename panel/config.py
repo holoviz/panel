@@ -155,6 +155,13 @@ class _config(_base_config):
     global_loading_spinner = param.Boolean(default=False, doc="""
         Whether to add a global loading spinner for the whole application.""")
 
+    lazy_resources = param.Boolean(default=True, doc="""
+        Whether components load the external libraries they need on demand
+        if they were not already declared with pn.extension. Disabling this
+        restores strict behavior, i.e. a component whose extension was not
+        declared fails loudly instead of fetching its resources at render
+        time, which is what an air-gapped deployment usually wants.""")
+
     layout_compatibility: t.Literal['warn', 'error'] = param.Selector(
         default='warn', objects=['warn', 'error'], doc="""
         Provide compatibility for older layout specifications. Incompatible
@@ -196,6 +203,11 @@ class _config(_base_config):
         Whether to enable automatic re-connect should the server connection
         be disrupted. Setting "prompt" will not enable automatic re-connect but
         will pop up a notification asking the user to confirm.""")  # type: ignore[assignment, ty:invalid-assignment]
+
+    resource_timeout = param.Integer(default=15000, bounds=(0, None), doc="""
+        Time in milliseconds a component waits for the external libraries
+        it lazily loads before it renders an error state instead. Set to 0
+        to wait indefinitely.""")
 
     reuse_sessions: t.Literal[True, False, 'warm'] = param.Selector(
         default=False, objects=[True, False, 'warm'], doc="""

@@ -18,10 +18,14 @@ import type {UIElement} from "@bokehjs/models/ui/ui_element"
 import {serializeEvent} from "./event-to-object"
 import {DOMEvent} from "./html"
 import {HTMLBox, HTMLBoxView, set_size} from "./layout"
+import {resources} from "./resources"
 import {convertUndefined, formatError} from "./util"
 
 import esm_css from "styles/models/esm.css"
 
+// Deliberately module local rather than on the shared resource registry:
+// its keys are logical (class name plus source length), so two Panel
+// versions on one page must not be able to satisfy each other from it.
 const MODULE_CACHE = new Map()
 
 export class DataEvent extends ModelEvent {
@@ -842,15 +846,10 @@ export class ReactiveESM extends HTMLBox {
     }
   }
 
-  protected _declare_importmap(): void {
+  protected async _declare_importmap(): Promise<void> {
+    await resources.ensure_shim(this.external_resources?.shim)
     if (this.importmap) {
-      const importMap = {...this.importmap}
-      try {
-        // @ts-ignore
-        importShim.addImportMap(importMap)
-      } catch (e) {
-        console.warn(`Failed to add import map: ${e}`)
-      }
+      resources.add_import_map(this.importmap)
     }
   }
 
@@ -876,8 +875,7 @@ export class ReactiveESM extends HTMLBox {
       const render_url = URL.createObjectURL(
         new Blob([code], {type: "text/javascript"}),
       )
-      // @ts-ignore
-      this.render_module = importShim(render_url)
+      this.render_module = resources.import_module(render_url, this.external_resources?.shim)
       MODULE_CACHE.set(this._render_cache_key, this.render_module)
     }
   }
@@ -945,13 +943,17 @@ export default {render}`
       return
     }
     this.compiled = compiled
-    this._declare_importmap()
+    // Awaiting the import map here would leave compiled_module holding the
+    // previous module for a tick, and a view handling the same esm change
+    // awaits that property, so it has to be replaced synchronously.
+    const declared = this._declare_importmap()
     let esm_module
     const use_cache = (!this.dev || this.bundle)
     const cache_key = (this.bundle === "url") ? this.esm : (this.bundle || `${this.class_name}-${this.esm.length}`)
     let resolve: (value: any) => void
     if (use_cache && MODULE_CACHE.has(cache_key)) {
-      esm_module = Promise.resolve(MODULE_CACHE.get(cache_key))
+      const cached = MODULE_CACHE.get(cache_key)
+      esm_module = declared.then(() => cached)
     } else {
       if (use_cache) {
         MODULE_CACHE.set(cache_key, new Promise((res) => { resolve = res }))
@@ -962,9 +964,9 @@ export default {render}`
       } else {
         url = URL.createObjectURL(new Blob([this.compiled], {type: "text/javascript"}))
       }
-      esm_module = (window as any).importShim(url)
+      esm_module = declared.then(() => resources.import_module(url, this.external_resources?.shim))
     }
-    this.compiled_module = (esm_module as Promise<any>).then((mod: any) => {
+    this.compiled_module = (esm_module).then((mod: any) => {
       if (resolve) {
         resolve(mod)
       }

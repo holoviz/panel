@@ -14,24 +14,15 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
-import sliders.pn_app as sliders_app
-
-from bokeh_django import autoload, static_extensions
-from django.apps import apps
 from django.contrib import admin
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.urls import include, path
-
-pn_app_config = apps.get_app_config("bokeh_django")
 
 urlpatterns = [
     path('sliders/', include('sliders.urls')),
     path('admin/', admin.site.urls),
 ]
 
-bokeh_apps = [
-    autoload("sliders", sliders_app.app),
-]
-
-urlpatterns += static_extensions()
+# Serve the static files of the Django project itself, e.g. the admin's.
+# Panel serves the BokehJS and extension resources it needs itself.
 urlpatterns += staticfiles_urlpatterns()

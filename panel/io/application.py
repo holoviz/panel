@@ -182,18 +182,13 @@ class Application(BkApplication):
         doc.on_event('document_ready', partial(state._schedule_on_load, doc))
         doc.on_session_destroyed(_log_session_destroyed)
 
-    def process_request(self, request) -> dict[str, t.Any]:
-        ''' Processes incoming HTTP request returning a dictionary of
-        additional data to add to the session_context.
-
-        Args:
-            request: HTTP request
-
-        Returns:
-            A dictionary of JSON serializable data to be included on
-            the session context.
-        '''
-        request_data = super().process_request(request)
+    def _extra_request_data(self, request) -> dict[str, t.Any]:
+        """
+        Panel specific additions to the token payload, i.e. the route
+        parameters captured by a wildcard route, the path the application
+        was served on and the OAuth user data associated with the request.
+        """
+        request_data: dict[str, t.Any] = {}
         route_params = getattr(request, 'route_params', {})
         if route_params:
             request_data['route_params'] = route_params
@@ -216,6 +211,36 @@ class Application(BkApplication):
                 if state.encryption:
                     user_data = state.encryption.encrypt(user_data.encode('utf-8'))
                 request_data['user_data'] = user_data
+        return request_data
+
+    def process_request(self, request) -> dict[str, t.Any]:
+        ''' Processes incoming HTTP request returning a dictionary of
+        additional data to add to the session_context.
+
+        Args:
+            request: HTTP request
+
+        Returns:
+            A dictionary of JSON serializable data to be included on
+            the session context.
+        '''
+        request_data = super().process_request(request)
+        request_data.update(self._extra_request_data(request))
+        return request_data
+
+    async def process_request_async(self, request) -> dict[str, t.Any]:
+        ''' Asynchronously processes an incoming HTTP request returning a
+        dictionary of additional data to add to the session_context.
+
+        Args:
+            request: HTTP request
+
+        Returns:
+            A dictionary of JSON serializable data to be included on
+            the session context.
+        '''
+        request_data = await super().process_request_async(request)
+        request_data.update(self._extra_request_data(request))
         return request_data
 
 bokeh.command.util.Application = Application # type: ignore

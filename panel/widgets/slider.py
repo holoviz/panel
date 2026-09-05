@@ -10,6 +10,8 @@ from __future__ import annotations
 import datetime as dt
 import typing as t
 
+from contextlib import nullcontext
+
 import numpy as np
 import param
 
@@ -20,7 +22,7 @@ from bokeh.models.widgets import (
     RangeSlider as _BkRangeSlider, Slider as _BkSlider,
 )
 from bokeh.models.widgets.sliders import NumericalSlider as _BkNumericalSlider
-from param.parameterized import resolve_value
+from param.parameterized import _syncing, resolve_value
 
 from ..config import config
 from ..io import state
@@ -530,13 +532,15 @@ class DiscreteSlider(CompositeWidget, _SliderBase):
         This will update the DiscreteSlider (front)
         based on changes to the IntSlider (behind the scene).
 
-        _syncing options is to avoid infinite loop.
+        The infinite loop with `_update_value` is already broken by
+        `_update_value`'s own `_syncing` guard, so this method must not
+        also bail out on `_syncing` - doing so would drop the relay of a
+        `value_throttled` update that originates from `_update_value`
+        pushing a programmatic `value` set down into the IntSlider.
 
         event.name is either value or value_throttled.
         """
         if event.name not in ('value', 'value_throttled'):
-            return
-        if self._syncing:
             return
         try:
             self._syncing = True
@@ -864,6 +868,7 @@ class _EditableContinuousSlider(CompositeWidget):
     __abstract = True
 
     def __init__(self, **params):
+        self._syncing = False
         if 'width' not in params and 'sizing_mode' not in params:
             params['width'] = 300
         self._validate_init_bounds(params)
@@ -974,15 +979,25 @@ class _EditableContinuousSlider(CompositeWidget):
 
     @param.depends('value', watch=True)
     def _update_value(self):
-        if self.value is not None:
-            self._slider.value = self.value
-        self._value_edit.value = self.value
+        # Ensure that child widget does not treat this as user update and sync value_throttled
+        slider_ctx = _syncing(self._slider, ['value']) if self._syncing else nullcontext()
+        edit_ctx = _syncing(self._value_edit, ['value']) if self._syncing else nullcontext()
+        with slider_ctx, edit_ctx:
+            if self.value is not None:
+                self._slider.value = self.value
+            self._value_edit.value = self.value
 
     def _sync_value(self, event):
         if event.name not in ('value', 'value_throttled'):
             return
-        with param.edit_constant(self):
-            self.param.update(**{event.name: event.new})
+        if self._syncing:
+            return
+        try:
+            self._syncing = True
+            with param.edit_constant(self):
+                self.param.update(**{event.name: event.new})
+        finally:
+            self._syncing = False
 
     @param.depends("start", "end", "fixed_start", "fixed_end", watch=True)
     def _update_bounds(self):
@@ -1098,6 +1113,7 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
     _composite_type: t.ClassVar[type[ListLike] | type[NamedListLike]] = Column
 
     def __init__(self, **params):
+        self._syncing = False
         if 'width' not in params and 'sizing_mode' not in params:
             params['width'] = 300
         self._validate_init_bounds(params)
@@ -1237,39 +1253,62 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
 
     @param.depends('value', watch=True)
     def _update_value(self):
-        self._slider.value = self.value
-        self._start_edit.value = self.value[0]
-        self._end_edit.value = self.value[1]
+        # Ensure that child widget does not treat this as user update and sync value_throttled
+        slider_ctx = _syncing(self._slider, ['value']) if self._syncing else nullcontext()
+        start_ctx = _syncing(self._start_edit, ['value']) if self._syncing else nullcontext()
+        end_ctx = _syncing(self._end_edit, ['value']) if self._syncing else nullcontext()
+        with slider_ctx, start_ctx, end_ctx:
+            self._slider.value = self.value
+            self._start_edit.value = self.value[0]
+            self._end_edit.value = self.value[1]
 
     def _sync_value(self, event):
         if event.name not in ('value', 'value_throttled'):
             return
-        with param.edit_constant(self):
-            self.param.update(**{event.name: event.new})
+        if self._syncing:
+            return
+        try:
+            self._syncing = True
+            with param.edit_constant(self):
+                self.param.update(**{event.name: event.new})
+        finally:
+            self._syncing = False
 
     def _sync_start_value(self, event):
         if event.name not in ('value', 'value_throttled'):
+            return
+        if self._syncing:
             return
         if event.name == 'value':
             end = self.value[1] if self.value else self.end
         else:
             end = self.value_throttled[1] if self.value_throttled else self.end
-        with param.edit_constant(self):
-            self.param.update(
-                **{event.name: (event.new, end)}
-            )
+        try:
+            self._syncing = True
+            with param.edit_constant(self):
+                self.param.update(
+                    **{event.name: (event.new, end)}
+                )
+        finally:
+            self._syncing = False
 
     def _sync_end_value(self, event):
         if event.name not in ('value', 'value_throttled'):
+            return
+        if self._syncing:
             return
         if event.name == 'value':
             start = self.value[0] if self.value else self.start
         else:
             start = self.value_throttled[0] if self.value_throttled else self.start
-        with param.edit_constant(self):
-            self.param.update(
-                **{event.name: (start, event.new)}
-            )
+        try:
+            self._syncing = True
+            with param.edit_constant(self):
+                self.param.update(
+                    **{event.name: (start, event.new)}
+                )
+        finally:
+            self._syncing = False
 
     @param.depends("start", "end", "fixed_start", "fixed_end", watch=True)
     def _update_bounds(self):

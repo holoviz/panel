@@ -9,6 +9,7 @@ from ..config import config
 from ..io.resources import bundled_files
 from ..util import classproperty
 from .layout import Column
+from .resource import ExternalResourcesMixin
 
 __all__ = (
     "Modal",
@@ -16,28 +17,21 @@ __all__ = (
 )
 
 
-class Modal(Column):
+class Modal(Column, ExternalResourcesMixin):
 
-    __javascript_raw__ = [
-        f"{config.npm_cdn}/a11y-dialog@7/dist/a11y-dialog.min.js"
+    __javascript_modules_raw__ = [
+        f"{config.npm_cdn}/a11y-dialog@7/dist/a11y-dialog.esm.min.js"
     ]
 
+    __javascript_module_exports__ = ['A11yDialog']
+
     @classproperty
-    def __javascript__(cls):
-        return bundled_files(cls)
+    def __javascript_modules__(cls):
+        return bundled_files(cls, 'javascript_modules')
 
     @classproperty
     def __js_skip__(cls):
-        return {'A11yDialog': cls.__javascript__[:1]}
-
-    __js_require__ = {
-        'paths': {
-            'a11y-dialog': f"{config.npm_cdn}/a11y-dialog@7/dist/a11y-dialog.min",
-        },
-        'exports': {
-            'A11yDialog': 'a11y-dialog',
-        }
-    }
+        return {'A11yDialog': cls.__javascript_modules__[:1]}
 
     open = Bool(default=False, help="Whether or not the modal is open.")
     show_close_button = Bool(True, help="Whether to show a close button in the modal.")

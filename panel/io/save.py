@@ -280,14 +280,18 @@ def save(
                 template_variables.update(doc._template_variables)
             model = doc
         else:
-            model = panel.get_root(doc, comm)
-            if embed:
-                embed_state(
-                    panel, model, doc, max_states, max_opts, embed_json,
-                    json_prefix, save_path, load_path, progress, embed_states
-                )
-            else:
-                add_to_doc(model, doc, True)
+            # Models resolve the urls of the resources they need when they are
+            # created, so the mode has to be set before rendering, not just
+            # when the page is written out.
+            with set_resource_mode(mode):
+                model = panel.get_root(doc, comm)
+                if embed:
+                    embed_state(
+                        panel, model, doc, max_states, max_opts, embed_json,
+                        json_prefix, save_path, load_path, progress, embed_states
+                    )
+                else:
+                    add_to_doc(model, doc, True)
 
     if isinstance(model, Model) and not isinstance(model, UIElement):
         raise ValueError("Cannot render non-UI components.")
