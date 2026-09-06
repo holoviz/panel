@@ -128,6 +128,8 @@ lite/files/*/
 discover/
 
 node_modules
+# The homepage's SSR bundle exists only to feed scripts/prerender.mjs; dist/ is already ignored.
+doc/homepage/dist-ssr/
 .bokeh
 /tmp
 .devcontainer/*

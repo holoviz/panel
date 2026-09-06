@@ -1,0 +1,126 @@
+<!doctype html>
+<!--
+  Served by CloudFront for any path the root distribution cannot resolve. Deliberately
+  standalone: no bundle, no font request, no React, so a broken URL always renders even if
+  the rest of the site is having a bad day. Inline styles restate the tokens from
+  src/theme.ts, which is the one place duplication is worth it.
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Page not found — Panel</title>
+    <meta name="robots" content="noindex" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" href="/icon-vector.svg" type="image/svg+xml" />
+    <style>
+      :root {
+        color-scheme: light dark;
+        --bg: #eeeeee;
+        --fg: #000000;
+        --muted: #666666;
+        --accent: #0072b5;
+        --rule: rgba(0, 0, 0, 0.14);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #001521;
+          --fg: #eef2f5;
+          --muted: #93aec0;
+          --accent: #4ea8dc;
+          --rule: rgba(238, 238, 238, 0.16);
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        background: var(--bg);
+        color: var(--fg);
+        font-family: Inter, system-ui, -apple-system, Arial, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      main {
+        width: 100%;
+        max-width: 44rem;
+        margin: 0 auto;
+        padding: 4rem 1.5rem;
+      }
+      img {
+        width: 104px;
+        display: block;
+      }
+      h1 {
+        margin: 2.5rem 0 0;
+        font-size: clamp(2rem, 1.4rem + 2.4vw, 3rem);
+        line-height: 1.05;
+        letter-spacing: -0.03em;
+        font-weight: 700;
+      }
+      p {
+        margin: 1.25rem 0 0;
+        max-width: 34rem;
+        font-size: 1.0625rem;
+        line-height: 1.62;
+        color: var(--muted);
+      }
+      ul {
+        margin: 2.5rem 0 0;
+        padding: 0;
+        list-style: none;
+        border-top: 1px solid var(--rule);
+      }
+      li {
+        border-bottom: 1px solid var(--rule);
+      }
+      a {
+        display: block;
+        padding: 0.9rem 0;
+        color: var(--fg);
+        text-decoration: none;
+        font-weight: 500;
+      }
+      a:hover,
+      a:focus-visible {
+        color: var(--accent);
+      }
+      a:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+      span {
+        display: block;
+        font-size: 0.9375rem;
+        font-weight: 400;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img src="/icon-vector.svg" alt="Panel" />
+      <h1>That page is not here.</h1>
+      <p>
+        The docs moved to a versioned layout, so a few older links no longer resolve. These
+        three cover most of what people arrive looking for.
+      </p>
+      <ul>
+        <li>
+          <a href="/en/docs/latest/">Documentation<span>Guides, how-tos and explanation</span></a>
+        </li>
+        <li>
+          <a href="/en/docs/latest/reference/index.html"
+            >Component gallery<span>Every widget, pane and layout, with examples</span></a
+          >
+        </li>
+        <li>
+          <a href="/">Home<span>Start again from the front page</span></a>
+        </li>
+      </ul>
+    </main>
+  </body>
+</html>
