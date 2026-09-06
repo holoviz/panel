@@ -1,0 +1,122 @@
+<!doctype html>
+<!--
+  Source for public/og-image.png. Rendered to PNG by scripts/og-image.py, which injects the
+  headline and the moving-average path from the live hero so the card cannot drift away from
+  the page it advertises. Not part of the Vite build.
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,100..900&display=swap"
+    />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        width: 1200px;
+        height: 630px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        padding: 68px 72px 0;
+        /* The wash rather than the page white, so the card keeps an edge against the white
+           chrome of whatever is embedding it. */
+        background: #f3f6f9;
+        color: #000000;
+        font-family: Inter, system-ui, sans-serif;
+        font-synthesis: none;
+        -webkit-font-smoothing: antialiased;
+        overflow: hidden;
+      }
+      .logo {
+        width: 286px;
+        display: block;
+      }
+      h1 {
+        margin-top: 44px;
+        max-width: 21ch;
+        font-size: 68px;
+        line-height: 1.02;
+        font-weight: 700;
+        letter-spacing: -0.032em;
+        font-variation-settings: 'opsz' 32;
+      }
+      /* The hero's two panes, cropped by the bottom edge: the mark, still doing its job. */
+      .app {
+        margin-top: 40px;
+        display: grid;
+        grid-template-columns: 236px 1fr;
+        height: 200px;
+        border-radius: 26px 26px 0 0;
+        overflow: hidden;
+        background: #0072b5;
+      }
+      .controls {
+        background: #00527f;
+        padding: 30px 28px;
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
+      }
+      .track {
+        height: 4px;
+        border-radius: 2px;
+        background: rgba(238, 238, 238, 0.32);
+        position: relative;
+      }
+      .track::before {
+        content: '';
+        position: absolute;
+        inset: 0 auto 0 0;
+        width: var(--fill);
+        border-radius: 2px;
+        background: #eeeeee;
+      }
+      .track::after {
+        content: '';
+        position: absolute;
+        top: -7px;
+        left: calc(var(--fill) - 9px);
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #eeeeee;
+      }
+      svg.chart {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <img class="logo" src="../../_static/logo_horizontal.svg" alt="Panel" />
+      <h1>__TITLE__</h1>
+    </div>
+    <div class="app">
+      <div class="controls">
+        <div class="track" style="--fill: 30%"></div>
+        <div class="track" style="--fill: 62%"></div>
+        <div class="track" style="--fill: 45%"></div>
+      </div>
+      <svg class="chart" viewBox="__VIEWBOX__" preserveAspectRatio="none">
+        <path d="__RAW__" fill="none" stroke="#eeeeee" stroke-opacity="0.42" stroke-width="2" />
+        <path
+          d="__SMOOTH__"
+          fill="none"
+          stroke="#eeeeee"
+          stroke-width="5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </svg>
+    </div>
+  </body>
+</html>

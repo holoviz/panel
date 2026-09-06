@@ -1,154 +1,103 @@
----
-sd_hide_title: true
----
+# Panel documentation
 
-```{image} _static/logo_horizontal_dark_theme.png
-:class: only-dark homepage-logo
-:width: 250px
-```
+Panel is an [open-source](https://github.com/holoviz/panel/blob/main/LICENSE.txt) Python library for building data apps, from two widgets beside a plot in a notebook to a multi-page application served behind your own authentication. The same objects do both. A Panel component renders in Jupyter, JupyterLab, VS Code, Colab and marimo, and `panel serve` turns the file it lives in into an application without a rewrite.
 
-```{image} _static/logo_horizontal_light_theme.png
-:class: only-light homepage-logo
-:width: 250px
-```
+Updates are declarative rather than script-level. You bind a function, or a component's state, to the widgets that feed it, and when one of those changes only what depends on it runs again, so an app that loads four million rows does not load them again because a slider moved. Panel renders what your plotting library already produces, whether that is Matplotlib, Plotly, Bokeh, HoloViews, Altair, ECharts, Deck.gl or an ipywidget, and the same app grows from a bound function into components made of components as it gets larger, which is refactoring rather than rewriting.
 
-# Overview
+For a tour with runnable examples, see the [Panel home page](https://panel.holoviz.org/). This site is the documentation: guides, reference pages, and the API.
 
-<h2 style="margin-top: 0.3em;">The Powerful Data Exploration & Web App Framework for Python</h2>
+## Learn
 
-::::{grid} 2 4 4 4
-
-:::{grid-item-card} Portfolio Analyzer
-:link: https://|gallery-endpoint|.holoviz-demo.anaconda.com/portfolio_analyzer
-:link-type: url
-
-```{image} https://assets.holoviz.org/panel/gallery/portfolio_analyzer.png
----
-alt: Portfolio Analyzer App
----
-```
-:::
-
-:::{grid-item-card} Portfolio Optimizer
-:link: https://|gallery-endpoint|.holoviz-demo.anaconda.com/portfolio_optimizer
-:link-type: url
-
-```{image} https://assets.holoviz.org/panel/gallery/portfolio_optimizer.png
----
-alt: Portfolio Optimizer App
----
-```
-:::
-
-:::{grid-item-card} WebLLM Chat App
-:link: https://|gallery-endpoint|.holoviz-demo.anaconda.com/webllm
-:link-type: url
-
-```{image} https://assets.holoviz.org/panel/gallery/webllm.png
----
-alt: WebLLM Application
----
-```
-:::
-
-:::{grid-item-card} Videostream
-:link: https://|gallery-endpoint|.holoviz-demo.anaconda.com/streaming_videostream
-:link-type: url
-
-```{image} https://assets.holoviz.org/panel/gallery/streaming_videostream.png
----
-alt: Videostream App
----
-```
-:::
-
-::::
-
-Panel is an [open-source](https://github.com/holoviz/panel/blob/main/LICENSE.txt) Python library designed to streamline the **development of robust tools, dashboards, and complex applications entirely within Python**. With a comprehensive philosophy, Panel integrates seamlessly with the PyData ecosystem, offering powerful, interactive data tables, visualizations, and much more, to unlock, visualize, share, and collaborate on your data for efficient workflows.
-
-Its feature set includes high-level reactive APIs and lower-level callback-based APIs, enabling rapid development of exploratory applications and facilitating the creation of intricate, multi-page applications with extensive interactivity.
-
-Panel is a proud member of the [HoloViz](https://holoviz.org/) ecosystem, providing a gateway to a cohesive suite of data exploration tools.
-
-```{notebook} panel ../examples/homepage.ipynb
-:disable_interactivity_warning: True
-```
-
-<br/>
-
-Panel makes it simple to:
-
-- Develop in your favorite **editor or notebook** environment
-- Combine the **PyData tools and plotting libraries** that you know and love
-- **Iterate quickly** to develop data tools, dashboards, and complex apps
-- **Collaborate** across skill levels and tool preferences
-- Add **advanced bi-directional communication** to your data apps
-- Create interactive **big data** applications with **crossfiltering**
-- Create **high-performing**, **streaming** data applications
-- Create data apps that **can run entirely in the browser**
-- Create **polished, performant, secure, and production-ready web applications**
-
----
-
-Enjoying Panel? Show your support with a [GitHub star](https://github.com/holoviz/panel) — it’s a simple click that means the world to us and helps others discover it too! ⭐️
-
-## Learn Panel
-
-::::{grid} 1 2 2 4
+::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`rocket;2.5em;sd-mr-1` Getting Started
+:::{grid-item-card} {octicon}`rocket;2.5em;sd-mr-1` Getting started
 :link: getting_started/index
 :link-type: doc
 
-The getting started guide will get you set up with Panel and provide a basic overview of the features and strengths of Panel.
+Install Panel, build your first app, and get an overview of how its pieces fit together.
 :::
 
 :::{grid-item-card} {octicon}`mortar-board;2.5em;sd-mr-1` Tutorials
 :link: tutorials/index
 :link-type: doc
 
-Through guided steps and activities, the tutorials will help you acquire the skills and knowledge to use Panel.
+Guided, end-to-end walkthroughs that build a real application step by step.
 :::
 
 :::{grid-item-card} {octicon}`telescope;2.5em;sd-mr-1` Explanation
 :link: explanation/index
 :link-type: doc
 
-Introduces you to some of the core concepts behind Panel and some of the advanced features that make Panel such a powerful library.
+Why Panel works the way it does: the reactive model, the two APIs, components, and design.
 :::
 
 ::::
 
-## Use Panel
+## Look something up
+
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
+
+:::{grid-item-card} {octicon}`package;2.5em;sd-mr-1` Component gallery
+:link: reference/index
+:link-type: doc
+
+Every component that ships with Panel, one page each, with the code that produced the example.
+:::
+
+:::{grid-item-card} {octicon}`beaker;2.5em;sd-mr-1` How-to guides
+:link: how_to/index
+:link-type: doc
+
+Step-by-step recipes for the specific problems that come up: layout, auth, deployment, testing.
+:::
+
+:::{grid-item-card} {octicon}`book;2.5em;sd-mr-1` API reference
+:link: api/index
+:link-type: doc
+
+The classes, parameters and methods that make up Panel's public interface.
+:::
+
+::::
+
+## Also here
 
 ::::{grid} 1 2 2 4
 :gutter: 1 1 1 2
 
-:::{grid-item-card} {octicon}`package;2.5em;sd-mr-1` Component Gallery
-:link: reference/index
+:::{grid-item-card} {octicon}`browser;2.5em;sd-mr-1` Example apps
+:link: gallery/index
 :link-type: doc
 
-The Component Gallery showcases Panel's components and their essential reference guides, offering users vital usage information.
+Complete applications, each editable and runnable in the browser.
 :::
 
-:::{grid-item-card} {octicon}`beaker;2.5em;sd-mr-1` How-to
-:link: how_to/index
+:::{grid-item-card} {octicon}`versions;2.5em;sd-mr-1` Upgrade guide
+:link: upgrade
 :link-type: doc
 
-How-to guides provide step-by-step recipes for solving essential problems and tasks that arise during your work.
+What changed between major versions, and what to do about it.
 :::
 
-:::{grid-item-card} {octicon}`book;2.5em;sd-mr-1` API Reference
-:link: api/index
+:::{grid-item-card} {octicon}`question;2.5em;sd-mr-1` FAQ
+:link: FAQ
 :link-type: doc
 
-The Panel API Reference Manual provides an extensive guide covering Panel's methods and parameters.
+The questions that come up often enough to have a written answer.
+:::
+
+:::{grid-item-card} {octicon}`comment-discussion;2.5em;sd-mr-1` Community
+:link: community
+:link-type: doc
+
+Where to ask, how to report a bug, and how to contribute.
 :::
 
 ::::
 
-For usage questions or technical assistance, please head over to [Discourse](https://discourse.holoviz.org/) or our [Discord server](https://discord.gg/muhupDZM). If you have any [issues](https://github.com/holoviz/panel/issues), [feature requests](https://github.com/holoviz/panel/issues), or wish to [contribute](https://github.com/holoviz/panel/blob/main/CONTRIBUTING.MD), you can visit our [GitHub site](https://github.com/holoviz/panel).
+For usage questions or technical assistance, head over to [Discourse](https://discourse.holoviz.org/) or our [Discord server](https://discord.gg/muhupDZM). If you have any [issues](https://github.com/holoviz/panel/issues), [feature requests](https://github.com/holoviz/panel/issues), or wish to [contribute](https://github.com/holoviz/panel/blob/main/CONTRIBUTING.MD), you can visit our [GitHub site](https://github.com/holoviz/panel).
 
 ## Sponsors
 

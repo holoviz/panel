@@ -51,6 +51,13 @@ no-default-feature = true
 features = ["py312", "required", "example", "doc"]
 no-default-feature = true
 
+# The homepage builds with Node and deploys to the site root on a different schedule than
+# the versioned docs, so it gets an environment of its own rather than riding along in
+# `docs`, whose example and Sphinx stack it needs none of.
+[environments.homepage]
+features = ["homepage"]
+no-default-feature = true
+
 [environments.build]
 features = ["py312", "required", "build"]
 no-default-feature = true
@@ -309,6 +316,28 @@ depends-on = [
     '_docs-pyodide',
     '_docs_markdown',
 ]
+
+# =============================================
+# ================= HOMEPAGE ==================
+# =============================================
+[feature.homepage.dependencies]
+nodejs = ">=20"
+# Python only for the Playwright checks and the social-card generator; the site itself is Node.
+python = "3.12.*"
+pytest = "*"
+pytest-playwright = "*"
+
+[feature.homepage.tasks]
+_homepage-install = { cmd = 'npm ci', cwd = 'doc/homepage', inputs = [
+    'doc/homepage/package.json',
+    'doc/homepage/package-lock.json',
+], outputs = ['doc/homepage/node_modules/.package-lock.json'] }
+homepage-serve = { cmd = 'npm run dev', cwd = 'doc/homepage', depends-on = ['_homepage-install'] }
+homepage-preview = { cmd = 'npm run preview', cwd = 'doc/homepage' }
+homepage-typecheck = { cmd = 'npm run typecheck', cwd = 'doc/homepage', depends-on = ['_homepage-install'] }
+homepage-build = { cmd = 'npm run build', cwd = 'doc/homepage', depends-on = ['_homepage-install'] }
+homepage-test = 'pytest doc/homepage/tests --browser chromium'
+homepage-og-image = 'python doc/homepage/scripts/og-image.py'
 
 # =============================================
 # ================== BUILD ====================
