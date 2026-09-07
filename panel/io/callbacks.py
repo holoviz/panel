@@ -151,8 +151,9 @@ class PeriodicCallback(param.Parameterized):
             start = time.monotonic()
             await func()
             timeout = (self.period/1000.) - (time.monotonic()-start)
-            if timeout > 0:
-                await asyncio.sleep(timeout)
+            # sleep(0) still yields, so an overrunning callback runs again
+            # immediately without holding the loop for the next iteration.
+            await asyncio.sleep(max(timeout, 0))
 
     def _cleanup(self, session_context):
         self.stop()
