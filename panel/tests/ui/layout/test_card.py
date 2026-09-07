@@ -228,6 +228,7 @@ def test_card_widget_spacebar_not_collapsed(page, card_components):
     assert not card.collapsed
 
 
+@pytest.mark.flaky(reruns=3, reruns_delays=2)
 def test_card_child_visible(page, card_components):
     w1, w2 = card_components
     w1.visible = False

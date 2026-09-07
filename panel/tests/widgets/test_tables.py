@@ -2,7 +2,6 @@ import asyncio
 import datetime as dt
 import random
 import string
-import sys
 
 from zoneinfo import ZoneInfo
 
@@ -2873,12 +2872,7 @@ def test_server_cell_click_async_event():
 
     # Ensure multiple callbacks started concurrently
     wait_until(lambda: len(counts) >= 1 and max(counts) > 1)
-
-    if sys.platform == 'win32':
-        # On Windows stopping the server loop at teardown abandons any pending
-        # callbacks, leaking "coroutine 'async_execute.<locals>.wrapped' was
-        # never awaited" warnings. Drain all callbacks before returning.
-        wait_until(lambda: done[0] == n_events)
+    wait_until(lambda: done[0] == n_events)
 
 def test_tabulator_pagination_remote_cell_click_event():
     df = makeMixedDataFrame()

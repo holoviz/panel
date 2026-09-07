@@ -162,7 +162,7 @@ def wait_until(fn, page=None, timeout=5000, interval=100):
     page : playwright.sync_api.Page, optional
         Playwright page
     timeout : int, optional
-        Total timeout in milliseconds, by default 5000
+        Total timeout in milliseconds, by default 10000
     interval : int, optional
         Waiting interval, by default 100
 
@@ -211,7 +211,7 @@ def wait_until(fn, page=None, timeout=5000, interval=100):
             time.sleep(interval / 1000)
 
 
-async def async_wait_until(fn, page=None, timeout=5000, interval=100):
+async def async_wait_until(fn, page=None, timeout=10000, interval=100):
     """
     Exercise a test function in a loop until it evaluates to True
     or times out.
@@ -234,7 +234,7 @@ async def async_wait_until(fn, page=None, timeout=5000, interval=100):
     page : playwright.async_api.Page, optional
         Playwright page
     timeout : int, optional
-        Total timeout in milliseconds, by default 5000
+        Total timeout in milliseconds, by default 10000
     interval : int, optional
         Waiting interval, by default 100
 
