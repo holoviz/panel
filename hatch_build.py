@@ -49,7 +49,11 @@ def bundle_resources():
         raise e
 
 def build_ui_bundle():
-    if not (BASE_DIR / "panel" / "ui").is_dir():
+    ui_dir = BASE_DIR / "panel" / "ui"
+    # While panel.ui only re-exports components implemented elsewhere there is
+    # no ESM source to compile, and find_module_bundles would pick up the
+    # re-exported components and try to rebuild their foreign bundle.
+    if not any(ui_dir.rglob("*.jsx")):
         return
 
     sys.path.insert(0, str(BASE_DIR))
