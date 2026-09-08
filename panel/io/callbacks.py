@@ -80,8 +80,14 @@ class PeriodicCallback(param.Parameterized):
     @param.depends('period', watch=True)
     def _update_period(self):
         if self._cb:
+            # stop() zeroes the counter and start() re-stamps the start time,
+            # so both are carried across the restart.
+            counter, start_time = self.counter, self._start_time
             self.stop()
             self.start()
+            with param.discard_events(self):
+                self.counter = counter
+            self._start_time = start_time
 
     def _exec_callback(self, post=False, busy_event_id=None):
         try:
