@@ -23,6 +23,43 @@ from panel.pane import PaneBase, Plotly
 
 
 @plotly_available
+@pytest.mark.parametrize('backend', ['numpy', 'polars'])
+@pytest.mark.parametrize('trace_type', ['scatter', 'parcoords'])
+def test_plotly_shared_figure_keeps_nested_arrays(document, comm, backend, trace_type):
+    as_array = np.asarray if backend == 'numpy' else pytest.importorskip('polars').Series
+    if trace_type == 'scatter':
+        fig = go.Figure(go.Scatter(
+            x=[1, 2], y=[3, 4],
+            marker={'color': as_array(['red', 'blue']), 'angle': as_array([0, 90]), 'symbol': 'arrow'},
+        ))
+        expected = {'marker.color': ['red', 'blue'], 'marker.angle': [0, 90]}
+    else:
+        fig = go.Figure(go.Parcoords(dimensions=[
+            {'label': 'first', 'values': as_array([1, 2])},
+            {'label': 'second', 'values': as_array([3, 4])},
+        ]))
+        expected = {'dimensions.0.values': [1, 2], 'dimensions.1.values': [3, 4]}
+
+    panes = []
+    try:
+        for _ in range(2):
+            pane = Plotly(fig)
+            model = pane.get_root(document, comm)
+            panes.append((pane, model))
+            for key, values in expected.items():
+                np.testing.assert_array_equal(model.data_sources[0].data[key][0], values)
+        if trace_type == 'scatter':
+            np.testing.assert_array_equal(fig.data[0].marker.color, ['red', 'blue'])
+            np.testing.assert_array_equal(fig.data[0].marker.angle, [0, 90])
+        else:
+            np.testing.assert_array_equal(fig.data[0].dimensions[0].values, [1, 2])
+            np.testing.assert_array_equal(fig.data[0].dimensions[1].values, [3, 4])
+    finally:
+        for pane, model in panes:
+            pane._cleanup(model)
+
+
+@plotly_available
 def test_get_plotly_pane_type_from_figure():
     trace = go.Scatter(x=[0, 1], y=[2, 3])
     fig = go.Figure([trace])
