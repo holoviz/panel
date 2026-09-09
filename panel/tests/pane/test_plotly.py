@@ -1,13 +1,10 @@
 import datetime as dt
 
-from importlib.util import find_spec
-
 import pytest
 
 try:
     import plotly
     import plotly.express as px
-    import plotly.figure_factory as ff
     import plotly.graph_objs as go
     import plotly.io as pio
     pio.templates.default = None
@@ -213,20 +210,14 @@ def test_clean_relayout_data():
     }
 
 
-@pytest.mark.skipif(not find_spec("scipy"), reason="requires scipy")
 @plotly_available
 def test_plotly_swap_traces(document, comm):
     data_bar = pd.DataFrame({'Count': [1, 2, 3, 4], 'Category': ["A", "B", "C", "D"]})
     data_cts = np.random.randn(1000)
 
     bar_plot = px.bar(x=data_bar["Category"], y=data_bar["Count"])
-    dist_plot = ff.create_distplot(
-        [data_cts],
-        ["distplot"],
-        bin_size=0.5,
-        show_hist=False,
-        show_rug=False,
-        histnorm="probability",
+    dist_plot = go.Figure(
+        go.Scatter(x=list(range(500)), y=np.sort(data_cts)[:500], mode='lines', name='distplot')
     )
 
     plotly = Plotly(bar_plot)
