@@ -1,6 +1,6 @@
 # Components Overview
 
-Panel is a library that provides a lot of object types and while building an app, even a simple one, you will create and interact with many of them. Compare this for instance to the Pandas library, with which you'll normally interact with just a few object types (e.g. `Series`, `DataFrame`). It is important for you to understand the differences between the objects Panel offers and how you can use them.
+Panel is a library that provides a comprehensive collection of object(s?) / types. While building an app, even a simple one, you will create and interact with many of them. Compare this for instance to the Pandas library, where you will normally interact with just a few object types (e.g. `Series`, `DataFrame`). It is important for you to understand the differences between the objects / object types? Panel offers and how you can use them.
 
 ```{pyodide}
 import panel as pn
@@ -8,7 +8,7 @@ import panel as pn
 pn.extension(notifications=True)
 ```
 
-The main objects that Panel provides, and that we are going to call *components* hereafter, short for *visual components*, include:
+The main object categories (types?) that Panel provides, and that we are going to call *components* hereafter, short for *visual components*, include:
 
 - *Widgets*: widgets are components, usually quite small even if there are exceptions, that allow your users to interact with your app. Most importantly, they allow you to get user input! Examples include a text input, a checkbox, a slider, etc.
 - *Panes*: panes are wrappers around some data that allow you to render that data, possibly customizing the rendering. Panel is known to support many data types, especially from the PyData ecosystem. You can indeed display a Pandas DataFrame, a Plotly plot, a Matplotlib plot, an Altair plot, all together on the same app! You can of course display HTML text or just raw text. Panes aren't limited to rendering data statically, they can allow for some user interactions and state syncing, like for instance the `Audio` or `Vega` panes.
@@ -80,7 +80,7 @@ Widgets **all** have a `value` *Parameter* that holds the widget state and that 
 
 :::{note}
 
-One gotcha that doesn't only apply to the `value` *Parameter* but that you are more likely to encounter with this *Parameter* than others is when it is referencing a mutable data structure that you mutate in-place. Take for example a `MultiSelect` widget whose `value` is a `list`. If you programmatically update that list directly, with for example `append` or `extend`, Panel will not be able to detect that change. In which case you need to explicitly trigger updates with `w_multiselect.param.trigger('value')` that will run all the same underlying machinery as if you were setting the *Parameter* to a new value. A notable widget that holds a multable datastructure is the `Tabulator` widget whose `value` is a Pandas DataFrame that can be updated in-place with e.g. `df.loc[0, 'A'] = new_value`, its `patch` method allows to both update the data and the user interface.
+One gotcha that doesn't only apply to the `value` *Parameter* , but that you are more likely to encounter with this *Parameter* than others is when it is referencing a mutable data structure that you mutate in-place. Take for example a `MultiSelect` widget whose `value` is a `list`. If you programmatically update that list directly, with for example `append` or `extend`, Panel will not be able to detect that change. In which case you need to explicitly trigger updates with `w_multiselect.param.trigger('value')` that will run all the same underlying machinery as if you were setting the *Parameter* to a new value. A notable widget that holds a multable datastructure is the `Tabulator` widget whose `value` is a Pandas DataFrame that can be updated in-place with e.g. `df.loc[0, 'A'] = new_value`, its `patch` method allows to both update the data and the user interface.
 :::
 
 ```{pyodide}
@@ -144,7 +144,7 @@ pn.widgets.TextInput(label='Age:')
 
 #### `description`
 
-The `description` *Parameter* was added in Panel 1.0 to some widgets. It adds a tooltip icon next to the widget label, it supports rendering HTML content.
+The `description` *Parameter* was added in Panel 1.0 to some widgets. It adds a tooltip icon next to the widget label, and it supports rendering HTML content.
 
 ```{pyodide}
 pn.widgets.Select(
@@ -195,7 +195,7 @@ p_md.object = '# New title'
 
 ### Indicators
 
-Indicators are useful to show transient state (e.g. progress bar), a numerical indicator or a text indicator (e.g. tooltip). They sit in between widgets and panes, they have a `value` *Parameter* that holds their state but cannot be modified from the user interface.
+Indicators are useful to show transient state (e.g. progress bar), a numerical indicator or a text indicator (e.g. tooltip). They sit in between widgets and panes, they have a `value` *Parameter* that holds their state, but that cannot be modified from the user interface.
 
 ```{pyodide}
 i_number = pn.indicators.Number(
