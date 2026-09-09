@@ -96,26 +96,6 @@ def test_normalize_app_path_prefix_boundary():
     assert _normalize_app_path('/pre/user/alice/ws', '/pre', suffix='/ws') == '/user/alice'
 
 
-def test_fastapi_route_context_prefix_boundary():
-    fastapi = pytest.importorskip("fastapi")
-    from panel.io.fastapi import _route_context
-
-    request = fastapi.Request({
-        'type': 'http',
-        'method': 'GET',
-        'scheme': 'http',
-        'path': '/prefix/user/alice',
-        'query_string': b'',
-        'headers': [],
-        'client': ('127.0.0.1', 5000),
-        'server': ('127.0.0.1', 8000),
-        'path_params': {'name': 'alice'},
-    })
-    route_params, app_path = _route_context(request, prefix='/pre')
-    assert route_params == {'name': 'alice'}
-    assert app_path == '/prefix/user/alice'
-
-
 @pytest.mark.xdist_group(name="server")
 def test_server_update(html_server_session):
     html, server, session, port = html_server_session
@@ -291,8 +271,8 @@ def test_server_template_static_resources(server_implementation):
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
 
-#@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
-def test_server_template_static_resources_with_prefix():
+@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
+def test_server_template_static_resources_with_prefix(server_implementation):
     template = BootstrapTemplate()
 
     r = serve_and_request({'template': template}, prefix="/prefix", suffix="/prefix/static/extensions/panel/bundled/bootstraptemplate/bootstrap.css")
@@ -301,8 +281,8 @@ def test_server_template_static_resources_with_prefix():
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
 
-#@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
-def test_server_template_static_resources_with_prefix_relative_url():
+@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
+def test_server_template_static_resources_with_prefix_relative_url(server_implementation):
     template = BootstrapTemplate()
 
     r = serve_and_request({'template': template}, prefix='/prefix', suffix="/prefix/template")
@@ -447,8 +427,8 @@ def test_server_on_session_created(server_implementation):
     assert len(session_contexts) == 3
 
 
-#@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
-def test_server_on_session_destroyed():
+@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
+def test_server_on_session_destroyed(server_implementation):
     session_contexts = []
     def append_session(session_context):
         session_contexts.append(session_context)
@@ -824,8 +804,6 @@ def test_server_route_context_size_is_capped(port, server_implementation):
 
 
 def test_server_route_params_autoload_js(port, server_implementation):
-    if server_implementation == 'fastapi':
-        pytest.skip("bokeh_fastapi does not expose an autoload.js endpoint.")
     route_params = []
     app_urls = []
 
@@ -852,17 +830,10 @@ def test_server_dynamic_ws_endpoint_resolution(port, server_implementation):
 
     serve_and_wait({'/user/{name}': app}, port=port)
     ws = requests.get(f"http://localhost:{port}/user/alice/ws")
-    if server_implementation == 'tornado':
-        assert ws.status_code == 400
-    else:
-        # FastAPI exposes websocket routes that are not accessible via HTTP GET.
-        assert ws.status_code == 404
+    assert ws.status_code == 400
 
 
 def test_server_dynamic_metadata_endpoint_resolution(port, server_implementation):
-    if server_implementation == 'fastapi':
-        pytest.skip("bokeh_fastapi does not expose a metadata endpoint.")
-
     def app():
         return 'route'
 
@@ -872,9 +843,6 @@ def test_server_dynamic_metadata_endpoint_resolution(port, server_implementation
 
 
 def test_server_dynamic_static_file_route(port, server_implementation):
-    if server_implementation == 'fastapi':
-        pytest.skip("bokeh_fastapi does not expose per-app static endpoints.")
-
     def app():
         return 'route'
 
@@ -892,10 +860,8 @@ def test_server_dynamic_routes_with_prefix_endpoint_access(port, server_implemen
     assert app_page.status_code == 200
     duplicate_prefix = requests.get(f"http://localhost:{port}/prefix/prefix/user/alice")
     assert duplicate_prefix.status_code == 404
-
-    if server_implementation == 'tornado':
-        metadata = requests.get(f"http://localhost:{port}/prefix/user/alice/metadata")
-        assert metadata.status_code == 200
+    metadata = requests.get(f"http://localhost:{port}/prefix/user/alice/metadata")
+    assert metadata.status_code == 200
 
 
 def test_fastapi_prefixed_route_registration_no_double_prefix():
@@ -908,24 +874,30 @@ def test_fastapi_prefixed_route_registration_no_double_prefix():
         return 'route'
 
     application = add_applications({'/user/{name}': panel_app}, app=app, prefix='/prefix')
-    paths = {route.path for route in application.app.router.routes if hasattr(route, "path")}
-    assert '/prefix/user/{name}' in paths
-    assert '/prefix/user/{name}/ws' in paths
-    assert '/prefix/prefix/user/{name}' not in paths
-    assert '/prefix/user/{name}/metadata' not in paths
-    assert '/prefix/user/{name}/autoload.js' not in paths
+
+    # The applications are served by the ASGI application, not registered as
+    # FastAPI routes, so the prefix must only be applied once when routing.
+    assert set(application.applications) == {'/user/{name}'}
+    asgi = application.asgi
+    resolved = asgi._resolve_route(asgi._route_path({'path': '/prefix/user/alice'}))
+    assert resolved is not None
+    assert resolved[1] == ''
+    assert resolved[2] == {'name': 'alice'}
+    assert asgi._resolve_route(asgi._route_path({'path': '/prefix/prefix/user/alice'})) is None
+    assert asgi._route_path({'path': '/user/alice'}) == ''
 
 
-def test_fastapi_synthetic_request_preserves_cookies(monkeypatch, port):
+@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
+def test_server_request_preserves_cookies(monkeypatch, port, server_implementation):
     seen_cookie_values = []
-    original_process_request = Application.process_request
+    original = Application._extra_request_data
 
-    def wrapped_process_request(self, request):
+    def wrapped(self, request):
         user_cookie = request.cookies.get('user')
         seen_cookie_values.append(None if user_cookie is None else user_cookie.value)
-        return original_process_request(self, request)
+        return original(self, request)
 
-    monkeypatch.setattr(Application, 'process_request', wrapped_process_request)
+    monkeypatch.setattr(Application, '_extra_request_data', wrapped)
 
     def app():
         return 'route'

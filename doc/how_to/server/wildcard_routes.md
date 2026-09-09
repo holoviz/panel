@@ -99,15 +99,16 @@ Then `pn.state.route_params` contains the named captures:
 
 ## Backend compatibility
 
-- **Tornado (`panel serve`, `panel.io.server.serve`)**
+- **Tornado (`panel serve`, `panel serve --server tornado`, `panel.io.server.serve`)**
   - Supports regex-style routes, e.g. `"/user/([^/]+)"` and named groups.
   - Supports path-template syntax, which is normalized to Tornado-compatible patterns (for example `"/user/{name}"`).
-- **FastAPI (`panel.io.fastapi.serve`)**
+- **ASGI (`panel serve --server fastapi|asgi`, `panel.io.fastapi.serve`, `panel.io.django.get_asgi_application`)**
   - Supports path-template syntax, e.g. `"/user/{name}"`, `"/files/{filepath:path}"`.
+  - Does not support regex routes, i.e. the pattern is matched literally apart from the `{name}` templates.
 
 ## Best practices
 
-- Prefer path-template syntax (`{name}`, `{name:path}`) when writing apps intended to run on both Tornado and FastAPI.
+- Prefer path-template syntax (`{name}`, `{name:path}`) when writing apps intended to run on both Tornado and the ASGI implementations.
 - If you use regex syntax, prefer non-greedy segment patterns such as `([^/]+)` for path segments.
 - Prefer explicit groups over very broad patterns like `(.*)` unless you specifically need to capture slashes.
 - Use `pn.state.app_url` when you need the concrete matched application URL for the current session.

@@ -142,7 +142,38 @@ options:
   --reuse-sessions      Whether to reuse sessions when serving the initial request.
   --global-loading-spinner
                         Whether to add a global loading spinner to the application(s).
+  --server {tornado,fastapi,asgi}
+                        The server implementation to serve the application(s) with. 'tornado' serves on the Bokeh/Tornado server, 'asgi' and 'fastapi' serve the ASGI application on uvicorn.
 ```
+
+## Choosing a server implementation
+
+By default `panel serve` runs the application(s) on the Bokeh/Tornado server. The `--server` option lets you pick a different implementation:
+
+- `tornado` (the default): the Bokeh/Tornado server.
+- `asgi`: Panel's ASGI application served by [uvicorn](https://www.uvicorn.org/).
+- `fastapi`: the same ASGI application mounted on a [FastAPI](https://fastapi.tiangolo.com/) application and served by uvicorn.
+
+```bash
+panel serve app.py --server fastapi
+```
+
+Both ASGI implementations require `uvicorn` to be installed (and `fastapi` additionally requires `fastapi`):
+
+```bash
+pip install uvicorn fastapi
+```
+
+The ASGI implementations support the same options as the Tornado server, with the exception of a few options that are implemented as Tornado request handlers or rely on Tornado specific functionality, and will error out if you supply them:
+
+- `--rest-provider` and `--rest-session-info`
+- `--enable-xsrf-cookies`
+- `--num-procs` (run multiple uvicorn processes behind a load balancer instead)
+- `--plugins` on `--server asgi`. On `--server fastapi` the plugin module must declare a FastAPI `APIRouter` instead of Tornado request handlers, see [Add custom endpoints](endpoints).
+
+The Tornado specific websocket tuning options (`--websocket-compression-level` and `--websocket-compression-mem-level`) are also ignored.
+
+If you want more control over the ASGI server, or need to serve Panel apps alongside your own routes, embed Panel in your own application instead. See the [FastAPI](../integrations/FastAPI) and [Django](../integrations/Django) how-to guides.
 
 To turn a notebook into a deployable app simply append `.servable()` to one or more Panel objects, which will add the app to Bokeh's `curdoc`, ensuring it can be discovered by Bokeh server on deployment. In this way it is trivial to build dashboards that can be used interactively in a notebook and then seamlessly deployed on Bokeh server.
 

@@ -15,6 +15,7 @@ from bokeh.models import ColumnDataSource, LayoutDOM
 from ..config import config
 from ..io.resources import bundled_files
 from ..util import classproperty
+from .resource import ExternalResourcesMixin
 
 VEGA_VERSION = "6.1.2"
 VEGA_LITE_VERSION = "6.3.0"
@@ -34,7 +35,7 @@ class VegaEvent(ModelEvent):
         super().__init__(model=model)
 
 
-class VegaPlot(LayoutDOM):
+class VegaPlot(LayoutDOM, ExternalResourcesMixin):
     """
     A Bokeh model that wraps around a Vega plot and renders it inside
     a Bokeh plot.

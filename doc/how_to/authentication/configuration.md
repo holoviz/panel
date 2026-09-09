@@ -226,3 +226,18 @@ pn.serve(app, oauth_provider='github', oauth_key=..., oauth_secret=..., cookie_s
 ```
 
 For a generic, password, or code provider you may also have to provide the `TOKEN_URL`, `AUTHORIZE_URL` and `USER_URL` via the `--oauth-extra-params` CLI argument, `OAUTH_EXTRA_PARAMS` environment variable or in Python using the `oauth_extra_params` keyword argument.
+
+## Server implementations
+
+Authentication is not specific to the server Panel runs on. The same configuration applies whether you serve with `panel serve` (on either `--server tornado` or `--server fastapi`), with `pn.serve` or by embedding Panel in an ASGI application, where the options are passed to [`panel.io.fastapi.add_applications`](../integrations/FastAPI) or [`panel.io.django.get_asgi_application`](../integrations/Django):
+
+```python
+add_applications(
+    {"/app": app}, app=fastapi_app, oauth_provider='github', oauth_key=...,
+    oauth_secret=..., cookie_secret=..., oauth_encryption_key=...
+)
+```
+
+The login and logout endpoints, the token refresh behavior and the signed cookies are shared implementations, so a session established against one server is accepted by another configured with the same `cookie_secret` and `oauth_encryption_key`. This means you can run a mix of implementations behind one load balancer, and switch between them without invalidating anyone's session.
+
+When embedding Panel in another web framework only the routes Panel owns are authenticated. Endpoints you declared yourself are served by your own framework and have to be secured with its own mechanisms.

@@ -37,6 +37,7 @@ from param.parameterized import (
 
 from .io.document import hold, unlocked
 from .io.notebook import push
+from .io.resource_spec import lazy_load_available, resource_spec
 from .io.resources import (
     CDN_DIST, get_dist_path, loading_css, patch_stylesheet, process_raw_css,
     resolve_stylesheet, stylesheet_url,
@@ -2149,21 +2150,29 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
         self, doc: Document, root: Model | None = None,
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
-        model = _BkReactiveHTML(**self._get_properties(doc))
-        if comm and not self._loaded():
-            self.param.warning(
-                f'{type(self).__name__} was not imported on instantiation and may not '
-                'render in a notebook. Restart the notebook kernel and '
-                'ensure you load it as part of the extension using:'
-                f'\n\npn.extension(\'{self._extension_name}\')\n'
-            )
-        elif root is not None and not self._loaded() and root.ref['id'] in state._views:
-            self.param.warning(
-                f'{type(self).__name__} was not imported on instantiation may not '
-                'render in the served application. Ensure you add the '
-                'following to the top of your application:'
-                f'\n\npn.extension(\'{self._extension_name}\')\n'
-            )
+        model = _BkReactiveHTML(
+            external_resources=resource_spec(type(self)),
+            **self._get_properties(doc)
+        )
+        # See lazy_load: with lazy resource loading an undeclared component
+        # still renders, so this only warns where that cannot work.
+        if not self._loaded() and (comm or (root is not None and root.ref['id'] in state._views)):
+            if lazy_load_available(notebook=bool(comm)):
+                self.param.log(
+                    param.DEBUG,
+                    f'{type(self).__name__} was not imported on instantiation and will '
+                    'load the resources it needs on demand. To load them up front '
+                    'ensure you load it as part of the extension using:'
+                    f'\n\npn.extension(\'{self._extension_name}\')\n'
+                )
+            else:
+                where = 'a notebook' if comm else 'the served application'
+                self.param.warning(
+                    f'{type(self).__name__} was not imported on instantiation and may '
+                    f'not render in {where}. Ensure you load it as part of the '
+                    'extension using:'
+                    f'\n\npn.extension(\'{self._extension_name}\')\n'
+                )
         if self._extension_name:
             ReactiveMetaBase._loaded_extensions.add(self._extension_name)
 

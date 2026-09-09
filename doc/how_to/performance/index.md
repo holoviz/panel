@@ -26,6 +26,13 @@ Discover how to enable throttling to reduce the number of events being processed
 Discover how to improve performance by using the `hold` context manager and decorator to batch updates to multiple components.
 :::
 
+:::{grid-item-card} {octicon}`package-dependents;2.5em;sd-mr-1 sd-animate-grow50` Control when resources load
+:link: resources
+:link-type: doc
+
+Discover when to declare extensions up front and when to let components load their libraries on demand.
+:::
+
 ::::
 
 ```{toctree}
@@ -36,4 +43,5 @@ Discover how to improve performance by using the `hold` context manager and deco
 reuse_sessions
 throttling
 hold
+resources
 ```

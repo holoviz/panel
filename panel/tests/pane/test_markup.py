@@ -13,7 +13,9 @@ from panel import config
 from panel.pane import (
     HTML, JSON, DataFrame, Markdown, PaneBase, Str,
 )
-from panel.tests.util import not_windows, streamz_available
+from panel.tests.util import (
+    not_windows, polars_available, pyarrow_available, streamz_available,
+)
 
 
 def test_get_markdown_pane_type():
@@ -26,6 +28,24 @@ def test_get_dataframe_pane_type():
 def test_get_series_pane_type():
     ser = pd.Series([1, 2, 3])
     assert PaneBase.get_pane_type(ser) is DataFrame
+
+@polars_available
+def test_get_polars_dataframe_pane_type():
+    import polars as pl
+    df = pl.DataFrame({"A": [1, 2, 3]})
+    assert PaneBase.get_pane_type(df) is DataFrame
+
+@polars_available
+def test_get_polars_series_pane_type():
+    import polars as pl
+    ser = pl.Series("A", [1, 2, 3])
+    assert PaneBase.get_pane_type(ser) is DataFrame
+
+@pyarrow_available
+def test_get_pyarrow_table_pane_type():
+    import pyarrow as pa
+    table = pa.table({"A": [1, 2, 3]})
+    assert PaneBase.get_pane_type(table) is DataFrame
 
 @pytest.fixture
 async def streamz_df():
@@ -262,6 +282,94 @@ def test_dataframe_pane_pandas(document, comm):
     # Cleanup
     pane._cleanup(model)
     assert pane._models == {}
+
+@polars_available
+def test_dataframe_pane_polars(document, comm):
+    import polars as pl
+    pane = DataFrame(pl.DataFrame({"A": [1, 2, 3]}))
+
+    model = pane.get_root(document, comm=comm)
+    assert pane._models[model.ref['id']][0] is model
+    assert model.text.startswith('&lt;table')
+    orig_text = model.text
+
+    pane.object = pl.DataFrame({"B": [1, 2, 3]})
+    assert pane._models[model.ref['id']][0] is model
+    assert model.text.startswith('&lt;table')
+    assert model.text != orig_text
+
+    pane._cleanup(model)
+    assert pane._models == {}
+
+@polars_available
+def test_dataframe_pane_polars_series(document, comm):
+    import polars as pl
+    pane = DataFrame(pl.Series("A", [1, 2, 3]))
+
+    model = pane.get_root(document, comm=comm)
+    assert model.text.startswith('&lt;table')
+
+    pane._cleanup(model)
+
+@polars_available
+def test_dataframe_pane_polars_pandas_conversion_failure_renders_styled_table(document, comm):
+    import polars as pl
+    df = pl.DataFrame({"A": [1, 2, 3], "B": ["a", "b", None]})
+    pane = DataFrame(df, text_align='center')
+
+    with patch.object(DataFrame, '_narwhals_to_pandas', side_effect=ModuleNotFoundError):
+        model = pane.get_root(document, comm=comm)
+
+    text = html.unescape(model.text)
+    assert text.startswith('<table border="0" class="panel-df center-align">')
+    assert '<thead>\n<tr><th>A</th><th>B</th></tr>\n</thead>' in text
+    assert '<tr><td>1</td><td>a</td></tr>' in text
+    assert '<tr><td>3</td><td>NaN</td></tr>' in text
+
+    pane._cleanup(model)
+
+@polars_available
+def test_dataframe_pane_polars_pandas_conversion_failure_truncates(document, comm):
+    import polars as pl
+    df = pl.DataFrame({"A": [1, 2, 3, 4, 5], "B": [1, 2, 3, 4, 5], "C": [1, 2, 3, 4, 5]})
+    pane = DataFrame(df, max_rows=3, max_cols=2, show_dimensions=True)
+
+    with patch.object(DataFrame, '_narwhals_to_pandas', side_effect=ModuleNotFoundError):
+        model = pane.get_root(document, comm=comm)
+
+    text = html.unescape(model.text)
+    assert '<tr><th>A</th><th>...</th><th>C</th></tr>' in text
+    assert '<tr><td>...</td><td>...</td><td>...</td></tr>' in text
+    assert text.count('<tr>') == 5  # header, 2 head rows, ellipsis row, 1 tail row
+    assert text.endswith('<p>5 rows × 3 columns</p>')
+
+    pane._cleanup(model)
+
+@polars_available
+def test_dataframe_pane_polars_pandas_conversion_failure_escapes(document, comm):
+    import polars as pl
+    df = pl.DataFrame({"url": ["<a href='https://panel.holoviz.org/'>Panel</a>"]})
+
+    with patch.object(DataFrame, '_narwhals_to_pandas', side_effect=ModuleNotFoundError):
+        pane = DataFrame(df)
+        model = pane.get_root(document, comm=comm)
+        assert '&lt;a href=' in html.unescape(model.text)
+        pane._cleanup(model)
+
+        pane = DataFrame(df, escape=False)
+        model = pane.get_root(document, comm=comm)
+        assert "<td><a href='https://panel.holoviz.org/'>Panel</a></td>" in html.unescape(model.text)
+        pane._cleanup(model)
+
+@pyarrow_available
+def test_dataframe_pane_pyarrow_table(document, comm):
+    import pyarrow as pa
+    pane = DataFrame(pa.table({"A": [1, 2, 3]}))
+
+    model = pane.get_root(document, comm=comm)
+    assert model.text.startswith('&lt;table')
+
+    pane._cleanup(model)
 
 def test_dataframe_pane_supports_escape(document, comm):
     url = "<a href='https://panel.holoviz.org/'>Panel</a>"

@@ -24,9 +24,9 @@ class GBM(param.Parameterized):
     # refresh the plot only on button refresh click
     @param.depends('refresh.clicks')
     def update_plot(self, **kwargs):
-        df_s = pd.DataFrame(index=range(0, self.n_observations))
+        df_s = pd.DataFrame(index=range(self.n_observations))
 
-        for s in range(0, self.n_simulations):
+        for s in range(self.n_simulations):
             name_s = f"stock_{s}"
             df_s[name_s] = self.gbm(spot=100,
                                     mean=self.mean/100,

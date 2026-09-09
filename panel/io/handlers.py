@@ -34,7 +34,7 @@ from .reload import record_modules
 from .state import set_curdoc, state
 
 if t.TYPE_CHECKING:
-    from collections.abc import Callable, Iterator
+    from collections.abc import Callable, Iterator, Sequence
     from types import ModuleType
 
     from bokeh.core.types import PathLike
@@ -560,7 +560,7 @@ class PanelCodeHandler(CodeHandler):
         self,
         *,
         source: str | None = None,
-        filename: PathLike, argv: list[str] = [],
+        filename: PathLike, argv: Sequence[str] = [],
         package: ModuleType | None = None,
         runner: PanelCodeRunner | None = None
     ) -> None:

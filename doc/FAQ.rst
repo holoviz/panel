@@ -186,7 +186,7 @@ The `technology comparisons section <https://panel.holoviz.org/explanation/index
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+--------------------+
 |Supports Altair/Vega plots            | Yes             | Yes                  | No              | Yes                | With a separate adapter| Yes                |
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+--------------------+
-|Supports Django and Django channels   | Yes             | No                   | Yes             | No                 | No                     | No                 |
+|Supports embedding in Django          | Yes             | No                   | Yes             | No                 | No                     | No                 |
 +--------------------------------------+-----------------+----------------------+-----------------+--------------------+------------------------+--------------------+
 |Allows separating business logic from | Yes             | No                   | No              | No                 | No                     | No                 |
 |presentation                          |                 |                      |                 |                    |                        |                    |

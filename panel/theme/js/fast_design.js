@@ -6,7 +6,7 @@ import {
   PaletteRGB,
   SwatchRGB,
   provideFASTDesignSystem,
-} from '../../@microsoft/fast-components@2.30.6/dist/fast-components.js'
+} from '../../@microsoft/fast-components@2.30.6/dist/fast-components.min.js'
 
 const hexRGBRegex = /^#((?:[0-9a-f]{6}|[0-9a-f]{3}))$/i
 

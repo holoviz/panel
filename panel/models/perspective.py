@@ -21,7 +21,6 @@ THEME_URL = f"{config.npm_cdn}/{THEME_PATH}"
 PANEL_CDN = f"{config.npm_cdn}/@holoviz/panel@{JS_VERSION}/dist/bundled/perspective/{THEME_PATH}"
 
 CSS_URLS = [
-    f"{THEME_URL}fonts.css",
     f"{THEME_URL}themes.css",
     f"{THEME_URL}variables.css",
 ]

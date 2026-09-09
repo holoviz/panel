@@ -8,11 +8,14 @@ configuration in a Resources object.
 :param js_files: a list of URIs for JS files to include
 :type js_files: list[str]
 
-:param js_modules: a list of URIs for JS modules to include
-:type js_files: list[str]
+:param js_modules: a list of (URI, exported global name or None) pairs
+:type js_modules: list[tuple[str, str | None]]
 
 :param js_raw: a list of raw JS snippets to put between ``<script>`` tags
 :type js_raw: list[str]
+
+:param resource_declarations: resource specs already satisfied by the tags above
+:type resource_declarations: dict
 
 #}
 <script type="esms-options">{"shimMode": true}</script>
@@ -21,16 +24,38 @@ configuration in a Resources object.
 <script type="text/javascript" src="{{ file }}"></script>
 {% endfor %}
 
-{% for file in js_modules %}
+{% for file, export in js_modules %}
+{%- if export %}
+<script type="module">
+  // Namespace import rather than a default import, matching what the resource
+  // registry's module wrapper assigns, so a library that only has named
+  // exports resolves to its namespace instead of to undefined. The import also
+  // loads the module, so it must not get a bare tag as well. A path relative
+  // to the page needs the ./ prefix an import specifier requires, while a
+  // root-relative or absolute url has to be left alone.
+  import * as ns from "{% if not file.startswith(('http', '/', './', '../')) %}./{% endif %}{{ file }}";
+  window.{{ export }} = ns.default ?? ns
+</script>
+{%- else %}
 <script type="module" src="{{ file }}"></script>
+{%- endif %}
 {% endfor %}
 
-{%- for name, file in js_module_exports.items() %}
-<script type="module">
-  import {{ name }} from "{% if not file.startswith('http') %}./{% endif %}{{ file }}";
-  window.{{ name }} = {{ name }}
+{%- if resource_declarations %}
+<script type="text/javascript">
+  // Tells the panel.js resource registry which component libraries the tags
+  // above have already satisfied, so nothing is fetched a second time. The
+  // queue covers the case where panel.js itself has not executed yet.
+  (function() {
+    const declared = {{ resource_declarations|json }};
+    if (window.__panel_resources__ != null) {
+      window.__panel_resources__.declare(declared);
+    } else {
+      (window.__panel_resources_declared__ = window.__panel_resources_declared__ || []).push(declared);
+    }
+  })();
 </script>
-{%- endfor %}
+{%- endif %}
 
 {%- for js in js_raw %}
 <script type="text/javascript">

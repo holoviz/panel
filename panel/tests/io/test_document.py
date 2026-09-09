@@ -16,8 +16,9 @@ import panel as pn
 
 from panel.io.document import (
     _UNCONNECTED_EVENTS, _WRITE_BLOCK, _cleanup_doc, _destroy_document,
-    _write_tasks, extra_socket_handlers, hold, schedule_write_events, unlocked,
-    write_events,
+    _is_write_blocked, _socket_dispatcher, _write_tasks, dispatch_django,
+    dispatch_tornado, extra_socket_handlers, hold, schedule_write_events,
+    unlocked, write_events,
 )
 from panel.io.state import _state, set_curdoc, state
 from panel.tests.util import serve_and_request, wait_until
@@ -264,9 +265,69 @@ class _FakeSocket:
 
 
 class _FakeConn:
-    def __init__(self, lock_held):
-        self._socket = _FakeSocket(lock_held)
+    def __init__(self, lock_held, socket_cls=_FakeSocket):
+        self._socket = socket_cls(lock_held)
         self.protocol = _FakeProtocol()
+
+
+def _asgi_transport():
+    """
+    Builds the real ASGI websocket transport Bokeh writes to, whose write
+    lock wraps an asyncio.Lock rather than exposing Tornado's semaphore.
+    """
+    from bokeh.server.asgi import _ASGIWebSocketTransport
+    return _ASGIWebSocketTransport(lambda event: None, supports_close_reason=True)
+
+
+class _FakeASGISocket:
+    """An ASGI transport shaped socket which can be handed a held lock."""
+
+    def __init__(self, lock_held):
+        from bokeh.server.asgi import _WriteLock
+        self.write_lock = _WriteLock()
+        if lock_held:
+            # Acquiring is a coroutine, so lock the wrapped asyncio.Lock
+            # directly to hold the lock without an event loop.
+            self.write_lock._lock._locked = True
+
+
+def test_socket_dispatcher_resolves_transport():
+    from bokeh.server.asgi import _ASGIWebSocketTransport
+    from tornado.websocket import WebSocketHandler
+
+    import panel.io.asgi as asgi_module
+
+    class FakeTornadoSocket(WebSocketHandler):
+        def __init__(self):
+            pass
+
+    class ASGISubclass(_ASGIWebSocketTransport):
+        pass
+
+    assert _socket_dispatcher(FakeTornadoSocket()) is dispatch_tornado
+    assert _socket_dispatcher(_asgi_transport()) is asgi_module.dispatch_asgi
+    # A subclass of a registered transport must resolve via the MRO rather
+    # than falling through to the Django consumer API.
+    subclass = ASGISubclass(lambda event: None, supports_close_reason=True)
+    assert _socket_dispatcher(subclass) is asgi_module.dispatch_asgi
+    assert _socket_dispatcher(object()) is dispatch_django
+
+
+def test_is_write_blocked_across_transports():
+    # Tornado exposes the lock state on an internal semaphore
+    tornado_socket = _FakeSocket(lock_held=False)
+    assert not _is_write_blocked(tornado_socket)
+    tornado_socket.write_lock._block._value = 0
+    assert _is_write_blocked(tornado_socket)
+
+    # Bokeh's ASGI _WriteLock wraps an asyncio.Lock
+    asgi_socket = _asgi_transport()
+    assert not _is_write_blocked(asgi_socket)
+    asgi_socket.write_lock._lock._locked = True
+    assert _is_write_blocked(asgi_socket)
+
+    # A socket without a write lock is never blocked
+    assert not _is_write_blocked(object())
 
 
 @pytest.mark.xdist_group(name="server")
@@ -377,6 +438,37 @@ async def test_schedule_write_events_defers_serialization():
         assert written == conn.protocol.created
     finally:
         extra_socket_handlers.pop(_FakeSocket, None)
+        _WRITE_BLOCK.pop(doc, None)
+
+
+@pytest.mark.asyncio
+async def test_schedule_write_events_defers_on_asgi_socket():
+    """
+    The write lock of an ASGI transport wraps an asyncio.Lock, so it has to
+    be probed differently from Tornado's. If it is not detected, queued
+    events are serialized and written while the socket is being written to,
+    reordering messages relative to the ones Bokeh writes itself.
+    """
+    written = []
+    extra_socket_handlers[_FakeASGISocket] = lambda conn, msg=None: written.append(msg) or []
+
+    try:
+        doc = Document()
+        conn = _FakeConn(lock_held=True, socket_cls=_FakeASGISocket)
+
+        schedule_write_events(doc, [conn], [object()])
+        await asyncio.sleep(0.05)
+
+        assert conn.protocol.created == []
+        assert written == []
+
+        conn._socket.write_lock._lock._locked = False
+        await asyncio.sleep(0.05)
+
+        assert len(conn.protocol.created) == 1
+        assert written == conn.protocol.created
+    finally:
+        extra_socket_handlers.pop(_FakeASGISocket, None)
         _WRITE_BLOCK.pop(doc, None)
 
 
