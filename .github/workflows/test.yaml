@@ -49,18 +49,16 @@ jobs:
       contents: write
     steps:
       - uses: holoviz-dev/holoviz_tasks/pre-commit@11eb638302f76ec64217e2eeddfb11df1f788b54 # v1.0.2
-      - uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd # v3.0.1
-        if: needs.setup.outputs.img_change == 'true'
+
+  optimize_png:
+    name: optimize-png
+    runs-on: "ubuntu-latest"
+    permissions:
+      contents: write
+    steps:
+      - uses: holoviz-dev/holoviz_tasks/optimize-png@e9aaca7738db5d27bf34d0f69e25990b74a85eaf # v1.0.7
         with:
-          extra_args: -a --hook-stage manual oxipng || true --
-      - name: Set git credentials
-        if: needs.setup.outputs.img_change == 'true'
-        run: git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
-      - uses: stefanzweifel/git-auto-commit-action@4a55954c782fc1ea30b9056cd3e7a2b40ca8887d # v7.2.0
-        if: needs.setup.outputs.img_change == 'true'
-        with:
-          commit_message: "Optimize PNG images (lossless)"
-          file_pattern: "*.png"
+          oxipng-version: "10.1.1"
 
   setup:
     name: Setup workflow
@@ -93,8 +91,6 @@ jobs:
               - 'doc/how_to/**'
               - 'scripts/**'
               - 'lite/**'
-            img:
-              - '**/*.png'
       - name: Set matrix option
         env:
           GITHUB_EVENT_INPUTS_TARGET: ${{ github.event.inputs.target }}

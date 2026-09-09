@@ -41,11 +41,6 @@ repos:
       - id: prettier
         entry: prettier --write --ignore-unknown --no-error-on-unmatched-pattern
         types_or: [css]
-  - repo: https://github.com/oxipng/oxipng
-    rev: 628e241e23f368097883807fa6e985ccf7c00357  # frozen: v10.1.1
-    hooks:
-      - id: oxipng
-        stages: [manual]
   - repo: https://github.com/pre-commit/mirrors-eslint
     rev: 8763fc929b6232999d541a3d8eb49965a6b71afb  # frozen: v10.6.0
     hooks:
