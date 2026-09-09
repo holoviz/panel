@@ -52,7 +52,6 @@ jobs:
 
   optimize_png:
     name: optimize-png
-    needs: [setup]
     runs-on: "ubuntu-latest"
     permissions:
       contents: write
