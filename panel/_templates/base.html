@@ -10,13 +10,21 @@ Renders Bokeh models into a basic .html file.
 :param plot_script: typically the output of PLOT_SCRIPT
 :type plot_script: str
 
+:param meta: mapping of metadata to render as ``<meta>`` tags, supporting
+    the title, name, description, keywords, author, refresh and viewport keys
+:type meta: dict
+
+:param theme_managed: whether the design system manages theming itself,
+    exposed to the client as the data-theme-managed attribute
+:type theme_managed: bool
+
 Users can customize the file output by providing their own Jinja2 template
 that accepts these same parameters.
 
 #}
 {% from macros import embed %}
 <!DOCTYPE html>
-<html lang="en" {{ html_attrs | default("", true) }}>
+<html lang="en" {{ html_attrs | default("", true) }} data-theme-managed="{{ 'true' if theme_managed else 'false' }}">
   {% block head %}
   <head>
   {% block inner_head %}
@@ -30,14 +38,39 @@ that accepts these same parameters.
     {%- endif %}
     {% if manifest_url %}<link rel="manifest" href="{{ manifest_url }}">{% endif %}
     {% if theme_name == "dark"%}<style>html { background-color: #121212 }</style>{% endif %}
-  {%  block preamble -%}
-    {% if apple_icon is not defined -%}
-    <link rel="apple-touch-icon" href="{{apple_icon}}">
-    {%- endif %}
-    {% if app_favicon -%}
-    <link rel="icon" href="{{app_favicon}}">
-    {%- endif %}
-  {%- endblock %}
+  {%  block meta %}
+    {% if meta is defined and meta %}
+    {% if meta.title %}
+    <meta name="title" content="{{ meta.title }}">
+    {% endif %}
+    {% if meta.name %}
+    <meta name="name" content="{{ meta.name }}">
+    {% endif %}
+    {% if meta.description %}
+    <meta name="description" content="{{ meta.description }}">
+    {% endif %}
+    {% if meta.keywords %}
+    <meta name="keywords" content="{{ meta.keywords }}">
+    {% endif %}
+    {% if meta.author %}
+    <meta name="author" content="{{ meta.author }}">
+    {% endif %}
+    {% if meta.refresh %}
+    <meta http-equiv="refresh" content="{{ meta.refresh }}">
+    {% endif %}
+    {% if meta.viewport %}
+    <meta name="viewport" content="{{ meta.viewport }}">
+    {% endif %}
+    {% endif %}
+  {%  endblock meta %}
+  {%  block preamble %}
+    {% if apple_icon %}
+    <link rel="apple-touch-icon" href="{{ apple_icon }}">
+    {% endif %}
+    {% if app_favicon %}
+    <link rel="icon" href="{{ app_favicon }}">
+    {% endif %}
+  {%  endblock preamble %}
   {%  block resources %}
     <style>
       html, body {
@@ -47,6 +80,7 @@ that accepts these same parameters.
         margin: 0;
         padding: 0;
       }
+      {% block loader_css %}{% endblock %}
     </style>
   {%   block css_resources -%}
     {{- bokeh_css if bokeh_css }}
@@ -62,6 +96,7 @@ that accepts these same parameters.
   {% block body %}
   <body>
   {%  block inner_body %}
+  {%    block loader %}{% endblock %}
   {%    block contents %}
   {%      for doc in docs %}
   {{        embed(doc) if doc.elementid }}
@@ -73,6 +108,7 @@ that accepts these same parameters.
   {%      endfor %}
   {%    endblock contents %}
   {{ plot_script | indent(4) }}
+  {%    block loader_script %}{% endblock %}
   {%  endblock inner_body %}
   </body>
   {% endblock body%}

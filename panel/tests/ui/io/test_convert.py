@@ -12,8 +12,8 @@ pytest.importorskip("playwright")
 
 from playwright.sync_api import expect
 
-from panel.config import config
 from panel.io.convert import BOKEH_LOCAL_WHL, PANEL_LOCAL_WHL, convert_apps
+from panel.io.loading import loading_css_classes
 from panel.tests.util import http_serve_directory
 
 if not (PANEL_LOCAL_WHL.is_file() and BOKEH_LOCAL_WHL.is_file()):
@@ -196,7 +196,7 @@ def wait_for_app(http_serve, app, page, runtime, wait=True, resources=None, **kw
 
     page.goto(f"{HTTP_URL}{app_path.name[:-3]}.html")
 
-    cls = f'pn-loading pn-{config.loading_spinner}'
+    cls = ' '.join(loading_css_classes())
     expect(page.locator('body')).to_have_class(cls)
     if wait:
         expect(page.locator('body')).not_to_have_class(cls, timeout=TIMEOUT)

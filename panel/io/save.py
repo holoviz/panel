@@ -184,7 +184,7 @@ def save(
     panel: Viewable | Document | BaseTemplate,
     filename: str | os.PathLike | t.IO,
     title: str | None = None,
-    resources: BkResources | None = None,
+    resources: BkResources | str | None = None,
     template: Template | str | None = None,
     template_variables: dict[str, t.Any] | None = None,
     embed: bool = False,

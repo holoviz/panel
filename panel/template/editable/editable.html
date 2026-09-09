@@ -241,7 +241,7 @@
     if (window.localStorage) {
       window.localStorage.removeItem(window.location.origin + window.location.pathname)
     }
-    document.getElementById('content').classList.add('pn-loading', 'pn-{{ loading_spinner }}')
+    document.getElementById('content').classList.add(...{{ loading_classes }})
     const queryParams = new URLSearchParams(window.location.search);
     queryParams.set('reset', 1);
     window.location.search = queryParams.toString();
