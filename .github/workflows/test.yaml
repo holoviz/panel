@@ -54,14 +54,12 @@ jobs:
     name: optimize-png
     needs: [setup]
     runs-on: "ubuntu-latest"
-    # if: needs.setup.outputs.img_change == 'true'
     permissions:
       contents: write
     steps:
       - uses: holoviz-dev/holoviz_tasks/optimize-png@e9aaca7738db5d27bf34d0f69e25990b74a85eaf # v1.0.7
         with:
           oxipng-version: "10.1.1"
-          run-all: true
 
   setup:
     name: Setup workflow
@@ -94,8 +92,6 @@ jobs:
               - 'doc/how_to/**'
               - 'scripts/**'
               - 'lite/**'
-            img:
-              - '**/*.png'
       - name: Set matrix option
         env:
           GITHUB_EVENT_INPUTS_TARGET: ${{ github.event.inputs.target }}
