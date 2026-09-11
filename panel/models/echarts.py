@@ -52,7 +52,9 @@ class ECharts(LayoutDOM, ExternalResourcesMixin):
             "echarts":  f"{config.npm_cdn}/echarts@{ECHARTS_VERSION}/dist/echarts.min",
             "echarts-gl": f"{config.npm_cdn}/echarts-gl@2.0.9/dist/echarts-gl.min"
         },
-        'exports': {}
+        # echarts-gl registers itself with echarts and exposes nothing the view
+        # reads, so only echarts needs a global.
+        'exports': {'echarts': 'echarts'}
     }
 
     data = Nullable(Dict(String, Any))

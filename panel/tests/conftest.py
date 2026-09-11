@@ -88,7 +88,10 @@ def get_default_port():
 
 def start_jupyter():
     global JUPYTER_PORT, JUPYTER_PROCESS
-    args = ['jupyter', 'server', '--port', str(JUPYTER_PORT), "--NotebookApp.token=''"]
+    args = [
+        'jupyter', 'server', '--port', str(JUPYTER_PORT), "--NotebookApp.token=''",
+        "--ServerApp.jpserver_extensions={'nbclassic': True}",
+    ]
     JUPYTER_PROCESS = process = Popen(args, stdout=PIPE, stderr=PIPE, bufsize=1, encoding='utf-8')
     deadline = time.monotonic() + JUPYTER_TIMEOUT
     while True:

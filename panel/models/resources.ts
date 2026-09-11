@@ -217,6 +217,35 @@ export class ResourceRegistry {
   }
 
   /**
+   * Records that a loader outside the registry is fetching these libraries.
+   *
+   * The classic notebook loads component libraries through RequireJS, which
+   * assigns their globals from its own module values. Those libraries must
+   * not be declared with `declare`: that reports them as ready immediately,
+   * and a view rendering before RequireJS has assigned the global reads
+   * `undefined` and throws, with no second attempt. Nor can they simply be
+   * left out, because then the registry fetches its own bundled copy in
+   * parallel and the resulting anonymous `define()` corrupts RequireJS'
+   * module resolution. Claiming them against `ready` is what makes
+   * `await_resources` wait for the loader that is actually doing the work.
+   */
+  claim(declared: {libs?: LibSpec[]}, ready: Promise<void>): void {
+    for (const lib of declared.libs ?? []) {
+      if (lib == null || lib.name == null) {
+        continue
+      }
+      this.specs.set(lib.name, lib)
+      this.libs.set(lib.name, ready)
+      for (const url of lib.js ?? []) {
+        this.urls.set(url_key(url), ready)
+      }
+      for (const {url} of lib.modules ?? []) {
+        this.urls.set(url_key(url), ready)
+      }
+    }
+  }
+
+  /**
    * Whether a library is already available without loading anything.
    *
    * Probes are hints derived from `__js_skip__` and are known to be wrong
@@ -475,7 +504,14 @@ function install(): ResourceRegistry {
   if (Array.isArray(queued)) {
     global.__panel_resources_declared__ = []
     for (const declared of queued) {
-      registry.declare(declared)
+      // A queued entry carrying `ready` is a claim: some other loader, i.e.
+      // the notebook's RequireJS, is fetching those libraries already.
+      const ready = declared?.ready
+      if (ready != null && typeof ready.then === "function") {
+        registry.claim(declared, ready)
+      } else {
+        registry.declare(declared)
+      }
     }
   }
   return registry

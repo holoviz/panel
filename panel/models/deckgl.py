@@ -70,11 +70,30 @@ class DeckGLPlot(HTMLBox):
             "loader-json": f"{config.npm_cdn}/@loaders.gl/json@4.2.2/dist/dist.min",
             "loader-tiles": f"{config.npm_cdn}/@loaders.gl/3d-tiles@4.2.2/dist/dist.min",
             "mapbox-gl": "https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl",
+            # Without a path of its own maplibre would be left to a plain
+            # script tag, where RequireJS' presence sends its UMD down the AMD
+            # branch: window.maplibregl is never assigned and the anonymous
+            # define() it leaves behind is attributed to whichever module
+            # RequireJS happens to be resolving.
+            "maplibre-gl": f"{config.npm_cdn}/maplibre-gl/dist/maplibre-gl",
             "carto": f"{config.npm_cdn}/@deck.gl/carto@^{DECKGL_VERSION}/dist.min",
     },
-        'exports': {"deck-gl": "deck", "mapbox-gl": "mapboxgl", "h3": "h3"},
+        'exports': {
+            "deck-gl": "deck", "mapbox-gl": "mapboxgl", "h3": "h3",
+            "maplibre-gl": "maplibregl",
+            # The json and carto bundles extend the deck namespace, and the
+            # three loaders bundles together make up window.loaders, which
+            # DeckGLPlotView reads CSVLoader and Tiles3DLoader from.
+            "deck-json": "deck", "carto": "deck",
+            "loader-csv": "loaders", "loader-json": "loaders",
+            "loader-tiles": "loaders",
+        },
         'shim': {
+            # carto and the json layer catalogue extend deck.gl classes off
+            # window.deck while their own factories run, so they need that
+            # global assigned rather than merely loaded.
             'deck-json': {'deps': ["deck-gl"]},
+            'carto': {'deps': ["deck-gl"]},
             'deck-gl': {'deps': ["h3"]}
         }
     }

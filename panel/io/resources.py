@@ -851,7 +851,8 @@ class Resources(BkResources):
             if resource.endswith('.css') and not resource.startswith(('http:', 'https:')):
                 resource += version_suffix
             if self.notebook:
-                endpoint = f'{state.base_url}panel-preview/static/extensions/panel/'
+                base_url = state.base_url.removesuffix('nbclassic/')
+                endpoint = f'{base_url}panel-preview/static/extensions/panel/'
                 if resource.startswith(CDN_DIST):
                     resource = endpoint + resource.removeprefix(CDN_DIST)
                 elif resource.startswith(LOCAL_DIST):
