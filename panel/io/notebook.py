@@ -120,13 +120,23 @@ AUTOLOAD_NB_JS: Template = _env.get_template("autoload_panel_js.js")
 NB_TEMPLATE_BASE: Template = _env.get_template('nb_template.html')
 
 def _autoload_js(
-    *, bundle, skip_imports, ipywidget, reloading=False, load_timeout=5000
+    *, bundle, configs, requirements, exports, error_id, skip_imports, ipywidget,
+    reloading=False, load_timeout=5000
 ):
+    config = {'packages': {}, 'paths': {}, 'shim': {}}
+    for conf in configs:
+        for key, c in conf.items():
+            config[key].update(c)
     return AUTOLOAD_NB_JS.render(
         bundle    = bundle,
         force     = not reloading,
         reloading = reloading,
         timeout   = load_timeout,
+        cdn_dist  = CDN_DIST,
+        config    = config,
+        requirements = requirements,
+        exports   = exports,
+        error_id  = error_id,
         skip_imports = skip_imports,
         ipywidget = ipywidget,
         version = bokeh.__version__
@@ -273,30 +283,69 @@ def mimebundle_to_html(bundle: dict[str, t.Any]) -> str:
     return html
 
 
-def component_skip_imports():
+def require_components():
     """
-    Returns component resources that have already loaded in the notebook.
+    Returns JS snippet to load the required dependencies in the classic
+    notebook using REQUIRE JS.
+
+    The ``__js_require__`` declarations this reads are deprecated and have
+    no effect outside the classic notebook. Components should declare
+    ``__javascript__``/``__javascript_modules__``/``__css__`` instead and
+    let panel.io.resource_spec derive the rest.
     """
-    models = []
+    from ..config import config
+
+    configs, requirements, exports = [], [], {}
+    js_requires = []
 
     for qual_name, model in Model.model_class_reverse_map.items():
         # We need to enable Models from Panel as well as Panel extensions
         # like awesome_panel_extensions.
         # The Bokeh models do not have "." in the qual_name
         if "." in qual_name:
-            models.append(model)
+            js_requires.append(model)
 
     from ..reactive import ReactiveHTML
-    models += list(_descendents(ReactiveHTML, concrete=True))
+    js_requires += list(_descendents(ReactiveHTML, concrete=True))
+
+    for export, js in config.js_files.items():
+        name = js.split('/')[-1].replace('.min', '').split('.')[-2]
+        conf = {'paths': {name: js[:-3]}, 'exports': {name: export}}
+        js_requires.append(conf)
 
     skip_import = {}
-    for model in models:
-        if issubclass(model, ReactiveHTML) and not model._loaded():
+    for model in js_requires:
+        if not isinstance(model, dict) and issubclass(model, ReactiveHTML) and not model._loaded():
             continue
 
         if hasattr(model, '__js_skip__'):
             skip_import.update(model.__js_skip__)
-    return skip_import
+
+        if not (hasattr(model, '__js_require__') or isinstance(model, dict)):
+            continue
+
+        if isinstance(model, dict):
+            model_require = model
+        else:
+            model_require = dict(model.__js_require__)
+
+        model_exports = model_require.pop('exports', {})
+        if not any(model_require == config for config in configs):
+            configs.append(model_require)
+
+        for req in list(model_require.get('paths', [])):
+            if isinstance(req, tuple):
+                model_require['paths'] = dict(model_require['paths'])
+                model_require['paths'][req[0]] = model_require['paths'].pop(req)
+
+            reqs = req[1] if isinstance(req, tuple) else (req,)
+            for r in reqs:
+                if r not in requirements:
+                    requirements.append(r)
+                    if r in model_exports:
+                        exports[r] = model_exports[r]
+
+    return configs, requirements, exports, skip_import
 
 
 class JupyterCommJSBinary(JupyterCommJS):
@@ -379,14 +428,16 @@ def load_notebook(
 ) -> None:
     from IPython.display import publish_display_data
 
+    from ..config import config
+
     resources = INLINE if inline and not state._is_pyodide else CDN
-    nb_endpoint = not state._is_pyodide
+    nb_endpoint = not state._is_pyodide and config.comms not in ('colab', 'vscode')
 
     # Components rendered in a later cell resolve their resources outside
     # any set_resource_mode block, so the notebook mode has to become the
-    # default rather than being scoped to the bootstrap. Inline output has
-    # no urls to hand out after the fact, hence the CDN.
-    set_default_resource_mode('cdn' if resources.mode == 'inline' else resources.mode)
+    # default rather than being scoped to the bootstrap. Panel resources use
+    # the Jupyter extension endpoint; Bokeh resources keep their CDN urls.
+    set_default_resource_mode('cdn' if resources.mode == 'inline' else resources.mode, notebook=nb_endpoint)
 
     with set_resource_mode(resources.mode):
         resources = Resources.from_bokeh(resources, notebook=nb_endpoint)
@@ -394,10 +445,15 @@ def load_notebook(
             None, resources, notebook=nb_endpoint, reloading=reloading,
             enable_mathjax=enable_mathjax
         )
-        skip_imports = component_skip_imports()
+        configs, requirements, exports, skip_imports = require_components()
         ipywidget = 'ipywidgets_bokeh' in sys.modules
+        error_id = make_id()
         bokeh_js = _autoload_js(
             bundle=bundle,
+            configs=configs,
+            requirements=requirements,
+            exports=exports,
+            error_id=error_id,
             skip_imports=skip_imports,
             ipywidget=ipywidget,
             reloading=reloading,
@@ -406,7 +462,8 @@ def load_notebook(
 
     CSS = (PANEL_DIR / '_templates' / 'jupyter.css').read_text(encoding='utf-8')
     shim = '<script type="esms-options">{"shimMode": true}</script>'
-    publish_display_data(data={'text/html': f'{shim}<style>{CSS}</style>'})
+    error = f'<div id="{error_id}" role="alert" hidden></div>'
+    publish_display_data(data={'text/html': f'{shim}<style>{CSS}</style>{error}'})
     publish_display_data({
         'application/javascript': bokeh_js,
         LOAD_MIME: bokeh_js,

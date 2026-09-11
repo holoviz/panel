@@ -26,6 +26,8 @@ calls it with the rendered model.
   const Bokeh = root.Bokeh;
   const BK_RE = /^https:\/\/cdn\.bokeh\.org\/bokeh\/(release|dev)\/bokeh-/;
   const PN_RE = /^https:\/\/cdn\.holoviz\.org\/panel\/[^/]+\/dist\/panel/i;
+  const JUPYTER_EXTENSION_PATH = "/panel-preview/static/extensions/panel/";
+  const CDN_DIST = {{ cdn_dist|json }};
 
   // Set a timeout for this load but only if we are not already initializing
   if (typeof (root._bokeh_timeout) === "undefined" || (force || !root._bokeh_is_initializing)) {
@@ -45,32 +47,19 @@ calls it with the rendered model.
     console.debug("Bokeh: all callbacks have finished");
   }
 
-  function install_amd_veto() {
-    if (typeof root.__panel_install_amd_veto__ === "function") {
-      return root.__panel_install_amd_veto__();
+  function show_jupyter_extension_error() {
+    const element = document.getElementById("{{ error_id }}");
+    if (element == null || !element.hidden) {
+      return;
     }
-    const define = root.define;
-    if (typeof define !== "function" || define.amd == null) {
-      return false;
-    }
-    const amd = define.amd;
-    try {
-      Object.defineProperty(define, "amd", {
-        configurable: true,
-        get: () => document.currentScript?.dataset.panelNoAmd == null ? amd : undefined,
-      });
-    } catch (error) {
-      return false;
-    }
-    root.__panel_install_amd_veto__ = () => true;
-    return true;
+    element.style.cssText = "color: #b91c1c; font-family: sans-serif; padding: 0.5em;";
+    element.textContent = (
+      "Panel could not load resources from its Jupyter server extension. " +
+      "Install Panel in the environment running the Jupyter server and restart it."
+    );
+    element.hidden = false;
   }
-
-  function veto_amd(element) {
-    if (install_amd_veto()) {
-      element.dataset.panelNoAmd = "";
-    }
-  }
+  root.__panel_jupyter_extension_error__ = show_jupyter_extension_error;
 
   function load_libs(css_urls, js_urls, js_modules, Bokeh, callback) {
     if (css_urls == null) css_urls = [];
@@ -98,13 +87,40 @@ calls it with the rendered model.
     }
     window._bokeh_on_load = on_load
 
-    function on_error(e) {
-      const src_el = e.srcElement
-      console.error("failed to load " + (src_el.href || src_el.src));
+    function on_error(url) {
+      console.error("failed to load " + url);
+      if (url.includes(JUPYTER_EXTENSION_PATH)) {
+        show_jupyter_extension_error();
+      }
+    }
+
+    function fallback_to_cdn(element, url, attribute, parent) {
+      const index = url.indexOf(JUPYTER_EXTENSION_PATH);
+      if (index === -1 || element.dataset.panelCdnFallback != null) {
+        return false;
+      }
+      element.dataset.panelCdnFallback = "";
+      element.remove();
+      element[attribute] = CDN_DIST + url.slice(index + JUPYTER_EXTENSION_PATH.length);
+      parent.appendChild(element);
+      return true;
     }
 
     const skip = [];
-    root._bokeh_is_loading = css_urls.length + js_urls.length + js_modules.length;
+    if (window.requirejs) {
+      window.requirejs.config({{ config|conffilter }});
+      {% for r in requirements %}
+      require(["{{ r }}"], function({{ exports[r] }}) {
+        {% if r in exports %}
+        window.{{ exports[r] }} = {{ exports[r] }}
+        {% endif %}
+        on_load()
+      })
+      {% endfor %}
+      root._bokeh_is_loading = css_urls.length + {{ requirements|length }};
+    } else {
+      root._bokeh_is_loading = css_urls.length + js_urls.length + js_modules.length;
+    }
 
     const existing_stylesheets = []
     const links = document.getElementsByTagName('link')
@@ -123,7 +139,11 @@ calls it with the rendered model.
       }
       const element = document.createElement("link");
       element.onload = on_load;
-      element.onerror = on_error;
+      element.onerror = () => {
+        if (!fallback_to_cdn(element, url, "href", document.body)) {
+          on_error(url);
+        }
+      };
       element.rel = "stylesheet";
       element.type = "text/css";
       element.href = url;
@@ -132,7 +152,7 @@ calls it with the rendered model.
     }
 
     {%- for lib, urls in skip_imports.items() %}
-    if ((window.{{ lib }} !== undefined) && (!(window.{{ lib }} instanceof HTMLElement))) {
+    if (((window.{{ lib }} !== undefined) && (!(window.{{ lib }} instanceof HTMLElement))) || window.requirejs) {
       var urls = {{ urls }};
       for (var i = 0; i < urls.length; i++) {
         skip.push(encodeURI(urls[i]))
@@ -154,15 +174,20 @@ calls it with the rendered model.
       const isBokehOrPanel = BK_RE.test(escaped) || PN_RE.test(escaped)
       const missingOrBroken = Bokeh == null || Bokeh.Panel == null || (Bokeh.version != version && !Bokeh.versions?.has(version)) || Bokeh.versions?.get(version)?.Panel == null;
       if (shouldSkip && !(isBokehOrPanel && missingOrBroken)) {
-        on_load();
+        if (!window.requirejs) {
+          on_load();
+        }
         continue;
       }
       const element = document.createElement('script');
       element.onload = on_load;
-      element.onerror = on_error;
+      element.onerror = () => {
+        if (!fallback_to_cdn(element, url, "src", document.head)) {
+          on_error(url);
+        }
+      };
       element.async = false;
       element.src = url;
-      veto_amd(element);
       console.debug("Bokeh: injecting script tag for BokehJS library: ", url);
       document.head.appendChild(element);
     }
@@ -171,11 +196,17 @@ calls it with the rendered model.
       const escaped = encodeURI(url)
       const loaded = name == null ? existing_scripts.indexOf(escaped) !== -1 : root[name] != null
       if (skip.indexOf(escaped) !== -1 || loaded) {
-        on_load();
+        if (!window.requirejs) {
+          on_load();
+        }
         continue;
       }
       var element = document.createElement('script');
-      element.onerror = on_error;
+      element.onerror = () => {
+        if (!fallback_to_cdn(element, url, "src", document.head)) {
+          on_error(url);
+        }
+      };
       element.async = false;
       element.type = "module";
       if (name == null) {

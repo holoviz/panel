@@ -73,36 +73,17 @@ function existing_urls(selector: string, attr: "src" | "href"): Set<string> {
 function inject(el: HTMLScriptElement | HTMLLinkElement): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     el.addEventListener("load", () => resolve(), {once: true})
-    el.addEventListener("error", () => reject(
-      new Error(`Failed to load ${(el as HTMLScriptElement).src || (el as HTMLLinkElement).href}`),
-    ), {once: true})
+    el.addEventListener("error", () => {
+      const url = (el as HTMLScriptElement).src || (el as HTMLLinkElement).href
+      const endpoint = "/panel-preview/static/extensions/panel/"
+      if (url.includes(endpoint)) {
+        const global = globalThis as any
+        global.__panel_jupyter_extension_error__?.()
+      }
+      reject(new Error(`Failed to load ${url}`))
+    }, {once: true})
     document.head.appendChild(el)
   })
-}
-
-function veto_amd(el: HTMLScriptElement): void {
-  const global = globalThis as any
-  if (typeof global.__panel_install_amd_veto__ === "function") {
-    if (global.__panel_install_amd_veto__()) {
-      el.dataset.panelNoAmd = ""
-    }
-    return
-  }
-  const define = global.define
-  if (typeof define !== "function" || define.amd == null) {
-    return
-  }
-  const amd = define.amd
-  try {
-    Object.defineProperty(define, "amd", {
-      configurable: true,
-      get: () => document.currentScript?.dataset.panelNoAmd == null ? amd : undefined,
-    })
-  } catch {
-    return
-  }
-  global.__panel_install_amd_veto__ = () => true
-  el.dataset.panelNoAmd = ""
 }
 
 /**
@@ -117,7 +98,6 @@ function inject_script(url: string): Promise<void> {
   const el = document.createElement("script")
   el.async = false
   el.src = url
-  veto_amd(el)
   return inject(el)
 }
 

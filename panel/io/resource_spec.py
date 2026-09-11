@@ -30,8 +30,9 @@ from bokeh.model import Model
 from ..config import config
 from ..util import isurl
 from .resources import (
-    Resources, component_resource_path, extension_declared, get_resource_mode,
-    resolve_resource_cdn, set_resource_mode,
+    Resources, component_resource_path, extension_declared,
+    get_notebook_resources, get_resource_mode, resolve_resource_cdn,
+    set_resource_mode,
 )
 from .state import state
 
@@ -82,7 +83,7 @@ def _spec_mode(mode: MODES | None = None) -> tuple[str, bool]:
 
 
 def _resources(mode: str) -> Resources:
-    return Resources(mode=mode)
+    return Resources(mode=mode, notebook=get_notebook_resources())
 
 
 def _parse_probe(expression: str) -> dict[str, str] | None:
