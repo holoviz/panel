@@ -6,7 +6,9 @@ from bokeh.models import ImportedStyleSheet, InlineStyleSheet
 
 from panel.config import config, panel_extension
 from panel.io import resources as resources_module
-from panel.io.notebook import ipywidget, load_notebook, replace_inline_css
+from panel.io.notebook import (
+    LOAD_MIME, ipywidget, load_notebook, replace_inline_css,
+)
 from panel.io.resource_spec import resource_spec
 from panel.io.resources import (
     CDN_DIST, CDN_ROOT, JS_VERSION, set_resource_mode,
@@ -98,6 +100,47 @@ def test_notebook_inline_css_stylesheets(nb_loaded):
     model = list(widget._models.values())[0][0]
     for stylesheet in model.stylesheets[:len(model.__css__)]:
         assert isinstance(stylesheet, InlineStyleSheet)
+
+
+def test_notebook_inline_resources_shadow_amd_globals(monkeypatch):
+    """
+    Inline UMD bundles must assign their browser globals on RequireJS pages.
+
+    See https://github.com/holoviz/panel/issues/8750.
+    """
+    published = []
+
+    def publish_display_data(data, **kwargs):
+        published.append(data)
+
+    monkeypatch.setattr('IPython.display.publish_display_data', publish_display_data)
+
+    load_notebook(inline=True)
+
+    bootstrap = next(data[LOAD_MIME] for data in published if LOAD_MIME in data)
+    assert 'function(Bokeh, define, module, exports)' in bootstrap
+    assert 'element.dataset.panelNoAmd = ""' in bootstrap
+    assert 'window.requirejs.config' not in bootstrap
+
+
+def test_notebook_external_resources_veto_amd(monkeypatch):
+    """
+    External UMD bundles must take their global branch on RequireJS pages.
+
+    See https://github.com/holoviz/panel/issues/8750.
+    """
+    published = []
+
+    def publish_display_data(data, **kwargs):
+        published.append(data)
+
+    monkeypatch.setattr('IPython.display.publish_display_data', publish_display_data)
+
+    load_notebook(inline=False)
+
+    bootstrap = next(data[LOAD_MIME] for data in published if LOAD_MIME in data)
+    assert 'element.dataset.panelNoAmd = ""' in bootstrap
+    assert 'window.requirejs.config' not in bootstrap
 
 
 def test_notebook_resources_resolve_absolutely(notebook_bootstrap):

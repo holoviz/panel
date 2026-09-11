@@ -80,6 +80,31 @@ function inject(el: HTMLScriptElement | HTMLLinkElement): Promise<void> {
   })
 }
 
+function veto_amd(el: HTMLScriptElement): void {
+  const global = globalThis as any
+  if (typeof global.__panel_install_amd_veto__ === "function") {
+    if (global.__panel_install_amd_veto__()) {
+      el.dataset.panelNoAmd = ""
+    }
+    return
+  }
+  const define = global.define
+  if (typeof define !== "function" || define.amd == null) {
+    return
+  }
+  const amd = define.amd
+  try {
+    Object.defineProperty(define, "amd", {
+      configurable: true,
+      get: () => document.currentScript?.dataset.panelNoAmd == null ? amd : undefined,
+    })
+  } catch {
+    return
+  }
+  global.__panel_install_amd_veto__ = () => true
+  el.dataset.panelNoAmd = ""
+}
+
 /**
  * Injects a classic script tag.
  *
@@ -92,6 +117,7 @@ function inject_script(url: string): Promise<void> {
   const el = document.createElement("script")
   el.async = false
   el.src = url
+  veto_amd(el)
   return inject(el)
 }
 

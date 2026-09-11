@@ -45,6 +45,33 @@ calls it with the rendered model.
     console.debug("Bokeh: all callbacks have finished");
   }
 
+  function install_amd_veto() {
+    if (typeof root.__panel_install_amd_veto__ === "function") {
+      return root.__panel_install_amd_veto__();
+    }
+    const define = root.define;
+    if (typeof define !== "function" || define.amd == null) {
+      return false;
+    }
+    const amd = define.amd;
+    try {
+      Object.defineProperty(define, "amd", {
+        configurable: true,
+        get: () => document.currentScript?.dataset.panelNoAmd == null ? amd : undefined,
+      });
+    } catch (error) {
+      return false;
+    }
+    root.__panel_install_amd_veto__ = () => true;
+    return true;
+  }
+
+  function veto_amd(element) {
+    if (install_amd_veto()) {
+      element.dataset.panelNoAmd = "";
+    }
+  }
+
   function load_libs(css_urls, js_urls, js_modules, Bokeh, callback) {
     if (css_urls == null) css_urls = [];
     if (js_urls == null) js_urls = [];
@@ -77,20 +104,7 @@ calls it with the rendered model.
     }
 
     const skip = [];
-    if (window.requirejs) {
-      window.requirejs.config({{ config|conffilter }});
-      {% for r in requirements %}
-      require(["{{ r }}"], function({{ exports[r] }}) {
-        {% if r in exports %}
-        window.{{ exports[r] }} = {{ exports[r] }}
-        {% endif %}
-        on_load()
-      })
-      {% endfor %}
-      root._bokeh_is_loading = css_urls.length + {{ requirements|length }};
-    } else {
-      root._bokeh_is_loading = css_urls.length + js_urls.length + js_modules.length;
-    }
+    root._bokeh_is_loading = css_urls.length + js_urls.length + js_modules.length;
 
     const existing_stylesheets = []
     const links = document.getElementsByTagName('link')
@@ -118,7 +132,7 @@ calls it with the rendered model.
     }
 
     {%- for lib, urls in skip_imports.items() %}
-    if (((window.{{ lib }} !== undefined) && (!(window.{{ lib }} instanceof HTMLElement))) || window.requirejs) {
+    if ((window.{{ lib }} !== undefined) && (!(window.{{ lib }} instanceof HTMLElement))) {
       var urls = {{ urls }};
       for (var i = 0; i < urls.length; i++) {
         skip.push(encodeURI(urls[i]))
@@ -140,9 +154,7 @@ calls it with the rendered model.
       const isBokehOrPanel = BK_RE.test(escaped) || PN_RE.test(escaped)
       const missingOrBroken = Bokeh == null || Bokeh.Panel == null || (Bokeh.version != version && !Bokeh.versions?.has(version)) || Bokeh.versions?.get(version)?.Panel == null;
       if (shouldSkip && !(isBokehOrPanel && missingOrBroken)) {
-        if (!window.requirejs) {
-          on_load();
-        }
+        on_load();
         continue;
       }
       const element = document.createElement('script');
@@ -150,6 +162,7 @@ calls it with the rendered model.
       element.onerror = on_error;
       element.async = false;
       element.src = url;
+      veto_amd(element);
       console.debug("Bokeh: injecting script tag for BokehJS library: ", url);
       document.head.appendChild(element);
     }
@@ -158,9 +171,7 @@ calls it with the rendered model.
       const escaped = encodeURI(url)
       const loaded = name == null ? existing_scripts.indexOf(escaped) !== -1 : root[name] != null
       if (skip.indexOf(escaped) !== -1 || loaded) {
-        if (!window.requirejs) {
-          on_load();
-        }
+        on_load();
         continue;
       }
       var element = document.createElement('script');
@@ -208,11 +219,11 @@ calls it with the rendered model.
     },
     {%- endfor %}
     {%- for js in (bundle.js_raw if bundle else js_raw) %}
-    function(Bokeh) {
+    function(Bokeh, define, module, exports) {
       {{ js|indent(6) }}
     },
     {% endfor -%}
-    function(Bokeh) {} // ensure no trailing comma for IE
+    function(Bokeh, define, module, exports) {} // ensure no trailing comma for IE
   ];
 
   function declare_resources() {

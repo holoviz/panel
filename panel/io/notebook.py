@@ -120,21 +120,13 @@ AUTOLOAD_NB_JS: Template = _env.get_template("autoload_panel_js.js")
 NB_TEMPLATE_BASE: Template = _env.get_template('nb_template.html')
 
 def _autoload_js(
-    *, bundle, configs, requirements, exports, skip_imports, ipywidget,
-    reloading=False, load_timeout=5000
+    *, bundle, skip_imports, ipywidget, reloading=False, load_timeout=5000
 ):
-    config = {'packages': {}, 'paths': {}, 'shim': {}}
-    for conf in configs:
-        for key, c in conf.items():
-            config[key].update(c)
     return AUTOLOAD_NB_JS.render(
         bundle    = bundle,
         force     = not reloading,
         reloading = reloading,
         timeout   = load_timeout,
-        config    = config,
-        requirements = requirements,
-        exports   = exports,
         skip_imports = skip_imports,
         ipywidget = ipywidget,
         version = bokeh.__version__
@@ -281,69 +273,30 @@ def mimebundle_to_html(bundle: dict[str, t.Any]) -> str:
     return html
 
 
-def require_components():
+def component_skip_imports():
     """
-    Returns JS snippet to load the required dependencies in the classic
-    notebook using REQUIRE JS.
-
-    The ``__js_require__`` declarations this reads are deprecated and have
-    no effect outside the classic notebook. Components should declare
-    ``__javascript__``/``__javascript_modules__``/``__css__`` instead and
-    let panel.io.resource_spec derive the rest.
+    Returns component resources that have already loaded in the notebook.
     """
-    from ..config import config
-
-    configs, requirements, exports = [], [], {}
-    js_requires = []
+    models = []
 
     for qual_name, model in Model.model_class_reverse_map.items():
         # We need to enable Models from Panel as well as Panel extensions
         # like awesome_panel_extensions.
         # The Bokeh models do not have "." in the qual_name
         if "." in qual_name:
-            js_requires.append(model)
+            models.append(model)
 
     from ..reactive import ReactiveHTML
-    js_requires += list(_descendents(ReactiveHTML, concrete=True))
-
-    for export, js in config.js_files.items():
-        name = js.split('/')[-1].replace('.min', '').split('.')[-2]
-        conf = {'paths': {name: js[:-3]}, 'exports': {name: export}}
-        js_requires.append(conf)
+    models += list(_descendents(ReactiveHTML, concrete=True))
 
     skip_import = {}
-    for model in js_requires:
-        if not isinstance(model, dict) and issubclass(model, ReactiveHTML) and not model._loaded():
+    for model in models:
+        if issubclass(model, ReactiveHTML) and not model._loaded():
             continue
 
         if hasattr(model, '__js_skip__'):
             skip_import.update(model.__js_skip__)
-
-        if not (hasattr(model, '__js_require__') or isinstance(model, dict)):
-            continue
-
-        if isinstance(model, dict):
-            model_require = model
-        else:
-            model_require = dict(model.__js_require__)
-
-        model_exports = model_require.pop('exports', {})
-        if not any(model_require == config for config in configs):
-            configs.append(model_require)
-
-        for req in list(model_require.get('paths', [])):
-            if isinstance(req, tuple):
-                model_require['paths'] = dict(model_require['paths'])
-                model_require['paths'][req[0]] = model_require['paths'].pop(req)
-
-            reqs = req[1] if isinstance(req, tuple) else (req,)
-            for r in reqs:
-                if r not in requirements:
-                    requirements.append(r)
-                    if r in model_exports:
-                        exports[r] = model_exports[r]
-
-    return configs, requirements, exports, skip_import
+    return skip_import
 
 
 class JupyterCommJSBinary(JupyterCommJS):
@@ -441,13 +394,10 @@ def load_notebook(
             None, resources, notebook=nb_endpoint, reloading=reloading,
             enable_mathjax=enable_mathjax
         )
-        configs, requirements, exports, skip_imports = require_components()
+        skip_imports = component_skip_imports()
         ipywidget = 'ipywidgets_bokeh' in sys.modules
         bokeh_js = _autoload_js(
             bundle=bundle,
-            configs=configs,
-            requirements=requirements,
-            exports=exports,
             skip_imports=skip_imports,
             ipywidget=ipywidget,
             reloading=reloading,
