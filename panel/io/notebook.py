@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import sys
 import typing as t
 import uuid
@@ -119,23 +120,77 @@ DOC_NB_JS: Template = _env.get_template("doc_nb_js.js")
 AUTOLOAD_NB_JS: Template = _env.get_template("autoload_panel_js.js")
 NB_TEMPLATE_BASE: Template = _env.get_template('nb_template.html')
 
+def _require_stages(requirements, shim):
+    """
+    Groups requirements so that a library loads after the ones it needs.
+
+    RequireJS honours ``shim`` dependencies only for scripts that do not call
+    ``define`` themselves, and the libraries that need ordering here do call it
+    (deck.gl's carto and json bundles). Their declared dependencies are
+    therefore satisfied by requiring them in stages instead, which is also
+    what gives the preceding stage's globals time to be assigned.
+    """
+    pending = {
+        name: {
+            dep for dep in (shim.get(name, {}).get('deps') or [])
+            if dep in requirements and dep != name
+        }
+        for name in requirements
+    }
+    stages, resolved = [], set()
+    while pending:
+        stage = [name for name, deps in pending.items() if deps <= resolved]
+        if not stage:
+            # A dependency cycle, so give up on ordering the remainder.
+            stage = list(pending)
+        stages.append(stage)
+        resolved.update(stage)
+        for name in stage:
+            del pending[name]
+    return stages
+
+
+#: Suffix of the helper modules that assign a library's browser global as
+#: soon as its own module resolves. A library whose factory reads another
+#: library's global depends on the helper rather than on the module itself.
+GLOBAL_MODULE_SUFFIX = '__panel_global'
+
+
 def _autoload_js(
-    *, bundle, configs, requirements, exports, skip_imports, ipywidget,
-    reloading=False, load_timeout=5000
+    *, bundle, configs, requirements, exports, error_id, skip_imports, require_skip,
+    ipywidget, reloading=False, load_timeout=5000
 ):
     config = {'packages': {}, 'paths': {}, 'shim': {}}
     for conf in configs:
         for key, c in conf.items():
             config[key].update(c)
+    stages = _require_stages(requirements, config['shim'])
+    # A shim describes a script that does not call define(). Where an entry
+    # only carries deps it is expressing load order, which the stages above
+    # now provide, and leaving it in the RequireJS config makes RequireJS
+    # treat a module that does call define() as shimmed and resolve it to
+    # undefined. Only entries naming an export are real shims.
+    config['shim'] = {
+        name: shim for name, shim in config['shim'].items() if shim.get('exports')
+    }
+    stages = [
+        [f'{r}{GLOBAL_MODULE_SUFFIX}' if r in exports else r for r in stage]
+        for stage in stages
+    ]
     return AUTOLOAD_NB_JS.render(
         bundle    = bundle,
         force     = not reloading,
         reloading = reloading,
         timeout   = load_timeout,
+        cdn_dist  = CDN_DIST,
         config    = config,
         requirements = requirements,
+        require_stages = stages,
         exports   = exports,
+        global_suffix = GLOBAL_MODULE_SUFFIX,
+        error_id  = error_id,
         skip_imports = skip_imports,
+        require_skip = require_skip,
         ipywidget = ipywidget,
         version = bokeh.__version__
     )
@@ -281,7 +336,103 @@ def mimebundle_to_html(bundle: dict[str, t.Any]) -> str:
     return html
 
 
-def require_components():
+def _cdn_url_key(url):
+    """
+    Normalizes a cdn url so a RequireJS path and a ``__javascript_raw__`` url
+    for the same file compare equal.
+
+    The two are written independently and differ in ways that carry no
+    meaning: a path omits the ``.js`` suffix, and it may be written
+    protocol-relative (``//cdn.jsdelivr.net/npm/...``) where the resource url
+    is absolute (``https://cdn.jsdelivr.net/npm/...``). Comparing the package
+    relative remainder ignores exactly those differences.
+    """
+    url = url.split('?')[0].split('#')[0]
+    url = re.sub(r'^(?:[a-z][a-z0-9+.-]*:)?//', '', url)
+    if '/npm/' in url:
+        url = url.split('/npm/', 1)[1]
+    elif '/' in url:
+        # Drop the host, keeping the path for cdns without an /npm/ prefix.
+        url = url.split('/', 1)[1]
+    return url[:-3] if url.endswith('.js') else url
+
+
+def _require_covered_urls(model, model_require, resources=None):
+    """
+    Resolved urls of a model's scripts that RequireJS is going to load.
+
+    A ``__js_require__`` path and a ``__javascript__`` url point at the same
+    file through different hosts: paths are declared against ``npm_cdn``,
+    while ``__javascript__`` resolves to Panel's own bundled copy. Pairing
+    them through ``__javascript_raw__``, which is in the same npm_cdn form as
+    the paths, is what identifies the urls RequireJS covers.
+
+    Only those may be skipped. Skipping a url RequireJS has no path for, as
+    skipping everything a component declares would, means nothing loads it at
+    all; leaving in a url RequireJS does load means the file is fetched twice
+    and the second, plain script tag copy corrupts RequireJS' resolution.
+    """
+    paths = model_require.get('paths', {}) or {}
+    path_keys = set()
+    for value in paths.values():
+        for url in (value if isinstance(value, (list, tuple)) else (value,)):
+            if isinstance(url, str):
+                path_keys.add(_cdn_url_key(url))
+    if not path_keys:
+        return []
+
+    try:
+        raw = list(getattr(model, '__javascript_raw__', None) or [])
+        declared = list(getattr(model, '__javascript__', None) or [])
+    except Exception:
+        return []
+    if len(raw) != len(declared):
+        return []
+
+    resolved = resources.adjust_paths(declared) if resources is not None else declared
+    covered = []
+    for raw_url, url in zip(raw, resolved):
+        if not isinstance(raw_url, str):
+            continue
+        raw_key = _cdn_url_key(raw_url)
+        # A resource url may name the package rather than a file in it
+        # (``vega@6.1.2``, which the cdn resolves to the package default),
+        # while a RequireJS path always names the file
+        # (``vega@6.1.2/build/vega.min``). Both refer to the same library.
+        if raw_key in path_keys or any(
+            key.startswith(f'{raw_key}/') for key in path_keys
+        ):
+            covered.append(url)
+    return covered
+
+
+def _resolve_js_skip(skip, resources=None):
+    """
+    Resolves ``__js_skip__`` urls into the form the bundle emits.
+
+    ``__js_skip__`` names a global and the urls that provide it, declared in
+    their ``bundled_files`` form, which is a CDN url. The bundle emits those
+    same libraries resolved for the active resource mode, which in a notebook
+    served by Panel's Jupyter extension is a ``/panel-preview/...`` endpoint
+    url. Comparing the two forms never matches, so without resolving them the
+    library is requested twice: RequireJS loads it as a module and the loader
+    also injects a plain script tag for it. That second copy calls ``define()``
+    anonymously outside any RequireJS script context, which corrupts RequireJS'
+    own module resolution and leaves components reading globals that were never
+    assigned.
+    """
+    resolved = {}
+    for name, urls in (skip or {}).items():
+        if isinstance(urls, str):
+            urls = [urls]
+        elif not isinstance(urls, (list, tuple)):
+            continue
+        urls = [url for url in urls if isinstance(url, str)]
+        resolved[name] = resources.adjust_paths(urls) if resources is not None else urls
+    return resolved
+
+
+def require_components(resources=None):
     """
     Returns JS snippet to load the required dependencies in the classic
     notebook using REQUIRE JS.
@@ -290,17 +441,29 @@ def require_components():
     no effect outside the classic notebook. Components should declare
     ``__javascript__``/``__javascript_modules__``/``__css__`` instead and
     let panel.io.resource_spec derive the rest.
+
+    ``resources`` resolves the ``__js_skip__`` urls for the active resource
+    mode. Without it they stay in their declared form and the skip list
+    cannot match what the bundle emits.
     """
-    from ..config import config
+    from ..config import config, panel_extension
 
     configs, requirements, exports = [], [], {}
     js_requires = []
+    active_modules = tuple(
+        panel_extension._imports[extension]
+        for extension in panel_extension._loaded_extensions
+        if extension in panel_extension._imports
+    )
 
     for qual_name, model in Model.model_class_reverse_map.items():
-        # We need to enable Models from Panel as well as Panel extensions
-        # like awesome_panel_extensions.
-        # The Bokeh models do not have "." in the qual_name
-        if "." in qual_name:
+        # Third-party models have no Panel extension metadata, so retain their
+        # requirements. Panel models only contribute when their extension was
+        # explicitly activated in this notebook.
+        module = model.__module__
+        if "." in qual_name and (
+            not module.startswith('panel.') or module.startswith(active_modules)
+        ):
             js_requires.append(model)
 
     from ..reactive import ReactiveHTML
@@ -312,12 +475,13 @@ def require_components():
         js_requires.append(conf)
 
     skip_import = {}
+    require_skip = []
     for model in js_requires:
         if not isinstance(model, dict) and issubclass(model, ReactiveHTML) and not model._loaded():
             continue
 
         if hasattr(model, '__js_skip__'):
-            skip_import.update(model.__js_skip__)
+            skip_import.update(_resolve_js_skip(model.__js_skip__, resources))
 
         if not (hasattr(model, '__js_require__') or isinstance(model, dict)):
             continue
@@ -326,6 +490,9 @@ def require_components():
             model_require = model
         else:
             model_require = dict(model.__js_require__)
+            for url in _require_covered_urls(model, model_require, resources):
+                if url not in require_skip:
+                    require_skip.append(url)
 
         model_exports = model_require.pop('exports', {})
         if not any(model_require == config for config in configs):
@@ -343,7 +510,7 @@ def require_components():
                     if r in model_exports:
                         exports[r] = model_exports[r]
 
-    return configs, requirements, exports, skip_import
+    return configs, requirements, exports, skip_import, require_skip
 
 
 class JupyterCommJSBinary(JupyterCommJS):
@@ -426,14 +593,16 @@ def load_notebook(
 ) -> None:
     from IPython.display import publish_display_data
 
+    from ..config import config
+
     resources = INLINE if inline and not state._is_pyodide else CDN
-    nb_endpoint = not state._is_pyodide
+    nb_endpoint = not state._is_pyodide and config.comms not in ('colab', 'vscode')
 
     # Components rendered in a later cell resolve their resources outside
     # any set_resource_mode block, so the notebook mode has to become the
-    # default rather than being scoped to the bootstrap. Inline output has
-    # no urls to hand out after the fact, hence the CDN.
-    set_default_resource_mode('cdn' if resources.mode == 'inline' else resources.mode)
+    # default rather than being scoped to the bootstrap. Panel resources use
+    # the Jupyter extension endpoint; Bokeh resources keep their CDN urls.
+    set_default_resource_mode('cdn' if resources.mode == 'inline' else resources.mode, notebook=nb_endpoint)
 
     with set_resource_mode(resources.mode):
         resources = Resources.from_bokeh(resources, notebook=nb_endpoint)
@@ -441,14 +610,17 @@ def load_notebook(
             None, resources, notebook=nb_endpoint, reloading=reloading,
             enable_mathjax=enable_mathjax
         )
-        configs, requirements, exports, skip_imports = require_components()
+        configs, requirements, exports, skip_imports, require_skip = require_components(resources)
         ipywidget = 'ipywidgets_bokeh' in sys.modules
+        error_id = make_id()
         bokeh_js = _autoload_js(
             bundle=bundle,
             configs=configs,
             requirements=requirements,
             exports=exports,
+            error_id=error_id,
             skip_imports=skip_imports,
+            require_skip=require_skip,
             ipywidget=ipywidget,
             reloading=reloading,
             load_timeout=load_timeout
@@ -456,7 +628,8 @@ def load_notebook(
 
     CSS = (PANEL_DIR / '_templates' / 'jupyter.css').read_text(encoding='utf-8')
     shim = '<script type="esms-options">{"shimMode": true}</script>'
-    publish_display_data(data={'text/html': f'{shim}<style>{CSS}</style>'})
+    error = f'<div id="{error_id}" role="alert" hidden></div>'
+    publish_display_data(data={'text/html': f'{shim}<style>{CSS}</style>{error}'})
     publish_display_data({
         'application/javascript': bokeh_js,
         LOAD_MIME: bokeh_js,

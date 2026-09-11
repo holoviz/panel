@@ -230,6 +230,8 @@ playwright-python = "1.61.*"
 pytest-playwright = "*"
 pytest-asyncio = "*"
 jupyter_server = "*"
+nbclassic = "*"
+notebook = "*"
 esbuild = "*"
 packaging = "*"
 

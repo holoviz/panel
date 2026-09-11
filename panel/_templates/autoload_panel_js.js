@@ -26,6 +26,8 @@ calls it with the rendered model.
   const Bokeh = root.Bokeh;
   const BK_RE = /^https:\/\/cdn\.bokeh\.org\/bokeh\/(release|dev)\/bokeh-/;
   const PN_RE = /^https:\/\/cdn\.holoviz\.org\/panel\/[^/]+\/dist\/panel/i;
+  const JUPYTER_EXTENSION_PATH = "/panel-preview/static/extensions/panel/";
+  const CDN_DIST = {{ cdn_dist|json }};
 
   // Set a timeout for this load but only if we are not already initializing
   if (typeof (root._bokeh_timeout) === "undefined" || (force || !root._bokeh_is_initializing)) {
@@ -44,6 +46,20 @@ calls it with the rendered model.
     }
     console.debug("Bokeh: all callbacks have finished");
   }
+
+  function show_jupyter_extension_error() {
+    const element = document.getElementById("{{ error_id }}");
+    if (element == null || !element.hidden) {
+      return;
+    }
+    element.style.cssText = "color: #b91c1c; font-family: sans-serif; padding: 0.5em;";
+    element.textContent = (
+      "Panel could not load resources from its Jupyter server extension. " +
+      "Install Panel in the environment running the Jupyter server and restart it."
+    );
+    element.hidden = false;
+  }
+  root.__panel_jupyter_extension_error__ = show_jupyter_extension_error;
 
   function load_libs(css_urls, js_urls, js_modules, Bokeh, callback) {
     if (css_urls == null) css_urls = [];
@@ -71,25 +87,107 @@ calls it with the rendered model.
     }
     window._bokeh_on_load = on_load
 
-    function on_error(e) {
-      const src_el = e.srcElement
-      console.error("failed to load " + (src_el.href || src_el.src));
+    function on_error(url) {
+      console.error("failed to load " + url);
+      if (url.includes(JUPYTER_EXTENSION_PATH)) {
+        show_jupyter_extension_error();
+      }
+    }
+
+    function fallback_to_cdn(element, url, attribute, parent) {
+      const index = url.indexOf(JUPYTER_EXTENSION_PATH);
+      if (index === -1 || element.dataset.panelCdnFallback != null) {
+        return false;
+      }
+      element.dataset.panelCdnFallback = "";
+      element.remove();
+      element[attribute] = CDN_DIST + url.slice(index + JUPYTER_EXTENSION_PATH.length);
+      parent.appendChild(element);
+      return true;
+    }
+
+    function inject_script_tag(url) {
+      const element = document.createElement('script');
+      element.onload = on_load;
+      element.onerror = () => {
+        if (!fallback_to_cdn(element, url, "src", document.head)) {
+          on_error(url);
+        }
+      };
+      element.async = false;
+      element.src = url;
+      console.debug("Bokeh: injecting script tag for BokehJS library: ", url);
+      document.head.appendChild(element);
     }
 
     const skip = [];
+    // Held until every resource below has been queued, so the counter cannot
+    // reach zero while injections are still pending, and released by the
+    // on_load() at the end of this function.
+    root._bokeh_is_loading = 1;
     if (window.requirejs) {
       window.requirejs.config({{ config|conffilter }});
+      {% if requirements %}
+      // Each library's global is assigned as its own module resolves rather
+      // than once the whole batch has, because a library whose factory reads
+      // another library's global (deck.gl's carto layers read window.deck)
+      // runs during the batch, not after it. Which libraries need that
+      // ordering is declared by their __js_require__ shim deps.
       {% for r in requirements %}
-      require(["{{ r }}"], function({{ exports[r] }}) {
-        {% if r in exports %}
-        window.{{ exports[r] }} = {{ exports[r] }}
-        {% endif %}
-        on_load()
+      {% if r in exports %}
+      define("{{ r }}{{ global_suffix }}", ["{{ r }}"], function(module) {
+        const name = "{{ exports[r] }}"
+        const existing = window[name]
+        // Several packages can contribute to one namespace: deck.gl's core,
+        // json and carto bundles all publish `deck`, and the three loaders.gl
+        // bundles all publish `loaders`. Their UMD builds do that by
+        // overwriting, which drops every contribution but the last, so the
+        // parts are merged here instead. Into a fresh object, because these
+        // namespaces expose their members through getters, which cannot be
+        // assigned onto.
+        if (existing != null && typeof existing === "object" &&
+            module != null && typeof module === "object") {
+          window[name] = Object.assign({}, existing, module)
+        } else {
+          window[name] = module
+        }
+        return window[name]
       })
+      {% endif %}
       {% endfor %}
-      root._bokeh_is_loading = css_urls.length + {{ requirements|length }};
-    } else {
-      root._bokeh_is_loading = css_urls.length + js_urls.length + js_modules.length;
+      root._bokeh_is_loading++;
+      // Required in stages so that a library which reads another's global
+      // while its own factory runs finds it assigned, and so that one failing
+      // library does not stop the others: each stage continues regardless.
+      const require_stages = {{ require_stages|default([])|json }};
+      const assign_resolved = () => {
+        {% for r in requirements %}
+        {% if r in exports %}
+        if (window.requirejs.defined("{{ r }}{{ global_suffix }}")) {
+          require("{{ r }}{{ global_suffix }}")
+        }
+        {% endif %}
+        {% endfor %}
+      };
+      const require_stage = (index) => {
+        if (index >= require_stages.length) {
+          // Only now are the globals the components read actually assigned.
+          require_ready_resolve()
+          on_load()
+          return
+        }
+        require(require_stages[index], () => require_stage(index + 1), (error) => {
+          const modules = error.requireModules ? error.requireModules.join(', ') : 'unknown';
+          console.error(`Panel: requirejs failed to load ${modules}: ${error.requireType} ${error.message}`);
+          // Publish whatever this stage did resolve, so that one library
+          // failing does not blank every component on the page.
+          assign_resolved()
+          on_error(modules)
+          require_stage(index + 1)
+        })
+      };
+      require_stage(0)
+      {% endif %}
     }
 
     const existing_stylesheets = []
@@ -104,12 +202,16 @@ calls it with the rendered model.
       const url = css_urls[i];
       const escaped = encodeURI(url)
       if (existing_stylesheets.indexOf(escaped) !== -1) {
-        on_load()
         continue;
       }
       const element = document.createElement("link");
+      root._bokeh_is_loading++;
       element.onload = on_load;
-      element.onerror = on_error;
+      element.onerror = () => {
+        if (!fallback_to_cdn(element, url, "href", document.body)) {
+          on_error(url);
+        }
+      };
       element.rel = "stylesheet";
       element.type = "text/css";
       element.href = url;
@@ -118,13 +220,26 @@ calls it with the rendered model.
     }
 
     {%- for lib, urls in skip_imports.items() %}
-    if (((window.{{ lib }} !== undefined) && (!(window.{{ lib }} instanceof HTMLElement))) || window.requirejs) {
+    // The global is already there, so re-fetching what provides it is waste.
+    if ((window.{{ lib }} !== undefined) && (!(window.{{ lib }} instanceof HTMLElement))) {
       var urls = {{ urls }};
       for (var i = 0; i < urls.length; i++) {
         skip.push(encodeURI(urls[i]))
       }
     }
     {%- endfor %}
+    {%- if require_skip %}
+    // RequireJS is loading these from its own paths, so a script tag for them
+    // would fetch the same library a second time and register an anonymous
+    // define() outside any RequireJS script context, which corrupts the
+    // resolution of the modules required above.
+    if (window.requirejs) {
+      var urls = {{ require_skip|json }};
+      for (var i = 0; i < urls.length; i++) {
+        skip.push(encodeURI(urls[i]))
+      }
+    }
+    {%- endif %}
     var existing_scripts = []
     const scripts = document.getElementsByTagName('script')
     for (let i = 0; i < scripts.length; i++) {
@@ -140,31 +255,25 @@ calls it with the rendered model.
       const isBokehOrPanel = BK_RE.test(escaped) || PN_RE.test(escaped)
       const missingOrBroken = Bokeh == null || Bokeh.Panel == null || (Bokeh.version != version && !Bokeh.versions?.has(version)) || Bokeh.versions?.get(version)?.Panel == null;
       if (shouldSkip && !(isBokehOrPanel && missingOrBroken)) {
-        if (!window.requirejs) {
-          on_load();
-        }
         continue;
       }
-      const element = document.createElement('script');
-      element.onload = on_load;
-      element.onerror = on_error;
-      element.async = false;
-      element.src = url;
-      console.debug("Bokeh: injecting script tag for BokehJS library: ", url);
-      document.head.appendChild(element);
+      root._bokeh_is_loading++;
+      inject_script_tag(url);
     }
     for (let i = 0; i < js_modules.length; i++) {
       const [url, name] = js_modules[i];
       const escaped = encodeURI(url)
       const loaded = name == null ? existing_scripts.indexOf(escaped) !== -1 : root[name] != null
       if (skip.indexOf(escaped) !== -1 || loaded) {
-        if (!window.requirejs) {
-          on_load();
-        }
         continue;
       }
       var element = document.createElement('script');
-      element.onerror = on_error;
+      root._bokeh_is_loading++;
+      element.onerror = () => {
+        if (!fallback_to_cdn(element, url, "src", document.head)) {
+          on_error(url);
+        }
+      };
       element.async = false;
       element.type = "module";
       if (name == null) {
@@ -187,9 +296,9 @@ calls it with the rendered model.
       console.debug("Bokeh: injecting script tag for BokehJS library: ", url);
       document.head.appendChild(element);
     }
-    if (!js_urls.length && !js_modules.length) {
-      on_load()
-    }
+    // Releases the reservation taken above, running the callbacks now if
+    // nothing else is outstanding.
+    on_load()
   };
 
   function inject_raw_css(css) {
@@ -208,12 +317,25 @@ calls it with the rendered model.
     },
     {%- endfor %}
     {%- for js in (bundle.js_raw if bundle else js_raw) %}
-    function(Bokeh) {
+    function(Bokeh, define, module, exports) {
       {{ js|indent(6) }}
     },
     {% endfor -%}
-    function(Bokeh) {} // ensure no trailing comma for IE
+    function(Bokeh, define, module, exports) {} // ensure no trailing comma for IE
   ];
+
+  // Resolved once RequireJS has loaded the libraries it is responsible for
+  // and their globals have been assigned, so that the resource registry can
+  // make components wait for them rather than racing them.
+  let require_ready_resolve;
+  const require_ready = new Promise((resolve) => { require_ready_resolve = resolve });
+  {%- if requirements %}
+  // A claimed library that is never released would keep its components from
+  // ever rendering, so the wait is bounded by the same timeout as the load.
+  setTimeout(() => require_ready_resolve(), {{ timeout|default(0)|json }} || 5000);
+  {%- else %}
+  require_ready_resolve();
+  {%- endif %}
 
   function declare_resources() {
     // Tells the panel.js resource registry which component libraries this
@@ -224,16 +346,34 @@ calls it with the rendered model.
     if (!declared || !(declared.libs || declared.css)) {
       return;
     }
-    if (root.__panel_resources__ != null) {
-      root.__panel_resources__.declare(declared);
-    } else {
-      (root.__panel_resources_declared__ = root.__panel_resources_declared__ || []).push(declared);
+    // Libraries RequireJS is loading are claimed against require_ready
+    // instead of being declared, since they are not ready yet.
+    const require_urls = window.requirejs ? {{ require_skip|default([])|json }} : [];
+    const satisfied = [], pending = [];
+    for (const lib of declared.libs || []) {
+      const urls = lib.js || [];
+      const by_require = urls.length > 0 && urls.every((url) => require_urls.includes(url));
+      (by_require ? pending : satisfied).push(lib);
+    }
+    const declarations = [{libs: satisfied, css: declared.css}];
+    if (pending.length > 0) {
+      declarations.push({libs: pending, ready: require_ready});
+    }
+    for (const declaration of declarations) {
+      if (root.__panel_resources__ != null) {
+        if (declaration.ready != null) {
+          root.__panel_resources__.claim(declaration, declaration.ready);
+        } else {
+          root.__panel_resources__.declare(declaration);
+        }
+      } else {
+        (root.__panel_resources_declared__ = root.__panel_resources_declared__ || []).push(declaration);
+      }
     }
   }
 
   function run_inline_js() {
     if ((root.Bokeh !== undefined) || (force === true)) {
-      declare_resources();
       for (let i = 0; i < inline_js.length; i++) {
         try {
           inline_js[i].call(root, root.Bokeh);
@@ -298,6 +438,12 @@ calls it with the rendered model.
       });
     }
   }
+  // Declared synchronously, before anything is scheduled. The declaration is
+  // metadata rather than a load, so it needs neither Bokeh nor the libraries
+  // themselves, and it has to be in place before the first model initializes:
+  // a cell whose output embeds while these libraries are still loading would
+  // otherwise find nothing declared and fetch its own second copy of each.
+  declare_resources();
   // Give older versions of the autoload script a head-start to ensure
   // they initialize before we start loading newer version.
   setTimeout(load_or_wait, 100)

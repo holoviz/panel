@@ -98,6 +98,7 @@ def parse_template(*args, **kwargs):
 
 # Handle serving of the panel extension before session is loaded
 RESOURCE_MODE: MODES = 'server'
+NOTEBOOK_RESOURCES = False
 PANEL_DIR = Path(__file__).parent.parent
 DIST_DIR = PANEL_DIR / 'dist'
 BUNDLE_DIR = DIST_DIR / 'bundled'
@@ -200,7 +201,11 @@ def get_resource_mode() -> MODES:
     """
     return RESOURCE_MODE
 
-def set_default_resource_mode(mode: MODES):
+def get_notebook_resources() -> bool:
+    """Whether resource urls should use the Jupyter extension endpoint."""
+    return NOTEBOOK_RESOURCES
+
+def set_default_resource_mode(mode: MODES, *, notebook: bool = False):
     """
     Sets the mode urls are resolved for outside a set_resource_mode block.
 
@@ -212,8 +217,9 @@ def set_default_resource_mode(mode: MODES):
     context manager either, because components created in a later cell
     resolve their resources long after ``pn.extension()`` returned.
     """
-    global RESOURCE_MODE
+    global NOTEBOOK_RESOURCES, RESOURCE_MODE
     RESOURCE_MODE = mode
+    NOTEBOOK_RESOURCES = notebook
 
 def use_cdn() -> bool:
     return _settings.resources(default="server") != 'server' or state._is_pyodide
@@ -844,6 +850,13 @@ class Resources(BkResources):
                     resource = f'{self.root_url}{resource}'
             if resource.endswith('.css') and not resource.startswith(('http:', 'https:')):
                 resource += version_suffix
+            if self.notebook:
+                base_url = state.base_url.removesuffix('nbclassic/')
+                endpoint = f'{base_url}panel-preview/static/extensions/panel/'
+                if resource.startswith(CDN_DIST):
+                    resource = endpoint + resource.removeprefix(CDN_DIST)
+                elif resource.startswith(LOCAL_DIST):
+                    resource = endpoint + resource.removeprefix(LOCAL_DIST)
             new_resources.append(resource)
         return new_resources
 

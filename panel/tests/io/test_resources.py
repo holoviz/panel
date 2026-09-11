@@ -113,6 +113,23 @@ def test_resources_cdn():
         f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-mathjax-{bokeh_version}.min.js',
     ]
 
+
+def test_notebook_resources_respect_jupyterhub_base_url():
+    resource = f'{CDN_DIST}bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js'
+    with edit_readonly(state):
+        state.base_url = '/user/alice/'
+    try:
+        resolved = Resources(mode='cdn', notebook=True).adjust_paths([resource])
+    finally:
+        with edit_readonly(state):
+            state.base_url = '/'
+
+    assert resolved == [
+        f'/user/alice/panel-preview/static/extensions/panel/bundled/datatabulator/'
+        f'tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js'
+    ]
+
+
 def test_resources_server_absolute():
     resources = Resources(mode='server', absolute=True, minified=True)
     assert resources.js_raw == ['Bokeh.set_log_level("info");']
