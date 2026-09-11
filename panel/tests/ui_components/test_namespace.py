@@ -4,7 +4,7 @@ the classic namespaces, that the flat and structured forms agree, and that
 importing it has no side effect other than selecting the design.
 
 panel.ui is imported through a fixture rather than at module scope. Importing it
-imports panel-material-ui, which until 0.12 patches Panel and assigns
+imports panel-material-ui, which unconditionally patches Panel and assigns
 config.design, and doing that during collection would change what the rest of
 the suite collects. The fixture also undoes those patches, since they otherwise
 leak into every test that runs after this module.
@@ -61,7 +61,7 @@ NOT_FLAT = {
 
 def patched_globals():
     """
-    The globals panel-material-ui replaces at import time until 0.12, which the
+    The globals panel-material-ui replaces at import time, which the
     ui fixture restores so that the patches do not reach the rest of the suite.
     Leaving Param.mapping patched, for instance, makes Widget.controls(jslink=True)
     raise for every classic widget with an Action or Event parameter.
@@ -164,6 +164,14 @@ def test_material_components_reachable_flat(ui, pmui, module):
 def test_classic_components_are_not_wrapped(ui):
     assert ui.Tabulator is pn.widgets.Tabulator
     assert ui.widgets.Tabulator is pn.widgets.Tabulator
+    assert ui.Player is pn.widgets.Player
+    assert ui.widgets.Player is pn.widgets.Player
+    assert ui.DiscretePlayer is pn.widgets.DiscretePlayer
+    assert ui.widgets.DiscretePlayer is pn.widgets.DiscretePlayer
+    assert ui.ColorMap is pn.widgets.ColorMap
+    assert ui.widgets.ColorMap is pn.widgets.ColorMap
+    assert ui.FileSelector is pn.widgets.FileSelector
+    assert ui.widgets.FileSelector is pn.widgets.FileSelector
     assert ui.Matplotlib is pn.pane.Matplotlib
     assert ui.GridStack is pn.layout.GridStack
 
@@ -272,7 +280,7 @@ def test_explicit_design_survives_importing_panel_ui():
 
 
 @pytest.mark.xfail(
-    reason='panel-material-ui patches Panel at import time until 0.12',
+    reason='panel-material-ui patches Panel at import time',
     strict=False
 )
 def test_importing_panel_ui_does_not_patch_core(ui):

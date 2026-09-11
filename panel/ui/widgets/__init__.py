@@ -19,12 +19,12 @@ from panel_material_ui.widgets import (
 )
 
 from ...widgets import (
-    ArrayInput, BooleanStatus, CodeEditor, CompositeWidget, DatetimeRangeInput,
-    Debugger, Dial, DiscretePlayer, FileDropper, FileSelector, Gauge, Grammar,
-    GrammarList, JSONEditor, LinearGauge, Number, Player, SpeechToText,
-    StaticText, Tabulator, Terminal, TextEditor, TextToSpeech, ToggleGroup,
-    TooltipIcon, Tqdm, Trend, Utterance, VideoStream, Voice, Widget,
-    WidgetBase,
+    ArrayInput, BooleanStatus, CodeEditor, ColorMap, CompositeWidget,
+    DatetimeRangeInput, Debugger, Dial, DiscretePlayer, FileDropper,
+    FileSelector, Gauge, Grammar, GrammarList, JSONEditor, LinearGauge, Number,
+    Player, SpeechToText, StaticText, Tabulator, Terminal, TextEditor,
+    TextToSpeech, ToggleGroup, TooltipIcon, Tqdm, Trend, Utterance,
+    VideoStream, Voice, Widget, WidgetBase,
 )
 
 __all__ = (
@@ -41,6 +41,7 @@ __all__ = (
     "Chip",
     "CircularProgress",
     "CodeEditor",
+    "ColorMap",
     "ColorPicker",
     "CompositeWidget",
     "CrossSelector",

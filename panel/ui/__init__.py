@@ -25,8 +25,8 @@ from ..config import config
 # public surface is versioned by another repository for the 1.x cycle, so a pmui
 # minor must not be able to change panel's documented API without a panel
 # release. Keep in sync with the pin in pyproject.toml.
-_PMUI_MIN_VERSION = '0.11.2'
-_PMUI_NEXT_VERSION = '0.12'
+_PMUI_MIN_VERSION = '0.15.0a0'
+_PMUI_NEXT_VERSION = '0.16'
 
 
 def _check_panel_material_ui() -> None:
@@ -74,7 +74,7 @@ def _set_global_design(design):
 _check_panel_material_ui()
 
 # Captured before panel-material-ui is imported below, since it assigns
-# config.design unconditionally at import time until 0.12.
+# config.design unconditionally at import time.
 _prior_design = _global_design()
 
 from . import (  # noqa
@@ -110,8 +110,8 @@ from .theme import (
 from .widgets import (
     ArrayInput, AutocompleteInput, Avatar, BooleanStatus, Breadcrumbs, Button,
     ButtonIcon, Checkbox, CheckBoxGroup, CheckButtonGroup, Chip,
-    CircularProgress, CodeEditor, ColorPicker, CrossSelector, DatePicker,
-    DateRangePicker, DateRangeSlider, DateSlider, DatetimeInput,
+    CircularProgress, CodeEditor, ColorMap, ColorPicker, CrossSelector,
+    DatePicker, DateRangePicker, DateRangeSlider, DateSlider, DatetimeInput,
     DatetimePicker, DatetimeRangeInput, DatetimeRangePicker,
     DatetimeRangeSlider, DatetimeSlider, Debugger, Dial, DictInput,
     DiscretePlayer, DiscreteSlider, EditableFloatSlider,
@@ -164,6 +164,7 @@ __all__ = (
     "CircularProgress",
     "Clickable",
     "CodeEditor",
+    "ColorMap",
     "ColorPicker",
     "Column",
     "Container",
