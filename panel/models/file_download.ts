@@ -212,7 +212,7 @@ export class FileDownloadView extends InputWidgetView {
       this.button_el.classList.add(buttons.btn)
       this.button_el.classList.add(btn_type)
     } else {  // When the button type is changed.
-      const prev_button_type = this.anchor_el.classList.item(1)
+      const prev_button_type = this.button_el.classList.item(1)
       if (prev_button_type) {
         this.button_el.classList.replace(prev_button_type, btn_type)
       }
