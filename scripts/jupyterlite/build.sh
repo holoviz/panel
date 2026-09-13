@@ -13,8 +13,10 @@ node update_lock.js
 python patch_lock.py
 rm node_modules/pyodide/*.whl
 
-jupyter lite build
+rm -rf static/pyodide
+mkdir -p static
+cp -r node_modules/pyodide static/pyodide
+mv pyodide-lock.json static/pyodide/pyodide-lock.json
+mv ../../dist/* static/pyodide
 
-cp -r node_modules/pyodide/ ../../lite/dist/pyodide
-mv pyodide-lock.json ../../lite/dist/pyodide/pyodide-lock.json
-mv ../../dist/* ../../lite/dist/pyodide
+jupyter lite build
