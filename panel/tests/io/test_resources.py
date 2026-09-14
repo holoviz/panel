@@ -130,6 +130,32 @@ def test_notebook_resources_respect_jupyterhub_base_url():
     ]
 
 
+def test_notebook_resources_do_not_double_render_endpoint_root():
+    """
+    The Jupyter extension render endpoint (`panel-preview/render/...`) sets
+    `rel_path` to its own `panel-preview` root for unrelated reasons
+    (resolving this same page's other relative asset and websocket urls).
+    That value is already the endpoint root, so it must not be appended a
+    second time on top of `base_url`, which the render endpoint also sets to
+    include `panel-preview`.
+    """
+    resource = f'{CDN_DIST}bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js'
+    with edit_readonly(state):
+        state.base_url = '/user/alice/panel-preview/'
+        state.rel_path = '/user/alice/panel-preview'
+    try:
+        resolved = Resources(mode='cdn', notebook=True).adjust_paths([resource])
+    finally:
+        with edit_readonly(state):
+            state.base_url = '/'
+            state.rel_path = ''
+
+    assert resolved == [
+        f'/user/alice/panel-preview/static/extensions/panel/bundled/datatabulator/'
+        f'tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js'
+    ]
+
+
 def test_resources_server_absolute():
     resources = Resources(mode='server', absolute=True, minified=True)
     assert resources.js_raw == ['Bokeh.set_log_level("info");']
