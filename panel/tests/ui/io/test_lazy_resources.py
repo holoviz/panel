@@ -393,14 +393,11 @@ def test_declared_extension_renders_with_lazy_resources_disabled(page):
 
 def test_lazy_component_ignores_stale_notebook_default(page):
     """
-    ``set_default_resource_mode(..., notebook=True)`` is a notebook's own
-    ``pn.extension()`` bootstrap setting a process-wide default so that
-    components created in a later cell still resolve against the Jupyter
-    extension endpoint (see ``panel.io.notebook.load_notebook``). A server
-    started from within that same kernel process (``pn.serve``, commonly
-    with ``threaded=True``, which is exactly how this test itself starts
-    one) must not inherit it: it never registers the `panel-preview`
-    endpoint, so every lazily-loaded resource would 404 for its users.
+    A server started from a notebook's kernel process (``pn.serve``,
+    commonly with ``threaded=True``, exactly how ``serve_component``
+    starts one here) must not inherit that notebook's resource default:
+    it never registers the `panel-preview` endpoint, so every
+    lazily-loaded resource would 404.
     """
     from panel.io import resources as resources_module
     old_notebook_resources = resources_module.NOTEBOOK_RESOURCES

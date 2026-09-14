@@ -382,14 +382,10 @@ def test_resource_spec_respects_rel_path(document):
 
 def test_resource_spec_ignores_stale_notebook_default_in_server_session(document):
     """
-    ``set_default_resource_mode(..., notebook=True)`` is the notebook's own
-    ``pn.extension()`` bootstrap setting a process-wide default so that
-    components created in a later cell still resolve against the Jupyter
-    extension endpoint. A server started from within that same kernel
-    process (``pn.serve``, commonly with ``threaded=True``) runs in the
-    same process and must not inherit it: a plain served app never
-    registers the `panel-preview` endpoint, so every lazily-loaded resource
-    would 404 for its users.
+    A server started from within a notebook's kernel process (``pn.serve``,
+    commonly with ``threaded=True``) must not inherit the notebook's
+    process-wide resource default: a plain served app never registers the
+    `panel-preview` endpoint, so every lazily-loaded resource would 404.
     """
     server_doc = document
     session_context = BokehSessionContext('test-session', object(), server_doc)

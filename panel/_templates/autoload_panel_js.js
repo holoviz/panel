@@ -121,30 +121,23 @@ calls it with the rendered model.
     }
 
     const skip = [];
-    // Held until every resource below has been queued, so the counter cannot
-    // reach zero while injections are still pending, and released by the
-    // on_load() at the end of this function.
+    // Held open until every resource below has been queued, then released
+    // by on_load() at the end of this function.
     root._bokeh_is_loading = 1;
     if (window.requirejs) {
       window.requirejs.config({{ config|conffilter }});
       {% if requirements %}
-      // Each library's global is assigned as its own module resolves rather
-      // than once the whole batch has, because a library whose factory reads
-      // another library's global (deck.gl's carto layers read window.deck)
-      // runs during the batch, not after it. Which libraries need that
-      // ordering is declared by their __js_require__ shim deps.
+      // Assigns each library's global as its own module resolves, since a
+      // library whose factory reads another's global (e.g. deck.gl's carto
+      // layers reading window.deck) runs during the batch, not after it.
       {% for r in requirements %}
       {% if r in exports %}
       define("{{ r }}{{ global_suffix }}", ["{{ r }}"], function(module) {
         const name = "{{ exports[r] }}"
         const existing = window[name]
-        // Several packages can contribute to one namespace: deck.gl's core,
-        // json and carto bundles all publish `deck`, and the three loaders.gl
-        // bundles all publish `loaders`. Their UMD builds do that by
-        // overwriting, which drops every contribution but the last, so the
-        // parts are merged here instead. Into a fresh object, because these
-        // namespaces expose their members through getters, which cannot be
-        // assigned onto.
+        // Several packages can contribute to one namespace (deck.gl's core,
+        // json and carto bundles all publish `deck`), so merge into a fresh
+        // object rather than overwrite.
         if (existing != null && typeof existing === "object" &&
             module != null && typeof module === "object") {
           window[name] = Object.assign({}, existing, module)
@@ -156,9 +149,8 @@ calls it with the rendered model.
       {% endif %}
       {% endfor %}
       root._bokeh_is_loading++;
-      // Required in stages so that a library which reads another's global
-      // while its own factory runs finds it assigned, and so that one failing
-      // library does not stop the others: each stage continues regardless.
+      // Required in stages so a library reading another's global finds it
+      // assigned, and so one failing library doesn't stop the rest.
       const require_stages = {{ require_stages|default([])|json }};
       const assign_resolved = () => {
         {% for r in requirements %}
@@ -229,10 +221,8 @@ calls it with the rendered model.
     }
     {%- endfor %}
     {%- if require_skip %}
-    // RequireJS is loading these from its own paths, so a script tag for them
-    // would fetch the same library a second time and register an anonymous
-    // define() outside any RequireJS script context, which corrupts the
-    // resolution of the modules required above.
+    // RequireJS already has its own path for these, so a script tag would
+    // load them a second time and corrupt RequireJS' module resolution.
     if (window.requirejs) {
       var urls = {{ require_skip|json }};
       for (var i = 0; i < urls.length; i++) {
@@ -324,9 +314,8 @@ calls it with the rendered model.
     function(Bokeh, define, module, exports) {} // ensure no trailing comma for IE
   ];
 
-  // Resolved once RequireJS has loaded the libraries it is responsible for
-  // and their globals have been assigned, so that the resource registry can
-  // make components wait for them rather than racing them.
+  // Resolved once RequireJS has loaded its libraries and assigned their
+  // globals, so the resource registry can wait for them instead of racing.
   let require_ready_resolve;
   const require_ready = new Promise((resolve) => { require_ready_resolve = resolve });
   {%- if requirements %}
@@ -438,11 +427,9 @@ calls it with the rendered model.
       });
     }
   }
-  // Declared synchronously, before anything is scheduled. The declaration is
-  // metadata rather than a load, so it needs neither Bokeh nor the libraries
-  // themselves, and it has to be in place before the first model initializes:
-  // a cell whose output embeds while these libraries are still loading would
-  // otherwise find nothing declared and fetch its own second copy of each.
+  // Declared synchronously, before anything is scheduled, so a cell whose
+  // output embeds while libraries are still loading finds this in place
+  // instead of fetching its own second copy of each.
   declare_resources();
   // Give older versions of the autoload script a head-start to ensure
   // they initialize before we start loading newer version.

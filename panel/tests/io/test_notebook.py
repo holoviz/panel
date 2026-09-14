@@ -46,10 +46,7 @@ def notebook_bootstrap():
     notebook_resources = resources_module.NOTEBOOK_RESOURCES
     notebook, notebook_type = state.notebook, state.notebook_type
     # `_SPEC_CACHE` is keyed in part on `RESOURCE_MODE`/`NOTEBOOK_RESOURCES`,
-    # so a spec this bootstrap computes must not be handed out to a test
-    # that runs later with those globals back at their own values, nor
-    # reuse an entry an earlier test cached before this bootstrap changed
-    # them (see test_resource_spec_cache_key_includes_notebook_default).
+    # so it must not leak a spec between this bootstrap and other tests.
     _SPEC_CACHE.clear()
     try:
         load_notebook(inline=True)
@@ -236,31 +233,22 @@ def test_notebook_dynamic_component_resources_use_jupyter_extension_endpoint(
 )
 def test_notebook_resources_do_not_reuse_spec_cached_before_bootstrap(nb_loaded):
     """
-    Regression test for a real CI failure under xdist, where a class' spec
-    computed by an earlier, unrelated test (outside any notebook, but under
-    the same 'cdn' resource mode the notebook bootstrap also selects) was
-    cached and then handed back to a notebook test unchanged, silently
-    dropping the Jupyter extension endpoint. ``resource_spec``'s cache key
-    must include the effective notebook default, not just the resolved
-    mode, or this reproduces on every run rather than only when xdist
-    happens to schedule the two tests in the same worker.
+    Regression test for a CI failure under xdist: a spec cached by an
+    earlier, unrelated test under the same resolved mode was handed back
+    unchanged to a notebook test, dropping the Jupyter extension endpoint.
+    ``resource_spec``'s cache key must include the effective notebook
+    default, not just the resolved mode.
 
-    The filter is unrelated to what this test checks: appending a live
-    component to an already-rendered comm-backed document tries to push
-    the update over that comm, which was never actually opened by a real
-    frontend in a unit test, and Python only raises that warning the first
-    time it is hit in the process, so whether it surfaces here depends on
-    what other tests already ran, not on anything this test does.
+    The filter is unrelated to what this checks: Python only raises that
+    warning the first time it's hit in the process, so whether it surfaces
+    here depends on what other tests already ran.
     """
     from bokeh.io.state import curstate
     state, mode = curstate(), resources_module.RESOURCE_MODE
     notebook_resources = resources_module.NOTEBOOK_RESOURCES
     notebook, notebook_type = state.notebook, state.notebook_type
     try:
-        # The "earlier, unrelated test": some other code already left the
-        # resource mode at 'cdn' (a common, unremarkable default) and built
-        # a component's spec under it, well before anything notebook
-        # related runs.
+        # Simulates the "earlier, unrelated test": mode 'cdn', no notebook.
         resources_module.RESOURCE_MODE = 'cdn'
         widget = TextEditor()
         outside_notebook_urls = [
@@ -269,8 +257,7 @@ def test_notebook_resources_do_not_reuse_spec_cached_before_bootstrap(nb_loaded)
         ]
         assert not any('panel-preview' in url for url in outside_notebook_urls)
 
-        # Now the notebook bootstrap runs, in the same process, and selects
-        # that same 'cdn' mode.
+        # The notebook bootstrap now runs, selecting that same 'cdn' mode.
         load_notebook(inline=True)
 
         column = Column()

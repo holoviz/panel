@@ -122,13 +122,12 @@ NB_TEMPLATE_BASE: Template = _env.get_template('nb_template.html')
 
 def _require_stages(requirements, shim):
     """
-    Groups requirements so that a library loads after the ones it needs.
+    Groups requirements into stages so each loads after its dependencies.
 
-    RequireJS honours ``shim`` dependencies only for scripts that do not call
-    ``define`` themselves, and the libraries that need ordering here do call it
-    (deck.gl's carto and json bundles). Their declared dependencies are
-    therefore satisfied by requiring them in stages instead, which is also
-    what gives the preceding stage's globals time to be assigned.
+    RequireJS ignores ``shim`` deps for scripts that call ``define``
+    themselves (deck.gl's carto and json bundles do), so those are ordered
+    via stages instead, which also gives a stage's globals time to be
+    assigned before the next one runs.
     """
     pending = {
         name: {
@@ -151,8 +150,7 @@ def _require_stages(requirements, shim):
 
 
 #: Suffix of the helper modules that assign a library's browser global as
-#: soon as its own module resolves. A library whose factory reads another
-#: library's global depends on the helper rather than on the module itself.
+#: soon as its own module resolves.
 GLOBAL_MODULE_SUFFIX = '__panel_global'
 
 
@@ -165,11 +163,9 @@ def _autoload_js(
         for key, c in conf.items():
             config[key].update(c)
     stages = _require_stages(requirements, config['shim'])
-    # A shim describes a script that does not call define(). Where an entry
-    # only carries deps it is expressing load order, which the stages above
-    # now provide, and leaving it in the RequireJS config makes RequireJS
-    # treat a module that does call define() as shimmed and resolve it to
-    # undefined. Only entries naming an export are real shims.
+    # A deps-only shim entry is now redundant (the stages above order it
+    # instead), and leaving it in makes RequireJS treat a module that calls
+    # define() itself as shimmed, resolving it to undefined.
     config['shim'] = {
         name: shim for name, shim in config['shim'].items() if shim.get('exports')
     }
@@ -338,14 +334,8 @@ def mimebundle_to_html(bundle: dict[str, t.Any]) -> str:
 
 def _cdn_url_key(url):
     """
-    Normalizes a cdn url so a RequireJS path and a ``__javascript_raw__`` url
-    for the same file compare equal.
-
-    The two are written independently and differ in ways that carry no
-    meaning: a path omits the ``.js`` suffix, and it may be written
-    protocol-relative (``//cdn.jsdelivr.net/npm/...``) where the resource url
-    is absolute (``https://cdn.jsdelivr.net/npm/...``). Comparing the package
-    relative remainder ignores exactly those differences.
+    Normalizes a cdn url so a RequireJS path and a resource url for the
+    same file compare equal, ignoring the ``.js`` suffix and protocol.
     """
     url = url.split('?')[0].split('#')[0]
     url = re.sub(r'^(?:[a-z][a-z0-9+.-]*:)?//', '', url)
@@ -361,16 +351,9 @@ def _require_covered_urls(model, model_require, resources=None):
     """
     Resolved urls of a model's scripts that RequireJS is going to load.
 
-    A ``__js_require__`` path and a ``__javascript__`` url point at the same
-    file through different hosts: paths are declared against ``npm_cdn``,
-    while ``__javascript__`` resolves to Panel's own bundled copy. Pairing
-    them through ``__javascript_raw__``, which is in the same npm_cdn form as
-    the paths, is what identifies the urls RequireJS covers.
-
-    Only those may be skipped. Skipping a url RequireJS has no path for, as
-    skipping everything a component declares would, means nothing loads it at
-    all; leaving in a url RequireJS does load means the file is fetched twice
-    and the second, plain script tag copy corrupts RequireJS' resolution.
+    Only those may be skipped: leaving a covered url in would fetch it
+    twice and corrupt RequireJS' resolution, while skipping an uncovered
+    one would mean nothing loads it at all.
     """
     paths = model_require.get('paths', {}) or {}
     path_keys = set()
@@ -408,18 +391,9 @@ def _require_covered_urls(model, model_require, resources=None):
 
 def _resolve_js_skip(skip, resources=None):
     """
-    Resolves ``__js_skip__`` urls into the form the bundle emits.
-
-    ``__js_skip__`` names a global and the urls that provide it, declared in
-    their ``bundled_files`` form, which is a CDN url. The bundle emits those
-    same libraries resolved for the active resource mode, which in a notebook
-    served by Panel's Jupyter extension is a ``/panel-preview/...`` endpoint
-    url. Comparing the two forms never matches, so without resolving them the
-    library is requested twice: RequireJS loads it as a module and the loader
-    also injects a plain script tag for it. That second copy calls ``define()``
-    anonymously outside any RequireJS script context, which corrupts RequireJS'
-    own module resolution and leaves components reading globals that were never
-    assigned.
+    Resolves ``__js_skip__`` urls into the form the bundle emits, so they
+    can be compared against it. Without this, a component whose global is
+    already present would still get a second, duplicate script tag.
     """
     resolved = {}
     for name, urls in (skip or {}).items():
@@ -442,9 +416,8 @@ def require_components(resources=None):
     ``__javascript__``/``__javascript_modules__``/``__css__`` instead and
     let panel.io.resource_spec derive the rest.
 
-    ``resources`` resolves the ``__js_skip__`` urls for the active resource
-    mode. Without it they stay in their declared form and the skip list
-    cannot match what the bundle emits.
+    ``resources``, if given, resolves the ``__js_skip__`` urls so they
+    match what the bundle emits.
     """
     from ..config import config, panel_extension
 

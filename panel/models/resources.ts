@@ -217,17 +217,10 @@ export class ResourceRegistry {
   }
 
   /**
-   * Records that a loader outside the registry is fetching these libraries.
-   *
-   * The classic notebook loads component libraries through RequireJS, which
-   * assigns their globals from its own module values. Those libraries must
-   * not be declared with `declare`: that reports them as ready immediately,
-   * and a view rendering before RequireJS has assigned the global reads
-   * `undefined` and throws, with no second attempt. Nor can they simply be
-   * left out, because then the registry fetches its own bundled copy in
-   * parallel and the resulting anonymous `define()` corrupts RequireJS'
-   * module resolution. Claiming them against `ready` is what makes
-   * `await_resources` wait for the loader that is actually doing the work.
+   * Records that a loader outside the registry (RequireJS, in the classic
+   * notebook) is already fetching these libraries. Unlike `declare`, this
+   * does not mark them ready immediately: `await_resources` waits on
+   * `ready` instead, so a view doesn't read an unassigned global.
    */
   claim(declared: {libs?: LibSpec[]}, ready: Promise<void>): void {
     for (const lib of declared.libs ?? []) {

@@ -83,16 +83,11 @@ def _spec_mode(mode: MODES | None = None) -> tuple[str, bool]:
 
 
 def _resources(mode: str) -> Resources:
-    # `NOTEBOOK_RESOURCES` is a process-wide default set once by the
-    # notebook's own `pn.extension()` bootstrap (`load_notebook`), so that
-    # components created in a later cell still resolve against the Jupyter
-    # extension endpoint. It is not scoped to that notebook's document,
-    # so a server started from within the same kernel process (`pn.serve`,
-    # commonly with `threaded=True`) would otherwise inherit it and point
-    # every lazily-loaded resource at a `panel-preview/static/...` endpoint
-    # that a plain served app never registers, 404ing all of them. A
-    # genuine server session's own document is the one thing that reliably
-    # tells the two apart.
+    # `NOTEBOOK_RESOURCES` is a process-wide default set by the notebook's
+    # own bootstrap, so it isn't scoped to that notebook's document. A
+    # server started from the same kernel process (e.g. `pn.serve(...,
+    # threaded=True)`) must not inherit it, or every lazily-loaded resource
+    # would 404 against an endpoint that server never registers.
     notebook = get_notebook_resources() and not state._is_server_session
     return Resources(mode=mode, notebook=notebook)
 
@@ -344,11 +339,9 @@ def resource_spec(cls: type, mode: MODES | None = None) -> dict[str, t.Any] | No
     if not config.lazy_resources or not _has_resources(cls):
         return None
     resolved_mode, inline_fallback = _spec_mode(mode)
-    # The effective notebook-endpoint default, not just `rel_path`/`base_url`,
-    # has to be part of the key: a notebook and a server started from it can
-    # share both of those (e.g. both default to '' and '/') while resolving
-    # to different urls, since only one of the two is a genuine server
-    # session. See `_resources` for why that check is what decides it.
+    # The effective notebook default has to be part of the key too: a
+    # notebook and a server started from it can share `rel_path`/`base_url`
+    # while only one of them is a genuine server session (see `_resources`).
     key = (
         cls, resolved_mode, state.rel_path, state.base_url,
         get_notebook_resources() and not state._is_server_session,

@@ -132,12 +132,9 @@ def test_notebook_resources_respect_jupyterhub_base_url():
 
 def test_notebook_resources_do_not_double_render_endpoint_root():
     """
-    The Jupyter extension render endpoint (`panel-preview/render/...`) sets
-    `rel_path` to its own `panel-preview` root for unrelated reasons
-    (resolving this same page's other relative asset and websocket urls).
-    That value is already the endpoint root, so it must not be appended a
-    second time on top of `base_url`, which the render endpoint also sets to
-    include `panel-preview`.
+    The render endpoint sets `rel_path` to its own `panel-preview` root
+    already, so it must not be appended a second time on top of
+    `base_url`, which the render endpoint also includes it in.
     """
     resource = f'{CDN_DIST}bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js'
     with edit_readonly(state):

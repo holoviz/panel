@@ -851,15 +851,10 @@ class Resources(BkResources):
             if resource.endswith('.css') and not resource.startswith(('http:', 'https:')):
                 resource += version_suffix
             if self.notebook:
-                # The Jupyter extension render endpoint (`panel-preview/render/...`)
-                # sets `rel_path` to its own `panel-preview` root for unrelated
-                # reasons (resolving this same page's other relative asset and
-                # websocket urls), so that value already *is* the endpoint root;
-                # appending `panel-preview/static/...` to `base_url` on top of it
-                # would double it. Classic notebook UIs (nbclassic) never set
-                # `rel_path`, so `base_url` is the raw server root there instead,
-                # and the endpoint is built on top of it, stripping the nbclassic
-                # UI's own path segment.
+                # The render endpoint sets `rel_path` to its own
+                # `panel-preview` root already, so building on `base_url`
+                # there would double it. nbclassic never sets `rel_path`,
+                # so `base_url` is the raw server root there instead.
                 if state.rel_path and state.rel_path.rstrip('/').endswith('panel-preview'):
                     endpoint = f"{state.rel_path.rstrip('/')}/static/extensions/panel/"
                 else:
