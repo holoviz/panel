@@ -375,6 +375,26 @@ class _state(param.Parameterized):
         return not bool(curdoc.session_context.server_context.sessions)
 
     @property
+    def _is_server_session(self) -> bool:
+        """
+        Whether the current document belongs to a genuine served session.
+
+        True only for a document a ``bokeh.server`` ``Server`` is handling a
+        request for. False for a notebook comm-rendered document (a bare
+        ``Document()`` with no session context at all) and for the Jupyter
+        extension's own render endpoint, whose session stubs a
+        ``session_context`` but always passes ``server_context=None`` (see
+        ``panel.io.session.generate_session``). Resource defaults set for
+        the current notebook (``set_default_resource_mode``) must not leak
+        into a server started from within that same notebook process, and
+        this is the signal that distinguishes the two.
+        """
+        curdoc = self.curdoc
+        return bool(
+            curdoc and curdoc.session_context and curdoc.session_context.server_context
+        )
+
+    @property
     def _is_pyodide(self) -> bool:
         return '_pyodide' in sys.modules
 

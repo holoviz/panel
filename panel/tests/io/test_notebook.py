@@ -12,7 +12,7 @@ from panel.io.notebook import (
     LOAD_MIME, ipywidget, load_notebook, replace_inline_css,
     require_components,
 )
-from panel.io.resource_spec import resource_spec
+from panel.io.resource_spec import _SPEC_CACHE, resource_spec
 from panel.io.resources import (
     CDN_DIST, CDN_ROOT, JS_VERSION, set_resource_mode,
 )
@@ -45,6 +45,12 @@ def notebook_bootstrap():
     state, mode = curstate(), resources_module.RESOURCE_MODE
     notebook_resources = resources_module.NOTEBOOK_RESOURCES
     notebook, notebook_type = state.notebook, state.notebook_type
+    # `_SPEC_CACHE` is keyed in part on `RESOURCE_MODE`/`NOTEBOOK_RESOURCES`,
+    # so a spec this bootstrap computes must not be handed out to a test
+    # that runs later with those globals back at their own values, nor
+    # reuse an entry an earlier test cached before this bootstrap changed
+    # them (see test_resource_spec_cache_key_includes_notebook_default).
+    _SPEC_CACHE.clear()
     try:
         load_notebook(inline=True)
         yield
@@ -52,6 +58,7 @@ def notebook_bootstrap():
         resources_module.RESOURCE_MODE = mode
         resources_module.NOTEBOOK_RESOURCES = notebook_resources
         state._notebook, state._notebook_type = notebook, notebook_type
+        _SPEC_CACHE.clear()
 
 
 @jb_available
@@ -222,6 +229,65 @@ def test_notebook_dynamic_component_resources_use_jupyter_extension_endpoint(
 
     assert urls
     assert all(url.startswith('/panel-preview/static/extensions/panel/') for url in urls)
+
+
+@pytest.mark.filterwarnings(
+    "ignore:Attempted to send message over Jupyter Comm.*:UserWarning"
+)
+def test_notebook_resources_do_not_reuse_spec_cached_before_bootstrap(nb_loaded):
+    """
+    Regression test for a real CI failure under xdist, where a class' spec
+    computed by an earlier, unrelated test (outside any notebook, but under
+    the same 'cdn' resource mode the notebook bootstrap also selects) was
+    cached and then handed back to a notebook test unchanged, silently
+    dropping the Jupyter extension endpoint. ``resource_spec``'s cache key
+    must include the effective notebook default, not just the resolved
+    mode, or this reproduces on every run rather than only when xdist
+    happens to schedule the two tests in the same worker.
+
+    The filter is unrelated to what this test checks: appending a live
+    component to an already-rendered comm-backed document tries to push
+    the update over that comm, which was never actually opened by a real
+    frontend in a unit test, and Python only raises that warning the first
+    time it is hit in the process, so whether it surfaces here depends on
+    what other tests already ran, not on anything this test does.
+    """
+    from bokeh.io.state import curstate
+    state, mode = curstate(), resources_module.RESOURCE_MODE
+    notebook_resources = resources_module.NOTEBOOK_RESOURCES
+    notebook, notebook_type = state.notebook, state.notebook_type
+    try:
+        # The "earlier, unrelated test": some other code already left the
+        # resource mode at 'cdn' (a common, unremarkable default) and built
+        # a component's spec under it, well before anything notebook
+        # related runs.
+        resources_module.RESOURCE_MODE = 'cdn'
+        widget = TextEditor()
+        outside_notebook_urls = [
+            url for lib in (widget.get_root().external_resources or {}).get('libs', [])
+            for url in lib['js']
+        ]
+        assert not any('panel-preview' in url for url in outside_notebook_urls)
+
+        # Now the notebook bootstrap runs, in the same process, and selects
+        # that same 'cdn' mode.
+        load_notebook(inline=True)
+
+        column = Column()
+        column._repr_mimebundle_()
+        editor = TextEditor()
+        column.append(editor)
+
+        (model, _) = list(editor._models.values())[0]
+        urls = [url for lib in model.external_resources['libs'] for url in lib['js']]
+
+        assert urls
+        assert all(url.startswith('/panel-preview/static/extensions/panel/') for url in urls)
+    finally:
+        resources_module.RESOURCE_MODE = mode
+        resources_module.NOTEBOOK_RESOURCES = notebook_resources
+        state._notebook, state._notebook_type = notebook, notebook_type
+        _SPEC_CACHE.clear()
 
 
 def test_replace_inline_css_ignores_version_query():
