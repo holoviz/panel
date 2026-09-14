@@ -217,6 +217,7 @@ def df_agg():
     return df
 
 
+@pytest.mark.filterwarnings("ignore:DataCube is deprecated")
 def test_hierarchical_index(document, comm, df_agg):
     table = DataFrame(value=df_agg, hierarchical=True,
                       aggregators={'Year': {'Int': 'sum', 'Float': 'mean'}})

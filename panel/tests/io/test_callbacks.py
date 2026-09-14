@@ -63,6 +63,50 @@ async def test_overrunning_callback_still_yields_to_the_loop():
     assert turns >= frames
 
 
+async def _run_until_stopped(cb, limit=400):
+    for _ in range(limit):
+        if not cb.running:
+            return
+        await asyncio.sleep(0.01)
+
+
+async def test_period_change_keeps_the_count_budget():
+    calls = 0
+
+    def body():
+        nonlocal calls
+        calls += 1
+
+    cb = PeriodicCallback(callback=body, period=20, count=6)
+    cb.start()
+    try:
+        while calls < 3:
+            await asyncio.sleep(0.005)
+        cb.period = 21
+        await _run_until_stopped(cb)
+    finally:
+        cb.stop()
+
+    assert calls == 6
+
+
+async def test_period_change_keeps_the_timeout_deadline():
+    cb = PeriodicCallback(callback=lambda: None, period=10, timeout=500)
+    start = time.monotonic()
+    cb.start()
+    try:
+        await asyncio.sleep(0.3)
+        cb.period = 11
+        await _run_until_stopped(cb)
+        elapsed = time.monotonic() - start
+    finally:
+        cb.stop()
+
+    # The deadline is 500 ms from start(); restarting it at the period change
+    # would push the last run out past 800 ms.
+    assert elapsed < 0.7
+
+
 async def test_callback_inside_its_period_still_waits():
     start = time.monotonic()
     calls, _ = await _drive(period=50, frames=2, body=lambda: None)
