@@ -375,6 +375,20 @@ class _state(param.Parameterized):
         return not bool(curdoc.session_context.server_context.sessions)
 
     @property
+    def _is_server_session(self) -> bool:
+        """
+        Whether the current document belongs to a genuine served session,
+        as opposed to a notebook comm-rendered document or the Jupyter
+        extension's own render endpoint (both leave ``server_context``
+        unset). Used to keep notebook-only resource defaults from leaking
+        into a server started from within that same notebook process.
+        """
+        curdoc = self.curdoc
+        return bool(
+            curdoc and curdoc.session_context and curdoc.session_context.server_context
+        )
+
+    @property
     def _is_pyodide(self) -> bool:
         return '_pyodide' in sys.modules
 

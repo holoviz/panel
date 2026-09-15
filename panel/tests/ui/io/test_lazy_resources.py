@@ -389,3 +389,28 @@ def test_declared_extension_renders_with_lazy_resources_disabled(page):
         assert _errors(msgs) == []
     finally:
         pn.config.lazy_resources = True
+
+
+def test_lazy_component_ignores_stale_notebook_default(page):
+    """
+    A server started from a notebook's kernel process (``pn.serve``,
+    commonly with ``threaded=True``, exactly how ``serve_component``
+    starts one here) must not inherit that notebook's resource default:
+    it never registers the `panel-preview` endpoint, so every
+    lazily-loaded resource would 404.
+    """
+    from panel.io import resources as resources_module
+    old_notebook_resources = resources_module.NOTEBOOK_RESOURCES
+    resources_module.NOTEBOOK_RESOURCES = True
+    try:
+        def app():
+            extension()
+            _tabulator().servable()
+
+        msgs, _ = serve_component(page, app)
+
+        expect(page.locator('.pnx-tabulator.tabulator')).to_have_count(1, timeout=20000)
+        assert _errors(msgs) == []
+        assert _script_count(page, 'panel-preview') == 0
+    finally:
+        resources_module.NOTEBOOK_RESOURCES = old_notebook_resources

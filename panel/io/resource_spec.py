@@ -30,8 +30,9 @@ from bokeh.model import Model
 from ..config import config
 from ..util import isurl
 from .resources import (
-    Resources, component_resource_path, extension_declared, get_resource_mode,
-    resolve_resource_cdn, set_resource_mode,
+    Resources, component_resource_path, extension_declared,
+    get_notebook_resources, get_resource_mode, resolve_resource_cdn,
+    set_resource_mode,
 )
 from .state import state
 
@@ -82,7 +83,13 @@ def _spec_mode(mode: MODES | None = None) -> tuple[str, bool]:
 
 
 def _resources(mode: str) -> Resources:
-    return Resources(mode=mode)
+    # `NOTEBOOK_RESOURCES` is a process-wide default set by the notebook's
+    # own bootstrap, so it isn't scoped to that notebook's document. A
+    # server started from the same kernel process (e.g. `pn.serve(...,
+    # threaded=True)`) must not inherit it, or every lazily-loaded resource
+    # would 404 against an endpoint that server never registers.
+    notebook = get_notebook_resources() and not state._is_server_session
+    return Resources(mode=mode, notebook=notebook)
 
 
 def _parse_probe(expression: str) -> dict[str, str] | None:
@@ -332,8 +339,12 @@ def resource_spec(cls: type, mode: MODES | None = None) -> dict[str, t.Any] | No
     if not config.lazy_resources or not _has_resources(cls):
         return None
     resolved_mode, inline_fallback = _spec_mode(mode)
+    # The effective notebook default has to be part of the key too: a
+    # notebook and a server started from it can share `rel_path`/`base_url`
+    # while only one of them is a genuine server session (see `_resources`).
     key = (
         cls, resolved_mode, state.rel_path, state.base_url,
+        get_notebook_resources() and not state._is_server_session,
         tuple(getattr(cls, '__css_raw__', None) or ()),
     )
     if key in _SPEC_CACHE:
