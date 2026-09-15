@@ -28,6 +28,10 @@ calls it with the rendered model.
   const PN_RE = /^https:\/\/cdn\.holoviz\.org\/panel\/[^/]+\/dist\/panel/i;
   const JUPYTER_EXTENSION_PATH = "/panel-preview/static/extensions/panel/";
   const CDN_DIST = {{ cdn_dist|json }};
+  // Exposed so the lazy-resource registry (models/resources.ts) can fall
+  // back to the CDN for the same endpoint, not just the eager bootstrap
+  // resources loaded below.
+  root.__panel_cdn_dist__ = CDN_DIST;
 
   // Set a timeout for this load but only if we are not already initializing
   if (typeof (root._bokeh_timeout) === "undefined" || (force || !root._bokeh_is_initializing)) {

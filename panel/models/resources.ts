@@ -70,18 +70,51 @@ function existing_urls(selector: string, attr: "src" | "href"): Set<string> {
   return urls
 }
 
+const JUPYTER_EXTENSION_PATH = "/panel-preview/static/extensions/panel/"
+
+/**
+ * Rewrites a failed Jupyter-extension-endpoint url to its CDN equivalent,
+ * mirroring the eager bootstrap's fallback in autoload_panel_js.js. Only
+ * tried once per element, and only when the bootstrap has published the
+ * CDN base (it hasn't in server/served-app contexts, where this endpoint
+ * never appears in the first place).
+ */
+function fallback_to_cdn(el: HTMLScriptElement | HTMLLinkElement, url: string): string | null {
+  const index = url.indexOf(JUPYTER_EXTENSION_PATH)
+  const cdn_dist = (globalThis as any).__panel_cdn_dist__
+  if (index === -1 || typeof cdn_dist !== "string" || el.dataset.panelCdnFallback != null) {
+    return null
+  }
+  el.dataset.panelCdnFallback = ""
+  return cdn_dist + url.slice(index + JUPYTER_EXTENSION_PATH.length)
+}
+
 function inject(el: HTMLScriptElement | HTMLLinkElement): Promise<void> {
   return new Promise<void>((resolve, reject) => {
-    el.addEventListener("load", () => resolve(), {once: true})
-    el.addEventListener("error", () => {
-      const url = (el as HTMLScriptElement).src || (el as HTMLLinkElement).href
-      const endpoint = "/panel-preview/static/extensions/panel/"
-      if (url.includes(endpoint)) {
-        const global = globalThis as any
-        global.__panel_jupyter_extension_error__?.()
-      }
-      reject(new Error(`Failed to load ${url}`))
-    }, {once: true})
+    const attempt = (element: HTMLScriptElement | HTMLLinkElement) => {
+      element.addEventListener("load", () => resolve(), {once: true})
+      element.addEventListener("error", () => {
+        const url = (element as HTMLScriptElement).src || (element as HTMLLinkElement).href
+        const fallback = fallback_to_cdn(element, url)
+        if (fallback != null) {
+          element.remove()
+          if (element instanceof HTMLLinkElement) {
+            element.href = fallback
+          } else {
+            element.src = fallback
+          }
+          attempt(element)
+          document.head.appendChild(element)
+          return
+        }
+        if (url.includes(JUPYTER_EXTENSION_PATH)) {
+          const global = globalThis as any
+          global.__panel_jupyter_extension_error__?.()
+        }
+        reject(new Error(`Failed to load ${url}`))
+      }, {once: true})
+    }
+    attempt(el)
     document.head.appendChild(el)
   })
 }
