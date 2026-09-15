@@ -74,6 +74,25 @@ def test_matplotlib_pane(document, comm):
 
 
 @mpl_available
+def test_matplotlib_pane_rerenders_once_per_object_change(document, comm, monkeypatch):
+    updates = []
+    update_pane = Matplotlib._update_pane
+
+    def counting_update_pane(self, *events):
+        updates.append(events)
+        return update_pane(self, *events)
+
+    monkeypatch.setattr(Matplotlib, '_update_pane', counting_update_pane)
+    pane = pn.pane.Matplotlib(mpl_figure())
+    pane.get_root(document, comm=comm)
+    updates.clear()
+
+    pane.object = mpl_figure()
+
+    assert len(updates) == 1
+
+
+@mpl_available
 def test_matplotlib_pane_svg_render(document, comm):
     pane = pn.pane.Matplotlib(mpl_figure(), format='svg', encode=True)
     model = pane.get_root(document, comm=comm)

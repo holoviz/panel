@@ -249,7 +249,7 @@ class Matplotlib(Image, IPyWidget):
     }
 
     _rerender_params = PNG._rerender_params + [
-        'interactive', 'object', 'dpi', 'tight', 'high_dpi'
+        'interactive', 'dpi', 'tight', 'high_dpi'
     ]
 
     _num = 0
@@ -405,7 +405,7 @@ class RGGPlot(PNG):
     dpi = param.Integer(default=144, bounds=(1, None), doc="""
         Scales the dpi of the ggplot figure.""")
 
-    _rerender_params = PNG._rerender_params + ['object', 'dpi', 'width', 'height']
+    _rerender_params = PNG._rerender_params + ['dpi']
 
     _rename: t.ClassVar[Mapping[str, str | None]] = {'dpi': None}
 

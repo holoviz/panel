@@ -321,8 +321,9 @@ class Pane(PaneBase, Reactive):
 
     def __init__(self, object=None, **params):
         super().__init__(object=object, **params)
+        # A parameter listed twice registers the watcher twice and rerenders twice
         self._internal_callbacks.append(
-            self.param.watch(self._update_pane, self._rerender_params)
+            self.param.watch(self._update_pane, list(dict.fromkeys(self._rerender_params)))
         )
 
     #----------------------------------------------------------------
