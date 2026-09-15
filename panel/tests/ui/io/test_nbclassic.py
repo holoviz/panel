@@ -135,3 +135,22 @@ def test_nbclassic_component_comm(page, nbclassic_server):
 
     page.get_by_role('button', name='Increment').click()
     expect(page.locator('.nbclassic-counter')).to_have_text('1')
+
+
+def test_nbclassic_warns_when_extension_missing(page, nbclassic_server):
+    """
+    The proactive liveness check must warn even when nothing else on the
+    page happens to request a panel-preview resource that would otherwise
+    trigger the reactive error path.
+    """
+    page.route(
+        '**/panel-preview/static/extensions/panel/**',
+        lambda route: route.fulfill(status=404, body='Not Found'),
+    )
+    run_notebook(page, nbclassic_server, 'extensioncheck', [
+        "import panel as pn\npn.extension(comms='default', inline=False)",
+    ])
+
+    alert = page.locator('.output_area [role="alert"]')
+    expect(alert).to_be_visible(timeout=15000)
+    expect(alert).to_contain_text('Jupyter server extension')

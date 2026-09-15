@@ -65,6 +65,17 @@ calls it with the rendered model.
   }
   root.__panel_jupyter_extension_error__ = show_jupyter_extension_error;
 
+  {% if check_extension %}
+  // Proactively checks the extension is actually installed, rather than
+  // waiting for some resource's load to fail. A plain HEAD request for the
+  // bundle every notebook session needs is enough to tell.
+  fetch(JUPYTER_EXTENSION_PATH + "panel.min.js", {method: "HEAD"}).then((response) => {
+    if (!response.ok) {
+      show_jupyter_extension_error();
+    }
+  }).catch(() => show_jupyter_extension_error());
+  {% endif %}
+
   function load_libs(css_urls, js_urls, js_modules, Bokeh, callback) {
     if (css_urls == null) css_urls = [];
     if (js_urls == null) js_urls = [];

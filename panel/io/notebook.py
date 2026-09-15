@@ -156,7 +156,7 @@ GLOBAL_MODULE_SUFFIX = '__panel_global'
 
 def _autoload_js(
     *, bundle, configs, requirements, exports, error_id, skip_imports, require_skip,
-    ipywidget, reloading=False, load_timeout=5000
+    check_extension=False, ipywidget, reloading=False, load_timeout=5000
 ):
     config = {'packages': {}, 'paths': {}, 'shim': {}}
     for conf in configs:
@@ -187,6 +187,7 @@ def _autoload_js(
         error_id  = error_id,
         skip_imports = skip_imports,
         require_skip = require_skip,
+        check_extension = check_extension,
         ipywidget = ipywidget,
         version = bokeh.__version__
     )
@@ -569,7 +570,10 @@ def load_notebook(
     from ..config import config
 
     resources = INLINE if inline and not state._is_pyodide else CDN
-    nb_endpoint = not state._is_pyodide and config.comms not in ('colab', 'vscode')
+    # The Jupyter extension endpoint only exists for a plain notebook kernel:
+    # 'vscode'/'colab'/'ipywidgets' render through a different mimebundle
+    # path (see Renderable._repr_mimebundle_) and never hit this endpoint.
+    nb_endpoint = not state._is_pyodide and config.comms == 'default'
 
     # Components rendered in a later cell resolve their resources outside
     # any set_resource_mode block, so the notebook mode has to become the
@@ -594,6 +598,7 @@ def load_notebook(
             error_id=error_id,
             skip_imports=skip_imports,
             require_skip=require_skip,
+            check_extension=nb_endpoint,
             ipywidget=ipywidget,
             reloading=reloading,
             load_timeout=load_timeout

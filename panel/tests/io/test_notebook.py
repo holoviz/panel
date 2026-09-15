@@ -200,6 +200,59 @@ def test_notebook_vscode_resources_use_cdn(monkeypatch, notebook_bootstrap):
     assert 'https://cdn.holoviz.org/panel/' in js_urls
 
 
+def test_notebook_ipywidgets_resources_use_cdn(monkeypatch, notebook_bootstrap):
+    """
+    ipywidgets mode (Voila and similar) has no Jupyter extension endpoint
+    either: only a plain notebook kernel (``comms == 'default'``) does.
+    """
+    published = []
+
+    def publish_display_data(data, **kwargs):
+        published.append(data)
+
+    monkeypatch.setattr('IPython.display.publish_display_data', publish_display_data)
+
+    with config.set(comms='ipywidgets'):
+        load_notebook(inline=False)
+
+    bootstrap = next(data[LOAD_MIME] for data in published if LOAD_MIME in data)
+    js_urls = next(line for line in bootstrap.splitlines() if 'const js_urls' in line)
+    assert '/panel-preview/static/extensions/panel/' not in js_urls
+    assert 'https://cdn.holoviz.org/panel/' in js_urls
+
+
+def test_notebook_checks_extension_only_for_default_comms(monkeypatch):
+    """
+    The proactive liveness check only makes sense where the endpoint is
+    actually expected to exist, i.e. a plain notebook kernel.
+    """
+    from bokeh.io.state import curstate
+
+    published = []
+
+    def publish_display_data(data, **kwargs):
+        published.append(data)
+
+    monkeypatch.setattr('IPython.display.publish_display_data', publish_display_data)
+
+    for comms in ('default', 'vscode', 'colab', 'ipywidgets'):
+        published.clear()
+        bk_state, mode = curstate(), resources_module.RESOURCE_MODE
+        notebook_resources = resources_module.NOTEBOOK_RESOURCES
+        notebook, notebook_type = bk_state.notebook, bk_state.notebook_type
+        try:
+            with config.set(comms=comms):
+                load_notebook(inline=False)
+            bootstrap = next(data[LOAD_MIME] for data in published if LOAD_MIME in data)
+            checks = 'panel.min.js", {method: "HEAD"}' in bootstrap
+            assert checks == (comms == 'default'), comms
+        finally:
+            resources_module.RESOURCE_MODE = mode
+            resources_module.NOTEBOOK_RESOURCES = notebook_resources
+            bk_state._notebook, bk_state._notebook_type = notebook, notebook_type
+            _SPEC_CACHE.clear()
+
+
 def test_notebook_resources_use_jupyter_extension_endpoint(notebook_bootstrap):
     """
     A component rendered in a later cell builds its specification outside
