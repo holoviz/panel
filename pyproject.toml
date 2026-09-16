@@ -86,8 +86,12 @@ django = [
     'django',
     'uvicorn',
 ]
+migrate = [
+    'libcst >=1.1',
+]
 dev = [
     'watchfiles',
+    'libcst >=1.1',
 ]
 tests = [
     'psutil' ,
@@ -95,6 +99,7 @@ tests = [
     'pytest-asyncio',
     'pytest-rerunfailures <16.0',
     'pytest-xdist',
+    'libcst >=1.1',
 ]
 mypy = [
     "mypy",
