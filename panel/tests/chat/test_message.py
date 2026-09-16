@@ -132,7 +132,7 @@ class TestChatMessage:
         assert not avatar_layout.visible
 
         message.avatar = SVG(
-            "https://tabler-icons.io/static/tabler-icons/icons/user.svg"
+            "https://tabler.io/icons/static/tabler-icons/icons/user.svg"
         )
         avatar_pane = columns[0][0]
         assert isinstance(avatar_pane, SVG)
