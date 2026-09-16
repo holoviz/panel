@@ -27,7 +27,7 @@ from ..io.notebook import render_template
 from ..io.notifications import NotificationArea, NotificationAreaBase
 from ..io.resources import (
     BUNDLE_DIR, CDN_DIST, JS_VERSION, ResourceComponent, _env,
-    component_resource_path, get_dist_path, loading_css, parse_template,
+    component_resource_path, get_dist_path, parse_template,
     resolve_custom_path, use_cdn,
 )
 from ..io.save import save
@@ -373,10 +373,11 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         dist_path = get_dist_path(cdn=cdn)
         version_suffix = f'?v={JS_VERSION}'
 
-        css_files['loading'] = f'{dist_path}css/loading.css{version_suffix}'
-        raw_css.extend(list(self.config.raw_css) + [loading_css(
-            config.loading_spinner, config.loading_color, config.loading_max_height
-        )])
+        loading = self._design.loading_resources(dist_path=dist_path)
+        for i, css in enumerate(loading['css']):
+            res_name = 'loading' if not i else f'loading_{i}'
+            css_files[res_name] = f'{css}{version_suffix}'
+        raw_css.extend(list(self.config.raw_css) + loading['raw_css'])
         for rname, res in self._design.resolve_resources(cdn).items():
             if isinstance(res, dict):
                 resource_types[rname].update(res)  # type: ignore

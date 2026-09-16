@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import base64
 import concurrent.futures
 import dataclasses
 import json
@@ -25,15 +24,17 @@ from bokeh.embed.wrappers import wrap_in_script_tag
 from bokeh.util.serialization import make_id
 from packaging.requirements import Requirement
 
-from .. import __version__, config
+from .. import __version__
 from ..util import base_version
 from .application import Application, build_single_handler_application
 from .document import MockSessionContext
-from .loading import LOADING_INDICATOR_CSS_CLASS
+from .loading import (
+    loading_css_classes, loading_resources as _design_loading_resources,
+)
 from .mime_render import find_requirements
 from .resources import (
     BASE_TEMPLATE, CDN_DIST, CDN_ROOT, DIST_DIR, INDEX_TEMPLATE, Resources,
-    _env as _pn_env, bundle_resources, loading_css, set_resource_mode,
+    _env as _pn_env, bundle_resources, set_resource_mode,
 )
 from .state import set_curdoc, state
 
@@ -285,28 +286,18 @@ def pack_files(filemap: dict, destination: str | os.PathLike | t.IO):
 
 
 def loading_resources(template, inline) -> list[str]:
-    css_resources = []
-    if template in (BASE_TEMPLATE, FILE):
-        # Add loading.css if not served from Panel template
-        if inline:
-            svg_name = f'{config.loading_spinner}_spinner.svg'
-            svg_b64 = base64.b64encode((DIST_DIR / 'assets' / svg_name).read_bytes()).decode('utf-8')
-            loading_base = (
-                DIST_DIR / "css" / "loading.css"
-            ).read_text(encoding='utf-8').replace(
-                f'../assets/{svg_name}', f'data:image/svg+xml;base64,{svg_b64}'
-            )
-            loading_style = f'<style type="text/css">\n{loading_base}\n</style>'
-        else:
-            loading_style = f'<link rel="stylesheet" href="{CDN_DIST}css/loading.css" type="text/css" />'
-        css_resources.append(loading_style)
-    spinner_css = loading_css(
-        config.loading_spinner, config.loading_color, config.loading_max_height
+    # The base loading.css is only needed if it is not already served
+    # as part of a Panel template.
+    resources = _design_loading_resources(
+        inline=inline, include_base=template in (BASE_TEMPLATE, FILE)
     )
-    css_resources.append(
-        f'<style type="text/css">\n{spinner_css}\n</style>'
-    )
-    return css_resources
+    return [
+        f'<link rel="stylesheet" href="{css}" type="text/css" />'
+        for css in resources['css']
+    ] + [
+        f'<style type="text/css">\n{raw_css}\n</style>'
+        for raw_css in resources['raw_css']
+    ]
 
 def script_to_html(
     filename: str | os.PathLike | t.IO,
@@ -411,7 +402,7 @@ def script_to_html(
                 js_resources = []
             worker_handler = WORKER_HANDLER_TEMPLATE.render({
                 'name': app_name,
-                'loading_spinner': config.loading_spinner
+                'loading_classes': json.dumps(loading_css_classes())
             })
             web_worker = WEB_WORKER_TEMPLATE.render({
                 'PYODIDE_URL': PYODIDE_PYC_URL if compiled else PYODIDE_URL,
@@ -481,7 +472,7 @@ def script_to_html(
     # Render
     html = template.render(context)
     html = (html
-        .replace('<body>', f'<body class="{LOADING_INDICATOR_CSS_CLASS} pn-{config.loading_spinner}">')
+        .replace('<body>', f'<body class="{" ".join(loading_css_classes())}">')
     )
     if runtime == 'pyscript-worker':
         # pyscript-worker apps must have strict cross-origin policies

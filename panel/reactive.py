@@ -36,11 +36,12 @@ from param.parameterized import (
 )
 
 from .io.document import hold, unlocked
+from .io.loading import loading_css
 from .io.notebook import push
 from .io.resource_spec import lazy_load_available, resource_spec
 from .io.resources import (
-    CDN_DIST, get_dist_path, loading_css, patch_stylesheet, process_raw_css,
-    resolve_stylesheet, stylesheet_url,
+    CDN_DIST, get_dist_path, patch_stylesheet, process_raw_css,
+    resolve_stylesheet, stylesheet_url
 )
 from .io.state import set_curdoc, state
 from .models.reactive_html import (
@@ -215,9 +216,9 @@ class Syncable(Renderable):
             properties['min_height'] = properties['height']
         if 'stylesheets' in properties:
             from .config import config
-            stylesheets = [loading_css(
-                config.loading_spinner, config.loading_color, config.loading_max_height
-            ), f'{get_dist_path()}css/loading.css']
+            design = getattr(self, '_design', None)
+            spinner_css = design.loading_css() if design else loading_css()
+            stylesheets = [spinner_css, f'{get_dist_path()}css/loading.css']
             stylesheets += process_raw_css(config.raw_css)
             stylesheets += config.css_files
             stylesheets += [
