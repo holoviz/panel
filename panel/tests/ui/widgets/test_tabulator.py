@@ -1361,7 +1361,6 @@ def test_tabulator_frozen_rows(page):
     wait_until(_frozen_rows_unchanged, page)
 
 
-@pytest.mark.flaky(reruns=5, reruns_delays=3)
 def test_tabulator_patch_no_horizontal_rescroll(page, df_mixed):
     widths = 100
     width = int(((df_mixed.shape[1] + 1) * widths) / 2)
@@ -1370,22 +1369,22 @@ def test_tabulator_patch_no_horizontal_rescroll(page, df_mixed):
 
     serve_component(page, widget)
 
-    cell = page.locator('text="target"')
-    expect(cell).to_be_attached()
+    expect(page.locator('text="target"')).to_be_attached()
+    header = page.locator('text="tomodify"')
 
     # Scroll to the right
-    cell.scroll_into_view_if_needed()
-    bb = page.locator('text="tomodify"').bounding_box()
+    table_holder = page.locator('.pnx-tabulator .tabulator-tableholder')
+    table_holder.evaluate("el => { el.scrollLeft = el.scrollWidth; }")
+    wait_until(lambda: table_holder.evaluate("el => el.scrollLeft > 0"), page)
+    bb = header.bounding_box()
     # Patch a cell in the latest column
     widget.patch({'tomodify': [(0, 'target-modified')]}, as_index=False)
+    expect(page.locator('text="target-modified"')).to_be_attached()
 
-    # Catch a potential rescroll
-    page.wait_for_timeout(400)
     # The table should keep the same scroll position
-    wait_until(lambda: bb == page.locator('text="tomodify"').bounding_box(), page)
+    wait_until(lambda: bb == header.bounding_box(), page)
 
 
-@pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3249')
 def test_tabulator_patch_no_vertical_rescroll(page):
     size = 10
     arr = np.random.choice(list('abcd'), size=size)
@@ -1398,28 +1397,21 @@ def test_tabulator_patch_no_vertical_rescroll(page):
 
     serve_component(page, widget)
 
-    # Scroll to the bottom
     target_cell = page.locator(f'text="{target}"')
-    target_cell.scroll_into_view_if_needed()
-    page.wait_for_timeout(400)
-    # Unfortunately that doesn't scroll down quite enough, it's missing
-    # a little scroll down so we do it manually which is more brittle.
-    # Might be a little brittle, setting the mouse somewhere in the table
-    # and scroll down
-    page.mouse.move(x=int(width/2), y=int(height/2))
-    page.mouse.wheel(delta_x=0, delta_y=10000)
-    # Give it time to scroll
-    page.wait_for_timeout(400)
+    expect(target_cell).to_be_attached()
 
-    bb = page.locator(f'text="{target}"').bounding_box()
+    # Scroll to the bottom
+    table_holder = page.locator('.pnx-tabulator .tabulator-tableholder')
+    table_holder.evaluate("el => { el.scrollTop = el.scrollHeight; }")
+    wait_until(lambda: table_holder.evaluate("el => el.scrollTop > 0"), page)
+    bb = target_cell.bounding_box()
     # Patch a cell in the latest row
     widget.patch({'col': [(size-1, new_val)]})
+    patched = page.locator(f'text="{new_val}"')
+    expect(patched).to_be_attached()
 
-    # Wait to catch a potential rescroll
-    page.wait_for_timeout(400)
     # The table should keep the same scroll position
-    # This fails
-    assert bb == page.locator(f'text="{new_val}"').bounding_box()
+    wait_until(lambda: bb == patched.bounding_box(), page)
 
 
 def test_tabulator_patch_with_filter_no_vertical_rescroll(page):

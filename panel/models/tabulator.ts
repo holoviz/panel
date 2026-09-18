@@ -395,6 +395,8 @@ export class DataTabulatorView extends HTMLBoxView {
   _resize_flush: Promise<void> | null = null
   _restore_scroll: boolean | "horizontal" | "vertical" = false
   _updating_scroll: boolean = false
+  _pending_scroll_restores: number = 0
+  _restored_scroll: {top: number, left: number} = {top: NaN, left: NaN}
   _is_scrolling: boolean = false
   _automatic_page_size: boolean = false
   _last_after_resize_el_width: number | null = null
@@ -1502,18 +1504,46 @@ export class DataTabulatorView extends HTMLBoxView {
     if (!(horizontal || vertical)) {
       return
     }
-    const opts: ScrollToOptions = {behavior: "instant"}
-    if (vertical) {
-      opts.top = this._lastVerticalScrollbarTopPosition
+    this._pending_scroll_restores += 1
+    const apply = (attempts: number) => {
+      requestAnimationFrame(() => {
+        const el = this.tabulator?.rowManager?.element
+        if (el == null) {
+          this._pending_scroll_restores -= 1
+          return
+        }
+        // Read when applied, so a scroll the user made meanwhile is kept.
+        const opts: ScrollToOptions = {behavior: "instant"}
+        if (vertical) {
+          opts.top = this._lastVerticalScrollbarTopPosition
+        }
+        if (horizontal) {
+          opts.left = this._lastHorizontalScrollbarLeftPosition
+        }
+        this._updating_scroll = true
+        el.scrollTo(opts)
+        this._updating_scroll = false
+        if (vertical) {
+          this._restored_scroll.top = el.scrollTop
+        }
+        if (horizontal) {
+          this._restored_scroll.left = el.scrollLeft
+        }
+        // The rows may still be rendering, so the element is not scrollable
+        // that far yet and the position was clamped. Offsets are fractional
+        // under browser zoom, hence the tolerance.
+        const restored = (
+          (opts.top == null || Math.abs(el.scrollTop - opts.top) < 1) &&
+          (opts.left == null || Math.abs(el.scrollLeft - opts.left) < 1)
+        )
+        if (!restored && attempts > 0) {
+          apply(attempts - 1)
+          return
+        }
+        this._pending_scroll_restores -= 1
+      })
     }
-    if (horizontal) {
-      opts.left = this._lastHorizontalScrollbarLeftPosition
-    }
-    requestAnimationFrame(() => {
-      this._updating_scroll = true
-      this.tabulator.rowManager.element.scrollTo(opts)
-      this._updating_scroll = false
-    })
+    apply(10)
   }
 
   // Update model
@@ -1522,8 +1552,19 @@ export class DataTabulatorView extends HTMLBoxView {
     if (this._updating_scroll) {
       return
     }
-    this._lastVerticalScrollbarTopPosition = this.tabulator.rowManager.element.scrollTop
-    this._lastHorizontalScrollbarLeftPosition = this.tabulator.rowManager.element.scrollLeft
+    const {scrollTop, scrollLeft} = this.tabulator.rowManager.element
+    // Scroll events arrive asynchronously, i.e. after _updating_scroll was
+    // cleared again. While a restore is pending, a position at the start is
+    // a redraw resetting the scroll and the position the restore set may be
+    // clamped by rows still rendering; anything else the user scrolled to.
+    const pending = this._pending_scroll_restores > 0
+    const restored = this._restored_scroll
+    if (!pending || (scrollTop !== 0 && scrollTop !== restored.top)) {
+      this._lastVerticalScrollbarTopPosition = scrollTop
+    }
+    if (!pending || (scrollLeft !== 0 && scrollLeft !== restored.left)) {
+      this._lastHorizontalScrollbarLeftPosition = scrollLeft
+    }
   }
 
   rowClicked(e: any, row: any) {
