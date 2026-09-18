@@ -1367,19 +1367,28 @@ def test_tabulator_patch_no_horizontal_rescroll(page, df_mixed):
     serve_component(page, widget)
 
     expect(page.locator('text="target"')).to_be_attached()
-    header = page.locator('text="tomodify"')
 
     # Scroll to the right
     table_holder = page.locator('.pnx-tabulator .tabulator-tableholder')
     table_holder.evaluate("el => { el.scrollLeft = el.scrollWidth; }")
-    wait_until(lambda: table_holder.evaluate("el => el.scrollLeft > 0"), page)
-    bb = header.bounding_box()
+    # A redraw may reset the scroll again, so keep the position the check saw.
+    scrolled_to = []
+
+    def scrolled():
+        scrolled_to.append(table_holder.evaluate("el => el.scrollLeft"))
+        return scrolled_to[-1] > 0
+
+    wait_until(scrolled, page)
     # Patch a cell in the latest column
     widget.patch({'tomodify': [(0, 'target-modified')]}, as_index=False)
     expect(page.locator('text="target-modified"')).to_be_attached()
 
     # The table should keep the same scroll position
-    wait_until(lambda: bb == header.bounding_box(), page)
+    def kept_position():
+        now = table_holder.evaluate("el => el.scrollLeft")
+        assert abs(now - scrolled_to[-1]) < 1, (scrolled_to[-1], now)
+
+    wait_until(kept_position, page)
 
 
 def test_tabulator_patch_no_vertical_rescroll(page):
@@ -1394,21 +1403,29 @@ def test_tabulator_patch_no_vertical_rescroll(page):
 
     serve_component(page, widget)
 
-    target_cell = page.locator(f'text="{target}"')
-    expect(target_cell).to_be_attached()
+    expect(page.locator(f'text="{target}"')).to_be_attached()
 
     # Scroll to the bottom
     table_holder = page.locator('.pnx-tabulator .tabulator-tableholder')
     table_holder.evaluate("el => { el.scrollTop = el.scrollHeight; }")
-    wait_until(lambda: table_holder.evaluate("el => el.scrollTop > 0"), page)
-    bb = target_cell.bounding_box()
+    # A redraw may reset the scroll again, so keep the position the check saw.
+    scrolled_to = []
+
+    def scrolled():
+        scrolled_to.append(table_holder.evaluate("el => el.scrollTop"))
+        return scrolled_to[-1] > 0
+
+    wait_until(scrolled, page)
     # Patch a cell in the latest row
     widget.patch({'col': [(size-1, new_val)]})
-    patched = page.locator(f'text="{new_val}"')
-    expect(patched).to_be_attached()
+    expect(page.locator(f'text="{new_val}"')).to_be_attached()
 
     # The table should keep the same scroll position
-    wait_until(lambda: bb == patched.bounding_box(), page)
+    def kept_position():
+        now = table_holder.evaluate("el => el.scrollTop")
+        assert abs(now - scrolled_to[-1]) < 1, (scrolled_to[-1], now)
+
+    wait_until(kept_position, page)
 
 
 def test_tabulator_patch_with_filter_no_vertical_rescroll(page):
