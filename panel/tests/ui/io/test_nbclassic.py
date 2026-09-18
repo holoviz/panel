@@ -50,11 +50,12 @@ def run_notebook(page, nbclassic_server, notebook_name, cells):
     expect(page.locator('#notebook-container .code_cell').first).to_be_visible()
     page.wait_for_function(
         "window.Jupyter?.notebook?._fully_loaded && "
-        "window.Jupyter.notebook.kernel && !window.Jupyter.notebook.kernel_busy"
+        "window.Jupyter.notebook.kernel?.is_connected() && !window.Jupyter.notebook.kernel_busy"
     )
     page.evaluate('Jupyter.notebook.execute_all_cells()')
+    # A queued cell has "*" as its prompt number.
     page.wait_for_function(
-        'Jupyter.notebook.get_cells().every((cell) => cell.input_prompt_number != null)'
+        "Jupyter.notebook.get_cells().every((cell) => typeof cell.input_prompt_number === 'number')"
     )
     page.wait_for_function("window.Jupyter && !window.Jupyter.notebook.kernel_busy")
     errors = page.locator('.output_error').all_inner_texts()
