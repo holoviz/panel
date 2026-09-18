@@ -1347,8 +1347,16 @@ def test_tabulator_frozen_rows(page):
     expect(y_cell).to_be_visible()
     expect(x_cell).to_have_count(1)
     expect(y_cell).to_have_count(1)
-    X_bb = x_cell.first.bounding_box()
-    Y_bb = y_cell.first.bounding_box()
+
+    # A redraw can briefly take the cells out of the layout.
+    boxes = []
+
+    def _laid_out():
+        boxes[:] = [x_cell.first.bounding_box(), y_cell.first.bounding_box()]
+        assert None not in boxes
+
+    wait_until(_laid_out, page)
+    X_bb, Y_bb = boxes
 
     # Scroll the non-frozen area to the bottom.
     page.locator('.pnx-tabulator .tabulator-tableholder').evaluate(
