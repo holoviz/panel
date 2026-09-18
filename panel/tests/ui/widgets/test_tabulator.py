@@ -1145,7 +1145,6 @@ def test_tabulator_alignment_text_str(page, df_mixed):
         expect(cells.nth(i)).to_have_css('text-align', talign)
 
 
-@pytest.mark.flaky(reruns=3, reruns_delays=2)
 def test_tabulator_frozen_columns(page, df_mixed):
     widths = 100
     width = int(((df_mixed.shape[1] + 1) * widths) / 2)
@@ -1217,7 +1216,6 @@ def test_tabulator_frozen_columns(page, df_mixed):
     assert int_bb == page.locator('text="int"').bounding_box()
 
 
-@pytest.mark.flaky(reruns=3, reruns_delays=2)
 def test_tabulator_frozen_columns_with_positions(page, df_mixed):
     widths = 100
     width = int(((df_mixed.shape[1] + 1) * widths) / 2)
@@ -1294,7 +1292,6 @@ def test_tabulator_frozen_columns_with_positions(page, df_mixed):
     assert int_bb == page.locator('text="int"').bounding_box()
 
 
-@pytest.mark.flaky(reruns=3, reruns_delays=2)
 def test_tabulator_frozen_rows(page):
     arr = np.array(['a'] * 10)
 
@@ -3918,7 +3915,6 @@ def test_tabulator_sorter_default_number(page):
     wait_until(x_values, page)
 
 
-@pytest.mark.flaky(reruns=3, reruns_delays=2)
 def test_tabulator_update_hidden_columns(page):
     df = pd.DataFrame({
         'a': [1, 2, 3],
