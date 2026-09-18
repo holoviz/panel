@@ -225,11 +225,8 @@ jobs:
           echo "PANEL_TEST_AUTH=1" >> $GITHUB_ENV
       - name: Test UI
         run: |
-          # Create a .uicoveragerc file to set the concurrency library to greenlet
-          # https://github.com/microsoft/playwright-python/issues/313
-          echo "[run]\nconcurrency = greenlet" > .uicoveragerc
           FAIL="--screenshot only-on-failure --full-page-screenshot --output ui_screenshots --tracing retain-on-failure"
-          pixi run -e "${ENV}" test-ui --jupyter $COV --cov-config=.uicoveragerc $FAIL
+          pixi run -e "${ENV}" test-ui --jupyter $COV $FAIL
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
