@@ -15,10 +15,10 @@ from bokeh.document.events import MessageSentEvent
 import panel as pn
 
 from panel.io.document import (
-    _UNCONNECTED_EVENTS, _WRITE_BLOCK, _cleanup_doc, _destroy_document,
-    _is_write_blocked, _socket_dispatcher, _write_tasks, dispatch_django,
-    dispatch_tornado, extra_socket_handlers, hold, schedule_write_events,
-    unlocked, write_events,
+    _UNCONNECTED_EVENTS, _WRITE_BLOCK, _cleanup_doc, _client_has_document,
+    _destroy_document, _is_write_blocked, _socket_dispatcher, _write_tasks,
+    dispatch_django, dispatch_tornado, extra_socket_handlers, hold,
+    schedule_write_events, unlocked, write_events,
 )
 from panel.io.state import _state, set_curdoc, state
 from panel.tests.util import serve_and_request, wait_until
@@ -497,3 +497,15 @@ async def test_dispatch_msgs_terminates_on_document_destroy():
         assert ref() is None
     finally:
         extra_socket_handlers.pop(_FakeSocket, None)
+
+
+def test_client_has_document_handles_destroyed_document():
+    doc = Document()
+    doc.add_root(pn.Column().get_root(doc))
+    assert not _client_has_document(doc)
+
+    doc.to_json()
+    assert _client_has_document(doc)
+
+    doc.models.destroy()
+    assert not _client_has_document(doc)
