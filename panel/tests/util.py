@@ -324,6 +324,8 @@ def serve_and_wait(app, page=None, prefix=None, port=None, proxy=None, **kwargs)
     wait_until(lambda: server_id in state._servers, page)
     server = state._servers[server_id][0]
     port = proxy if proxy else server.port
+    if not proxy and hasattr(server, '_tornado'):
+        server._tornado.websocket_origins.add(f'127.0.0.1:{port}')
     wait_for_server(port, prefix=prefix)
     if page:
         page.wait_for_function("document.readyState === 'complete'", timeout=5000)
@@ -336,7 +338,8 @@ def serve_component(page, app, suffix='', wait=True, **kwargs):
     msgs = []
     page.on("console", lambda msg: msgs.append(msg))
     port = serve_and_wait(app, page, **kwargs)
-    page.goto(f"http://localhost:{port}{suffix}", wait_until="domcontentloaded")
+    host = 'localhost' if kwargs.get('proxy') else '127.0.0.1'
+    page.goto(f"http://{host}:{port}{suffix}", wait_until="domcontentloaded")
 
     if wait:
         wait_until(lambda: any("Websocket connection 0 is now open" in str(msg) for msg in msgs), page, interval=10)
