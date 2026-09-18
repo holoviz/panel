@@ -87,6 +87,9 @@ export class ColumnView extends BkColumnView {
     }
     requestAnimationFrame(() => {
       this.el.scrollTo({top: this.model.scroll_position, behavior: "instant"})
+      if (getComputedStyle(this.el).overflowY === "visible") {
+        this._initial_scroll_pending = true
+      }
     })
   }
 
