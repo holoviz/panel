@@ -33,6 +33,7 @@ export class ScrollToEvent extends ModelEvent {
 export class ColumnView extends BkColumnView {
   declare model: Column
   _updating: boolean = false
+  protected _stylesheet_listener: boolean = false
 
   scroll_down_button_el: HTMLElement
 
@@ -156,6 +157,21 @@ export class ColumnView extends BkColumnView {
       this.scroll_to_latest()
       this.model.trigger_event(new ScrollButtonClick())
     })
+    if (!this._stylesheet_listener) {
+      this._stylesheet_listener = true
+      // The element only becomes a scroll container once its stylesheets
+      // loaded, which happens asynchronously, so scrolling before was a no-op.
+      this.shadow_el.addEventListener("load", () => this._apply_initial_scroll(), true)
+    }
+  }
+
+  _apply_initial_scroll(): void {
+    if (this.model.scroll_position) {
+      this.scroll_to_position()
+    }
+    if (this.model.view_latest) {
+      this.scroll_to_latest()
+    }
   }
 
   override async update_children(): Promise<void> {
@@ -203,12 +219,7 @@ export class ColumnView extends BkColumnView {
   override after_render(): void {
     super.after_render()
     requestAnimationFrame(() => {
-      if (this.model.scroll_position) {
-        this.scroll_to_position()
-      }
-      if (this.model.view_latest) {
-        this.scroll_to_latest()
-      }
+      this._apply_initial_scroll()
       this.toggle_scroll_button()
     })
   }
