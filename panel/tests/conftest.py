@@ -201,6 +201,14 @@ def pytest_runtest_setup(item):
         pytest.skip("Skipping test: No internet connection")
 
 
+@pytest.fixture(scope="session")
+def browser_type_launch_args(browser_type_launch_args, browser_name):
+    if browser_name != "chromium":
+        return browser_type_launch_args
+    args = [*browser_type_launch_args.get("args", []), "--host-resolver-rules=MAP localhost 127.0.0.1"]
+    return {**browser_type_launch_args, "args": args}
+
+
 @pytest.fixture
 def context(context):
     # Set the default timeout to 20 secs
