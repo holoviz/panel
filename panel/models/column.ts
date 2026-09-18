@@ -34,6 +34,7 @@ export class ColumnView extends BkColumnView {
   declare model: Column
   _updating: boolean = false
   protected _stylesheet_listener: boolean = false
+  protected _initial_scroll_pending: boolean = false
 
   scroll_down_button_el: HTMLElement
 
@@ -160,7 +161,11 @@ export class ColumnView extends BkColumnView {
     if (!this._stylesheet_listener) {
       this._stylesheet_listener = true
       // Scrolling is a no-op until the stylesheets making it scrollable load.
-      this.shadow_el.addEventListener("load", () => this._apply_initial_scroll(), true)
+      this.shadow_el.addEventListener("load", () => {
+        if (this._initial_scroll_pending) {
+          this._apply_initial_scroll()
+        }
+      }, true)
     }
   }
 
@@ -171,6 +176,7 @@ export class ColumnView extends BkColumnView {
     if (this.model.view_latest) {
       this.scroll_to_latest()
     }
+    this._initial_scroll_pending = getComputedStyle(this.el).overflowY === "visible"
   }
 
   override async update_children(): Promise<void> {
@@ -217,6 +223,7 @@ export class ColumnView extends BkColumnView {
 
   override after_render(): void {
     super.after_render()
+    this._initial_scroll_pending = true
     requestAnimationFrame(() => {
       this._apply_initial_scroll()
       this.toggle_scroll_button()
