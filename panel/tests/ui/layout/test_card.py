@@ -228,7 +228,6 @@ def test_card_widget_spacebar_not_collapsed(page, card_components):
     assert not card.collapsed
 
 
-@pytest.mark.flaky(reruns=3, reruns_delays=2)
 def test_card_child_visible(page, card_components):
     w1, w2 = card_components
     w1.visible = False
@@ -237,6 +236,7 @@ def test_card_child_visible(page, card_components):
     serve_component(page, card)
 
     slider = page.locator('.bk-Slider')
+    expect(slider).to_be_attached()
     expect(slider).not_to_be_visible()
 
     w1.visible = True
@@ -253,7 +253,7 @@ def test_card_child_visible(page, card_components):
     card.append(w2)
 
     text_input = page.locator(".class_w2")
-
+    expect(text_input).to_be_attached()
     expect(text_input).not_to_be_visible()
 
     # Ensure opening card renders visible component
