@@ -46,7 +46,7 @@ def test_tabs_toggle_clickable(page):
 
     page.mouse.click(200, 200)
 
-    assert page.url.startswith('http://localhost')
+    assert page.url.startswith('http://127.0.0.1')
 
     tabs_root.locator('.bk-tab').first.click(force=True)
 
