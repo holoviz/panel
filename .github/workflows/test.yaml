@@ -215,7 +215,7 @@ jobs:
         run: |
           jupyter server extension enable panel.io.jupyter_server_extension --sys-prefix
           (jupyter lab --config panel/tests/ui/jupyter_server_test_config.py --port 8887 > /tmp/jupyterlab_server.log 2>&1) &
-          curl -fsS --retry 180 --retry-delay 1 --retry-connrefused http://localhost:8887/lab >/dev/null
+          curl -fsS --retry 180 --retry-delay 1 --retry-connrefused http://127.0.0.1:8887/lab >/dev/null
       - name: Build JupyterLite
         shell: pixi run -e test-ui bash -e {0}
         run: pixi run -e lite lite-build

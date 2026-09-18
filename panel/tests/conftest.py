@@ -89,8 +89,8 @@ def get_default_port():
 def start_jupyter():
     global JUPYTER_PORT, JUPYTER_PROCESS
     args = [
-        'jupyter', 'server', '--port', str(JUPYTER_PORT), "--NotebookApp.token=''",
-        "--ServerApp.jpserver_extensions={'nbclassic': True}",
+        'jupyter', 'server', '--port', str(JUPYTER_PORT), '--ip', '127.0.0.1',
+        "--NotebookApp.token=''", "--ServerApp.jpserver_extensions={'nbclassic': True}",
     ]
     JUPYTER_PROCESS = process = Popen(args, stdout=PIPE, stderr=PIPE, bufsize=1, encoding='utf-8')
     deadline = time.monotonic() + JUPYTER_TIMEOUT
@@ -117,7 +117,7 @@ def cleanup_jupyter():
 def jupyter_preview(request):
     path = pathlib.Path(request.fspath.dirname)
     rel = path.relative_to(pathlib.Path(request.config.invocation_dir).absolute())
-    return f'http://localhost:{JUPYTER_PORT}/panel-preview/render/{str(rel)}'
+    return f'http://127.0.0.1:{JUPYTER_PORT}/panel-preview/render/{str(rel)}'
 
 atexit.register(cleanup_jupyter)
 optional_markers = {
