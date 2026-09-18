@@ -20,10 +20,10 @@ def get_bbox(page, obj):
     wait_for_server(port)
 
     if obj.embed:
-        page.goto(f"http://localhost:{port}")
+        page.goto(f"http://127.0.0.1:{port}")
     else:
         with page.expect_response(obj.object):
-            page.goto(f"http://localhost:{port}")
+            page.goto(f"http://127.0.0.1:{port}")
     wait_until(lambda: page.locator("img") is not None, page)
     for _ in range(5):
         bbox = page.locator("img").bounding_box()
@@ -184,7 +184,7 @@ def test_pdf_embed(page):
 
     src = page.locator("embed").get_attribute('src')
 
-    assert src.startswith(f"blob:http://localhost:{port}")
+    assert src.startswith(f"blob:http://127.0.0.1:{port}")
     assert src.endswith("#page=1")
 
 def test_pdf_embed_start_page(page):
@@ -195,7 +195,7 @@ def test_pdf_embed_start_page(page):
 
     src = page.locator("embed").get_attribute('src')
 
-    assert src.startswith(f"blob:http://localhost:{port}")
+    assert src.startswith(f"blob:http://127.0.0.1:{port}")
     assert src.endswith("#page=22")
 
 def test_pdf_no_embed_start_page(page):
