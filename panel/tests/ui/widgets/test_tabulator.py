@@ -1282,7 +1282,14 @@ def test_tabulator_frozen_columns_with_positions(page, df_mixed):
     # Scroll to the right, and give it a little extra time
     cell = page.locator('text="2019-01-01 10:00:00"')
     expect(cell).to_be_attached()
-    cell.scroll_into_view_if_needed()
+
+    def _scroll_into_view():
+        try:
+            cell.scroll_into_view_if_needed(timeout=1000)
+        except Error as e:
+            raise AssertionError(str(e)) from e
+
+    wait_until(_scroll_into_view, page)
 
     # Check that the position of one of the non-frozen columns has indeed moved
     wait_until(lambda: page.locator('text="str"').bounding_box()['x'] < str_bb['x'], page)
