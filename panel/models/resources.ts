@@ -280,6 +280,14 @@ export class ResourceRegistry {
    * already cached file.
    */
   loaded(lib: LibSpec, scripts?: Set<string>): boolean {
+    // The modules of a library are loaded separately, e.g. by the notebook,
+    // so its probe can pass before every module assigned its global.
+    const exported = (lib.modules ?? []).every(
+      ({export: name}) => name == null || (globalThis as any)[name] != null,
+    )
+    if (!exported) {
+      return false
+    }
     const {probe} = lib
     if (probe != null) {
       if (probe.global != null) {

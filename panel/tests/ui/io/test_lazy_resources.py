@@ -414,3 +414,29 @@ def test_lazy_component_ignores_stale_notebook_default(page):
         assert _script_count(page, 'panel-preview') == 0
     finally:
         resources_module.NOTEBOOK_RESOURCES = old_notebook_resources
+
+
+def test_library_not_loaded_until_module_exports_assigned(page):
+    def app():
+        extension()
+        return pn.pane.Markdown('text')
+
+    serve_component(page, app)
+
+    loaded = page.evaluate("""() => {
+        window.PanelTestLib = {}
+        const lib = {
+            name: 'panel-test-lib',
+            probe: {global: 'PanelTestLib'},
+            modules: [
+                {url: 'https://example.com/lib.js', export: 'PanelTestLib'},
+                {url: 'https://example.com/plugin.js', export: 'PanelTestPlugin'},
+            ],
+        }
+        const before = window.__panel_resources__.loaded(lib)
+        window.PanelTestPlugin = () => {}
+        const after = window.__panel_resources__.loaded(lib)
+        return [before, after]
+    }""")
+
+    assert loaded == [False, True]
