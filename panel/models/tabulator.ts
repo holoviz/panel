@@ -1343,8 +1343,7 @@ export class DataTabulatorView extends HTMLBoxView {
   postUpdate(): void {
     this.setSelection()
     this.setStyles()
-    // Tabulator also redraws by itself, e.g. when resized, which resets the
-    // horizontal scroll without anything restoring it.
+    // Tabulator also redraws by itself, e.g. when resized, resetting the scroll.
     const restore = this._restore_scroll || "horizontal"
     this.restore_scroll(restore !== "vertical", restore !== "horizontal")
     this._restore_scroll = false
@@ -1528,9 +1527,7 @@ export class DataTabulatorView extends HTMLBoxView {
         if (horizontal) {
           this._restored_scroll.left = el.scrollLeft
         }
-        // The rows may still be rendering, so the element is not scrollable
-        // that far yet and the position was clamped. Offsets are fractional
-        // under browser zoom, hence the tolerance.
+        // Rows still rendering clamp the position; offsets are fractional when zoomed.
         const restored = (
           (opts.top == null || Math.abs(el.scrollTop - opts.top) < 1) &&
           (opts.left == null || Math.abs(el.scrollLeft - opts.left) < 1)
@@ -1552,10 +1549,8 @@ export class DataTabulatorView extends HTMLBoxView {
       return
     }
     const {scrollTop, scrollLeft} = this.tabulator.rowManager.element
-    // Scroll events arrive asynchronously, i.e. after _updating_scroll was
-    // cleared again. While a restore is pending, a position at the start is
-    // a redraw resetting the scroll and the position the restore set may be
-    // clamped by rows still rendering; anything else the user scrolled to.
+    // Scroll events arrive after _updating_scroll is cleared, so while restoring
+    // ignore the reset to the start and the clamped position.
     const pending = this._pending_scroll_restores > 0
     const restored = this._restored_scroll
     if (!pending || (scrollTop !== 0 && scrollTop !== restored.top)) {

@@ -59,16 +59,14 @@ class StoppableThread(threading.Thread):
                 del self._Thread__target, self._Thread__args, self._Thread__kwargs # type: ignore
 
     def _cancel_pending_tasks(self) -> None:
-        # Stopping the server can schedule tasks that never run before the
-        # loop is closed, leaving them destroyed while pending.
+        # Stopping the server can leave tasks pending.
         loop = self.asyncio_loop
         tasks = [task for task in asyncio.all_tasks(loop) if not task.done()]
         if not tasks:
             return
         for task in tasks:
             task.cancel()
-        # A task may shield itself from the cancellation, so it is not awaited
-        # indefinitely.
+        # A task may shield itself from the cancellation.
         loop.run_until_complete(asyncio.wait(tasks, timeout=SHUTDOWN_TIMEOUT))
 
     def stop(self) -> None:
@@ -86,13 +84,11 @@ class StoppableThread(threading.Thread):
         self.join()
 
     async def _shutdown(self):
-        # A locked callback cancelled halfway may already have returned a
-        # coroutine, which nothing awaits then.
+        # Cancelling a locked callback halfway leaves its coroutine unawaited.
         servers = state._servers.get(self.server_id) if self.server_id else None
         server = servers[0] if servers else None
         if server is not None and not getattr(server, '_stopped', True):
-            # Lifecycle hooks and locked callbacks run before the server is
-            # stopped, so it may never complete.
+            # Lifecycle hooks may never complete.
             try:
                 await asyncio.wait_for(server.stop_async(), SHUTDOWN_TIMEOUT)
             except TimeoutError:

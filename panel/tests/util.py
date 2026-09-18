@@ -318,8 +318,7 @@ def serve_and_wait(app, page=None, prefix=None, port=None, proxy=None, **kwargs)
         serve_app = serve
     if proxy:
         kwargs['websocket_origin'] = [f'localhost:{proxy}']
-    # Tornado reuses the port it bound on IPv4 for IPv6, which fails when
-    # another process already holds it there.
+    # Tornado reuses the IPv4 port for IPv6, which another process may hold.
     kwargs.setdefault('address', '127.0.0.1')
     serve_app(app, port=port or 0, threaded=True, show=False, liveness=True, server_id=server_id, prefix=prefix or "", **kwargs)
     wait_until(lambda: server_id in state._servers, page)

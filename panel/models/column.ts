@@ -159,8 +159,7 @@ export class ColumnView extends BkColumnView {
     })
     if (!this._stylesheet_listener) {
       this._stylesheet_listener = true
-      // The element only becomes a scroll container once its stylesheets
-      // loaded, which happens asynchronously, so scrolling before was a no-op.
+      // Scrolling is a no-op until the stylesheets making it scrollable load.
       this.shadow_el.addEventListener("load", () => this._apply_initial_scroll(), true)
     }
   }

@@ -1516,7 +1516,6 @@ def test_tabulator_header_filter_no_horizontal_rescroll(page, df_mixed, paginati
     # Wait for the table to be laid out and overflowing before scrolling it,
     # otherwise scrollLeft may be a no-op if it's set before layout settles.
     wait_until(lambda: table_holder.evaluate("el => el.scrollWidth > el.clientWidth"), page)
-    # Scroll horizontally to the right.
     table_holder.evaluate("el => { el.scrollLeft = el.scrollWidth; }")
     wait_until(lambda: table_holder.evaluate("el => el.scrollLeft > 0"), page)
 
@@ -1532,8 +1531,7 @@ def test_tabulator_header_filter_no_horizontal_rescroll(page, df_mixed, paginati
     # With remote pagination current_view is None while the server recomputes it.
     wait_until(lambda: (view := widget.current_view) is not None and view.empty, page)
 
-    # The table should stay scrolled to the right. Focusing the filter scrolls
-    # it into view, which may move it by a few pixels.
+    # Focusing the filter scrolls it into view by a few pixels.
     wait_until(lambda: table_holder.evaluate(
         "el => el.scrollLeft >= el.scrollWidth - el.clientWidth - 10"
     ), page)
