@@ -104,18 +104,11 @@ def _cleanup_task(task):
 
 def _client_has_document(doc: Document) -> bool:
     """
-    Whether the client has already been sent the Document.
-
-    Events held before that can be dropped, since the serialization the
-    client is sent reproduces them, but once it has the Document a change
-    only reaches it as a patch. ``state._connected`` is set when the client
-    reports the Document as ready, which is after it was sent, so the
-    models it has been serialized are checked as well.
+    Whether the client was sent the Document, after which held events
+    must not be dropped. ``state._connected`` is only set once it is ready.
     """
     if state._connected.get(doc):
         return True
-    # bokeh keeps models that were detached again in `_new_models`, so the
-    # counts cannot be compared.
     live = getattr(doc.models, '_models', None)
     if not live:
         return False
@@ -301,19 +294,12 @@ def _is_write_blocked(socket: t.Any) -> bool:
 
 def _keep_unsent_models_new(doc: Document) -> None:
     """
-    Keeps models Panel has not written yet out of the Document's synced
-    models.
-
-    Applying a patch the client sent declares every model in the Document
-    as synced, since bokeh serializes a patch as it dispatches it and
-    therefore assumes anything new has been sent. Panel serializes at write
-    time, so a model that a held or queued patch defines would be
-    serialized as a bare reference to a model the client never received.
+    Keeps models Panel has not written yet unsent when a client patch is
+    applied, since bokeh then declares all models synced.
     """
     if getattr(doc.apply_json_patch, '_panel_keeps_unsent', False):
         return
-    # A bound method would keep the Document alive through the wrapper it is
-    # stored on, leaving the Document collectable only as a cycle.
+    # A bound method would keep the Document alive in a cycle.
     apply_json_patch = type(doc).apply_json_patch
     ref = weakref.ref(doc)
 

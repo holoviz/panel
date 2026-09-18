@@ -502,11 +502,6 @@ async def test_dispatch_msgs_terminates_on_document_destroy():
 
 
 def test_keep_unsent_models_new_across_client_patch():
-    """
-    A patch the client sends declares every model in the Document as
-    synced. Models a queued patch still has to define must stay unsent, or
-    the client is sent a reference to a model it never received.
-    """
     doc = Document()
     column = pn.Column()
     root = column.get_root(doc)
@@ -527,10 +522,6 @@ def test_keep_unsent_models_new_across_client_patch():
 
 
 def test_keep_unsent_models_new_still_flushes_own_patches():
-    """
-    Serializing a patch Panel writes itself has to declare the models it
-    defines as synced, otherwise every later patch defines them again.
-    """
     doc = Document()
     column = pn.Column()
     doc.add_root(column.get_root(doc))

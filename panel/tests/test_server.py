@@ -1105,7 +1105,6 @@ def test_threaded_server_stop_does_not_leave_unstarted_tasks(monkeypatch):
     loop.call_soon_threadsafe(create_task_and_stop)
     thread.join(timeout=5)
     assert not thread.is_alive()
-    # Release the loop so a task it still holds is collected
     thread = loop = None
     gc.collect()
 
