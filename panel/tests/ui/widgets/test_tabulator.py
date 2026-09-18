@@ -104,6 +104,21 @@ def bounding_boxes(page, *locators):
     return boxes
 
 
+def box_in_table(page, locator):
+    # A redraw resets the scroll until the table restores it.
+    table = page.locator('.pnx-tabulator.tabulator')
+    boxes = []
+
+    def _in_table():
+        outer, inner = bounding_boxes(page, table, locator)
+        assert outer['x'] <= inner['x'] and inner['x'] + inner['width'] <= outer['x'] + outer['width']
+        assert outer['y'] <= inner['y'] and inner['y'] + inner['height'] <= outer['y'] + outer['height']
+        boxes[:] = [inner]
+
+    wait_until(_in_table, page)
+    return boxes[0]
+
+
 def tabulator_column_values(page, col_name: str) -> list[str]:
     """Get the values of a column.
 
@@ -3646,7 +3661,8 @@ def test_tabulator_loading_no_horizontal_rescroll(page, df_mixed):
 
     wait_until(_scroll_into_view, page)
     page.wait_for_timeout(200)
-    [bb] = bounding_boxes(page, page.locator('text="Target"'))
+    target = page.locator('text="Target"')
+    bb = box_in_table(page, target)
 
     widget.loading = True
     page.wait_for_timeout(200)
@@ -3655,7 +3671,7 @@ def test_tabulator_loading_no_horizontal_rescroll(page, df_mixed):
     # To catch a potential rescroll
     page.wait_for_timeout(400)
     # The table should keep the same scroll position
-    assert [bb] == bounding_boxes(page, page.locator('text="Target"'))
+    wait_until(lambda: target.bounding_box() == bb, page)
 
 
 def test_tabulator_loading_no_vertical_rescroll(page):
@@ -3681,7 +3697,8 @@ def test_tabulator_loading_no_vertical_rescroll(page):
     wait_until(_scroll_into_view, page)
     page.wait_for_timeout(200)
 
-    [bb] = bounding_boxes(page, page.locator('text="T"'))
+    target = page.locator('text="T"')
+    bb = box_in_table(page, target)
 
     widget.loading = True
     page.wait_for_timeout(200)
@@ -3690,7 +3707,7 @@ def test_tabulator_loading_no_vertical_rescroll(page):
     # To catch a potential rescroll
     page.wait_for_timeout(400)
     # The table should keep the same scroll position
-    assert [bb] == bounding_boxes(page, page.locator('text="T"'))
+    wait_until(lambda: target.bounding_box() == bb, page)
 
 
 def test_tabulator_trigger_value_update(page):
