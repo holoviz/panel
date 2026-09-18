@@ -35,6 +35,7 @@ export class ColumnView extends BkColumnView {
   _updating: boolean = false
   protected _stylesheet_listener: boolean = false
   protected _initial_scroll_pending: boolean = false
+  protected _auto_scroll_pending: boolean = false
 
   scroll_down_button_el: HTMLElement
 
@@ -43,7 +44,7 @@ export class ColumnView extends BkColumnView {
 
     const {children, scroll_position, scroll_button_threshold} = this.model.properties
 
-    this.on_change(children, () => this.trigger_auto_scroll())
+    this.on_change(children, () => this._check_auto_scroll())
     this.on_change(scroll_position, () => this.scroll_to_position())
     this.on_change(scroll_button_threshold, () => this.toggle_scroll_button())
     this.model.on_event(ScrollToEvent, (event: ScrollToEvent) => this.scroll_to_index(event.index))
@@ -97,22 +98,20 @@ export class ColumnView extends BkColumnView {
       }
     }
 
+    // A new child may only get its final size a frame later.
     requestAnimationFrame(() => {
-      this.model.scroll_position = Math.round(this.el.scrollHeight)
+      requestAnimationFrame(() => {
+        this.model.scroll_position = Math.round(this.el.scrollHeight)
+      })
     })
   }
 
-  trigger_auto_scroll(): void {
+  _check_auto_scroll(): void {
     const limit = this.model.auto_scroll_limit
     if (limit == 0) {
       return
     }
-    const within_limit = this.distance_from_latest <= limit
-    if (!within_limit) {
-      return
-    }
-
-    this.scroll_to_latest()
+    this._auto_scroll_pending = this.distance_from_latest <= limit
   }
 
   record_scroll_position(): void {
@@ -219,6 +218,10 @@ export class ColumnView extends BkColumnView {
     this.r_after_render()
     this._update_children()
     this.invalidate_layout()
+    if (this._auto_scroll_pending) {
+      this._auto_scroll_pending = false
+      this.scroll_to_latest()
+    }
   }
 
   override after_render(): void {
