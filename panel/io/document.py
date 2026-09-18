@@ -102,6 +102,26 @@ def _cleanup_task(task):
             tasks.remove(task)
             break
 
+def _client_has_document(doc: Document) -> bool:
+    """
+    Whether the client has already been sent the Document.
+
+    Events held before that can be dropped, since the serialization the
+    client is sent reproduces them, but once it has the Document a change
+    only reaches it as a patch. ``state._connected`` is set when the client
+    reports the Document as ready, which is after it was sent, so the
+    models it has been serialized are checked as well.
+    """
+    if state._connected.get(doc):
+        return True
+    # bokeh keeps models that were detached again in `_new_models`, so the
+    # counts cannot be compared.
+    live = getattr(doc.models, '_models', None)
+    if not live:
+        return False
+    unsent = doc.models._new_models
+    return any(model not in unsent for model in live.values())
+
 def _dispatch_events(doc: Document, events: list[DocumentChangedEvent]) -> None:
     """
     Handles dispatch of events which could not be processed in
@@ -783,7 +803,7 @@ def hold(
                 pass
             elif threaded:
                 if not held or we_held:
-                    if state._connected.get(doc):
+                    if _client_has_document(doc):
                         def _unhold(lock=hold_lock, doc=doc):
                             with lock:
                                 doc.unhold()
@@ -802,7 +822,7 @@ def hold(
             elif comm is not None:
                 from .notebook import push
                 push(doc, comm)
-            elif not state._connected.get(doc):
+            elif not _client_has_document(doc):
                 _dispatch_events(doc, _drain_unconnected_events(doc, hold_lock))
             else:
                 doc.unhold()
