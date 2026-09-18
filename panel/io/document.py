@@ -299,6 +299,42 @@ def _is_write_blocked(socket: t.Any) -> bool:
     return False
 
 
+def _keep_unsent_models_new(doc: Document) -> None:
+    """
+    Keeps models Panel has not written yet out of the Document's synced
+    models.
+
+    Applying a patch the client sent declares every model in the Document
+    as synced, since bokeh serializes a patch as it dispatches it and
+    therefore assumes anything new has been sent. Panel serializes at write
+    time, so a model that a held or queued patch defines would be
+    serialized as a bare reference to a model the client never received.
+    """
+    if getattr(doc.apply_json_patch, '_panel_keeps_unsent', False):
+        return
+    # A bound method would keep the Document alive through the wrapper it is
+    # stored on, leaving the Document collectable only as a cycle.
+    apply_json_patch = type(doc).apply_json_patch
+    ref = weakref.ref(doc)
+
+    @wraps(apply_json_patch)
+    def _apply_json_patch(*args, **kwargs):
+        doc = ref()
+        if doc is None:
+            return None
+        unsent = set(doc.models._new_models)
+        try:
+            return apply_json_patch(doc, *args, **kwargs)
+        finally:
+            live = getattr(doc.models, '_models', None)
+            if unsent and live is not None:
+                doc.models._new_models |= {
+                    model for model in unsent if live.get(model.id) is model
+                }
+
+    _apply_json_patch._panel_keeps_unsent = True  # type: ignore[attr-defined]
+    doc.apply_json_patch = _apply_json_patch  # type: ignore[method-assign]
+
 async def _dispatch_msgs(doc):
     """
     Serializes and writes batches of events to the sockets, ensuring
@@ -489,6 +525,8 @@ def init_doc(doc: Document | None) -> Document:
     thread_id = threading.get_ident()
     if thread_id:
         state._thread_id_[curdoc] = thread_id
+
+    _keep_unsent_models_new(curdoc)
 
     if config.global_loading_spinner:
         curdoc.js_on_event(
