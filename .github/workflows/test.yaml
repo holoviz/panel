@@ -208,6 +208,14 @@ jobs:
         with:
           environments: ${{ matrix.environment }}
         id: install
+      # Each UI test uses new ports, which can exhaust the default range
+      # and fail connections with WSAENOBUFS (net::ERR_NO_BUFFER_SPACE).
+      - name: Widen the ephemeral port range
+        if: runner.os == 'Windows'
+        run: |
+          netsh int ipv4 show dynamicport tcp
+          netsh int ipv4 set dynamicport tcp start=10000 num=55535
+          netsh int ipv4 show dynamicport tcp
       - name: Build pyodide wheels
         run: pixi run -e test-ui "python ./scripts/build_pyodide_wheels.py"
       - name: Launch JupyterLab
