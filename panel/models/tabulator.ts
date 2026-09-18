@@ -464,6 +464,7 @@ export class DataTabulatorView extends HTMLBoxView {
 
     this.on_change(cell_styles, () => {
       if (this._applied_styles) {
+        this.record_scroll()
         this._updating_scroll = true
         this.tabulator.redraw(true)
         this._updating_scroll = false
@@ -493,6 +494,8 @@ export class DataTabulatorView extends HTMLBoxView {
       }
       this._restore_scroll = "horizontal"
       this._selection_updating = true
+      // The scroll event of a scroll just before may not have been handled yet.
+      this.record_scroll()
       this._updating_scroll = true
       void this.setData().then(() => {
         this._selection_updating = false
@@ -503,6 +506,7 @@ export class DataTabulatorView extends HTMLBoxView {
     this.connect(this.model.source.streaming, () => this.addData())
     this.connect(this.model.source.patching, () => {
       const inds = this.model.source.selected.indices
+      this.record_scroll()
       this._updating_scroll = true
       this.updateOrAddData()
       this._updating_scroll = false
