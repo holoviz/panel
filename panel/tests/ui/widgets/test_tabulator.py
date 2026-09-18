@@ -1206,7 +1206,15 @@ def test_tabulator_frozen_columns(page, df_mixed):
     assert float_bb['x'] < int_bb['x']
 
     # Scroll to the right, and give it a little extra time
-    page.locator('text="2019-01-01 10:00:00"').scroll_into_view_if_needed()
+    cell = page.locator('text="2019-01-01 10:00:00"')
+
+    def _scroll_into_view():
+        try:
+            cell.scroll_into_view_if_needed(timeout=1000)
+        except Error as e:
+            raise AssertionError(str(e)) from e
+
+    wait_until(_scroll_into_view, page)
 
     # Check that the position of one of the non frozen columns has indeed moved
     wait_until(lambda: page.locator('text="bool"').bounding_box()['x'] < bool_bb['x'], page)
