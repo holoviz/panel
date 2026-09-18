@@ -3,6 +3,7 @@ import datetime as dt
 import logging
 import os
 import pathlib
+import threading
 import time
 import weakref
 
@@ -1083,6 +1084,34 @@ def test_kill_all_servers(html_server_session, markdown_server_session):
     assert server_2._stopped
 
 
+def test_threaded_server_stop_does_not_leave_unstarted_tasks(monkeypatch):
+    import gc
+    import sys
+
+    unraisable = []
+    monkeypatch.setattr(sys, "unraisablehook", unraisable.append)
+
+    serve_and_wait(Markdown('# Title'))
+    thread = next(iter(state._threads.values()))
+    loop = thread.asyncio_loop
+
+    async def respawn():
+        loop.create_task(respawn())
+
+    def create_task_and_stop():
+        loop.create_task(respawn())
+        loop.stop()
+
+    loop.call_soon_threadsafe(create_task_and_stop)
+    thread.join(timeout=5)
+    assert not thread.is_alive()
+    # Release the loop so a task it still holds is collected
+    thread = loop = None
+    gc.collect()
+
+    assert [u.object for u in unraisable] == []
+
+
 @pytest.mark.xdist_group(name="server")
 def test_multiple_titles(multiple_apps_server_sessions):
     """Serve multiple apps with a title per app."""
@@ -1825,3 +1854,32 @@ def test_server_threads_save(threads, tmp_path):
     serve_and_request(app)
 
     wait_until(lambda: fsave.exists())
+
+
+def test_threaded_server_stop_finishes_locked_callbacks(monkeypatch):
+    import gc
+    import sys
+
+    unraisable = []
+    monkeypatch.setattr(sys, "unraisablehook", unraisable.append)
+    started, finished = threading.Event(), []
+
+    def app():
+        doc = state.curdoc
+
+        async def slow():
+            started.set()
+            await asyncio.sleep(0.2)
+            finished.append('done')
+
+        doc.add_next_tick_callback(slow)
+        return Markdown('# Title')
+
+    serve_and_request(app)
+    assert started.wait(5)
+
+    state.kill_all_servers()
+    gc.collect()
+
+    assert finished == ['done']
+    assert [u.object for u in unraisable] == []
