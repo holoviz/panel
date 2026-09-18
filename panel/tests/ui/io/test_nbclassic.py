@@ -48,9 +48,12 @@ def run_notebook(page, nbclassic_server, notebook_name, cells):
     response.raise_for_status()
     page.goto(f'{host}/notebooks/{notebook_name}.ipynb')
     expect(page.locator('#notebook-container .code_cell').first).to_be_visible()
+    # Cells executed before the kernel is ready never run.
     page.wait_for_function(
         "window.Jupyter?.notebook?._fully_loaded && "
-        "window.Jupyter.notebook.kernel?.is_connected() && !window.Jupyter.notebook.kernel_busy"
+        "window.Jupyter.notebook.kernel?.is_connected() && "
+        "Object.keys(window.Jupyter.notebook.kernel.info_reply).length > 0 && "
+        "!window.Jupyter.notebook.kernel_busy"
     )
     page.evaluate('Jupyter.notebook.execute_all_cells()')
     # A queued cell has "*" as its prompt number.
