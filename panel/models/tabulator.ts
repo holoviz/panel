@@ -1343,12 +1343,11 @@ export class DataTabulatorView extends HTMLBoxView {
   postUpdate(): void {
     this.setSelection()
     this.setStyles()
-    if (this._restore_scroll) {
-      const vertical = this._restore_scroll === "horizontal" ? false : true
-      const horizontal = this._restore_scroll === "vertical" ? false : true
-      this.restore_scroll(horizontal, vertical)
-      this._restore_scroll = false
-    }
+    // Tabulator also redraws by itself, e.g. when resized, which resets the
+    // horizontal scroll without anything restoring it.
+    const restore = this._restore_scroll || "horizontal"
+    this.restore_scroll(restore !== "vertical", restore !== "horizontal")
+    this._restore_scroll = false
   }
 
   updateOrAddData(): void {
