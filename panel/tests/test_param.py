@@ -1920,7 +1920,6 @@ async def test_param_async_generator(document, comm):
     await async_wait_until(lambda: root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n')
 
 
-@pytest.mark.flaky(max_runs=3)
 async def test_param_async_generator_append(document, comm):
     checkbox = Checkbox(value=False)
 
@@ -1948,7 +1947,6 @@ async def test_param_async_generator_append(document, comm):
     assert root.children[1].text == '&lt;p&gt;False&lt;/p&gt;\n'
 
 
-@pytest.mark.flaky(max_runs=3)
 async def test_param_generator_multiple(document, comm):
     checkbox = Checkbox(value=False)
 
