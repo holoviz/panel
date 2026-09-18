@@ -671,7 +671,11 @@ export class DataTabulatorView extends HTMLBoxView {
       return false
     }
     // Tabulator marks the edited cell with `tabulator-editing` while an editor is active.
-    return this.container.querySelector(".tabulator-editing") !== null
+    // A header filter list is a popup outside the cell, which a redraw would close.
+    return (
+      this.container.querySelector(".tabulator-editing") !== null ||
+      this.shadow_el.querySelector(".tabulator-edit-list") !== null
+    )
   }
 
   override stylesheets(): StyleSheetLike[] {
