@@ -351,7 +351,7 @@ def serve_and_request(app, suffix="", n=1, port=None, proxy=None, **kwargs):
     port = serve_and_wait(app, port=port, proxy=proxy, **kwargs)
     if proxy:
         port = proxy
-    reqs = [r for _ in range(n) if (r := requests.get(f"http://localhost:{port}{suffix}")).ok]
+    reqs = [r for _ in range(n) if (r := requests.get(f"http://127.0.0.1:{port}{suffix}")).ok]
     assert len(reqs) == n, "Not all requests were successful"
     return reqs[0] if n == 1 else reqs
 
@@ -361,7 +361,7 @@ def wait_for_server(port, prefix=None, timeout=3):
     prefix = prefix or ""
     if not prefix.endswith('/'):
         prefix += '/'
-    url = f"http://localhost:{port}{prefix}liveness"
+    url = f"http://127.0.0.1:{port}{prefix}liveness"
     while True:
         try:
             if requests.get(url).ok:
