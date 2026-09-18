@@ -46,6 +46,10 @@ export class FeedView extends ColumnView {
     const is_scroll_container = this.model.css_classes.some((cls) => cls.startsWith("scroll"))
     const root = is_scroll_container ? this.el : null
     this._intersection_observer = new IntersectionObserver((entries) => {
+      // Until its stylesheets load the Feed does not clip, so all children intersect.
+      if (is_scroll_container && getComputedStyle(this.el).overflowY === "visible") {
+        return
+      }
       const visible = [...this.model.visible_children]
       const nodes = this.node_map
 
