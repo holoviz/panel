@@ -342,7 +342,8 @@ def serve_component(page, app, suffix='', wait=True, **kwargs):
         wait_until(lambda: any("Websocket connection 0 is now open" in str(msg) for msg in msgs), page, interval=10)
 
     if page and wait:
-        page.wait_for_function("document.readyState === 'complete'", timeout=5000)
+        # Heavy bundles can take over 5s to load on a busy runner.
+        page.wait_for_function("document.readyState === 'complete'", timeout=15000)
         page.wait_for_load_state('networkidle')
     return msgs, port
 
