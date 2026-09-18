@@ -98,11 +98,8 @@ export class ColumnView extends BkColumnView {
       }
     }
 
-    // A new child may only get its final size a frame later.
     requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        this.model.scroll_position = Math.round(this.el.scrollHeight)
-      })
+      this.model.scroll_position = Math.round(this.el.scrollHeight)
     })
   }
 
@@ -220,7 +217,8 @@ export class ColumnView extends BkColumnView {
     this.invalidate_layout()
     if (this._auto_scroll_pending) {
       this._auto_scroll_pending = false
-      this.scroll_to_latest()
+      // A new child may only get its final size a frame later.
+      requestAnimationFrame(() => this.scroll_to_latest())
     }
   }
 
