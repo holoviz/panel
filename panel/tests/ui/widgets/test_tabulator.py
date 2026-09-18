@@ -92,6 +92,18 @@ def count_per_page(count: int, page_size: int):
     return count_per_page
 
 
+def bounding_boxes(page, *locators):
+    # A redraw can briefly take the cells out of the layout.
+    boxes = []
+
+    def _laid_out():
+        boxes[:] = [locator.bounding_box() for locator in locators]
+        assert None not in boxes
+
+    wait_until(_laid_out, page)
+    return boxes
+
+
 def tabulator_column_values(page, col_name: str) -> list[str]:
     """Get the values of a column.
 
@@ -1198,9 +1210,9 @@ def test_tabulator_frozen_columns(page, df_mixed):
         use_inner_text=True
     )
 
-    float_bb = page.locator('text="float"').bounding_box()
-    int_bb = page.locator('text="int"').bounding_box()
-    bool_bb = page.locator('text="bool"').bounding_box()
+    float_bb, int_bb, bool_bb = bounding_boxes(
+        page, page.locator('text="float"'), page.locator('text="int"'), page.locator('text="bool"')
+    )
 
     # Check that the float column is rendered before the int column
     assert float_bb['x'] < int_bb['x']
@@ -1277,9 +1289,9 @@ def test_tabulator_frozen_columns_with_positions(page, df_mixed):
         use_inner_text=True
     )
 
-    float_bb = page.locator('text="float"').bounding_box()
-    int_bb = page.locator('text="int"').bounding_box()
-    str_bb = page.locator('text="str"').bounding_box()
+    float_bb, int_bb, str_bb = bounding_boxes(
+        page, page.locator('text="float"'), page.locator('text="int"'), page.locator('text="str"')
+    )
 
     # Check that the float column is rendered before the int col
     assert float_bb['x'] < int_bb['x']
@@ -1355,16 +1367,7 @@ def test_tabulator_frozen_rows(page):
     expect(y_cell).to_be_visible()
     expect(x_cell).to_have_count(1)
     expect(y_cell).to_have_count(1)
-
-    # A redraw can briefly take the cells out of the layout.
-    boxes = []
-
-    def _laid_out():
-        boxes[:] = [x_cell.first.bounding_box(), y_cell.first.bounding_box()]
-        assert None not in boxes
-
-    wait_until(_laid_out, page)
-    X_bb, Y_bb = boxes
+    X_bb, Y_bb = bounding_boxes(page, x_cell.first, y_cell.first)
 
     # Scroll the non-frozen area to the bottom.
     page.locator('.pnx-tabulator .tabulator-tableholder').evaluate(
@@ -3643,7 +3646,7 @@ def test_tabulator_loading_no_horizontal_rescroll(page, df_mixed):
 
     wait_until(_scroll_into_view, page)
     page.wait_for_timeout(200)
-    bb = page.locator('text="Target"').bounding_box()
+    [bb] = bounding_boxes(page, page.locator('text="Target"'))
 
     widget.loading = True
     page.wait_for_timeout(200)
@@ -3652,7 +3655,7 @@ def test_tabulator_loading_no_horizontal_rescroll(page, df_mixed):
     # To catch a potential rescroll
     page.wait_for_timeout(400)
     # The table should keep the same scroll position
-    assert bb == page.locator('text="Target"').bounding_box()
+    assert [bb] == bounding_boxes(page, page.locator('text="Target"'))
 
 
 def test_tabulator_loading_no_vertical_rescroll(page):
@@ -3678,7 +3681,7 @@ def test_tabulator_loading_no_vertical_rescroll(page):
     wait_until(_scroll_into_view, page)
     page.wait_for_timeout(200)
 
-    bb = page.locator('text="T"').bounding_box()
+    [bb] = bounding_boxes(page, page.locator('text="T"'))
 
     widget.loading = True
     page.wait_for_timeout(200)
@@ -3687,7 +3690,7 @@ def test_tabulator_loading_no_vertical_rescroll(page):
     # To catch a potential rescroll
     page.wait_for_timeout(400)
     # The table should keep the same scroll position
-    assert bb == page.locator('text="T"').bounding_box()
+    assert [bb] == bounding_boxes(page, page.locator('text="T"'))
 
 
 def test_tabulator_trigger_value_update(page):
