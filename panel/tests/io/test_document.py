@@ -11,13 +11,15 @@ import tornado.locks
 
 from bokeh.document import Document
 from bokeh.document.events import MessageSentEvent
+from bokeh.protocol import Protocol
 
 import panel as pn
 
 from panel.io.document import (
-    _UNCONNECTED_EVENTS, _WRITE_BLOCK, _cleanup_doc, _client_has_document,
-    _destroy_document, _is_write_blocked, _socket_dispatcher, _write_tasks,
-    dispatch_django, dispatch_tornado, extra_socket_handlers, hold,
+    _UNCONNECTED_EVENTS, _WRITE_BLOCK, MockSessionContext, _cleanup_doc,
+    _client_has_document, _destroy_document, _is_write_blocked,
+    _keep_unsent_models_new, _socket_dispatcher, _write_tasks, dispatch_django,
+    dispatch_tornado, extra_socket_handlers, hold, init_doc,
     schedule_write_events, unlocked, write_events,
 )
 from panel.io.state import _state, set_curdoc, state
@@ -499,6 +501,54 @@ async def test_dispatch_msgs_terminates_on_document_destroy():
         extra_socket_handlers.pop(_FakeSocket, None)
 
 
+def test_keep_unsent_models_new_across_client_patch():
+    """
+    A patch the client sends declares every model in the Document as
+    synced. Models a queued patch still has to define must stay unsent, or
+    the client is sent a reference to a model it never received.
+    """
+    doc = Document()
+    column = pn.Column()
+    root = column.get_root(doc)
+    doc.add_root(root)
+    _keep_unsent_models_new(doc)
+    doc.to_json()
+
+    with set_curdoc(doc):
+        column.append(pn.pane.Markdown('unsent'))
+    unsent = set(doc.models._new_models)
+    assert unsent
+
+    doc.apply_json_patch({'events': [
+        {'kind': 'ModelChanged', 'model': {'id': root.id}, 'attr': 'name', 'new': 'renamed'}
+    ]})
+
+    assert unsent <= doc.models._new_models
+
+
+def test_keep_unsent_models_new_still_flushes_own_patches():
+    """
+    Serializing a patch Panel writes itself has to declare the models it
+    defines as synced, otherwise every later patch defines them again.
+    """
+    doc = Document()
+    column = pn.Column()
+    doc.add_root(column.get_root(doc))
+    _keep_unsent_models_new(doc)
+    doc.to_json()
+
+    sizes = []
+    with set_curdoc(doc):
+        for i in range(3):
+            doc.hold()
+            column.append(pn.pane.Markdown(f'item {i}'))
+            events, doc.callbacks._held_events = list(doc.callbacks._held_events), []
+            sizes.append(len(Protocol().create('PATCH-DOC', events).content_json))
+            doc.callbacks._hold = None
+
+    assert sizes[2] == pytest.approx(sizes[1], abs=100)
+
+
 def test_client_has_document_handles_destroyed_document():
     doc = Document()
     doc.add_root(pn.Column().get_root(doc))
@@ -509,3 +559,16 @@ def test_client_has_document_handles_destroyed_document():
 
     doc.models.destroy()
     assert not _client_has_document(doc)
+
+
+def test_init_doc_keeps_unsent_models_new_once():
+    doc = Document()
+    doc.add_root(pn.Column().get_root(doc))
+    doc._session_context = lambda: MockSessionContext(doc)
+
+    init_doc(doc)
+    wrapper = doc.apply_json_patch
+    assert getattr(wrapper, '_panel_keeps_unsent', False)
+
+    init_doc(doc)
+    assert doc.apply_json_patch is wrapper
