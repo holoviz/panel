@@ -7,7 +7,7 @@ from .state import state
 
 logger = logging.getLogger(__name__)
 
-SHUTDOWN_TIMEOUT = 5
+_SHUTDOWN_TIMEOUT = 5
 
 
 class StoppableThread(threading.Thread):
@@ -48,11 +48,10 @@ class StoppableThread(threading.Thread):
                     self._cancel_pending_tasks()
                 except Exception:
                     logger.debug('Could not drain pending tasks', exc_info=True)
-                finally:
-                    try:
-                        self.asyncio_loop.close()
-                    except Exception:
-                        logger.debug('Could not close the event loop', exc_info=True)
+                try:
+                    self.asyncio_loop.close()
+                except Exception:
+                    logger.debug('Could not close the event loop', exc_info=True)
             if hasattr(self, '_target'):
                 del self._target, self._args, self._kwargs # type: ignore
             else:
@@ -67,7 +66,7 @@ class StoppableThread(threading.Thread):
         for task in tasks:
             task.cancel()
         # A task may shield itself from the cancellation.
-        loop.run_until_complete(asyncio.wait(tasks, timeout=SHUTDOWN_TIMEOUT))
+        loop.run_until_complete(asyncio.wait(tasks, timeout=_SHUTDOWN_TIMEOUT))
 
     def stop(self) -> None:
         if not self.is_alive():
@@ -90,9 +89,9 @@ class StoppableThread(threading.Thread):
         if server is not None and not getattr(server, '_stopped', True):
             # Lifecycle hooks may never complete.
             try:
-                await asyncio.wait_for(server.stop_async(), SHUTDOWN_TIMEOUT)
+                await asyncio.wait_for(server.stop_async(), _SHUTDOWN_TIMEOUT)
             except TimeoutError:
-                logger.warning('Server did not stop within %s seconds', SHUTDOWN_TIMEOUT)
+                logger.warning('Server did not stop within %s seconds', _SHUTDOWN_TIMEOUT)
             except Exception:
                 logger.debug('Could not stop the server', exc_info=True)
         cur_task = asyncio.current_task()
