@@ -110,8 +110,9 @@ def test_reconnect_notification(page):
 
     session = doc.session_context.server_context.sessions[0]
 
-    # Close WebSocket
-    list(session._subscribed_connections)[0]._socket.ws_connection.close()
+    # Close WebSocket on the server loop, Tornado streams are not thread safe
+    ws_connection = list(session._subscribed_connections)[0]._socket.ws_connection
+    ws_connection.stream.io_loop.add_callback(ws_connection.close)
 
     # Ensure reconnect notifications are shown
     expect(page.locator('.notyf__message').nth(0)).to_have_text('Disconnected! Reconnecting now.')
