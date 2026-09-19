@@ -1,9 +1,12 @@
+import json
+import time
+
 import pytest
 import requests
 
 pytest.importorskip("playwright")
 
-from playwright.sync_api import expect
+from playwright.sync_api import TimeoutError, expect
 
 pytestmark = [pytest.mark.ui, pytest.mark.jupyter]
 
@@ -13,6 +16,32 @@ def nbclassic_server(jupyter_preview):
     """Use nbclassic as an extension of the shared Jupyter Server."""
     host, _ = jupyter_preview.split('/panel-preview/', 1)
     return f'{host}/nbclassic'
+
+
+def _record_kernel_frames(page):
+    frames = []
+
+    def on_websocket(ws):
+        if '/api/kernels/' not in ws.url:
+            return
+        ws.on('framesent', lambda payload: frames.append((time.monotonic(), 'sent', payload)))
+        ws.on('framereceived', lambda payload: frames.append((time.monotonic(), 'received', payload)))
+
+    page.on('websocket', on_websocket)
+    return frames
+
+
+def _describe_frames(frames):
+    t0 = frames[0][0] if frames else 0
+    lines = []
+    for t, direction, payload in frames:
+        try:
+            msg = json.loads(payload)
+            what = f"{msg['header']['msg_type']} {msg.get('content', {}).get('execution_state', '')}"
+        except Exception:
+            what = f'<{len(payload)} bytes>'
+        lines.append(f'{t - t0:7.2f}s {direction:8} {what}')
+    return '\n'.join(lines[-40:])
 
 
 def run_notebook(page, nbclassic_server, notebook_name, cells):
@@ -46,6 +75,8 @@ def run_notebook(page, nbclassic_server, notebook_name, cells):
         timeout=10,
     )
     response.raise_for_status()
+    # Tells a stalled server or kernel apart from a request that was never sent.
+    frames = _record_kernel_frames(page)
     page.goto(f'{host}/notebooks/{notebook_name}.ipynb')
     expect(page.locator('#notebook-container .code_cell').first).to_be_visible()
     # Cells executed before the kernel is ready never run.
@@ -57,9 +88,12 @@ def run_notebook(page, nbclassic_server, notebook_name, cells):
     )
     page.evaluate('Jupyter.notebook.execute_all_cells()')
     # A queued cell has "*" as its prompt number.
-    page.wait_for_function(
-        "Jupyter.notebook.get_cells().every((cell) => typeof cell.input_prompt_number === 'number')"
-    )
+    try:
+        page.wait_for_function(
+            "Jupyter.notebook.get_cells().every((cell) => typeof cell.input_prompt_number === 'number')"
+        )
+    except TimeoutError as error:
+        raise AssertionError(f'The cells did not run, kernel frames:\n{_describe_frames(frames)}') from error
     page.wait_for_function("window.Jupyter && !window.Jupyter.notebook.kernel_busy")
     errors = page.locator('.output_error').all_inner_texts()
     assert not errors, '\n'.join(errors)
