@@ -205,7 +205,13 @@ export class FeedView extends ColumnView {
     super.render()
     if (!this._visibility_listener) {
       this._visibility_listener = true
-      this.shadow_el.addEventListener("load", () => this._reobserve_children(), true)
+      this.shadow_el.addEventListener("load", () => {
+        if (this._latest_pending) {
+          this._land_latest_scroll()
+        } else {
+          this._reobserve_children()
+        }
+      }, true)
     }
   }
 
@@ -223,23 +229,29 @@ export class FeedView extends ColumnView {
 
   override trigger_auto_scroll(): void {}
 
+  _land_latest_scroll(): void {
+    // Scroll now rather than frames later via scroll_position, so the
+    // children are measured at the latest position.
+    this.el.scrollTo({top: this.el.scrollHeight, behavior: "instant"})
+    // Until its stylesheets load the scroll is a no-op, so keep waiting.
+    if (getComputedStyle(this.el).overflowY === "visible") {
+      return
+    }
+    this._latest_pending = false
+    this._reobserve_children()
+  }
+
   override after_render(): void {
     BkColumnView.prototype.after_render.call(this)
     requestAnimationFrame(() => {
       if (this.model.view_latest && !this._rendered) {
-        // Scroll now rather than frames later via scroll_position, so the
-        // children are measured at the latest position.
-        this.el.scrollTo({top: this.el.scrollHeight, behavior: "instant"})
+        this._land_latest_scroll()
         this.scroll_to_latest()
       } else if (this.model.scroll_position) {
         this.scroll_to_position()
       }
       this.toggle_scroll_button()
       this._rendered = true
-      if (this._latest_pending) {
-        this._latest_pending = false
-        this._reobserve_children()
-      }
     })
   }
 }
