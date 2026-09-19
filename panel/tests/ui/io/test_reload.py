@@ -1,6 +1,5 @@
 import os
 import pathlib
-import time
 
 import pytest
 
@@ -97,10 +96,8 @@ def test_reload_app_on_local_module_change(page, autoreload, py_files):
 
     expect(page.locator('.markdown')).to_have_text('foo')
 
-    time.sleep(0.1)
     with open(module.name, 'w') as f:
         f.write("var = 'bar';")
     pathlib.Path(module.name).touch()
-    time.sleep(0.1)
 
     wait_until(lambda: expect(page.locator('.markdown')).to_have_text('bar'), page)
