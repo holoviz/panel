@@ -52,6 +52,6 @@ def test_tabs_toggle_clickable(page):
 
     expect(tab_panels.first).to_be_visible()
 
-    page.mouse.click(200, 200)
+    page.locator(f'a[href="{url}"]').click()
 
     wait_until(lambda: page.url == url, page)
