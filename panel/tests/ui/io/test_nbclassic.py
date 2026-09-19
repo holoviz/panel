@@ -158,3 +158,14 @@ def test_nbclassic_warns_when_extension_missing(page, nbclassic_server):
     alert = page.locator('.output_area [role="alert"]')
     expect(alert).to_be_visible(timeout=15000)
     expect(alert).to_contain_text('Jupyter server extension')
+
+
+def test_nbclassic_component_renders_when_other_library_fails(page, nbclassic_server):
+    page.route('**/bundled/katex/**', lambda route: route.fulfill(status=404, body='Not Found'))
+    run_notebook(page, nbclassic_server, 'failedlibrary', [
+        'import panel as pn',
+        "pn.extension('filedropper', 'katex', comms='default', inline=False)",
+        'pn.widgets.FileDropper(height=100)',
+    ])
+
+    expect(page.locator('.filepond--root')).to_have_count(1, timeout=12000)
