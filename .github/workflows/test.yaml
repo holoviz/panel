@@ -204,18 +204,10 @@ jobs:
       OKTA_OAUTH_PASSWORD: ${{ secrets.OKTA_OAUTH_PASSWORD }}
       ENV: ${{ matrix.environment }}
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@11eb638302f76ec64217e2eeddfb11df1f788b54 # v1.0.2
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@e5ffb7d47f47c735c590769e1357c014b0969852 # v1.0.11
         with:
           environments: ${{ matrix.environment }}
         id: install
-      # Each UI test uses new ports, which can exhaust the default range
-      # and fail connections with WSAENOBUFS (net::ERR_NO_BUFFER_SPACE).
-      - name: Widen the ephemeral port range
-        if: runner.os == 'Windows'
-        run: |
-          netsh int ipv4 show dynamicport tcp
-          netsh int ipv4 set dynamicport tcp start=10000 num=55535
-          netsh int ipv4 show dynamicport tcp
       - name: Build pyodide wheels
         run: pixi run -e test-ui "python ./scripts/build_pyodide_wheels.py"
       - name: Launch JupyterLab
