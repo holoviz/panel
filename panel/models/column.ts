@@ -44,7 +44,7 @@ export class ColumnView extends BkColumnView {
 
     const {children, scroll_position, scroll_button_threshold} = this.model.properties
 
-    this.on_change(children, () => this._check_auto_scroll())
+    this.on_change(children, () => this.trigger_auto_scroll())
     this.on_change(scroll_position, () => this.scroll_to_position())
     this.on_change(scroll_button_threshold, () => this.toggle_scroll_button())
     this.model.on_event(ScrollToEvent, (event: ScrollToEvent) => this.scroll_to_index(event.index))
@@ -106,7 +106,7 @@ export class ColumnView extends BkColumnView {
     })
   }
 
-  _check_auto_scroll(): void {
+  trigger_auto_scroll(): void {
     const limit = this.model.auto_scroll_limit
     if (limit == 0) {
       return
