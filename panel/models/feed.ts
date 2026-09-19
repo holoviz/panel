@@ -216,7 +216,7 @@ export class FeedView extends ColumnView {
     }
   }
 
-  override _check_auto_scroll(): void {}
+  override trigger_auto_scroll(): void {}
 
   override after_render(): void {
     BkColumnView.prototype.after_render.call(this)
