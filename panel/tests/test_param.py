@@ -1890,17 +1890,11 @@ async def test_param_generator_append(document, comm):
 
     root = pane.get_root(document, comm)
 
-    await async_wait_until(lambda: len(root.children) == 2)
-    assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
-    assert root.children[1].text == '&lt;p&gt;True&lt;/p&gt;\n'
+    await async_wait_until(lambda: [c.text for c in root.children] == ['&lt;p&gt;False&lt;/p&gt;\n', '&lt;p&gt;True&lt;/p&gt;\n'])
 
     checkbox.value = True
 
-    await async_wait_until(lambda: len(root.children) == 2)
-    await async_wait_until(lambda: (
-        (root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n') and
-        (root.children[1].text == '&lt;p&gt;False&lt;/p&gt;\n')
-    ))
+    await async_wait_until(lambda: [c.text for c in root.children] == ['&lt;p&gt;True&lt;/p&gt;\n', '&lt;p&gt;False&lt;/p&gt;\n'])
 
 
 async def test_param_async_generator(document, comm):
@@ -1932,19 +1926,13 @@ async def test_param_async_generator_append(document, comm):
 
     root = pane.get_root(document, comm)
 
-    await async_wait_until(lambda: len(root.children) == 1, interval=10)
-    await async_wait_until(lambda: root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n')
-    await async_wait_until(lambda: len(root.children) == 2, interval=10)
-    assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
-    assert root.children[1].text == '&lt;p&gt;True&lt;/p&gt;\n'
+    await async_wait_until(lambda: [c.text for c in root.children] == ['&lt;p&gt;False&lt;/p&gt;\n'], interval=10)
+    await async_wait_until(lambda: [c.text for c in root.children] == ['&lt;p&gt;False&lt;/p&gt;\n', '&lt;p&gt;True&lt;/p&gt;\n'], interval=10)
 
     checkbox.value = True
 
-    await async_wait_until(lambda: len(root.children) == 1, interval=10)
-    assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
-    await async_wait_until(lambda: len(root.children) == 2, interval=10)
-    assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
-    assert root.children[1].text == '&lt;p&gt;False&lt;/p&gt;\n'
+    await async_wait_until(lambda: [c.text for c in root.children] == ['&lt;p&gt;True&lt;/p&gt;\n'], interval=10)
+    await async_wait_until(lambda: [c.text for c in root.children] == ['&lt;p&gt;True&lt;/p&gt;\n', '&lt;p&gt;False&lt;/p&gt;\n'], interval=10)
 
 
 async def test_param_generator_multiple(document, comm):
