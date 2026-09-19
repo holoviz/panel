@@ -341,6 +341,10 @@ calls it with the rendered model.
   require_ready_resolve();
   {%- endif %}
 
+  // Module exports are only assigned once their libraries have loaded.
+  let libs_ready_resolve;
+  const libs_ready = new Promise((resolve) => { libs_ready_resolve = resolve });
+
   function declare_resources() {
     // Tells the panel.js resource registry which component libraries this
     // bundle has already satisfied, so nothing is fetched a second time.
@@ -353,15 +357,19 @@ calls it with the rendered model.
     // Libraries RequireJS is loading are claimed against require_ready
     // instead of being declared, since they are not ready yet.
     const require_urls = window.requirejs ? {{ require_skip|default([])|json }} : [];
-    const satisfied = [], pending = [];
+    const satisfied = [], pending = [], exporting = [];
     for (const lib of declared.libs || []) {
       const urls = lib.js || [];
       const by_require = urls.length > 0 && urls.every((url) => require_urls.includes(url));
-      (by_require ? pending : satisfied).push(lib);
+      const exports = (lib.modules || []).some((module) => module.export != null);
+      (by_require ? pending : exports ? exporting : satisfied).push(lib);
     }
     const declarations = [{libs: satisfied, css: declared.css}];
     if (pending.length > 0) {
       declarations.push({libs: pending, ready: require_ready});
+    }
+    if (exporting.length > 0) {
+      declarations.push({libs: exporting, ready: libs_ready});
     }
     for (const declaration of declarations) {
       if (root.__panel_resources__ != null) {
@@ -427,6 +435,7 @@ calls it with the rendered model.
       }
       load_libs(css_urls, js_urls, js_modules, Bokeh, function() {
         console.debug("Bokeh: BokehJS plotting callback run at", now());
+        libs_ready_resolve();
         run_inline_js();
         if (Bokeh != undefined && !reloading) {
           const NewBokeh = root.Bokeh;
