@@ -156,10 +156,11 @@ export class FeedView extends ColumnView {
     this._sync = true
 
     // Ensure we adjust the scroll position in case we prepended items
-    if (is_prepended) {
+    // The reference child may have been removed, its offset is then meaningless.
+    const reference = this._reference_view
+    if (is_prepended && reference != null && this.child_views.includes(reference)) {
       requestAnimationFrame(() => {
-        const after_offset = this._reference_view?.el.offsetTop || 0
-        const offset = (after_offset-(this._reference || 0))
+        const offset = reference.el.offsetTop - (this._reference || 0)
         // A scroll to where it already is would cancel one in progress.
         if (offset !== 0) {
           this.el.scrollTo({top: scroll_top + offset, behavior: "smooth"})
