@@ -36,6 +36,7 @@ export class FeedView extends ColumnView {
   _sync: boolean
   _reference: number | null = null
   _reference_view: UIElementView | null = null
+  protected _children_update: Promise<void> | null = null
 
   override initialize(): void {
     super.initialize()
@@ -88,11 +89,13 @@ export class FeedView extends ColumnView {
 
   override connect_signals(): void {
     super.connect_signals()
-    this.model.on_event(ScrollLatestEvent, (event: ScrollLatestEvent) => {
-      this.scroll_to_latest(event.scroll_limit)
+    this.model.on_event(ScrollLatestEvent, async (event: ScrollLatestEvent) => {
       if (event.rerender) {
         this._rendered = false
       }
+      // The event follows the children it rerendered, which may still be building.
+      await this._children_update
+      this.scroll_to_latest(event.scroll_limit)
     })
   }
 
@@ -105,6 +108,18 @@ export class FeedView extends ColumnView {
   }
 
   override async update_children(): Promise<void> {
+    const update = this._rebuild_children()
+    this._children_update = update
+    try {
+      await update
+    } finally {
+      if (this._children_update === update) {
+        this._children_update = null
+      }
+    }
+  }
+
+  protected async _rebuild_children(): Promise<void> {
     const last = this._last_visible
     const scroll_top = this.el.scrollTop
     this._reference_view = last
