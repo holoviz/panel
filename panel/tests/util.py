@@ -348,7 +348,23 @@ def serve_component(page, app, suffix='', wait=True, **kwargs):
         # Heavy bundles can take over 5s to load on a busy runner.
         page.wait_for_function("document.readyState === 'complete'", timeout=15000)
         page.wait_for_load_state('networkidle')
+        # The views request their stylesheets only once they render.
+        wait_until(lambda: any(
+            "items were rendered successfully" in str(msg) or "Error rendering Bokeh items" in str(msg)
+            for msg in msgs
+        ), page, interval=10)
+        page.wait_for_function(_STYLESHEETS_SETTLED, timeout=15000)
     return msgs, port
+
+
+_STYLESHEETS_SETTLED = """() => {
+    const failed = (link) => performance.getEntriesByName(link.href).some((entry) => entry.responseStatus >= 400)
+    const settled = (root) => [...root.querySelectorAll('*')].every((el) => el.shadowRoot == null || (
+        [...el.shadowRoot.querySelectorAll('link[rel="stylesheet"]')].every((link) => link.sheet != null || failed(link))
+        && settled(el.shadowRoot)
+    ))
+    return settled(document)
+}"""
 
 
 def serve_and_request(app, suffix="", n=1, port=None, proxy=None, **kwargs):
