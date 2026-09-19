@@ -233,7 +233,7 @@ def test_server_ico_handling(path, port):
 
     dots = path.count('/')*'.'
     assert f'<link rel="icon" href="{dots}/favicon.ico"' in r.content.decode('utf-8')
-    ico = requests.get(f"http://localhost:{port}/favicon.ico")
+    ico = requests.get(f"http://localhost:{port}/favicon.ico", timeout=30)
     assert ico.content == ico_path.read_bytes()
 
 def test_server_ico_handling_with_prefix(port):
@@ -245,7 +245,7 @@ def test_server_ico_handling_with_prefix(port):
     )
 
     assert '<link rel="icon" href="./favicon.ico"' in r.content.decode('utf-8')
-    ico = requests.get(f"http://localhost:{port}/favicon.ico")
+    ico = requests.get(f"http://localhost:{port}/favicon.ico", timeout=30)
     assert ico.content == ico_path.read_bytes()
 
 @pytest.mark.parametrize('path', ["/app", "/nested/app"])
@@ -260,7 +260,7 @@ def test_server_template_ico_handling(path, port):
 
     dots = path.count('/')*'.'
     assert f'<link rel="icon" href="{dots}/favicon.ico"' in r.content.decode('utf-8')
-    ico = requests.get(f"http://localhost:{port}/favicon.ico")
+    ico = requests.get(f"http://localhost:{port}/favicon.ico", timeout=30)
     assert ico.content == ico_path.read_bytes()
 
 def test_server_template_static_resources(server_implementation):
@@ -404,8 +404,8 @@ def test_serve_config_per_session_state(server_implementation):
     serve_and_wait(app1, port=port1)
     serve_and_wait(app2, port=port2)
 
-    r1 = requests.get(f"http://localhost:{port1}/").content.decode('utf-8')
-    r2 = requests.get(f"http://localhost:{port2}/").content.decode('utf-8')
+    r1 = requests.get(f"http://localhost:{port1}/", timeout=30).content.decode('utf-8')
+    r2 = requests.get(f"http://localhost:{port2}/", timeout=30).content.decode('utf-8')
 
     assert CSS1 not in config.raw_css
     assert CSS2 not in config.raw_css
@@ -695,8 +695,8 @@ def test_server_session_args(port, server_implementation):
 
     serve_and_wait(app, port=port)
 
-    requests.get(f"http://localhost:{port}/?arg=foo")
-    requests.get(f"http://localhost:{port}/?arg=bar")
+    requests.get(f"http://localhost:{port}/?arg=foo", timeout=30)
+    requests.get(f"http://localhost:{port}/?arg=bar", timeout=30)
 
     assert session_args == ["foo", "bar"]
 
@@ -712,8 +712,8 @@ def test_server_route_params(port, server_implementation):
 
     route = '/user/{name}' if server_implementation == 'fastapi' else '/user/([^/]+)'
     serve_and_wait({route: app}, port=port)
-    requests.get(f"http://localhost:{port}/user/alice")
-    requests.get(f"http://localhost:{port}/user/bob")
+    requests.get(f"http://localhost:{port}/user/alice", timeout=30)
+    requests.get(f"http://localhost:{port}/user/bob", timeout=30)
 
     if server_implementation == 'fastapi':
         assert route_params == [{'name': 'alice'}, {'name': 'bob'}]
@@ -765,7 +765,7 @@ def test_server_route_params_path_templates(port, server_implementation, route, 
 
     serve_and_wait({route: app}, port=port)
     for suffix, _expected in requests_and_expected:
-        requests.get(f"http://localhost:{port}{suffix}")
+        requests.get(f"http://localhost:{port}{suffix}", timeout=30)
 
     assert route_params == [expected for _, expected in requests_and_expected]
     assert app_urls == [suffix for suffix, _ in requests_and_expected]
@@ -781,7 +781,7 @@ def test_server_route_params_path_converter_path(port, server_implementation):
         return 'route'
 
     serve_and_wait({'/files/{filepath:path}': app}, port=port)
-    requests.get(f"http://localhost:{port}/files/a/b/c.txt")
+    requests.get(f"http://localhost:{port}/files/a/b/c.txt", timeout=30)
 
     assert route_params == [{'filepath': 'a/b/c.txt'}]
     assert app_urls == ['/files/a/b/c.txt']
@@ -798,7 +798,7 @@ def test_server_route_context_size_is_capped(port, server_implementation):
 
     overlong = 'a' * (_MAX_ROUTE_PARAM_VALUE_CHARS + 300)
     serve_and_wait({'/files/{filepath:path}': app}, port=port)
-    requests.get(f"http://localhost:{port}/files/{overlong}")
+    requests.get(f"http://localhost:{port}/files/{overlong}", timeout=30)
 
     assert route_params == [{'filepath': overlong[:_MAX_ROUTE_PARAM_VALUE_CHARS]}]
     assert app_urls == [f"/files/{overlong}"[:_MAX_APP_PATH_CHARS]]
@@ -819,7 +819,7 @@ def test_server_route_params_autoload_js(port, server_implementation):
         "&bokeh-app-path=/user/alice"
         f"&bokeh-absolute-url=http://localhost:{port}/user/alice"
     )
-    r = requests.get(f"http://localhost:{port}/user/alice/autoload.js?{args}")
+    r = requests.get(f"http://localhost:{port}/user/alice/autoload.js?{args}", timeout=30)
     assert r.status_code == 200
     wait_until(lambda: route_params == [{'name': 'alice'}])
     assert app_urls == ['/user/alice']
@@ -830,7 +830,7 @@ def test_server_dynamic_ws_endpoint_resolution(port, server_implementation):
         return 'route'
 
     serve_and_wait({'/user/{name}': app}, port=port)
-    ws = requests.get(f"http://localhost:{port}/user/alice/ws")
+    ws = requests.get(f"http://localhost:{port}/user/alice/ws", timeout=30)
     assert ws.status_code == 400
 
 
@@ -839,7 +839,7 @@ def test_server_dynamic_metadata_endpoint_resolution(port, server_implementation
         return 'route'
 
     serve_and_wait({'/user/{name}': app}, port=port)
-    metadata = requests.get(f"http://localhost:{port}/user/alice/metadata")
+    metadata = requests.get(f"http://localhost:{port}/user/alice/metadata", timeout=30)
     assert metadata.status_code == 200
 
 
@@ -848,7 +848,7 @@ def test_server_dynamic_static_file_route(port, server_implementation):
         return 'route'
 
     serve_and_wait({'/user/{name}': app}, port=port)
-    static = requests.get(f"http://localhost:{port}/user/alice/static/does-not-exist.css")
+    static = requests.get(f"http://localhost:{port}/user/alice/static/does-not-exist.css", timeout=30)
     assert static.status_code == 404
 
 
@@ -857,11 +857,11 @@ def test_server_dynamic_routes_with_prefix_endpoint_access(port, server_implemen
         return 'route'
 
     serve_and_wait({'/user/{name}': app}, port=port, prefix='/prefix')
-    app_page = requests.get(f"http://localhost:{port}/prefix/user/alice")
+    app_page = requests.get(f"http://localhost:{port}/prefix/user/alice", timeout=30)
     assert app_page.status_code == 200
-    duplicate_prefix = requests.get(f"http://localhost:{port}/prefix/prefix/user/alice")
+    duplicate_prefix = requests.get(f"http://localhost:{port}/prefix/prefix/user/alice", timeout=30)
     assert duplicate_prefix.status_code == 404
-    metadata = requests.get(f"http://localhost:{port}/prefix/user/alice/metadata")
+    metadata = requests.get(f"http://localhost:{port}/prefix/user/alice/metadata", timeout=30)
     assert metadata.status_code == 200
 
 
@@ -904,7 +904,7 @@ def test_server_request_preserves_cookies(monkeypatch, port, server_implementati
         return 'route'
 
     serve_and_wait({'/user/{name}': app}, port=port)
-    response = requests.get(f"http://localhost:{port}/user/alice", cookies={'user': 'alice'})
+    response = requests.get(f"http://localhost:{port}/user/alice", cookies={'user': 'alice'}, timeout=30)
     assert response.status_code == 200
     wait_until(lambda: len(seen_cookie_values) > 0)
     assert seen_cookie_values[-1] == 'alice'
@@ -935,7 +935,7 @@ def test_server_app_url_context(port, server_implementation, route, suffix, expe
         return 'route'
 
     serve_and_wait({route: app}, port=port)
-    requests.get(f"http://localhost:{port}{suffix}")
+    requests.get(f"http://localhost:{port}{suffix}", timeout=30)
 
     assert app_urls == [expected_app_url]
 
@@ -964,7 +964,7 @@ def test_server_app_url_context_with_prefix(port, server_implementation, route, 
         return 'route'
 
     serve_and_wait({route: app}, port=port, prefix='/prefix')
-    requests.get(f"http://localhost:{port}{suffix}")
+    requests.get(f"http://localhost:{port}{suffix}", timeout=30)
 
     assert app_urls == [expected_app_url]
 
@@ -997,7 +997,7 @@ def test_server_app_url_context_on_proxy(
 
     port, proxy = reverse_proxy
     serve_and_wait({route: app}, port=port, proxy=proxy)
-    requests.get(f"http://localhost:{proxy}{suffix}")
+    requests.get(f"http://localhost:{proxy}{suffix}", timeout=30)
 
     assert app_urls == [expected_app_url]
 
@@ -1033,7 +1033,7 @@ def test_server_app_url_context_on_proxy_with_prefix(
 
     port, proxy = reverse_proxy
     serve_and_wait({route: app}, port=port, proxy=proxy, prefix='/prefix')
-    requests.get(f"http://localhost:{proxy}{suffix}")
+    requests.get(f"http://localhost:{proxy}{suffix}", timeout=30)
 
     assert app_urls == [expected_app_url]
 
@@ -1054,8 +1054,8 @@ def test_server_reuse_sessions_with_session_key_func(port, reuse_sessions):
 
     serve_and_wait(app, port=port)
 
-    r1 = requests.get(f"http://localhost:{port}/?arg=foo")
-    r2 = requests.get(f"http://localhost:{port}/?arg=bar")
+    r1 = requests.get(f"http://localhost:{port}/?arg=foo", timeout=30)
+    r2 = requests.get(f"http://localhost:{port}/?arg=bar", timeout=30)
 
     assert len(state._sessions) == 2
     assert ('/', b'foo') in state._sessions
@@ -1573,7 +1573,7 @@ def test_server_ico_path_on_proxy(reverse_proxy):
     )
 
     assert '<link rel="icon" href="./favicon.ico"' in r.content.decode('utf-8')
-    ico = requests.get(f"http://localhost:{proxy}/proxy/favicon.ico")
+    ico = requests.get(f"http://localhost:{proxy}/proxy/favicon.ico", timeout=30)
     assert ico.content == ico_path.read_bytes()
 
 
