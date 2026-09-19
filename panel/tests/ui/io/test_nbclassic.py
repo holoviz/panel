@@ -11,7 +11,7 @@ from playwright.sync_api import TimeoutError, expect
 pytestmark = [pytest.mark.ui, pytest.mark.jupyter]
 
 
-_notebooks = []
+_notebooks: list[str] = []
 
 
 @pytest.fixture
