@@ -28,6 +28,8 @@ export class ScrollLatestEvent extends ModelEvent {
 export class FeedView extends ColumnView {
   declare model: Feed
   _intersection_observer: IntersectionObserver
+  protected _visibility_pending: boolean = false
+  protected _visibility_listener: boolean = false
   _last_visible: UIElementView | null
   _rendered: boolean = false
   _sync: boolean
@@ -48,6 +50,7 @@ export class FeedView extends ColumnView {
     this._intersection_observer = new IntersectionObserver((entries) => {
       // Until its stylesheets load the Feed does not clip, so all children intersect.
       if (is_scroll_container && getComputedStyle(this.el).overflowY === "visible") {
+        this._visibility_pending = true
         return
       }
       const visible = [...this.model.visible_children]
@@ -192,6 +195,22 @@ export class FeedView extends ColumnView {
   override render(): void {
     this._rendered = false
     super.render()
+    if (!this._visibility_listener) {
+      this._visibility_listener = true
+      this.shadow_el.addEventListener("load", () => this._reobserve_children(), true)
+    }
+  }
+
+  _reobserve_children(): void {
+    if (!this._visibility_pending || getComputedStyle(this.el).overflowY === "visible") {
+      return
+    }
+    this._visibility_pending = false
+    // An observed child is only reported again once its intersection changes.
+    for (const view of this.child_views) {
+      this._intersection_observer.unobserve(view.el)
+      this._intersection_observer.observe(view.el)
+    }
   }
 
   override _check_auto_scroll(): void {}
