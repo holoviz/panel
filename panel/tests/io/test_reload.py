@@ -62,11 +62,10 @@ async def test_reload_on_update(server_document, watch_files):
         await async_wait_until(lambda: location.reload)
 
 
-# On macOS the watcher reports changes for the whole directory, which hides it.
+# On macOS the watcher can report changes for the whole directory, which may hide it.
 @pytest.mark.xfail(
-    sys.platform != "darwin",
     reason="The autoreload watcher only watches the files known when it started",
-    strict=True,
+    strict=sys.platform != "darwin",
 )
 async def test_reload_on_update_of_module_recorded_after_watching(server_document, watch_files, tmp_path):
     location = Location()
