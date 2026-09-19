@@ -341,9 +341,12 @@ calls it with the rendered model.
   require_ready_resolve();
   {%- endif %}
 
-  // Module exports are only assigned once their libraries have loaded.
+  // Module exports are only assigned once their libraries have loaded. A
+  // library that fails to load never finishes the load, so the wait is bounded
+  // and the registry loads whatever is still missing itself.
   let libs_ready_resolve;
   const libs_ready = new Promise((resolve) => { libs_ready_resolve = resolve });
+  setTimeout(() => libs_ready_resolve(), {{ timeout|default(0)|json }} || 5000);
 
   function declare_resources() {
     // Tells the panel.js resource registry which component libraries this
