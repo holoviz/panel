@@ -1893,3 +1893,20 @@ def test_threaded_server_stop_runs_unload_hook(monkeypatch):
     state.kill_all_servers()
 
     admin_context.run_unload_hook.assert_called_once()
+
+
+def test_threaded_server_stops_when_autoreload_failed(monkeypatch):
+    from unittest.mock import Mock
+
+    async def failing_watcher(stop_event=None):
+        raise FileNotFoundError('Watched file was removed')
+
+    monkeypatch.setattr('panel.io.reload.setup_autoreload_watcher', failing_watcher)
+    admin_context = Mock()
+    monkeypatch.setattr(state, '_admin_context', admin_context)
+
+    with config.set(autoreload=True):
+        serve_and_wait(Markdown('# Title'))
+    state.kill_all_servers()
+
+    admin_context.run_unload_hook.assert_called_once()
