@@ -357,10 +357,11 @@ def serve_component(page, app, suffix='', wait=True, **kwargs):
     return msgs, port
 
 
+# Chromium also gives a stylesheet that failed to load an empty sheet, so
+# only one still in flight has none.
 _STYLESHEETS_SETTLED = """() => {
-    const failed = (link) => performance.getEntriesByName(link.href).some((entry) => entry.responseStatus >= 400)
     const settled = (root) => [...root.querySelectorAll('*')].every((el) => el.shadowRoot == null || (
-        [...el.shadowRoot.querySelectorAll('link[rel="stylesheet"]')].every((link) => link.sheet != null || failed(link))
+        [...el.shadowRoot.querySelectorAll('link[rel="stylesheet"]')].every((link) => link.sheet != null)
         && settled(el.shadowRoot)
     ))
     return settled(document)
