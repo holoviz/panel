@@ -190,6 +190,10 @@ def pytest_collection_modifyitems(config, items):
         else:
             skipped.append(item)
 
+    for item in selected:
+        if item.get_closest_marker("internet") and not item.get_closest_marker("flaky"):
+            item.add_marker(pytest.mark.flaky(reruns=3, reason="Downloads remote files, which can fail on a bad connection"))
+
     config.hook.pytest_deselected(items=skipped)
     # Sorted because pytest 8.4.0 and pytest-playwright
     # https://github.com/microsoft/playwright-pytest/pull/284
