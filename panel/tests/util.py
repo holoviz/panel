@@ -318,10 +318,14 @@ def serve_and_wait(app, page=None, prefix=None, port=None, proxy=None, **kwargs)
         serve_app = serve
     if proxy:
         kwargs['websocket_origin'] = [f'localhost:{proxy}']
+    # Tornado reuses the IPv4 port for IPv6, which another process may hold.
+    kwargs.setdefault('address', '127.0.0.1')
     serve_app(app, port=port or 0, threaded=True, show=False, liveness=True, server_id=server_id, prefix=prefix or "", **kwargs)
     wait_until(lambda: server_id in state._servers, page)
     server = state._servers[server_id][0]
     port = proxy if proxy else server.port
+    if not proxy and hasattr(server, '_tornado'):
+        server._tornado.websocket_origins.add(f'127.0.0.1:{port}')
     wait_for_server(port, prefix=prefix)
     if page:
         page.wait_for_function("document.readyState === 'complete'", timeout=5000)
@@ -334,22 +338,41 @@ def serve_component(page, app, suffix='', wait=True, **kwargs):
     msgs = []
     page.on("console", lambda msg: msgs.append(msg))
     port = serve_and_wait(app, page, **kwargs)
-    page.goto(f"http://localhost:{port}{suffix}", wait_until="domcontentloaded")
+    host = 'localhost' if kwargs.get('proxy') else '127.0.0.1'
+    page.goto(f"http://{host}:{port}{suffix}", wait_until="domcontentloaded")
 
     if wait:
         wait_until(lambda: any("Websocket connection 0 is now open" in str(msg) for msg in msgs), page, interval=10)
 
     if page and wait:
-        page.wait_for_function("document.readyState === 'complete'", timeout=5000)
+        # Heavy bundles can take over 5s to load on a busy runner.
+        page.wait_for_function("document.readyState === 'complete'", timeout=15000)
         page.wait_for_load_state('networkidle')
+        # The views request their stylesheets only once they render.
+        wait_until(lambda: any(
+            "items were rendered successfully" in str(msg) or "Error rendering Bokeh items" in str(msg)
+            for msg in msgs
+        ), page, interval=10)
+        page.wait_for_function(_STYLESHEETS_SETTLED, timeout=15000)
     return msgs, port
+
+
+# Chromium also gives a stylesheet that failed to load an empty sheet, so
+# only one still in flight has none.
+_STYLESHEETS_SETTLED = """() => {
+    const settled = (root) => [...root.querySelectorAll('*')].every((el) => el.shadowRoot == null || (
+        [...el.shadowRoot.querySelectorAll('link[rel="stylesheet"]')].every((link) => link.sheet != null)
+        && settled(el.shadowRoot)
+    ))
+    return settled(document)
+}"""
 
 
 def serve_and_request(app, suffix="", n=1, port=None, proxy=None, **kwargs):
     port = serve_and_wait(app, port=port, proxy=proxy, **kwargs)
     if proxy:
         port = proxy
-    reqs = [r for _ in range(n) if (r := requests.get(f"http://localhost:{port}{suffix}")).ok]
+    reqs = [r for _ in range(n) if (r := requests.get(f"http://127.0.0.1:{port}{suffix}")).ok]
     assert len(reqs) == n, "Not all requests were successful"
     return reqs[0] if n == 1 else reqs
 
@@ -359,7 +382,7 @@ def wait_for_server(port, prefix=None, timeout=3):
     prefix = prefix or ""
     if not prefix.endswith('/'):
         prefix += '/'
-    url = f"http://localhost:{port}{prefix}liveness"
+    url = f"http://127.0.0.1:{port}{prefix}liveness"
     while True:
         try:
             if requests.get(url).ok:

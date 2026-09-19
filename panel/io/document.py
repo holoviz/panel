@@ -102,6 +102,19 @@ def _cleanup_task(task):
             tasks.remove(task)
             break
 
+def _client_has_document(doc: Document) -> bool:
+    """
+    Whether the client was sent the Document, after which held events
+    must not be dropped. ``state._connected`` is only set once it is ready.
+    """
+    if state._connected.get(doc):
+        return True
+    live = getattr(doc.models, '_models', None)
+    if not live:
+        return False
+    unsent = doc.models._new_models
+    return any(model not in unsent for model in live.values())
+
 def _dispatch_events(doc: Document, events: list[DocumentChangedEvent]) -> None:
     """
     Handles dispatch of events which could not be processed in
@@ -278,6 +291,35 @@ def _is_write_blocked(socket: t.Any) -> bool:
         return inner.locked()
     return False
 
+
+def _keep_unsent_models_new(doc: Document) -> None:
+    """
+    Keeps models Panel has not written yet unsent when a client patch is
+    applied, since bokeh then declares all models synced.
+    """
+    if getattr(doc.apply_json_patch, '_panel_keeps_unsent', False):
+        return
+    # A bound method would keep the Document alive in a cycle.
+    apply_json_patch = type(doc).apply_json_patch
+    ref = weakref.ref(doc)
+
+    @wraps(apply_json_patch)
+    def _apply_json_patch(*args, **kwargs):
+        doc = ref()
+        if doc is None:
+            return None
+        unsent = set(doc.models._new_models)
+        try:
+            return apply_json_patch(doc, *args, **kwargs)
+        finally:
+            live = getattr(doc.models, '_models', None)
+            if unsent and live is not None:
+                doc.models._new_models |= {
+                    model for model in unsent if live.get(model.id) is model
+                }
+
+    _apply_json_patch._panel_keeps_unsent = True  # type: ignore[attr-defined]
+    doc.apply_json_patch = _apply_json_patch  # type: ignore[method-assign]
 
 async def _dispatch_msgs(doc):
     """
@@ -469,6 +511,8 @@ def init_doc(doc: Document | None) -> Document:
     thread_id = threading.get_ident()
     if thread_id:
         state._thread_id_[curdoc] = thread_id
+
+    _keep_unsent_models_new(curdoc)
 
     if config.global_loading_spinner:
         curdoc.js_on_event(
@@ -783,7 +827,7 @@ def hold(
                 pass
             elif threaded:
                 if not held or we_held:
-                    if state._connected.get(doc):
+                    if _client_has_document(doc):
                         def _unhold(lock=hold_lock, doc=doc):
                             with lock:
                                 doc.unhold()
@@ -802,7 +846,7 @@ def hold(
             elif comm is not None:
                 from .notebook import push
                 push(doc, comm)
-            elif not state._connected.get(doc):
+            elif not _client_has_document(doc):
                 _dispatch_events(doc, _drain_unconnected_events(doc, hold_lock))
             else:
                 doc.unhold()

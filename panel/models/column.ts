@@ -30,9 +30,17 @@ export class ScrollToEvent extends ModelEvent {
   }
 }
 
+const SCROLL_CLASSES = [
+  "scroll", "scroll-horizontal", "scroll-vertical",
+  "scrollable", "scrollable-horizontal", "scrollable-vertical",
+]
+
 export class ColumnView extends BkColumnView {
   declare model: Column
   _updating: boolean = false
+  protected _stylesheet_listener: boolean = false
+  protected _initial_scroll_pending: boolean = false
+  protected _auto_scroll_pending: boolean = false
 
   scroll_down_button_el: HTMLElement
 
@@ -45,6 +53,12 @@ export class ColumnView extends BkColumnView {
     this.on_change(scroll_position, () => this.scroll_to_position())
     this.on_change(scroll_button_threshold, () => this.toggle_scroll_button())
     this.model.on_event(ScrollToEvent, (event: ScrollToEvent) => this.scroll_to_index(event.index))
+  }
+
+  // The css classes of the scroll options (`_SCROLL_MAPPING`), not any class
+  // that happens to start with "scroll".
+  get is_scroll_container(): boolean {
+    return this.model.css_classes.some((cls) => SCROLL_CLASSES.includes(cls))
   }
 
   get distance_from_latest(): number {
@@ -84,6 +98,9 @@ export class ColumnView extends BkColumnView {
     }
     requestAnimationFrame(() => {
       this.el.scrollTo({top: this.model.scroll_position, behavior: "instant"})
+      if (this.is_scroll_container && getComputedStyle(this.el).overflowY === "visible") {
+        this._initial_scroll_pending = true
+      }
     })
   }
 
@@ -105,12 +122,7 @@ export class ColumnView extends BkColumnView {
     if (limit == 0) {
       return
     }
-    const within_limit = this.distance_from_latest <= limit
-    if (!within_limit) {
-      return
-    }
-
-    this.scroll_to_latest()
+    this._auto_scroll_pending = this.distance_from_latest <= limit
   }
 
   record_scroll_position(): void {
@@ -156,6 +168,25 @@ export class ColumnView extends BkColumnView {
       this.scroll_to_latest()
       this.model.trigger_event(new ScrollButtonClick())
     })
+    if (!this._stylesheet_listener) {
+      this._stylesheet_listener = true
+      // Scrolling is a no-op until the stylesheets making it scrollable load.
+      this.shadow_el.addEventListener("load", () => {
+        if (this._initial_scroll_pending) {
+          this._apply_initial_scroll()
+        }
+      }, true)
+    }
+  }
+
+  _apply_initial_scroll(): void {
+    if (this.model.scroll_position) {
+      this.scroll_to_position()
+    }
+    if (this.model.view_latest) {
+      this.scroll_to_latest()
+    }
+    this._initial_scroll_pending = this.is_scroll_container && getComputedStyle(this.el).overflowY === "visible"
   }
 
   override async update_children(): Promise<void> {
@@ -198,17 +229,18 @@ export class ColumnView extends BkColumnView {
     this.r_after_render()
     this._update_children()
     this.invalidate_layout()
+    if (this._auto_scroll_pending) {
+      this._auto_scroll_pending = false
+      // A new child may only get its final size a frame later.
+      requestAnimationFrame(() => this.scroll_to_latest())
+    }
   }
 
   override after_render(): void {
     super.after_render()
+    this._initial_scroll_pending = true
     requestAnimationFrame(() => {
-      if (this.model.scroll_position) {
-        this.scroll_to_position()
-      }
-      if (this.model.view_latest) {
-        this.scroll_to_latest()
-      }
+      this._apply_initial_scroll()
       this.toggle_scroll_button()
     })
   }

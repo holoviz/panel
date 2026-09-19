@@ -42,6 +42,7 @@ def test_texteditor_no_toolbar(page):
     expect(page.locator('.ql-container')).to_be_visible()
 
 
+@pytest.mark.internet
 def test_texteditor_init_with_value(page):
     widget = TextEditor(value='test')
 
@@ -179,6 +180,7 @@ def test_texteditor_select_and_style(page):
     wait_until(lambda: widget.value == '<p>xxx</p><p></p><p><strong><u>yyy</u></strong></p>', page)
 
 
+@pytest.mark.internet
 def test_texteditor_link(page):
     widget = TextEditor(value='<p>xxx</p></br><p>yyy</p>')
 

@@ -269,7 +269,8 @@ export class CardView extends ColumnView {
     }
     this._updating_child_visibility.add(child_view)
     try {
-      child_view.model.visible = visible
+      // Collapsing is client side state, syncing it echoes stale values back.
+      child_view.model.setv({visible}, {sync: false})
     } finally {
       this._updating_child_visibility.delete(child_view)
     }

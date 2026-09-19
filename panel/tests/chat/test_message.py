@@ -171,28 +171,36 @@ class TestChatMessage:
         assert isinstance(object_pane, Markdown)
         assert object_pane.object == "I am a file"
 
-    @pytest.mark.flaky(reruns=3, reason="Minute can change during test run")
     def test_update_timestamp(self):
+        # A second `now()` can straddle a minute change.
         message = ChatMessage()
         columns = message._composite.objects
         timestamp_pane = columns[1][5][0]
         assert isinstance(timestamp_pane, HTML)
-        dt_str = datetime.datetime.now().strftime("%H:%M")
-        assert timestamp_pane.object == dt_str
+        assert timestamp_pane.object == message.timestamp.strftime("%H:%M")
+        assert message.timestamp.timestamp() == pytest.approx(
+            datetime.datetime.now().timestamp(), abs=10
+        )
 
         message = ChatMessage(timestamp_tz="UTC")
         columns = message._composite.objects
         timestamp_pane = columns[1][5][0]
         assert isinstance(timestamp_pane, HTML)
-        dt_str = datetime.datetime.now(datetime.timezone.utc).strftime("%H:%M")
-        assert timestamp_pane.object == dt_str
+        assert timestamp_pane.object == message.timestamp.strftime("%H:%M")
+        assert message.timestamp.tzinfo == ZoneInfo("UTC")
+        assert message.timestamp.timestamp() == pytest.approx(
+            datetime.datetime.now(datetime.timezone.utc).timestamp(), abs=10
+        )
 
         message = ChatMessage(timestamp_tz="US/Pacific")
         columns = message._composite.objects
         timestamp_pane = columns[1][5][0]
         assert isinstance(timestamp_pane, HTML)
-        dt_str = datetime.datetime.now(tz=ZoneInfo("US/Pacific")).strftime("%H:%M")
-        assert timestamp_pane.object == dt_str
+        assert timestamp_pane.object == message.timestamp.strftime("%H:%M")
+        assert message.timestamp.tzinfo == ZoneInfo("US/Pacific")
+        assert message.timestamp.timestamp() == pytest.approx(
+            datetime.datetime.now(tz=ZoneInfo("US/Pacific")).timestamp(), abs=10
+        )
 
         special_dt = datetime.datetime(2023, 6, 24, 15)
         message.timestamp = special_dt

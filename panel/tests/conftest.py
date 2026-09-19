@@ -10,6 +10,7 @@ import re
 import shutil
 import signal
 import socket
+import sys
 import tempfile
 import time
 import unittest
@@ -89,8 +90,8 @@ def get_default_port():
 def start_jupyter():
     global JUPYTER_PORT, JUPYTER_PROCESS
     args = [
-        'jupyter', 'server', '--port', str(JUPYTER_PORT), "--NotebookApp.token=''",
-        "--ServerApp.jpserver_extensions={'nbclassic': True}",
+        'jupyter', 'server', '--port', str(JUPYTER_PORT), '--ip', '127.0.0.1',
+        "--NotebookApp.token=''", "--ServerApp.jpserver_extensions={'nbclassic': True}",
     ]
     JUPYTER_PROCESS = process = Popen(args, stdout=PIPE, stderr=PIPE, bufsize=1, encoding='utf-8')
     deadline = time.monotonic() + JUPYTER_TIMEOUT
@@ -117,7 +118,7 @@ def cleanup_jupyter():
 def jupyter_preview(request):
     path = pathlib.Path(request.fspath.dirname)
     rel = path.relative_to(pathlib.Path(request.config.invocation_dir).absolute())
-    return f'http://localhost:{JUPYTER_PORT}/panel-preview/render/{str(rel)}'
+    return f'http://127.0.0.1:{JUPYTER_PORT}/panel-preview/render/{str(rel)}'
 
 atexit.register(cleanup_jupyter)
 optional_markers = {
@@ -190,6 +191,10 @@ def pytest_collection_modifyitems(config, items):
         else:
             skipped.append(item)
 
+    for item in selected:
+        if item.get_closest_marker("internet") and not item.get_closest_marker("flaky"):
+            item.add_marker(pytest.mark.flaky(reruns=3, reason="Downloads remote files, which can fail on a bad connection"))
+
     config.hook.pytest_deselected(items=skipped)
     # Sorted because pytest 8.4.0 and pytest-playwright
     # https://github.com/microsoft/playwright-pytest/pull/284
@@ -199,6 +204,21 @@ def pytest_collection_modifyitems(config, items):
 def pytest_runtest_setup(item):
     if "internet" in item.keywords and not internet_available():
         pytest.skip("Skipping test: No internet connection")
+
+
+@pytest.hookimpl(optionalhook=True)
+def pytest_handlecrashitem(crashitem, report, sched):
+    # xdist only names the test in the final summary, which a cancelled job never prints.
+    sys.stderr.write(f"\nWorker crashed while running {crashitem}\n")
+    sys.stderr.flush()
+
+
+@pytest.fixture(scope="session")
+def browser_type_launch_args(browser_type_launch_args, browser_name):
+    if browser_name != "chromium":
+        return browser_type_launch_args
+    args = [*browser_type_launch_args.get("args", []), "--host-resolver-rules=MAP localhost 127.0.0.1"]
+    return {**browser_type_launch_args, "args": args}
 
 
 @pytest.fixture

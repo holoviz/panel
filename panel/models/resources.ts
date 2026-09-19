@@ -261,7 +261,20 @@ export class ResourceRegistry {
         continue
       }
       this.specs.set(lib.name, lib)
-      this.libs.set(lib.name, ready)
+      this.libs.set(lib.name, ready.then(() => {
+        if (this.loaded(lib)) {
+          return element_defined(lib)
+        }
+        // The other loader failed or gave up, so load what is missing here.
+        const urls = [...(lib.js ?? []), ...(lib.modules ?? []).map((module) => module.url)]
+        for (const url of urls) {
+          if (this.urls.get(url_key(url)) === ready) {
+            this.urls.delete(url_key(url))
+          }
+        }
+        const elements = lib.probe?.custom_element != null ? [lib.probe.custom_element] : []
+        return this._load(lib.js ?? [], lib.modules ?? [], elements)
+      }))
       for (const url of lib.js ?? []) {
         this.urls.set(url_key(url), ready)
       }
@@ -280,6 +293,14 @@ export class ResourceRegistry {
    * already cached file.
    */
   loaded(lib: LibSpec, scripts?: Set<string>): boolean {
+    // The modules of a library are loaded separately, e.g. by the notebook,
+    // so its probe can pass before every module assigned its global.
+    const exported = (lib.modules ?? []).every(
+      ({export: name}) => name == null || (globalThis as any)[name] != null,
+    )
+    if (!exported) {
+      return false
+    }
     const {probe} = lib
     if (probe != null) {
       if (probe.global != null) {

@@ -3,6 +3,7 @@ import datetime as dt
 import logging
 import os
 import pathlib
+import threading
 import time
 import weakref
 
@@ -1083,6 +1084,33 @@ def test_kill_all_servers(html_server_session, markdown_server_session):
     assert server_2._stopped
 
 
+def test_threaded_server_stop_does_not_leave_unstarted_tasks(monkeypatch):
+    import gc
+    import sys
+
+    unraisable = []
+    monkeypatch.setattr(sys, "unraisablehook", unraisable.append)
+
+    serve_and_wait(Markdown('# Title'))
+    thread = next(iter(state._threads.values()))
+    loop = thread.asyncio_loop
+
+    async def respawn():
+        loop.create_task(respawn())
+
+    def create_task_and_stop():
+        loop.create_task(respawn())
+        loop.stop()
+
+    loop.call_soon_threadsafe(create_task_and_stop)
+    thread.join(timeout=5)
+    assert not thread.is_alive()
+    thread = loop = None
+    gc.collect()
+
+    assert [u.object for u in unraisable] == []
+
+
 @pytest.mark.xdist_group(name="server")
 def test_multiple_titles(multiple_apps_server_sessions):
     """Serve multiple apps with a title per app."""
@@ -1294,7 +1322,6 @@ async def test_server_text_input_update_before_click_event(server_implementation
     wait_until(lambda: bool(called))
 
 
-@pytest.mark.flaky(max_runs=3)
 def test_server_thread_pool_change_event(server_implementation, threads):
     button = Button(label='Click')
     button2 = Button(label='Click')
@@ -1825,3 +1852,61 @@ def test_server_threads_save(threads, tmp_path):
     serve_and_request(app)
 
     wait_until(lambda: fsave.exists())
+
+
+def test_threaded_server_stop_finishes_locked_callbacks(monkeypatch):
+    import gc
+    import sys
+
+    unraisable = []
+    monkeypatch.setattr(sys, "unraisablehook", unraisable.append)
+    started, finished = threading.Event(), []
+
+    def app():
+        doc = state.curdoc
+
+        async def slow():
+            started.set()
+            await asyncio.sleep(0.2)
+            finished.append('done')
+
+        doc.add_next_tick_callback(slow)
+        return Markdown('# Title')
+
+    serve_and_request(app)
+    assert started.wait(5)
+
+    state.kill_all_servers()
+    gc.collect()
+
+    assert finished == ['done']
+    assert [u.object for u in unraisable] == []
+
+
+def test_threaded_server_stop_runs_unload_hook(monkeypatch):
+    from unittest.mock import Mock
+
+    admin_context = Mock()
+    monkeypatch.setattr(state, '_admin_context', admin_context)
+
+    serve_and_wait(Markdown('# Title'))
+    state.kill_all_servers()
+
+    admin_context.run_unload_hook.assert_called_once()
+
+
+def test_threaded_server_stops_when_autoreload_failed(monkeypatch):
+    from unittest.mock import Mock
+
+    async def failing_watcher(stop_event=None):
+        raise FileNotFoundError('Watched file was removed')
+
+    monkeypatch.setattr('panel.io.reload.setup_autoreload_watcher', failing_watcher)
+    admin_context = Mock()
+    monkeypatch.setattr(state, '_admin_context', admin_context)
+
+    with config.set(autoreload=True):
+        serve_and_wait(Markdown('# Title'))
+    state.kill_all_servers()
+
+    admin_context.run_unload_hook.assert_called_once()
