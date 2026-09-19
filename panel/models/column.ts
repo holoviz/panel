@@ -30,6 +30,11 @@ export class ScrollToEvent extends ModelEvent {
   }
 }
 
+const SCROLL_CLASSES = [
+  "scroll", "scroll-horizontal", "scroll-vertical",
+  "scrollable", "scrollable-horizontal", "scrollable-vertical",
+]
+
 export class ColumnView extends BkColumnView {
   declare model: Column
   _updating: boolean = false
@@ -48,6 +53,12 @@ export class ColumnView extends BkColumnView {
     this.on_change(scroll_position, () => this.scroll_to_position())
     this.on_change(scroll_button_threshold, () => this.toggle_scroll_button())
     this.model.on_event(ScrollToEvent, (event: ScrollToEvent) => this.scroll_to_index(event.index))
+  }
+
+  // The css classes of the scroll options (`_SCROLL_MAPPING`), not any class
+  // that happens to start with "scroll".
+  get is_scroll_container(): boolean {
+    return this.model.css_classes.some((cls) => SCROLL_CLASSES.includes(cls))
   }
 
   get distance_from_latest(): number {
@@ -87,7 +98,7 @@ export class ColumnView extends BkColumnView {
     }
     requestAnimationFrame(() => {
       this.el.scrollTo({top: this.model.scroll_position, behavior: "instant"})
-      if (getComputedStyle(this.el).overflowY === "visible") {
+      if (this.is_scroll_container && getComputedStyle(this.el).overflowY === "visible") {
         this._initial_scroll_pending = true
       }
     })
@@ -175,7 +186,7 @@ export class ColumnView extends BkColumnView {
     if (this.model.view_latest) {
       this.scroll_to_latest()
     }
-    this._initial_scroll_pending = getComputedStyle(this.el).overflowY === "visible"
+    this._initial_scroll_pending = this.is_scroll_container && getComputedStyle(this.el).overflowY === "visible"
   }
 
   override async update_children(): Promise<void> {
