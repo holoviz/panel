@@ -92,3 +92,4 @@ async def test_reload_on_update_of_module_recorded_after_watching(server_documen
         await async_wait_until(lambda: location.reload, timeout=3000)
     finally:
         sys.modules.pop('reload_recorded_module', None)
+        _modules.discard('reload_recorded_module')
