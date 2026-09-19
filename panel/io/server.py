@@ -721,6 +721,8 @@ class Server(BokehServer):
             event.set()
         state._watch_events.clear()
         self._autoreload_stop_event.set()
+        if self._autoreload_task.cancelled():
+            return
         try:
             await self._autoreload_task
         except Exception:
