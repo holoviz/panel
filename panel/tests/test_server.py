@@ -1881,3 +1881,15 @@ def test_threaded_server_stop_finishes_locked_callbacks(monkeypatch):
 
     assert finished == ['done']
     assert [u.object for u in unraisable] == []
+
+
+def test_threaded_server_stop_runs_unload_hook(monkeypatch):
+    from unittest.mock import Mock
+
+    admin_context = Mock()
+    monkeypatch.setattr(state, '_admin_context', admin_context)
+
+    serve_and_wait(Markdown('# Title'))
+    state.kill_all_servers()
+
+    admin_context.run_unload_hook.assert_called_once()
