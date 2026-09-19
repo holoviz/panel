@@ -719,7 +719,7 @@ class Server(BokehServer):
     async def _stop_autoreload(self) -> None:
         for event in state._watch_events:
             event.set()
-        state._watch_events = []
+        state._watch_events.clear()
         self._autoreload_stop_event.set()
         await self._autoreload_task
 
