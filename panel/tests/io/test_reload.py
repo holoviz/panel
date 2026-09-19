@@ -1,7 +1,11 @@
 import asyncio
+import importlib
 import os
 import pathlib
+import sys
 import tempfile
+
+import pytest
 
 from panel.io.location import Location
 from panel.io.reload import (
@@ -56,3 +60,34 @@ async def test_reload_on_update(server_document, watch_files):
         pathlib.Path(temp.name).touch()
 
         await async_wait_until(lambda: location.reload)
+
+
+@pytest.mark.xfail(
+    reason="The autoreload watcher only watches the files known when it started",
+    strict=True,
+)
+async def test_reload_on_update_of_module_recorded_after_watching(server_document, watch_files, tmp_path):
+    location = Location()
+    state._locations[server_document] = location
+    state._loaded[server_document] = True
+    app = tmp_path / 'app.py'
+    app.write_text('')
+    module = tmp_path / 'reload_recorded_module.py'
+    module.write_text('value = 1')
+
+    watch_files(str(app))
+    await asyncio.sleep(0.1)
+
+    sys.path.insert(0, str(tmp_path))
+    try:
+        with record_modules():
+            importlib.import_module('reload_recorded_module')
+    finally:
+        sys.path.remove(str(tmp_path))
+    await asyncio.sleep(0.1)
+
+    try:
+        module.write_text('value = 2')
+        await async_wait_until(lambda: location.reload, timeout=3000)
+    finally:
+        sys.modules.pop('reload_recorded_module', None)
