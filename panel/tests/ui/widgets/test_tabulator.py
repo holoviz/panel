@@ -155,6 +155,7 @@ def test_tabulator_no_console_error(page, df_mixed):
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
 
+@pytest.mark.internet
 def test_tabulator_with_loading_ipywidgets_no_console_error(page, df_mixed):
 
     def app():
@@ -167,6 +168,7 @@ def test_tabulator_with_loading_ipywidgets_no_console_error(page, df_mixed):
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
 
+@pytest.mark.internet
 def test_tabulator_default(page, df_mixed, df_mixed_as_string):
     nrows, ncols = df_mixed.shape
     widget = Tabulator(df_mixed)
@@ -208,6 +210,7 @@ def test_tabulator_default(page, df_mixed, df_mixed_as_string):
         assert cols.nth(i).get_attribute('aria-sort') == 'none'
 
 
+@pytest.mark.internet
 def test_tabulator_value_changed(page, df_mixed):
     widget = Tabulator(df_mixed)
 
@@ -223,6 +226,7 @@ def test_tabulator_value_changed(page, df_mixed):
     expect(page.locator('text="AA"')).to_have_count(1)
 
 
+@pytest.mark.internet
 def test_tabulator_disabled(page, df_mixed):
     widget = Tabulator(df_mixed, disabled=True)
 
@@ -2951,6 +2955,7 @@ def test_tabulator_editor_datetime_nan(page, df_mixed):
     wait_until(lambda: len(events) == 0, page)
 
 
+@pytest.mark.internet
 @pytest.mark.parametrize('col', ['index', 'int', 'float', 'str', 'date', 'datetime'])
 @pytest.mark.parametrize('dir', ['ascending', 'descending'])
 def test_tabulator_sorters_on_init(page, df_mixed, col, dir):
@@ -3433,6 +3438,7 @@ def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pa
     assert len(widget.current_view) == 4
 
 
+@pytest.mark.internet
 @pytest.mark.parametrize('sorter', ['sorter', 'no_sorter'])
 @pytest.mark.parametrize('python_filter', ['python_filter', 'no_python_filter'])
 @pytest.mark.parametrize('header_filter', ['header_filter', 'no_header_filter'])
@@ -3516,6 +3522,7 @@ def test_tabulator_edit_event_integrations(page, sorter, python_filter, header_f
     pd.testing.assert_frame_equal(widget.current_view, expected_current_view)
 
 
+@pytest.mark.internet
 @pytest.mark.parametrize('sorter', ['sorter', 'no_sorter'])
 @pytest.mark.parametrize('python_filter', ['python_filter', 'no_python_filter'])
 @pytest.mark.parametrize('header_filter', ['header_filter', 'no_header_filter'])
@@ -3921,6 +3928,7 @@ def test_tabulator_sort_algorithm_no_show_index(page):
     assert values[1] == (target_col, target_index, target_val)
 
 
+@pytest.mark.internet
 @pytest.mark.parametrize(
     ('col', 'vals'),
     (
@@ -4099,6 +4107,7 @@ def test_tabulator_local_pagination_auto_page_size_last_button(page):
     expect(page.locator('.tabulator-row').last).to_contain_text(str(df['value'].iloc[-1]))
 
 
+@pytest.mark.internet
 @pytest.mark.parametrize('pagination', ['local', 'remote', None])
 def test_selection_indices_on_paginated_and_filtered_data(page, df_strings, pagination):
     tbl = Tabulator(
@@ -4148,6 +4157,7 @@ def test_selection_indices_on_paginated_and_filtered_data(page, df_strings, pagi
     wait_until(lambda: tbl.selection == [8], page)
 
 
+@pytest.mark.internet
 @pytest.mark.parametrize('pagination', ['local', 'remote', None])
 def test_selection_indices_on_paginated_sorted_and_filtered_data(page, df_strings, pagination):
     tbl = Tabulator(
@@ -4207,6 +4217,7 @@ def test_selection_indices_on_paginated_sorted_and_filtered_data(page, df_string
     wait_until(lambda: tbl.selection == [7], page)
 
 
+@pytest.mark.internet
 @pytest.mark.parametrize('pagination', ['remote', 'local', None])
 def test_range_selection_on_sorted_data_downward(page, pagination):
     df = pd.DataFrame({'a': [1, 3, 2, 4, 5, 6, 7, 8, 9], 'b': [6, 5, 6, 7, 7, 7, 7, 7, 7]})
@@ -4227,6 +4238,7 @@ def test_range_selection_on_sorted_data_downward(page, pagination):
     wait_until(lambda: table.selection == [0, 2], page)
 
 
+@pytest.mark.internet
 @pytest.mark.parametrize('pagination', ['remote', 'local', None])
 def test_range_selection_on_sorted_data_upward(page, pagination):
     df = pd.DataFrame({'a': [1, 3, 2, 4, 5, 6, 7, 8, 9], 'b': [6, 5, 6, 7, 7, 7, 7, 7, 7]})
@@ -4304,6 +4316,7 @@ class Test_RemotePagination:
 class Test_RemotePagination_Selection(Test_RemotePagination):
     selectable = True
 
+    @pytest.mark.internet
     def test_one_item_first_page(self, page):
         rows = self.get_rows(page)
 
@@ -4314,6 +4327,7 @@ class Test_RemotePagination_Selection(Test_RemotePagination):
             rows.nth(0).click()
         self.check_selected(page, [])
 
+    @pytest.mark.internet
     def test_one_item_first_page_and_then_another(self, page):
         rows = self.get_rows(page)
 
@@ -4323,6 +4337,7 @@ class Test_RemotePagination_Selection(Test_RemotePagination):
         rows.nth(1).click()
         self.check_selected(page, [1])
 
+    @pytest.mark.internet
     def test_two_items_first_page(self, page):
         rows = self.get_rows(page)
 
@@ -4333,6 +4348,7 @@ class Test_RemotePagination_Selection(Test_RemotePagination):
             rows.nth(1).click()
         self.check_selected(page, [0, 1])
 
+    @pytest.mark.internet
     def test_one_item_first_page_goto_second_page(self, page):
         rows = self.get_rows(page)
 
@@ -4345,6 +4361,7 @@ class Test_RemotePagination_Selection(Test_RemotePagination):
         self.goto_page(page, 1)
         self.check_selected(page, [0], 1)
 
+    @pytest.mark.internet
     def test_one_item_both_pages_python(self, page):
         self.widget.selection = [0, 10]
         self.check_selected(page, [0, 10], 1)
@@ -4373,6 +4390,7 @@ class Test_RemotePagination_Selection(Test_RemotePagination):
         rows.nth(0).click()
         self.check_selected(page, [10], 1)
 
+    @pytest.mark.internet
     @pytest.mark.parametrize("selection", (0, 10), ids=["page1", "page2"])
     def test_sorting(self, page, selection):
         self.widget.selection = [selection]
@@ -4390,6 +4408,7 @@ class Test_RemotePagination_Selection(Test_RemotePagination):
         self.click_sorting(page)
         self.check_selected(page, [selection], int(selection == 0))
 
+    @pytest.mark.internet
     @pytest.mark.parametrize("selection", (0, 10), ids=["page1", "page2"])
     def test_filtering(self, page, selection):
         self.widget.selection = [selection]
@@ -4707,6 +4726,7 @@ def test_tabulator_hierarchical_data_grouping(page, df, request):
     expect(employees.nth(1)).to_contain_text("Eve")
 
 
+@pytest.mark.internet
 @pytest.mark.parametrize("aggs", [
     {"region": "min", "gender": "max"},
     {"region": "min", "gender": {"salary": "max", "date_joined": "max"}},

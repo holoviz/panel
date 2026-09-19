@@ -134,6 +134,7 @@ def _assert_no_duplicates(page):
     assert not duplicates, f'resources loaded more than once: {sorted(duplicates)}'
 
 
+@pytest.mark.internet
 @pytest.mark.parametrize('name', list(COMPONENTS))
 def test_undeclared_component_renders(page, name):
     factory, selector = COMPONENTS[name]
@@ -148,6 +149,7 @@ def test_undeclared_component_renders(page, name):
     assert _errors(msgs) == []
 
 
+@pytest.mark.internet
 @pytest.mark.parametrize('name', list(COMPONENTS))
 def test_undeclared_component_renders_after_load(page, name):
     """
@@ -218,6 +220,7 @@ def test_late_component_reuses_loaded_library(page):
     assert _errors(msgs) == []
 
 
+@pytest.mark.internet
 def test_esm_components_share_one_shim(page):
     def app():
         extension()

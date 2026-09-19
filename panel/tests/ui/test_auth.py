@@ -18,6 +18,7 @@ from panel.tests.util import (
 pytestmark = pytest.mark.ui
 auth_check = pytest.mark.skipif('PANEL_TEST_AUTH' not in os.environ, reason='PANEL_TEST_AUTH environment variable is required to run this test')
 
+@pytest.mark.internet
 @linux_only
 @pytest.mark.parametrize('prefix', ['', 'prefix'])
 def test_basic_auth(py_file, page, prefix):
@@ -40,6 +41,7 @@ def test_basic_auth(py_file, page, prefix):
 
         expect(page.locator('.markdown')).to_have_text('test_user', timeout=10000)
 
+@pytest.mark.internet
 @linux_only
 @pytest.mark.parametrize('prefix', ['', 'prefix'])
 def test_basic_auth_via_proxy(py_file, page, prefix, reverse_proxy):
@@ -204,6 +206,7 @@ def test_auth0_oauth_via_proxy(py_file, page):
 
             expect(page.locator('.markdown')).to_have_text(auth0_user, timeout=10000)
 
+@pytest.mark.internet
 @linux_only
 @pytest.mark.parametrize('logout_template', [None, (pathlib.Path(__file__).parent / 'logout.html').absolute()])
 def test_basic_auth_logout(py_file, page, logout_template):
@@ -238,6 +241,7 @@ def test_basic_auth_logout(py_file, page, logout_template):
         assert 'id_token' not in cookies
 
 
+@pytest.mark.internet
 @linux_only
 @pytest.mark.parametrize('logout_template', [None, (pathlib.Path(__file__).parent / 'logout.html').absolute()])
 def test_basic_auth_logout_via_proxy(py_file, page, logout_template, reverse_proxy):
@@ -277,6 +281,7 @@ def test_basic_auth_logout_via_proxy(py_file, page, logout_template, reverse_pro
         assert 'id_token' not in cookies
 
 
+@pytest.mark.internet
 @linux_only
 def test_authorize_callback_redirect(page):
 
@@ -314,6 +319,7 @@ def test_authorize_callback_redirect(page):
         expect(page.locator(".markdown").locator("div")).to_have_text('Page B\n')
 
 
+@pytest.mark.internet
 @linux_only
 def test_global_authorize_callback(page):
     users, sessions = [], []

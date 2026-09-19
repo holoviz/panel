@@ -29,6 +29,7 @@ def test_tabs_toggle_visible(page):
     expect(tab_panels.last).to_have_text("Bar")
 
 
+@pytest.mark.internet
 def test_tabs_toggle_clickable(page):
     url = "https://assets.holoviz.org/panel/samples/png_sample.png"
     png_pane = PNG(url, link_url=url, target="_self")

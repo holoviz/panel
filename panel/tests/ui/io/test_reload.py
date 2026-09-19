@@ -35,6 +35,7 @@ def test_reload_app_on_touch(page, autoreload, app):
 
     expect(page.locator('.counter')).to_have_text('1')
 
+@pytest.mark.internet
 def test_reload_app_with_error(page, autoreload, py_file):
     py_file.write("import panel as pn; pn.panel('foo').servable();")
     py_file.close()
