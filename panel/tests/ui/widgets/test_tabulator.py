@@ -119,6 +119,22 @@ def box_in_table(page, locator):
     return boxes[0]
 
 
+def wait_for_data_synced(page, widget):
+    # Rows the server sends replace the table, closing any editor opened before.
+    model = next(iter(widget._models.values()))[0]
+
+    def _synced():
+        expected = {key: [str(v) for v in values] for key, values in model.source.data.items()}
+        actual = page.evaluate("""(id) => {
+            const data = Bokeh.documents[0].get_model_by_id(id).data
+            const entries = data instanceof Map ? [...data.entries()] : Object.entries(data)
+            return Object.fromEntries(entries.map(([key, values]) => [key, Array.from(values, String)]))
+        }""", model.source.id)
+        assert actual == expected
+
+    wait_until(_synced, page)
+
+
 def tabulator_column_values(page, col_name: str) -> list[str]:
     """Get the values of a column.
 
@@ -3180,6 +3196,7 @@ def test_tabulator_edit_event_and_header_filters_last_row(page):
     str_header.click()
     str_header.fill('D')
     str_header.press('Enter')
+    wait_for_data_synced(page, widget)
     wait_until(lambda: len(widget.filters) == 1, page)
 
     # Click on the last cell
@@ -3190,6 +3207,7 @@ def test_tabulator_edit_event_and_header_filters_last_row(page):
     editable_cell.press('Enter')
 
     wait_until(lambda: len(values) == 1, page)
+    wait_for_data_synced(page, widget)
     # This cell was at index 4 in col2 of the original dataframe
     assert values[0] == ('col2', 4, 'Z', 'ZZ')
     assert df['col2'].iloc[-1] == 'ZZ'
@@ -3217,6 +3235,7 @@ def test_tabulator_edit_event_and_header_filters(page):
     str_header.click()
     str_header.fill('a')
     str_header.press('Enter')
+    wait_for_data_synced(page, widget)
 
     # Change the cell that contains B to BB
     cell = page.locator('text="B"')
@@ -3226,6 +3245,7 @@ def test_tabulator_edit_event_and_header_filters(page):
     editable_cell.press('Enter')
 
     wait_until(lambda: len(values) == 1, page)
+    wait_for_data_synced(page, widget)
     # This cell was at index 1 in col2 of the original dataframe
     assert values[0] == ('col2', 1, 'B', 'BB')
     assert df['col2'][1] == 'BB'
@@ -3256,6 +3276,7 @@ def test_tabulator_edit_event_and_header_filters_same_column(page, show_index, i
     header.click()
     header.fill('B')
     header.press('Enter')
+    wait_for_data_synced(page, widget)
 
     # Check the table has the right number of rows
     expect(page.locator('.tabulator-row')).to_have_count(2)
@@ -3271,6 +3292,7 @@ def test_tabulator_edit_event_and_header_filters_same_column(page, show_index, i
     editable_cell.press('Enter')
 
     wait_until(lambda: len(values) == 1, page)
+    wait_for_data_synced(page, widget)
     assert values[0] == ('values', len(df) - 1, 'B', 'X')
     assert df.at['idx3', 'values'] == 'X'
     # The current view should show the edited value
@@ -3287,6 +3309,7 @@ def test_tabulator_edit_event_and_header_filters_same_column(page, show_index, i
     editable_cell.press('Enter')
 
     wait_until(lambda: len(values) == 2, page)
+    wait_for_data_synced(page, widget)
     assert values[-1] == ('values', len(df) - 1, 'X', 'Y')
     assert df.at['idx3', 'values'] == 'Y'
     assert len(widget.current_view) == 2
@@ -3302,6 +3325,7 @@ def test_tabulator_edit_event_and_header_filters_same_column(page, show_index, i
     editable_cell.press('Enter')
 
     wait_until(lambda: len(values) == 3, page)
+    wait_for_data_synced(page, widget)
     assert values[-1] == ('values', len(df) - 2, 'B', 'Z')
     assert df.at['idx2', 'values'] == 'Z'
     # current_view should show Y and Z, there's no more B
@@ -3330,6 +3354,7 @@ def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pa
     header.click()
     header.fill('B')
     header.press('Enter')
+    wait_for_data_synced(page, widget)
 
     wait_until(lambda: widget.current_view is not None and widget.current_view.equals(df[df['values'] == 'B']))
 
@@ -3343,6 +3368,7 @@ def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pa
     editable_cell.press('Enter')
 
     wait_until(lambda: len(values) == 1, page)
+    wait_for_data_synced(page, widget)
     assert values[-1] == ('values', 2, 'B', 'Q')
     assert df.at['idx2', 'values'] == 'Q'
     # current_view should show Y and Z, there's no more B
@@ -3364,6 +3390,7 @@ def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pa
     editable_cell.press('Enter')
 
     wait_until(lambda: len(values) == 2, page)
+    wait_for_data_synced(page, widget)
     assert values[-1] == ('values', len(df) - 1, 'B', 'X')
     assert df.at['idx5', 'values'] == 'X'
     # The current view should show the edited value
@@ -3380,6 +3407,7 @@ def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pa
     editable_cell.press('Enter')
 
     wait_until(lambda: len(values) == 3, page)
+    wait_for_data_synced(page, widget)
     assert values[-1] == ('values', len(df) - 1, 'X', 'Y')
     assert df.at['idx5', 'values'] == 'Y'
     assert len(widget.current_view) == 4
@@ -3395,6 +3423,7 @@ def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pa
     editable_cell.press('Enter')
 
     wait_until(lambda: len(values) == 4, page)
+    wait_for_data_synced(page, widget)
     assert values[-1] == ('values', len(df) - 2, 'B', 'Z')
     assert df.at['idx4', 'values'] == 'Z'
     # current_view should show Y and Z, there's no more B
