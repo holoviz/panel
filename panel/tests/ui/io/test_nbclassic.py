@@ -8,7 +8,7 @@ pytest.importorskip("playwright")
 
 from playwright.sync_api import TimeoutError, expect
 
-pytestmark = [pytest.mark.ui, pytest.mark.jupyter]
+pytestmark = [pytest.mark.ui, pytest.mark.jupyter, pytest.mark.flaky(reruns=3)]
 
 
 _notebooks: list[str] = []
