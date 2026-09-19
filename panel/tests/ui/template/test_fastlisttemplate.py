@@ -2,7 +2,7 @@ import pytest
 
 try:
     from playwright.sync_api import expect
-    pytestmark = pytest.mark.ui
+    pytestmark = [pytest.mark.ui, pytest.mark.internet]
 except ImportError:
     pytestmark = pytest.mark.skip('playwright not available')
 

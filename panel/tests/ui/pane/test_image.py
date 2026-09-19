@@ -2,7 +2,7 @@ import pytest
 
 from numpy.testing import assert_allclose
 
-pytestmark = pytest.mark.ui
+pytestmark = [pytest.mark.ui, pytest.mark.internet]
 
 from panel.layout import Row
 from panel.pane import PDF, PNG, SVG
