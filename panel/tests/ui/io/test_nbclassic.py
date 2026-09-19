@@ -94,12 +94,30 @@ def run_notebook(page, nbclassic_server, notebook_name, cells):
     page.goto(f'{host}/notebooks/{notebook_name}.ipynb')
     expect(page.locator('#notebook-container .code_cell').first).to_be_visible()
     # Cells executed before the kernel is ready never run.
-    page.wait_for_function(
+    ready = (
         "window.Jupyter?.notebook?._fully_loaded && "
         "window.Jupyter.notebook.kernel?.is_connected() && "
         "Object.keys(window.Jupyter.notebook.kernel.info_reply).length > 0 && "
         "!window.Jupyter.notebook.kernel_busy"
     )
+    try:
+        page.wait_for_function(ready, timeout=5000)
+    except TimeoutError:
+        # nbclassic asks a kernel for its info only once when it connects, and
+        # never again if that request is lost while the kernel starts.
+        page.evaluate("""() => {
+            const kernel = window.Jupyter?.notebook?.kernel
+            if (kernel?.is_connected()) {
+                kernel.kernel_info((reply) => {
+                    kernel.info_reply = reply.content
+                    kernel.events.trigger('kernel_ready.Kernel', {kernel})
+                })
+            }
+        }""")
+        try:
+            page.wait_for_function(ready)
+        except TimeoutError as error:
+            raise AssertionError(f'The kernel did not get ready, kernel frames:\n{_describe_frames(frames)}') from error
     page.evaluate('Jupyter.notebook.execute_all_cells()')
     # A queued cell has "*" as its prompt number.
     try:
