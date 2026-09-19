@@ -3196,8 +3196,8 @@ def test_tabulator_edit_event_and_header_filters_last_row(page):
     str_header.click()
     str_header.fill('D')
     str_header.press('Enter')
-    wait_for_data_synced(page, widget)
     wait_until(lambda: len(widget.filters) == 1, page)
+    wait_for_data_synced(page, widget)
 
     # Click on the last cell
     cell = page.locator('text="Z"')
@@ -3235,6 +3235,7 @@ def test_tabulator_edit_event_and_header_filters(page):
     str_header.click()
     str_header.fill('a')
     str_header.press('Enter')
+    wait_until(lambda: len(widget.filters) == 1, page)
     wait_for_data_synced(page, widget)
 
     # Change the cell that contains B to BB
@@ -3276,6 +3277,7 @@ def test_tabulator_edit_event_and_header_filters_same_column(page, show_index, i
     header.click()
     header.fill('B')
     header.press('Enter')
+    wait_until(lambda: len(widget.filters) == 1, page)
     wait_for_data_synced(page, widget)
 
     # Check the table has the right number of rows
@@ -3354,6 +3356,7 @@ def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pa
     header.click()
     header.fill('B')
     header.press('Enter')
+    wait_until(lambda: len(widget.filters) == 1, page)
     wait_for_data_synced(page, widget)
 
     wait_until(lambda: widget.current_view is not None and widget.current_view.equals(df[df['values'] == 'B']))
