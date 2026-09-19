@@ -11,11 +11,24 @@ from playwright.sync_api import TimeoutError, expect
 pytestmark = [pytest.mark.ui, pytest.mark.jupyter]
 
 
+_notebooks = []
+
+
 @pytest.fixture
 def nbclassic_server(jupyter_preview):
     """Use nbclassic as an extension of the shared Jupyter Server."""
     host, _ = jupyter_preview.split('/panel-preview/', 1)
-    return f'{host}/nbclassic'
+    yield f'{host}/nbclassic'
+    # A kernel outlives its notebook page, and the kernels left running
+    # starved new ones on small runners.
+    paths = {f'{name}.ipynb' for name in _notebooks}
+    _notebooks.clear()
+    session = requests.Session()
+    session.get(f'{host}/nbclassic/tree', timeout=10).raise_for_status()
+    headers = {'X-XSRFToken': session.cookies.get('_xsrf', '')}
+    for notebook_session in session.get(f'{host}/api/sessions', timeout=10).json():
+        if notebook_session['path'] in paths:
+            session.delete(f'{host}/api/sessions/{notebook_session["id"]}', headers=headers, timeout=10)
 
 
 def _record_kernel_frames(page):
@@ -46,6 +59,7 @@ def _describe_frames(frames):
 
 def run_notebook(page, nbclassic_server, notebook_name, cells):
     """Open a notebook in nbclassic and run every cell through its UI."""
+    _notebooks.append(notebook_name)
     host = nbclassic_server
     api_host = host.removesuffix('/nbclassic')
     notebook = {
