@@ -1264,7 +1264,7 @@ def test_tabulator_frozen_columns(page, df_mixed):
     wait_until(_scroll_into_view, page)
 
     # Check that the position of one of the non frozen columns has indeed moved
-    wait_until(lambda: page.locator('text="bool"').bounding_box()['x'] < bool_bb['x'], page)
+    wait_until(lambda: bounding_boxes(page, page.locator('text="bool"'))[0]['x'] < bool_bb['x'], page)
 
     # Check that the two frozen columns haven't moved after scrolling right
     assert float_bb == page.locator('text="float"').bounding_box()
@@ -1347,7 +1347,7 @@ def test_tabulator_frozen_columns_with_positions(page, df_mixed):
     wait_until(_scroll_into_view, page)
 
     # Check that the position of one of the non-frozen columns has indeed moved
-    wait_until(lambda: page.locator('text="str"').bounding_box()['x'] < str_bb['x'], page)
+    wait_until(lambda: bounding_boxes(page, page.locator('text="str"'))[0]['x'] < str_bb['x'], page)
 
     # Check that the two frozen columns haven't moved after scrolling right
     assert float_bb == page.locator('text="float"').bounding_box()
@@ -4040,10 +4040,12 @@ def test_tabulator_update_hidden_columns(page):
 
     title = page.locator('text="a"')
     cell = col_a_cells.first
-    wait_until(lambda: (
-        (title.bounding_box()['x'] == cell.bounding_box()['x']) and
-        (title.bounding_box()['width'] == cell.bounding_box()['width'])
-    ), page)
+
+    def aligned():
+        title_box, cell_box = bounding_boxes(page, title, cell)
+        assert title_box['x'] == cell_box['x']
+        assert title_box['width'] == cell_box['width']
+    wait_until(aligned, page)
 
 
 def test_tabulator_remote_pagination_auto_page_size_grow(page, df_mixed):
