@@ -161,7 +161,10 @@ export class FeedView extends ColumnView {
       requestAnimationFrame(() => {
         const after_offset = this._reference_view?.el.offsetTop || 0
         const offset = (after_offset-(this._reference || 0))
-        this.el.scrollTo({top: scroll_top + offset, behavior: "smooth"})
+        // A scroll to where it already is would cancel one in progress.
+        if (offset !== 0) {
+          this.el.scrollTo({top: scroll_top + offset, behavior: "smooth"})
+        }
       })
     }
   }
