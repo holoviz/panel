@@ -721,7 +721,11 @@ class Server(BokehServer):
             event.set()
         state._watch_events.clear()
         self._autoreload_stop_event.set()
-        await self._autoreload_task
+        try:
+            await self._autoreload_task
+        except Exception:
+            # A failed watcher must not keep the server from stopping.
+            logger.exception('Autoreload watcher failed')
 
     def stop(self, wait: bool = True) -> None:
         if self._autoreload_stop_event:
