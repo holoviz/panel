@@ -172,16 +172,13 @@ def test_plotly_hover_data(page, plotly_2d_plot):
 def test_plotly_click_data(page, plotly_2d_plot):
     serve_component(page, plotly_2d_plot)
 
-    plotly_plot = page.locator('.js-plotly-plot .plot-container.plotly')
-    expect(plotly_plot).to_have_count(1)
+    points = page.locator('.js-plotly-plot .plot-container.plotly path.point')
+    expect(points).to_have_count(2)
 
-    # Select and click on points
     for i in range(2):
-        for _ in range(3):
-            # Simulating click is unreliable
-            point = page.locator('.js-plotly-plot .plot-container.plotly path.point').nth(i)
-            point.click(force=True)
-            time.sleep(0.1)
+        points.nth(i).hover(force=True)
+        wait_until(lambda i=i: (plotly_2d_plot.hover_data or {}).get('points', [{}])[0].get('pointNumber') == i, page)
+        points.nth(i).click(force=True)
 
         def check_click(i=i):
             assert plotly_2d_plot.click_data == {
