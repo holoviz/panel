@@ -103,11 +103,11 @@ def run_notebook(page, nbclassic_server, notebook_name, cells):
     try:
         page.wait_for_function(ready, timeout=5000)
     except TimeoutError:
-        # nbclassic asks a kernel for its info only once when it connects, and
-        # never again if that request is lost while the kernel starts.
+        # nbclassic only asks a kernel for its info when it connects or starts,
+        # so a request lost while the kernel starts leaves it waiting.
         page.evaluate("""() => {
             const kernel = window.Jupyter?.notebook?.kernel
-            if (kernel?.is_connected()) {
+            if (kernel?.is_connected() && Object.keys(kernel.info_reply).length === 0) {
                 kernel.kernel_info((reply) => {
                     kernel.info_reply = reply.content
                     kernel.events.trigger('kernel_ready.Kernel', {kernel})
