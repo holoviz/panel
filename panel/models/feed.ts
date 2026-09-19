@@ -30,6 +30,7 @@ export class FeedView extends ColumnView {
   _intersection_observer: IntersectionObserver
   protected _visibility_pending: boolean = false
   protected _visibility_listener: boolean = false
+  protected _latest_pending: boolean = false
   _last_visible: UIElementView | null
   _rendered: boolean = false
   _sync: boolean
@@ -48,7 +49,9 @@ export class FeedView extends ColumnView {
     const root = is_scroll_container ? this.el : null
     this._intersection_observer = new IntersectionObserver((entries) => {
       // Until its stylesheets load the Feed does not clip, so all children intersect.
-      if (is_scroll_container && getComputedStyle(this.el).overflowY === "visible") {
+      // Before the initial scroll to the latest child the top children are
+      // visible; reporting them makes the server load the wrong range.
+      if (this._latest_pending || (is_scroll_container && getComputedStyle(this.el).overflowY === "visible")) {
         this._visibility_pending = true
         return
       }
@@ -197,6 +200,7 @@ export class FeedView extends ColumnView {
 
   override render(): void {
     this._rendered = false
+    this._latest_pending = this.model.view_latest && this.is_scroll_container
     super.render()
     if (!this._visibility_listener) {
       this._visibility_listener = true
@@ -221,14 +225,20 @@ export class FeedView extends ColumnView {
   override after_render(): void {
     BkColumnView.prototype.after_render.call(this)
     requestAnimationFrame(() => {
-      if (this.model.scroll_position) {
-        this.scroll_to_position()
-      }
       if (this.model.view_latest && !this._rendered) {
+        // Scroll now rather than frames later via scroll_position, so the
+        // children are measured at the latest position.
+        this.el.scrollTo({top: this.el.scrollHeight, behavior: "instant"})
         this.scroll_to_latest()
+      } else if (this.model.scroll_position) {
+        this.scroll_to_position()
       }
       this.toggle_scroll_button()
       this._rendered = true
+      if (this._latest_pending) {
+        this._latest_pending = false
+        this._reobserve_children()
+      }
     })
   }
 }
