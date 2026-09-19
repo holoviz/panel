@@ -1,6 +1,5 @@
 import os
 import pathlib
-import time
 
 import pytest
 
@@ -130,7 +129,7 @@ def test_azure_oauth(py_file, page):
         page.locator('input[type="submit"]').click(force=True)
 
         expect(page.locator('input[type="submit"]')).to_have_attribute('value', 'Next')
-        time.sleep(1) # Loading password page is slow
+        expect(page.locator('input[type="password"]')).to_be_visible()
         page.locator('input[type="password"]').fill(azure_password)
         page.locator('button[type="submit"]').click(force=True)
         page.locator('button[type="submit"][id="acceptButton"]').click(force=True)  # Stay signed in
