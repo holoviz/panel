@@ -126,6 +126,30 @@ def test_feed_scroll_to_latest_always_when_limit_null(page):
     wait_until(lambda: int(page.locator('pre').last.inner_text() or 0) > 0.9 * ITEMS, page)
 
 
+def test_feed_scroll_to_latest_while_building_latest_children(page):
+    feed = Feed(*list(range(ITEMS)), height=250)
+    serve_component(page, feed)
+
+    wait_until(lambda: int(page.locator('pre').last.inner_text() or 0) < 0.9 * ITEMS, page)
+    page.evaluate("""() => {
+        const view = Object.values(Bokeh.index)[0]
+        const build = view.build_child_views.bind(view)
+        view.build_child_views = async () => {
+            const created = await build()
+            await new Promise((resolve) => setTimeout(resolve, 500))
+            return created
+        }
+    }""")
+    feed.scroll_to_latest(scroll_limit=None)
+
+    feed_el = page.locator(".bk-panel-models-feed-Feed")
+
+    def at_latest():
+        assert page.locator('pre').last.inner_text() == str(ITEMS - 1)
+        assert feed_el.evaluate('(el) => el.scrollHeight - el.scrollTop - el.clientHeight') <= 1
+    wait_until(at_latest, page)
+
+
 def test_feed_scroll_to_latest_within_limit(page):
     """Test that scroll_to_latest only triggers within the specified limit"""
     feed = Feed(
