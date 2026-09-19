@@ -10,6 +10,7 @@ import re
 import shutil
 import signal
 import socket
+import sys
 import tempfile
 import time
 import unittest
@@ -203,6 +204,13 @@ def pytest_collection_modifyitems(config, items):
 def pytest_runtest_setup(item):
     if "internet" in item.keywords and not internet_available():
         pytest.skip("Skipping test: No internet connection")
+
+
+@pytest.hookimpl(optionalhook=True)
+def pytest_handlecrashitem(crashitem, report, sched):
+    # xdist only names the test in the final summary, which a cancelled job never prints.
+    sys.stderr.write(f"\nWorker crashed while running {crashitem}\n")
+    sys.stderr.flush()
 
 
 @pytest.fixture(scope="session")
