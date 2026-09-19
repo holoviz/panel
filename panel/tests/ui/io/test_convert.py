@@ -3,7 +3,6 @@ import pathlib
 import re
 import shutil
 import tempfile
-import time
 import uuid
 
 import pytest
@@ -156,8 +155,6 @@ def http_serve():
         pass
 
     httpd, _ = http_serve_directory(str(temp_path), port=HTTP_PORT)
-
-    time.sleep(1)
 
     def write(app):
         app_name = uuid.uuid4().hex
