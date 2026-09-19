@@ -161,6 +161,11 @@ jobs:
       - name: Test unit
         run: |
           pixi run -e "${ENV}" test-unit $COV
+      # A worker killed with SIGKILL, e.g. when out of memory, leaves no traceback
+      - name: Show killed processes
+        if: failure() && runner.os == 'Linux'
+        run: |
+          sudo dmesg | grep -iE "killed process|out of memory|oom" || echo "No processes were killed"
       - name: Test subprocess
         if: contains(matrix.os, 'ubuntu')
         run: |

@@ -4,12 +4,14 @@ A module containing testing utilities and fixtures.
 import asyncio
 import atexit
 import datetime as dt
+import faulthandler
 import os
 import pathlib
 import re
 import shutil
 import signal
 import socket
+import sys
 import tempfile
 import time
 import unittest
@@ -159,6 +161,27 @@ def pytest_configure(config):
         start_jupyter()
 
     config.addinivalue_line("markers", "internet: mark test as requiring an internet connection")
+
+    if os.environ.get("PYTEST_XDIST_WORKER"):
+        _trace_worker_exit()
+
+
+def _trace_worker_exit():
+    # A crashed xdist worker leaves no traceback, so dump the stacks when it
+    # is killed by a signal or exits without unwinding.
+    stderr = os.fdopen(os.dup(sys.__stderr__.fileno()), "w")
+    if hasattr(faulthandler, "register"):
+        for sig in (signal.SIGTERM, signal.SIGHUP, signal.SIGQUIT):
+            faulthandler.register(sig, file=stderr, all_threads=True, chain=True)
+    exit = os._exit
+
+    def _exit(code):
+        stderr.write(f"\nos._exit({code}) called in {os.environ['PYTEST_XDIST_WORKER']}\n")
+        stderr.flush()
+        faulthandler.dump_traceback(file=stderr, all_threads=True)
+        exit(code)
+
+    os._exit = _exit
 
 def pytest_generate_tests(metafunc):
     repeat = getattr(metafunc.config.option, 'repeat', None)
