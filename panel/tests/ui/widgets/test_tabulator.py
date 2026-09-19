@@ -3489,6 +3489,8 @@ def test_tabulator_edit_event_integrations(page, sorter, python_filter, header_f
         page.locator('text="Last"').click()
         page.wait_for_timeout(200)
 
+    wait_for_data_synced(page, widget)
+
     # Change the cell concent
     cell = page.locator(f'text="{target_val}"')
     cell.click()
