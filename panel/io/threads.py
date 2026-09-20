@@ -49,13 +49,6 @@ class StoppableThread(threading.Thread):
                 except Exception:
                     logger.debug('Could not drain pending tasks', exc_info=True)
                 try:
-                    # Closing the loop leaves the threads of its default executor behind
-                    self.asyncio_loop.run_until_complete(
-                        self.asyncio_loop.shutdown_default_executor()
-                    )
-                except Exception:
-                    logger.debug('Could not shut down the default executor', exc_info=True)
-                try:
                     self.asyncio_loop.close()
                 except Exception:
                     logger.debug('Could not close the event loop', exc_info=True)
