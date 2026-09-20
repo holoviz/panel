@@ -721,10 +721,10 @@ class Server(BokehServer):
             event.set()
         state._watch_events.clear()
         self._autoreload_stop_event.set()
-        if self._autoreload_task.cancelled():
-            return
         try:
             await self._autoreload_task
+        except asyncio.CancelledError:
+            pass
         except Exception:
             # A failed watcher must not keep the server from stopping.
             logger.exception('Autoreload watcher failed')
