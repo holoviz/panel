@@ -1147,7 +1147,7 @@ class ComponentResourceHandler(StaticFileHandler):
         '_css', '_js', 'base_css', 'css', '_stylesheets', 'modifiers', '_bundle_path', '_bundle_css'
     ]
 
-    def initialize(self, path: str | t.Literal['root'] = 'root', default_filename: str | None = None):
+    def initialize(self, path: str | t.Literal['root'] = 'root', default_filename: str | None = None, *args: t.Any, **kwargs: t.Any):
         self.root = path
         self.default_filename = default_filename
 
