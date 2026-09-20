@@ -7,6 +7,7 @@ import json
 import os
 import platform
 import re
+import signal
 import socket
 import subprocess
 import sys
@@ -394,15 +395,28 @@ def wait_for_server(port, prefix=None, timeout=3):
             raise RuntimeError(f'{url} did not respond before timeout.')
 
 
+def terminate_panel_serve(p):
+    if ON_POSIX:
+        # `--num-procs` forks children that outlive the process it started them from
+        try:
+            os.killpg(os.getpgid(p.pid), signal.SIGTERM)
+        except (ProcessLookupError, PermissionError):
+            pass
+    p.terminate()
+    p.wait()
+
+
 @contextlib.contextmanager
 def run_panel_serve(args, cwd=None):
     cmd = [sys.executable, "-m", "panel", "serve", *map(str, args)]
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False, cwd=cwd, close_fds=ON_POSIX)
+    p = subprocess.Popen(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False, cwd=cwd,
+        close_fds=ON_POSIX, start_new_session=ON_POSIX
+    )
     try:
         yield p
     except BaseException as e:
-        p.terminate()
-        p.wait()
+        terminate_panel_serve(p)
         print("An error occurred: %s", e)  # noqa: T201
         try:
             out = p.stdout.read().decode()
@@ -412,8 +426,7 @@ def run_panel_serve(args, cwd=None):
             pass
         raise
     else:
-        p.terminate()
-        p.wait()
+        terminate_panel_serve(p)
 
 
 class NBSR:
