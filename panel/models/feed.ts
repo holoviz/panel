@@ -37,6 +37,7 @@ export class FeedView extends ColumnView {
   _reference: number | null = null
   _reference_view: UIElementView | null = null
   protected _children_update: Promise<void> | null = null
+  protected _latest_scroll_pending: boolean = false
 
   override initialize(): void {
     super.initialize()
@@ -92,6 +93,8 @@ export class FeedView extends ColumnView {
     this.model.on_event(ScrollLatestEvent, async (event: ScrollLatestEvent) => {
       if (event.rerender) {
         this._rendered = false
+        // The children it rerendered may not have arrived yet
+        this._latest_scroll_pending = true
       }
       const limit = event.scroll_limit
       if (limit != null && this.distance_from_latest > limit) {
@@ -100,13 +103,8 @@ export class FeedView extends ColumnView {
       // Until the scroll lands, the children at the old position report as
       // visible and make the server load that range again.
       this._latest_pending = this.is_scroll_container
-      // The event follows the children it rerendered, which may still be building.
       await this._children_update
-      if (this._latest_pending) {
-        this._land_latest_scroll()
-      } else {
-        this.scroll_to_latest()
-      }
+      this._scroll_to_latest_children()
     })
   }
 
@@ -127,6 +125,20 @@ export class FeedView extends ColumnView {
       if (this._children_update === update) {
         this._children_update = null
       }
+    }
+    if (this._latest_scroll_pending) {
+      this._latest_scroll_pending = false
+      this._scroll_to_latest_children()
+    }
+  }
+
+  _scroll_to_latest_children(): void {
+    // A Feed that cannot scroll yet reports nothing, so leave the retry to
+    // scroll_position rather than holding the visibility.
+    if (!this._latest_pending || !this._land_latest_scroll()) {
+      this._latest_pending = false
+      this._reobserve_children()
+      this.scroll_to_latest()
     }
   }
 
@@ -255,16 +267,17 @@ export class FeedView extends ColumnView {
 
   override trigger_auto_scroll(): void {}
 
-  _land_latest_scroll(): void {
+  _land_latest_scroll(): boolean {
     // Scroll now rather than frames later via scroll_position, so the
     // children are measured at the latest position.
     this.el.scrollTo({top: this.el.scrollHeight, behavior: "instant"})
     // Until its stylesheets load the scroll is a no-op, so keep waiting.
     if (getComputedStyle(this.el).overflowY === "visible") {
-      return
+      return false
     }
     this._latest_pending = false
     this._reobserve_children()
+    return true
   }
 
   override after_render(): void {

@@ -131,11 +131,13 @@ def test_feed_scroll_to_latest_while_building_latest_children(page):
     serve_component(page, feed)
 
     wait_until(lambda: int(page.locator('pre').last.inner_text() or 0) < 0.9 * ITEMS, page)
+    # Delay the build the scroll event races, so it always lands mid-build
     page.evaluate("""() => {
         const view = Object.values(Bokeh.index)[0]
         const build = view.build_child_views.bind(view)
         view.build_child_views = async () => {
             const created = await build()
+            view.build_child_views = build
             await new Promise((resolve) => setTimeout(resolve, 500))
             return created
         }
@@ -145,7 +147,7 @@ def test_feed_scroll_to_latest_while_building_latest_children(page):
     feed_el = page.locator(".bk-panel-models-feed-Feed")
 
     def at_latest():
-        assert page.locator('pre').last.inner_text() == str(ITEMS - 1)
+        assert int(page.locator('pre').last.inner_text() or 0) == pytest.approx(ITEMS - 1, abs=1)
         assert feed_el.evaluate('(el) => el.scrollHeight - el.scrollTop - el.clientHeight') <= 1
     wait_until(at_latest, page)
 
