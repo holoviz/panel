@@ -389,6 +389,7 @@ export class DataTabulatorView extends HTMLBoxView {
   _lastHorizontalScrollbarLeftPosition: number = 0
   _applied_styles: boolean = false
   _building: boolean = false
+  _pending_data: boolean = false
   _redrawing: boolean = false
   /** Coalesced resize redraw; waits for `this.root.ready` (Bokeh view async chain) before redrawing. */
   _resize_pending: boolean = false
@@ -830,6 +831,9 @@ export class DataTabulatorView extends HTMLBoxView {
       this.tabulator.setPage(this.model.page)
     }
     this._initializing = this._building = false
+    if (this._pending_data) {
+      void this.setData().then(() => this.postUpdate())
+    }
     this._request_resize_redraw()
   }
 
@@ -1320,8 +1324,11 @@ export class DataTabulatorView extends HTMLBoxView {
   // Update table
   setData(): Promise<void> {
     if (this._initializing || this._building || !this.tabulator.initialized) {
+      // The table keeps the data it was built with, so apply this once it is
+      this._pending_data = true
       return Promise.resolve(undefined)
     }
+    this._pending_data = false
     const data = this.getData()
     if (this.model.pagination != null) {
       return this.tabulator.rowManager.setData(data, true, false)
