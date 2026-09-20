@@ -1125,13 +1125,13 @@ def test_multiple_titles(multiple_apps_server_sessions):
             slugs=('app1', 'app2'), titles={'badkey': 'APP1', 'app2': 'APP2'})
 
 
-def test_serve_can_serve_panel_app_from_file(server_implementation):
+def test_serve_can_serve_panel_app_from_file(server_implementation, asyncio_loop):
     path = pathlib.Path(__file__).parent / "io"/"panel_app.py"
     server = get_server({"panel-app": path})
     assert "/panel-app" in server._tornado.applications
 
 
-def test_serve_can_serve_bokeh_app_from_file(server_implementation):
+def test_serve_can_serve_bokeh_app_from_file(server_implementation, asyncio_loop):
     path = pathlib.Path(__file__).parent / "io"/"bk_app.py"
     server = get_server({"bk-app": path})
     assert "/bk-app" in server._tornado.applications

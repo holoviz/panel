@@ -183,6 +183,7 @@ def _trace_worker_exit():
 
     os._exit = _exit
 
+
 def pytest_generate_tests(metafunc):
     repeat = getattr(metafunc.config.option, 'repeat', None)
     if repeat is not None:
@@ -285,11 +286,22 @@ def stop_event():
 
 @pytest.fixture
 def asyncio_loop():
+    try:
+        previous = asyncio.get_event_loop()
+    except Exception:
+        previous = None
     loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(asyncio.new_event_loop())
-    yield
-    loop.stop()
-    loop.close()
+    asyncio.set_event_loop(loop)
+    try:
+        yield loop
+    finally:
+        # A server on this loop cannot be stopped once it is closed
+        state.kill_all_servers()
+        # Closing the loop leaves the threads of its default executor behind
+        loop.run_until_complete(loop.shutdown_default_executor())
+        loop.stop()
+        loop.close()
+        asyncio.set_event_loop(previous)
 
 @pytest.fixture
 async def watch_files():
@@ -581,6 +593,8 @@ def threads():
     try:
         yield 4
     finally:
+        # A server still stopping needs the thread pool to discard its sessions
+        state.kill_all_servers()
         config.nthreads = None
 
 @pytest.fixture
