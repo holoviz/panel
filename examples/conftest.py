@@ -1,5 +1,7 @@
 from importlib.util import find_spec
 
+import pytest
+
 collect_ignore_glob = [
     "apps/",
     "developer_guide/",
@@ -41,6 +43,9 @@ if find_spec("pyvista") is None:
 def pytest_configure(config):
     # A cell that never finishes would otherwise hang until the job times out
     config.option.nbval_cell_timeout = min(config.option.nbval_cell_timeout, 60)
+    # The cells that time out are the ones downloading their data
+    config.option.reruns = max(config.option.reruns or 0, 2)
+    config.option.only_rerun = [*(config.option.only_rerun or []), "Timeout of"]
 
 
 def pytest_runtest_makereport(item, call):
@@ -56,6 +61,13 @@ def pytest_runtest_makereport(item, call):
     tr = pytest_runtest_makereport(item, call)
 
     if call.excinfo is not None:
+        # nbval expects every later cell of a timed out notebook to fail, and
+        # the interrupted cell can leave the ones after it without their state
+        if "Timeout of" in str(call.excinfo.value):
+            item.parent.timed_out = False
+            for cell in item.session.items:
+                if cell.nodeid.startswith(f"{item.parent.nodeid}::"):
+                    cell.add_marker(pytest.mark.flaky(reruns=2, only_rerun=[".*"]))
         msgs = [
             "Kernel died before replying to kernel_info",
             "Kernel didn't respond in 60 seconds",
