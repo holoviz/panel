@@ -4,14 +4,12 @@ A module containing testing utilities and fixtures.
 import asyncio
 import atexit
 import datetime as dt
-import faulthandler
 import os
 import pathlib
 import re
 import shutil
 import signal
 import socket
-import sys
 import tempfile
 import time
 import unittest
@@ -51,7 +49,6 @@ config.apply_signatures = False
 JUPYTER_PORT = 8887
 JUPYTER_TIMEOUT = 15 # s
 JUPYTER_PROCESS = None
-_REAL_STDERR = None
 
 if os.name != 'nt':
     import resource
@@ -163,87 +160,6 @@ def pytest_configure(config):
 
     config.addinivalue_line("markers", "internet: mark test as requiring an internet connection")
 
-    if os.environ.get("PYTEST_XDIST_WORKER"):
-        _trace_worker_exit()
-
-
-def _real_stderr():
-    # pytest captures stderr, so keep a copy of the original
-    global _REAL_STDERR
-    if _REAL_STDERR is None:
-        _REAL_STDERR = os.fdopen(os.dup(sys.__stderr__.fileno()), "w")
-        atexit.register(_REAL_STDERR.close)
-    return _REAL_STDERR
-
-
-def _trace_worker_exit():
-    # A crashed xdist worker leaves no traceback, so dump the stacks when it
-    # is killed by a signal or exits without unwinding.
-    stderr = _real_stderr()
-    if hasattr(faulthandler, "register"):
-        for sig in (signal.SIGTERM, signal.SIGHUP, signal.SIGQUIT):
-            faulthandler.register(sig, file=stderr, all_threads=True, chain=True)
-    exit = os._exit
-
-    def _exit(code):
-        stderr.write(f"\nos._exit({code}) called in {os.environ['PYTEST_XDIST_WORKER']}\n")
-        stderr.flush()
-        faulthandler.dump_traceback(file=stderr, all_threads=True)
-        exit(code)
-
-    os._exit = _exit
-
-
-# Repeated dumps tell a frozen thread from a looping one
-STALL_DUMP_INTERVAL = float(os.environ.get("PYTEST_STALL_DUMP_INTERVAL", 120))
-
-
-@pytest.hookimpl(hookwrapper=True)
-def pytest_runtest_protocol(item, nextitem):
-    trace = bool(os.environ.get("PYTEST_TRACE_TESTS"))
-    if not (trace or STALL_DUMP_INTERVAL > 0):
-        yield
-        return
-    stderr = _real_stderr()
-    worker = os.environ.get("PYTEST_XDIST_WORKER", "main")
-    if STALL_DUMP_INTERVAL > 0:
-        faulthandler.dump_traceback_later(
-            STALL_DUMP_INTERVAL, repeat=True, file=stderr, exit=False
-        )
-    try:
-        # A crash report then shows what every worker was running
-        if trace:
-            stderr.write(f"{time.time():.3f} {worker} start {item.nodeid}\n")
-            stderr.flush()
-        yield
-        if trace:
-            stderr.write(f"{time.time():.3f} {worker} end   {item.nodeid}\n")
-            stderr.flush()
-    finally:
-        if STALL_DUMP_INTERVAL > 0:
-            faulthandler.cancel_dump_traceback_later()
-
-
-@pytest.hookimpl(optionalhook=True)
-def pytest_testnodedown(node, error):
-    # xdist only reports that a worker went down, not how
-    if error is None:
-        return
-    popen = getattr(getattr(node.gateway, "_io", None), "popen", None)
-    code = popen.poll() if popen is not None else None
-    if code is None and popen is not None:
-        try:
-            code = popen.wait(timeout=5)
-        except Exception:
-            pass
-    if code is None:
-        how = "with an unknown exit status"
-    elif code < 0:
-        how = f"killed by {signal.Signals(-code).name}"
-    else:
-        how = f"with exit code {code}"
-    sys.stderr.write(f"\nWorker {node.gateway.id} went down {how}: {error}\n")
-    sys.stderr.flush()
 
 def pytest_generate_tests(metafunc):
     repeat = getattr(metafunc.config.option, 'repeat', None)

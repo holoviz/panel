@@ -207,9 +207,7 @@ uvicorn = "*"
 vl-convert-python = "*"
 
 [feature.test-unit-task.tasks] # So it is not showing up in the test-ui environment
-# pytest-xdist 3.8.0 hangs with `--dist loadgroup` when it replaces a crashed worker,
-# remove `--max-worker-restart=0` with a pytest-xdist newer than 3.8.0.
-test-unit = 'pytest panel/tests -n logical --dist loadgroup --max-worker-restart=0'
+test-unit = 'pytest panel/tests -n logical --dist loadgroup'
 test-subprocess = 'pytest panel/tests --subprocess'
 
 [feature.test-example.tasks]

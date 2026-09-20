@@ -26,7 +26,7 @@ on:
 permissions: {}
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.sha }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 defaults:
@@ -159,16 +159,8 @@ jobs:
           environments: ${{ matrix.environment }}
           opengl: true
       - name: Test unit
-        env:
-          # So a crashed worker reports what every worker was running
-          PYTEST_TRACE_TESTS: "1"
         run: |
           pixi run -e "${ENV}" test-unit $COV
-      # A worker killed with SIGKILL, e.g. when out of memory, leaves no traceback
-      - name: Show killed processes
-        if: failure() && runner.os == 'Linux'
-        run: |
-          sudo dmesg | grep -iE "killed process|out of memory|oom" || echo "No processes were killed"
       - name: Test subprocess
         if: contains(matrix.os, 'ubuntu')
         run: |
@@ -222,7 +214,7 @@ jobs:
         shell: pixi run -e test-ui bash -e {0}
         run: |
           jupyter server extension enable panel.io.jupyter_server_extension --sys-prefix
-          (jupyter lab --config panel/tests/ui/jupyter_server_test_config.py --port 8887 > jupyter_server.log 2>&1) &
+          (jupyter lab --config panel/tests/ui/jupyter_server_test_config.py --port 8887 > /tmp/jupyterlab_server.log 2>&1) &
           curl -fsS --retry 180 --retry-delay 1 --retry-connrefused http://127.0.0.1:8887/lab >/dev/null
       - name: Build JupyterLite
         shell: pixi run -e test-ui bash -e {0}
@@ -240,12 +232,6 @@ jobs:
         with:
           name: ui_screenshots_${{ runner.os }}
           path: ./ui_screenshots
-          if-no-files-found: ignore
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        if: failure()
-        with:
-          name: jupyter_server_log_${{ runner.os }}
-          path: ./jupyter_server.log
           if-no-files-found: ignore
       - name: Stop JupyterLab
         if: always()
