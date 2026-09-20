@@ -230,8 +230,10 @@ def test_texteditor_on_keyup_false_commits_on_blur(page):
 
     editor = page.locator('.ql-editor')
     editor.fill('test')
-    # Move focus away to trigger Quill's blur (null selection-change).
-    page.locator('body').click(position={'x': 0, 'y': 0})
+    wait_until(lambda: widget.value_input == '<p>test</p>', page)
+    # Quill commits on blur, which a click only causes outside the editor
+    box = editor.bounding_box()
+    page.mouse.click(box['x'] + box['width'] / 2, box['y'] + box['height'] + 20)
     wait_until(lambda: widget.value == '<p>test</p>', page)
 
 
