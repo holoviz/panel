@@ -5,6 +5,7 @@ import type * as p from "@bokehjs/core/properties"
 import {GridAlignmentLayout} from "@bokehjs/models/layouts/alignments"
 import {LayoutDOMView} from "@bokehjs/models/layouts/layout_dom"
 import type {UIElementView} from "@bokehjs/models/ui/ui_element"
+import {Markup} from "@bokehjs/models/widgets/markup"
 import {Widget} from "@bokehjs/models/widgets/widget"
 
 import {Column, ColumnView} from "./column"
@@ -228,7 +229,8 @@ export class CardView extends ColumnView {
   _toggle_button(e: MouseEvent): void {
     const widget_els = new Set<HTMLElement>()
     const collect = (view: UIElementView): void => {
-      if (view.model instanceof Widget) {
+      // A Markup widget is the header text, e.g. the title of an Accordion.
+      if (view.model instanceof Widget && !(view.model instanceof Markup)) {
         widget_els.add(view.el)
       }
       for (const child of (view as any).child_views ?? []) {
