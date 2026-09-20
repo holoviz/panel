@@ -113,7 +113,10 @@ export class ColumnView extends BkColumnView {
     }
 
     requestAnimationFrame(() => {
-      this.model.scroll_position = Math.round(this.el.scrollHeight)
+      const latest = Math.round(this.el.scrollHeight)
+      // A scroll_position that did not change emits no event to scroll on
+      this.el.scrollTo({top: latest, behavior: "instant"})
+      this.model.scroll_position = latest
     })
   }
 
