@@ -543,12 +543,21 @@ def test_keep_unsent_models_new_still_flushes_own_patches():
 def test_client_has_document_handles_destroyed_document():
     doc = Document()
     doc.add_root(pn.Column().get_root(doc))
+    doc._session_context = lambda: MockSessionContext(doc)
     assert not _client_has_document(doc)
 
     doc.to_json()
     assert _client_has_document(doc)
 
     doc.models.destroy()
+    assert not _client_has_document(doc)
+
+
+def test_client_has_document_ignores_sessionless_document():
+    doc = Document()
+    doc.add_root(pn.Column().get_root(doc))
+
+    doc.to_json()
     assert not _client_has_document(doc)
 
 

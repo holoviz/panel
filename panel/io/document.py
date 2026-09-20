@@ -109,10 +109,13 @@ def _client_has_document(doc: Document) -> bool:
     """
     if state._connected.get(doc):
         return True
-    live = getattr(doc.models, '_models', None)
-    if not live:
+    if doc.session_context is None:
+        # Serializing the document, e.g. to save it, also marks models sent
         return False
-    unsent = doc.models._new_models
+    live = getattr(doc.models, '_models', None)
+    unsent = getattr(doc.models, '_new_models', None)
+    if not live or unsent is None:
+        return False
     return any(model not in unsent for model in live.values())
 
 def _dispatch_events(doc: Document, events: list[DocumentChangedEvent]) -> None:
@@ -298,6 +301,10 @@ def _keep_unsent_models_new(doc: Document) -> None:
     applied, since bokeh then declares all models synced.
     """
     if getattr(doc.apply_json_patch, '_panel_keeps_unsent', False):
+        return
+    if not hasattr(doc.models, '_new_models'):
+        # A bokeh that tracks unsent models differently needs no patching
+        logger.debug('Could not keep unsent models unsent, bokeh changed')
         return
     # A bound method would keep the Document alive in a cycle.
     apply_json_patch = type(doc).apply_json_patch
