@@ -38,6 +38,7 @@ export class FeedView extends ColumnView {
   _reference_view: UIElementView | null = null
   protected _children_update: Promise<void> | null = null
   protected _latest_scroll_pending: boolean = false
+  protected _latest_timer: ReturnType<typeof setTimeout> | null = null
 
   override initialize(): void {
     super.initialize()
@@ -104,7 +105,9 @@ export class FeedView extends ColumnView {
       }
       // Until the scroll lands, the children at the old position report as
       // visible and make the server load that range again.
-      this._latest_pending = this.is_scroll_container
+      if (this.is_scroll_container) {
+        this._hold_latest()
+      }
       await this._children_update
       this._scroll_to_latest_children()
     })
@@ -138,8 +141,7 @@ export class FeedView extends ColumnView {
     // A Feed that cannot scroll yet reports nothing, so leave the retry to
     // scroll_position rather than holding the visibility.
     if (!this._latest_pending || !this._land_latest_scroll()) {
-      this._latest_pending = false
-      this._reobserve_children()
+      this._release_latest()
       this.scroll_to_latest()
     }
   }
@@ -241,11 +243,16 @@ export class FeedView extends ColumnView {
 
   override render(): void {
     this._rendered = false
-    this._latest_pending = this.model.view_latest && this.is_scroll_container
+    if (this.model.view_latest && this.is_scroll_container) {
+      this._hold_latest()
+    }
     super.render()
     if (!this._visibility_listener) {
       this._visibility_listener = true
-      this.shadow_el.addEventListener("load", () => {
+      this.shadow_el.addEventListener("load", (event) => {
+        if (!(event.target instanceof HTMLLinkElement)) {
+          return
+        }
         if (this._latest_pending) {
           this._land_latest_scroll()
         } else {
@@ -255,8 +262,8 @@ export class FeedView extends ColumnView {
     }
   }
 
-  _reobserve_children(): void {
-    if (!this._visibility_pending || getComputedStyle(this.el).overflowY === "visible") {
+  _reobserve_children(force: boolean = false): void {
+    if (!this._visibility_pending || (!force && getComputedStyle(this.el).overflowY === "visible")) {
       return
     }
     this._visibility_pending = false
@@ -269,6 +276,34 @@ export class FeedView extends ColumnView {
 
   override trigger_auto_scroll(): void {}
 
+  _hold_latest(): void {
+    // Should the Feed never become scrollable, e.g. because a stylesheet
+    // failed, release the hold rather than never reporting visibility again.
+    this._latest_pending = true
+    if (this._latest_timer == null) {
+      this._latest_timer = setTimeout(() => this._release_latest(true), 1000)
+    }
+  }
+
+  _release_latest(force: boolean = false): void {
+    if (this._latest_timer != null) {
+      clearTimeout(this._latest_timer)
+      this._latest_timer = null
+    }
+    if (this._latest_pending) {
+      this._latest_pending = false
+      this._reobserve_children(force)
+    }
+  }
+
+  override remove(): void {
+    if (this._latest_timer != null) {
+      clearTimeout(this._latest_timer)
+      this._latest_timer = null
+    }
+    super.remove()
+  }
+
   _land_latest_scroll(): boolean {
     // Scroll now rather than frames later via scroll_position, so the
     // children are measured at the latest position.
@@ -277,8 +312,7 @@ export class FeedView extends ColumnView {
     if (getComputedStyle(this.el).overflowY === "visible") {
       return false
     }
-    this._latest_pending = false
-    this._reobserve_children()
+    this._release_latest()
     return true
   }
 

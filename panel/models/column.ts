@@ -120,6 +120,7 @@ export class ColumnView extends BkColumnView {
   trigger_auto_scroll(): void {
     const limit = this.model.auto_scroll_limit
     if (limit == 0) {
+      this._auto_scroll_pending = false
       return
     }
     this._auto_scroll_pending = this.distance_from_latest <= limit
@@ -171,8 +172,8 @@ export class ColumnView extends BkColumnView {
     if (!this._stylesheet_listener) {
       this._stylesheet_listener = true
       // Scrolling is a no-op until the stylesheets making it scrollable load.
-      this.shadow_el.addEventListener("load", () => {
-        if (this._initial_scroll_pending) {
+      this.shadow_el.addEventListener("load", (event) => {
+        if (event.target instanceof HTMLLinkElement && this._initial_scroll_pending) {
           this._apply_initial_scroll()
         }
       }, true)
