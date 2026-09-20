@@ -212,7 +212,7 @@ jobs:
       OKTA_OAUTH_PASSWORD: ${{ secrets.OKTA_OAUTH_PASSWORD }}
       ENV: ${{ matrix.environment }}
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@e5ffb7d47f47c735c590769e1357c014b0969852 # v1.0.11
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@0d2b48d28d94714bf566148cd050233ec875a92d # v1.0.13
         with:
           environments: ${{ matrix.environment }}
         id: install
