@@ -159,6 +159,9 @@ jobs:
           environments: ${{ matrix.environment }}
           opengl: true
       - name: Test unit
+        env:
+          # So a crashed worker reports what every worker was running
+          PYTEST_TRACE_TESTS: "1"
         run: |
           pixi run -e "${ENV}" test-unit $COV
       # A worker killed with SIGKILL, e.g. when out of memory, leaves no traceback

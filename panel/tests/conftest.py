@@ -51,6 +51,7 @@ config.apply_signatures = False
 JUPYTER_PORT = 8887
 JUPYTER_TIMEOUT = 15 # s
 JUPYTER_PROCESS = None
+_REAL_STDERR = None
 
 if os.name != 'nt':
     import resource
@@ -166,10 +167,18 @@ def pytest_configure(config):
         _trace_worker_exit()
 
 
+def _real_stderr():
+    # pytest captures stderr, so keep a copy of the original
+    global _REAL_STDERR
+    if _REAL_STDERR is None:
+        _REAL_STDERR = os.fdopen(os.dup(sys.__stderr__.fileno()), "w")
+    return _REAL_STDERR
+
+
 def _trace_worker_exit():
     # A crashed xdist worker leaves no traceback, so dump the stacks when it
     # is killed by a signal or exits without unwinding.
-    stderr = os.fdopen(os.dup(sys.__stderr__.fileno()), "w")
+    stderr = _real_stderr()
     if hasattr(faulthandler, "register"):
         for sig in (signal.SIGTERM, signal.SIGHUP, signal.SIGQUIT):
             faulthandler.register(sig, file=stderr, all_threads=True, chain=True)
@@ -183,6 +192,42 @@ def _trace_worker_exit():
 
     os._exit = _exit
 
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_protocol(item, nextitem):
+    # A crash report then shows what every worker was running
+    if not os.environ.get("PYTEST_TRACE_TESTS"):
+        yield
+        return
+    stderr = _real_stderr()
+    worker = os.environ.get("PYTEST_XDIST_WORKER", "main")
+    stderr.write(f"{time.time():.3f} {worker} start {item.nodeid}\n")
+    stderr.flush()
+    yield
+    stderr.write(f"{time.time():.3f} {worker} end   {item.nodeid}\n")
+    stderr.flush()
+
+
+@pytest.hookimpl(optionalhook=True)
+def pytest_testnodedown(node, error):
+    # xdist only reports that a worker went down, not how
+    if error is None:
+        return
+    popen = getattr(getattr(node.gateway, "_io", None), "popen", None)
+    code = popen.poll() if popen is not None else None
+    if code is None and popen is not None:
+        try:
+            code = popen.wait(timeout=5)
+        except Exception:
+            pass
+    if code is None:
+        how = "with an unknown exit status"
+    elif code < 0:
+        how = f"killed by {signal.Signals(-code).name}"
+    else:
+        how = f"with exit code {code}"
+    sys.stderr.write(f"\nWorker {node.gateway.id} went down {how}: {error}\n")
+    sys.stderr.flush()
 
 def pytest_generate_tests(metafunc):
     repeat = getattr(metafunc.config.option, 'repeat', None)
