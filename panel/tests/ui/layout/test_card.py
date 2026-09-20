@@ -204,6 +204,8 @@ def test_card_widget_not_collapsed(page, card_components):
     slider_input.click()
 
     wait_until(lambda: w2.value == 'F', page)
+    # A collapse the click on the slider caused arrives with its value
+    wait_until(lambda: w1.value != 0, page)
     assert not card.collapsed
 
 

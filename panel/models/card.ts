@@ -5,6 +5,7 @@ import type * as p from "@bokehjs/core/properties"
 import {GridAlignmentLayout} from "@bokehjs/models/layouts/alignments"
 import {LayoutDOMView} from "@bokehjs/models/layouts/layout_dom"
 import type {UIElementView} from "@bokehjs/models/ui/ui_element"
+import {Widget} from "@bokehjs/models/widgets/widget"
 
 import {Column, ColumnView} from "./column"
 
@@ -225,14 +226,26 @@ export class CardView extends ColumnView {
   }
 
   _toggle_button(e: MouseEvent): void {
-    const is_panel_widget = (el: EventTarget): boolean =>
+    const widget_els = new Set<HTMLElement>()
+    const collect = (view: UIElementView): void => {
+      if (view.model instanceof Widget) {
+        widget_els.add(view.el)
+      }
+      for (const child of (view as any).child_views ?? []) {
+        collect(child)
+      }
+    }
+    collect(this.child_views[0])
+
+    const is_widget = (el: EventTarget): boolean =>
       el instanceof HTMLInputElement || (
-        el instanceof HTMLElement &&
-	Array.from(el.classList).some((c) => c.startsWith("bk-panel-models-widgets-")))
+        el instanceof HTMLElement && (
+          widget_els.has(el) ||
+          Array.from(el.classList).some((c) => c.startsWith("bk-panel-models-widgets-"))))
 
     for (const el of e.composedPath()) {
-      // If the click came from any Panel widget in the header, don't toggle.
-      if (is_panel_widget(el)) {
+      // A click on a widget in the header operates the widget, not the card.
+      if (is_widget(el)) {
         return
       }
     }
