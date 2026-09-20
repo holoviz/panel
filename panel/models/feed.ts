@@ -93,12 +93,14 @@ export class FeedView extends ColumnView {
     this.model.on_event(ScrollLatestEvent, async (event: ScrollLatestEvent) => {
       if (event.rerender) {
         this._rendered = false
-        // The children it rerendered may not have arrived yet
-        this._latest_scroll_pending = true
       }
       const limit = event.scroll_limit
       if (limit != null && this.distance_from_latest > limit) {
         return
+      }
+      if (event.rerender) {
+        // The children it rerendered may not have arrived yet
+        this._latest_scroll_pending = true
       }
       // Until the scroll lands, the children at the old position report as
       // visible and make the server load that range again.

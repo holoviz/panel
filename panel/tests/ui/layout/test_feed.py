@@ -152,6 +152,25 @@ def test_feed_scroll_to_latest_while_building_latest_children(page):
     wait_until(at_latest, page)
 
 
+def test_feed_scroll_to_latest_outside_limit_stays(page):
+    feed = Feed(*list(range(ITEMS)), height=250)
+    serve_component(page, feed)
+
+    feed_el = page.locator(".bk-panel-models-feed-Feed")
+    wait_until(lambda: int(page.locator('pre').last.inner_text() or 0) < 0.9 * ITEMS, page)
+
+    # The latest objects are not loaded, so the server rerenders them, but the
+    # distance to them is beyond the limit and the view must stay put
+    feed.scroll_to_latest(scroll_limit=50)
+
+    def away_from_latest():
+        assert feed_el.evaluate('(el) => el.scrollHeight - el.scrollTop - el.clientHeight') > 100
+    wait_until(away_from_latest, page)
+    # The scroll would land once the rerendered children arrive
+    page.wait_for_timeout(500)
+    away_from_latest()
+
+
 def test_feed_scroll_to_latest_within_limit(page):
     """Test that scroll_to_latest only triggers within the specified limit"""
     feed = Feed(
