@@ -396,14 +396,24 @@ def wait_for_server(port, prefix=None, timeout=3):
 
 
 def terminate_panel_serve(p):
+    pgid = None
     if ON_POSIX:
-        # `--num-procs` forks children that outlive the process it started them from
         try:
-            os.killpg(os.getpgid(p.pid), signal.SIGTERM)
-        except (ProcessLookupError, PermissionError):
+            pgid = os.getpgid(p.pid)
+        except OSError:
             pass
     p.terminate()
-    p.wait()
+    try:
+        p.wait(timeout=20)
+    except subprocess.TimeoutExpired:
+        p.kill()
+        p.wait()
+    if pgid is not None:
+        # `--num-procs` forks children that outlive the process it started them from
+        try:
+            os.killpg(pgid, signal.SIGKILL)
+        except (ProcessLookupError, PermissionError):
+            pass
 
 
 @contextlib.contextmanager
