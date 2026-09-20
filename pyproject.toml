@@ -221,8 +221,6 @@ asyncio_default_fixture_loop_scope = "function"
 xfail_strict = true
 minversion = "7"
 log_cli_level = "INFO"
-# Dump the stacks of a test that stalls before CI cancels the job
-faulthandler_timeout = 300
 filterwarnings = [
     "error",
     # 2023-11: `pkg_resources` is deprecated

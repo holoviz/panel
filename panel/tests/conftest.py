@@ -172,6 +172,7 @@ def _real_stderr():
     global _REAL_STDERR
     if _REAL_STDERR is None:
         _REAL_STDERR = os.fdopen(os.dup(sys.__stderr__.fileno()), "w")
+        atexit.register(_REAL_STDERR.close)
     return _REAL_STDERR
 
 
@@ -193,19 +194,34 @@ def _trace_worker_exit():
     os._exit = _exit
 
 
+# Repeated dumps tell a frozen thread from a looping one
+STALL_DUMP_INTERVAL = float(os.environ.get("PYTEST_STALL_DUMP_INTERVAL", 120))
+
+
 @pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_protocol(item, nextitem):
-    # A crash report then shows what every worker was running
-    if not os.environ.get("PYTEST_TRACE_TESTS"):
+    trace = bool(os.environ.get("PYTEST_TRACE_TESTS"))
+    if not (trace or STALL_DUMP_INTERVAL > 0):
         yield
         return
     stderr = _real_stderr()
     worker = os.environ.get("PYTEST_XDIST_WORKER", "main")
-    stderr.write(f"{time.time():.3f} {worker} start {item.nodeid}\n")
-    stderr.flush()
-    yield
-    stderr.write(f"{time.time():.3f} {worker} end   {item.nodeid}\n")
-    stderr.flush()
+    if STALL_DUMP_INTERVAL > 0:
+        faulthandler.dump_traceback_later(
+            STALL_DUMP_INTERVAL, repeat=True, file=stderr, exit=False
+        )
+    try:
+        # A crash report then shows what every worker was running
+        if trace:
+            stderr.write(f"{time.time():.3f} {worker} start {item.nodeid}\n")
+            stderr.flush()
+        yield
+        if trace:
+            stderr.write(f"{time.time():.3f} {worker} end   {item.nodeid}\n")
+            stderr.flush()
+    finally:
+        if STALL_DUMP_INTERVAL > 0:
+            faulthandler.cancel_dump_traceback_later()
 
 
 @pytest.hookimpl(optionalhook=True)
