@@ -43,11 +43,8 @@ export class FeedView extends ColumnView {
   override initialize(): void {
     super.initialize()
     this._sync = true
-    // The Feed only clips its children when it is a scroll container.
-    // Otherwise it grows to fit its content and an ancestor (e.g. the page)
-    // scrolls, so visibility must be measured against the viewport; rooting on
-    // this.el would treat every rendered child - including the load_buffer - as
-    // visible and expand visible_range until all objects load (#8661).
+    // A Feed that does not clip lets an ancestor scroll, and rooting on it
+    // would report every child visible until all objects load (#8661).
     const is_scroll_container = this.is_scroll_container
     const root = is_scroll_container ? this.el : null
     this._intersection_observer = new IntersectionObserver((entries) => {

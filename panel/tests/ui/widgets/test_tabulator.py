@@ -1466,7 +1466,6 @@ def test_tabulator_patch_no_vertical_rescroll(page):
 
     expect(page.locator(f'text="{target}"')).to_be_attached()
 
-    # Scroll to the bottom
     table_holder = page.locator('.pnx-tabulator .tabulator-tableholder')
     table_holder.evaluate("el => { el.scrollTop = el.scrollHeight; }")
     # A redraw may reset the scroll again, so keep the position the check saw.
