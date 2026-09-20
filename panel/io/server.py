@@ -1148,8 +1148,7 @@ class ComponentResourceHandler(StaticFileHandler):
     ]
 
     def initialize(self, path: str | t.Literal['root'] = 'root', default_filename: str | None = None, *args: t.Any, **kwargs: t.Any):
-        self.root = path
-        self.default_filename = default_filename
+        super().initialize(path, default_filename, *args, **kwargs)
 
     def parse_url_path(self, path: str) -> str:
         """

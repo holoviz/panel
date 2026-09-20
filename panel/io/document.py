@@ -109,7 +109,10 @@ def _client_has_document(doc: Document) -> bool:
     """
     if state._connected.get(doc):
         return True
-    if doc.session_context is None:
+    if doc.session_context is None and not any(
+        comm is not None and view_doc is doc
+        for _, _, view_doc, comm in state._views.values()
+    ):
         # Serializing the document, e.g. to save it, also marks models sent
         return False
     live = getattr(doc.models, '_models', None)

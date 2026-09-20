@@ -561,6 +561,29 @@ def test_client_has_document_ignores_sessionless_document():
     assert not _client_has_document(doc)
 
 
+def test_client_has_document_counts_a_notebook_comm():
+    doc = Document()
+    root = pn.Column().get_root(doc)
+    doc.add_root(root)
+
+    doc.to_json()
+    _state._views[root.ref['id']] = (None, root, doc, object())
+    try:
+        assert _client_has_document(doc)
+    finally:
+        del _state._views[root.ref['id']]
+
+
+def test_keep_unsent_models_new_skips_a_bokeh_without_new_models():
+    doc = Document()
+    doc.add_root(pn.Column().get_root(doc))
+    doc._session_context = lambda: MockSessionContext(doc)
+    del doc.models._new_models
+    _keep_unsent_models_new(doc)
+
+    assert not getattr(doc.apply_json_patch, '_panel_keeps_unsent', False)
+
+
 def test_init_doc_keeps_unsent_models_new_once():
     doc = Document()
     doc.add_root(pn.Column().get_root(doc))

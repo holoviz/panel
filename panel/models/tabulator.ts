@@ -678,10 +678,10 @@ export class DataTabulatorView extends HTMLBoxView {
     // Tabulator marks the edited cell with `tabulator-editing` while an editor is active.
     // A header filter list is a popup outside the cell, which a redraw would close.
     // A popup left behind hidden must not hold the redraw back forever.
-    const filter_list = this.shadow_el.querySelector(".tabulator-edit-list")
+    const filter_lists = [...this.shadow_el.querySelectorAll(".tabulator-edit-list")]
     return (
       this.container.querySelector(".tabulator-editing") !== null ||
-      (filter_list instanceof HTMLElement && filter_list.offsetParent !== null)
+      filter_lists.some((el) => el instanceof HTMLElement && el.offsetParent !== null)
     )
   }
 
