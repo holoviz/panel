@@ -570,12 +570,23 @@ class _SimpleRequestHandler(http.server.SimpleHTTPRequestHandler):
 
 @contextlib.contextmanager
 def reverse_proxy(port=None, proxy_port=None):
-    if port is None and proxy_port is None:
-        port, proxy_port = get_open_ports(2)
-    elif proxy_port is None:
-        proxy_port, = get_open_ports(1)
-    elif port is None:
+    if port is None:
         port, = get_open_ports(1)
+    # A free port can be taken again before caddy binds it, so pick another
+    for _ in range(5 if proxy_port is None else 1):
+        process, bound_port = _start_reverse_proxy(port, proxy_port or get_open_ports(1)[0])
+        if process.poll() is None:
+            break
+    else:
+        raise RuntimeError('caddy could not bind a port')
+    try:
+        yield port, bound_port
+    finally:
+        process.terminate()
+        process.wait()
+
+
+def _start_reverse_proxy(port, proxy_port):
     headers = {
         "request": {
             "set": {
@@ -610,7 +621,7 @@ def reverse_proxy(port=None, proxy_port=None):
         ]
     }
     proxy_config = {
-        "listen": [f":{proxy_port}"],
+        "listen": [f"127.0.0.1:{proxy_port}"],
         "routes": [route_config, ws_config]
     }
     config = {
@@ -619,12 +630,31 @@ def reverse_proxy(port=None, proxy_port=None):
     }
     process = subprocess.Popen(
         ['caddy', 'run', '--config', '-'],
-        stdin=subprocess.PIPE, close_fds=ON_POSIX, text=True
+        stdin=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=ON_POSIX, text=True
     )
     process.stdin.write(json.dumps(config))
     process.stdin.close()
-    try:
-        yield port, proxy_port
-    finally:
-        process.terminate()
-        process.wait()
+    lines: Queue[str | None] = Queue()
+
+    def forward_log():
+        with process.stderr:
+            for line in process.stderr:
+                sys.stderr.write(line)
+                lines.put(line)
+        lines.put(None)
+
+    Thread(target=forward_log, daemon=True).start()
+    # Whatever else holds the port would answer a probe of it, so only
+    # caddy can tell whether it is serving.
+    deadline = time.monotonic() + 10
+    while (remaining := deadline - time.monotonic()) > 0:
+        try:
+            line = lines.get(timeout=remaining)
+        except Empty:
+            break
+        if line is None:
+            process.wait()
+            break
+        if 'serving initial configuration' in line:
+            break
+    return process, proxy_port

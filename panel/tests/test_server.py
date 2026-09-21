@@ -3,6 +3,7 @@ import datetime as dt
 import logging
 import os
 import pathlib
+import socket
 import threading
 import time
 import weakref
@@ -19,6 +20,7 @@ from packaging.version import Version
 from panel.config import config
 from panel.io import state
 from panel.io.application import Application
+from panel.io.compile import check_cli_tool
 from panel.io.resources import DIST_DIR, JS_VERSION
 from panel.io.server import (
     _MAX_APP_PATH_CHARS, _MAX_ROUTE_PARAM_VALUE_CHARS, INDEX_HTML, RootHandler,
@@ -32,8 +34,10 @@ from panel.pane import Markdown
 from panel.param import ParamFunction
 from panel.reactive import ReactiveHTML
 from panel.template import BootstrapTemplate
+from panel.tests import util as test_util
 from panel.tests.util import (
-    get_open_ports, serve_and_request, serve_and_wait, wait_until,
+    get_open_ports, reverse_proxy as reverse_proxy_ctx, serve_and_request,
+    serve_and_wait, wait_until,
 )
 from panel.widgets import (
     Button, Tabulator, Terminal, TextInput,
@@ -1910,3 +1914,20 @@ def test_threaded_server_stops_when_autoreload_failed(monkeypatch):
     state.kill_all_servers()
 
     admin_context.run_unload_hook.assert_called_once()
+
+
+@pytest.mark.skipif(not check_cli_tool("caddy"), reason="caddy is not installed")
+def test_reverse_proxy_picks_another_port_when_taken(monkeypatch):
+    taken = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    taken.bind(('127.0.0.1', 0))
+    taken.listen()
+    taken_port = taken.getsockname()[1]
+    ports = iter([(taken_port,)])
+    open_ports = test_util.get_open_ports
+    monkeypatch.setattr(test_util, 'get_open_ports', lambda n=1: next(ports, None) or open_ports(n))
+    try:
+        with reverse_proxy_ctx(port=1234) as (_, proxy_port):
+            assert proxy_port != taken_port
+            socket.create_connection(('127.0.0.1', proxy_port), timeout=5).close()
+    finally:
+        taken.close()
