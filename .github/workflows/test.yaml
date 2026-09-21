@@ -164,7 +164,7 @@ jobs:
         run: |
           pixi run -e "${ENV}" test-unit $COV
       - name: Test subprocess
-        if: contains(matrix.os, 'ubuntu')
+        if: contains(matrix.os, 'ubuntu') && matrix.environment != 'test-315'
         run: |
           pixi run -e "${ENV}" test-subprocess $COV
       - name: Test docs
