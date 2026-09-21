@@ -1,7 +1,7 @@
 [workspace]
 name = "panel"
 channels = ["pyviz/label/dev", "bokeh/label/rc", "conda-forge"]
-platforms = ["linux-64", "osx-arm64", "osx-64", "win-64"]
+platforms = ["linux-64", "osx-arm64", "win-64"]
 
 [activation.env]
 MPLBACKEND = "Agg"
@@ -11,9 +11,8 @@ PYTHONIOENCODING = "utf-8"
 default = [
     "py312",
     "required",
+    "optional",
     "test-core",
-    "test",
-    "example",
     "test-example",
     "test-unit-task",
     "test-ui",
@@ -24,31 +23,42 @@ default = [
 ]
 
 [environments.test-312]
-features = ["py312", "required", "test-core", "test", "example", "test-example", "test-unit-task"]
+features = ["py312", "required", "test-core", "optional", "test-example", "test-unit-task"]
 no-default-feature = true
 
 [environments.test-313]
-features = ["py313", "required", "test-core", "test", "example", "test-example", "test-unit-task"]
+features = ["py313", "required", "test-core", "optional", "test-example", "test-unit-task"]
 no-default-feature = true
 
 [environments.test-314]
-features = ["py314", "required", "test-core", "test", "example", "test-example", "test-unit-task"]
+features = ["py314", "required", "test-core", "optional", "test-example", "test-unit-task"]
+no-default-feature = true
+
+[environments.test-315]
+features = ["py315", "required", "test-core", "optional-315", "test-example", "test-unit-task"]
 no-default-feature = true
 
 [environments.test-ui]
-features = ["py313", "required", "test-core", "test", "test-ui"]
+features = ["py313", "required", "test-core", "optional", "test-ui"]
 no-default-feature = true
 
 [environments.test-core]
 features = ["py314", "required", "test-core", "test-unit-task"]
 no-default-feature = true
 
+[feature.py315]
+channels = ["conda-forge/label/python_rc"]
+
+[feature.py315.dependencies]
+python = "3.15.*"
+_python_rc = "*"
+
 [environments.test-type]
-features = ["py312", "required", "type", "example", "test"]
+features = ["py312", "required", "type", "optional"]
 no-default-feature = true
 
 [environments.docs]
-features = ["py312", "required", "example", "doc"]
+features = ["py312", "optional", "doc"]
 no-default-feature = true
 
 [environments.build]
@@ -107,19 +117,27 @@ python = "3.14.*"
 [feature.py314.activation.env]
 COVERAGE_CORE = "sysmon"
 
-[feature.example.dependencies]
+[feature.optional.dependencies]
 # Optional dependencies - recommended
 holoviews = ">=1.16.0"
 jupyterlab = "*"
 matplotlib-base = "*"
 pillow = "*"
 plotly = ">=4.0"
-# Example dependencies
+# Optional dependencies - dev
+watchfiles = "*"
+# Dependencies
 aiohttp = "*"
 altair = "*"
+anywidget = "*"
 bokeh_sampledata = "*"
+caddy = "*"
 croniter = "*"
+cryptography = "*"
 datashader = "*"
+diskcache = "*"
+django = "*"
+fastapi = "*"
 fastparquet = "*"
 folium = "*"
 fsspec = "*"
@@ -133,6 +151,9 @@ ipywidgets = "*"
 ipywidgets_bokeh = ">=1.8.0"
 jupyter_bokeh = ">=3.0.7"
 networkx = ">=2.5"
+numba = "*"
+polars = "*"
+pyarrow = "*"
 # pydeck = ">=0.8"  # Add back when it support ipywidgets 8.0
 pyecharts = "*"
 pygraphviz = "*"
@@ -143,14 +164,78 @@ reacton = "*"
 s3fs = "*"
 scikit-image = "*"
 scikit-learn = "*"
+scipy = "*"
 seaborn = "*"
+starlette = "*"
 streamz = "*"
 textual = "*"
 tqdm = ">=4.48.0"
+uvicorn = "*"
 vega_datasets = "*"
+vl-convert-python = "*"
 vtk = "*"
 xarray = "*"
 xgboost = "*"
+
+[feature.optional-315.dependencies]
+# Recommended dependencies
+holoviews = ">=1.16.0"
+jupyterlab = "*"
+matplotlib-base = "*"
+pillow = "*"
+plotly = ">=4.0"
+# Dev Dependencies
+watchfiles = "*"
+# Dependencies
+aiohttp = "*"
+altair = "*"
+anywidget = "*"
+bokeh_sampledata = "*"
+caddy = "*"
+croniter = "*"
+cryptography = "*"
+# datashader = "*"
+diskcache = "*"
+django = "*"
+# fastapi = "*"  # needs pydantic 2
+# fastparquet = "*"
+folium = "*"
+fsspec = "*"
+graphviz = "*"
+hvplot = "*"
+ipyleaflet = "*"
+ipympl = "*"
+# ipyvolume = "*"
+ipyvuetify = "*"
+ipywidgets = "*"
+ipywidgets_bokeh = ">=1.8.0"
+jupyter_bokeh = ">=3.0.7"
+networkx = ">=2.5"
+# numba = "*"
+polars = "*"
+# pyarrow = "*"
+# pydeck = ">=0.8"  # Add back when it support ipywidgets 8.0
+pyecharts = "*"
+pygraphviz = "*"
+# pyinstrument = ">=4.0"
+python-graphviz = "*"
+# pyvista = ">=0.47"
+reacton = "*"
+s3fs = "*"
+# scikit-image = "*"
+# scikit-learn = "*"
+# scipy = "*"
+# seaborn = "*"
+starlette = "*"
+streamz = "*"
+textual = "*"
+tqdm = ">=4.48.0"
+uvicorn = "*"
+vega_datasets = "*"
+vl-convert-python = "*"
+# vtk = "*"
+xarray = "*"
+# xgboost = "*"
 
 # =================== DEV ===================
 
@@ -175,37 +260,6 @@ pytest-github-actions-annotate-failures = "*"
 pytest-rerunfailures = "*"
 pytest-timeout = "*"
 pytest-xdist = "*"
-
-[feature.test.dependencies]
-# Optional dependencies - recommended
-holoviews = ">=1.16.0"
-jupyterlab = "*"
-matplotlib-base = "*"
-pillow = "*"
-plotly = ">=6.0"
-# Optional dependencies - dev
-watchfiles = "*"
-# Test dependencies
-altair = "*"
-anywidget = "*"
-bokeh_sampledata = "*"
-caddy = "*"
-cryptography = "*"
-diskcache = "*"
-django = "*"
-fastapi = "*"
-folium = "*"
-ipympl = "*"
-ipyvuetify = "*"
-ipywidgets_bokeh = "*"
-numba = "*"
-polars = "*"
-pyarrow = "*"
-reacton = "*"
-scipy = "*"
-textual = "*"
-uvicorn = "*"
-vl-convert-python = "*"
 
 [feature.test-unit-task.tasks] # So it is not showing up in the test-ui environment
 test-unit = 'pytest panel/tests -n logical --dist loadgroup'
@@ -343,6 +397,3 @@ lite-build = "bash scripts/jupyterlite/build.sh"
 # Service worker only work on 127.0.0.1
 # https://jupyterlite.readthedocs.io/en/latest/howto/configure/advanced/service-worker.html#limitations
 lite-server = "python -m http.server --directory ./lite/dist --bind 127.0.0.1"
-
-
-# relock count: 0
