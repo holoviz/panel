@@ -85,7 +85,6 @@ from .chat import (
     ChatAreaInput, ChatFeed, ChatInterface, ChatMessage, ChatReactionIcons,
     ChatStep,
 )
-from .designs import Anaconda
 from .indicators import String
 from .layout import (
     Accordion, Alert, Backdrop, Card, Column, Container, Details, Dialog,
