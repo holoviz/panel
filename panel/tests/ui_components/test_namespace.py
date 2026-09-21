@@ -29,8 +29,8 @@ CLASSIC_MODULES = {
 }
 
 SUBMODULES = (
-    'base', 'chat', 'designs', 'indicators', 'layout', 'notifications', 'pane',
-    'template', 'theme', 'widgets', 'wrappers'
+    'base', 'chat', 'indicators', 'layout', 'notifications', 'pane', 'template',
+    'theme', 'widgets', 'wrappers'
 )
 
 COMPONENT_SUBMODULES = (
