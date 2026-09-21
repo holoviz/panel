@@ -129,14 +129,13 @@ export class FeedView extends ColumnView {
       }
     }
     if (this._latest_scroll_pending) {
-      // The server may answer with another window, so keep scrolling until the
-      // last child it renders stops changing.
+      // The server may still answer with another window
       const last = this.child_views.at(-1)?.model.id ?? null
       this._latest_scroll_pending = last !== this._latest_last
       this._latest_last = last
       this._scroll_to_latest_children()
     } else if (at_latest && this.distance_from_latest > 1) {
-      // The children the rebuild rendered grew below a Feed at its latest one
+      // A rebuild can grow the children below a Feed at its latest one
       this.scroll_to_latest()
     }
   }

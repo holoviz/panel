@@ -572,7 +572,7 @@ class _SimpleRequestHandler(http.server.SimpleHTTPRequestHandler):
 def reverse_proxy(port=None, proxy_port=None):
     if port is None:
         port, = get_open_ports(1)
-    # A free port can be taken again before caddy binds it, so pick another
+    # A free port can be taken again before caddy binds it
     for _ in range(5 if proxy_port is None else 1):
         process, bound_port = _start_reverse_proxy(port, proxy_port or get_open_ports(1)[0])
         if process.poll() is None:
