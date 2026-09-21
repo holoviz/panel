@@ -638,11 +638,15 @@ def _start_reverse_proxy(port, proxy_port):
     process.stdin.write(json.dumps(config))
     process.stdin.close()
     lines: Queue[str | None] = Queue()
+    # Caddy logs after the test that started it, which only the stderr the
+    # test captured at the start keeps out of the test run.
+    log = os.fdopen(os.dup(2), 'w')
 
     def forward_log():
-        with process.stderr:
+        with process.stderr, log:
             for line in process.stderr:
-                sys.stderr.write(line)
+                log.write(line)
+                log.flush()
                 lines.put(line)
         lines.put(None)
 
