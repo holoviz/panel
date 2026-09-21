@@ -173,6 +173,7 @@ pytest-asyncio = "*"
 pytest-cov = "*"
 pytest-github-actions-annotate-failures = "*"
 pytest-rerunfailures = "*"
+pytest-timeout = "*"
 pytest-xdist = "*"
 
 [feature.test.dependencies]
