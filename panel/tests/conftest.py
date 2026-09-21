@@ -61,6 +61,11 @@ for e in os.environ:
     if e.startswith(('BOKEH_', "PANEL_")) and e not in ("PANEL_LOG_LEVEL", "PANEL_TEST_AUTH"):
         os.environ.pop(e, None)
 
+# The IPython shells of parallel test processes would otherwise share one history database
+IPYTHON_DIR = tempfile.mkdtemp(prefix="panel-ipython-")
+os.environ["IPYTHONDIR"] = IPYTHON_DIR
+atexit.register(shutil.rmtree, IPYTHON_DIR, ignore_errors=True)
+
 @cache
 def internet_available(host="8.8.8.8", port=53, timeout=3):
     """Check if the internet connection is available."""
