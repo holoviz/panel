@@ -8,6 +8,12 @@ import {LayoutDOM, LayoutDOMView} from "@bokehjs/models/layouts/layout_dom"
 import type {UIElement} from "@bokehjs/models/ui/ui_element"
 import type * as p from "@bokehjs/core/properties"
 
+import type {ExternalResourcesModel, ResourceSpec} from "./resources"
+import {
+  await_resources, define_external_resources, load_resources,
+  render_resource_error,
+} from "./resources"
+
 /**
  * Re-renders a view, including its layout.
  *
@@ -56,6 +62,11 @@ export class PanelMarkupView extends WidgetView {
 
   override async lazy_initialize() {
     await super.lazy_initialize()
+
+    const error = await await_resources(this.model as unknown as ExternalResourcesModel)
+    if (error != null) {
+      render_resource_error(this, error, PanelMarkupView.prototype.render)
+    }
 
     if (this.provider.status == "not_started" || this.provider.status == "loading") {
       this.provider.ready.connect(() => {
@@ -137,7 +148,7 @@ export class PanelMarkupView extends WidgetView {
   }
 }
 
-export function set_size(el: HTMLElement, model: HTMLBox, adjust_margin: boolean = true): void {
+export function set_size(el: HTMLElement, model: LayoutDOM, adjust_margin: boolean = true): void {
   let width_policy = model.width != null ? "fixed" : "fit"
   let height_policy = model.height != null ? "fixed" : "fit"
   const {sizing_mode, margin} = model
@@ -231,6 +242,14 @@ export abstract class HTMLBoxView extends LayoutDOMView {
     })
   }
 
+  override async lazy_initialize(): Promise<void> {
+    await super.lazy_initialize()
+    const error = await await_resources(this.model)
+    if (error != null) {
+      render_resource_error(this, error, HTMLBoxView.prototype.render)
+    }
+  }
+
   override render(): void {
     super.render()
     set_size(this.el, this.model)
@@ -269,7 +288,9 @@ export abstract class HTMLBoxView extends LayoutDOMView {
 
 export namespace HTMLBox {
   export type Attrs = p.AttrsOf<Props>
-  export type Props = LayoutDOM.Props
+  export type Props = LayoutDOM.Props & {
+    external_resources: p.Property<ResourceSpec | null>
+  }
 }
 
 export interface HTMLBox extends HTMLBox.Attrs {}
@@ -279,5 +300,22 @@ export abstract class HTMLBox extends LayoutDOM {
 
   constructor(attrs?: Partial<HTMLBox.Attrs>) {
     super(attrs)
+  }
+
+  static {
+    define_external_resources(this)
+  }
+
+  /**
+   * Starts loading the component's external libraries.
+   *
+   * Every model in a document is initialized before the first view is built
+   * and `build_views` then builds them one at a time, so kicking the fetch
+   * off here is what keeps a page of ten components waiting for the slowest
+   * library rather than for all of them in sequence.
+   */
+  override initialize(): void {
+    super.initialize()
+    load_resources(this)
   }
 }

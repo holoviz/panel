@@ -1,3 +1,13 @@
+"""
+Native FastAPI integration for Panel applications.
+
+Panel applications are served by :class:`panel.io.asgi.PanelASGI`, a
+framework neutral ASGI application. Rather than registering one route per
+application on the FastAPI app, the ASGI application is installed as a
+middleware which claims the paths Panel owns and delegates everything else
+to FastAPI. This makes the integration insensitive to the order in which
+Panel and FastAPI routes are declared.
+"""
 from __future__ import annotations
 
 import asyncio
@@ -5,237 +15,141 @@ import socket
 import typing as t
 import uuid
 
+from contextlib import asynccontextmanager
 from functools import wraps
-from http.cookies import SimpleCookie
 
-import tornado
-
-from ..config import config
-from .application import build_applications
-from .document import _cleanup_doc, extra_socket_handlers
-from .resources import COMPONENT_PATH
-from .server import (
-    ComponentResourceHandler, _sanitize_route_context, _strip_prefixed_path,
-    _validate_token_for_resign, server_html_page_for_session,
-)
+from .asgi import PanelASGI, build_asgi_app, dispatch_asgi
 from .state import state
 from .threads import StoppableThread
 
 try:
-    from bokeh.util.token import generate_jwt_token, generate_session_id
-    from bokeh_fastapi import BokehFastAPI
-    from bokeh_fastapi.handler import (
-        DocHandler, SessionHandler as BkSessionHandler, WSHandler,
-    )
-    from fastapi import (
-        FastAPI, HTTPException, Query, Request,
-    )
-    from fastapi.responses import FileResponse
-    from tornado.httputil import HTTPHeaders, HTTPServerRequest
-    from tornado.ioloop import IOLoop
+    from fastapi import FastAPI
 except ImportError as e:
-    if e.name == "bokeh_fastapi":
-        msg = "bokeh_fastapi must be installed to use the panel.io.fastapi module."
+    if e.name == 'fastapi':
+        msg = 'fastapi must be installed to use the panel.io.fastapi module.'
         raise ImportError(msg) from None
     raise e
 
 if t.TYPE_CHECKING:
-    from bokeh.application import Application as BkApplication
-    from bokeh.document.events import DocumentPatchedEvent
-    from bokeh.protocol.message import Message
+    from bokeh.server.core import BokehServerCore
     from uvicorn import Server
 
     from .application import TViewableFuncOrPath
+    from .asgi import Receive, Scope, Send
     from .location import Location
+
+__all__ = (
+    "add_application",
+    "add_applications",
+    "dispatch_fastapi",
+    "get_server",
+    "serve",
+)
+
+# Kept for backward compatibility, the write dispatcher is now shared by all
+# ASGI transports.
+dispatch_fastapi = dispatch_asgi
 
 #---------------------------------------------------------------------
 # Private API
 #---------------------------------------------------------------------
 
-DocHandler.render_session = server_html_page_for_session
+# Routes Panel serves as a convenience but which an explicitly declared
+# FastAPI route should win, so that embedding Panel does not take over the
+# root of an existing application.
+DEFERRED_ROUTES = ('/', '/favicon.ico')
 
 
-def _route_context(
-    request_or_scope: Request | dict[str, t.Any], suffix: str = '', prefix: str = ''
-) -> tuple[dict[str, str], str | None]:
-    if isinstance(request_or_scope, dict):
-        path_params = request_or_scope.get('path_params') or {}
-        path = request_or_scope.get('path')
-    else:
-        path_params = request_or_scope.path_params
-        path = request_or_scope.url.path
-    if path and prefix:
-        path = _strip_prefixed_path(path, prefix)
-        if not path.startswith('/'):
-            path = '/' + path
-    if path and suffix and path.endswith(suffix):
-        path = path[:-len(suffix)] or '/'
-    return _sanitize_route_context(path_params, path)
+class PanelDispatchMiddleware:
+    """
+    ASGI middleware which forwards the routes owned by one or more
+    ``PanelASGI`` applications and delegates all other requests to the
+    wrapped application.
+    """
 
+    def __init__(self, app, fastapi: FastAPI, panel_apps: list[PanelASGI]) -> None:
+        self.app = app
+        self.fastapi = fastapi
+        self.panel_apps = panel_apps
 
-def _prefix_path(path: str, prefix: str) -> str:
-    if not prefix:
-        return path
-    if not path.startswith('/'):
-        path = '/' + path
-    if path == '/':
-        return prefix
-    if path.startswith(prefix + '/') or path == prefix:
-        return path
-    return f"{prefix}{path}"
-
-
-async def _get_fastapi_session(self, request: Request, session_id: t.Any):
-    app = self.application
-    if session_id is None:
-        session_id = generate_session_id(
-            secret_key=app.secret_key, signed=app.sign_sessions
+    def _declared_by_fastapi(self, scope: Scope) -> bool:
+        from starlette.routing import Match
+        return any(
+            route.matches(scope)[0] is Match.FULL
+            for route in self.fastapi.router.routes
         )
 
-    route_params, app_path = _route_context(
-        request, prefix=getattr(self.application, '_prefix', '')
-    )
-    uri = f"{request.url.path}{f'?{request.url.query}' if request.url.query else ''}"
-    if tornado.version_info < (6, 5, 0) and request.client is not None:
-        # Compatibility with changes made in Tornado 6.5
-        # https://github.com/tornadoweb/tornado/pull/3487
-        tornado_request = HTTPServerRequest(
-            method=request.method,
-            uri=uri,
-            headers=HTTPHeaders(request.headers),
-            host=request.client.host,
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope['type'] in ('http', 'websocket'):
+            for panel_app in self.panel_apps:
+                if not panel_app.handles(scope):
+                    continue
+                if (
+                    panel_app._route_path(scope) in DEFERRED_ROUTES and
+                    self._declared_by_fastapi(scope)
+                ):
+                    break
+                await panel_app(scope, receive, send)
+                return
+        await self.app(scope, receive, send)
+
+
+class PanelFastAPI:
+    """
+    Handle bundling a FastAPI application with the ``PanelASGI``
+    application serving the Panel application(s) added to it.
+    """
+
+    def __init__(self, app: FastAPI, asgi: PanelASGI) -> None:
+        self.app = app
+        self.asgi = asgi
+
+    @property
+    def core(self) -> BokehServerCore:
+        return self.asgi.core
+
+    @property
+    def applications(self):
+        return self.asgi.core.applications
+
+    def __getattr__(self, name: str):
+        # Forward the BokehServerCore configuration (secret_key,
+        # sign_sessions, include_headers etc.) for compatibility.
+        return getattr(self.asgi.core, name)
+
+
+def _install_panel_asgi(app: FastAPI, asgi: PanelASGI) -> None:
+    """
+    Installs the dispatch middleware on the FastAPI application, reusing
+    it if applications were added to the same app before, and hooks the
+    Panel application into the FastAPI lifespan.
+    """
+    panel_apps = getattr(app.state, '_panel_asgi_apps', None)
+    if panel_apps is None:
+        panel_apps = []
+        app.state._panel_asgi_apps = panel_apps
+        app.add_middleware(
+            PanelDispatchMiddleware, fastapi=app, panel_apps=panel_apps
         )
-    else:
-        tornado_request = HTTPServerRequest(
-            method=request.method,
-            uri=uri,
-            headers=HTTPHeaders(request.headers),
-        )
-    tornado_request.route_params = route_params
-    tornado_request.app_path = app_path
-    simple_cookies = SimpleCookie({
-        name: cookie.value if hasattr(cookie, "value") else str(cookie)
-        for name, cookie in request.cookies.items()
-    })
-    tornado_request._cookies = simple_cookies
+    panel_apps.append(asgi)
 
-    headers = dict(tornado_request.headers)
-    cookies = {
-        name: cookie.value if hasattr(cookie, "value") else str(cookie)
-        for name, cookie in request.cookies.items()
-    }
+    # Wrap rather than replace the lifespan so that a user supplied lifespan
+    # (or a previous add_applications call) keeps running. Starlette dropped
+    # the add_event_handler API so composition is the only portable option.
+    previous = app.router.lifespan_context
 
-    if app.include_headers is None:
-        excluded_headers = app.exclude_headers or []
-        allowed_headers = [
-            header for header in headers if header not in excluded_headers
-        ]
-    else:
-        allowed_headers = app.include_headers
-    headers = {k: v for k, v in headers.items() if k in allowed_headers}
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        await asgi._ensure_started()
+        try:
+            async with previous(app):
+                yield
+        finally:
+            await asgi._panel_stop()
+            await asgi.core.stop()
 
-    if app.include_cookies is None:
-        excluded_cookies = app.exclude_cookies or []
-        allowed_cookies = [
-            cookie for cookie in cookies if cookie not in excluded_cookies
-        ]
-    else:
-        allowed_cookies = app.include_cookies
-    cookies = {k: v for k, v in cookies.items() if k in allowed_cookies}
+    app.router.lifespan_context = lifespan
 
-    if (
-        cookies
-        and "Cookie" in headers
-        and "Cookie" not in (app.include_headers or [])
-    ):
-        # Do not include Cookie header since cookies can be restored from cookies dict
-        del headers["Cookie"]
-
-    payload = {
-        "headers": headers,
-        "cookies": cookies,
-        "arguments": tornado_request.arguments,
-    }
-    payload.update(self.application_context.application.process_request(tornado_request))
-    token = generate_jwt_token(
-        session_id,
-        secret_key=app.secret_key,
-        signed=app.sign_sessions,
-        expiration=300,
-        extra_payload=payload,
-    )
-    if self.application_context.io_loop is None:
-        self.application_context._loop = IOLoop.current()
-    session = await self.application_context.create_session_if_needed(
-        session_id, tornado_request, token
-    )
-    return session
-
-
-_bk_fastapi_async_open = WSHandler._async_open
-
-
-async def _async_open_with_route_context(self, socket, token):
-    payload, session_id, expires_in = _validate_token_for_resign(
-        token, secret_key=self.application.secret_key, signed=self.application.sign_sessions
-    )
-    route_params, app_path = _route_context(
-        socket.scope, suffix='/ws', prefix=getattr(self.application, '_prefix', '')
-    )
-    socket.scope['route_params'] = route_params
-    socket.scope['app_path'] = app_path
-    if route_params or app_path:
-        payload = dict(payload)
-        if route_params:
-            payload['route_params'] = route_params
-        if app_path:
-            payload['app_path'] = app_path
-        payload.pop('session_expiry', None)
-        token = generate_jwt_token(
-            session_id,
-            secret_key=self.application.secret_key,
-            signed=self.application.sign_sessions,
-            expiration=expires_in,
-            extra_payload=payload,
-        )
-    return await _bk_fastapi_async_open(self, socket, token)
-
-
-BkSessionHandler.get_session = _get_fastapi_session
-WSHandler._async_open = _async_open_with_route_context
-
-
-def dispatch_fastapi(conn, events: list[DocumentPatchedEvent] | None = None, msg: Message | None = None):
-    if msg is None:
-        msg = conn.protocol.create("PATCH-DOC", events)
-    return [conn._socket.send_message(msg)]
-
-extra_socket_handlers[WSHandler] = dispatch_fastapi
-
-
-def add_liveness_handler(app, endpoint: str, applications: dict[str, BkApplication]):
-    @app.get(endpoint, response_model=dict[str, bool])
-    async def liveness_handler(request: Request, endpoint: str | None = Query(None)):
-        if endpoint is not None:
-            if endpoint not in applications:
-                raise HTTPException(status_code=400, detail=f"Endpoint {endpoint!r} does not exist.")
-            app_instance = applications[endpoint]
-            try:
-                doc = app_instance.create_document()
-                _cleanup_doc(doc)
-                return {endpoint: True}
-            except Exception as e:
-                raise HTTPException(
-                    status_code=500,
-                    detail=f"Endpoint {endpoint!r} could not be served. Application raised error: {e}"
-                ) from e
-        else:
-            return {str(request.url.path): True}
-
-def add_history_handler(app, endpoint):
-    @app.get(endpoint, response_model=dict[str, int | dict[str, t.Any]])
-    async def history_handler(request: Request):
-        return state.session_info
 
 #---------------------------------------------------------------------
 # Public API
@@ -250,7 +164,7 @@ def add_applications(
     session_history: int | None = None,
     liveness: bool | str = False,
     **kwargs
-):
+) -> PanelFastAPI:
     """
     Adds application(s) to an existing FastAPI application.
 
@@ -271,54 +185,28 @@ def add_applications(
         Whether to enable the admin panel
     session_history: int (optional, default=None)
       The amount of session history to accumulate. If set to non-zero
-      and non-None value will launch a REST endpoint at
-      /rest/session_info, which returns information about the session
-      history.
+      and non-None value will launch an endpoint at /session_info,
+      which returns information about the session history.
     liveness: bool | str (optional, default=False)
       Whether to add a liveness endpoint. If a string is provided
       then this will be used as the endpoint, otherwise the endpoint
       will be hosted at /liveness.
     **kwargs:
-        Additional keyword arguments to pass to the BokehFastAPI application
+        Additional keyword arguments to pass to the PanelASGI application
     """
-    prefix = kwargs.get('prefix', '') or ''
+    prefix = kwargs.pop('prefix', '') or ''
     if prefix:
         if not prefix.startswith('/'):
             raise ValueError("prefix must start with '/'.")
-        prefix = prefix.rstrip('/') or '/'
-        kwargs['prefix'] = prefix
-    apps = build_applications(panel, title=title, location=location, admin=admin)
-    if prefix:
-        apps = {_prefix_path(endpoint, prefix): app for endpoint, app in apps.items()}
-    ws_origins = kwargs.pop('websocket_origin', None)
-    if ws_origins and not isinstance(ws_origins, list):
-        ws_origins = [ws_origins]
-    if ws_origins:
-        kwargs['websocket_origins'] = ws_origins
-
-    application = BokehFastAPI(apps, app=app, **kwargs)
-    if session_history is not None:
-        config.session_history = session_history
-        add_history_handler(application.app, endpoint=_prefix_path('/session_info', prefix))
-    if liveness:
-        liveness_endpoint = liveness if isinstance(liveness, str) else '/liveness'
-        add_liveness_handler(
-            application.app, endpoint=_prefix_path(liveness_endpoint, prefix), applications=apps
-        )
-
-    @application.app.get(
-        _prefix_path(f"/{COMPONENT_PATH.rstrip('/')}" + "/{path:path}", prefix),
-        include_in_schema=False
+        prefix = prefix.rstrip('/')
+    asgi = build_asgi_app(
+        panel, title=title, location=location, admin=admin, prefix=prefix,
+        session_history=session_history, liveness=liveness, **kwargs
     )
-    def get_component_resource(path: str):
-        # ComponentResourceHandler.parse_url_path only ever accesses
-        # self._resource_attrs, which fortunately is a class attribute. Thus, we can
-        # get away with using the method without actually instantiating the class
-        self_ = t.cast("ComponentResourceHandler", ComponentResourceHandler)
-        resolved_path = ComponentResourceHandler.parse_url_path(self_, path)
-        return FileResponse(resolved_path)
-
-    return application
+    if app is None:
+        app = FastAPI()
+    _install_panel_asgi(app, asgi)
+    return PanelFastAPI(app, asgi)
 
 
 def add_application(
@@ -346,7 +234,7 @@ def add_application(
     admin: boolean (default=False)
         Whether to enable the admin panel
     **kwargs:
-        Additional keyword arguments to pass to the BokehFastAPI application
+        Additional keyword arguments to pass to the PanelASGI application
     """
     def decorator(func):
         @wraps(func)
@@ -355,9 +243,8 @@ def add_application(
 
         # Register the Panel application after the function is defined
         add_applications(
-            {path: func},
-            app=app,
-            title=title
+            {path: func}, app=app, title=title, location=location,
+            admin=admin, **kwargs
         )
         return wrapper
 
@@ -373,7 +260,7 @@ def get_server(
     location: bool | Location = True,
     admin: bool = False,
     **kwargs
-):
+) -> Server:
     """
     Creates a FastAPI server running the provided Panel application(s).
 
@@ -402,11 +289,10 @@ def get_server(
       will be hosted at /liveness.
     session_history: int (optional, default=None)
       The amount of session history to accumulate. If set to non-zero
-      and non-None value will launch a REST endpoint at
-      /rest/session_info, which returns information about the session
-      history.
+      and non-None value will launch an endpoint at /session_info,
+      which returns information about the session history.
     **kwargs:
-        Additional keyword arguments to pass to the BokehFastAPI application
+        Additional keyword arguments to pass to the PanelASGI application
     """
     try:
         import uvicorn
@@ -424,30 +310,38 @@ def get_server(
         port = sock.getsockname()[1]  # Get the dynamically assigned port
         sock.close()
 
-    loop = kwargs.pop('loop')
-    config_kwargs = {}
+    loop = kwargs.pop('loop', None)
+    config_kwargs: dict[str, t.Any] = {'port': port}
     if loop:
         config_kwargs['loop'] = loop
         asyncio.set_event_loop(loop)
-    if port:
-        config_kwargs['port'] = port
+    if address:
+        config_kwargs['host'] = address
     server_id = kwargs.pop('server_id', uuid.uuid4().hex)
+    prefix = kwargs.get('prefix', '') or ''
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        if show:
+            address_string = address if address else 'localhost'
+            from bokeh.util.browser import view
+            view(f"http://{address_string}:{port}{prefix}", new='tab')
+        yield
+
     application = add_applications(
-        panel, title=title, location=location, admin=admin, **kwargs
+        panel, app=FastAPI(lifespan=lifespan), title=title, location=location,
+        admin=admin, **kwargs
     )
 
-    if show:
-        @application.app.on_event('startup')
-        def show_callback():
-            prefix = kwargs.get('prefix', '')
-            address_string = 'localhost'
-            if address is not None and address != '':
-                address_string = address
-            url = f"http://{address_string}:{config.port}{prefix}"
-            from bokeh.util.browser import view
-            view(url, new='tab')
-    config = uvicorn.Config(application.app, **config_kwargs)
-    server = uvicorn.Server(config)
+    uv_config = uvicorn.Config(application.app, **config_kwargs)
+    server = uvicorn.Server(uv_config)
+
+    # uvicorn.Server does not expose the address, port or prefix it is
+    # serving on, so record them for the benefit of state._servers consumers
+    # such as Location._sync_pathname.
+    server.address = address  # type: ignore[attr-defined]
+    server.port = port  # type: ignore[attr-defined]
+    server.prefix = application.core.prefix  # type: ignore[attr-defined]
 
     state._servers[server_id] = (server, panel, [])
     if not start:
@@ -506,8 +400,8 @@ def serve(
       an external web site.
 
       If None, "localhost" is used.
-    loop : tornado.ioloop.IOLoop (optional, default=IOLoop.current())
-      The tornado IOLoop to run the Server on
+    loop : asyncio.AbstractEventLoop (optional)
+      The event loop to run the Server on
     show : boolean (optional, default=True)
       Whether to open the server in a new browser tab on start
     start : boolean(optional, default=True)
@@ -528,14 +422,11 @@ def serve(
       will be hosted at /liveness.
     session_history: int (optional, default=None)
       The amount of session history to accumulate. If set to non-zero
-      and non-None value will launch a REST endpoint at
-      /rest/session_info, which returns information about the session
-      history.
+      and non-None value will launch an endpoint at /session_info,
+      which returns information about the session history.
     kwargs: dict
-      Additional keyword arguments to pass to Server instance
+      Additional keyword arguments to pass to the PanelASGI application
     """
-    # Empty layout are valid and the Bokeh warning is silenced as usually
-    # not relevant to Panel users.
     kwargs = dict(kwargs, **dict(
         port=port, address=address, websocket_origin=websocket_origin,
         loop=loop, show=show, start=start, title=title,

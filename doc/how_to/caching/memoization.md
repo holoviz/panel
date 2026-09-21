@@ -148,6 +148,41 @@ Once a function has been decorated with `pn.cache`, you can easily clear the cac
 
 By default, any functions decorated or wrapped with `pn.cache` will use a global cache that will be reused across multiple sessions, i.e., multiple users visiting your app will all share the same cache. If instead, you want a session-local cache that only reuses cached outputs for the duration of each visit to your application, you can set `pn.cache(..., per_session=True)`.
 
+## How Arguments Are Hashed
+
+`pn.cache` looks up a result by hashing the arguments of the call, so the cost of a cache hit scales with the size of the arguments: hashing a million row DataFrame takes tens of milliseconds on every call, whether it hits or misses. Three consequences are worth knowing about.
+
+**Large inputs are hashed approximately.** DataFrames and Series with 100,000 or more rows, and arrays with 100,000 or more elements, are hashed from a fixed pseudo-random sample of 100,000 rows rather than from all of the data. A difference confined to the rows that were not sampled is therefore invisible, and the call returns the result cached for the earlier input. Set `approximate=False` to hash all of the data instead, at the cost of a full pass over it on every call:
+
+```python
+@pn.cache(approximate=False)
+def process(df):
+    ...
+```
+
+If even that is too expensive, hash the input by something cheap that you control:
+
+```python
+@pn.cache(hash_funcs={pd.DataFrame: lambda df: str(df.attrs['version']).encode()})
+def process(df):
+    ...
+```
+
+**Arguments must not be mutated in place.** Once a result has been cached, mutating an argument and calling again may hash the same and return the earlier result. Pass a new object instead of modifying one that has already been used for a cached call.
+
+**Results are shared, not copied.** Every hit hands out the very same object, so mutating a returned value changes what later calls see:
+
+```python
+@pn.cache
+def load_data(path):
+    return pd.read_csv(path)
+
+df = load_data('data.csv')
+df['new'] = 1        # this column is now in the cached result
+```
+
+Treat cached results as read-only, and copy them if you need to modify them, e.g. `load_data('data.csv').copy()`.
+
 ## Related Resources
 
 - [Manually Cache](./manual.md)

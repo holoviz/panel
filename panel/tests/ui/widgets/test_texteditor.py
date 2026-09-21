@@ -42,6 +42,7 @@ def test_texteditor_no_toolbar(page):
     expect(page.locator('.ql-container')).to_be_visible()
 
 
+@pytest.mark.internet
 def test_texteditor_init_with_value(page):
     widget = TextEditor(value='test')
 
@@ -179,6 +180,7 @@ def test_texteditor_select_and_style(page):
     wait_until(lambda: widget.value == '<p>xxx</p><p></p><p><strong><u>yyy</u></strong></p>', page)
 
 
+@pytest.mark.internet
 def test_texteditor_link(page):
     widget = TextEditor(value='<p>xxx</p></br><p>yyy</p>')
 
@@ -228,8 +230,10 @@ def test_texteditor_on_keyup_false_commits_on_blur(page):
 
     editor = page.locator('.ql-editor')
     editor.fill('test')
-    # Move focus away to trigger Quill's blur (null selection-change).
-    page.locator('body').click(position={'x': 0, 'y': 0})
+    wait_until(lambda: widget.value_input == '<p>test</p>', page)
+    # Quill commits on blur, which a click only causes outside the editor
+    box = editor.bounding_box()
+    page.mouse.click(box['x'] + box['width'] / 2, box['y'] + box['height'] + 20)
     wait_until(lambda: widget.value == '<p>test</p>', page)
 
 

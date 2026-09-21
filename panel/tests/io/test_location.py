@@ -175,7 +175,7 @@ def test_server_location_populate_from_request():
     loc = locs[0]
     assert loc.href == request.url
     assert loc.protocol == 'http:'
-    assert loc.hostname == 'localhost'
+    assert loc.hostname == '127.0.0.1'
     assert loc.pathname == '/'
     assert loc.search == '?foo=1'
 

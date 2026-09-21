@@ -1,17 +1,20 @@
 import os
+import re
 
 from pathlib import Path
+from urllib.parse import urljoin
 
 import bokeh
+import pytest
 
 from packaging.version import Version
 
 from panel.config import config, panel_extension as extension
 from panel.custom import JSComponent
 from panel.io.resources import (
-    CDN_DIST, DIST_DIR, JS_VERSION, PANEL_DIR, Resources,
-    component_resource_path, resolve_custom_path, resolve_resource_cdn,
-    resolve_stylesheet, set_resource_mode,
+    CDN_DIST, DIST_DIR, JS_RESOURCES, JS_VERSION, PANEL_DIR, Resources,
+    component_resource_path, module_tags, resolve_custom_path,
+    resolve_resource_cdn, resolve_stylesheet, set_resource_mode,
 )
 from panel.io.state import set_curdoc, state
 from panel.models.tabulator import TABULATOR_VERSION
@@ -45,6 +48,59 @@ def test_resolve_custom_path_abs_input():
 def test_resolve_custom_path_abs_input_relative_to():
     assert str(resolve_custom_path(Button, (PANEL_DIR / 'widgets' / 'button.py'), relative=True)) == 'button.py'
 
+def test_module_tags_pairs_exports_in_place():
+    """
+    A module with an export wrapper must not also get a bare module tag, and
+    must keep the position it had, since that is its execution order.
+    """
+    tags = module_tags(
+        ['perspective.js', 'perspective-viewer.js', 'datagrid.js'],
+        {'perspective': 'perspective.js', 'perspective_viewer': 'perspective-viewer.js'}
+    )
+    assert tags == [
+        ('perspective.js', 'perspective'),
+        ('perspective-viewer.js', 'perspective_viewer'),
+        ('datagrid.js', None),
+    ]
+
+def test_module_tags_appends_unlisted_exports():
+    assert module_tags(['a.js'], {'B': 'b.js'}) == [('a.js', None), ('b.js', 'B')]
+
+def test_render_js_emits_one_tag_per_module(document):
+    resources = Resources(mode='cdn')
+    with set_resource_mode('cdn'), set_curdoc(document):
+        extension('filedropper', 'perspective', 'vizzu')
+        rendered = resources.render_js
+        tags = module_tags(resources.js_modules, resources.js_module_exports)
+        assert tags
+        for url, name in tags:
+            assert rendered.count(f'src="{url}"') == (0 if name else 1)
+            assert rendered.count(f'from "{url}"') == (1 if name else 0)
+
+@pytest.mark.parametrize('url', [
+    'static/extensions/panel/bundled/filedropper/filepond.esm.min.js',
+    '../static/extensions/panel/bundled/filedropper/filepond.esm.min.js',
+    '/user/foo/panel-preview/static/extensions/panel/bundled/filedropper/filepond.esm.min.js',
+    'https://cdn.holoviz.org/panel/dist/bundled/filedropper/filepond.esm.min.js',
+])
+def test_module_import_specifier_resolves_like_a_src(url):
+    """
+    Panel emits resource urls relative to the page, which is what lets a
+    prefixed server or a reverse proxy work without being told the prefix. An
+    import specifier does not resolve like a ``src`` though: without a scheme,
+    ``/``, ``./`` or ``../`` it is a bare package name only an import map can
+    resolve. So the wrapper has to add ``./`` to the urls that lack one and to
+    no others, and must land where the equivalent ``src`` would.
+    """
+    rendered = JS_RESOURCES.render(
+        js_raw=[], js_files=[], js_modules=[(url, 'FilePond')], hashes={}
+    )
+    specifier = re.search(r'import \* as ns from "([^"]+)"', rendered).group(1)
+
+    assert re.match(r'[a-z][a-z0-9+.-]*:|/|\.\.?/', specifier)
+    page = 'http://localhost:5006/prefix/subpath/app'
+    assert urljoin(page, specifier) == urljoin(page, url)
+
 def test_resources_cdn():
     resources = Resources(mode='cdn', minified=True)
     assert resources.js_raw == ['Bokeh.set_log_level("info");']
@@ -56,6 +112,46 @@ def test_resources_cdn():
         f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-tables-{bokeh_version}.min.js',
         f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-mathjax-{bokeh_version}.min.js',
     ]
+
+
+def test_notebook_resources_respect_jupyterhub_base_url():
+    resource = f'{CDN_DIST}bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js'
+    with edit_readonly(state):
+        state.base_url = '/user/alice/'
+    try:
+        resolved = Resources(mode='cdn', notebook=True).adjust_paths([resource])
+    finally:
+        with edit_readonly(state):
+            state.base_url = '/'
+
+    assert resolved == [
+        f'/user/alice/panel-preview/static/extensions/panel/bundled/datatabulator/'
+        f'tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js'
+    ]
+
+
+def test_notebook_resources_do_not_double_render_endpoint_root():
+    """
+    The render endpoint sets `rel_path` to its own `panel-preview` root
+    already, so it must not be appended a second time on top of
+    `base_url`, which the render endpoint also includes it in.
+    """
+    resource = f'{CDN_DIST}bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js'
+    with edit_readonly(state):
+        state.base_url = '/user/alice/panel-preview/'
+        state.rel_path = '/user/alice/panel-preview'
+    try:
+        resolved = Resources(mode='cdn', notebook=True).adjust_paths([resource])
+    finally:
+        with edit_readonly(state):
+            state.base_url = '/'
+            state.rel_path = ''
+
+    assert resolved == [
+        f'/user/alice/panel-preview/static/extensions/panel/bundled/datatabulator/'
+        f'tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js'
+    ]
+
 
 def test_resources_server_absolute():
     resources = Resources(mode='server', absolute=True, minified=True)

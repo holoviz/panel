@@ -6,6 +6,11 @@ import {LayoutDOM, LayoutDOMView} from "@bokehjs/models/layouts/layout_dom"
 import type {Attrs} from "@bokehjs/core/types"
 
 import {set_size} from "./layout"
+import type {ResourceSpec} from "./resources"
+import {
+  await_resources, define_external_resources, load_resources,
+  render_resource_error,
+} from "./resources"
 
 import {debounce} from  "debounce"
 
@@ -33,6 +38,14 @@ export class VegaPlotView extends LayoutDOMView {
   _replot: any
   _resize: any
   _rendered: boolean = false
+
+  override async lazy_initialize(): Promise<void> {
+    await super.lazy_initialize()
+    const error = await await_resources(this.model)
+    if (error != null) {
+      render_resource_error(this, error, LayoutDOMView.prototype.render)
+    }
+  }
 
   override connect_signals(): void {
     super.connect_signals()
@@ -189,6 +202,7 @@ export namespace VegaPlot {
     show_actions: p.Property<boolean>
     theme: p.Property<string | null>
     throttle: p.Property<any>
+    external_resources: p.Property<ResourceSpec | null>
   }
 }
 
@@ -214,5 +228,11 @@ export class VegaPlot extends LayoutDOM {
       theme:        [ Nullable(Str), null ],
       throttle:     [ Any,                {} ],
     }))
+    define_external_resources(this)
+  }
+
+  override initialize(): void {
+    super.initialize()
+    load_resources(this)
   }
 }

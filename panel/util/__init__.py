@@ -298,6 +298,26 @@ def lazy_load(module, model, notebook=False, root=None, ext=None):
             _default_resolver.add(model_cls)
         return model_cls
 
+    from ..io.resource_spec import lazy_load_available
+
+    # With lazy resource loading the component fetches what it needs at render
+    # time, so a missing extension is no longer a rendering failure. It still
+    # costs a round trip, hence the debug message. The extension is
+    # deliberately *not* registered after the fact: doing so would put the
+    # library in the page for every subsequent render and make the page
+    # contents depend on when the component happened to be created.
+    if lazy_load_available(notebook=notebook):
+        param.main.param.log(
+            param.DEBUG,
+            f'{model} was not imported on instantiation and will load the '
+            'resources it needs on demand. To load them up front pass the '
+            'extension explicitly:'
+            f'\n\npn.extension({ext!r})\n'
+        )
+        return getattr(import_module(module), model)
+
+    # Only reached when on-demand loading is unavailable, so these really are
+    # warnings about a component that may not render.
     if notebook:
         param.main.param.warning(
             f'{model} was not imported on instantiation and may not '
@@ -329,7 +349,7 @@ def lazy_load(module, model, notebook=False, root=None, ext=None):
         )
     elif root is not None and root.ref['id'] in state._views:
         param.main.param.warning(
-            f'{model} was not imported on instantiation may not '
+            f'{model} was not imported on instantiation and may not '
             'render in the served application. Ensure you add the '
             'following to the top of your application:'
             f'\n\npn.extension(\'{ext}\')\n'

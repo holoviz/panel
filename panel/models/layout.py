@@ -9,6 +9,8 @@ from bokeh.events import ModelEvent
 from bokeh.models import Column as BkColumn
 from bokeh.models.layouts import LayoutDOM
 
+from .resource import ExternalResourcesMixin
+
 __all__ = (
     "Card",
     "HTMLBox",
@@ -28,7 +30,7 @@ class ScrollToEvent(ModelEvent):
         return dict(super().event_values(), index=self.index)
 
 
-class HTMLBox(LayoutDOM):
+class HTMLBox(LayoutDOM, ExternalResourcesMixin):
     """ """
 
 

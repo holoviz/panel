@@ -2,13 +2,13 @@
 
 Panel generally runs on the Bokeh server, which itself runs on [Tornado](https://tornadoweb.org/en/stable/). However, it is also often useful to embed a Panel app in an existing web application, such as a [FastAPI](https://fastapi.tiangolo.com/) web server.
 
-Since Panel 1.5.0 it is possible to run Panel application(s) natively on a FastAPI based server. Therefore this how-to guide will explain how to add Panel application(s) directly to an existing FastAPI application. This functionality is new and experimental so we also provide the original [how-to guide to embed a Tornado based Panel server application inside a FastAPI application](./FastAPI_Tornado).
+Since Panel 1.5.0 it is possible to run Panel application(s) natively on a FastAPI based server. Therefore this how-to guide will explain how to add Panel application(s) directly to an existing FastAPI application. If you would rather embed a separate Tornado based Panel server inside your FastAPI application we also provide a [how-to guide for that](./FastAPI_Tornado).
 
 By the end of this guide, you'll be able to run a FastAPI application that serves a simple interactive Panel app. The Panel app will consist of a slider widget that dynamically updates a string of stars (⭐) based on the slider's value.
 
 ## Setup
 
-Following FastAPI's [Tutorial - User Guide](https://fastapi.tiangolo.com/tutorial/) make sure you first have [FastAPI](https://fastapi.tiangolo.com/) and [bokeh-fastapi](https://github.com/bokeh/bokeh-fastapi) installed using:
+Following FastAPI's [Tutorial - User Guide](https://fastapi.tiangolo.com/tutorial/) make sure you first have [FastAPI](https://fastapi.tiangolo.com/) installed using:
 
 ::::{tab-set}
 
@@ -20,7 +20,7 @@ pip install panel[fastapi]
 
 :::{tab-item} `conda`
 ```bash
-conda install -c conda-forge bokeh-fastapi
+conda install -c conda-forge fastapi uvicorn
 ```
 :::
 
@@ -159,6 +159,92 @@ add_applications({
 }, app=app)
 ```
 
+`add_applications` returns a handle exposing the `FastAPI` application as `.app`, the underlying ASGI application Panel uses to serve the apps as `.asgi` and the Bokeh server configuration as `.core`.
+
+Panel installs itself as an ASGI middleware on the FastAPI application, which claims only the paths it owns and delegates everything else to FastAPI. This means it does not matter whether you declare your own FastAPI routes before or after calling `add_applications`, and you may call `add_applications` more than once on the same app.
+
+## Supported endpoints
+
+Alongside the application paths themselves the integration serves the same endpoints as `panel serve`:
+
+- `/<app>/ws`: the websocket connection for a session.
+- `/<app>/autoload.js`: the script for embedding an app in an external page.
+- `/<app>/metadata`: the app metadata, if it declares any.
+- `/static/extensions/...` and component resources, i.e. the JS and CSS of Panel and any extensions in use.
+- `/favicon.ico`, overridable with the `ico_path` argument.
+- The index page listing all applications, customizable with the `index` and `index_titles` arguments.
+
+The `liveness` and `session_history` arguments add `/liveness` and `/session_info` endpoints respectively, and `static_dirs` mounts additional directories, just as the equivalent `panel serve` options do:
+
+```python
+add_applications(
+    {"/panel_app": create_panel_app},
+    app=app,
+    liveness=True,
+    session_history=10,
+    static_dirs={'assets': './assets'},
+)
+```
+
+## Wildcard routes
+
+Applications can be served on [wildcard routes](../server/wildcard_routes) and the captured parameters are made available on `pn.state.route_params`:
+
+```python
+import panel as pn
+
+from fastapi import FastAPI
+from panel.io.fastapi import add_applications
+
+app = FastAPI()
+
+def greet():
+    return pn.pane.Markdown(f"# Hello {pn.state.route_params['name']}!")
+
+add_applications({"/user/{name}": greet}, app=app)
+```
+
+## Serving under a prefix
+
+To serve all Panel applications below a common path pass a `prefix`:
+
+```python
+add_applications({"/panel_app": create_panel_app}, app=app, prefix='/apps')
+```
+
+The app is then served at `/apps/panel_app` and all resource and websocket URLs are prefixed accordingly. This is independent of the `--root-path` handled by the proxy, described below.
+
+## Authentication
+
+[Authentication](../authentication/index) is configured with the same arguments you would pass to `panel serve` or `pn.serve`, e.g. to require a password:
+
+```python
+add_applications(
+    {"/panel_app": create_panel_app},
+    app=app,
+    basic_auth='my_password',
+    cookie_secret='my_super_safe_cookie_secret',
+)
+```
+
+or to authenticate against an OAuth provider:
+
+```python
+add_applications(
+    {"/panel_app": create_panel_app},
+    app=app,
+    oauth_provider='azure',
+    oauth_key='...',
+    oauth_secret='...',
+    oauth_encryption_key='...',
+    cookie_secret='...',
+)
+```
+
+Panel then serves the `/login` and `/logout` endpoints and authenticates the application routes, the websocket connection, the autoload and metadata endpoints and any `static_dirs`. Routes you declared on the FastAPI application itself are never touched, so securing your own API endpoints remains up to you.
+
+Cookies are minted and validated identically on both servers, so a user logged in against a Tornado based `panel serve` process is accepted by a FastAPI process configured with the same `cookie_secret` (and `oauth_encryption_key`), and vice versa. That makes it possible to run both behind the same load balancer, or to migrate from one to the other without logging everyone out.
+
 ## Tips & Tricks
 
 ### Running Behind a Proxy
@@ -172,3 +258,5 @@ For more details, refer to the [Behind a Proxy](https://fastapi.tiangolo.com/adv
 ## Conclusion
 
 That's it! You now have embedded panel in FastAPI! You can now build off of this to create your own web app tailored to your needs.
+
+A complete example combining FastAPI routes, the `add_application` decorator, `add_applications` and a wildcard route can be found in `examples/apps/fastApi_native`, which you can launch with `uvicorn main:app --reload`.

@@ -506,7 +506,9 @@ Note that the event that triggered the callback will be made available in the na
 
 ## External Dependencies
 
-Often the components you build will have dependencies on some external Javascript or CSS files. To make this possible `ReactiveHTML` components may declare `__javascript__`, `__javascript_modules__` and `__css__` attributes, specifying the external dependencies to load. Note that in a notebook as long as the component is imported before the call to `pn.extension` all its dependencies will be loaded automatically. If you want to require users to load the components as an extension explicitly via a `pn.extension` call you can declare an `_extension_name`.
+Often the components you build will have dependencies on some external Javascript or CSS files. To make this possible `ReactiveHTML` components may declare `__javascript__`, `__javascript_modules__` and `__css__` attributes, specifying the external dependencies to load. Panel derives what the browser needs from those declarations, so the dependencies are fetched the first time your component renders whether or not they were loaded up front. If you want users to be able to preload them with a `pn.extension` call you can declare an `_extension_name`; see [Control when resources load](../../how_to/performance/resources.md) for when that is worth doing.
+
+If your component pulls in several libraries that provide separate globals, also declare `__js_skip__` mapping each global to the urls that provide it. That is how Panel knows to skip a library the page already has, and it is what keeps two components that share a library from loading it twice.
 
 Below we will create a Material UI text field and declare the Javascript and CSS components to load:
 

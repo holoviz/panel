@@ -11,13 +11,16 @@ import tornado.locks
 
 from bokeh.document import Document
 from bokeh.document.events import MessageSentEvent
+from bokeh.protocol import Protocol
 
 import panel as pn
 
 from panel.io.document import (
-    _UNCONNECTED_EVENTS, _WRITE_BLOCK, _cleanup_doc, _destroy_document,
-    _write_tasks, extra_socket_handlers, hold, schedule_write_events, unlocked,
-    write_events,
+    _UNCONNECTED_EVENTS, _WRITE_BLOCK, MockSessionContext, _cleanup_doc,
+    _client_has_document, _destroy_document, _is_write_blocked,
+    _keep_unsent_models_new, _socket_dispatcher, _write_tasks, dispatch_django,
+    dispatch_tornado, extra_socket_handlers, hold, init_doc,
+    schedule_write_events, unlocked, write_events,
 )
 from panel.io.state import _state, set_curdoc, state
 from panel.tests.util import serve_and_request, wait_until
@@ -264,9 +267,69 @@ class _FakeSocket:
 
 
 class _FakeConn:
-    def __init__(self, lock_held):
-        self._socket = _FakeSocket(lock_held)
+    def __init__(self, lock_held, socket_cls=_FakeSocket):
+        self._socket = socket_cls(lock_held)
         self.protocol = _FakeProtocol()
+
+
+def _asgi_transport():
+    """
+    Builds the real ASGI websocket transport Bokeh writes to, whose write
+    lock wraps an asyncio.Lock rather than exposing Tornado's semaphore.
+    """
+    from bokeh.server.asgi import _ASGIWebSocketTransport
+    return _ASGIWebSocketTransport(lambda event: None, supports_close_reason=True)
+
+
+class _FakeASGISocket:
+    """An ASGI transport shaped socket which can be handed a held lock."""
+
+    def __init__(self, lock_held):
+        from bokeh.server.asgi import _WriteLock
+        self.write_lock = _WriteLock()
+        if lock_held:
+            # Acquiring is a coroutine, so lock the wrapped asyncio.Lock
+            # directly to hold the lock without an event loop.
+            self.write_lock._lock._locked = True
+
+
+def test_socket_dispatcher_resolves_transport():
+    from bokeh.server.asgi import _ASGIWebSocketTransport
+    from tornado.websocket import WebSocketHandler
+
+    import panel.io.asgi as asgi_module
+
+    class FakeTornadoSocket(WebSocketHandler):
+        def __init__(self):
+            pass
+
+    class ASGISubclass(_ASGIWebSocketTransport):
+        pass
+
+    assert _socket_dispatcher(FakeTornadoSocket()) is dispatch_tornado
+    assert _socket_dispatcher(_asgi_transport()) is asgi_module.dispatch_asgi
+    # A subclass of a registered transport must resolve via the MRO rather
+    # than falling through to the Django consumer API.
+    subclass = ASGISubclass(lambda event: None, supports_close_reason=True)
+    assert _socket_dispatcher(subclass) is asgi_module.dispatch_asgi
+    assert _socket_dispatcher(object()) is dispatch_django
+
+
+def test_is_write_blocked_across_transports():
+    # Tornado exposes the lock state on an internal semaphore
+    tornado_socket = _FakeSocket(lock_held=False)
+    assert not _is_write_blocked(tornado_socket)
+    tornado_socket.write_lock._block._value = 0
+    assert _is_write_blocked(tornado_socket)
+
+    # Bokeh's ASGI _WriteLock wraps an asyncio.Lock
+    asgi_socket = _asgi_transport()
+    assert not _is_write_blocked(asgi_socket)
+    asgi_socket.write_lock._lock._locked = True
+    assert _is_write_blocked(asgi_socket)
+
+    # A socket without a write lock is never blocked
+    assert not _is_write_blocked(object())
 
 
 @pytest.mark.xdist_group(name="server")
@@ -381,6 +444,37 @@ async def test_schedule_write_events_defers_serialization():
 
 
 @pytest.mark.asyncio
+async def test_schedule_write_events_defers_on_asgi_socket():
+    """
+    The write lock of an ASGI transport wraps an asyncio.Lock, so it has to
+    be probed differently from Tornado's. If it is not detected, queued
+    events are serialized and written while the socket is being written to,
+    reordering messages relative to the ones Bokeh writes itself.
+    """
+    written = []
+    extra_socket_handlers[_FakeASGISocket] = lambda conn, msg=None: written.append(msg) or []
+
+    try:
+        doc = Document()
+        conn = _FakeConn(lock_held=True, socket_cls=_FakeASGISocket)
+
+        schedule_write_events(doc, [conn], [object()])
+        await asyncio.sleep(0.05)
+
+        assert conn.protocol.created == []
+        assert written == []
+
+        conn._socket.write_lock._lock._locked = False
+        await asyncio.sleep(0.05)
+
+        assert len(conn.protocol.created) == 1
+        assert written == conn.protocol.created
+    finally:
+        extra_socket_handlers.pop(_FakeASGISocket, None)
+        _WRITE_BLOCK.pop(doc, None)
+
+
+@pytest.mark.asyncio
 async def test_dispatch_msgs_terminates_on_document_destroy():
     """Pending _dispatch_msgs loop must stop after document is destroyed."""
     extra_socket_handlers[_FakeSocket] = lambda conn, msg=None: []
@@ -405,3 +499,99 @@ async def test_dispatch_msgs_terminates_on_document_destroy():
         assert ref() is None
     finally:
         extra_socket_handlers.pop(_FakeSocket, None)
+
+
+def test_keep_unsent_models_new_across_client_patch():
+    doc = Document()
+    column = pn.Column()
+    root = column.get_root(doc)
+    doc.add_root(root)
+    _keep_unsent_models_new(doc)
+    doc.to_json()
+
+    with set_curdoc(doc):
+        column.append(pn.pane.Markdown('unsent'))
+    unsent = set(doc.models._new_models)
+    assert unsent
+
+    doc.apply_json_patch({'events': [
+        {'kind': 'ModelChanged', 'model': {'id': root.id}, 'attr': 'name', 'new': 'renamed'}
+    ]})
+
+    assert unsent <= doc.models._new_models
+
+
+def test_keep_unsent_models_new_still_flushes_own_patches():
+    doc = Document()
+    column = pn.Column()
+    doc.add_root(column.get_root(doc))
+    _keep_unsent_models_new(doc)
+    doc.to_json()
+
+    sizes = []
+    with set_curdoc(doc):
+        for i in range(3):
+            doc.hold()
+            column.append(pn.pane.Markdown(f'item {i}'))
+            events, doc.callbacks._held_events = list(doc.callbacks._held_events), []
+            sizes.append(len(Protocol().create('PATCH-DOC', events).content_json))
+            doc.callbacks._hold = None
+
+    assert sizes[2] == pytest.approx(sizes[1], abs=100)
+
+
+def test_client_has_document_handles_destroyed_document():
+    doc = Document()
+    doc.add_root(pn.Column().get_root(doc))
+    doc._session_context = lambda: MockSessionContext(doc)
+    assert not _client_has_document(doc)
+
+    doc.to_json()
+    assert _client_has_document(doc)
+
+    doc.models.destroy()
+    assert not _client_has_document(doc)
+
+
+def test_client_has_document_ignores_sessionless_document():
+    doc = Document()
+    doc.add_root(pn.Column().get_root(doc))
+
+    doc.to_json()
+    assert not _client_has_document(doc)
+
+
+def test_client_has_document_counts_a_notebook_comm():
+    doc = Document()
+    root = pn.Column().get_root(doc)
+    doc.add_root(root)
+
+    doc.to_json()
+    _state._views[root.ref['id']] = (None, root, doc, object())
+    try:
+        assert _client_has_document(doc)
+    finally:
+        del _state._views[root.ref['id']]
+
+
+def test_keep_unsent_models_new_skips_a_bokeh_without_new_models():
+    doc = Document()
+    doc.add_root(pn.Column().get_root(doc))
+    doc._session_context = lambda: MockSessionContext(doc)
+    del doc.models._new_models
+    _keep_unsent_models_new(doc)
+
+    assert not getattr(doc.apply_json_patch, '_panel_keeps_unsent', False)
+
+
+def test_init_doc_keeps_unsent_models_new_once():
+    doc = Document()
+    doc.add_root(pn.Column().get_root(doc))
+    doc._session_context = lambda: MockSessionContext(doc)
+
+    init_doc(doc)
+    wrapper = doc.apply_json_patch
+    assert getattr(wrapper, '_panel_keeps_unsent', False)
+
+    init_doc(doc)
+    assert doc.apply_json_patch is wrapper

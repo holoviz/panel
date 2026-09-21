@@ -21,7 +21,6 @@ THEME_URL = f"{config.npm_cdn}/{THEME_PATH}"
 PANEL_CDN = f"{config.npm_cdn}/@holoviz/panel@{JS_VERSION}/dist/bundled/perspective/{THEME_PATH}"
 
 CSS_URLS = [
-    f"{THEME_URL}fonts.css",
     f"{THEME_URL}themes.css",
     f"{THEME_URL}variables.css",
 ]
@@ -104,22 +103,6 @@ class Perspective(HTMLBox):
         return {
             "customElements.get('perspective-viewer')": cls.__javascript_modules__
         }
-
-    __js_require__ = {
-        "paths": {
-            "perspective": f"{config.npm_cdn}/@finos/perspective@{PERSPECTIVE_VERSION}/dist/cdn/perspective",
-            "perspective-worker": f"{config.npm_cdn}/@finos/perspective@{PERSPECTIVE_VERSION}/dist/cdn/perspective.worker",
-            "perspective-viewer": f"{config.npm_cdn}/@finos/perspective-viewer@{PERSPECTIVE_VERSION}/dist/cdn/perspective-viewer",
-            "perspective-viewer-datagrid": f"{config.npm_cdn}/@finos/perspective-viewer-datagrid@{PERSPECTIVE_VERSION}/dist/cdn/perspective-viewer-datagrid",
-            "perspective-viewer-d3fc": f"{config.npm_cdn}/@finos/perspective-viewer-d3fc@{PERSPECTIVE_VERSION}/dist/cdn/perspective-viewer-d3fc",
-        },
-        "exports": {
-            "perspective": "perspective",
-            "perspective-viewer": "PerspectiveViewer",
-            "perspective-viewer-datagrid": "PerspectiveViewerDatagrid",
-            "perspective-viewer-d3fc": "PerspectiveViewerD3fc",
-        },
-    }
 
     __css_raw__ = CSS_URLS
 

@@ -23,7 +23,7 @@ class VanillaTemplate(BasicTemplate):
     _css = [pathlib.Path(__file__).parent / 'vanilla.css']
 
     _resources = {
-        'css': {
+        'font': {
             'lato': "https://fonts.googleapis.com/css?family=Lato&subset=latin,latin-ext"
         }
     }

@@ -3,6 +3,8 @@ import datetime as dt
 import logging
 import os
 import pathlib
+import socket
+import threading
 import time
 import weakref
 
@@ -18,6 +20,7 @@ from packaging.version import Version
 from panel.config import config
 from panel.io import state
 from panel.io.application import Application
+from panel.io.compile import check_cli_tool
 from panel.io.resources import DIST_DIR, JS_VERSION
 from panel.io.server import (
     _MAX_APP_PATH_CHARS, _MAX_ROUTE_PARAM_VALUE_CHARS, INDEX_HTML, RootHandler,
@@ -31,8 +34,10 @@ from panel.pane import Markdown
 from panel.param import ParamFunction
 from panel.reactive import ReactiveHTML
 from panel.template import BootstrapTemplate
+from panel.tests import util as test_util
 from panel.tests.util import (
-    get_open_ports, serve_and_request, serve_and_wait, wait_until,
+    get_open_ports, reverse_proxy as reverse_proxy_ctx, serve_and_request,
+    serve_and_wait, wait_until,
 )
 from panel.widgets import (
     Button, Tabulator, Terminal, TextInput,
@@ -94,26 +99,6 @@ def test_normalize_app_path_prefix_boundary():
     assert _normalize_app_path('/pre/user/alice', '/pre') == '/user/alice'
     assert _normalize_app_path('/prefix/user/alice', '/pre') == '/prefix/user/alice'
     assert _normalize_app_path('/pre/user/alice/ws', '/pre', suffix='/ws') == '/user/alice'
-
-
-def test_fastapi_route_context_prefix_boundary():
-    fastapi = pytest.importorskip("fastapi")
-    from panel.io.fastapi import _route_context
-
-    request = fastapi.Request({
-        'type': 'http',
-        'method': 'GET',
-        'scheme': 'http',
-        'path': '/prefix/user/alice',
-        'query_string': b'',
-        'headers': [],
-        'client': ('127.0.0.1', 5000),
-        'server': ('127.0.0.1', 8000),
-        'path_params': {'name': 'alice'},
-    })
-    route_params, app_path = _route_context(request, prefix='/pre')
-    assert route_params == {'name': 'alice'}
-    assert app_path == '/prefix/user/alice'
 
 
 @pytest.mark.xdist_group(name="server")
@@ -252,7 +237,7 @@ def test_server_ico_handling(path, port):
 
     dots = path.count('/')*'.'
     assert f'<link rel="icon" href="{dots}/favicon.ico"' in r.content.decode('utf-8')
-    ico = requests.get(f"http://localhost:{port}/favicon.ico")
+    ico = requests.get(f"http://localhost:{port}/favicon.ico", timeout=30)
     assert ico.content == ico_path.read_bytes()
 
 def test_server_ico_handling_with_prefix(port):
@@ -264,7 +249,7 @@ def test_server_ico_handling_with_prefix(port):
     )
 
     assert '<link rel="icon" href="./favicon.ico"' in r.content.decode('utf-8')
-    ico = requests.get(f"http://localhost:{port}/favicon.ico")
+    ico = requests.get(f"http://localhost:{port}/favicon.ico", timeout=30)
     assert ico.content == ico_path.read_bytes()
 
 @pytest.mark.parametrize('path', ["/app", "/nested/app"])
@@ -279,7 +264,7 @@ def test_server_template_ico_handling(path, port):
 
     dots = path.count('/')*'.'
     assert f'<link rel="icon" href="{dots}/favicon.ico"' in r.content.decode('utf-8')
-    ico = requests.get(f"http://localhost:{port}/favicon.ico")
+    ico = requests.get(f"http://localhost:{port}/favicon.ico", timeout=30)
     assert ico.content == ico_path.read_bytes()
 
 def test_server_template_static_resources(server_implementation):
@@ -291,8 +276,8 @@ def test_server_template_static_resources(server_implementation):
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
 
-#@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
-def test_server_template_static_resources_with_prefix():
+@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
+def test_server_template_static_resources_with_prefix(server_implementation):
     template = BootstrapTemplate()
 
     r = serve_and_request({'template': template}, prefix="/prefix", suffix="/prefix/static/extensions/panel/bundled/bootstraptemplate/bootstrap.css")
@@ -301,8 +286,8 @@ def test_server_template_static_resources_with_prefix():
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
 
-#@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
-def test_server_template_static_resources_with_prefix_relative_url():
+@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
+def test_server_template_static_resources_with_prefix_relative_url(server_implementation):
     template = BootstrapTemplate()
 
     r = serve_and_request({'template': template}, prefix='/prefix', suffix="/prefix/template")
@@ -423,8 +408,8 @@ def test_serve_config_per_session_state(server_implementation):
     serve_and_wait(app1, port=port1)
     serve_and_wait(app2, port=port2)
 
-    r1 = requests.get(f"http://localhost:{port1}/").content.decode('utf-8')
-    r2 = requests.get(f"http://localhost:{port2}/").content.decode('utf-8')
+    r1 = requests.get(f"http://localhost:{port1}/", timeout=30).content.decode('utf-8')
+    r2 = requests.get(f"http://localhost:{port2}/", timeout=30).content.decode('utf-8')
 
     assert CSS1 not in config.raw_css
     assert CSS2 not in config.raw_css
@@ -447,8 +432,8 @@ def test_server_on_session_created(server_implementation):
     assert len(session_contexts) == 3
 
 
-#@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
-def test_server_on_session_destroyed():
+@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
+def test_server_on_session_destroyed(server_implementation):
     session_contexts = []
     def append_session(session_context):
         session_contexts.append(session_context)
@@ -714,8 +699,8 @@ def test_server_session_args(port, server_implementation):
 
     serve_and_wait(app, port=port)
 
-    requests.get(f"http://localhost:{port}/?arg=foo")
-    requests.get(f"http://localhost:{port}/?arg=bar")
+    requests.get(f"http://localhost:{port}/?arg=foo", timeout=30)
+    requests.get(f"http://localhost:{port}/?arg=bar", timeout=30)
 
     assert session_args == ["foo", "bar"]
 
@@ -731,8 +716,8 @@ def test_server_route_params(port, server_implementation):
 
     route = '/user/{name}' if server_implementation == 'fastapi' else '/user/([^/]+)'
     serve_and_wait({route: app}, port=port)
-    requests.get(f"http://localhost:{port}/user/alice")
-    requests.get(f"http://localhost:{port}/user/bob")
+    requests.get(f"http://localhost:{port}/user/alice", timeout=30)
+    requests.get(f"http://localhost:{port}/user/bob", timeout=30)
 
     if server_implementation == 'fastapi':
         assert route_params == [{'name': 'alice'}, {'name': 'bob'}]
@@ -784,7 +769,7 @@ def test_server_route_params_path_templates(port, server_implementation, route, 
 
     serve_and_wait({route: app}, port=port)
     for suffix, _expected in requests_and_expected:
-        requests.get(f"http://localhost:{port}{suffix}")
+        requests.get(f"http://localhost:{port}{suffix}", timeout=30)
 
     assert route_params == [expected for _, expected in requests_and_expected]
     assert app_urls == [suffix for suffix, _ in requests_and_expected]
@@ -800,7 +785,7 @@ def test_server_route_params_path_converter_path(port, server_implementation):
         return 'route'
 
     serve_and_wait({'/files/{filepath:path}': app}, port=port)
-    requests.get(f"http://localhost:{port}/files/a/b/c.txt")
+    requests.get(f"http://localhost:{port}/files/a/b/c.txt", timeout=30)
 
     assert route_params == [{'filepath': 'a/b/c.txt'}]
     assert app_urls == ['/files/a/b/c.txt']
@@ -817,15 +802,13 @@ def test_server_route_context_size_is_capped(port, server_implementation):
 
     overlong = 'a' * (_MAX_ROUTE_PARAM_VALUE_CHARS + 300)
     serve_and_wait({'/files/{filepath:path}': app}, port=port)
-    requests.get(f"http://localhost:{port}/files/{overlong}")
+    requests.get(f"http://localhost:{port}/files/{overlong}", timeout=30)
 
     assert route_params == [{'filepath': overlong[:_MAX_ROUTE_PARAM_VALUE_CHARS]}]
     assert app_urls == [f"/files/{overlong}"[:_MAX_APP_PATH_CHARS]]
 
 
 def test_server_route_params_autoload_js(port, server_implementation):
-    if server_implementation == 'fastapi':
-        pytest.skip("bokeh_fastapi does not expose an autoload.js endpoint.")
     route_params = []
     app_urls = []
 
@@ -840,7 +823,7 @@ def test_server_route_params_autoload_js(port, server_implementation):
         "&bokeh-app-path=/user/alice"
         f"&bokeh-absolute-url=http://localhost:{port}/user/alice"
     )
-    r = requests.get(f"http://localhost:{port}/user/alice/autoload.js?{args}")
+    r = requests.get(f"http://localhost:{port}/user/alice/autoload.js?{args}", timeout=30)
     assert r.status_code == 200
     wait_until(lambda: route_params == [{'name': 'alice'}])
     assert app_urls == ['/user/alice']
@@ -851,35 +834,25 @@ def test_server_dynamic_ws_endpoint_resolution(port, server_implementation):
         return 'route'
 
     serve_and_wait({'/user/{name}': app}, port=port)
-    ws = requests.get(f"http://localhost:{port}/user/alice/ws")
-    if server_implementation == 'tornado':
-        assert ws.status_code == 400
-    else:
-        # FastAPI exposes websocket routes that are not accessible via HTTP GET.
-        assert ws.status_code == 404
+    ws = requests.get(f"http://localhost:{port}/user/alice/ws", timeout=30)
+    assert ws.status_code == 400
 
 
 def test_server_dynamic_metadata_endpoint_resolution(port, server_implementation):
-    if server_implementation == 'fastapi':
-        pytest.skip("bokeh_fastapi does not expose a metadata endpoint.")
-
     def app():
         return 'route'
 
     serve_and_wait({'/user/{name}': app}, port=port)
-    metadata = requests.get(f"http://localhost:{port}/user/alice/metadata")
+    metadata = requests.get(f"http://localhost:{port}/user/alice/metadata", timeout=30)
     assert metadata.status_code == 200
 
 
 def test_server_dynamic_static_file_route(port, server_implementation):
-    if server_implementation == 'fastapi':
-        pytest.skip("bokeh_fastapi does not expose per-app static endpoints.")
-
     def app():
         return 'route'
 
     serve_and_wait({'/user/{name}': app}, port=port)
-    static = requests.get(f"http://localhost:{port}/user/alice/static/does-not-exist.css")
+    static = requests.get(f"http://localhost:{port}/user/alice/static/does-not-exist.css", timeout=30)
     assert static.status_code == 404
 
 
@@ -888,14 +861,12 @@ def test_server_dynamic_routes_with_prefix_endpoint_access(port, server_implemen
         return 'route'
 
     serve_and_wait({'/user/{name}': app}, port=port, prefix='/prefix')
-    app_page = requests.get(f"http://localhost:{port}/prefix/user/alice")
+    app_page = requests.get(f"http://localhost:{port}/prefix/user/alice", timeout=30)
     assert app_page.status_code == 200
-    duplicate_prefix = requests.get(f"http://localhost:{port}/prefix/prefix/user/alice")
+    duplicate_prefix = requests.get(f"http://localhost:{port}/prefix/prefix/user/alice", timeout=30)
     assert duplicate_prefix.status_code == 404
-
-    if server_implementation == 'tornado':
-        metadata = requests.get(f"http://localhost:{port}/prefix/user/alice/metadata")
-        assert metadata.status_code == 200
+    metadata = requests.get(f"http://localhost:{port}/prefix/user/alice/metadata", timeout=30)
+    assert metadata.status_code == 200
 
 
 def test_fastapi_prefixed_route_registration_no_double_prefix():
@@ -908,30 +879,36 @@ def test_fastapi_prefixed_route_registration_no_double_prefix():
         return 'route'
 
     application = add_applications({'/user/{name}': panel_app}, app=app, prefix='/prefix')
-    paths = {route.path for route in application.app.router.routes if hasattr(route, "path")}
-    assert '/prefix/user/{name}' in paths
-    assert '/prefix/user/{name}/ws' in paths
-    assert '/prefix/prefix/user/{name}' not in paths
-    assert '/prefix/user/{name}/metadata' not in paths
-    assert '/prefix/user/{name}/autoload.js' not in paths
+
+    # The applications are served by the ASGI application, not registered as
+    # FastAPI routes, so the prefix must only be applied once when routing.
+    assert set(application.applications) == {'/user/{name}'}
+    asgi = application.asgi
+    resolved = asgi._resolve_route(asgi._route_path({'path': '/prefix/user/alice'}))
+    assert resolved is not None
+    assert resolved[1] == ''
+    assert resolved[2] == {'name': 'alice'}
+    assert asgi._resolve_route(asgi._route_path({'path': '/prefix/prefix/user/alice'})) is None
+    assert asgi._route_path({'path': '/user/alice'}) == ''
 
 
-def test_fastapi_synthetic_request_preserves_cookies(monkeypatch, port):
+@pytest.mark.parametrize('server_implementation', ["tornado", "fastapi"], indirect=True)
+def test_server_request_preserves_cookies(monkeypatch, port, server_implementation):
     seen_cookie_values = []
-    original_process_request = Application.process_request
+    original = Application._extra_request_data
 
-    def wrapped_process_request(self, request):
+    def wrapped(self, request):
         user_cookie = request.cookies.get('user')
         seen_cookie_values.append(None if user_cookie is None else user_cookie.value)
-        return original_process_request(self, request)
+        return original(self, request)
 
-    monkeypatch.setattr(Application, 'process_request', wrapped_process_request)
+    monkeypatch.setattr(Application, '_extra_request_data', wrapped)
 
     def app():
         return 'route'
 
     serve_and_wait({'/user/{name}': app}, port=port)
-    response = requests.get(f"http://localhost:{port}/user/alice", cookies={'user': 'alice'})
+    response = requests.get(f"http://localhost:{port}/user/alice", cookies={'user': 'alice'}, timeout=30)
     assert response.status_code == 200
     wait_until(lambda: len(seen_cookie_values) > 0)
     assert seen_cookie_values[-1] == 'alice'
@@ -962,7 +939,7 @@ def test_server_app_url_context(port, server_implementation, route, suffix, expe
         return 'route'
 
     serve_and_wait({route: app}, port=port)
-    requests.get(f"http://localhost:{port}{suffix}")
+    requests.get(f"http://localhost:{port}{suffix}", timeout=30)
 
     assert app_urls == [expected_app_url]
 
@@ -991,7 +968,7 @@ def test_server_app_url_context_with_prefix(port, server_implementation, route, 
         return 'route'
 
     serve_and_wait({route: app}, port=port, prefix='/prefix')
-    requests.get(f"http://localhost:{port}{suffix}")
+    requests.get(f"http://localhost:{port}{suffix}", timeout=30)
 
     assert app_urls == [expected_app_url]
 
@@ -1024,7 +1001,7 @@ def test_server_app_url_context_on_proxy(
 
     port, proxy = reverse_proxy
     serve_and_wait({route: app}, port=port, proxy=proxy)
-    requests.get(f"http://localhost:{proxy}{suffix}")
+    requests.get(f"http://localhost:{proxy}{suffix}", timeout=30)
 
     assert app_urls == [expected_app_url]
 
@@ -1060,7 +1037,7 @@ def test_server_app_url_context_on_proxy_with_prefix(
 
     port, proxy = reverse_proxy
     serve_and_wait({route: app}, port=port, proxy=proxy, prefix='/prefix')
-    requests.get(f"http://localhost:{proxy}{suffix}")
+    requests.get(f"http://localhost:{proxy}{suffix}", timeout=30)
 
     assert app_urls == [expected_app_url]
 
@@ -1081,8 +1058,8 @@ def test_server_reuse_sessions_with_session_key_func(port, reuse_sessions):
 
     serve_and_wait(app, port=port)
 
-    r1 = requests.get(f"http://localhost:{port}/?arg=foo")
-    r2 = requests.get(f"http://localhost:{port}/?arg=bar")
+    r1 = requests.get(f"http://localhost:{port}/?arg=foo", timeout=30)
+    r2 = requests.get(f"http://localhost:{port}/?arg=bar", timeout=30)
 
     assert len(state._sessions) == 2
     assert ('/', b'foo') in state._sessions
@@ -1111,6 +1088,33 @@ def test_kill_all_servers(html_server_session, markdown_server_session):
     assert server_2._stopped
 
 
+def test_threaded_server_stop_does_not_leave_unstarted_tasks(monkeypatch):
+    import gc
+    import sys
+
+    unraisable = []
+    monkeypatch.setattr(sys, "unraisablehook", unraisable.append)
+
+    serve_and_wait(Markdown('# Title'))
+    thread = next(iter(state._threads.values()))
+    loop = thread.asyncio_loop
+
+    async def respawn():
+        loop.create_task(respawn())
+
+    def create_task_and_stop():
+        loop.create_task(respawn())
+        loop.stop()
+
+    loop.call_soon_threadsafe(create_task_and_stop)
+    thread.join(timeout=5)
+    assert not thread.is_alive()
+    thread = loop = None
+    gc.collect()
+
+    assert [u.object for u in unraisable] == []
+
+
 @pytest.mark.xdist_group(name="server")
 def test_multiple_titles(multiple_apps_server_sessions):
     """Serve multiple apps with a title per app."""
@@ -1125,13 +1129,13 @@ def test_multiple_titles(multiple_apps_server_sessions):
             slugs=('app1', 'app2'), titles={'badkey': 'APP1', 'app2': 'APP2'})
 
 
-def test_serve_can_serve_panel_app_from_file(server_implementation):
+def test_serve_can_serve_panel_app_from_file(server_implementation, asyncio_loop):
     path = pathlib.Path(__file__).parent / "io"/"panel_app.py"
     server = get_server({"panel-app": path})
     assert "/panel-app" in server._tornado.applications
 
 
-def test_serve_can_serve_bokeh_app_from_file(server_implementation):
+def test_serve_can_serve_bokeh_app_from_file(server_implementation, asyncio_loop):
     path = pathlib.Path(__file__).parent / "io"/"bk_app.py"
     server = get_server({"bk-app": path})
     assert "/bk-app" in server._tornado.applications
@@ -1322,7 +1326,6 @@ async def test_server_text_input_update_before_click_event(server_implementation
     wait_until(lambda: bool(called))
 
 
-@pytest.mark.flaky(max_runs=3)
 def test_server_thread_pool_change_event(server_implementation, threads):
     button = Button(label='Click')
     button2 = Button(label='Click')
@@ -1574,7 +1577,7 @@ def test_server_ico_path_on_proxy(reverse_proxy):
     )
 
     assert '<link rel="icon" href="./favicon.ico"' in r.content.decode('utf-8')
-    ico = requests.get(f"http://localhost:{proxy}/proxy/favicon.ico")
+    ico = requests.get(f"http://localhost:{proxy}/proxy/favicon.ico", timeout=30)
     assert ico.content == ico_path.read_bytes()
 
 
@@ -1853,3 +1856,78 @@ def test_server_threads_save(threads, tmp_path):
     serve_and_request(app)
 
     wait_until(lambda: fsave.exists())
+
+
+def test_threaded_server_stop_finishes_locked_callbacks(monkeypatch):
+    import gc
+    import sys
+
+    unraisable = []
+    monkeypatch.setattr(sys, "unraisablehook", unraisable.append)
+    started, finished = threading.Event(), []
+
+    def app():
+        doc = state.curdoc
+
+        async def slow():
+            started.set()
+            await asyncio.sleep(0.2)
+            finished.append('done')
+
+        doc.add_next_tick_callback(slow)
+        return Markdown('# Title')
+
+    serve_and_request(app)
+    assert started.wait(5)
+
+    state.kill_all_servers()
+    gc.collect()
+
+    assert finished == ['done']
+    assert [u.object for u in unraisable] == []
+
+
+def test_threaded_server_stop_runs_unload_hook(monkeypatch):
+    from unittest.mock import Mock
+
+    admin_context = Mock()
+    monkeypatch.setattr(state, '_admin_context', admin_context)
+
+    serve_and_wait(Markdown('# Title'))
+    state.kill_all_servers()
+
+    admin_context.run_unload_hook.assert_called_once()
+
+
+def test_threaded_server_stops_when_autoreload_failed(monkeypatch):
+    from unittest.mock import Mock
+
+    async def failing_watcher(stop_event=None):
+        raise FileNotFoundError('Watched file was removed')
+
+    monkeypatch.setattr('panel.io.reload.setup_autoreload_watcher', failing_watcher)
+    admin_context = Mock()
+    monkeypatch.setattr(state, '_admin_context', admin_context)
+
+    with config.set(autoreload=True):
+        serve_and_wait(Markdown('# Title'))
+    state.kill_all_servers()
+
+    admin_context.run_unload_hook.assert_called_once()
+
+
+@pytest.mark.skipif(not check_cli_tool("caddy"), reason="caddy is not installed")
+def test_reverse_proxy_picks_another_port_when_taken(monkeypatch):
+    taken = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    taken.bind(('127.0.0.1', 0))
+    taken.listen()
+    taken_port = taken.getsockname()[1]
+    ports = iter([(taken_port,)])
+    open_ports = test_util.get_open_ports
+    monkeypatch.setattr(test_util, 'get_open_ports', lambda n=1: next(ports, None) or open_ports(n))
+    try:
+        with reverse_proxy_ctx(port=1234) as (_, proxy_port):
+            assert proxy_port != taken_port
+            socket.create_connection(('127.0.0.1', proxy_port), timeout=5).close()
+    finally:
+        taken.close()

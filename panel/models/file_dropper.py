@@ -7,6 +7,7 @@ from bokeh.models.widgets import InputWidget
 from ..config import config
 from ..io.resources import bundled_files
 from ..util import classproperty
+from .resource import ExternalResourcesMixin
 
 
 class UploadEvent(ModelEvent):
@@ -26,7 +27,7 @@ class DeleteEvent(ModelEvent):
         super().__init__(model=model)
 
 
-class FileDropper(InputWidget):
+class FileDropper(InputWidget, ExternalResourcesMixin):
 
     accepted_filetypes = List(String)
 
@@ -46,39 +47,33 @@ class FileDropper(InputWidget):
 
     previews = List(String)
 
-    __javascript_raw__ = [
-        f"{config.npm_cdn}/filepond-plugin-image-preview/dist/filepond-plugin-image-preview.js",
-        f"{config.npm_cdn}/filepond-plugin-file-validate-size/dist/filepond-plugin-file-validate-size.js",
-        f"{config.npm_cdn}/filepond-plugin-file-validate-type/dist/filepond-plugin-file-validate-type.js",
-        f"{config.npm_cdn}/filepond-plugin-pdf-preview/dist/filepond-plugin-pdf-preview.min.js",
-        f"{config.npm_cdn}/filepond@^4/dist/filepond.min.js"
+    # filepond's ESM entrypoint has no default export, so the namespace it
+    # resolves to is the same shape as the UMD global; the plugins each
+    # default export their plugin object.
+    __javascript_modules_raw__ = [
+        f"{config.npm_cdn}/filepond@^4/dist/filepond.esm.min.js",
+        f"{config.npm_cdn}/filepond-plugin-image-preview/dist/filepond-plugin-image-preview.esm.min.js",
+        f"{config.npm_cdn}/filepond-plugin-file-validate-size/dist/filepond-plugin-file-validate-size.esm.min.js",
+        f"{config.npm_cdn}/filepond-plugin-file-validate-type/dist/filepond-plugin-file-validate-type.esm.min.js",
+        f"{config.npm_cdn}/filepond-plugin-pdf-preview/dist/filepond-plugin-pdf-preview.esm.min.js",
+    ]
+
+    __javascript_module_exports__ = [
+        'FilePond',
+        'FilePondPluginImagePreview',
+        'FilePondPluginFileValidateSize',
+        'FilePondPluginFileValidateType',
+        'FilePondPluginPdfPreview',
     ]
 
     @classproperty
-    def __javascript__(cls):
-        return bundled_files(cls)
-
-    __js_require__ = {
-        'paths': {
-            "filepond":  f"{config.npm_cdn}/filepond@^4/dist/filepond",
-            "filepond-preview-image": f"{config.npm_cdn}/filepond-plugin-image-preview/dist/filepond-plugin-image-preview",
-            "filepond-validate-size": f"{config.npm_cdn}/filepond-plugin-file-validate-size/dist/filepond-plugin-file-validate-size",
-            "filepond-validate-type": f"{config.npm_cdn}/filepond-plugin-file-validate-type/dist/filepond-plugin-file-validate-type",
-            "filepond-preview-pdf": f"{config.npm_cdn}/filepond-plugin-pdf-preview/dist/filepond-plugin-pdf-preview.min",
-        },
-        'exports': {
-            'filepond': 'FilePond',
-            'filepond-preview-image': 'FilePondPluginImagePreview',
-            'filepond-preview-pdf': 'FilePondPluginPdfPreview',
-            'filepond-validate-size': 'FilePondPluginFileValidateSize',
-            'filepond-validate-type': 'FilePondPluginFileValidateType'
-        }
-    }
+    def __javascript_modules__(cls):
+        return bundled_files(cls, 'javascript_modules')
 
     @classproperty
     def __js_skip__(cls):
         return {
-            'FilePond': cls.__javascript__[:]
+            'FilePond': cls.__javascript_modules__[:]
         }
 
     __css_raw__ = [

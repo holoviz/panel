@@ -92,6 +92,49 @@ def count_per_page(count: int, page_size: int):
     return count_per_page
 
 
+def bounding_boxes(page, *locators):
+    # A redraw can briefly take the cells out of the layout.
+    boxes = []
+
+    def _laid_out():
+        boxes[:] = [locator.bounding_box() for locator in locators]
+        assert None not in boxes
+
+    wait_until(_laid_out, page)
+    return boxes
+
+
+def box_in_table(page, locator):
+    # A redraw resets the scroll until the table restores it.
+    table = page.locator('.pnx-tabulator.tabulator')
+    boxes = []
+
+    def _in_table():
+        outer, inner = bounding_boxes(page, table, locator)
+        assert outer['x'] <= inner['x'] and inner['x'] + inner['width'] <= outer['x'] + outer['width']
+        assert outer['y'] <= inner['y'] and inner['y'] + inner['height'] <= outer['y'] + outer['height']
+        boxes[:] = [inner]
+
+    wait_until(_in_table, page)
+    return boxes[0]
+
+
+def wait_for_data_synced(page, widget):
+    # Rows the server sends replace the table, closing any editor opened before.
+    model = next(iter(widget._models.values()))[0]
+
+    def _synced():
+        expected = {key: [str(v) for v in values] for key, values in model.source.data.items()}
+        actual = page.evaluate("""(id) => {
+            const data = Bokeh.documents[0].get_model_by_id(id).data
+            const entries = data instanceof Map ? [...data.entries()] : Object.entries(data)
+            return Object.fromEntries(entries.map(([key, values]) => [key, Array.from(values, String)]))
+        }""", model.source.id)
+        assert actual == expected
+
+    wait_until(_synced, page)
+
+
 def tabulator_column_values(page, col_name: str) -> list[str]:
     """Get the values of a column.
 
@@ -112,6 +155,7 @@ def test_tabulator_no_console_error(page, df_mixed):
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
 
+@pytest.mark.internet
 def test_tabulator_with_loading_ipywidgets_no_console_error(page, df_mixed):
 
     def app():
@@ -124,6 +168,7 @@ def test_tabulator_with_loading_ipywidgets_no_console_error(page, df_mixed):
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
 
+@pytest.mark.internet
 def test_tabulator_default(page, df_mixed, df_mixed_as_string):
     nrows, ncols = df_mixed.shape
     widget = Tabulator(df_mixed)
@@ -165,6 +210,7 @@ def test_tabulator_default(page, df_mixed, df_mixed_as_string):
         assert cols.nth(i).get_attribute('aria-sort') == 'none'
 
 
+@pytest.mark.internet
 def test_tabulator_value_changed(page, df_mixed):
     widget = Tabulator(df_mixed)
 
@@ -180,6 +226,7 @@ def test_tabulator_value_changed(page, df_mixed):
     expect(page.locator('text="AA"')).to_have_count(1)
 
 
+@pytest.mark.internet
 def test_tabulator_disabled(page, df_mixed):
     widget = Tabulator(df_mixed, disabled=True)
 
@@ -1198,25 +1245,32 @@ def test_tabulator_frozen_columns(page, df_mixed):
         use_inner_text=True
     )
 
-    float_bb = page.locator('text="float"').bounding_box()
-    int_bb = page.locator('text="int"').bounding_box()
-    bool_bb = page.locator('text="bool"').bounding_box()
+    float_bb, int_bb, bool_bb = bounding_boxes(
+        page, page.locator('text="float"'), page.locator('text="int"'), page.locator('text="bool"')
+    )
 
     # Check that the float column is rendered before the int column
     assert float_bb['x'] < int_bb['x']
 
     # Scroll to the right, and give it a little extra time
-    page.locator('text="2019-01-01 10:00:00"').scroll_into_view_if_needed()
+    cell = page.locator('text="2019-01-01 10:00:00"')
+
+    def _scroll_into_view():
+        try:
+            cell.scroll_into_view_if_needed(timeout=1000)
+        except Error as e:
+            raise AssertionError(str(e)) from e
+
+    wait_until(_scroll_into_view, page)
 
     # Check that the position of one of the non frozen columns has indeed moved
-    wait_until(lambda: page.locator('text="bool"').bounding_box()['x'] < bool_bb['x'], page)
+    wait_until(lambda: bounding_boxes(page, page.locator('text="bool"'))[0]['x'] < bool_bb['x'], page)
 
     # Check that the two frozen columns haven't moved after scrolling right
     assert float_bb == page.locator('text="float"').bounding_box()
     assert int_bb == page.locator('text="int"').bounding_box()
 
 
-@pytest.mark.flaky(reruns=3, reruns_delays=2)
 def test_tabulator_frozen_columns_with_positions(page, df_mixed):
     widths = 100
     width = int(((df_mixed.shape[1] + 1) * widths) / 2)
@@ -1270,9 +1324,9 @@ def test_tabulator_frozen_columns_with_positions(page, df_mixed):
         use_inner_text=True
     )
 
-    float_bb = page.locator('text="float"').bounding_box()
-    int_bb = page.locator('text="int"').bounding_box()
-    str_bb = page.locator('text="str"').bounding_box()
+    float_bb, int_bb, str_bb = bounding_boxes(
+        page, page.locator('text="float"'), page.locator('text="int"'), page.locator('text="str"')
+    )
 
     # Check that the float column is rendered before the int col
     assert float_bb['x'] < int_bb['x']
@@ -1283,10 +1337,17 @@ def test_tabulator_frozen_columns_with_positions(page, df_mixed):
     # Scroll to the right, and give it a little extra time
     cell = page.locator('text="2019-01-01 10:00:00"')
     expect(cell).to_be_attached()
-    cell.scroll_into_view_if_needed()
+
+    def _scroll_into_view():
+        try:
+            cell.scroll_into_view_if_needed(timeout=1000)
+        except Error as e:
+            raise AssertionError(str(e)) from e
+
+    wait_until(_scroll_into_view, page)
 
     # Check that the position of one of the non-frozen columns has indeed moved
-    wait_until(lambda: page.locator('text="str"').bounding_box()['x'] < str_bb['x'], page)
+    wait_until(lambda: bounding_boxes(page, page.locator('text="str"'))[0]['x'] < str_bb['x'], page)
 
     # Check that the two frozen columns haven't moved after scrolling right
     assert float_bb == page.locator('text="float"').bounding_box()
@@ -1341,8 +1402,7 @@ def test_tabulator_frozen_rows(page):
     expect(y_cell).to_be_visible()
     expect(x_cell).to_have_count(1)
     expect(y_cell).to_have_count(1)
-    X_bb = x_cell.first.bounding_box()
-    Y_bb = y_cell.first.bounding_box()
+    X_bb, Y_bb = bounding_boxes(page, x_cell.first, y_cell.first)
 
     # Scroll the non-frozen area to the bottom.
     page.locator('.pnx-tabulator .tabulator-tableholder').evaluate(
@@ -1359,7 +1419,6 @@ def test_tabulator_frozen_rows(page):
     wait_until(_frozen_rows_unchanged, page)
 
 
-@pytest.mark.flaky(reruns=3, reruns_delays=2)
 def test_tabulator_patch_no_horizontal_rescroll(page, df_mixed):
     widths = 100
     width = int(((df_mixed.shape[1] + 1) * widths) / 2)
@@ -1368,22 +1427,31 @@ def test_tabulator_patch_no_horizontal_rescroll(page, df_mixed):
 
     serve_component(page, widget)
 
-    cell = page.locator('text="target"')
-    expect(cell).to_be_attached()
+    expect(page.locator('text="target"')).to_be_attached()
 
     # Scroll to the right
-    cell.scroll_into_view_if_needed()
-    bb = page.locator('text="tomodify"').bounding_box()
+    table_holder = page.locator('.pnx-tabulator .tabulator-tableholder')
+    table_holder.evaluate("el => { el.scrollLeft = el.scrollWidth; }")
+    # A redraw may reset the scroll again, so keep the position the check saw.
+    scrolled_to = []
+
+    def scrolled():
+        scrolled_to.append(table_holder.evaluate("el => el.scrollLeft"))
+        return scrolled_to[-1] > 0
+
+    wait_until(scrolled, page)
     # Patch a cell in the latest column
     widget.patch({'tomodify': [(0, 'target-modified')]}, as_index=False)
+    expect(page.locator('text="target-modified"')).to_be_attached()
 
-    # Catch a potential rescroll
-    page.wait_for_timeout(400)
     # The table should keep the same scroll position
-    wait_until(lambda: bb == page.locator('text="tomodify"').bounding_box(), page)
+    def kept_position():
+        now = table_holder.evaluate("el => el.scrollLeft")
+        assert abs(now - scrolled_to[-1]) < 1, (scrolled_to[-1], now)
+
+    wait_until(kept_position, page)
 
 
-@pytest.mark.xfail(reason='See https://github.com/holoviz/panel/issues/3249')
 def test_tabulator_patch_no_vertical_rescroll(page):
     size = 10
     arr = np.random.choice(list('abcd'), size=size)
@@ -1396,28 +1464,28 @@ def test_tabulator_patch_no_vertical_rescroll(page):
 
     serve_component(page, widget)
 
-    # Scroll to the bottom
-    target_cell = page.locator(f'text="{target}"')
-    target_cell.scroll_into_view_if_needed()
-    page.wait_for_timeout(400)
-    # Unfortunately that doesn't scroll down quite enough, it's missing
-    # a little scroll down so we do it manually which is more brittle.
-    # Might be a little brittle, setting the mouse somewhere in the table
-    # and scroll down
-    page.mouse.move(x=int(width/2), y=int(height/2))
-    page.mouse.wheel(delta_x=0, delta_y=10000)
-    # Give it time to scroll
-    page.wait_for_timeout(400)
+    expect(page.locator(f'text="{target}"')).to_be_attached()
 
-    bb = page.locator(f'text="{target}"').bounding_box()
+    table_holder = page.locator('.pnx-tabulator .tabulator-tableholder')
+    table_holder.evaluate("el => { el.scrollTop = el.scrollHeight; }")
+    # A redraw may reset the scroll again, so keep the position the check saw.
+    scrolled_to = []
+
+    def scrolled():
+        scrolled_to.append(table_holder.evaluate("el => el.scrollTop"))
+        return scrolled_to[-1] > 0
+
+    wait_until(scrolled, page)
     # Patch a cell in the latest row
     widget.patch({'col': [(size-1, new_val)]})
+    expect(page.locator(f'text="{new_val}"')).to_be_attached()
 
-    # Wait to catch a potential rescroll
-    page.wait_for_timeout(400)
     # The table should keep the same scroll position
-    # This fails
-    assert bb == page.locator(f'text="{new_val}"').bounding_box()
+    def kept_position():
+        now = table_holder.evaluate("el => el.scrollTop")
+        assert abs(now - scrolled_to[-1]) < 1, (scrolled_to[-1], now)
+
+    wait_until(kept_position, page)
 
 
 def test_tabulator_patch_with_filter_no_vertical_rescroll(page):
@@ -1520,14 +1588,13 @@ def test_tabulator_header_filter_no_horizontal_rescroll(page, df_mixed, paginati
 
     serve_component(page, widget)
 
-    page.wait_for_timeout(150)
-
     table_holder = page.locator('.pnx-tabulator .tabulator-tableholder')
     expect(table_holder).to_have_count(1)
-    # Scroll horizontally to the right, then track that position.
+    # Wait for the table to be laid out and overflowing before scrolling it,
+    # otherwise scrollLeft may be a no-op if it's set before layout settles.
+    wait_until(lambda: table_holder.evaluate("el => el.scrollWidth > el.clientWidth"), page)
     table_holder.evaluate("el => { el.scrollLeft = el.scrollWidth; }")
     wait_until(lambda: table_holder.evaluate("el => el.scrollLeft > 0"), page)
-    scroll_left = table_holder.evaluate("el => el.scrollLeft")
 
     header = page.locator(
         f'.tabulator-col[tabulator-field="{col_name}"] '
@@ -1538,12 +1605,13 @@ def test_tabulator_header_filter_no_horizontal_rescroll(page, df_mixed, paginati
     header.fill('off')
     header.press('Enter')
 
-    # Wait for filtering to be applied, then give some time to catch rescroll.
-    wait_until(lambda: widget.current_view.empty, page)
-    page.wait_for_timeout(300)
+    # With remote pagination current_view is None while the server recomputes it.
+    wait_until(lambda: (view := widget.current_view) is not None and view.empty, page)
 
-    # The table should keep the same horizontal scroll position.
-    wait_until(lambda: abs(table_holder.evaluate("el => el.scrollLeft") - scroll_left) <= 1, page)
+    # Focusing the filter scrolls it into view by a few pixels.
+    wait_until(lambda: table_holder.evaluate(
+        "el => el.scrollLeft >= el.scrollWidth - el.clientWidth - 10"
+    ), page)
 
 
 def test_tabulator_header_filter_always_visible(page, df_mixed):
@@ -2886,6 +2954,7 @@ def test_tabulator_editor_datetime_nan(page, df_mixed):
     wait_until(lambda: len(events) == 0, page)
 
 
+@pytest.mark.internet
 @pytest.mark.parametrize('col', ['index', 'int', 'float', 'str', 'date', 'datetime'])
 @pytest.mark.parametrize('dir', ['ascending', 'descending'])
 def test_tabulator_sorters_on_init(page, df_mixed, col, dir):
@@ -3132,6 +3201,7 @@ def test_tabulator_edit_event_and_header_filters_last_row(page):
     str_header.fill('D')
     str_header.press('Enter')
     wait_until(lambda: len(widget.filters) == 1, page)
+    wait_for_data_synced(page, widget)
 
     # Click on the last cell
     cell = page.locator('text="Z"')
@@ -3141,6 +3211,7 @@ def test_tabulator_edit_event_and_header_filters_last_row(page):
     editable_cell.press('Enter')
 
     wait_until(lambda: len(values) == 1, page)
+    wait_for_data_synced(page, widget)
     # This cell was at index 4 in col2 of the original dataframe
     assert values[0] == ('col2', 4, 'Z', 'ZZ')
     assert df['col2'].iloc[-1] == 'ZZ'
@@ -3168,6 +3239,8 @@ def test_tabulator_edit_event_and_header_filters(page):
     str_header.click()
     str_header.fill('a')
     str_header.press('Enter')
+    wait_until(lambda: len(widget.filters) == 1, page)
+    wait_for_data_synced(page, widget)
 
     # Change the cell that contains B to BB
     cell = page.locator('text="B"')
@@ -3177,6 +3250,7 @@ def test_tabulator_edit_event_and_header_filters(page):
     editable_cell.press('Enter')
 
     wait_until(lambda: len(values) == 1, page)
+    wait_for_data_synced(page, widget)
     # This cell was at index 1 in col2 of the original dataframe
     assert values[0] == ('col2', 1, 'B', 'BB')
     assert df['col2'][1] == 'BB'
@@ -3207,6 +3281,8 @@ def test_tabulator_edit_event_and_header_filters_same_column(page, show_index, i
     header.click()
     header.fill('B')
     header.press('Enter')
+    wait_until(lambda: len(widget.filters) == 1, page)
+    wait_for_data_synced(page, widget)
 
     # Check the table has the right number of rows
     expect(page.locator('.tabulator-row')).to_have_count(2)
@@ -3222,6 +3298,7 @@ def test_tabulator_edit_event_and_header_filters_same_column(page, show_index, i
     editable_cell.press('Enter')
 
     wait_until(lambda: len(values) == 1, page)
+    wait_for_data_synced(page, widget)
     assert values[0] == ('values', len(df) - 1, 'B', 'X')
     assert df.at['idx3', 'values'] == 'X'
     # The current view should show the edited value
@@ -3238,6 +3315,7 @@ def test_tabulator_edit_event_and_header_filters_same_column(page, show_index, i
     editable_cell.press('Enter')
 
     wait_until(lambda: len(values) == 2, page)
+    wait_for_data_synced(page, widget)
     assert values[-1] == ('values', len(df) - 1, 'X', 'Y')
     assert df.at['idx3', 'values'] == 'Y'
     assert len(widget.current_view) == 2
@@ -3253,6 +3331,7 @@ def test_tabulator_edit_event_and_header_filters_same_column(page, show_index, i
     editable_cell.press('Enter')
 
     wait_until(lambda: len(values) == 3, page)
+    wait_for_data_synced(page, widget)
     assert values[-1] == ('values', len(df) - 2, 'B', 'Z')
     assert df.at['idx2', 'values'] == 'Z'
     # current_view should show Y and Z, there's no more B
@@ -3281,6 +3360,8 @@ def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pa
     header.click()
     header.fill('B')
     header.press('Enter')
+    wait_until(lambda: len(widget.filters) == 1, page)
+    wait_for_data_synced(page, widget)
 
     wait_until(lambda: widget.current_view is not None and widget.current_view.equals(df[df['values'] == 'B']))
 
@@ -3294,6 +3375,7 @@ def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pa
     editable_cell.press('Enter')
 
     wait_until(lambda: len(values) == 1, page)
+    wait_for_data_synced(page, widget)
     assert values[-1] == ('values', 2, 'B', 'Q')
     assert df.at['idx2', 'values'] == 'Q'
     # current_view should show Y and Z, there's no more B
@@ -3315,6 +3397,7 @@ def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pa
     editable_cell.press('Enter')
 
     wait_until(lambda: len(values) == 2, page)
+    wait_for_data_synced(page, widget)
     assert values[-1] == ('values', len(df) - 1, 'B', 'X')
     assert df.at['idx5', 'values'] == 'X'
     # The current view should show the edited value
@@ -3331,6 +3414,7 @@ def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pa
     editable_cell.press('Enter')
 
     wait_until(lambda: len(values) == 3, page)
+    wait_for_data_synced(page, widget)
     assert values[-1] == ('values', len(df) - 1, 'X', 'Y')
     assert df.at['idx5', 'values'] == 'Y'
     assert len(widget.current_view) == 4
@@ -3346,12 +3430,14 @@ def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pa
     editable_cell.press('Enter')
 
     wait_until(lambda: len(values) == 4, page)
+    wait_for_data_synced(page, widget)
     assert values[-1] == ('values', len(df) - 2, 'B', 'Z')
     assert df.at['idx4', 'values'] == 'Z'
     # current_view should show Y and Z, there's no more B
     assert len(widget.current_view) == 4
 
 
+@pytest.mark.internet
 @pytest.mark.parametrize('sorter', ['sorter', 'no_sorter'])
 @pytest.mark.parametrize('python_filter', ['python_filter', 'no_python_filter'])
 @pytest.mark.parametrize('header_filter', ['header_filter', 'no_header_filter'])
@@ -3411,6 +3497,8 @@ def test_tabulator_edit_event_integrations(page, sorter, python_filter, header_f
         page.locator('text="Last"').click()
         page.wait_for_timeout(200)
 
+    wait_for_data_synced(page, widget)
+
     # Change the cell concent
     cell = page.locator(f'text="{target_val}"')
     cell.click()
@@ -3433,6 +3521,7 @@ def test_tabulator_edit_event_integrations(page, sorter, python_filter, header_f
     pd.testing.assert_frame_equal(widget.current_view, expected_current_view)
 
 
+@pytest.mark.internet
 @pytest.mark.parametrize('sorter', ['sorter', 'no_sorter'])
 @pytest.mark.parametrize('python_filter', ['python_filter', 'no_python_filter'])
 @pytest.mark.parametrize('header_filter', ['header_filter', 'no_header_filter'])
@@ -3612,7 +3701,8 @@ def test_tabulator_loading_no_horizontal_rescroll(page, df_mixed):
 
     wait_until(_scroll_into_view, page)
     page.wait_for_timeout(200)
-    bb = page.locator('text="Target"').bounding_box()
+    target = page.locator('text="Target"')
+    bb = box_in_table(page, target)
 
     widget.loading = True
     page.wait_for_timeout(200)
@@ -3621,7 +3711,7 @@ def test_tabulator_loading_no_horizontal_rescroll(page, df_mixed):
     # To catch a potential rescroll
     page.wait_for_timeout(400)
     # The table should keep the same scroll position
-    assert bb == page.locator('text="Target"').bounding_box()
+    wait_until(lambda: target.bounding_box() == bb, page)
 
 
 def test_tabulator_loading_no_vertical_rescroll(page):
@@ -3647,7 +3737,8 @@ def test_tabulator_loading_no_vertical_rescroll(page):
     wait_until(_scroll_into_view, page)
     page.wait_for_timeout(200)
 
-    bb = page.locator('text="T"').bounding_box()
+    target = page.locator('text="T"')
+    bb = box_in_table(page, target)
 
     widget.loading = True
     page.wait_for_timeout(200)
@@ -3656,7 +3747,7 @@ def test_tabulator_loading_no_vertical_rescroll(page):
     # To catch a potential rescroll
     page.wait_for_timeout(400)
     # The table should keep the same scroll position
-    assert bb == page.locator('text="T"').bounding_box()
+    wait_until(lambda: target.bounding_box() == bb, page)
 
 
 def test_tabulator_trigger_value_update(page):
@@ -3836,6 +3927,7 @@ def test_tabulator_sort_algorithm_no_show_index(page):
     assert values[1] == (target_col, target_index, target_val)
 
 
+@pytest.mark.internet
 @pytest.mark.parametrize(
     ('col', 'vals'),
     (
@@ -3947,10 +4039,12 @@ def test_tabulator_update_hidden_columns(page):
 
     title = page.locator('text="a"')
     cell = col_a_cells.first
-    wait_until(lambda: (
-        (title.bounding_box()['x'] == cell.bounding_box()['x']) and
-        (title.bounding_box()['width'] == cell.bounding_box()['width'])
-    ), page)
+
+    def aligned():
+        title_box, cell_box = bounding_boxes(page, title, cell)
+        assert title_box['x'] == cell_box['x']
+        assert title_box['width'] == cell_box['width']
+    wait_until(aligned, page)
 
 
 def test_tabulator_remote_pagination_auto_page_size_grow(page, df_mixed):
@@ -4014,6 +4108,7 @@ def test_tabulator_local_pagination_auto_page_size_last_button(page):
     expect(page.locator('.tabulator-row').last).to_contain_text(str(df['value'].iloc[-1]))
 
 
+@pytest.mark.internet
 @pytest.mark.parametrize('pagination', ['local', 'remote', None])
 def test_selection_indices_on_paginated_and_filtered_data(page, df_strings, pagination):
     tbl = Tabulator(
@@ -4063,6 +4158,7 @@ def test_selection_indices_on_paginated_and_filtered_data(page, df_strings, pagi
     wait_until(lambda: tbl.selection == [8], page)
 
 
+@pytest.mark.internet
 @pytest.mark.parametrize('pagination', ['local', 'remote', None])
 def test_selection_indices_on_paginated_sorted_and_filtered_data(page, df_strings, pagination):
     tbl = Tabulator(
@@ -4122,6 +4218,7 @@ def test_selection_indices_on_paginated_sorted_and_filtered_data(page, df_string
     wait_until(lambda: tbl.selection == [7], page)
 
 
+@pytest.mark.internet
 @pytest.mark.parametrize('pagination', ['remote', 'local', None])
 def test_range_selection_on_sorted_data_downward(page, pagination):
     df = pd.DataFrame({'a': [1, 3, 2, 4, 5, 6, 7, 8, 9], 'b': [6, 5, 6, 7, 7, 7, 7, 7, 7]})
@@ -4142,6 +4239,7 @@ def test_range_selection_on_sorted_data_downward(page, pagination):
     wait_until(lambda: table.selection == [0, 2], page)
 
 
+@pytest.mark.internet
 @pytest.mark.parametrize('pagination', ['remote', 'local', None])
 def test_range_selection_on_sorted_data_upward(page, pagination):
     df = pd.DataFrame({'a': [1, 3, 2, 4, 5, 6, 7, 8, 9], 'b': [6, 5, 6, 7, 7, 7, 7, 7, 7]})
@@ -4219,6 +4317,7 @@ class Test_RemotePagination:
 class Test_RemotePagination_Selection(Test_RemotePagination):
     selectable = True
 
+    @pytest.mark.internet
     def test_one_item_first_page(self, page):
         rows = self.get_rows(page)
 
@@ -4229,6 +4328,7 @@ class Test_RemotePagination_Selection(Test_RemotePagination):
             rows.nth(0).click()
         self.check_selected(page, [])
 
+    @pytest.mark.internet
     def test_one_item_first_page_and_then_another(self, page):
         rows = self.get_rows(page)
 
@@ -4238,6 +4338,7 @@ class Test_RemotePagination_Selection(Test_RemotePagination):
         rows.nth(1).click()
         self.check_selected(page, [1])
 
+    @pytest.mark.internet
     def test_two_items_first_page(self, page):
         rows = self.get_rows(page)
 
@@ -4248,6 +4349,7 @@ class Test_RemotePagination_Selection(Test_RemotePagination):
             rows.nth(1).click()
         self.check_selected(page, [0, 1])
 
+    @pytest.mark.internet
     def test_one_item_first_page_goto_second_page(self, page):
         rows = self.get_rows(page)
 
@@ -4260,6 +4362,7 @@ class Test_RemotePagination_Selection(Test_RemotePagination):
         self.goto_page(page, 1)
         self.check_selected(page, [0], 1)
 
+    @pytest.mark.internet
     def test_one_item_both_pages_python(self, page):
         self.widget.selection = [0, 10]
         self.check_selected(page, [0, 10], 1)
@@ -4288,6 +4391,7 @@ class Test_RemotePagination_Selection(Test_RemotePagination):
         rows.nth(0).click()
         self.check_selected(page, [10], 1)
 
+    @pytest.mark.internet
     @pytest.mark.parametrize("selection", (0, 10), ids=["page1", "page2"])
     def test_sorting(self, page, selection):
         self.widget.selection = [selection]
@@ -4305,6 +4409,7 @@ class Test_RemotePagination_Selection(Test_RemotePagination):
         self.click_sorting(page)
         self.check_selected(page, [selection], int(selection == 0))
 
+    @pytest.mark.internet
     @pytest.mark.parametrize("selection", (0, 10), ids=["page1", "page2"])
     def test_filtering(self, page, selection):
         self.widget.selection = [selection]
@@ -4622,6 +4727,7 @@ def test_tabulator_hierarchical_data_grouping(page, df, request):
     expect(employees.nth(1)).to_contain_text("Eve")
 
 
+@pytest.mark.internet
 @pytest.mark.parametrize("aggs", [
     {"region": "min", "gender": "max"},
     {"region": "min", "gender": {"salary": "max", "date_joined": "max"}},
