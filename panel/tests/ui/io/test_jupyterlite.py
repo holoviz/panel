@@ -1,5 +1,4 @@
 import sys
-import time
 
 from http.client import HTTPConnection
 from subprocess import PIPE, Popen
@@ -10,6 +9,8 @@ pytest.importorskip("playwright")
 
 from playwright.sync_api import expect
 
+from panel.tests.util import wait_until
+
 pytestmark = pytest.mark.jupyter
 
 
@@ -18,23 +19,22 @@ def launch_jupyterlite():
     process = Popen(
         [sys.executable, "-m", "http.server", "8123", "--directory", 'lite/dist/'], stdout=PIPE
     )
-    retries = 5
-    while retries > 0:
+    def serving():
         conn = HTTPConnection("localhost:8123")
         try:
             conn.request("HEAD", 'index.html')
-            response = conn.getresponse()
-            if response is not None:
-                conn.close()
-                break
+            return conn.getresponse() is not None
         except ConnectionRefusedError:
-            time.sleep(1)
-            retries -= 1
+            return False
+        finally:
+            conn.close()
 
-    if not retries:
+    try:
+        wait_until(serving)
+    except TimeoutError as e:
         process.terminate()
         process.wait()
-        raise RuntimeError("Failed to start http server")
+        raise RuntimeError("Failed to start http server") from e
     try:
         yield
     finally:

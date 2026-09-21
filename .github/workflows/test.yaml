@@ -204,7 +204,7 @@ jobs:
       OKTA_OAUTH_PASSWORD: ${{ secrets.OKTA_OAUTH_PASSWORD }}
       ENV: ${{ matrix.environment }}
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@11eb638302f76ec64217e2eeddfb11df1f788b54 # v1.0.2
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@0d2b48d28d94714bf566148cd050233ec875a92d # v1.0.13
         with:
           environments: ${{ matrix.environment }}
         id: install
@@ -215,7 +215,7 @@ jobs:
         run: |
           jupyter server extension enable panel.io.jupyter_server_extension --sys-prefix
           (jupyter lab --config panel/tests/ui/jupyter_server_test_config.py --port 8887 > /tmp/jupyterlab_server.log 2>&1) &
-          curl -fsS --retry 180 --retry-delay 1 --retry-connrefused http://localhost:8887/lab >/dev/null
+          curl -fsS --retry 180 --retry-delay 1 --retry-connrefused http://127.0.0.1:8887/lab >/dev/null
       - name: Build JupyterLite
         shell: pixi run -e test-ui bash -e {0}
         run: pixi run -e lite lite-build
@@ -225,11 +225,8 @@ jobs:
           echo "PANEL_TEST_AUTH=1" >> $GITHUB_ENV
       - name: Test UI
         run: |
-          # Create a .uicoveragerc file to set the concurrency library to greenlet
-          # https://github.com/microsoft/playwright-python/issues/313
-          echo "[run]\nconcurrency = greenlet" > .uicoveragerc
           FAIL="--screenshot only-on-failure --full-page-screenshot --output ui_screenshots --tracing retain-on-failure"
-          pixi run -e "${ENV}" test-ui --jupyter $COV --cov-config=.uicoveragerc $FAIL
+          pixi run -e "${ENV}" test-ui --jupyter $COV $FAIL
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:

@@ -8,7 +8,7 @@ from panel.pane import Markdown
 from panel.template import EditableTemplate
 from panel.tests.util import serve_component, wait_until
 
-pytestmark = pytest.mark.ui
+pytestmark = [pytest.mark.ui, pytest.mark.internet]
 
 
 def test_editable_template_no_console_errors(page):

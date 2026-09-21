@@ -1,22 +1,65 @@
+import json
+import time
+
 import pytest
 import requests
 
 pytest.importorskip("playwright")
 
-from playwright.sync_api import expect
+from playwright.sync_api import TimeoutError, expect
 
-pytestmark = [pytest.mark.ui, pytest.mark.jupyter]
+pytestmark = [pytest.mark.ui, pytest.mark.jupyter, pytest.mark.flaky(reruns=3)]
+
+
+_notebooks: list[str] = []
 
 
 @pytest.fixture
 def nbclassic_server(jupyter_preview):
     """Use nbclassic as an extension of the shared Jupyter Server."""
     host, _ = jupyter_preview.split('/panel-preview/', 1)
-    return f'{host}/nbclassic'
+    yield f'{host}/nbclassic'
+    # A kernel outlives its notebook page, and the kernels left running
+    # starved new ones on small runners.
+    paths = {f'{name}.ipynb' for name in _notebooks}
+    _notebooks.clear()
+    session = requests.Session()
+    session.get(f'{host}/nbclassic/tree', timeout=10).raise_for_status()
+    headers = {'X-XSRFToken': session.cookies.get('_xsrf', '')}
+    for notebook_session in session.get(f'{host}/api/sessions', timeout=10).json():
+        if notebook_session['path'] in paths:
+            session.delete(f'{host}/api/sessions/{notebook_session["id"]}', headers=headers, timeout=10)
+
+
+def _record_kernel_frames(page):
+    frames = []
+
+    def on_websocket(ws):
+        if '/api/kernels/' not in ws.url:
+            return
+        ws.on('framesent', lambda payload: frames.append((time.monotonic(), 'sent', payload)))
+        ws.on('framereceived', lambda payload: frames.append((time.monotonic(), 'received', payload)))
+
+    page.on('websocket', on_websocket)
+    return frames
+
+
+def _describe_frames(frames):
+    t0 = frames[0][0] if frames else 0
+    lines = []
+    for t, direction, payload in frames:
+        try:
+            msg = json.loads(payload)
+            what = f"{msg['header']['msg_type']} {msg.get('content', {}).get('execution_state', '')}"
+        except Exception:
+            what = f'<{len(payload)} bytes>'
+        lines.append(f'{t - t0:7.2f}s {direction:8} {what}')
+    return '\n'.join(lines[-40:])
 
 
 def run_notebook(page, nbclassic_server, notebook_name, cells):
     """Open a notebook in nbclassic and run every cell through its UI."""
+    _notebooks.append(notebook_name)
     host = nbclassic_server
     api_host = host.removesuffix('/nbclassic')
     notebook = {
@@ -46,16 +89,43 @@ def run_notebook(page, nbclassic_server, notebook_name, cells):
         timeout=10,
     )
     response.raise_for_status()
+    # Tells a stalled server or kernel apart from a request that was never sent.
+    frames = _record_kernel_frames(page)
     page.goto(f'{host}/notebooks/{notebook_name}.ipynb')
     expect(page.locator('#notebook-container .code_cell').first).to_be_visible()
-    page.wait_for_function(
+    # Cells executed before the kernel is ready never run.
+    ready = (
         "window.Jupyter?.notebook?._fully_loaded && "
-        "window.Jupyter.notebook.kernel && !window.Jupyter.notebook.kernel_busy"
+        "window.Jupyter.notebook.kernel?.is_connected() && "
+        "Object.keys(window.Jupyter.notebook.kernel.info_reply).length > 0 && "
+        "!window.Jupyter.notebook.kernel_busy"
     )
+    try:
+        page.wait_for_function(ready, timeout=5000)
+    except TimeoutError:
+        # nbclassic only asks a kernel for its info when it connects or starts,
+        # so a request lost while the kernel starts leaves it waiting.
+        page.evaluate("""() => {
+            const kernel = window.Jupyter?.notebook?.kernel
+            if (kernel?.is_connected() && Object.keys(kernel.info_reply).length === 0) {
+                kernel.kernel_info((reply) => {
+                    kernel.info_reply = reply.content
+                    kernel.events.trigger('kernel_ready.Kernel', {kernel})
+                })
+            }
+        }""")
+        try:
+            page.wait_for_function(ready)
+        except TimeoutError as error:
+            raise AssertionError(f'The kernel did not get ready, kernel frames:\n{_describe_frames(frames)}') from error
     page.evaluate('Jupyter.notebook.execute_all_cells()')
-    page.wait_for_function(
-        'Jupyter.notebook.get_cells().every((cell) => cell.input_prompt_number != null)'
-    )
+    # A queued cell has "*" as its prompt number.
+    try:
+        page.wait_for_function(
+            "Jupyter.notebook.get_cells().every((cell) => typeof cell.input_prompt_number === 'number')"
+        )
+    except TimeoutError as error:
+        raise AssertionError(f'The cells did not run, kernel frames:\n{_describe_frames(frames)}') from error
     page.wait_for_function("window.Jupyter && !window.Jupyter.notebook.kernel_busy")
     errors = page.locator('.output_error').all_inner_texts()
     assert not errors, '\n'.join(errors)
@@ -154,3 +224,14 @@ def test_nbclassic_warns_when_extension_missing(page, nbclassic_server):
     alert = page.locator('.output_area [role="alert"]')
     expect(alert).to_be_visible(timeout=15000)
     expect(alert).to_contain_text('Jupyter server extension')
+
+
+def test_nbclassic_component_renders_when_other_library_fails(page, nbclassic_server):
+    page.route('**/bundled/katex/**', lambda route: route.fulfill(status=404, body='Not Found'))
+    run_notebook(page, nbclassic_server, 'failedlibrary', [
+        'import panel as pn',
+        "pn.extension('filedropper', 'katex', comms='default', inline=False)",
+        'pn.widgets.FileDropper(height=100)',
+    ])
+
+    expect(page.locator('.filepond--root')).to_have_count(1, timeout=12000)

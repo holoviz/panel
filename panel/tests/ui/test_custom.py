@@ -1,6 +1,5 @@
 import os
 import pathlib
-import time
 import typing as t
 
 import param
@@ -102,6 +101,7 @@ class AnyWidgetReactUpdate(AnyWidgetComponent):
     export default { render }
     """
 
+@pytest.mark.internet
 @pytest.mark.parametrize('component', [JSUpdate, ReactUpdate, AnyWidgetUpdate, AnyWidgetReactUpdate])
 def test_update(page, component):
     example = component(text='Hello World!')
@@ -161,6 +161,7 @@ class AnyWidgetEventUpdate(AnyWidgetComponent):
     """
 
 
+@pytest.mark.internet
 @pytest.mark.parametrize('component', [JSEventUpdate, ReactEventUpdate, AnyWidgetEventUpdate])
 def test_event_update(page, component):
     example = component()
@@ -296,6 +297,7 @@ class ReactModuleCached(ReactComponent):
     }
     """
 
+@pytest.mark.internet
 @pytest.mark.parametrize('component', [AnyWidgetModuleCached, JSModuleCached, ReactModuleCached])
 def test_module_cached(page, component):
     example = Row(component())
@@ -426,6 +428,7 @@ class AnyWidgetParent(AnyWidgetComponent):
     """
 
 
+@pytest.mark.internet
 @pytest.mark.parametrize('component', [JSParent, ReactParent, AnyWidgetParent])
 def test_nested_update(page, component):
     example = component(child=Nested(text='Hello World!'))
@@ -490,6 +493,7 @@ class ReactInput(ReactComponent):
     }
     """
 
+@pytest.mark.internet
 @pytest.mark.parametrize('component', [JSInput, ReactInput, AnyWidgetInput])
 def test_gather_input(page, component):
     example = component(text='Hello World!')
@@ -557,6 +561,7 @@ class ReactNestedInput(ReactComponent):
     }
     """
 
+@pytest.mark.internet
 @pytest.mark.parametrize('component', [JSNestedInput, ReactNestedInput, AnyWidgetNestedInput])
 def test_gather_nested_input(page, component):
     example = component(child=Nested(text='Hello World!'))
@@ -603,6 +608,7 @@ class ReactSendEvent(ReactComponent):
     def _handle_click(self, event):
         self.clicks += 1
 
+@pytest.mark.internet
 @pytest.mark.parametrize('component', [JSSendEvent, ReactSendEvent])
 def test_send_event(page, component):
     button = component()
@@ -651,6 +657,7 @@ class ReactSendMsg(ReactComponent):
         self.clicks += 1
 
 
+@pytest.mark.internet
 @pytest.mark.parametrize('component', [JSSendMsg, ReactSendMsg])
 def test_send_msg(page, component):
     button = component()
@@ -715,6 +722,7 @@ class ReactChild(ReactComponent):
     }"""
 
 
+@pytest.mark.internet
 @pytest.mark.parametrize('component', [JSChild, ReactChild])
 def test_child(page, component):
     example = component(child='A Markdown pane!')
@@ -749,6 +757,7 @@ def test_render_policy_manual(page):
     assert example.render_count == 1
 
 
+@pytest.mark.internet
 def test_react_child_no_shadow_dom(page):
     example = ReactChild(
         child=ReactChild(
@@ -810,6 +819,7 @@ class ReactChildren(ListLike, ReactComponent):  # type: ignore[misc]
       return <div id="container">{model.get_child("objects")}</div>
     }"""
 
+@pytest.mark.internet
 @pytest.mark.parametrize('component', [JSChildren, JSChildrenNoReturn, ReactChildren])
 def test_children(page, component):
     example = component(objects=['A Markdown pane!'])
@@ -833,6 +843,7 @@ def test_children(page, component):
 
     assert example.render_count == (3 if issubclass(component, (JSChildren, ReactChildren)) else 2)
 
+@pytest.mark.internet
 @pytest.mark.parametrize('component', [JSChildren, JSChildrenNoReturn, ReactChildren])
 def test_children_add_and_remove_without_error(page, component):
     example = component(objects=['A Markdown pane!'])
@@ -854,6 +865,7 @@ def test_children_add_and_remove_without_error(page, component):
 
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
+@pytest.mark.internet
 @pytest.mark.parametrize('component', [JSChildren, JSChildrenNoReturn, ReactChildren])
 def test_children_append_without_rerender(page, component):
     child = JSChild(child=Markdown(
@@ -903,6 +915,7 @@ export function render() {
   return <h1>bar</h1>
 }"""
 
+@pytest.mark.internet
 @pytest.mark.parametrize(['component', 'before', 'after'], [
     (JSComponent, JS_CODE_BEFORE, JS_CODE_AFTER),
     (ReactChildren, REACT_CODE_BEFORE, REACT_CODE_AFTER),
@@ -929,8 +942,6 @@ def test_reload(page, js_file, component, before, after):
         js_file.file.flush()
         os.fsync(js_file.file.fileno())
         js_file.file.seek(0)
-        while not pathlib.Path(js_file.name).exists():
-            time.sleep(0.1)
         example._update_esm()
 
         expect(h1).to_have_text('bar')
@@ -978,6 +989,7 @@ class ReactLifecycleAfterRender(ReactComponent):
       return <h1>{text}</h1>
     }"""
 
+@pytest.mark.internet
 @pytest.mark.parametrize('component', [JSLifecycleAfterRender, ReactLifecycleAfterRender])
 def test_after_render_lifecycle_hooks(page, component):
     example = component()
@@ -988,6 +1000,7 @@ def test_after_render_lifecycle_hooks(page, component):
 
     expect(page.locator('h1')).to_have_text("rendered")
 
+@pytest.mark.internet
 def test_react_child_no_shadow_dom_after_render_lifecycle_hook(page):
     example = ReactChild(
         child=ReactLifecycleAfterRender(use_shadow_dom=False),
@@ -1020,6 +1033,7 @@ class ReactLifecycleAfterLayout(ReactComponent):
       return <h1>{text}</h1>
     }"""
 
+@pytest.mark.internet
 @pytest.mark.parametrize('component', [JSLifecycleAfterLayout, ReactLifecycleAfterLayout])
 def test_after_layout_lifecycle_hooks(page, component):
     example = component()
@@ -1030,6 +1044,7 @@ def test_after_layout_lifecycle_hooks(page, component):
 
     expect(page.locator('h1')).to_have_text("layouted")
 
+@pytest.mark.internet
 def test_react_child_no_shadow_dom_after_layout_lifecycle_hook(page):
     example = ReactChild(
         child=ReactLifecycleAfterLayout(use_shadow_dom=False),
@@ -1064,6 +1079,7 @@ class ReactLifecycleAfterResize(ReactComponent):
       return <h1>{count}</h1>
     }"""
 
+@pytest.mark.internet
 @pytest.mark.parametrize('component', [JSLifecycleAfterResize, ReactLifecycleAfterResize])
 def test_after_resize_lifecycle_hooks(page, component):
     example = component(sizing_mode='stretch_width')
@@ -1101,6 +1117,7 @@ class ReactLifecycleRemove(ReactComponent):
     }"""
 
 
+@pytest.mark.internet
 @pytest.mark.parametrize('component', [JSLifecycleRemove, ReactLifecycleRemove])
 def test_remove_lifecycle_hooks(page, component):
     example = Row(component(sizing_mode='stretch_width'))
@@ -1116,6 +1133,7 @@ def test_remove_lifecycle_hooks(page, component):
 
     wait_until(lambda: msg_info.value.args[0].json_value() == "Removed", page)
 
+@pytest.mark.internet
 def test_react_child_no_shadow_dom_remove_lifecycle_hook(page):
     example = ReactChild(
         child=ReactLifecycleRemove(use_shadow_dom=False),
@@ -1171,6 +1189,7 @@ class ReactDefaultExport(ReactComponent):
     export default { render }
     """
 
+@pytest.mark.internet
 @pytest.mark.parametrize('component', [AnyWidgetDefaultExport, JSDefaultExport, ReactDefaultExport])
 def test_esm_component_default_export(page, component):
     example = Row(component(sizing_mode='stretch_width'))
@@ -1221,6 +1240,7 @@ class ReactDefaultFunctionExport(ReactComponent):
     }
     """
 
+@pytest.mark.internet
 @pytest.mark.parametrize('component', [AnyWidgetDefaultFunctionExport, JSDefaultExport, ReactDefaultExport])
 def test_esm_component_default_function_export(page, component):
     example = Row(component(sizing_mode='stretch_width'))
@@ -1384,6 +1404,7 @@ class ReactRootReady(ReactComponent):
     """
 
 
+@pytest.mark.internet
 @pytest.mark.parametrize('component', [JSReady, ReactReady])
 def test_view_ready(page, component):
     example = component()
@@ -1393,6 +1414,7 @@ def test_view_ready(page, component):
     expect(page.locator('#ready-status')).to_have_text('ready')
 
 
+@pytest.mark.internet
 @pytest.mark.parametrize('component', [JSRootReady, ReactRootReady])
 def test_view_root_ready_with_child(page, component):
     example = component(child=Markdown('Hello'))
@@ -1448,6 +1470,7 @@ class JSReadyPartialChildren(JSComponent):
     """
 
 
+@pytest.mark.internet
 @pytest.mark.parametrize('component', [JSReadyPartialChildren, ReactReadyPartialChildren])
 def test_view_ready_partial_children(page, component):
     example = component(items=[Markdown('Tab 0'), Markdown('Tab 1'), Markdown('Tab 2')])
@@ -1492,6 +1515,7 @@ class ReactChildInner(ReactComponent):
     """
 
 
+@pytest.mark.internet
 def test_react_root_ready_after_child_update(page):
     inner = ReactChildInner(text="first")
     example = ReactReadyChildUpdate(child=inner)
@@ -1540,6 +1564,7 @@ class ReactReadyChildrenAppend(ListLike, ReactComponent):
     """
 
 
+@pytest.mark.internet
 def test_react_root_ready_after_children_append(page):
     example = ReactReadyChildrenAppend(
         objects=[ReactChildInner(text="child-0")]
@@ -1621,6 +1646,7 @@ COUNT_OVERLAPPING_BUILDS = """
 """
 
 
+@pytest.mark.internet
 def test_children_updates_do_not_overlap(page):
     example = ReactChildrenRace(
         views=[Row(ReactChildInner(text="view-0"))],

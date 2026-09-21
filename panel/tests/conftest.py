@@ -61,6 +61,11 @@ for e in os.environ:
     if e.startswith(('BOKEH_', "PANEL_")) and e not in ("PANEL_LOG_LEVEL", "PANEL_TEST_AUTH"):
         os.environ.pop(e, None)
 
+# The IPython shells of parallel test processes would otherwise share one history database
+IPYTHON_DIR = tempfile.mkdtemp(prefix="panel-ipython-")
+os.environ["IPYTHONDIR"] = IPYTHON_DIR
+atexit.register(shutil.rmtree, IPYTHON_DIR, ignore_errors=True)
+
 @cache
 def internet_available(host="8.8.8.8", port=53, timeout=3):
     """Check if the internet connection is available."""
@@ -89,8 +94,8 @@ def get_default_port():
 def start_jupyter():
     global JUPYTER_PORT, JUPYTER_PROCESS
     args = [
-        'jupyter', 'server', '--port', str(JUPYTER_PORT), "--NotebookApp.token=''",
-        "--ServerApp.jpserver_extensions={'nbclassic': True}",
+        'jupyter', 'server', '--port', str(JUPYTER_PORT), '--ip', '127.0.0.1',
+        "--NotebookApp.token=''", "--ServerApp.jpserver_extensions={'nbclassic': True}",
     ]
     JUPYTER_PROCESS = process = Popen(args, stdout=PIPE, stderr=PIPE, bufsize=1, encoding='utf-8')
     deadline = time.monotonic() + JUPYTER_TIMEOUT
@@ -117,7 +122,7 @@ def cleanup_jupyter():
 def jupyter_preview(request):
     path = pathlib.Path(request.fspath.dirname)
     rel = path.relative_to(pathlib.Path(request.config.invocation_dir).absolute())
-    return f'http://localhost:{JUPYTER_PORT}/panel-preview/render/{str(rel)}'
+    return f'http://127.0.0.1:{JUPYTER_PORT}/panel-preview/render/{str(rel)}'
 
 atexit.register(cleanup_jupyter)
 optional_markers = {
@@ -160,6 +165,7 @@ def pytest_configure(config):
 
     config.addinivalue_line("markers", "internet: mark test as requiring an internet connection")
 
+
 def pytest_generate_tests(metafunc):
     repeat = getattr(metafunc.config.option, 'repeat', None)
     if repeat is not None:
@@ -190,6 +196,10 @@ def pytest_collection_modifyitems(config, items):
         else:
             skipped.append(item)
 
+    for item in selected:
+        if item.get_closest_marker("internet") and not item.get_closest_marker("flaky"):
+            item.add_marker(pytest.mark.flaky(reruns=3, reason="Downloads remote files, which can fail on a bad connection"))
+
     config.hook.pytest_deselected(items=skipped)
     # Sorted because pytest 8.4.0 and pytest-playwright
     # https://github.com/microsoft/playwright-pytest/pull/284
@@ -199,6 +209,14 @@ def pytest_collection_modifyitems(config, items):
 def pytest_runtest_setup(item):
     if "internet" in item.keywords and not internet_available():
         pytest.skip("Skipping test: No internet connection")
+
+
+@pytest.fixture(scope="session")
+def browser_type_launch_args(browser_type_launch_args, browser_name):
+    if browser_name != "chromium":
+        return browser_type_launch_args
+    args = [*browser_type_launch_args.get("args", []), "--host-resolver-rules=MAP localhost 127.0.0.1"]
+    return {**browser_type_launch_args, "args": args}
 
 
 @pytest.fixture
@@ -250,11 +268,22 @@ def stop_event():
 
 @pytest.fixture
 def asyncio_loop():
+    try:
+        previous = asyncio.get_event_loop()
+    except Exception:
+        previous = None
     loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(asyncio.new_event_loop())
-    yield
-    loop.stop()
-    loop.close()
+    asyncio.set_event_loop(loop)
+    try:
+        yield loop
+    finally:
+        # A server on this loop cannot be stopped once it is closed
+        state.kill_all_servers()
+        # Closing the loop leaves the threads of its default executor behind
+        loop.run_until_complete(loop.shutdown_default_executor())
+        loop.stop()
+        loop.close()
+        asyncio.set_event_loop(previous)
 
 @pytest.fixture
 async def watch_files():
@@ -546,6 +575,8 @@ def threads():
     try:
         yield 4
     finally:
+        # A server still stopping needs the thread pool to discard its sessions
+        state.kill_all_servers()
         config.nthreads = None
 
 @pytest.fixture

@@ -134,6 +134,7 @@ def _assert_no_duplicates(page):
     assert not duplicates, f'resources loaded more than once: {sorted(duplicates)}'
 
 
+@pytest.mark.internet
 @pytest.mark.parametrize('name', list(COMPONENTS))
 def test_undeclared_component_renders(page, name):
     factory, selector = COMPONENTS[name]
@@ -148,6 +149,7 @@ def test_undeclared_component_renders(page, name):
     assert _errors(msgs) == []
 
 
+@pytest.mark.internet
 @pytest.mark.parametrize('name', list(COMPONENTS))
 def test_undeclared_component_renders_after_load(page, name):
     """
@@ -218,6 +220,7 @@ def test_late_component_reuses_loaded_library(page):
     assert _errors(msgs) == []
 
 
+@pytest.mark.internet
 def test_esm_components_share_one_shim(page):
     def app():
         extension()
@@ -414,3 +417,29 @@ def test_lazy_component_ignores_stale_notebook_default(page):
         assert _script_count(page, 'panel-preview') == 0
     finally:
         resources_module.NOTEBOOK_RESOURCES = old_notebook_resources
+
+
+def test_library_not_loaded_until_module_exports_assigned(page):
+    def app():
+        extension()
+        return pn.pane.Markdown('text')
+
+    serve_component(page, app)
+
+    loaded = page.evaluate("""() => {
+        window.PanelTestLib = {}
+        const lib = {
+            name: 'panel-test-lib',
+            probe: {global: 'PanelTestLib'},
+            modules: [
+                {url: 'https://example.com/lib.js', export: 'PanelTestLib'},
+                {url: 'https://example.com/plugin.js', export: 'PanelTestPlugin'},
+            ],
+        }
+        const before = window.__panel_resources__.loaded(lib)
+        window.PanelTestPlugin = () => {}
+        const after = window.__panel_resources__.loaded(lib)
+        return [before, after]
+    }""")
+
+    assert loaded == [False, True]

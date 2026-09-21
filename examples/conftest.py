@@ -38,6 +38,11 @@ if find_spec("pyvista") is None:
     ]
 
 
+def pytest_configure(config):
+    # A cell that never finishes would otherwise hang until the job times out
+    config.option.nbval_cell_timeout = min(config.option.nbval_cell_timeout, 60)
+
+
 def pytest_runtest_makereport(item, call):
     """
     Skip tests that fail because "the kernel died before replying to kernel_info"

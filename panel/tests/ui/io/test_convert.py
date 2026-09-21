@@ -3,7 +3,6 @@ import pathlib
 import re
 import shutil
 import tempfile
-import time
 import uuid
 
 import pytest
@@ -23,7 +22,7 @@ if not (PANEL_LOCAL_WHL.is_file() and BOKEH_LOCAL_WHL.is_file()):
         allow_module_level=True
     )
 
-pytestmark = [pytest.mark.ui, pytest.mark.flaky(max_runs=3)]
+pytestmark = [pytest.mark.ui, pytest.mark.flaky(reruns=3)]
 
 
 if os.name == "nt":
@@ -156,8 +155,6 @@ def http_serve():
         pass
 
     httpd, _ = http_serve_directory(str(temp_path), port=HTTP_PORT)
-
-    time.sleep(1)
 
     def write(app):
         app_name = uuid.uuid4().hex
