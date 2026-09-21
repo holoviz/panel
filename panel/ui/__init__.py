@@ -134,7 +134,6 @@ from .wrappers import (
 __all__ = (
     "Accordion",
     "Alert",
-    "Anaconda",
     "AppBar",
     "ArrayInput",
     "Audio",
