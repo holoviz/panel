@@ -78,8 +78,8 @@ _check_panel_material_ui()
 _prior_design = _global_design()
 
 from . import (  # noqa
-    base, chat, designs, indicators, layout, notifications, pane, template,
-    theme, widgets, wrappers,
+    base, chat, indicators, layout, notifications, pane, template, theme,
+    widgets, wrappers,
 )
 from .chat import (
     ChatAreaInput, ChatFeed, ChatInterface, ChatMessage, ChatReactionIcons,
