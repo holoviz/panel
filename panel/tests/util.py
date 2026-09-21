@@ -324,6 +324,9 @@ def serve_and_wait(app, page=None, prefix=None, port=None, proxy=None, **kwargs)
     serve_app(app, port=port or 0, threaded=True, show=False, liveness=True, server_id=server_id, prefix=prefix or "", **kwargs)
     wait_until(lambda: server_id in state._servers, page)
     server = state._servers[server_id][0]
+    if proxy:
+        # The proxy answers the paths it does not route itself
+        wait_for_server(server.port, prefix=prefix)
     port = proxy if proxy else server.port
     if not proxy and hasattr(server, '_tornado'):
         server._tornado.websocket_origins.add(f'127.0.0.1:{port}')
