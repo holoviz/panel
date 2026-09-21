@@ -25,7 +25,7 @@ IGNORED = ['vtk']
 doc_files = [df for df in sorted(DOC_PATH.rglob("*.md")) if not any(ig in str(df).lower() for ig in IGNORED)]
 doc_available = pytest.mark.skipif(not DOC_PATH.is_dir(), reason="folder 'doc' not found")
 
-ALLOWED_NO_DOCS_MODULES = ()
+ALLOWED_NO_DOCS_MODULES = ("scipy", ) # TODO(3.15): Until release
 
 @ref_available
 def test_layouts_are_in_reference_gallery():
@@ -140,7 +140,7 @@ async def test_markdown_codeblocks(file, tmp_path):
         f.writelines(lines)
 
     try:
-        runpy.run_path(str(mod))
+        runpy.run_path(str(mod), run_name="__main__")
     except ModuleNotFoundError as e:
         if e.name not in ALLOWED_NO_DOCS_MODULES:
             raise e

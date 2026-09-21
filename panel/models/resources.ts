@@ -70,12 +70,51 @@ function existing_urls(selector: string, attr: "src" | "href"): Set<string> {
   return urls
 }
 
+const JUPYTER_EXTENSION_PATH = "/panel-preview/static/extensions/panel/"
+
+/**
+ * Rewrites a failed Jupyter-extension-endpoint url to its CDN equivalent,
+ * mirroring the eager bootstrap's fallback in autoload_panel_js.js. Only
+ * tried once per element, and only when the bootstrap has published the
+ * CDN base (it hasn't in server/served-app contexts, where this endpoint
+ * never appears in the first place).
+ */
+function fallback_to_cdn(el: HTMLScriptElement | HTMLLinkElement, url: string): string | null {
+  const index = url.indexOf(JUPYTER_EXTENSION_PATH)
+  const cdn_dist = (globalThis as any).__panel_cdn_dist__
+  if (index === -1 || typeof cdn_dist !== "string" || el.dataset.panelCdnFallback != null) {
+    return null
+  }
+  el.dataset.panelCdnFallback = ""
+  return cdn_dist + url.slice(index + JUPYTER_EXTENSION_PATH.length)
+}
+
 function inject(el: HTMLScriptElement | HTMLLinkElement): Promise<void> {
   return new Promise<void>((resolve, reject) => {
-    el.addEventListener("load", () => resolve(), {once: true})
-    el.addEventListener("error", () => reject(
-      new Error(`Failed to load ${(el as HTMLScriptElement).src || (el as HTMLLinkElement).href}`),
-    ), {once: true})
+    const attempt = (element: HTMLScriptElement | HTMLLinkElement) => {
+      element.addEventListener("load", () => resolve(), {once: true})
+      element.addEventListener("error", () => {
+        const url = (element as HTMLScriptElement).src || (element as HTMLLinkElement).href
+        const fallback = fallback_to_cdn(element, url)
+        if (fallback != null) {
+          element.remove()
+          if (element instanceof HTMLLinkElement) {
+            element.href = fallback
+          } else {
+            element.src = fallback
+          }
+          attempt(element)
+          document.head.appendChild(element)
+          return
+        }
+        if (url.includes(JUPYTER_EXTENSION_PATH)) {
+          const global = globalThis as any
+          global.__panel_jupyter_extension_error__?.()
+        }
+        reject(new Error(`Failed to load ${url}`))
+      }, {once: true})
+    }
+    attempt(el)
     document.head.appendChild(el)
   })
 }
@@ -211,6 +250,41 @@ export class ResourceRegistry {
   }
 
   /**
+   * Records that a loader outside the registry (RequireJS, in the classic
+   * notebook) is already fetching these libraries. Unlike `declare`, this
+   * does not mark them ready immediately: `await_resources` waits on
+   * `ready` instead, so a view doesn't read an unassigned global.
+   */
+  claim(declared: {libs?: LibSpec[]}, ready: Promise<void>): void {
+    for (const lib of declared.libs ?? []) {
+      if (lib == null || lib.name == null) {
+        continue
+      }
+      this.specs.set(lib.name, lib)
+      this.libs.set(lib.name, ready.then(() => {
+        if (this.loaded(lib)) {
+          return element_defined(lib)
+        }
+        // The other loader failed or gave up, so load what is missing here.
+        const urls = [...(lib.js ?? []), ...(lib.modules ?? []).map((module) => module.url)]
+        for (const url of urls) {
+          if (this.urls.get(url_key(url)) === ready) {
+            this.urls.delete(url_key(url))
+          }
+        }
+        const elements = lib.probe?.custom_element != null ? [lib.probe.custom_element] : []
+        return this._load(lib.js ?? [], lib.modules ?? [], elements)
+      }))
+      for (const url of lib.js ?? []) {
+        this.urls.set(url_key(url), ready)
+      }
+      for (const {url} of lib.modules ?? []) {
+        this.urls.set(url_key(url), ready)
+      }
+    }
+  }
+
+  /**
    * Whether a library is already available without loading anything.
    *
    * Probes are hints derived from `__js_skip__` and are known to be wrong
@@ -219,6 +293,14 @@ export class ResourceRegistry {
    * already cached file.
    */
   loaded(lib: LibSpec, scripts?: Set<string>): boolean {
+    // The modules of a library are loaded separately, e.g. by the notebook,
+    // so its probe can pass before every module assigned its global.
+    const exported = (lib.modules ?? []).every(
+      ({export: name}) => name == null || (globalThis as any)[name] != null,
+    )
+    if (!exported) {
+      return false
+    }
     const {probe} = lib
     if (probe != null) {
       if (probe.global != null) {
@@ -469,7 +551,14 @@ function install(): ResourceRegistry {
   if (Array.isArray(queued)) {
     global.__panel_resources_declared__ = []
     for (const declared of queued) {
-      registry.declare(declared)
+      // A queued entry carrying `ready` is a claim: some other loader, i.e.
+      // the notebook's RequireJS, is fetching those libraries already.
+      const ready = declared?.ready
+      if (ready != null && typeof ready.then === "function") {
+        registry.claim(declared, ready)
+      } else {
+        registry.declare(declared)
+      }
     }
   }
   return registry

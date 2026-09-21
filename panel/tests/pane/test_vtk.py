@@ -1,4 +1,5 @@
 import base64
+import gc
 import os
 import sys
 
@@ -30,6 +31,17 @@ from panel.pane.vtk.vtk import (
 
 vtk_available = pytest.mark.skipif(vtk is None, reason="requires vtk")
 pyvista_available = pytest.mark.skipif(True or (vtk is None), reason="requires pyvista")
+
+
+# Freeing the NSWindow a rendered window owns off the main thread deadlocks macOS
+@pytest.fixture(autouse=True)
+def release_render_windows():
+    yield
+    if vtk is None:
+        return
+    for obj in gc.get_objects():
+        if isinstance(obj, vtk.vtkRenderWindow):
+            obj.Finalize()
 
 
 def make_render_window():

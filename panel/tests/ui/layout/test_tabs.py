@@ -29,6 +29,7 @@ def test_tabs_toggle_visible(page):
     expect(tab_panels.last).to_have_text("Bar")
 
 
+@pytest.mark.internet
 def test_tabs_toggle_clickable(page):
     url = "https://assets.holoviz.org/panel/samples/png_sample.png"
     png_pane = PNG(url, link_url=url, target="_self")
@@ -46,12 +47,12 @@ def test_tabs_toggle_clickable(page):
 
     page.mouse.click(200, 200)
 
-    assert page.url.startswith('http://localhost')
+    assert page.url.startswith('http://127.0.0.1')
 
     tabs_root.locator('.bk-tab').first.click(force=True)
 
     expect(tab_panels.first).to_be_visible()
 
-    page.mouse.click(200, 200)
+    page.locator(f'a[href="{url}"]').click()
 
     wait_until(lambda: page.url == url, page)

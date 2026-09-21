@@ -716,21 +716,35 @@ class Server(BokehServer):
             self._autoreload_stop_event = stop_event = asyncio.Event()
             self._autoreload_task = self._loop.asyncio_loop.create_task(setup_autoreload_watcher(stop_event))
 
+    async def _stop_autoreload(self) -> None:
+        for event in state._watch_events:
+            event.set()
+        state._watch_events.clear()
+        self._autoreload_stop_event.set()
+        try:
+            await self._autoreload_task
+        except asyncio.CancelledError:
+            pass
+        except Exception:
+            # A failed watcher must not keep the server from stopping.
+            logger.exception('Autoreload watcher failed')
+
     def stop(self, wait: bool = True) -> None:
         if self._autoreload_stop_event:
             # For the stop event to be processed we have to restart
             # the IOLoop briefly, ensuring an orderly cleanup
-            async def stop_autoreload():
-                for event in state._watch_events:
-                    event.set()
-                state._watch_events = []
-                self._autoreload_stop_event.set()
-                await self._autoreload_task
             try:
-                self._loop.asyncio_loop.run_until_complete(stop_autoreload())
+                self._loop.asyncio_loop.run_until_complete(self._stop_autoreload())
             except RuntimeError:
                 pass # Ignore if the event loop is still running
         super().stop(wait=wait)
+        if state._admin_context:
+            state._admin_context.run_unload_hook()
+
+    async def stop_async(self) -> None:
+        if self._autoreload_stop_event:
+            await self._stop_autoreload()
+        await super().stop_async()
         if state._admin_context:
             state._admin_context.run_unload_hook()
 
@@ -1133,9 +1147,8 @@ class ComponentResourceHandler(StaticFileHandler):
         '_css', '_js', 'base_css', 'css', '_stylesheets', 'modifiers', '_bundle_path', '_bundle_css'
     ]
 
-    def initialize(self, path: str | t.Literal['root'] = 'root', default_filename: str | None = None):
-        self.root = path
-        self.default_filename = default_filename
+    def initialize(self, path: str | t.Literal['root'] = 'root', default_filename: str | None = None, *args: t.Any, **kwargs: t.Any):
+        super().initialize(path, default_filename, *args, **kwargs)
 
     def parse_url_path(self, path: str) -> str:
         """

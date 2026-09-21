@@ -113,6 +113,46 @@ def test_resources_cdn():
         f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-mathjax-{bokeh_version}.min.js',
     ]
 
+
+def test_notebook_resources_respect_jupyterhub_base_url():
+    resource = f'{CDN_DIST}bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js'
+    with edit_readonly(state):
+        state.base_url = '/user/alice/'
+    try:
+        resolved = Resources(mode='cdn', notebook=True).adjust_paths([resource])
+    finally:
+        with edit_readonly(state):
+            state.base_url = '/'
+
+    assert resolved == [
+        f'/user/alice/panel-preview/static/extensions/panel/bundled/datatabulator/'
+        f'tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js'
+    ]
+
+
+def test_notebook_resources_do_not_double_render_endpoint_root():
+    """
+    The render endpoint sets `rel_path` to its own `panel-preview` root
+    already, so it must not be appended a second time on top of
+    `base_url`, which the render endpoint also includes it in.
+    """
+    resource = f'{CDN_DIST}bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js'
+    with edit_readonly(state):
+        state.base_url = '/user/alice/panel-preview/'
+        state.rel_path = '/user/alice/panel-preview'
+    try:
+        resolved = Resources(mode='cdn', notebook=True).adjust_paths([resource])
+    finally:
+        with edit_readonly(state):
+            state.base_url = '/'
+            state.rel_path = ''
+
+    assert resolved == [
+        f'/user/alice/panel-preview/static/extensions/panel/bundled/datatabulator/'
+        f'tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js'
+    ]
+
+
 def test_resources_server_absolute():
     resources = Resources(mode='server', absolute=True, minified=True)
     assert resources.js_raw == ['Bokeh.set_log_level("info");']

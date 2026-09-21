@@ -355,8 +355,11 @@ def test_asgi_reuse_sessions_regenerates_token(asgi_client, reuse_sessions):
         first, second = _token(client), _token(client)
 
     assert get_session_id(first) != get_session_id(second)
-    # The payload of the reused session is carried over to the new token
-    assert get_token_payload(first) == get_token_payload(second)
+    # The payload of the reused session is carried over to the new token,
+    # only the expiry is computed per token and may fall in the next second.
+    first_payload, second_payload = get_token_payload(first), get_token_payload(second)
+    assert first_payload.pop('session_expiry') == pytest.approx(second_payload.pop('session_expiry'), abs=1)
+    assert first_payload == second_payload
 
 
 def test_asgi_reuse_sessions_warm(asgi_apps, reuse_sessions):
