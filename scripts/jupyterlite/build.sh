@@ -2,13 +2,13 @@
 
 set -euxo pipefail
 
+rm -f build/panel-*.whl build/bokeh-*.whl dist/panel-*.whl dist/bokeh-*.whl
 python ./scripts/build_pyodide_wheels.py dist
 python ./scripts/panelite/generate_panelite_content.py
 
 # Update lockfiles
 cd "$(dirname "${BASH_SOURCE[0]}")"
-rm -rf node_modules
-npm install .
+npm ci
 node update_lock.js
 python patch_lock.py
 rm node_modules/pyodide/*.whl

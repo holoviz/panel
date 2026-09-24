@@ -1,5 +1,5 @@
 {
   "dependencies": {
-    "pyodide": "^314.0.6"
+    "pyodide": "314.0.7"
   }
 }

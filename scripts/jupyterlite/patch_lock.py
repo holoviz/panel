@@ -43,7 +43,7 @@ whl_files = glob("../../dist/*.whl")
 for whl_file in whl_files:
     name, version, *_ = parse_wheel_filename(os.path.basename(whl_file))
 
-    package = data["packages"][name]
+    package = data["packages"][str(name)]
     package["version"] = str(version)
     package["file_name"] = os.path.basename(whl_file)
     package["sha256"] = calculate_sha256(whl_file)

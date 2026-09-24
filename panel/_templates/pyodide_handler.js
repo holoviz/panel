@@ -1,4 +1,4 @@
-const pyodideWorker = new Worker("./{{ name }}.js");
+const pyodideWorker = new Worker("./{{ name }}.js", {type: 'module'});
 pyodideWorker.busy = false
 pyodideWorker.queue = []
 

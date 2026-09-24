@@ -338,8 +338,8 @@ lint-install = 'pre-commit install -t=pre-commit'
 [feature.lite.dependencies]
 pyviz_comms = ">=3.0.6"
 jupyterlab-myst = "*"
-jupyterlite-core = ">=0.8.3"
-jupyterlite-pyodide-kernel = "*"
+jupyterlite-core = ">=0.8.3,<0.9"
+jupyterlite-pyodide-kernel = ">=0.8.1,<0.9"
 python-build = "*"
 python-libarchive-c = "*"
 
