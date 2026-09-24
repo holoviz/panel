@@ -324,7 +324,6 @@ __all__ = (
 if _global_design() is not _prior_design:
     _set_global_design(_prior_design)
 
-if config.design is None:
-    # Importing panel.ui opts in to the Material design, but never over an
-    # explicit choice made with pn.extension(design=...) or config.design.
+if config.design is None or config.design is MaterialDesign:
+    # The dependency selects MaterialDesign on import, even without a user choice.
     _set_global_design(MaterialUIDesign)

@@ -254,9 +254,31 @@ def test_design_alias_resolves(ui):
     assert resolve_design('Material-UI') is ui.MaterialUIDesign
 
 
+def test_material_dataframe_stylesheet_uses_dist(ui):
+    from panel.io.resources import CDN_DIST, stylesheet_url
+
+    pane = ui.DataFrame()
+    stylesheets = ui.MaterialUIDesign().params(pane)[0]['stylesheets']
+
+    assert pane._stylesheets == [f'{CDN_DIST}css/dataframe.css']
+    assert stylesheet_url(stylesheets[-1]) == f'{CDN_DIST}css/dataframe_mui.css'
+
+
 def test_importing_panel_ui_selects_the_material_design():
     output = run_check("""\
     import panel as pn
+
+    import panel.ui
+
+    print(pn.config.design is pn.ui.MaterialUIDesign, end='')
+    """)
+    assert output == 'True'
+
+
+def test_importing_panel_ui_replaces_dependency_default():
+    output = run_check("""\
+    import panel as pn
+    import panel_material_ui
 
     import panel.ui
 
