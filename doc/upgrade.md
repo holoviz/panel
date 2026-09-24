@@ -36,32 +36,30 @@ panel migrate my_app/
 
 For example, a classic `pn.widgets.Button(name='Run')` call becomes `pnui.Button(label='Run')`, with `import panel.ui as pnui` added to the file. Where supported, the tool also renames `button_type` to `color` and `button_style` to `variant`, converts `MenuButton(split=True)` to `SplitButton`, and replaces compatible classic template calls with `pnui.Page(...)`. It removes simple explicit design settings when switching to the Material UI design. Review the diff, especially button callbacks, templates, and any design settings you need to retain. Calls with unsupported parameters, argument unpacking, or template options that cannot be confirmed compatible are left unchanged and reported for manual review. The tool changes Python source, not notebooks.
 
+For `RadioButtonGroup` and `CheckButtonGroup`, classic `variant='solid'` maps to `variant='contained'` and `variant='outline'` maps to `variant='outlined'`. The new component constructors also accept the classic spellings. `panel migrate` converts literal `variant` and `button_style` values for these groups; dynamic expressions need manual review.
+
 (panel-ui-compatibility)=
 
 #### Classic and `panel.ui` compatibility
 
-The following tables compare the public Param parameters of classic components with their `panel.ui` counterparts in this release. A component re-exported unchanged from classic Panel has the same Python class and parameter API. For Material replacements, a matching parameter name does not guarantee identical validation or behavior; compare the individual component references and test the result in your app. These tables list all parameters present only on the classic side of each same-named replacement, plus selected changes to types and defaults that can affect existing apps.
+The following tables compare the public Param parameters of classic components with their `panel.ui` counterparts. A component re-exported unchanged from classic Panel has the same Python class and parameter API. For Material replacements, a matching parameter name does not guarantee identical validation or behavior; compare the individual component references and test the result in your app. The differences below reflect the updated `panel-material-ui` implementation; install a release containing those changes before relying on the restored parameters and defaults.
 
 | Classic component | Parameters absent from `panel.ui` | Migration consideration |
 | --- | --- | --- |
-| `widgets.CheckButtonGroup`, `widgets.RadioButtonGroup` | `variant` | Classic `variant` does not map directly to the Material option. |
-| `widgets.CrossSelector` | `definition_order`, `filter_fn` | Review selection order and filtering. |
 | `widgets.DatetimePicker` | `allow_input`, `mode` | Review date entry and picker mode. |
 | `widgets.DatetimeRangePicker` | `allow_input`, `as_numpy_datetime64`, `enable_time`, `mode` | Check output types as well as input behavior. |
-| `widgets.DiscreteSlider` | `formatter` | Review displayed option labels. |
 | `widgets.EditableFloatSlider`, `widgets.EditableIntSlider`, `widgets.EditableRangeSlider` | `editable` | Material editable sliders do not offer this switch. |
 | `widgets.LoadingSpinner` | `throttle` | Review loading timing. |
 | `widgets.MenuButton` | `clicked`, `split` | Use `SplitButton` for `split=True`; review callback semantics. |
-| `widgets.Progress` | `bar_color`, `max` | Review color and absolute-value progress. |
+| `widgets.Progress` | `bar_color` | Review color selection; `max` is supported. |
 | `layout.Accordion`, `layout.Tabs` | `scroll` | Review overflow behavior. |
 | `layout.Card` | `active_header_background`, `auto_scroll_limit`, `button_css_classes`, `scroll`, `scroll_button_threshold`, `scroll_position`, `view_latest` | Review header styling and auto-scrolling. |
 
 | Component | Classic default or parameter type | `panel.ui` default or parameter type |
 | --- | --- | --- |
 | `widgets.Button` | `color='default'`, `variant='solid'` | `color='primary'`, `variant='contained'` |
-| `widgets.FloatSlider` | `end=1.0`, `width=None` | `end=100`, `width=300` |
-| `widgets.IntSlider` | `start=0`, `width=None` | `start=1`, `width=300` |
-| `widgets.RangeSlider` | `step=0.1`, `value=(0, 1)` | `step=1`, `value=(0, 100)` |
+| `widgets.FloatSlider` | `width=None` | `width=300` |
+| `widgets.IntSlider` | `width=None` | `width=300` |
 | `widgets.DatetimeRangeSlider` | `step=60000` | `step=60` |
 | `widgets.LoadingSpinner` | Boolean `value`, `size=125` | Number `value`, `size=40` |
 | `widgets.Select` | Integer `size` | Selector `size` |
