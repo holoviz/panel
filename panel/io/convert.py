@@ -48,7 +48,7 @@ WORKER_HANDLER_TEMPLATE = _pn_env.get_template('pyodide_handler.js')
 PANEL_ROOT = pathlib.Path(__file__).parent.parent
 BOKEH_VERSION = base_version(bokeh.__version__)
 PY_VERSION = base_version(__version__)
-PYODIDE_VERSION = 'v0.29.3'
+PYODIDE_VERSION = 'v314.0.7'
 PYSCRIPT_VERSION = '2026.2.1'
 WHL_PATH = DIST_DIR / 'wheels'
 PANEL_LOCAL_WHL = WHL_PATH / f'panel-{__version__.replace("-dirty", "")}-py3-none-any.whl'
@@ -57,6 +57,8 @@ PANEL_CDN_WHL = f'{CDN_DIST}wheels/panel-{PY_VERSION}-py3-none-any.whl'
 BOKEH_CDN_WHL = f'{CDN_ROOT}wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 PYODIDE_URL = f'https://cdn.jsdelivr.net/pyodide/{PYODIDE_VERSION}/full/pyodide.js'
 PYODIDE_PYC_URL = f'https://cdn.jsdelivr.net/pyodide/{PYODIDE_VERSION}/pyc/pyodide.js'
+PYODIDE_MODULE_URL = f'https://cdn.jsdelivr.net/pyodide/{PYODIDE_VERSION}/full/pyodide.mjs'
+PYODIDE_PYC_MODULE_URL = f'https://cdn.jsdelivr.net/pyodide/{PYODIDE_VERSION}/pyc/pyodide.mjs'
 PYSCRIPT_CSS = f'<link rel="stylesheet" href="https://pyscript.net/releases/{PYSCRIPT_VERSION}/core.css" />'
 PYSCRIPT_CSS_OVERRIDES = f'<link rel="stylesheet" href="{CDN_DIST}css/pyscript.css" />'
 PYSCRIPT_JS = f'<script type="module" src="https://pyscript.net/releases/{PYSCRIPT_VERSION}/core.js" defer></script>'
@@ -414,7 +416,7 @@ def script_to_html(
                 'loading_spinner': config.loading_spinner
             })
             web_worker = WEB_WORKER_TEMPLATE.render({
-                'PYODIDE_URL': PYODIDE_PYC_URL if compiled else PYODIDE_URL,
+                'PYODIDE_URL': PYODIDE_PYC_MODULE_URL if compiled else PYODIDE_MODULE_URL,
                 'data_archives': data_archives,
                 'env_spec': env_spec,
                 'code': code
