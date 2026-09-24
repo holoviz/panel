@@ -125,13 +125,7 @@ def _build_component_matches() -> dict[str, ComponentMatch]:
             identical=ui_cls is cls,
             dropped_params=frozenset(classic_params - ui_params),
             has_label='label' in cls.param,
-            # Gated on both sides: e.g. RadioButtonGroup/CheckButtonGroup keep
-            # `button_type`/`color` on both classic and panel.ui, but drop
-            # `variant` entirely on the panel.ui side because classic
-            # `variant` means something different there (plan §8.2) -- so
-            # `button_style=` must not be renamed to `variant=` for them,
-            # even though the classic class has both `button_style` and
-            # `variant` params.
+            # Check both sides before renaming an appearance alias.
             has_color_alias=(
                 'button_type' in cls.param and 'color' in cls.param and 'color' in ui_params
             ),

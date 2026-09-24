@@ -277,7 +277,8 @@ class _PanelMigrateTransformer(cst.CSTTransformer):
             )
             menu_button_split_true = _is_true(split_arg.value)
 
-        dropped_for_conflict_check = match.dropped_params
+        button_group = dotted in ('panel.widgets.RadioButtonGroup', 'panel.widgets.CheckButtonGroup')
+        dropped_for_conflict_check = match.dropped_params - {'variant'} if button_group else match.dropped_params
         if menu_button_split_true:
             dropped_for_conflict_check = dropped_for_conflict_check - {compat.MENU_BUTTON_SPLIT_KWARG}
 
@@ -291,6 +292,16 @@ class _PanelMigrateTransformer(cst.CSTTransformer):
                 ),
             ))
             return updated_node
+
+        if button_group:
+            for arg in original_node.args:
+                if arg.keyword is None or arg.keyword.value not in ('variant', 'button_style'):
+                    continue
+                if not isinstance(arg.value, cst.SimpleString) or arg.value.evaluated_value not in ('solid', 'outline'):
+                    self.manual_reviews.append(ManualReview(
+                        line, f'{dotted} uses a dynamic {arg.keyword.value}; left unmigrated for manual review.'
+                    ))
+                    return updated_node
 
         return self._rewrite_component_call(updated_node, match, dotted, used_kwargs, line)
 
@@ -349,7 +360,9 @@ class _PanelMigrateTransformer(cst.CSTTransformer):
 
         # Rule 3: button_type=/button_style= -> color=/variant=
         for classic_kw, modern_kw in compat.BUTTON_APPEARANCE_RENAMES.items():
-            supported = match.has_color_alias if modern_kw == 'color' else match.has_variant_alias
+            supported = match.has_color_alias if modern_kw == 'color' else (
+                match.has_variant_alias or dotted in ('panel.widgets.RadioButtonGroup', 'panel.widgets.CheckButtonGroup')
+            )
             if not supported or classic_kw not in used_kwargs or modern_kw in used_kwargs:
                 continue
             new_args, renamed = _rename_kwarg(new_args, classic_kw, modern_kw)
@@ -357,6 +370,15 @@ class _PanelMigrateTransformer(cst.CSTTransformer):
                 self.rewrites.append(Rewrite(
                     line, RULE_BUTTON_APPEARANCE, f'{dotted}: {classic_kw}= -> {modern_kw}='
                 ))
+
+        if dotted in ('panel.widgets.RadioButtonGroup', 'panel.widgets.CheckButtonGroup'):
+            for index, arg in enumerate(new_args):
+                if arg.keyword is not None and arg.keyword.value == 'variant' and isinstance(arg.value, cst.SimpleString):
+                    value = arg.value.evaluated_value
+                    assert isinstance(value, str)
+                    new_args[index] = arg.with_changes(value=cst.SimpleString(repr({
+                        'solid': 'contained', 'outline': 'outlined'
+                    }[value])))
 
         # Rule 1: rewrite the access path itself.
         self.needs_pnui_import = True

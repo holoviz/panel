@@ -111,20 +111,25 @@ def test_button_type_and_style_together_with_name():
     assert 'pnui.Button(' in result.source
 
 
-def test_variant_rewrite_is_gated_per_component_even_when_button_type_is_not():
-    """
-    RadioButtonGroup/CheckButtonGroup: panel.ui drops `variant` entirely
-    because classic `variant` means something different there (plan §8.2), so
-    `button_style=` must not be renamed to `variant=` even though the class
-    has both classic params -- while `button_type=` -> `color=` is unaffected
-    and still rewritten, since `color` is not dropped.
-    """
-    source = "import panel as pn\npn.widgets.RadioButtonGroup(button_type='primary', button_style='outline')\n"
+@pytest.mark.parametrize('group', ['RadioButtonGroup', 'CheckButtonGroup'])
+@pytest.mark.parametrize('keyword', ['variant', 'button_style'])
+@pytest.mark.parametrize(('classic', 'material'), [('solid', 'contained'), ('outline', 'outlined')])
+def test_button_group_variant_migration(group, keyword, classic, material):
+    source = f"import panel as pn\npn.widgets.{group}(button_type='primary', {keyword}='{classic}')\n"
     result = migrate_source(source)
     assert "color='primary'" in result.source
-    assert "button_style='outline'" in result.source
-    assert "variant=" not in result.source
+    assert f"variant='{material}'" in result.source
+    assert 'button_style=' not in result.source
     assert 'button-appearance' in _rules(result)
+    assert not result.manual_reviews
+
+
+@pytest.mark.parametrize('keyword', ['variant', 'button_style'])
+def test_dynamic_button_group_variant_requires_review(keyword):
+    source = f'import panel as pn\npn.widgets.RadioButtonGroup({keyword}=style)\n'
+    result = migrate_source(source)
+    assert not result.changed
+    assert result.manual_reviews
 
 
 def test_menu_button_split_true_becomes_split_button():
