@@ -78,7 +78,7 @@ class Migrate(Subcommand):
         )),
     )
 
-    def invoke(self, args: argparse.Namespace) -> int:
+    def invoke(self, args: argparse.Namespace) -> int:  # type: ignore[override]
         try:
             import libcst  # noqa: F401
         except ImportError:

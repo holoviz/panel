@@ -301,6 +301,7 @@ depends-on = ["_install-ui"]
 # =============================================
 [feature.type.dependencies]
 mypy = "*"
+libcst = ">=1.1"
 pytest = "*"
 pandas-stubs = "*"
 types-croniter = "*"
