@@ -17,6 +17,7 @@ import threading
 import time
 import typing as t
 import unittest.mock
+import uuid
 
 from contextlib import contextmanager
 
@@ -617,6 +618,7 @@ def cache(
     with _hash_context(hash_funcs, approximate):
         closure_key = _closure_key(func)
 
+    fallback_fname = uuid.uuid4().hex
     lock = threading.RLock()
 
     def hash_func(*args, **kwargs):
@@ -640,8 +642,10 @@ def cache(
         # file, class and qualified function name. Since that is shared
         # by all functions a factory generates we also key on the values
         # the function closes over.
-        module = sys.modules[func.__module__]
-        fname = '__main__' if func.__module__ == '__main__' else module.__file__
+        module = sys.modules.get(func.__module__)
+        fname = '__main__' if func.__module__ == '__main__' else getattr(module, '__file__', None)
+        if fname is None:
+            fname = fallback_fname
         qualname = getattr(func, '__qualname__', func_name)
         if is_method:
             func_hash = (fname, type(args[0]).__name__, qualname)
