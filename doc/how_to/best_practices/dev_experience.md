@@ -28,9 +28,9 @@ Be sure to bind `obj.param.{parameter}` (the Parameter object), not just `{param
 def show_clicks(clicks):
     return f"Number of clicks: {clicks}"
 
-button = pn.widgets.Button(label="Click me!")
+button = pn.ui.Button(label="Click me!")
 clicks = pn.bind(show_clicks, button.param.clicks)
-pn.Row(button, clicks)
+pn.ui.Row(button, clicks)
 ```
 
 ### Wrong
@@ -41,9 +41,9 @@ Binding to `{parameter}` will bind to the single current value of the parameter,
 def show_clicks(clicks):
     return f"Number of clicks: {clicks}"
 
-button = pn.widgets.Button(label="Click me!")
+button = pn.ui.Button(label="Click me!")
 clicks = pn.bind(show_clicks, button.clicks)  # not button.clicks!
-pn.Row(button, clicks)
+pn.ui.Row(button, clicks)
 ```
 
 ## Inherit from `pn.viewer.Viewer` or `pn.custom.PyComponent`
@@ -78,7 +78,7 @@ class MultipleChildren(PyComponent):
     objects = Children()
 
     def __panel__(self):
-        return pn.Column(objects=self.param['objects'], styles={"background": "silver"})
+        return pn.ui.Column(objects=self.param['objects'], styles={"background": "silver"})
 ```
 
 ### Okay
@@ -113,9 +113,9 @@ class ExampleApp(pn.viewable.Viewer):
     color = param.Color(default="red", label="Color of box")
 
     def __panel__(self):
-        return pn.Column(
-            pn.Param(self, widgets={"height": pn.widgets.IntInput}),
-            pn.pane.HTML(
+        return pn.ui.Column(
+            pn.Param(self, widgets={"height": pn.ui.IntInput}),
+            pn.ui.HTML(
                 width=self.param.width,
                 height=self.param.height,
                 styles={"background-color": self.param.color},
@@ -138,14 +138,14 @@ class ExampleApp(pn.viewable.Viewer):
     color = param.Color(default="red", label="Color of box")
 
     def __panel__(self):
-        width_slider = pn.widgets.IntSlider.from_param(self.param.width)
-        height_input = pn.widgets.IntInput.from_param(self.param.height)
-        color_picker = pn.widgets.ColorPicker.from_param(self.param.color)
-        return pn.Column(
+        width_slider = pn.ui.IntSlider.from_param(self.param.width)
+        height_input = pn.ui.IntInput.from_param(self.param.height)
+        color_picker = pn.ui.ColorPicker.from_param(self.param.color)
+        return pn.ui.Column(
             width_slider,
             height_input,
             color_picker,
-            pn.pane.HTML(
+            pn.ui.HTML(
                 width=self.param.width,
                 height=self.param.height,
                 styles={"background-color": self.param.color},
@@ -169,28 +169,28 @@ class ExampleApp(pn.viewable.Viewer):
     color = param.Color(default="red", label="Color of box")
 
     def __panel__(self):
-        width_slider = pn.widgets.IntSlider(
+        width_slider = pn.ui.IntSlider(
             value=self.param.width,
             start=self.param["width"].bounds[0],
             end=self.param["width"].bounds[1],
             label=self.param["width"].label,
         )
-        height_input = pn.widgets.IntInput(
+        height_input = pn.ui.IntInput(
             value=self.param.height,
             start=self.param["height"].bounds[0],
             end=self.param["height"].bounds[1],
             label=self.param["height"].label,
         )
-        color_picker = pn.widgets.ColorPicker(
+        color_picker = pn.ui.ColorPicker(
             value=self.param.color,
             label=self.param["color"].label,
             width=200,
         )
-        return pn.Column(
+        return pn.ui.Column(
             width_slider,
             height_input,
             color_picker,
-            pn.pane.HTML(
+            pn.ui.HTML(
                 width=self.param.width,
                 height=self.param.height,
                 styles={"background-color": self.param.color},
@@ -213,19 +213,19 @@ class ExampleApp(pn.viewable.Viewer):
     color = param.Color(default="red", label="Color of box")
 
     def __panel__(self):
-        width_slider = pn.widgets.IntSlider()
-        height_input = pn.widgets.IntInput()
-        color_picker = pn.widgets.ColorPicker()
+        width_slider = pn.ui.IntSlider()
+        height_input = pn.ui.IntInput()
+        color_picker = pn.ui.ColorPicker()
 
         width_slider.link(self, value="width", bidirectional=True)
         height_input.link(self, value="height", bidirectional=True)
         color_picker.link(self, value="color", bidirectional=True)
 
-        return pn.Column(
+        return pn.ui.Column(
             width_slider,
             height_input,
             color_picker,
-            pn.pane.HTML(
+            pn.ui.HTML(
                 width=self.param.width,
                 height=self.param.height,
                 styles={"background-color": self.param.color},
@@ -243,9 +243,9 @@ Widgets should not be used as if they were Parameters, because then all instance
 ```{pyodide}
 class ExampleApp(pn.viewable.Viewer):
 
-    width = pn.widgets.IntSlider()
-    height = pn.widgets.IntInput()
-    color = pn.widgets.ColorPicker()
+    width = pn.ui.IntSlider()
+    height = pn.ui.IntInput()
+    color = pn.ui.ColorPicker()
 ```
 
 ## Show templates in notebooks
@@ -277,21 +277,21 @@ class NotebookPlaceholderTemplate(pn.viewable.Viewer):
     title = param.String()
 
     def __panel__(self):
-        title = pn.pane.Markdown(f"# {self.title}", sizing_mode="stretch_width")
+        title = pn.ui.Markdown(f"# {self.title}", sizing_mode="stretch_width")
         # pastel blue
-        header_row = pn.Row(
+        header_row = pn.ui.Row(
             title,
             *self.header,
             sizing_mode="stretch_width",
             styles={"background": "#e6f2ff"},
         )
-        main_col = pn.WidgetBox(*self.main, sizing_mode="stretch_both")
-        sidebar_col = pn.WidgetBox(
+        main_col = pn.ui.WidgetBox(*self.main, sizing_mode="stretch_both")
+        sidebar_col = pn.ui.WidgetBox(
             *self.sidebar, width=300, sizing_mode="stretch_height"
         )
-        return pn.Column(
+        return pn.ui.Column(
             header_row,
-            pn.Row(sidebar_col, main_col, sizing_mode="stretch_both"),
+            pn.ui.Row(sidebar_col, main_col, sizing_mode="stretch_both"),
             sizing_mode="stretch_both",
             min_height=400,
         )
@@ -316,9 +316,9 @@ def increment_to_value(value):
         time.sleep(0.1)
         yield i
 
-slider = pn.widgets.IntSlider(start=1, end=10)
+slider = pn.ui.IntSlider(start=1, end=10)
 output = pn.bind(increment_to_value, slider.param.value_throttled)
-pn.Row(slider, output)
+pn.ui.Row(slider, output)
 ```
 
 ## Watch side effects
@@ -331,7 +331,7 @@ For functions that trigger side effects, i.e. do not return anything (or return 
 def print_clicks(clicks):
     print(f"Number of clicks: {clicks}")
 
-button = pn.widgets.Button(label="Click me!")
+button = pn.ui.Button(label="Click me!")
 pn.bind(print_clicks, button.param.clicks, watch=True)
 button
 ```
@@ -345,7 +345,7 @@ def print_clicks(event):
     clicks = event.new
     print(f"Number of clicks: {clicks}")
 
-button = pn.widgets.Button(label="Click me!", on_click=print_clicks)
+button = pn.ui.Button(label="Click me!", on_click=print_clicks)
 button
 ```
 
@@ -358,7 +358,7 @@ def print_clicks(event):
     clicks = event.new
     print(f"Number of clicks: {clicks}")
 
-button = pn.widgets.Button(label="Click me!")
+button = pn.ui.Button(label="Click me!")
 button.param.watch(print_clicks, "clicks")
 button
 ```
@@ -373,7 +373,7 @@ Updating the `objects` on a layout should be done via the methods on the layout 
 def print_objects(event):
     print(f"Got new {[pane.object for pane in event.new]}")
 
-col = pn.Column("a", "b")
+col = pn.ui.Column("a", "b")
 
 col.param.watch(print_objects, 'objects')
 
@@ -392,7 +392,7 @@ Modifying container `objects` by index will not trigger the callback.
 def print_objects(event):
     print(f"Got new {event.new}")
 
-col = pn.Column("a", "b")
+col = pn.ui.Column("a", "b")
 
 col.param.watch(print_objects, "objects")
 
@@ -411,7 +411,7 @@ However, you **can** modify the container by index using the APIs on the compone
 def print_objects(event):
     print(f"Got new {[pane.object for pane in event.new]}")
 
-col = pn.Column("a", "b")
+col = pn.ui.Column("a", "b")
 
 col.param.watch(print_objects, "objects")
 

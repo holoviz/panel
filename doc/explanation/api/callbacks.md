@@ -25,12 +25,12 @@ from bokeh.sampledata.autompg import autompg
 
 columns = list(autompg.columns[:-2])
 
-x = pn.widgets.Select(value='mpg', options=columns, label='x')
-y = pn.widgets.Select(value='hp', options=columns, label='y')
-color = pn.widgets.ColorPicker(label='Color', value='#880588')
+x = pn.ui.Select(value='mpg', options=columns, label='x')
+y = pn.ui.Select(value='hp', options=columns, label='y')
+color = pn.ui.ColorPicker(label='Color', value='#880588')
 
-layout = pn.Row(
-    pn.Column('## MPG Explorer', x, y, color),
+layout = pn.ui.Row(
+    pn.ui.Column('## MPG Explorer', x, y, color),
     autompg.hvplot.scatter(x.value, y.value, c=color.value, padding=0.1)
 )
 

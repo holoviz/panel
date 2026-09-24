@@ -26,8 +26,8 @@ class ActionExample(param.Parameterized):
 
 action_example = ActionExample()
 
-pn.Row(
-    pn.Column(
+pn.ui.Row(
+    pn.ui.Column(
         pn.panel(action_example, show_name=False, margin=0, widgets={"action": {"color": "primary"}, "number": {"disabled": True}}),
         '**Click the button** to trigger an update in the output.'
     ),

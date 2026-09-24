@@ -28,7 +28,7 @@ import panel as pn
 
 pn.extension(sizing_mode="stretch_width", template="fast", theme="dark")
 
-pn.Column(
+pn.ui.Column(
     "# 📖 Info",
     """This app is an example of a built in template with a
 *sidebar*, *header* and *main* area.
@@ -47,7 +47,7 @@ async def stream():
         await sleep(0.25)
         yield datetime.now()
 
-pn.Column(
+pn.ui.Column(
     "The current date and time:", *(stream for i in range(5))
 ).servable(target="main")
 

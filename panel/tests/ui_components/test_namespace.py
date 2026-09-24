@@ -173,6 +173,7 @@ def test_classic_components_are_not_wrapped(ui):
     assert ui.FileSelector is pn.widgets.FileSelector
     assert ui.widgets.FileSelector is pn.widgets.FileSelector
     assert ui.Matplotlib is pn.pane.Matplotlib
+    assert ui.Image is ui.pane.Image is pn.pane.Image
     assert ui.GridStack is pn.layout.GridStack
 
 

@@ -71,7 +71,7 @@ button = ImageButton(
     styles={"border": "2px solid lightgray"},
     width=400, height=200
 )
-pn.Column(button, button.param.clicks,).servable()
+pn.ui.Column(button, button.param.clicks,).servable()
 ```
 :::
 
@@ -131,7 +131,7 @@ button = ImageButton(
     styles={"border": "2px solid lightgray"},
     width=400
 )
-pn.Column(button, button.param.clicks).servable()
+pn.ui.Column(button, button.param.clicks).servable()
 ```
 :::
 
@@ -201,7 +201,7 @@ button = ImageButton(
     width=400, height=200
 )
 
-pn.Column(button, button.param.clicks).servable()
+pn.ui.Column(button, button.param.clicks).servable()
 ```
 :::
 
@@ -225,7 +225,7 @@ class MyClass(param.Parameterized):
 
 my_instance = MyClass()
 button2 = ImageButton.from_param(my_instance.param.value, image="https://panel.holoviz.org/_static/logo_stacked.png",)
-pn.Column(button2, my_instance.param.clicks).servable()
+pn.ui.Column(button2, my_instance.param.clicks).servable()
 ```
 
 When you click the image button you should see the number of clicks increase.

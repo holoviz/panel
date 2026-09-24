@@ -287,7 +287,7 @@ import panel as pn
 
 pn.extension()
 
-component = pn.Column(
+component = pn.ui.Column(
     pn.panel({"Wind Speeds": [0, 3, 6, 9, 12, 15, 18, 21], "Power Output": [0,39,260,780, 1300, 1300, 0, 0]}),
     pn.panel("https://assets.holoviz.org/panel/tutorials/wind_turbine.png", height=100),
     pn.panel("https://assets.holoviz.org/panel/tutorials/wind_turbine.mp3"),
@@ -299,7 +299,7 @@ component.servable()
 
 ## Display any Python object in a layout
 
-If we place objects in a [*layout*](../../reference/index.rst#layouts) like [`pn.Column`](../../reference/layouts/Column.md) (more about layouts later), then the layout will apply `pn.panel` for us automatically.
+If we place objects in a [*layout*](../../reference/index.rst#layouts) like [`pn.ui.Column`](../../reference/layouts/Column.md) (more about layouts later), then the layout will apply `pn.panel` for us automatically.
 
 Run the code below:
 
@@ -308,7 +308,7 @@ import panel as pn
 
 pn.extension()
 
-component = pn.Column(
+component = pn.ui.Column(
     {"Wind Speeds": [0, 3, 6, 9, 12, 15, 18, 21], "Power Output": [0,39,260,780, 1300, 1300, 0, 0]},
     "https://assets.holoviz.org/panel/tutorials/wind_turbine.png",
     "https://assets.holoviz.org/panel/tutorials/wind_turbine.mp3",
@@ -327,7 +327,7 @@ import panel as pn
 
 pn.extension()
 
-component = pn.Column(
+component = pn.ui.Column(
     pn.panel({"Wind Speeds": [0, 3, 6, 9, 12, 15, 18, 21], "Power Output": [0,39,260,780, 1300, 1300, 0, 0]}),
     pn.panel("https://assets.holoviz.org/panel/tutorials/wind_turbine.png", height=100),
     pn.panel("https://assets.holoviz.org/panel/tutorials/wind_turbine.mp3", styles={"background": "orange", "padding": "10px"}),
@@ -345,7 +345,7 @@ The example above sets the *css* `styles` of the `Audio` player. The `styles` pa
 
 `pn.panel` is a versatile helper function that converts objects into a [*Pane*](../../reference/index.rst#panes). It automatically selects the best *representation* for an object based on available [*Pane*](../../reference/index.rst#panes) types, ranking them by priority.
 
-For optimal performance, specify the desired *Pane* type directly, like `pn.pane.Matplotlib(fig)` instead of using `pn.panel(fig)`. You will learn about *Panes*  in the [Display Content with Panes](panes.md) section.
+For optimal performance, specify the desired *Pane* type directly, like `pn.ui.Matplotlib(fig)` instead of using `pn.panel(fig)`. You will learn about *Panes*  in the [Display Content with Panes](panes.md) section.
 
 ## Recap
 
@@ -356,7 +356,7 @@ In this guide, we have learned to display Python objects easily with `pn.panel`:
 - Display DataFrames with `pn.panel(df)`
 - Display most Python objects with `pn.panel(some_python_object)`
 - Configure how an object is displayed by giving arguments to `pn.panel`
-- Display most Python objects in *layouts* like `pn.Column` with and without the use of `pn.panel`
+- Display most Python objects in *layouts* like `pn.ui.Column` with and without the use of `pn.panel`
 - Use a specific *Pane* instead of `pn.panel` if performance is key
 - Add JavaScript dependencies via `pn.extension`. For example `pn.extension("vega")` or `pn.extension("plotly")`
 

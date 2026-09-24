@@ -26,12 +26,12 @@ Let's take the example of a form that allows us to register a new user and their
 ```{pyodide}
 import panel as pn
 
-user   = pn.widgets.TextInput(label='User')
-age    = pn.widgets.IntSlider(label='Age', start=0, end=100)
-submit = pn.widgets.Button(label='Submit')
+user   = pn.ui.TextInput(label='User')
+age    = pn.ui.IntSlider(label='Age', start=0, end=100)
+submit = pn.ui.Button(label='Submit')
 
-widgets = pn.Column(user, age, submit)
-md = pn.pane.Markdown()
+widgets = pn.ui.Column(user, age, submit)
+md = pn.ui.Markdown()
 
 def update_preview(event):
     if not user.value:
@@ -48,7 +48,7 @@ user.param.watch(update_preview, 'value')
 age.param.watch(update_preview, 'value')
 submit.on_click(submit_form)
 
-pn.Row(widgets, md)
+pn.ui.Row(widgets, md)
 ```
 
 Note the complexity of defining at least two separate callbacks and accessing the widget values from the global namespace.
@@ -70,11 +70,11 @@ In the reactive approach things are much simpler; the three inputs are bound to 
 ```{pyodide}
 import panel as pn
 
-user   = pn.widgets.TextInput(label='User')
-age    = pn.widgets.IntSlider(label='Age', start=0, end=100)
-submit = pn.widgets.Button(label='Submit')
+user   = pn.ui.TextInput(label='User')
+age    = pn.ui.IntSlider(label='Age', start=0, end=100)
+submit = pn.ui.Button(label='Submit')
 
-widgets = pn.Column(user, age, submit)
+widgets = pn.ui.Column(user, age, submit)
 
 def preview(user, age, submit):
     if not user:
@@ -84,9 +84,9 @@ def preview(user, age, submit):
         pass
     return f'Hit submit to add user {user!r} who is {age} years old.'
 
-md = pn.pane.Markdown(pn.bind(preview, user, age, submit))
+md = pn.ui.Markdown(pn.bind(preview, user, age, submit))
 
-pn.Row(widgets, md)
+pn.ui.Row(widgets, md)
 ```
 
 Note the simplicity of binding all three parameters to one function which generates the preview AND performs the database insertion.
@@ -99,7 +99,7 @@ Note the simplicity of binding all three parameters to one function which genera
 Now that we have introduced some of the concepts behind the reactive approaches, let's dive into the nitty gritty and try to understand how Panel actually implements the abstract concepts of reactivity in practice. As we discussed previously, reactive approaches rely on **data binding**, and we also mentioned that Parameters are the native way for Panel to express the data model. At the implementation level, data binding therefore happens by binding parameter state to some component or function. The important thing to understand is that for binding to be expressed in code, we have to make a distinction between the parameter **value** and the abstract parameter **reference**. To make this concrete, to perform binding we have to use the parameter **object**, which acts as a proxy or reference for its value. Let's say we have a `TextInput` widget:
 
 ```{pyodide}
-text = pn.widgets.TextInput(value='Hello world!')
+text = pn.ui.TextInput(value='Hello world!')
 
 text
 ```
@@ -107,19 +107,19 @@ text
 The widget's value parameter value can be accessed as `text.value`, but executing that code would resolve to the single value at that point in time. To perform binding we need an indirect reference to the object that contains the current value, so that we can get notified about any future new value. For a TextInput, the underlying Parameter object is named "value", and the way to access that Parameter object `text.param.value`. (Yes, it's confusing that the Parameter we need is named "value", such that here we are choosing between getting a "value" of the "value" object (a text string) or the object itself (a Parameter instance)! In Panel there are two main ways of binding to a reference. The first option is to directly bind a parameter object as input to some other component:
 
 ```{pyodide}
-pn.pane.Markdown(object=text.param.value)
+pn.ui.Markdown(object=text.param.value)
 ```
 
 Where supported, this syntax performs data binding between the `value` parameter of the widget and the `object` parameter of the `Markdown` pane and provides a declarative specification of this reactive component, making its `object` update automatically whenever the text changes. We will refer to this approach as **component-level binding**. Component-level bindings are the simplest and most explicit form of data binding in Panel, and can be distinguished from **function-level binding** where we use `pn.bind` to bind a parameter reference to a function:
 
 ```{pyodide}
-a_slider = pn.widgets.FloatSlider(start=0, end=10)
-b_slider = pn.widgets.FloatSlider(start=0, end=10)
+a_slider = pn.ui.FloatSlider(start=0, end=10)
+b_slider = pn.ui.FloatSlider(start=0, end=10)
 
 def add(a, b):
-    return pn.pane.Str(f'{a} + {b} = {a+b}')
+    return pn.ui.Str(f'{a} + {b} = {a+b}')
 
-pn.Column(a_slider, b_slider, pn.bind(add, a_slider.param.value, b_slider.param.value))
+pn.ui.Column(a_slider, b_slider, pn.bind(add, a_slider.param.value, b_slider.param.value))
 ```
 
 In this example, we have bound two inputs to the function and return an output, the `Str` pane. Internally a few things will happen to make this work:
@@ -147,9 +147,9 @@ In any case, if we think back to the diagram above, we can hopefully immediately
 So far we have explored the difference between reactive and callback-based code and gone over component-level and function-level binding to achieve reactivity in Panel. To really understand the power of binding we have to dive a little deeper into what it references are and how they can be bound. In particular we have, so far, focused primarily on Parameters as references. This makes sense since pretty much all reactivity in Panel is ultimately driven by a Parameter. However, binding parameters on their own is usually not that useful. Thinking back to our simple component-level binding example:
 
 ```python
-text = pn.widgets.TextInput(value='Hello world!')
+text = pn.ui.TextInput(value='Hello world!')
 
-pn.pane.Markdown(object=text.param.value)
+pn.ui.Markdown(object=text.param.value)
 ```
 
 You might have wondered: "why is this useful?". It's rare that you would want to bind the output of a widget directly to some other output or parameter. In practice, an output or parameter value will usually be the result of transforming one or more inputs. For this reason Panel (and Param, which it builds on) allows a number of different types to be used as a reference:
@@ -160,9 +160,9 @@ You might have wondered: "why is this useful?". It's rare that you would want to
 A `Parameter` object is the simplest reference.
 
 ```python
-text = pn.widgets.TextInput(value='Hello world!')
+text = pn.ui.TextInput(value='Hello world!')
 
-pn.pane.Markdown(object=text.param.value)
+pn.ui.Markdown(object=text.param.value)
 ```
 :::
 
@@ -170,9 +170,9 @@ pn.pane.Markdown(object=text.param.value)
 A Panel `Widget` acts as a proxy for its `value` parameter, i.e. passing `text` and `text.param.value` are equivalent:
 
 ```python
-text = pn.widgets.TextInput(value='Hello world!')
+text = pn.ui.TextInput(value='Hello world!')
 
-pn.pane.Markdown(object=text)
+pn.ui.Markdown(object=text)
 ```
 :::
 
@@ -180,12 +180,12 @@ pn.pane.Markdown(object=text)
 A function which has other references bound to it using the `pn.bind` helper may also be used as a reference.
 
 ```python
-text = pn.widgets.TextInput(value='world')
+text = pn.ui.TextInput(value='world')
 
 def format(text):
     return f'Hello {text}!'
 
-pn.pane.Markdown(object=pn.bind(format, text))
+pn.ui.Markdown(object=pn.bind(format, text))
 ```
 :::
 
@@ -193,11 +193,11 @@ pn.pane.Markdown(object=pn.bind(format, text))
 Param offers "reactive expressions", which act as proxies for their underlying objects and can be chained together into arbitrary expressions.
 
 ```python
-text = pn.widgets.TextInput(value='world')
+text = pn.ui.TextInput(value='world')
 
 template = pn.rx('Hello {text}!')
 
-pn.pane.Markdown(object=template.format(text=text))
+pn.ui.Markdown(object=template.format(text=text))
 ```
 :::
 
@@ -218,7 +218,7 @@ def gen():
         i = (i+1) % len(options)
         time.sleep(1)
 
-pn.pane.Markdown(object=gen)
+pn.ui.Markdown(object=gen)
 ```
 :::
 
@@ -227,25 +227,25 @@ pn.pane.Markdown(object=gen)
 To unpack these options a little bit, let's go back to our earlier example, which used function-level binding to add two values and render the output using a `Str` pane:
 
 ```{pyodide}
-a_slider = pn.widgets.FloatSlider(start=0, end=10)
-b_slider = pn.widgets.FloatSlider(start=0, end=10)
+a_slider = pn.ui.FloatSlider(start=0, end=10)
+b_slider = pn.ui.FloatSlider(start=0, end=10)
 
 def add(a, b):
-    return pn.pane.Str(f'{a} + {b} = {a+b}')
+    return pn.ui.Str(f'{a} + {b} = {a+b}')
 
-pn.Column(a_slider, b_slider, pn.bind(add, a_slider.param.value, b_slider.param.value))
+pn.ui.Column(a_slider, b_slider, pn.bind(add, a_slider.param.value, b_slider.param.value))
 ```
 
 As we emphasized earlier, function-level binding is often inefficient, but using a bound function as a reference we can rewrite this to use component-level binding instead:
 
 ```{pyodide}
-a_slider = pn.widgets.FloatSlider(start=0, end=10)
-b_slider = pn.widgets.FloatSlider(start=0, end=10)
+a_slider = pn.ui.FloatSlider(start=0, end=10)
+b_slider = pn.ui.FloatSlider(start=0, end=10)
 
 def add(a, b):
     return f'{a} + {b} = {a+b}'
 
-pn.Column(a_slider, b_slider, pn.pane.Str(object=pn.bind(add, a_slider, b_slider)))
+pn.ui.Column(a_slider, b_slider, pn.ui.Str(object=pn.bind(add, a_slider, b_slider)))
 ```
 
 ## So when _should_ you use callbacks?
@@ -267,47 +267,47 @@ Certain user interactions are, by their very nature more amenable to an event-dr
 Let us, for example, extend our simple addition app with a button that triggers the calculation:
 
 ```{pyodide}
-a = pn.widgets.FloatSlider()
-b = pn.widgets.FloatSlider()
-button = pn.widgets.Button(label='Calculate')
+a = pn.ui.FloatSlider()
+b = pn.ui.FloatSlider()
+button = pn.ui.Button(label='Calculate')
 
-str_pane = pn.pane.Str(f'{a.value} + {b.value} = {a.value+b.value}')
+str_pane = pn.ui.Str(f'{a.value} + {b.value} = {a.value+b.value}')
 
 def update(_=None):
     str_pane.object = f'{a.value} + {b.value} = {a.value+b.value}'
 
 button.on_click(update)
 
-pn.Column(a, b, button, str_pane)
+pn.ui.Column(a, b, button, str_pane)
 ```
 
 Defining a click handler using the `on_click` method to trigger the computation feels natural, but we again struggle with the fact that we have to access the state from multiple widgets. The reactive approaches therefore do provide alternatives here, e.g. when using function level binding we can determine if the button has been clicked and raise `Skip` error if it hasn't, causing the update event to be skipped:
 
 ```{pyodide}
-a_slider = pn.widgets.FloatSlider()
-b_slider = pn.widgets.FloatSlider()
-button = pn.widgets.Button(label='Calculate')
+a_slider = pn.ui.FloatSlider()
+b_slider = pn.ui.FloatSlider()
+button = pn.ui.Button(label='Calculate')
 
 def add(a, b, compute):
     if not compute:
         raise pn.param.Skip
     return f'{a} + {b} = {a+b}'
 
-pn.Column(a_slider, b_slider, button, pn.bind(add, a_slider, b_slider, button))
+pn.ui.Column(a_slider, b_slider, button, pn.bind(add, a_slider, b_slider, button))
 ```
 
 Reactive expressions also have a mechanism to condition an event being emitted on a transient event, using the `.rx.when` method:
 
 ```{pyodide}
-a_slider = pn.widgets.FloatSlider()
-b_slider = pn.widgets.FloatSlider()
-button = pn.widgets.Button(label='Calculate')
+a_slider = pn.ui.FloatSlider()
+b_slider = pn.ui.FloatSlider()
+button = pn.ui.Button(label='Calculate')
 
 out = pn.rx('{a} + {b} = {c}').format(
     a=a_slider, b=b_slider, c=a_slider.rx()+b_slider.rx()
 ).rx.when(button)
 
-pn.Column(a_slider, b_slider, button, pn.pane.Str(out))
+pn.ui.Column(a_slider, b_slider, button, pn.ui.Str(out))
 ```
 
 As we can see, at least for this simple case there are still approaches that allow us to stay in a reactive world, and keeping a single approach in a given codebase can reduce the burden on a reader or maintainer of the code.

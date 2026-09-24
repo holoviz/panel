@@ -74,12 +74,12 @@ control_app = pn.Param(
 )
 
 # Building the complete interactive example.
-pn.Column(
+pn.ui.Column(
     "## Precedence Example",
     "Moving the sliders of the control app should update the display of the dummy app.",
-    pn.Row(
-        pn.Column("**Control app**", control_app),
-        pn.Column("**Dummy app**", precedence_model.dummy_app)
+    pn.ui.Row(
+        pn.ui.Column("**Control app**", control_app),
+        pn.ui.Column("**Dummy app**", precedence_model.dummy_app)
     )
 ).servable()
 ```

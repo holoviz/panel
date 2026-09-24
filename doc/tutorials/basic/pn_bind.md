@@ -19,7 +19,7 @@ def calculate_power(wind_speed, efficiency):
         f"Power Generation: {power_generation:.1f} kW"
     )
 
-wind_speed = pn.widgets.FloatSlider(
+wind_speed = pn.ui.FloatSlider(
     value=5, start=0, end=20, step=1, label="Wind Speed (m/s)"
 )
 
@@ -29,7 +29,7 @@ power = pn.bind(
     calculate_power, wind_speed=wind_speed, efficiency=efficiency
 )
 
-pn.Column(wind_speed, power).servable()
+pn.ui.Column(wind_speed, power).servable()
 ```
 
 As you interact with the slider, notice how the displayed power generation dynamically updates, reflecting changes in wind speed.
@@ -49,16 +49,16 @@ def calculate_power(wind_speed, efficiency):
         f"Power Generation: {power_generation:.1f} kW"
     )
 
-wind_speed = pn.widgets.FloatSlider(
+wind_speed = pn.ui.FloatSlider(
     value=5, start=0, end=20, step=1, label="Wind Speed (m/s)"
 )
-efficiency = pn.widgets.FloatInput(value=0.3, start=0.0, end=1.0, label="Efficiency (kW/(m/s))")
+efficiency = pn.ui.FloatInput(value=0.3, start=0.0, end=1.0, label="Efficiency (kW/(m/s))")
 
 power = pn.bind(
     calculate_power, wind_speed=wind_speed, efficiency=efficiency
 )
 
-pn.Column(wind_speed, efficiency, power).servable()
+pn.ui.Column(wind_speed, efficiency, power).servable()
 ```
 
 ## Using References
@@ -78,18 +78,18 @@ def calculate_power(wind_speed, efficiency):
         f"Power Generation: {power_generation:.1f} kW"
     )
 
-wind_speed = pn.widgets.FloatSlider(
+wind_speed = pn.ui.FloatSlider(
     value=5, start=0, end=20, step=1, label="Wind Speed (m/s)"
 )
-efficiency = pn.widgets.FloatInput(value=0.3, start=0.0, end=1.0, label="Efficiency (kW/(m/s))")
+efficiency = pn.ui.FloatInput(value=0.3, start=0.0, end=1.0, label="Efficiency (kW/(m/s))")
 
 power = pn.bind(
     calculate_power, wind_speed=wind_speed, efficiency=efficiency
 )
 
-power_md = pn.pane.Markdown(power)
+power_md = pn.ui.Markdown(power)
 
-pn.Column(wind_speed, efficiency, power_md).servable()
+pn.ui.Column(wind_speed, efficiency, power_md).servable()
 ```
 
 Note how we pass the bound function as an argument to the `Markdown` pane. This way the Markdown pane only has to send the updated text.
@@ -111,25 +111,25 @@ def calculate_power(wind_speed, efficiency):
         f"Power Generation: {power_generation:.1f} kW"
     )
 
-wind_speed = pn.widgets.FloatSlider(
+wind_speed = pn.ui.FloatSlider(
     value=5, start=0, end=20, step=1, label="Wind Speed (m/s)"
 )
-efficiency = pn.widgets.FloatInput(value=0.3, start=0.0, end=1.0, label="Efficiency (kW/(m/s))")
+efficiency = pn.ui.FloatInput(value=0.3, start=0.0, end=1.0, label="Efficiency (kW/(m/s))")
 
 power = pn.bind(
     calculate_power, wind_speed=wind_speed, efficiency=efficiency
 )
 
-submit = pn.widgets.Button(label="Submit", color="primary")
+submit = pn.ui.Button(label="Submit", color="primary")
 
 def result(clicked):
     if clicked:
         return power()
     return "Click Submit"
 
-result = pn.pane.Markdown(pn.bind(result, submit))
+result = pn.ui.Markdown(pn.bind(result, submit))
 
-pn.Column(
+pn.ui.Column(
     wind_speed, efficiency, submit, result
 ).servable()
 ```
@@ -155,7 +155,7 @@ def calculate_power(wind_speed, efficiency):
         f"Power Generation: {power_generation:.1f} kW"
     )
 
-wind_speed = pn.widgets.FloatSlider(
+wind_speed = pn.ui.FloatSlider(
     value=5, start=0, end=20, step=1, label="Wind Speed (m/s)"
 )
 
@@ -165,9 +165,9 @@ calculate_power_bnd = pn.bind(
     calculate_power, wind_speed=wind_speed.param.value_throttled, efficiency=efficiency
 )
 
-power_md = pn.pane.Markdown(calculate_power_bnd)
+power_md = pn.ui.Markdown(calculate_power_bnd)
 
-pn.Column(wind_speed, power_md).servable()
+pn.ui.Column(wind_speed, power_md).servable()
 ```
 
 Try dragging the slider. Notice that the `calculate_power` function is only run when you release the mouse.
@@ -191,7 +191,7 @@ def format_power_gen(wind_speed, efficiency, power):
         f"Power Generation: {power:.1f} kW"
     )
 
-wind_speed = pn.widgets.FloatSlider(
+wind_speed = pn.ui.FloatSlider(
     value=5, start=0, end=20, step=1, label="Wind Speed (m/s)"
 )
 
@@ -201,7 +201,7 @@ power = pn.bind(power_generation, wind_speed, efficiency)
 
 power_text = pn.bind(format_power_gen, wind_speed, efficiency, power)
 
-pn.Column(wind_speed, power, power_text).servable()
+pn.ui.Column(wind_speed, power, power_text).servable()
 ```
 
 :::{warning}
@@ -229,7 +229,7 @@ import panel as pn
 
 pn.extension()
 
-submit = pn.widgets.Button(label="Start the wind turbine")
+submit = pn.ui.Button(label="Start the wind turbine")
 
 def start_stop_wind_turbine(clicked):
     if submit.clicks % 2:
@@ -239,7 +239,7 @@ def start_stop_wind_turbine(clicked):
 
 pn.bind(start_stop_wind_turbine, submit, watch=True)
 
-pn.Column(submit).servable()
+pn.ui.Column(submit).servable()
 ```
 
 ```{warning}
@@ -256,7 +256,7 @@ import panel as pn
 
 pn.extension()
 
-submit = pn.widgets.Button(label="Start the wind turbine")
+submit = pn.ui.Button(label="Start the wind turbine")
 
 def start_stop_wind_turbine(clicked):
     with submit.param.update(loading=True, disabled=True):
@@ -268,7 +268,7 @@ def start_stop_wind_turbine(clicked):
 
 pn.bind(start_stop_wind_turbine, submit, watch=True)
 
-pn.Column(submit).servable()
+pn.ui.Column(submit).servable()
 ```
 
 ### Keep the UI responsive with threads or processes
@@ -284,7 +284,7 @@ import panel as pn
 
 pn.extension()
 
-submit = pn.widgets.Button(label="Start the wind turbine")
+submit = pn.ui.Button(label="Start the wind turbine")
 
 async def start_stop_wind_turbine(clicked):
     with submit.param.update(loading=True, disabled=True):
@@ -297,7 +297,7 @@ async def start_stop_wind_turbine(clicked):
 
 pn.bind(start_stop_wind_turbine, submit, watch=True)
 
-pn.Column(submit).servable()
+pn.ui.Column(submit).servable()
 ```
 
 :::{note}

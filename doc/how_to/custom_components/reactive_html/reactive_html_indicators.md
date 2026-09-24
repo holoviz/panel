@@ -24,7 +24,7 @@ class CustomProgress(ReactiveHTML):
 progress = CustomProgress(
   value=55, styles={"border": "2px solid lightgray"}, height=100, sizing_mode="stretch_width"
 )
-pn.Column(progress, progress.param.value, progress.param.color).servable()
+pn.ui.Column(progress, progress.param.value, progress.param.color).servable()
 ```
 
 ## Advanced Progress Indicator
@@ -275,5 +275,5 @@ indicator = ArcProgressIndicator(
         {"progress": 100, "text": "100%", "tick_width": 0.2, "text_size": 0.8},
     ],
 )
-pn.Row(indicator.controls()[0], indicator).servable()
+pn.ui.Row(indicator.controls()[0], indicator).servable()
 ```

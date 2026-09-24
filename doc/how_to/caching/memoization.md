@@ -35,13 +35,13 @@ DATASETS = {
     'MPG': 'https://raw.githubusercontent.com/mwaskom/seaborn-data/master/mpg.csv'
 }
 
-select = pn.widgets.Select(options=DATASETS)
+select = pn.ui.Select(options=DATASETS)
 
 @pn.cache
 def fetch_data(url):
     return pd.read_csv(url)
 
-pn.Column(select, pn.bind(pn.widgets.Tabulator, pn.bind(fetch_data, select), page_size=10))
+pn.ui.Column(select, pn.bind(pn.ui.Tabulator, pn.bind(fetch_data, select), page_size=10))
 ```
 
 ## Caching Functions with Dependencies
@@ -49,14 +49,14 @@ pn.Column(select, pn.bind(pn.widgets.Tabulator, pn.bind(fetch_data, select), pag
 The `pn.cache` decorator can easily be combined with `pn.depends` to speed up the rendering of your reactive components:
 
 ```{pyodide}
-select = pn.widgets.Select(options=DATASETS)
+select = pn.ui.Select(options=DATASETS)
 
 @pn.cache
 @pn.depends(select)
 def fetch_data(url):
     return pd.read_csv(url)
 
-pn.Column(select, pn.widgets.Tabulator(fetch_data, page_size=10))
+pn.ui.Column(select, pn.ui.Tabulator(fetch_data, page_size=10))
 ```
 
 ## Caching Methods with Dependencies
@@ -73,7 +73,7 @@ class DataExplorer(pn.viewable.Viewer):
         return pd.read_csv(self.dataset)
 
     def __panel__(self):
-        return pn.Column(self.param.dataset, pn.widgets.Tabulator(self.fetch_data, page_size=10))
+        return pn.ui.Column(self.param.dataset, pn.ui.Tabulator(self.fetch_data, page_size=10))
 
 DataExplorer().servable()
 ```
@@ -111,7 +111,7 @@ result1 = expensive_computation(5)
 # Subsequent calls are instant, even after server restart
 result2 = expensive_computation(5)
 
-pn.Column(result1, result2).servable()
+pn.ui.Column(result1, result2).servable()
 ```
 
 By default, cached values are stored in a `./cache` directory relative to your application.

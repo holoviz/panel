@@ -55,10 +55,10 @@ class App(pn.viewable.Viewer):
         self._time = time.time()
 
 
-        self._status_pane = pn.pane.Markdown(self.status, height=40, align="start", margin=(0,5,10,5))
-        self._result_pane = pn.Column(result)
-        self._view = pn.Column(
-            pn.Row(pn.widgets.Button.from_param(self.param.run, sizing_mode="fixed"), self._status_pane),
+        self._status_pane = pn.ui.Markdown(self.status, height=40, align="start", margin=(0,5,10,5))
+        self._result_pane = pn.ui.Column(result)
+        self._view = pn.ui.Column(
+            pn.ui.Row(pn.ui.Button.from_param(self.param.run, sizing_mode="fixed"), self._status_pane),
             self._result_pane
         )
 

@@ -5,10 +5,10 @@ from panel_material_ui.pane import MaterialPaneBase, Typography
 
 from ...pane import (
     AVIF, GIF, HTML, ICO, JPG, JSON, PDF, PNG, SVG, VTK, YT, Audio, Bokeh,
-    DataFrame, DeckGL, ECharts, HoloViews, Interactive, IPyLeaflet, IPyWidget,
-    LaTeX, Markdown, Matplotlib, Pane, PaneBase, ParamFunction, ParamMethod,
-    ParamRef, Perspective, Placeholder, Plotly, ReactiveExpr, Reacton, RGGPlot,
-    Str, Streamz, Textual, Vega, Video, Vizzu, VTKVolume,
+    DataFrame, DeckGL, ECharts, HoloViews, Image, Interactive, IPyLeaflet,
+    IPyWidget, LaTeX, Markdown, Matplotlib, Pane, PaneBase, ParamFunction,
+    ParamMethod, ParamRef, Perspective, Placeholder, Plotly, ReactiveExpr,
+    Reacton, RGGPlot, Str, Streamz, Textual, Vega, Video, Vizzu, VTKVolume,
 )
 
 __all__ = (
@@ -22,6 +22,7 @@ __all__ = (
     "HoloViews",
     "HTML",
     "ICO",
+    "Image",
     "Interactive",
     "IPyLeaflet",
     "IPyWidget",

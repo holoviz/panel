@@ -18,7 +18,7 @@ import random
 pn.extension()
 
 def create_random_spacer():
-    return pn.Spacer(
+    return pn.ui.Spacer(
         height=100,
         width=random.randint(1, 4) * 100,
         styles={"background": "teal"},
@@ -26,7 +26,7 @@ def create_random_spacer():
     )
 spacers = [create_random_spacer() for _ in range(10)]
 
-pn.FlexBox(*spacers).servable()
+pn.ui.FlexBox(*spacers).servable()
 ```
 
 `FlexBox` is based on [CSS Flexbox](https://css-tricks.com/snippets/css/a-guide-to-flexbox/) and supports many of the same options, such as setting `flex_direction`, `flex-wrap`, `align_items` and `align_content`.
@@ -38,7 +38,7 @@ import random
 pn.extension()
 
 def create_random_spacer():
-    return pn.Spacer(
+    return pn.ui.Spacer(
         height=random.randint(1, 2) * 100,
         width=random.randint(1, 4) * 100,
         styles={"background": "teal"},
@@ -46,7 +46,7 @@ def create_random_spacer():
     )
 spacers = [create_random_spacer() for _ in range(10)]
 
-pn.FlexBox(*spacers, align_items="center").servable()
+pn.ui.FlexBox(*spacers, align_items="center").servable()
 ```
 
 ### Distributing proportions
@@ -58,11 +58,11 @@ import panel as pn
 
 pn.extension()
 
-red = pn.Spacer(height=200, styles={'background': 'red', 'flex': '1 1 auto'})
-green = pn.Spacer(height=200, styles={'background': 'green', 'flex': '3 1 auto'})
-blue = pn.Spacer(height=200, styles={'background': 'blue', 'flex': '1 1 auto'})
+red = pn.ui.Spacer(height=200, styles={'background': 'red', 'flex': '1 1 auto'})
+green = pn.ui.Spacer(height=200, styles={'background': 'green', 'flex': '3 1 auto'})
+blue = pn.ui.Spacer(height=200, styles={'background': 'blue', 'flex': '1 1 auto'})
 
-pn.FlexBox(red, green, blue).servable()
+pn.ui.FlexBox(red, green, blue).servable()
 ```
 
 To learn more about this read [this guide on controlling ratios of flex items](https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_flexible_box_layout/Controlling_ratios_of_flex_items_along_the_main_axis).
@@ -93,11 +93,11 @@ wind_speed = pd.DataFrame(
     columns=["Day", "Wind Speed (m/s)"],
 )
 
-dataframe_1 = pn.pane.DataFrame(wind_speed, styles={'flex': '3 1 auto'})
-markdown = pn.pane.Markdown(text, styles={'flex': '3 1 auto'})
-dataframe_2 = pn.pane.DataFrame(wind_speed, styles={'flex': '3 1 auto'})
+dataframe_1 = pn.ui.DataFrame(wind_speed, styles={'flex': '3 1 auto'})
+markdown = pn.ui.Markdown(text, styles={'flex': '3 1 auto'})
+dataframe_2 = pn.ui.DataFrame(wind_speed, styles={'flex': '3 1 auto'})
 
-pn.FlexBox(dataframe_1, markdown, dataframe_2).servable()
+pn.ui.FlexBox(dataframe_1, markdown, dataframe_2).servable()
 ```
 
 :::{dropdown} Solution
@@ -122,11 +122,11 @@ wind_speed = pd.DataFrame(
     columns=["Day", "Wind Speed (m/s)"],
 )
 
-dataframe_1 = pn.pane.DataFrame(wind_speed, styles={'flex': '3 1 auto'})
-markdown = pn.pane.Markdown(text, styles={'flex': '1 1 0', "align-self": "center"})
-dataframe_2 = pn.pane.DataFrame(wind_speed, styles={'flex': '3 1 auto'})
+dataframe_1 = pn.ui.DataFrame(wind_speed, styles={'flex': '3 1 auto'})
+markdown = pn.ui.Markdown(text, styles={'flex': '1 1 0', "align-self": "center"})
+dataframe_2 = pn.ui.DataFrame(wind_speed, styles={'flex': '3 1 auto'})
 
-pn.FlexBox(dataframe_1, markdown, dataframe_2).servable()
+pn.ui.FlexBox(dataframe_1, markdown, dataframe_2).servable()
 ```
 
 :::
@@ -145,9 +145,9 @@ import panel as pn
 pn.extension()
 
 
-red = pn.Spacer(height=200, width=400, styles={'background': 'red'})
-green = pn.Spacer(height=200, width=400, styles={'background': 'green'})
-blue = pn.Spacer(height=200, width=400, styles={'background': 'blue'})
+red = pn.ui.Spacer(height=200, width=400, styles={'background': 'red'})
+green = pn.ui.Spacer(height=200, width=400, styles={'background': 'green'})
+blue = pn.ui.Spacer(height=200, width=400, styles={'background': 'blue'})
 
 media_query = """
 @media screen and (max-width: 1200px) {
@@ -157,7 +157,7 @@ media_query = """
 }
 """
 
-pn.FlexBox(red, green, blue, stylesheets=[media_query]).servable()
+pn.ui.FlexBox(red, green, blue, stylesheets=[media_query]).servable()
 ```
 
 Try changing your browser width to see how the layout changes from row based to column based.
@@ -188,8 +188,8 @@ CARD_STYLE = """
   padding: 5px 10px;
 }"""
 
-manufacturers = pn.widgets.MultiChoice(options=df.t_manu.unique().rx.pipe(list), label='Manufacturer')
-year = pn.widgets.IntRangeSlider(start=df.p_year.min().rx.pipe(int), end=df.p_year.max().rx.pipe(int), label='Year')
+manufacturers = pn.ui.MultiChoice(options=df.t_manu.unique().rx.pipe(list), label='Manufacturer')
+year = pn.ui.IntRangeSlider(start=df.p_year.min().rx.pipe(int), end=df.p_year.max().rx.pipe(int), label='Year')
 columns = ['p_name', 't_state', 't_county', 'p_year', 't_manu', 'p_cap']
 
 filtered = df[columns][df.t_manu.isin(manufacturers.rx.where(manufacturers, df.t_manu.unique())) & df.p_year.between(*year.rx())]
@@ -198,15 +198,15 @@ count = pn.indicators.Number(label='Turbine Count', value=filtered.rx.len(), for
 total_cap = pn.indicators.Number(label='Total Capacity', value=filtered.p_cap.mean(), format='{value:.2f} TWh', stylesheets=[CARD_STYLE])
 modal_year = pn.indicators.Number(label='Modal Year', value=filtered.p_year.mode().iloc[0], stylesheets=[CARD_STYLE])
 
-widgets = pn.Column(manufacturers, year, stylesheets=[CARD_STYLE], margin=10)
-table = pn.widgets.Tabulator(filtered, stylesheets=[CARD_STYLE], max_width=500)
+widgets = pn.ui.Column(manufacturers, year, stylesheets=[CARD_STYLE], margin=10)
+table = pn.ui.Tabulator(filtered, stylesheets=[CARD_STYLE], max_width=500)
 
 year_hist = filtered.hvplot.hist(y='p_year', responsive=True, max_width=300, height=312)
 cap_hist = filtered.hvplot.hist(y='p_cap', responsive=True, max_width=300, height=312)
 
-plots = pn.Column(hv.DynamicMap(cap_hist), hv.DynamicMap(year_hist), stylesheets=[CARD_STYLE], max_width=400, margin=5)
+plots = pn.ui.Column(hv.DynamicMap(cap_hist), hv.DynamicMap(year_hist), stylesheets=[CARD_STYLE], max_width=400, margin=5)
 
-pn.Column(count, total_cap, modal_year, widgets, table, plots).servable()
+pn.ui.Column(count, total_cap, modal_year, widgets, table, plots).servable()
 ```
 
 :::{dropdown} Solution

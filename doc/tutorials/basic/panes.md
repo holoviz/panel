@@ -2,7 +2,7 @@
 
 In this tutorial, we will learn to display objects with *Panes*:
 
-- *Panes* are available in the `pn.pane` namespace.
+- *Panes* are available in the `pn.ui` namespace.
 - *Panes* take an `object` argument as well as other arguments.
 - Discover all *Panes* and their *reference guides* in the [Panes Section](../../reference/index.rst#panes) of the [Component Gallery](../../reference/index.rst).
 
@@ -34,7 +34,7 @@ import panel as pn
 
 pn.extension()
 
-pn.pane.Str(
+pn.ui.Str(
     'This is a raw string that will not be formatted in any way.',
 ).servable()
 ```
@@ -60,7 +60,7 @@ import panel as pn
 
 pn.extension()
 
-pn.pane.Markdown("""\
+pn.ui.Markdown("""\
 # Wind Turbine
 
 A wind turbine is a device that converts the kinetic energy of wind into \
@@ -87,7 +87,7 @@ import panel as pn
 
 pn.extension()
 
-pn.pane.Alert("""
+pn.ui.Alert("""
 ## Markdown Sample
 
 This sample text is from [The Markdown Guide](https://www.markdownguide.org)!
@@ -128,7 +128,7 @@ fig = (
     .properties(width="container", height="container", title="Wind Speed")
 )
 
-pn.pane.Vega(fig, sizing_mode="stretch_width", height=400).servable()
+pn.ui.Vega(fig, sizing_mode="stretch_width", height=400).servable()
 ```
 
 :::{note}
@@ -166,7 +166,7 @@ config = {
         'data': [7, 4, 9, 4, 4, 5, 4]
     }],
 }
-pn.pane.ECharts(config, height=400, sizing_mode="stretch_width").servable()
+pn.ui.ECharts(config, height=400, sizing_mode="stretch_width").servable()
 ```
 
 :::{note}
@@ -197,7 +197,7 @@ data = pd.DataFrame([
 
 fig = data.hvplot(x="Day", y="Wind Speed (m/s)", line_width=10, ylim=(0,10), title="Wind Speed")
 
-pn.pane.HoloViews(fig, sizing_mode="stretch_width").servable()
+pn.ui.HoloViews(fig, sizing_mode="stretch_width").servable()
 ```
 
 :::{note}
@@ -239,7 +239,7 @@ ax.set(
 ax.grid()
 plt.close(fig)  # CLOSE THE FIGURE TO AVOID MEMORY LEAKS!
 
-pn.pane.Matplotlib(fig, dpi=144, tight=True, format="svg", sizing_mode="stretch_width").servable()
+pn.ui.Matplotlib(fig, dpi=144, tight=True, format="svg", sizing_mode="stretch_width").servable()
 ```
 
 :::{note}
@@ -274,7 +274,7 @@ fig.update_traces(mode="lines+markers", marker=dict(size=10), line=dict(width=4)
 fig.update_yaxes(range=[0, max(data['Wind Speed (m/s)']) + 1])
 fig.layout.autosize = True
 
-pn.pane.Plotly(fig, height=400, sizing_mode="stretch_width").servable()
+pn.ui.Plotly(fig, height=400, sizing_mode="stretch_width").servable()
 ```
 
 :::{note}
@@ -301,7 +301,7 @@ data = pd.DataFrame([
     ('Friday', 4), ('Saturday', 5), ('Sunday', 4)], columns=['Day', 'Wind Speed (m/s)']
 )
 
-pn.pane.Vizzu(
+pn.ui.Vizzu(
     data, config={'geometry': 'line', 'x': 'Day', 'y': 'Wind Speed (m/s)', 'title': 'Wind Speed'},
     duration=400, height=400, sizing_mode='stretch_width', tooltip=True
 ).servable()
@@ -331,7 +331,7 @@ data = pd.DataFrame([
     ('Monday', 7), ('Tuesday', 4), ('Wednesday', 9), ('Thursday', 4),
     ('Friday', 4), ('Saturday', 4), ('Sunday', 4)], columns=['Day', 'Orders']
 )
-pn.pane.DataFrame(data).servable()
+pn.ui.DataFrame(data).servable()
 ```
 
 :::{note}
@@ -349,10 +349,10 @@ import panel as pn
 
 pn.extension()
 
-pn.Column(
-    pn.pane.JSON({"Wind Speeds": [0, 3, 6, 9, 12, 15, 18, 21], "Power Output": [0,39,260,780, 1300, 1300, 0, 0]}),
-    pn.pane.PNG("https://assets.holoviz.org/panel/tutorials/wind_turbine.png", height=100),
-    pn.pane.Audio("https://assets.holoviz.org/panel/tutorials/wind_turbine.mp3"),
+pn.ui.Column(
+    pn.ui.JSON({"Wind Speeds": [0, 3, 6, 9, 12, 15, 18, 21], "Power Output": [0,39,260,780, 1300, 1300, 0, 0]}),
+    pn.ui.PNG("https://assets.holoviz.org/panel/tutorials/wind_turbine.png", height=100),
+    pn.ui.Audio("https://assets.holoviz.org/panel/tutorials/wind_turbine.mp3"),
 ).servable()
 ```
 
@@ -360,7 +360,7 @@ pn.Column(
 
 In this guide, we have learned to display Python objects with *Panes*:
 
-- *Panes* are available in the `pn.pane` namespace
+- *Panes* are available in the `pn.ui` namespace
 - *Panes* take an `object` argument as well as other arguments
 - Display strings with the [`Str`](../../reference/panes/Str.md), [`Markdown`](../../reference/panes/Markdown.md) and [`Alert`](../../reference/panes/Alert.md) panes
 - Display plot figures like [Altair](https://altair-viz.github.io/), [ECharts](https://echarts.apache.org/en/index.html), [hvPlot](https://hvplot.holoviz.org), [Matplotlib](https://matplotlib.org/), [Plotly](https://plotly.com/python/) and [Vizzu](https://vizzuhq.com/) with the [`Vega`](../../reference/panes/Vega.md), [`ECharts`](../../reference/panes/ECharts.md), [`HoloViews`](../../reference/panes/HoloViews.md), [`Matplotlib`](../../reference/panes/Matplotlib.md), [`Plotly`](../../reference/panes/Plotly.md) and [`Vizzu`](../../reference/panes/Vizzu.md) *panes*, respectively.

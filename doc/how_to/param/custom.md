@@ -29,9 +29,9 @@ class CustomExample(param.Parameterized):
 
 
 pn.Param(CustomExample.param, widgets={
-    'select_string': pn.widgets.RadioButtonGroup,
-    'autocomplete_string': pn.widgets.AutocompleteInput,
-    'select_number': pn.widgets.DiscretePlayer}
+    'select_string': pn.ui.RadioButtonGroup,
+    'autocomplete_string': pn.ui.AutocompleteInput,
+    'select_number': pn.ui.DiscretePlayer}
 )
 ```
 
@@ -41,16 +41,16 @@ Taking up the previous example.
 
 ```{pyodide}
 pn.Param(CustomExample.param, widgets={
-    'select_string': {'widget_type': pn.widgets.RadioButtonGroup, 'color': 'success'},
-    'autocomplete_string': {'widget_type': pn.widgets.AutocompleteInput, 'placeholder': 'Find a color...'},
-    'select_number': pn.widgets.DiscretePlayer}
+    'select_string': {'widget_type': pn.ui.RadioButtonGroup, 'color': 'success'},
+    'autocomplete_string': {'widget_type': pn.ui.AutocompleteInput, 'placeholder': 'Find a color...'},
+    'select_number': pn.ui.DiscretePlayer}
 )
 ```
 
 However it is also possible to explicitly construct a widget from a parameter using the `.from_param` method, which makes it easy to override widget settings using keyword arguments:
 
 ```{pyodide}
-pn.widgets.RadioBoxGroup.from_param(CustomExample.param.select_string, inline=True)
+pn.ui.RadioBoxGroup.from_param(CustomExample.param.select_string, inline=True)
 ```
 
 ## Custom name

@@ -25,11 +25,11 @@ To use `pn.bind`, follow these steps:
 def my_func(value):
     return ...
 # 2. Define your widgets
-slider = pn.widgets.IntSlider(...)
+slider = pn.ui.IntSlider(...)
 # 3. Bind your function to the widget(s)
 my_bound_func = pn.bind(my_func, value=slider)
 # 4. Layout and display your bound functions and widgets
-pn.Column(slider, my_bound_func)
+pn.ui.Column(slider, my_bound_func)
 ```
 
 Once you've set up your functions and widgets as described, they will automatically update in response to user interactions.
@@ -88,10 +88,10 @@ def plot(data, bins):
     return fig
 
 data = np.random.normal(1, 1, size=100)
-bins_input = pn.widgets.IntSlider(value=20, start=10, end=30, step=1, label="Bins")
+bins_input = pn.ui.IntSlider(value=20, start=10, end=30, step=1, label="Bins")
 bplot = pn.bind(plot, data=data, bins=bins_input)
 
-pn.Column(bins_input, bplot).servable()
+pn.ui.Column(bins_input, bplot).servable()
 ```
 
 ![Panel Basic Interactivity Example](https://assets.holoviz.org/panel/gifs/panel_interactivity_example.gif)
@@ -185,14 +185,14 @@ def run_calculation(running, calculation):
         The function took {time_end - time_start:1.1f} seconds to complete
         """
 
-calculation_input = pn.widgets.RadioBoxGroup(label="Calculation", options=["A", "B"])
-run_input = pn.widgets.Button(
+calculation_input = pn.ui.RadioBoxGroup(label="Calculation", options=["A", "B"])
+run_input = pn.ui.Button(
     label="Press to run calculation",
     icon="caret-right",
     color="primary",
     width=250,
 )
-pn.Column(
+pn.ui.Column(
     "Which calculation would you like to perform?",
     calculation_input,
     pn.bind(notify_choice, calculation_input),
@@ -246,14 +246,14 @@ def run_calculation(running, calculation):
         The function took {time_end - time_start:1.1f} seconds to complete.
         """
 
-calculation_input = pn.widgets.RadioBoxGroup(label="Calculation", options=["A", "B"])
-run_input = pn.widgets.Button(
+calculation_input = pn.ui.RadioBoxGroup(label="Calculation", options=["A", "B"])
+run_input = pn.ui.Button(
     label="Press to run calculation",
     icon="caret-right",
     color="primary",
     width=250,
 )
-pn.Column(
+pn.ui.Column(
     "Which calculation would you like to perform?",
     calculation_input,
     pn.bind(notify_choice, calculation_input),
@@ -323,11 +323,11 @@ def results(running):
         layout[-1] = result
         yield layout
 
-run_input = pn.widgets.Button(label="Run model")
-loading = pn.widgets.LoadingSpinner(value=True, size=50, label="Running... Please Wait!")
-layout = pn.Column("Calculation did not run yet")
+run_input = pn.ui.Button(label="Run model")
+loading = pn.ui.LoadingSpinner(value=True, size=50, label="Running... Please Wait!")
+layout = pn.ui.Column("Calculation did not run yet")
 
-pn.Column(run_input, pn.bind(results, run_input)).servable()
+pn.ui.Column(run_input, pn.bind(results, run_input)).servable()
 ```
 
 ![Panel Multiple Results Example](https://assets.holoviz.org/panel/gifs/panel_sync_multi_example.gif)

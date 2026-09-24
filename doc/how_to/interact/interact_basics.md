@@ -32,9 +32,9 @@ We can also explicitly pass a widget as one of the values:
 
 ```{pyodide}
 def create_block(c):
-    return pn.pane.HTML(width=100, height=100, styles={'background': c})
+    return pn.ui.HTML(width=100, height=100, styles={'background': c})
 
-color_widget = pn.widgets.ColorPicker(label='Color', value='#4f4fdf')
+color_widget = pn.ui.ColorPicker(label='Color', value='#4f4fdf')
 
 pn.interact(create_block, c=color_widget)
 ```
@@ -68,9 +68,9 @@ pn.interact(
 )
 
 def create_block(c):
-    return pn.pane.HTML(width=100, height=100, styles={'background': c})
+    return pn.ui.HTML(width=100, height=100, styles={'background': c})
 
-color_widget = pn.widgets.ColorPicker(label='Color', value='#4f4fdf')
+color_widget = pn.ui.ColorPicker(label='Color', value='#4f4fdf')
 
 pn.interact(create_block, c=color_widget)
 ```

@@ -88,7 +88,7 @@ pn.extension("vega")
 
 ACCENT = "teal"
 
-image = pn.pane.JPG("https://assets.holoviz.org/panel/tutorials/wind_turbines_sunset.png")
+image = pn.ui.JPG("https://assets.holoviz.org/panel/tutorials/wind_turbines_sunset.png")
 
 if pn.config.theme=="dark":
     alt.theme.enable("dark")
@@ -124,7 +124,7 @@ fig = (
         width="container",
     )
 )
-plot = pn.pane.Vega(fig, sizing_mode="stretch_both", max_height=800, margin=20)
+plot = pn.ui.Vega(fig, sizing_mode="stretch_both", max_height=800, margin=20)
 
 pn.template.FastListTemplate(
     title="Wind Turbine Manufacturers",

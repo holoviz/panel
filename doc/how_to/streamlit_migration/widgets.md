@@ -11,7 +11,7 @@ Panel provides widgets similar to the ones you know from Streamlit and some uniq
 To migrate your app's input widgets to Panel:
 
 - Replace your Streamlit `st.some_widget` function with the corresponding Panel
-`pn.widgets.SomeWidget` class.
+`pn.ui.SomeWidget` class.
 
 You can identify the corresponding widget via the [Widgets Section](../../reference/index.md#widgets) of the [Component Gallery](../../reference/index.md).
 
@@ -35,16 +35,16 @@ st.write(bins)
 
 #### Panel Integer Slider Example
 
-You will find Panels input *widgets* in `pn.widgets` module.
+You will find Panel's input *widgets* in the `pn.ui` namespace.
 
 ```python
 import panel as pn
 
 pn.extension(sizing_mode="stretch_width", template="bootstrap")
 
-bins = pn.widgets.IntSlider(value=20, start=10, end=30, step=1, label="Bins")
+bins = pn.ui.IntSlider(value=20, start=10, end=30, step=1, label="Bins")
 
-pn.Column(bins, pn.pane.Str(bins)).servable()
+pn.ui.Column(bins, pn.ui.Str(bins)).servable()
 ```
 
 ![Panel Widgets Example](../../_static/images/panel_widgets_example.png)

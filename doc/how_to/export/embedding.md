@@ -7,12 +7,12 @@ This guide addresses how to embed app state for usage entirely within Javascript
 Panel generally relies on either the Jupyter kernel or a Bokeh Server to be running in the background to provide interactive behavior. However for simple apps with a limited amount of state it is also possible to `embed` all the widget state, allowing the app to be used entirely from within Javascript. To demonstrate this we will create a simple app which simply takes a slider value, multiplies it by 5 and then display the result.
 
 ```
-slider = pn.widgets.IntSlider(start=0, end=10)
+slider = pn.ui.IntSlider(start=0, end=10)
 
 def callback(value):
     return '%d * 5 = %d' % (value, value*5)
 
-row = pn.Row(slider, pn.bind(callback, slider))
+row = pn.ui.Row(slider, pn.bind(callback, slider))
 ```
 
 If we displayed this the normal way it would call back into Python every time the value changed. However, the `.embed()` method will record the state of the app for the different widget configurations.

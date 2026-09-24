@@ -12,7 +12,7 @@ To explicitly construct a pane, use one of the pane types listed in the [compone
 import panel as pn
 pn.extension() # for notebook
 
-pn.pane.Markdown('''
+pn.ui.Markdown('''
 # H1
 ## H2
 ### H3

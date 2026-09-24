@@ -22,7 +22,7 @@ import panel as pn
 
 pn.extension(template="bootstrap")
 
-layout = pn.pane.Markdown()
+layout = pn.ui.Markdown()
 
 def some_long_running_task():
     time.sleep(5) # Some long running task
@@ -45,7 +45,7 @@ import panel as pn
 
 pn.extension(template="bootstrap")
 
-layout = pn.pane.Markdown("# Loading...")
+layout = pn.ui.Markdown("# Loading...")
 
 def some_long_running_task():
     time.sleep(5) # Some long running task
@@ -100,7 +100,7 @@ def table(data):
     if data is None:
         return loading_indicator("Loading data")
 
-    return pn.pane.DataFrame(data)
+    return pn.ui.DataFrame(data)
 
 def plot(data):
     if data is None:
@@ -114,7 +114,7 @@ def plot(data):
 state = AppState()
 pn.state.onload(state.update)
 
-pn.Column(
+pn.ui.Column(
     short_running_task,
     pn.bind(table, data=state.param.data),
     pn.bind(plot, data=state.param.data),

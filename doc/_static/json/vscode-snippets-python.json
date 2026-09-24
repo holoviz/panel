@@ -8,12 +8,12 @@
 			"",
 			"TEXT = \"Panel\"",
 			"",
-			"length = pn.widgets.IntSlider(value=len(TEXT), end=len(TEXT), label=\"length\")",
+			"length = pn.ui.IntSlider(value=len(TEXT), end=len(TEXT), label=\"length\")",
 			"",
 			"def text(value):",
 			"    return TEXT[:value]",
 			"",
-			"layout = pn.Column(length, pn.bind(text, length))",
+			"layout = pn.ui.Column(length, pn.bind(text, length))",
 			"",
 			"pn.template.FastListTemplate(site=\"Panel\", title=\"App\", sidebar=[length], main=[layout]).servable()"
 		]
@@ -69,12 +69,12 @@
 			"        return self._layout",
 			"",
 			"    def _get_layout(self):",
-			"        return pn.Column(\"# Custom Component\", self.param.value)",
+			"        return pn.ui.Column(\"# Custom Component\", self.param.value)",
 			"",
 			"if pn.state.served:",
 			"    pn.extension(sizing_mode=\"stretch_width\")",
 			"    ",
-			"    pn.Column(",
+			"    pn.ui.Column(",
 			"        CustomComponent",
 			"    ).servable()"
 		]

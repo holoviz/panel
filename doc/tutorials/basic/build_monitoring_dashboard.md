@@ -67,7 +67,7 @@ power_output_view = pn.indicators.Number(
         (max(POWER_OUTPUTS), "red"),
     ],
 )
-indicators = pn.FlexBox(wind_speed_view, power_output_view)
+indicators = pn.ui.FlexBox(wind_speed_view, power_output_view)
 
 # Layout and style with template
 
@@ -177,7 +177,7 @@ power_output_view = pn.indicators.Number(
         (max(POWER_OUTPUTS), "red"),
     ],
 )
-indicators = pn.FlexBox(wind_speed_view, power_output_view)
+indicators = pn.ui.FlexBox(wind_speed_view, power_output_view)
 indicators
 ```
 

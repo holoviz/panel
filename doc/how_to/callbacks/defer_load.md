@@ -49,7 +49,7 @@ def long_running_task():
     time.sleep(3)
     return "# I'm deferred and shown after load"
 
-pn.Column("# I'm shown on load", long_running_task).servable()
+pn.ui.Column("# I'm shown on load", long_running_task).servable()
 ```
 
 ![panel-defer-all-example](https://assets.holoviz.org/panel/gifs/defer_all_tasks.gif)
@@ -71,7 +71,7 @@ def long_running_task():
     time.sleep(3)
     return "# I'm deferred and shown after load"
 
-pn.Column(
+pn.ui.Column(
     short_running_task,
     pn.panel(long_running_task, defer_load=True, min_height=50, min_width=200),
 ).servable()
