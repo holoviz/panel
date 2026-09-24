@@ -27,25 +27,27 @@ url = f"https://cdn.jsdelivr.net/pyodide/v{pyodide_version}/full"
 with open(path) as f:
     data = json.load(f)
 
+# micropip.freeze points bundled packages at the local node_modules cache
 for p in data["packages"].values():
     if not p["file_name"].startswith("http"):
-        p["file_name"] = f'{url}/{p["file_name"]}'
+        p["file_name"] = f'{url}/{os.path.basename(p["file_name"])}'
+
+# pyodide.loadPackage does not terminate on the panel / panel-material-ui cycle
+for dep in data["packages"]["panel"]["depends"]:
+    depends = data["packages"].get(dep, {}).get("depends", [])
+    if "panel" in depends:
+        depends.remove("panel")
 
 
 whl_files = glob("../../dist/*.whl")
 for whl_file in whl_files:
     name, version, *_ = parse_wheel_filename(os.path.basename(whl_file))
 
-    package = data["packages"][name]
+    package = data["packages"][str(name)]
     package["version"] = str(version)
     package["file_name"] = os.path.basename(whl_file)
     package["sha256"] = calculate_sha256(whl_file)
     package["imports"] = [name]
-
-# Can be removed when micropip 0.9.0 is part of pyodide
-bokeh_req = data["packages"]["bokeh"]["depends"]
-if "narwhals" not in bokeh_req:
-    bokeh_req.append("narwhals")
 
 
 with open(path, "w") as f:

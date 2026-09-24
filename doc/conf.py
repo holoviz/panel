@@ -23,8 +23,8 @@ description = 'High-level dashboarding for python visualization libraries'
 import panel
 
 from panel.io.convert import (
-    BOKEH_VERSION, MINIMUM_VERSIONS, PY_VERSION, PYODIDE_VERSION,
-    PYSCRIPT_VERSION,
+    BOKEH_VERSION, MINIMUM_VERSIONS, PY_VERSION, PYODIDE_MODULE_URL,
+    PYODIDE_VERSION, PYSCRIPT_VERSION,
 )
 from panel.io.resources import CDN_ROOT
 
@@ -232,7 +232,8 @@ html_js_files = [
 ]
 
 nbsite_pyodide_conf = {
-    'PYODIDE_URL': f'https://cdn.jsdelivr.net/pyodide/{PYODIDE_VERSION}/full/pyodide.js',
+    'PYODIDE_URL': PYODIDE_MODULE_URL,
+    'lockfile': True,
     'requirements': [bokeh_req, panel_req, 'pyodide-http'],
     'requires': get_requirements(),
 }
