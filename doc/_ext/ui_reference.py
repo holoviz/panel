@@ -434,6 +434,68 @@ def _write_generated(path, content):
         path.write_text(rendered, encoding='utf-8')
 
 
+def prepare_ui_gallery(app):
+    """Let nbsite discover UI pages from a temporary view of the original notebooks."""
+    from nbsite.gallery.gen import DEFAULT_GALLERY_CONF
+
+    import panel.ui as ui
+
+    from panel.viewable import Viewable
+
+    material = _material_examples(app)
+    if material is None:
+        raise FileNotFoundError('PMUI reference notebooks are unavailable.')
+    app._ui_reference_material = material
+    conf = app.config.nbsite_gallery_conf
+    source = conf['galleries']['reference/classic']['source']
+    examples = (Path(app.builder.srcdir) / conf.get('examples_dir', DEFAULT_GALLERY_CONF['examples_dir']) / source).resolve()
+    app._ui_reference_gallery = tempfile.TemporaryDirectory(prefix='panel-ui-gallery-')
+    root = Path(app._ui_reference_gallery.name)
+    for module_name, section in SECTIONS.items():
+        module = getattr(ui, module_name)
+        names = sorted(name for name in ui.__all__ if (
+            getattr(module, name, None) is getattr(ui, name)
+            and inspect.isclass(component := getattr(ui, name))
+            and issubclass(component, Viewable)
+        ))
+        directory = root / section
+        directory.mkdir()
+        for name in names:
+            component = getattr(ui, name)
+            material_section = {'templates': 'page'}.get(section, section)
+            notebook = material / material_section / f'{name}.ipynb'
+            if not notebook.is_file():
+                notebook = material / material_section / f'{component.__name__}.ipynb'
+            if not notebook.is_file():
+                notebook = next((candidate for other in ('widgets', 'indicators', 'menus')
+                                 if (candidate := material / other / f'{component.__name__}.ipynb').is_file()), notebook)
+            if not notebook.is_file():
+                notebook = examples / section / f'{name}.ipynb'
+            if notebook.is_file():
+                (directory / f'{name}.ipynb').symlink_to(notebook)
+            else:
+                (directory / f'{name}.py').touch()
+    gallery = app.config.nbsite_gallery_conf['galleries']['reference']
+    gallery['source'] = str(root)
+    gallery['sections'] = [
+        *[section for section in SECTIONS.values() if section != 'templates'],
+        {'path': 'templates', 'title': 'Templates',
+         'description': ('Classic templates are still available, but new applications should use '
+                         '`pn.ui.Page <templates/Page.html>`_. Browse the '
+                         '`classic template reference <classic/templates/index.html>`_ for the older APIs.')},
+    ]
+    gallery['extensions'] = ['*.ipynb', '*.py']
+    gallery['as_pyodide'] = False
+    gallery['skip_rst_notebook_directive'] = True
+    gallery['thumbnail_url'] = 'https://assets.holoviz.org/panel-material-ui/thumbnails'
+    gallery['normalize_titles'] = False
+    gallery['no_image_thumb'] = True
+    gallery['intro'] = ('Looking for the original Panel components? Browse the '
+                        '`classic component gallery <classic/index.html>`_. '
+                        'The components below use ``panel.ui``.\n\n'
+                        '.. toctree::\n   :hidden:\n\n   classic/index\n')
+
+
 def relocate_classic_links(app, docname, source):
     """Correct links from nbsite notebooks moved under reference/classic."""
     if not docname.startswith('reference/classic/'):
@@ -482,6 +544,12 @@ def relocate_classic_links(app, docname, source):
     source[0] = ''.join(lines)
 
 
+def resolve_gallery_index_links(app, docname, source):
+    if docname.startswith('reference/'):
+        return
+    source[0] = re.sub(r'((?:\.\./)+reference/index)\.md(?=#|\))', r'\1.rst', source[0])
+
+
 def generate_ui_reference(app):
     """Run after nbsite generates classic pages, before Sphinx scans sources."""
     import panel as pn
@@ -492,7 +560,7 @@ def generate_ui_reference(app):
     gallery_conf = app.config.nbsite_gallery_conf
     source = gallery_conf['galleries']['reference/classic']['source']
     examples = (Path(app.builder.srcdir) / gallery_conf['examples_dir'] / source).resolve()
-    material = _material_examples(app)
+    material = getattr(app, '_ui_reference_material', None) or _material_examples(app)
     if material is None:
         raise FileNotFoundError(
             'PMUI reference notebooks are unavailable. Set PANEL_UI_REFERENCE_PMUI_SOURCE '
@@ -500,14 +568,6 @@ def generate_ui_reference(app):
             'notebooks in the installed panel_material_ui package.'
         )
     output = Path(app.builder.srcdir) / 'reference'
-    index = [
-        '# Component Gallery', '',
-        ':::{important}',
-        'Looking for the original Panel components? Browse the '
-        '[classic component gallery](classic/index). The components below use `panel.ui`.',
-        ':::', '',
-    ]
-    section_indexes = []
     for module_name, section in SECTIONS.items():
         module = getattr(ui, module_name)
         names = sorted(name for name in ui.__all__ if (
@@ -517,19 +577,11 @@ def generate_ui_reference(app):
         ))
         if not names:
             continue
-        section_indexes.append(f'{section}/index')
         section_dir = output / section
         section_dir.mkdir(parents=True, exist_ok=True)
-        if section != 'templates':
-            index.extend([f'## {section.title()}', '', ', '.join(
-                f'[{name}]({section}/{name})' for name in names
-            ), ''])
-        _write_generated(section_dir / 'index.md',
-            f'# {section.title()}\n\n'
-            + '\n'.join(f'- [{name}]({name})' for name in names)
-            + '\n\n```{toctree}\n:hidden:\n\n'
-            + '\n'.join(names) + '\n```\n',
-        )
+        old_section_index = section_dir / 'index.md'
+        if old_section_index.is_file() and old_section_index.read_text(encoding='utf-8').startswith(GENERATED):
+            old_section_index.unlink()
         for name in names:
             component = getattr(ui, name)
             notebook = examples / section / f'{name}.ipynb'
@@ -561,19 +613,22 @@ def generate_ui_reference(app):
                         f'[classic reference](../classic/{section}/{name}).\n\n{content}'
                     )
             _write_generated(section_dir / f'{name}.md', f'# {name}\n\n{content}\n')
-    classic_templates = sorted((examples / 'templates').glob('*.ipynb'))
-    index.extend([
-        '## Templates', '',
-        'Classic templates are still available, but new applications should use '
-        '[`pn.ui.Page`](templates/Page). Browse the '
-        '[classic template reference](classic/templates/index) for the older APIs.', '',
-        ', '.join(f'[{path.stem}](classic/templates/{path.stem})' for path in classic_templates), '',
-    ])
-    index.extend(['```{toctree}', ':hidden:', '', 'classic/index', *section_indexes, '```', ''])
-    _write_generated(output / 'index.md', '\n'.join(index) + '\n')
+    old_index = output / 'index.md'
+    if old_index.is_file() and old_index.read_text(encoding='utf-8').startswith(GENERATED):
+        old_index.unlink()
+
+
+def cleanup_ui_gallery(app, exception):
+    if temporary := getattr(app, '_ui_reference_gallery', None):
+        temporary.cleanup()
+    if temporary := getattr(app, '_pmui_reference_dir', None):
+        temporary.cleanup()
 
 
 def setup(app):
+    app.connect('builder-inited', prepare_ui_gallery, priority=400)
     app.connect('builder-inited', generate_ui_reference, priority=600)
     app.connect('source-read', relocate_classic_links)
+    app.connect('source-read', resolve_gallery_index_links)
+    app.connect('build-finished', cleanup_ui_gallery)
     return {'parallel_read_safe': True, 'parallel_write_safe': True}
