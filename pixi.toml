@@ -88,7 +88,7 @@ pip = "*"
 # Required
 nh3 = "*"
 bokeh = ">=3.10.0,<3.11.0a0"
-panel-material-ui = ">=0.15.1a0,<0.16"
+panel-material-ui = ">=0.15.1a1,<0.16"
 linkify-it-py = "*"
 markdown = "*"
 markdown-it-py = "*"
@@ -334,13 +334,16 @@ SPHINX_APIDOC_OPTIONS = "members,show-inheritance"
 [feature.doc.dependencies]
 lxml = "*"
 nbsite = ">=0.10.0a5"
-panel-material-ui = ">=0.15.1a0,<0.16"
+nodejs = ">=18"
+panel-material-ui = ">=0.15.1a1,<0.16"
+pip = "*"
 selenium = "*"
 numpydoc = "*"
 pydeck = ">=0.8"  # Add back to examples, when it support ipywidgets 8.0
 sphinx = ">=9"
 
 [feature.doc.tasks]
+install = 'python -m pip install --no-deps --disable-pip-version-check -e .'
 _docs-refmanual = 'sphinx-apidoc -e -o doc/api/ panel/ panel/tests --ext-autodoc --ext-intersphinx'
 _docs-convert-gallery = 'python scripts/gallery/convert_gallery.py'
 _docs-generate = 'nbsite build --what=html --output=builtdocs --org holoviz --project-name panel --disable-parallel'
