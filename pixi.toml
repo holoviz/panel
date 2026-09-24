@@ -58,7 +58,7 @@ features = ["py312", "required", "type", "optional"]
 no-default-feature = true
 
 [environments.docs]
-features = ["py312", "optional", "doc"]
+features = ["py312", "required", "optional", "doc"]
 no-default-feature = true
 
 [environments.build]
@@ -336,7 +336,7 @@ sphinx = ">=9"
 
 [feature.doc.tasks]
 _docs-pyodide-npm = 'npm install --no-save --no-package-lock --prefix . pyodide@314.0.7'
-_docs-pyodide-wheels = 'if test -d panel/dist/wheels; then mkdir -p builtdocs/wheels && cp panel/dist/wheels/*.whl builtdocs/wheels/; fi'
+_docs-pyodide-wheels = "bash -c 'if test -d panel/dist/wheels; then mkdir -p builtdocs/wheels && cp panel/dist/wheels/*.whl builtdocs/wheels/; fi'"
 _docs-refmanual = 'sphinx-apidoc -e -o doc/api/ panel/ panel/tests --ext-autodoc --ext-intersphinx'
 _docs-convert-gallery = 'python scripts/gallery/convert_gallery.py'
 _docs-generate = { cmd = 'nbsite build --what=html --output=builtdocs --org holoviz --project-name panel --disable-parallel', depends-on = ['_docs-pyodide-npm', '_docs-pyodide-wheels'] }
