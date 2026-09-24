@@ -18,7 +18,7 @@ When migrating you will have to decide which template to use
 
 ### FastListTemplate Example
 
-Here is an example with the [`FastListTemplate`](../../reference/templates/FastListTemplate).
+Here is an example with the [`FastListTemplate`](../../reference/classic/templates/FastListTemplate).
 
 ```python
 from asyncio import sleep

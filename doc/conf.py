@@ -1,9 +1,13 @@
 import json
 import os
 import pathlib
+import sys
 import typing as t
 
 import param
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(pathlib.Path(__file__).parent / '_ext'))
 
 param.parameterized.docstring_signature = False
 param.parameterized.docstring_describe_params = False
@@ -101,6 +105,7 @@ extensions = [
     'sphinx_copybutton',
     'sphinxext.rediraffe',
     'nbsite.gallery',
+    'ui_reference',
     'nbsite.pyodide',
     'nbsite.analytics',
 ]
@@ -135,8 +140,10 @@ nbsite_gallery_conf = {
     'github_org': 'holoviz',
     'github_project': 'panel',
     'galleries': {
-        'reference': {
-            'title': 'Component Gallery',
+        'reference/classic': {
+            'title': 'Classic Component Reference',
+            'source': 'reference',
+            'thumbnail_source': 'reference',
             'extensions': ['*.ipynb', '*.py', '*.md'],
             'sections': [
                 'panes',

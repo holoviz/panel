@@ -232,7 +232,7 @@ pn.template.FastListTemplate(
 ).servable()
 ```
 
-The [`FastListTemplate`](https://panel.holoviz.org/reference/templates/FastListTemplate.html) is a pre-built Panel template that provides a clean and modern layout for our dashboard. It takes our crossfiltering plot and other configurations as input, creating a cohesive and interactive web application.
+The [`FastListTemplate`](https://panel.holoviz.org/reference/classic/templates/FastListTemplate.html) is a pre-built Panel template that provides a clean and modern layout for our dashboard. It takes our crossfiltering plot and other configurations as input, creating a cohesive and interactive web application.
 
 Now serve the app with `panel serve app.py --dev`. It should look like
 

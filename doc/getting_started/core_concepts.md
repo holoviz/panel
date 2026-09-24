@@ -344,7 +344,7 @@ In this **Getting Started** guide, you've installed Panel, built a simple app, a
 
 For a hands-on approach to **learning Panel**, dive into our [Tutorials](../tutorials/index.md). If you seek clarity or wish to deepen your understanding of specific topics, refer to the [Explanation](../explanation/index.md) section of the docs.
 
-During **Panel usage**, consult the [Component Gallery](../reference/index.rst) reference guides, find solutions to specific problems in the [How-to](../how_to/index.md) guides, or explore the [API Reference](../api/index.md) sections for technical specifications and descriptions.
+During **Panel usage**, consult the [Component Gallery](../reference/index.md) reference guides, find solutions to specific problems in the [How-to](../how_to/index.md) guides, or explore the [API Reference](../api/index.md) sections for technical specifications and descriptions.
 
 ## Getting Help
 

@@ -8,7 +8,7 @@ In this guide, we'll explore the following aspects of layouts:
 
 - **Layouts**: Accessible in the `pn` namespace.
 - **Layout Techniques**: Utilize `pn.ui.Column` and `pn.ui.Row` to structure your content.
-- **Reference Guides**: Explore detailed documentation for each layout in the [Layouts Section](../../reference/index.rst#layouts) of the [Component Gallery](../../reference/index.rst).
+- **Reference Guides**: Explore detailed documentation for each layout in the [Layouts Section](../../reference/index.md#layouts) of the [Component Gallery](../../reference/index.md).
 
 :::{note}
 As you follow along with the code examples below, feel free to execute them directly in the Panel documentation, a notebook cell, or within a file named `app.py` served with `panel serve app.py --dev`.
@@ -237,7 +237,7 @@ pn.ui.Column(
 
 Panel provides a vast collection of layouts to suit your needs.
 
-Click [this link](../../reference/index.rst#layouts) to explore available layouts and their detailed reference guides.
+Click [this link](../../reference/index.md#layouts) to explore available layouts and their detailed reference guides.
 
 ## Recap
 
@@ -271,4 +271,4 @@ Now, you're equipped to create dynamic and visually appealing layouts for your P
 
 ### Component Gallery
 
-- [Layouts](../../reference/index.rst#layouts)
+- [Layouts](../../reference/index.md#layouts)

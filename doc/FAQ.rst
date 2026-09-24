@@ -94,7 +94,7 @@ That said, Panel is in no way a clone of Shiny; Panel is a complete solution for
 
 **Q: Can Panel be used like Powerpoint?**
 
-**A:** Panel works very well with `RISE <https://github.com/damianavila/RISE>`__, which lets a Jupyter notebook (including any Panel layouts) be used for a fully interactive full-screen presentation. Panel 1.0 also includes a native `SlidesTemplate <https://panel.holoviz.org/reference/templates/Slides.html>`__ similar to RISE.
+**A:** Panel works very well with `RISE <https://github.com/damianavila/RISE>`__, which lets a Jupyter notebook (including any Panel layouts) be used for a fully interactive full-screen presentation. Panel 1.0 also includes a native `SlidesTemplate <https://panel.holoviz.org/reference/classic/templates/Slides.html>`__ similar to RISE.
 
 
 **Q: What performance limitations does Panel have?**
