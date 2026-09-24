@@ -1,4 +1,4 @@
-importScripts("{{ PYODIDE_URL }}");
+import { loadPyodide } from "{{ PYODIDE_URL }}";
 
 function sendPatch(patch, buffers, msg_id) {
   self.postMessage({
