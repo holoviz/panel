@@ -7,8 +7,13 @@ from panel_material_ui.widgets.indicators import (
 
 from ...widgets.indicators import (
     BooleanIndicator, BooleanStatus, Dial, Gauge, LinearGauge, Number, String,
-    TooltipIcon, Tqdm, Trend, ValueIndicator,
+    TooltipIcon, Tqdm as _ClassicTqdm, Trend, ValueIndicator,
 )
+
+
+class Tqdm(_ClassicTqdm):
+    _progress_type = Progress
+
 
 __all__ = (
     "BooleanIndicator",

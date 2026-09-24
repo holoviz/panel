@@ -164,14 +164,6 @@ def test_material_components_reachable_flat(ui, pmui, module):
 def test_classic_components_are_not_wrapped(ui):
     assert ui.Tabulator is pn.widgets.Tabulator
     assert ui.widgets.Tabulator is pn.widgets.Tabulator
-    assert ui.Player is pn.widgets.Player
-    assert ui.widgets.Player is pn.widgets.Player
-    assert ui.DiscretePlayer is pn.widgets.DiscretePlayer
-    assert ui.widgets.DiscretePlayer is pn.widgets.DiscretePlayer
-    assert ui.ColorMap is pn.widgets.ColorMap
-    assert ui.widgets.ColorMap is pn.widgets.ColorMap
-    assert ui.FileSelector is pn.widgets.FileSelector
-    assert ui.widgets.FileSelector is pn.widgets.FileSelector
     assert ui.Matplotlib is pn.pane.Matplotlib
     assert ui.Image is ui.pane.Image is pn.pane.Image
     assert ui.GridStack is pn.layout.GridStack
@@ -182,6 +174,22 @@ def test_material_components_come_from_panel_material_ui(ui, pmui):
     # the implementation is vendored the identity flips (plan section 7.5).
     assert ui.Button is pmui.Button
     assert ui.widgets.Button is pmui.Button
+    for name in ('ArrayInput', 'ColorMap', 'DatetimeRangeInput', 'DiscretePlayer', 'FileSelector', 'Player'):
+        assert getattr(ui, name) is getattr(ui.widgets, name) is getattr(pmui, name)
+    assert ui.WidgetBox is ui.layout.WidgetBox is ui.Paper is pmui.Paper
+
+
+def test_material_tqdm_uses_material_progress(ui):
+    indicator = ui.Tqdm()
+    assert isinstance(indicator, pn.widgets.Tqdm)
+    assert indicator.progress is not pn.widgets.indicators.Progress
+    assert isinstance(indicator.progress, ui.Progress)
+    assert ui.widgets.Tqdm is ui.indicators.Tqdm is ui.Tqdm
+    for _ in indicator(range(2)):
+        pass
+    assert indicator.progress.value == indicator.value == 2
+    assert indicator.progress.max == indicator.max == 2
+    assert isinstance(pn.widgets.Tqdm().progress, pn.widgets.indicators.Progress)
 
 
 @pytest.mark.parametrize('module', (None, *SUBMODULES))

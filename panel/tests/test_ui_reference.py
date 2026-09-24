@@ -27,9 +27,11 @@ def notebook(path, *cells):
 def gallery(tmp_path):
     examples = tmp_path / 'examples' / 'reference'
     examples.mkdir(parents=True)
+    material = tmp_path / 'material' / 'examples' / 'reference'
+    material.mkdir(parents=True)
     app = SimpleNamespace(
         builder=SimpleNamespace(srcdir=str(tmp_path / 'doc')),
-        config=SimpleNamespace(nbsite_gallery_conf={
+        config=SimpleNamespace(ui_reference_pmui_source=str(material), nbsite_gallery_conf={
             'examples_dir': '../examples',
             'galleries': {
                 'reference/classic': {'source': 'reference'},
@@ -38,6 +40,80 @@ def gallery(tmp_path):
         }),
     )
     return app, examples
+
+
+def test_material_notebook_preserves_narrative_and_rewrites_code(gallery):
+    app, _ = gallery
+    source = Path(app.config.ui_reference_pmui_source)
+    notebook(source / 'widgets' / 'Button.ipynb',
+        ('code', 'import panel as pn\nimport panel_material_ui as pmui\nfrom panel_material_ui import Button\npn.extension()'),
+        ('markdown', 'A **material** button. See [next](TextInput.ipynb#usage) and [guide](../../how_to/index.md).'),
+        ('code', 'label = "pmui.Button"\n# pmui.Button\npmui.Row(Button(label="Go"), pmui.Button())'),
+    )
+    notebook(source / 'widgets' / 'TextInput.ipynb',
+             ('code', 'import panel as pn\nimport panel_material_ui as pmui\npmui.TextInput()'))
+    ui_reference.generate_ui_reference(app)
+    content = (Path(app.builder.srcdir) / 'reference/widgets/Button.md').read_text()
+    assert 'A **material** button.' in content
+    assert 'pn.ui.Row(pn.ui.Button(label="Go"), pn.ui.Button())' in content
+    assert 'import panel_material_ui' not in content
+    assert 'from panel_material_ui' not in content
+    assert 'import panel.ui' in content
+    assert '"pmui.Button"' in content
+    assert '# pmui.Button' in content
+    assert '(TextInput#usage)' in content
+    assert '(../../how_to/index.md)' in content
+
+
+def test_material_notebook_rejects_unsupported_api(gallery):
+    import panel.ui as ui
+
+    app, _ = gallery
+    source = Path(app.config.ui_reference_pmui_source)
+    path = source / 'widgets' / 'Button.ipynb'
+    notebook(path, ('code', 'import panel as pn\nimport panel_material_ui as pmui\npmui.NotExported()\npmui.Button()'))
+    with pytest.raises(ValueError, match='NotExported'):
+        ui_reference._material_page(path, source, ui)
+    notebook(path, ('code', 'import panel as pn\nfrom panel_material_ui import Button\nButton()'))
+    content = ui_reference._material_page(path, source, ui)
+    assert 'pn.ui.Button()' in content
+
+
+def test_material_source_takes_precedence_over_classic(gallery):
+    app, examples = gallery
+    source = Path(app.config.ui_reference_pmui_source)
+    notebook(examples / 'widgets' / 'Button.ipynb',
+             ('code', 'import panel as pn\npn.widgets.Button(name="Classic")'))
+    notebook(source / 'widgets' / 'Button.ipynb',
+             ('markdown', 'Material button examples.'),
+             ('code', 'import panel as pn\nimport panel_material_ui as pmui\npmui.Button(label="Modern")'))
+    ui_reference.generate_ui_reference(app)
+    content = (Path(app.builder.srcdir) / 'reference/widgets/Button.md').read_text()
+    assert 'Material button examples.' in content
+    assert 'pn.ui.Button(label="Modern")' in content
+    assert 'Classic' not in content
+
+
+def test_renamed_and_menu_notebooks_use_ui_exports(gallery):
+    app, _ = gallery
+    source = Path(app.config.ui_reference_pmui_source)
+    notebook(source / 'widgets' / 'IconButton.ipynb',
+             ('code', 'import panel as pn\nimport panel_material_ui as pmui\npmui.IconButton(icon="star")'))
+    notebook(source / 'menus' / 'MenuButton.ipynb',
+             ('code', 'import panel as pn\nimport panel_material_ui as pmui\npmui.MenuButton()'))
+    ui_reference.generate_ui_reference(app)
+    output = Path(app.builder.srcdir) / 'reference/widgets'
+    assert 'pn.ui.IconButton(icon="star")' in (output / 'ButtonIcon.md').read_text()
+    assert 'pn.ui.MenuButton()' in (output / 'MenuButton.md').read_text()
+
+
+def test_missing_material_source_fails_with_instruction(gallery, monkeypatch):
+    app, _ = gallery
+    del app.config.ui_reference_pmui_source
+    monkeypatch.delenv('PANEL_UI_REFERENCE_PMUI_SOURCE', raising=False)
+    monkeypatch.setattr(ui_reference, 'find_spec', lambda name: None)
+    with pytest.raises(FileNotFoundError, match='PANEL_UI_REFERENCE_PMUI_SOURCE'):
+        ui_reference.generate_ui_reference(app)
 
 
 def test_reuses_classic_notebook_without_copying_source(gallery):
@@ -137,7 +213,7 @@ def test_links_route_to_ui_or_classic_and_leave_other_urls_alone(gallery):
               '[guide](../../how_to/layout/index.md) [external](https://example.com/x) '
               '[missing](Missing.ipynb) ![image](../image.png)'))
     content = ui_reference._notebook_page(path, examples, pn, ui)
-    assert '(ColorMap#part)' in content
+    assert '(../classic/widgets/ColorMap#part)' in content
     assert '(../classic/widgets/Button)' in content
     assert '(../../how_to/layout/index.md)' in content
     assert '(https://example.com/x)' in content
@@ -173,7 +249,7 @@ def test_code_strings_comments_and_unicode_are_preserved(gallery):
     assert 'pn.ui.Tabulator()' in content
     assert '"pn.widgets.Button"' in content
     assert '# pn.widgets.Button' in content
-    assert 'caf\u00e9' in content
+    assert 'calf\u00e9' in content
 
 
 def test_generation_order_and_nonexecuting_fallback(gallery):

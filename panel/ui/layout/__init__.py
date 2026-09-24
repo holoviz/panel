@@ -8,8 +8,10 @@ from panel_material_ui.layout import (
 
 from ...layout import (
     FloatPanel, GridBox, GridSpec, GridStack, HSpacer, ListLike, ListPanel,
-    Modal, Panel, Spacer, Swipe, VSpacer, WidgetBox,
+    Modal, Panel, Spacer, Swipe, VSpacer,
 )
+
+WidgetBox = Paper
 
 __all__ = (
     "Accordion",

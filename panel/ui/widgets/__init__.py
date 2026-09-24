@@ -2,30 +2,30 @@
 Material UI widgets, plus the classic widgets that have no Material equivalent.
 """
 from panel_material_ui.widgets import (
-    AutocompleteInput, Avatar, Breadcrumbs, Button, ButtonIcon, Checkbox,
-    CheckBoxGroup, CheckButtonGroup, Chip, CircularProgress, ColorPicker,
-    CrossSelector, DatePicker, DateRangePicker, DateRangeSlider, DateSlider,
-    DatetimeInput, DatetimePicker, DatetimeRangePicker, DatetimeRangeSlider,
-    DatetimeSlider, DictInput, DiscreteSlider, EditableFloatSlider,
-    EditableIntRangeSlider, EditableIntSlider, EditableRangeSlider, Fab,
-    FileDownload, FileInput, FloatInput, FloatSlider, IconButton, IntInput,
-    IntRangeSlider, IntSlider, LinearProgress, ListInput, LiteralInput,
-    LoadingSpinner, MenuBar, MenuButton, MenuList, MenuToggle, MultiChoice,
-    MultiPill, MultiSelect, NestedBreadcrumbs, NestedSelect, NumberInput,
-    Pagination, PasswordInput, Pill, Progress, RadioBoxGroup, RadioButtonGroup,
-    RangeSlider, Rating, Select, SpeedDial, SplitButton, StepperMenu, Switch,
-    TabMenu, TextAreaInput, TextInput, TimePicker, Toggle, ToggleIcon, Tree,
-    TupleInput,
+    ArrayInput, AutocompleteInput, Avatar, Breadcrumbs, Button, ButtonIcon,
+    Checkbox, CheckBoxGroup, CheckButtonGroup, Chip, CircularProgress,
+    ColorMap, ColorPicker, CrossSelector, DatePicker, DateRangePicker,
+    DateRangeSlider, DateSlider, DatetimeInput, DatetimePicker,
+    DatetimeRangeInput, DatetimeRangePicker, DatetimeRangeSlider,
+    DatetimeSlider, DictInput, DiscretePlayer, DiscreteSlider,
+    EditableFloatSlider, EditableIntRangeSlider, EditableIntSlider,
+    EditableRangeSlider, Fab, FileDownload, FileInput, FileSelector,
+    FloatInput, FloatSlider, IconButton, IntInput, IntRangeSlider, IntSlider,
+    LinearProgress, ListInput, LiteralInput, LoadingSpinner, MenuBar,
+    MenuButton, MenuList, MenuToggle, MultiChoice, MultiPill, MultiSelect,
+    NestedBreadcrumbs, NestedSelect, NumberInput, Pagination, PasswordInput,
+    Pill, Player, Progress, RadioBoxGroup, RadioButtonGroup, RangeSlider,
+    Rating, Select, SpeedDial, SplitButton, StepperMenu, Switch, TabMenu,
+    TextAreaInput, TextInput, TimePicker, Toggle, ToggleIcon, Tree, TupleInput,
 )
 
 from ...widgets import (
-    ArrayInput, BooleanStatus, CodeEditor, ColorMap, CompositeWidget,
-    DatetimeRangeInput, Debugger, Dial, DiscretePlayer, FileDropper,
-    FileSelector, Gauge, Grammar, GrammarList, JSONEditor, LinearGauge, Number,
-    Player, SpeechToText, StaticText, Tabulator, Terminal, TextEditor,
-    TextToSpeech, ToggleGroup, TooltipIcon, Tqdm, Trend, Utterance,
-    VideoStream, Voice, Widget, WidgetBase,
+    BooleanStatus, CodeEditor, CompositeWidget, Debugger, Dial, FileDropper,
+    Gauge, Grammar, GrammarList, JSONEditor, LinearGauge, Number, SpeechToText,
+    StaticText, Tabulator, Terminal, TextEditor, TextToSpeech, ToggleGroup,
+    TooltipIcon, Trend, Utterance, VideoStream, Voice, Widget, WidgetBase,
 )
+from ..indicators import Tqdm
 
 __all__ = (
     "ArrayInput",
