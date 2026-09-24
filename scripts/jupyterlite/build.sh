@@ -2,6 +2,7 @@
 
 set -euxo pipefail
 
+rm -f build/panel-*.whl build/bokeh-*.whl dist/panel-*.whl dist/bokeh-*.whl
 python ./scripts/build_pyodide_wheels.py dist
 python ./scripts/panelite/generate_panelite_content.py
 
