@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 import param
 
+from bokeh.document import Document
+from bokeh.models import ImportedStyleSheet
 from bokeh.plotting import figure
 
 from panel.custom import PyComponent, ReactiveESM
@@ -67,6 +69,37 @@ def test_reactive_esm_sync_dataframe(document, comm):
     expected = {"index": np.array([0]), "1": np.array([2])}
     for col, values in model.data.df.items():
         np.testing.assert_array_equal(values, expected.get(col))
+
+
+def test_reactive_esm_stylesheet_updates_across_documents(document, comm):
+    """A reused ESM component does not attach stylesheets to another document."""
+    other_doc = Document()
+    component = ReactiveESM(stylesheets=['https://example.com/first.css'])
+
+    with set_curdoc(document):
+        model1 = component.get_root(document, comm)
+        document.add_root(model1)
+        model2 = component.get_root(other_doc, comm)
+        other_doc.add_root(model2)
+        shared = ImportedStyleSheet(url='https://example.com/shared.css')
+        process = component._process_param_change
+
+        def add_shared(params):
+            props = process(params)
+            if 'stylesheets' in props:
+                props['stylesheets'].append(shared)
+            return props
+
+        component._process_param_change = add_shared
+        component.stylesheets = ['https://example.com/second.css']
+
+    for model, doc in ((model1, document), (model2, other_doc)):
+        assert all(sts.document is doc for sts in model.stylesheets if isinstance(sts, ImportedStyleSheet))
+        assert any(
+            isinstance(sts, ImportedStyleSheet) and sts.url == 'https://example.com/shared.css'
+            for sts in model.stylesheets
+        )
+        doc.to_json()
 
 
 class ESMBundle(ReactiveESM):

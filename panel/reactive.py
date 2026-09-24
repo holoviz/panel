@@ -226,21 +226,11 @@ class Syncable(Renderable):
             ]
             stylesheets += properties['stylesheets']
             wrapped = []
-            if state.curdoc:
-                css_cache = state._stylesheets.get(state.curdoc, {})
-            else:
-                css_cache = {}
             for stylesheet in stylesheets:
                 if not stylesheet:
                     continue
                 if isinstance(stylesheet, str) and (stylesheet.split('?')[0].endswith('.css') or stylesheet.startswith('http')):
-                    conv_stylesheet = css_cache.get(stylesheet)
-                    # A cached stylesheet that lost its url was destroyed
-                    # along with the Document it was rendered into and
-                    # has to be recreated.
-                    if conv_stylesheet is None or stylesheet_url(conv_stylesheet) is None:
-                        css_cache[stylesheet] = conv_stylesheet = ImportedStyleSheet(url=stylesheet)
-                    stylesheet = conv_stylesheet
+                    stylesheet = ImportedStyleSheet(url=stylesheet)
                 wrapped.append(stylesheet)
             properties['stylesheets'] = wrapped
         return properties
@@ -352,6 +342,8 @@ class Syncable(Renderable):
         if ref not in state._views or ref in state._fake_roots:
             return True
         viewable, root, doc, comm = state._views[ref]
+        if isinstance(self, Reactive):
+            self._resolve_stylesheets(msg, doc)
         if comm or not doc.session_context or state._unblocked(doc):
             with unlocked():
                 self._update_model(events, msg, root, model, doc, comm)
@@ -708,8 +700,12 @@ class Reactive(Syncable, Viewable):
             elif k not in params or self.param[k].default is not v:
                 params[k] = v
         properties = self._process_param_change(params)
+        self._resolve_stylesheets(properties, doc)
+        return properties
+
+    def _resolve_stylesheets(self, properties: dict[str, t.Any], doc: Document | None) -> None:
         if 'stylesheets' not in properties:
-            return properties
+            return
         if doc:
             state._stylesheets[doc] = css_cache = state._stylesheets.get(doc, {})
         else:
@@ -728,14 +724,16 @@ class Reactive(Syncable, Viewable):
                     # Adding it to the model would make the Document
                     # unserializable so we have to drop it.
                     continue
-                if url in css_cache and stylesheet_url(css_cache[url]) is not None:
-                    stylesheet = css_cache[url]
+                cached = css_cache.get(url)
+                if cached is not None and stylesheet_url(cached) is not None and cached.document in (None, doc):
+                    stylesheet = cached
                 else:
+                    if stylesheet.document is not None and stylesheet.document is not doc:
+                        stylesheet = ImportedStyleSheet(url=url)
                     css_cache[url] = stylesheet
                 patch_stylesheet(stylesheet, dist_url)
             stylesheets.append(stylesheet)
         properties['stylesheets'] = stylesheets
-        return properties
 
     def _update_properties(self, *events: param.parameterized.Event, doc: Document) -> dict[str, t.Any]:
         params, _ = self._design.params(self, doc) if self._design else ({}, None)
@@ -743,20 +741,6 @@ class Reactive(Syncable, Viewable):
         if 'stylesheets' in changes and 'stylesheets' in params:
             changes['stylesheets'] = params['stylesheets'] + changes['stylesheets']
         return self._process_param_change(changes)
-
-    def _update_model(
-        self, events: dict[str, param.parameterized.Event], msg: dict[str, t.Any],
-        root: Model, model: Model, doc: Document, comm: Comm | None
-    ) -> None:
-        if 'stylesheets' in msg:
-            if doc and 'dist_url' in doc._template_variables:
-                dist_url = doc._template_variables['dist_url']
-            else:
-                dist_url = CDN_DIST
-            for stylesheet in msg['stylesheets']:
-                if isinstance(stylesheet, ImportedStyleSheet):
-                    patch_stylesheet(stylesheet, dist_url)
-        super()._update_model(events, msg, root, model, doc, comm)
 
     #----------------------------------------------------------------
     # Public API

@@ -279,7 +279,7 @@ class Design(param.Parameterized, ResourceComponent):
         # e.g. stylesheets or sizing_mode, are not synced between the
         # Panel component and the model anyway however in certain edge cases
         # this may end up causing issues.
-        from ..io.resources import CDN_DIST, patch_stylesheet, stylesheet_url
+        from ..io.resources import stylesheet_url
 
         if mref not in viewable._models:
             return
@@ -296,13 +296,8 @@ class Design(param.Parameterized, ResourceComponent):
         else:
             props = viewable._process_param_change(params)
         doc = model.document or document
-        if doc and 'dist_url' in doc._template_variables:
-            dist_url = doc._template_variables['dist_url']
-        else:
-            dist_url = CDN_DIST
-        for stylesheet in props.get('stylesheets', []):
-            if isinstance(stylesheet, ImportedStyleSheet):
-                patch_stylesheet(stylesheet, dist_url)
+        reactive = viewable._view__ if isinstance(viewable, PyComponent) else viewable
+        reactive._resolve_stylesheets(props, doc)
 
         # Do not update stylesheets if they match
         if 'stylesheets' in props and len(model.stylesheets) == len(props['stylesheets']):
