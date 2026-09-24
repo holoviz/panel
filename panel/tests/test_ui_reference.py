@@ -121,7 +121,9 @@ def test_nbsite_generates_cards_for_material_notebooks(gallery, monkeypatch):
     assert '.. grid-item-card:: Button' in index
     assert ':link: widgets/Button\n        :link-type: doc' in index
     assert 'Templates' in index
-    assert 'classic component gallery' in index
+    assert index.index('Templates') < index.index('Classic Reference')
+    assert '.. grid-item-card:: Classic Component Gallery' in index
+    assert ':link: classic/index.html' in index
     assert 'Material button guide.' in page
     assert 'pn.ui.Button()' in page
 
@@ -202,6 +204,7 @@ def test_reuses_classic_notebook_without_copying_source(gallery):
     ui_reference.prepare_ui_gallery(app)
     gallery_conf = app.config.nbsite_gallery_conf['galleries']['reference']
     assert 'classic/index' in gallery_conf['intro']
+    assert 'classic component gallery' not in gallery_conf['intro']
     assert (Path(gallery_conf['source']) / 'widgets/Tabulator.ipynb').is_symlink()
     assert not (Path(app.builder.srcdir) / 'reference/ui/index.md').exists()
     assert len(list(examples.rglob('Tabulator.ipynb'))) == 1
@@ -233,17 +236,18 @@ def test_ui_only_exports_and_manual_page(gallery):
         assert (Path(app.builder.srcdir) / f'reference/{section}/{name}.md').exists()
 
 
-def test_gallery_banner_and_classic_templates_at_end(gallery):
+def test_classic_gallery_follows_templates(gallery):
     app, examples = gallery
     notebook(examples / 'templates' / 'FastListTemplate.ipynb',
              ('code', 'import panel as pn\npn.template.FastListTemplate()'))
     ui_reference.prepare_ui_gallery(app)
     gallery_conf = app.config.nbsite_gallery_conf['galleries']['reference']
-    assert gallery_conf['sections'][-1]['title'] == 'Templates'
-    assert 'pn.ui.Page' in gallery_conf['sections'][-1]['description']
+    assert gallery_conf['sections'][-2]['title'] == 'Templates'
+    assert 'pn.ui.Page' in gallery_conf['sections'][-2]['description']
     assert (Path(gallery_conf['source']) / 'templates/Page.ipynb').is_symlink() or (
         Path(gallery_conf['source']) / 'templates/Page.py').exists()
-    assert 'classic component gallery <classic/index.html>' in gallery_conf['intro']
+    assert gallery_conf['sections'][-1]['title'] == 'Classic Reference'
+    assert gallery_conf['sections'][-1]['items'][0]['url'] == 'classic/index.html'
 
 
 def test_unsafe_code_is_not_rewritten(gallery):

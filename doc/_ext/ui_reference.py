@@ -483,6 +483,10 @@ def prepare_ui_gallery(app):
          'description': ('Classic templates are still available, but new applications should use '
                          '`pn.ui.Page <templates/Page.html>`_. Browse the '
                          '`classic template reference <classic/templates/index.html>`_ for the older APIs.')},
+        {'path': 'classic', 'title': 'Classic Reference',
+         'description': 'The original Panel components and their reference guides.',
+         'items': [{'title': 'Classic Component Gallery', 'url': 'classic/index.html',
+                    'thumbnail': 'https://assets.holoviz.org/panel/thumbnails/reference/widgets/Button.png'}]},
     ]
     gallery['extensions'] = ['*.ipynb', '*.py']
     gallery['as_pyodide'] = False
@@ -490,9 +494,7 @@ def prepare_ui_gallery(app):
     gallery['thumbnail_url'] = 'https://assets.holoviz.org/panel-material-ui/thumbnails'
     gallery['normalize_titles'] = False
     gallery['no_image_thumb'] = True
-    gallery['intro'] = ('Looking for the original Panel components? Browse the '
-                        '`classic component gallery <classic/index.html>`_. '
-                        'The components below use ``panel.ui``.\n\n'
+    gallery['intro'] = ('The components below use ``panel.ui``.\n\n'
                         '.. toctree::\n   :hidden:\n\n   classic/index\n')
 
 
