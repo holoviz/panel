@@ -9,8 +9,8 @@ from panel.theme.base import (
     DESIGN_ALIASES, Design, resolve_component, resolve_design, resolve_widget,
 )
 from panel.widgets import (
-    Checkbox, DiscreteSlider, FloatSlider, IntSlider, LiteralInput, Select,
-    TextInput, widget,
+    Checkbox, DiscreteSlider, FloatInput, FloatSlider, IntInput, IntSlider,
+    LiteralInput, Select, TextInput, widget,
 )
 
 
@@ -248,6 +248,25 @@ def test_param_pane_input_widgets():
 
     for name in names:
         assert type(widgets[name]) is mapping[classic[name]]
+
+
+def test_param_pane_unbounded_widget_mapping():
+    class CustomFloatInput(FloatInput):
+        pass
+
+    class CustomIntInput(IntInput):
+        pass
+
+    class InputDesign(Design):
+        widget_mapping = {
+            param.Number: lambda p: CustomIntInput if isinstance(p, param.Integer) else CustomFloatInput,
+        }
+
+    with config.set(design=InputDesign):
+        widgets = _param_widgets(Parameters())
+
+    assert type(widgets['unbounded']) is CustomFloatInput
+    assert type(widgets['unbounded_int']) is CustomIntInput
 
 
 def test_param_pane_widget_override_wins(alternate_design):

@@ -264,6 +264,15 @@ def test_existing_panel_ui_import_alias_is_reused():
     assert 'ui.Button(' in result.source
 
 
+def test_plain_panel_ui_import_does_not_reuse_panel_name():
+    source = 'import panel.ui\nimport panel as pn\npn.widgets.Button()\n'
+    result = migrate_source(source)
+    assert 'import panel.ui as pnui\n' in result.source
+    assert 'pnui.Button()' in result.source
+    assert 'panel.Button()' not in result.source
+    assert not migrate_source(result.source).changed
+
+
 def test_no_rewrite_needed_produces_no_import():
     source = "import panel as pn\nprint('hello')\n"
     result = migrate_source(source)

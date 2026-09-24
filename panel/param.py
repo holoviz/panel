@@ -505,12 +505,12 @@ class Param(Pane):
                 not isinstance(p_obj, (param.Date, param.CalendarDate))):
                 # Do not change widget class if mapping was overridden
                 if not widget_class_overridden:
-                    from .theme.base import resolve_component
+                    from .theme.base import resolve_component, resolve_widget
+                    designed = resolve_widget(p_obj)
                     if isinstance(p_obj, param.Number):
-                        widget_class = self_or_cls.input_widgets[float]
-                        if is_int:
-                            widget_class = self_or_cls.input_widgets[int]
-                    elif not issubclass(widget_class, LiteralInput):
+                        if designed is None:
+                            widget_class = self_or_cls.input_widgets[int if is_int else float]
+                    elif designed is None and not issubclass(widget_class, LiteralInput):
                         widget_class = self_or_cls.input_widgets['literal']
                     if isinstance(widget_class, FunctionType):
                         widget_class = widget_class(p_obj)

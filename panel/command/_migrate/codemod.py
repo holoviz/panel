@@ -113,7 +113,7 @@ class _ImportAliasCollector(cst.CSTVisitor):
                 # top-level name `panel`.
                 bound = dotted.split('.')[0]
                 self.aliases[bound] = bound
-            if dotted == 'panel.ui':
+            if dotted == 'panel.ui' and alias.asname is not None:
                 self.panel_ui_alias = bound
 
     def visit_ImportFrom(self, node: cst.ImportFrom) -> None:
