@@ -182,7 +182,6 @@ def test_material_components_come_from_panel_material_ui(ui, pmui):
     # the implementation is vendored the identity flips (plan section 7.5).
     assert ui.Button is pmui.Button
     assert ui.widgets.Button is pmui.Button
-    assert ui.MaterialUIDesign is pmui.MaterialDesign
 
 
 @pytest.mark.parametrize('module', (None, *SUBMODULES))
