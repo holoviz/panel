@@ -277,7 +277,7 @@ nodejs = ">=18"
 selenium = "*"
 numpydoc = "*"
 pydeck = ">=0.8"  # Add back to examples, when it support ipywidgets 8.0
-sphinx = "<9"
+sphinx = ">=9"
 
 [feature.doc.tasks]
 _docs-pyodide-npm = 'npm install --no-save --no-package-lock --prefix . pyodide@314.0.7'
