@@ -81,7 +81,7 @@ pip = "*"
 # Required
 nh3 = "*"
 bokeh = ">=3.10.0,<3.11.0a0"
-panel-material-ui = ">=0.15.0a0,<0.16"
+panel-material-ui = ">=0.15.1a0,<0.16"
 linkify-it-py = "*"
 markdown = "*"
 markdown-it-py = "*"
@@ -327,7 +327,7 @@ SPHINX_APIDOC_OPTIONS = "members,show-inheritance"
 [feature.doc.dependencies]
 lxml = "*"
 nbsite = ">=0.10.0a5"
-panel-material-ui = ">=0.15.0a0,<0.16"
+panel-material-ui = ">=0.15.1a0,<0.16"
 selenium = "*"
 numpydoc = "*"
 pydeck = ">=0.8"  # Add back to examples, when it support ipywidgets 8.0
