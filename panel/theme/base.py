@@ -263,7 +263,7 @@ class Design(param.Parameterized, ResourceComponent):
         model, _ = viewable._models[mref]
         doc = model.document or document
         if cache is None:
-            cache = cls._cache if doc is None else _stylesheet_cache(doc)
+            cache = {} if doc is None else _stylesheet_cache(doc)
         modifiers, child_modifiers = cls._get_modifiers(viewable, theme, isolated)
         cls._patch_modifiers(doc, modifiers, cache)
         if child_modifiers:
