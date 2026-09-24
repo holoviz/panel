@@ -1,7 +1,9 @@
 """Focused tests for the generated panel.ui component reference."""
 
 import importlib.util
+import io
 import json
+import tarfile
 
 from pathlib import Path
 from types import SimpleNamespace
@@ -114,6 +116,38 @@ def test_missing_material_source_fails_with_instruction(gallery, monkeypatch):
     monkeypatch.setattr(ui_reference, 'find_spec', lambda name: None)
     with pytest.raises(FileNotFoundError, match='PANEL_UI_REFERENCE_PMUI_SOURCE'):
         ui_reference.generate_ui_reference(app)
+
+
+def test_installed_material_source_archive_fallback(gallery, monkeypatch):
+    app, _ = gallery
+    del app.config.ui_reference_pmui_source
+    package = Path(app.builder.srcdir).parent / 'installed' / 'panel_material_ui'
+    package.mkdir(parents=True)
+    (package / '__init__.py').write_text('')
+    monkeypatch.setattr(ui_reference, 'find_spec', lambda name: SimpleNamespace(origin=str(package / '__init__.py')))
+    monkeypatch.setattr(ui_reference, 'version', lambda name: '0.15.0')
+    contents = json.dumps({'cells': [{'cell_type': 'code', 'source': ['import panel_material_ui as pmui\npmui.Button()']}]})
+    archive = io.BytesIO()
+    with tarfile.open(fileobj=archive, mode='w:gz') as tar:
+        payload = contents.encode()
+        member = tarfile.TarInfo('panel-material-ui-0.15.0/examples/reference/widgets/Button.ipynb')
+        member.size = len(payload)
+        tar.addfile(member, io.BytesIO(payload))
+        stray = tarfile.TarInfo('panel-material-ui-0.15.0/README.md')
+        stray.size = 0
+        tar.addfile(stray, io.BytesIO())
+    requested = []
+
+    def fetch(url, timeout):
+        requested.append((url, timeout))
+        return io.BytesIO(archive.getvalue())
+
+    monkeypatch.setattr(ui_reference, 'urlopen', fetch)
+    source = ui_reference._material_examples(app)
+    assert requested == [('https://github.com/panel-extensions/panel-material-ui/archive/refs/tags/v0.15.0.tar.gz', 30)]
+    assert (source / 'widgets/Button.ipynb').read_text() == contents
+    assert not (source / 'README.md').exists()
+    app._pmui_reference_dir.cleanup()
 
 
 def test_reuses_classic_notebook_without_copying_source(gallery):

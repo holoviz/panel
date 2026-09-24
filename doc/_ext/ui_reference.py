@@ -1,13 +1,20 @@
-"""Generate panel.ui reference pages from Panel's classic examples and public API."""
+"""Generate panel.ui reference pages from PMUI and identity-compatible classic notebooks."""
 
 import ast
 import inspect
+import io
 import json
+import os
 import posixpath
 import re
+import tarfile
+import tempfile
 
+from importlib.metadata import version
+from importlib.util import find_spec
 from pathlib import Path
 from urllib.parse import urlsplit
+from urllib.request import urlopen
 
 SECTIONS = {
     'widgets': 'widgets',
@@ -78,7 +85,7 @@ def _references(code, classic, ui):
             continue
         if name not in ui.__all__ or obj is not getattr(ui, name):
             return None
-        spans.append((node.lineno, node.col_offset, node.end_lineno, node.end_col_offset, name))
+        spans.append((node.lineno, node.col_offset, node.end_lineno, node.end_col_offset, f'pn.ui.{name}'))
     return spans
 
 
@@ -90,12 +97,95 @@ def _rewrite(code, spans):
     content = code.encode('utf-8')
     for first, start, last, end, name in sorted(spans, reverse=True):
         left, right = offsets[first - 1] + start, offsets[last - 1] + end
-        content = content[:left] + f'pn.ui.{name}'.encode() + content[right:]
+        content = content[:left] + name.encode() + content[right:]
     return content.decode('utf-8')
 
 
 def _cells(path):
     return json.loads(path.read_text(encoding='utf-8'))['cells']
+
+
+def _material_codes(cells, ui):
+    """Rewrite PMUI imports and references only for components exported by panel.ui."""
+    imported = set()
+    material_imported = False
+    for cell in cells:
+        if cell['cell_type'] != 'code':
+            continue
+        tree = ast.parse(''.join(cell['source']))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.ImportFrom) and node.module == 'panel_material_ui':
+                for alias in node.names:
+                    if alias.asname or alias.name not in set(ui.__all__) | {'COLORS'}:
+                        raise ValueError(f'Unsupported PMUI import: {alias.name}')
+                    if alias.name != 'COLORS':
+                        imported.add(alias.name)
+            elif isinstance(node, ast.Import) and any(alias.name == 'panel_material_ui' and alias.asname == 'pmui'
+                                                        for alias in node.names):
+                material_imported = True
+    codes = []
+    used = set()
+    has_import = False
+    for cell in cells:
+        if cell['cell_type'] != 'code':
+            continue
+        source = ''.join(cell['source'])
+        if re.search(r'(?m)^\s*(?:%|!)', source):
+            raise ValueError('Notebook contains magic or shell commands')
+        tree = ast.parse(source)
+        spans = []
+        attribute_bases = {id(node.value) for node in ast.walk(tree) if isinstance(node, ast.Attribute)}
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                if any(alias.name == 'panel_material_ui' and alias.asname != 'pmui'
+                       or alias.name.startswith('panel_material_ui.') for alias in node.names):
+                    raise ValueError('Unsupported PMUI module import')
+                if any(alias.name == 'panel' and alias.asname == 'pn' for alias in node.names):
+                    has_import = True
+                if any(alias.name == 'panel_material_ui' for alias in node.names):
+                    if len(node.names) != 1:
+                        raise ValueError('Combined PMUI imports are unsupported')
+                    spans.append((node.lineno, node.col_offset, node.end_lineno, node.end_col_offset, 'import panel.ui'))
+                    has_import = True
+            elif isinstance(node, ast.ImportFrom) and node.module == 'panel_material_ui':
+                imports = [alias.name for alias in node.names]
+                replacement = 'import panel.ui'
+                if 'COLORS' in imports:
+                    replacement += '\nCOLORS = ["default", "primary", "secondary", "error", "info", "success", "warning", "light", "dark", "danger"]'
+                spans.append((node.lineno, node.col_offset, node.end_lineno, node.end_col_offset, replacement))
+                has_import = True
+            elif isinstance(node, ast.ImportFrom) and node.module and node.module.startswith('panel_material_ui.'):
+                raise ValueError('Unsupported PMUI submodule import')
+            elif isinstance(node, ast.Name) and node.id in imported and isinstance(node.ctx, ast.Load):
+                spans.append((node.lineno, node.col_offset, node.end_lineno, node.end_col_offset, f'pn.ui.{node.id}'))
+                used.add(node.id)
+            elif isinstance(node, ast.Attribute) and isinstance(node.value, ast.Name) and node.value.id == 'pmui':
+                if node.attr == 'widgets':
+                    continue
+                if node.attr not in ui.__all__:
+                    raise ValueError(f'PMUI component is not exported by panel.ui: {node.attr}')
+                spans.append((node.lineno, node.col_offset, node.end_lineno, node.end_col_offset, f'pn.ui.{node.attr}'))
+                used.add(node.attr)
+            elif (isinstance(node, ast.Attribute) and isinstance(node.value, ast.Attribute)
+                  and isinstance(node.value.value, ast.Name) and node.value.value.id == 'pmui'
+                  and node.value.attr == 'widgets'):
+                if node.attr not in ui.__all__:
+                    raise ValueError(f'Unsupported PMUI namespace: {node.value.attr}.{node.attr}')
+                spans.append((node.lineno, node.col_offset, node.end_lineno, node.end_col_offset, f'pn.ui.{node.attr}'))
+                used.add(node.attr)
+            elif isinstance(node, ast.Name) and node.id in imported | {'pmui'} and isinstance(node.ctx, (ast.Store, ast.Del)):
+                raise ValueError(f'PMUI alias is reassigned: {node.id}')
+            elif (isinstance(node, ast.Name) and node.id == 'pmui' and isinstance(node.ctx, ast.Load)
+                  and id(node) not in attribute_bases):
+                raise ValueError('Unsupported direct use of pmui module')
+        codes.append(_rewrite(source, spans))
+    if not has_import:
+        raise ValueError('Notebook does not import Panel or PMUI')
+    if any('pmui' in {node.id for node in ast.walk(ast.parse(''.join(cell['source'])))
+                      if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Load)}
+           for cell in cells if cell['cell_type'] == 'code') and not material_imported:
+        raise ValueError('Notebook uses pmui without importing it')
+    return codes, used
 
 
 def _safe_cells(cells, classic, ui):
@@ -159,7 +249,7 @@ def _notebook_page(path, examples, classic, ui):
     if not _safe_cells(cells, classic, ui):
         return None
     if not any(
-        path.stem in {span[-1] for span in _references(''.join(cell['source']), classic, ui)}
+        f'pn.ui.{path.stem}' in {span[-1] for span in _references(''.join(cell['source']), classic, ui)}
         for cell in cells if cell['cell_type'] == 'code'
     ):
         return None
@@ -217,6 +307,102 @@ def _notebook_page(path, examples, classic, ui):
 
             chunks.append(REFERENCE.sub(reference, source))
     return '\n\n'.join(chunks)
+
+
+def _material_page(path, examples, ui, name=None):
+    cells = _cells(path)
+    codes, used = _material_codes(cells, ui)
+    if (name or path.stem) not in used and path.stem not in used:
+        raise ValueError(f'{path} does not demonstrate pn.ui.{name or path.stem}')
+    chunks = []
+    code_iter = iter(codes)
+    for cell in cells:
+        if cell['cell_type'] == 'code':
+            source = next(code_iter)
+            if 'import panel as pn' in source and 'import panel.ui' not in source:
+                source = source.replace('import panel as pn', 'import panel as pn\nimport panel.ui', 1)
+            fence = '````' if '```' in source else '```'
+            chunks.append(f'{fence}{{pyodide}}\n{source}\n{fence}')
+        elif cell['cell_type'] == 'markdown':
+            source = ''.join(cell['source'])
+
+            def link(match):
+                target = match[1]
+                path_part, sep, suffix = target.partition('#')
+                if (not path_part.endswith('.ipynb') or path_part.startswith(('/', '<'))
+                    or ':' in path_part or '?' in path_part):
+                    return match[0]
+                notebook = (path.parent / path_part).resolve()
+                if not notebook.is_relative_to(examples) or not notebook.is_file():
+                    return match[0]
+                relative = notebook.relative_to(examples)
+                section = relative.parts[0]
+                destination = {'page': 'templates', 'menus': 'widgets'}.get(section, section)
+                if destination not in SECTIONS.values():
+                    return match[0]
+                target_name = notebook.stem
+                if target_name not in ui.__all__:
+                    target_name = next((name for name in ui.__all__
+                                        if getattr(ui, name).__name__ == notebook.stem), target_name)
+                if target_name not in ui.__all__:
+                    return match[0]
+                current = posixpath.join('reference', {'page': 'templates', 'menus': 'widgets'}.get(path.parent.name, path.parent.name))
+                return f']({posixpath.relpath(posixpath.join("reference", destination, target_name), current)}{sep}{suffix})'
+
+            source = LINK.sub(link, source)
+            source = re.sub(
+                r'(?<![\w.])pmui\.(?:widgets\.)?([A-Za-z]\w*)',
+                lambda match: f'pn.ui.{match[1]}' if match[1] in ui.__all__ else match[0],
+                source,
+            )
+            chunks.append(source)
+    return '\n\n'.join(chunks)
+
+
+def _material_examples(app):
+    configured = getattr(app.config, 'ui_reference_pmui_source', None) or os.environ.get('PANEL_UI_REFERENCE_PMUI_SOURCE')
+    if configured:
+        root = Path(configured).expanduser().resolve()
+        if (root / 'examples/reference').is_dir():
+            root /= 'examples/reference'
+        if not root.is_dir():
+            raise FileNotFoundError(f'PMUI notebook source not found: {root}')
+        return root
+    spec = find_spec('panel_material_ui')
+    if spec and spec.origin:
+        package = Path(spec.origin).resolve().parent
+        for root in (package / 'examples/reference', package.parent.parent / 'examples/reference'):
+            if (root / 'widgets/Button.ipynb').is_file():
+                return root
+        release = version('panel-material-ui')
+        url = f'https://github.com/panel-extensions/panel-material-ui/archive/refs/tags/v{release}.tar.gz'
+        try:
+            with urlopen(url, timeout=30) as response:
+                archive = io.BytesIO(response.read())
+        except OSError as exc:
+            raise FileNotFoundError(
+                f'PMUI reference notebooks are not installed and the source archive at {url} '
+                'could not be downloaded. Set PANEL_UI_REFERENCE_PMUI_SOURCE to a local checkout.'
+            ) from exc
+        app._pmui_reference_dir = tempfile.TemporaryDirectory(prefix='panel-pmui-reference-')
+        root = Path(app._pmui_reference_dir.name)
+        with tarfile.open(fileobj=archive, mode='r:gz') as source:
+            for member in source:
+                parts = Path(member.name).parts
+                if not member.isfile() or len(parts) < 5 or parts[1:3] != ('examples', 'reference'):
+                    continue
+                if not member.name.endswith('.ipynb'):
+                    continue
+                destination = root.joinpath(*parts[3:])
+                if not destination.resolve().is_relative_to(root.resolve()):
+                    continue
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                with source.extractfile(member) as notebook, destination.open('wb') as output:
+                    output.write(notebook.read())
+        if (root / 'widgets/Button.ipynb').is_file():
+            return root
+        raise FileNotFoundError(f'PMUI source archive at {url} has no reference notebooks')
+    return None
 
 
 def _api_page(name, component):
@@ -306,6 +492,13 @@ def generate_ui_reference(app):
     gallery_conf = app.config.nbsite_gallery_conf
     source = gallery_conf['galleries']['reference/classic']['source']
     examples = (Path(app.builder.srcdir) / gallery_conf['examples_dir'] / source).resolve()
+    material = _material_examples(app)
+    if material is None:
+        raise FileNotFoundError(
+            'PMUI reference notebooks are unavailable. Set PANEL_UI_REFERENCE_PMUI_SOURCE '
+            'to a panel-material-ui checkout (or examples/reference directory), or provide '
+            'notebooks in the installed panel_material_ui package.'
+        )
     output = Path(app.builder.srcdir) / 'reference'
     index = [
         '# Component Gallery', '',
@@ -340,7 +533,23 @@ def generate_ui_reference(app):
         for name in names:
             component = getattr(ui, name)
             notebook = examples / section / f'{name}.ipynb'
-            content = _notebook_page(notebook, examples, pn, ui) if notebook.is_file() else None
+            material_section = {'templates': 'page'}.get(section, section)
+            material_notebook = material / material_section / f'{name}.ipynb'
+            if not material_notebook.is_file() and component.__name__ != name:
+                material_notebook = material / material_section / f'{component.__name__}.ipynb'
+            if not material_notebook.is_file():
+                for other_section in ('widgets', 'indicators', 'menus'):
+                    candidate = material / other_section / f'{component.__name__}.ipynb'
+                    if candidate.is_file():
+                        material_notebook = candidate
+                        break
+            if material_notebook.is_file():
+                try:
+                    content = _material_page(material_notebook, material, ui, name)
+                except (ValueError, SyntaxError) as exc:
+                    raise ValueError(f'Cannot convert PMUI notebook {material_notebook}: {exc}') from exc
+            else:
+                content = _notebook_page(notebook, examples, pn, ui) if notebook.is_file() else None
             if content is None:
                 content = _api_page(name, component)
                 if notebook.is_file() and any(
