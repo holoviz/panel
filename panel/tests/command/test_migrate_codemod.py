@@ -266,6 +266,68 @@ def test_no_rewrite_needed_produces_no_import():
     assert 'panel.ui' not in result.source
 
 
+@pytest.mark.parametrize('design', ["'fast'", "'material'", 'pn.theme.Fast'])
+def test_explicit_design_settings_removed(design):
+    source = (
+        'import panel as pn\n'
+        f'pn.config.design = {design}\n'
+        f'pn.extension(design={design}, sizing_mode="stretch_width")\n'
+        'pn.widgets.Button()\n'
+    )
+    result = migrate_source(source)
+    assert 'config.design' not in result.source
+    assert 'design=' not in result.source
+    assert 'pn.extension(sizing_mode="stretch_width")' in result.source
+    assert 'pnui.Button()' in result.source
+    assert sum(rewrite.rule == 'remove-design' for rewrite in result.rewrites) == 2
+    assert not result.manual_reviews
+
+
+def test_design_only_extension_call_is_kept_without_design():
+    result = migrate_source('import panel as pn\npn.extension(design="fast")\n')
+    assert 'pn.extension()' in result.source
+    assert 'import panel.ui' not in result.source
+
+
+def test_design_setting_aliases_and_semicolon_siblings():
+    source = (
+        'import panel as pn\n'
+        'from panel import config as settings, extension as init\n'
+        'settings.design = "fast"; print("keep")\n'
+        'init(sizing_mode="stretch_width", design="fast")\n'
+    )
+    result = migrate_source(source)
+    assert 'settings.design' not in result.source
+    assert 'print("keep")' in result.source
+    assert 'init(sizing_mode="stretch_width")' in result.source
+
+
+def test_config_module_import_design_assignment_removed():
+    source = 'from panel.config import config\nconfig.design = "fast"\n'
+    result = migrate_source(source)
+    assert result.source == 'from panel.config import config\n'
+    assert [rewrite.rule for rewrite in result.rewrites] == ['remove-design']
+
+
+def test_dynamic_design_settings_are_reported_not_removed():
+    source = (
+        'import panel as pn\n'
+        'pn.config.design = select_design()\n'
+        'pn.extension(design=select_design())\n'
+    )
+    result = migrate_source(source)
+    assert not result.changed
+    assert result.source == source
+    assert len(result.manual_reviews) == 2
+
+
+def test_unrelated_design_settings_are_preserved():
+    source = 'import panel as pn\nother.config.design = "fast"\nother.extension(design="fast")\n'
+    result = migrate_source(source)
+    assert not result.changed
+    assert result.source == source
+
+
 def test_idempotent_second_pass_is_a_no_op():
     source = (
         "import panel as pn\n"

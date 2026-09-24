@@ -1,15 +1,17 @@
 """
-The ``libcst`` codemod implementing the five rewrite rules from plan §10.1:
+The ``libcst`` codemod implementing the migration rewrite rules:
 
 1. Rewrite classic import/access paths (``panel.widgets.X``, ``panel.pane.X``,
    ``panel.layout.X``, bare ``panel.X`` layout shortcuts, ``panel.chat.X``,
-   ``panel.indicators.X``) to the ``panel.ui`` equivalent, inserting
+    ``panel.indicators.X``) to the ``panel.ui`` equivalent, inserting
    ``import panel.ui as pnui`` once per file.
 2. ``name=`` to ``label=`` on calls resolved to a class with a ``label`` param.
 3. ``button_type=``/``button_style=`` to ``color=``/``variant=``.
 4. ``MenuButton(split=True)`` to ``SplitButton(...)``.
 5. Classic template instantiation to ``panel.ui.Page(...)`` when every keyword
    used is confirmed compatible.
+6. Remove explicit design selections so migrated apps use the ``panel.ui``
+   default, reporting expressions with side effects for manual review.
 
 Resolution of a call's callee back to its classic dotted path (through
 ``import panel as pn``, ``from panel import widgets as w``,
@@ -19,14 +21,15 @@ forms this codemod has to support are a small, fixed set, and a tracker scoped
 to exactly those forms is easier to reason about and keep correct than
 adapting a general-purpose provider to this problem.
 
-All four rules that touch a call (2-5) are applied together, in a single pass
+The component rules that touch a call (1-4) are applied together, in a single pass
 over each ``Call`` node, once that node's callee has been resolved to a
 classic dotted path: rule 1's path rewrite and rules 2-4's keyword rewrites
 all rewrite the *same* node, so doing them as one atomic operation avoids
 having to re-resolve an already-rewritten node in a second pass. Classic
 template calls (rule 5) never resolve to a name in ``panel.ui`` in the first
 place (there is no ``panel.ui.BootstrapTemplate``), so they cannot collide
-with rules 1-4 and are handled as an independent branch.
+with rules 1-4 and are handled as an independent branch. Explicit design
+arguments (rule 6) are handled separately from component and template calls.
 
 Running the codemod on already-migrated code is a no-op: every rewrite target
 lives under the inserted ``panel.ui`` alias, whose dotted path (``panel.ui``)
@@ -49,6 +52,7 @@ RULE_NAME_TO_LABEL = 'name-to-label'
 RULE_BUTTON_APPEARANCE = 'button-appearance'
 RULE_MENU_BUTTON_SPLIT = 'menu-button-split'
 RULE_TEMPLATE_TO_PAGE = 'template-to-page'
+RULE_REMOVE_DESIGN = 'remove-design'
 
 DEFAULT_PANEL_UI_ALIAS = 'pnui'
 
@@ -166,6 +170,12 @@ def _is_true(expr: cst.BaseExpression) -> bool:
     return isinstance(expr, cst.Name) and expr.value == 'True'
 
 
+def _safe_design_value(expr: cst.BaseExpression) -> bool:
+    return isinstance(expr, (cst.SimpleString, cst.Name)) or (
+        isinstance(expr, cst.Attribute) and _dotted_name_to_str(expr) is not None
+    )
+
+
 def _rename_kwarg(args: list[cst.Arg], old: str, new: str) -> tuple[list[cst.Arg], bool]:
     changed = False
     new_args = []
@@ -210,6 +220,23 @@ class _PanelMigrateTransformer(cst.CSTTransformer):
     def leave_Call(self, original_node: cst.Call, updated_node: cst.Call) -> cst.BaseExpression:
         dotted = _resolve_dotted(original_node.func, self._aliases)
         if dotted is None:
+            return updated_node
+
+        if dotted == 'panel.extension':
+            design_args = [
+                arg for arg in original_node.args
+                if arg.keyword is not None and arg.keyword.value == 'design'
+            ]
+            if design_args:
+                line = self._line(original_node)
+                if not all(_safe_design_value(arg.value) for arg in design_args):
+                    self.manual_reviews.append(ManualReview(
+                        line, 'panel.extension(design=...) uses an expression; remove the design '
+                        'setting manually to preserve its side effects.'
+                    ))
+                else:
+                    self.rewrites.append(Rewrite(line, RULE_REMOVE_DESIGN, 'removed panel.extension(design=...)'))
+                    return updated_node.with_changes(args=_drop_kwarg(list(updated_node.args), 'design'))
             return updated_node
 
         template_match = compat.TEMPLATE_MATCHES.get(dotted)
@@ -266,6 +293,32 @@ class _PanelMigrateTransformer(cst.CSTTransformer):
             return updated_node
 
         return self._rewrite_component_call(updated_node, match, dotted, used_kwargs, line)
+
+    def leave_SimpleStatementLine(
+        self, original_node: cst.SimpleStatementLine, updated_node: cst.SimpleStatementLine,
+    ) -> cst.BaseStatement | cst.RemovalSentinel:
+        body = []
+        for stmt in original_node.body:
+            if not isinstance(stmt, cst.Assign) or len(stmt.targets) != 1 or (
+                _resolve_dotted(stmt.targets[0].target, self._aliases)
+                not in ('panel.config.design', 'panel.config.config.design')
+            ):
+                body.append(stmt)
+                continue
+            line = self._line(stmt)
+            if not _safe_design_value(stmt.value):
+                self.manual_reviews.append(ManualReview(
+                    line, 'panel.config.design uses an expression; remove the design '
+                    'setting manually to preserve its side effects.'
+                ))
+                body.append(stmt)
+                continue
+            self.rewrites.append(Rewrite(line, RULE_REMOVE_DESIGN, 'removed panel.config.design assignment'))
+        if len(body) == len(original_node.body):
+            return updated_node
+        if not body:
+            return cst.RemoveFromParent()
+        return updated_node.with_changes(body=body)
 
     def _rewrite_component_call(
         self, node: cst.Call, match: compat.ComponentMatch, dotted: str, used_kwargs: set[str], line: int
