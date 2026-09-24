@@ -8,13 +8,42 @@ import tarfile
 from pathlib import Path
 from types import SimpleNamespace
 
+import param
 import pytest
+
+import panel.io.convert
+import panel.io.resources
+
+from panel.config import config
+from panel.pane import HoloViews
+from panel.param import Param
 
 EXTENSION = Path(__file__).resolve().parents[2] / 'doc' / '_ext' / 'ui_reference.py'
 spec = importlib.util.spec_from_file_location('ui_reference', EXTENSION)
 assert spec is not None and spec.loader is not None
 ui_reference = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(ui_reference)
+
+
+@pytest.fixture(autouse=True)
+def restore_design():
+    design = param.Parameterized.__getattribute__(config, 'design')
+    globals_to_restore = (
+        (Param, 'mapping'),
+        (Param, 'input_widgets'),
+        (HoloViews, 'default_widgets'),
+        (panel.io.convert, 'loading_resources'),
+        (panel.io.convert, 'BASE_TEMPLATE'),
+        (panel.io.resources, 'BASE_TEMPLATE'),
+    )
+    prior = [
+        (obj, attr, dict(value) if isinstance(value := getattr(obj, attr), dict) else value)
+        for obj, attr in globals_to_restore
+    ]
+    yield
+    for obj, attr, value in prior:
+        setattr(obj, attr, value)
+    param.Parameterized.__setattr__(config, 'design', design)
 
 
 def notebook(path, *cells):

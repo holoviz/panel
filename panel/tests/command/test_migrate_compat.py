@@ -5,12 +5,27 @@ These assert properties of the *introspected* data rather than hardcoding
 names or counts from the plan doc, which predate panel.ui existing and would
 go stale as panel.ui grows. See plan §10.1 / §2.
 """
+import subprocess
+import sys
+
 import param
 import pytest
 
 pytest.importorskip("libcst")
 
 from panel.command._migrate import compat
+
+
+def test_importing_compat_preserves_design():
+    """Migration introspection must not change classic design or widget mappings."""
+    subprocess.run([
+        sys.executable, '-c',
+        'import panel as pn; '
+        'before = (pn.config.design, dict(pn.param.Param.mapping)); '
+        'from panel.command._migrate import compat; '
+        'assert pn.config.design is before[0]; '
+        'assert pn.param.Param.mapping == before[1]',
+    ], check=True)
 
 
 def test_component_matches_ui_name_gettable():

@@ -182,6 +182,7 @@ async def test_stopping_watcher_deregisters_event(tmp_path):
     assert watcher._stop_event is None
 
 
+@pytest.mark.skipif(not import_available('watchfiles'), reason='watchfiles is not installed')
 def test_esm_components_share_a_watcher(document, comm, tmp_path):
     from panel.config import config
     from panel.custom import JSComponent

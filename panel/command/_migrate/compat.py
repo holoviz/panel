@@ -30,12 +30,34 @@ import param
 
 import panel as pn
 import panel.chat as pn_chat
+import panel.io.convert as pn_convert
+import panel.io.resources as pn_resources
 import panel.layout as pn_layout
 import panel.pane as pn_pane
 import panel.template as pn_template
-import panel.ui as pn_ui
 import panel.widgets as pn_widgets
 import panel.widgets.indicators as pn_indicators
+
+# Introspection must not select a design or patch classic components for an app.
+_prior_design = param.Parameterized.__getattribute__(pn.config, 'design')
+_patched_globals = (
+    (pn.param.Param, 'mapping'),
+    (pn.param.Param, 'input_widgets'),
+    (pn.pane.HoloViews, 'default_widgets'),
+    (pn_convert, 'loading_resources'),
+    (pn_convert, 'BASE_TEMPLATE'),
+    (pn_resources, 'BASE_TEMPLATE'),
+)
+_prior_globals = [
+    (obj, attr, dict(value) if isinstance(value := getattr(obj, attr), dict) else value)
+    for obj, attr in _patched_globals
+]
+try:
+    import panel.ui as pn_ui
+finally:
+    for obj, attr, value in _prior_globals:
+        setattr(obj, attr, value)
+    param.Parameterized.__setattr__(pn.config, 'design', _prior_design)
 
 # 'name' is structural (every Parameterized has it) rather than meaningful API
 # surface, and it is handled by the dedicated name->label rule, not treated as
