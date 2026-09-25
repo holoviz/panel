@@ -6,6 +6,24 @@ from panel import widgets
 from panel.interact import interactive
 from panel.models import HTML as BkHTML
 from panel.pane import HTML
+from panel.widgets.widget import fixed
+
+
+def test_fixed_widget_preserves_parameter_reference():
+    """A fixed argument must keep the widget object, not resolve its value."""
+    source = widgets.ColorPicker(value='#4f4fdf')
+    result = fixed(source)
+    assert result.value is source
+    assert result.param.value.allow_refs is False
+
+
+def test_interact_accepts_material_widget():
+    """Material widgets implement WidgetBase but not the classic Widget class."""
+    import panel as pn
+
+    color = pn.ui.ColorPicker(value='#4f4fdf')
+    result = interactive(lambda c: c, c=color)
+    assert result._widgets['c'] is color
 
 
 def test_interact_title():

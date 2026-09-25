@@ -31,11 +31,11 @@ class Sine(param.Parameterized):
         y = (y - y.min()) / np.ptp(y) * 20
         array = np.array(
             [list((' ' * (int(round(d)) - 1) + '*').ljust(20)) for d in y])
-        return pn.pane.Str('\n'.join([''.join(r) for r in array.T]), height=380, width=500)
+        return pn.ui.Str('\n'.join([''.join(r) for r in array.T]), height=380, width=500)
 
 sine = Sine(name='ASCII Sine Wave')
 
-pn.Row(sine.param, sine.view)
+pn.ui.Row(sine.param, sine.view)
 ```
 
 The parameterized and annotated ``view`` method could return any one of the types handled by the [Pane objects](../../explanation/components/components_overview.md#panes) Panel provides, making it easy to link parameters and their associated widgets to a plot or other output. Parameterized classes can therefore be a very useful pattern for encapsulating a part of a computational workflow with an associated visualization, declaratively expressing the dependencies between the parameters and the computation.
@@ -44,7 +44,7 @@ By default, a Param pane will show widgets for all parameters with a `precedence
 
 
 ```{pyodide}
-pn.Row(pn.panel(sine.param, parameters=['phase']), sine.view)
+pn.ui.Row(pn.panel(sine.param, parameters=['phase']), sine.view)
 ```
 
 Another common pattern is linking the values of one parameter to another parameter, e.g. when dependencies between parameters exist. In the example below we will define two parameters, one for the continent and one for the country. Since we want the selection of valid countries to change when we change the continent, we define a method to do that for us. In order to link the two we express the dependency using the ``param.depends`` decorator and then ensure that we will run the method whenever the continent changes by setting ``watch=True``.
@@ -75,13 +75,13 @@ class GoogleMapViewer(param.Parameterized):
         <iframe width="800" height="400" src="https://maps.google.com/maps?q={country}&z=6&output=embed"
         frameborder="0" scrolling="no" marginheight="0" marginwidth="0"></iframe>
         """.format(country=self.country)
-        return pn.pane.HTML(iframe, height=400)
+        return pn.ui.HTML(iframe, height=400)
 
 viewer = GoogleMapViewer(name='Google Map Viewer')
-pn.Row(viewer.param, viewer.view)
+pn.ui.Row(viewer.param, viewer.view)
 ```
 
-Whenever the continent changes Param will now eagerly execute the ``_update_countries`` method to change the list of countries that is displayed, which in turn triggers an update in the view method updating the map. Note that there is no need to add ``watch=True`` to decorators of methods that are passed to a Panel layout (e.g. ``viewer.View`` being passed to ``pn.Row`` here), because Panel will already handle dependencies on those methods, executing the method automatically when the dependent parameters change. Indeed, if you specify ``watch=True`` for such a method, the method will get invoked _twice_ each time a dependency changes (once by Param internally and once by Panel), so you should reserve ``watch=True`` only for methods that aren't otherwise being monitored for dependencies.
+Whenever the continent changes Param will now eagerly execute the ``_update_countries`` method to change the list of countries that is displayed, which in turn triggers an update in the view method updating the map. Note that there is no need to add ``watch=True`` to decorators of methods that are passed to a Panel layout (e.g. ``viewer.View`` being passed to ``pn.ui.Row`` here), because Panel will already handle dependencies on those methods, executing the method automatically when the dependent parameters change. Indeed, if you specify ``watch=True`` for such a method, the method will get invoked _twice_ each time a dependency changes (once by Param internally and once by Panel), so you should reserve ``watch=True`` only for methods that aren't otherwise being monitored for dependencies.
 
 ---
 

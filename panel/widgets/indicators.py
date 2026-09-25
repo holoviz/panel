@@ -1324,7 +1324,7 @@ class Tqdm(Indicator):
 
     max = param.Integer(default=100, doc="The maximum value of the progress bar.")
 
-    progress = param.ClassSelector(class_=Progress, allow_refs=False, precedence=-1, doc="""
+    progress = param.ClassSelector(class_=Viewable, allow_refs=False, precedence=-1, doc="""
         The Progress indicator used to display the progress.""",)
 
     text = param.String(default='', doc="""
@@ -1347,6 +1347,8 @@ class Tqdm(Indicator):
 
     _layouts: t.ClassVar[dict[type[Panel], str]] = {Row: 'row', Column: 'column'}
 
+    _progress_type: t.ClassVar[type[Viewable]] = Progress
+
     _rename: t.ClassVar[Mapping[str, str | None]] = {
         'value': None, 'min': None, 'max': None, 'text': None, 'name': 'name'
     }
@@ -1361,7 +1363,7 @@ class Tqdm(Indicator):
                 margin=MARGIN["text_pane"][layout],
             )
         if "progress" not in params:
-            params["progress"] = Progress(
+            params["progress"] = self._progress_type(
                 active=False,
                 sizing_mode="stretch_width",
                 min_width=100,

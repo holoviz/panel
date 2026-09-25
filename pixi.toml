@@ -58,7 +58,7 @@ features = ["py312", "required", "type", "optional"]
 no-default-feature = true
 
 [environments.docs]
-features = ["py312", "optional", "doc"]
+features = ["py312", "required", "optional", "doc"]
 no-default-feature = true
 
 [environments.build]
@@ -81,7 +81,7 @@ pip = "*"
 # Required
 nh3 = "*"
 bokeh = ">=3.10.0,<3.11.0a0"
-panel-material-ui = ">=0.10.0"
+panel-material-ui = ">=0.15.1a0,<0.16"
 linkify-it-py = "*"
 markdown = "*"
 markdown-it-py = "*"
@@ -98,6 +98,10 @@ typing_extensions = "*"
 
 [feature.required.tasks]
 install = 'python -m pip install --no-deps --disable-pip-version-check -e .'
+# Rebuilds panel/dist/ui without a full reinstall; watch-ui additionally
+# recompiles on every JSX change for the `panel serve --dev` loop.
+build-ui = 'panel compile panel.ui --file-loaders woff woff2'
+watch-ui = 'panel compile panel.ui --file-loaders woff woff2 --unminified --watch'
 
 [feature.py312.dependencies]
 python = "3.12.*"
@@ -297,6 +301,7 @@ depends-on = ["_install-ui"]
 # =============================================
 [feature.type.dependencies]
 mypy = "*"
+libcst = ">=1.1"
 pytest = "*"
 pandas-stubs = "*"
 types-croniter = "*"
@@ -323,6 +328,7 @@ SPHINX_APIDOC_OPTIONS = "members,show-inheritance"
 lxml = "*"
 nbsite = ">=0.10.0a7"
 nodejs = ">=18"
+panel-material-ui = ">=0.15.1a0,<0.16"
 selenium = "*"
 numpydoc = "*"
 pydeck = ">=0.8"  # Add back to examples, when it support ipywidgets 8.0
@@ -330,7 +336,7 @@ sphinx = ">=9"
 
 [feature.doc.tasks]
 _docs-pyodide-npm = 'npm install --no-save --no-package-lock --prefix . pyodide@314.0.7'
-_docs-pyodide-wheels = 'if test -d panel/dist/wheels; then mkdir -p builtdocs/wheels && cp panel/dist/wheels/*.whl builtdocs/wheels/; fi'
+_docs-pyodide-wheels = "bash -c 'if test -d panel/dist/wheels; then mkdir -p builtdocs/wheels && cp panel/dist/wheels/*.whl builtdocs/wheels/; fi'"
 _docs-refmanual = 'sphinx-apidoc -e -o doc/api/ panel/ panel/tests --ext-autodoc --ext-intersphinx'
 _docs-convert-gallery = 'python scripts/gallery/convert_gallery.py'
 _docs-generate = { cmd = 'nbsite build --what=html --output=builtdocs --org holoviz --project-name panel --disable-parallel', depends-on = ['_docs-pyodide-npm', '_docs-pyodide-wheels'] }

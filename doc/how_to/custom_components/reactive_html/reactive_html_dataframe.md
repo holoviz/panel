@@ -62,11 +62,11 @@ def data(event):
     ["Afshin", "afshin@mail.com", "(353) 22 87 8356", random.uniform(0, 1)]
   ], columns= ["Name", "Email", "Phone Number", "Random"])
 
-update_button = pn.widgets.Button(label="UPDATE", color="primary")
+update_button = pn.ui.Button(label="UPDATE", color="primary")
 
 grid = GridJS(value=pn.bind(data, update_button), sizing_mode="stretch_width")
 
-pn.Column(update_button, grid).servable()
+pn.ui.Column(update_button, grid).servable()
 ```
 
 The main challenge of creating this component is understanding the structure of `data.value` and how it can be converted to a format (`config`) that `gridjs.Grid` accepts.

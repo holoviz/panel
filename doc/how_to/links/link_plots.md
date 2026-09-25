@@ -26,10 +26,10 @@ p = figure(width=300, height=300)
 xs = np.linspace(0, 10)
 r = p.line(xs, np.sin(xs))
 
-width_slider = pn.widgets.FloatSlider(label='Line Width', start=0.1, end=10)
+width_slider = pn.ui.FloatSlider(label='Line Width', start=0.1, end=10)
 width_slider.jslink(r.glyph, value='line_width')
 
-pn.Column(width_slider, p)
+pn.ui.Column(width_slider, p)
 ```
 
 ### Link HoloViews plots
@@ -52,15 +52,15 @@ import holoviews.plotting.bokeh
 
 colors = ["black", "red", "blue", "green", "gray"]
 
-size_widget = pn.widgets.FloatSlider(value=8, start=3, end=20, label='Size')
-color_widget = pn.widgets.Select(label='Color', options=colors, value='black')
+size_widget = pn.ui.FloatSlider(value=8, start=3, end=20, label='Size')
+color_widget = pn.ui.Select(label='Color', options=colors, value='black')
 
 points = hv.Points(np.random.rand(10, 2)).options(padding=0.1, line_color='black')
 
 size_widget.jslink(points, value='glyph.size')
 color_widget.jslink(points, value='glyph.fill_color')
 
-pn.Row(points, pn.Column(size_widget, color_widget))
+pn.ui.Row(points, pn.ui.Column(size_widget, color_widget))
 ```
 
 Of course, if you need to transform between the displayed widget value and the value to be used on the underlying Bokeh property, you can add custom JS code as shown in [the guide on JS-callbacks](./jscallbacks.md). Together these linking options should allow you to express whatever interactions you wish between your Panel objects.

@@ -7,8 +7,8 @@ Welcome to our guide on layouting Python objects, including Panel components! Le
 In this guide, we'll explore the following aspects of layouts:
 
 - **Layouts**: Accessible in the `pn` namespace.
-- **Layout Techniques**: Utilize `pn.Column` and `pn.Row` to structure your content.
-- **Reference Guides**: Explore detailed documentation for each layout in the [Layouts Section](../../reference/index.rst#layouts) of the [Component Gallery](../../reference/index.rst).
+- **Layout Techniques**: Utilize `pn.ui.Column` and `pn.ui.Row` to structure your content.
+- **Reference Guides**: Explore detailed documentation for each layout in the [Layouts Section](../../reference/index.md#layouts) of the [Component Gallery](../../reference/index.md).
 
 :::{note}
 As you follow along with the code examples below, feel free to execute them directly in the Panel documentation, a notebook cell, or within a file named `app.py` served with `panel serve app.py --dev`.
@@ -26,7 +26,7 @@ import panel as pn
 
 pn.extension()
 
-button = pn.widgets.Button(label="Refresh", icon="refresh", color="primary")
+button = pn.ui.Button(label="Refresh", icon="refresh", color="primary")
 
 data = pd.DataFrame(
     [
@@ -41,7 +41,7 @@ data = pd.DataFrame(
     columns=["Day", "Wind Speed (m/s)"],
 )
 
-pn.Column("# Wind Speed", data, button).servable()
+pn.ui.Column("# Wind Speed", data, button).servable()
 ```
 
 :::{note}
@@ -79,7 +79,7 @@ data = pd.DataFrame(
 )
 plot = data.hvplot(x="Day", y="Wind Speed (m/s)", kind="bar", color="goldenrod", title="Wind Speed (m/s)")
 
-pn.Row(plot, data).servable()
+pn.ui.Row(plot, data).servable()
 ```
 
 ## Displays using `pn.panel`
@@ -106,8 +106,8 @@ data = pd.DataFrame(
     ],
     columns=["Day", "Wind Speed (m/s)"],
 )
-button = pn.widgets.Button(label="Refresh", icon="refresh", color="primary")
-component = pn.Column("# Wind Speed", data, button)
+button = pn.ui.Button(label="Refresh", icon="refresh", color="primary")
+component = pn.ui.Column("# Wind Speed", data, button)
 print(component)
 component.servable()
 ```
@@ -135,7 +135,7 @@ import panel as pn
 
 pn.extension()
 
-button = pn.widgets.Button(label="Refresh", icon="refresh", color="primary")
+button = pn.ui.Button(label="Refresh", icon="refresh", color="primary")
 
 data = pd.DataFrame(
     [
@@ -150,8 +150,8 @@ data = pd.DataFrame(
     columns=["Day", "Wind Speed (m/s)"],
 )
 
-pn.Column(
-    pn.pane.Str("# Wind Speed"), pn.panel(data, sizing_mode="stretch_width"), button
+pn.ui.Column(
+    pn.ui.Str("# Wind Speed"), pn.panel(data, sizing_mode="stretch_width"), button
 ).servable()
 ```
 
@@ -167,7 +167,7 @@ import panel as pn
 
 pn.extension()
 
-button = pn.widgets.Button(label="Refresh", icon="refresh", color="primary")
+button = pn.ui.Button(label="Refresh", icon="refresh", color="primary")
 
 data = pd.DataFrame(
     [
@@ -182,8 +182,8 @@ data = pd.DataFrame(
     columns=["Day", "Wind Speed (m/s)"],
 )
 
-component = pn.Column("# Wind Speed", data, button)
-pn.Column(component[0], component[2], component[1]).servable()
+component = pn.ui.Column("# Wind Speed", data, button)
+pn.ui.Column(component[0], component[2], component[1]).servable()
 ```
 
 :::{note}
@@ -205,7 +205,7 @@ import hvplot.pandas
 
 pn.extension()
 
-button = pn.widgets.Button(label="Refresh", icon="refresh", color="primary")
+button = pn.ui.Button(label="Refresh", icon="refresh", color="primary")
 data = pd.DataFrame(
     [
         ("Monday", 7),
@@ -226,10 +226,10 @@ plot = data.hvplot(
     title="Wind Speed (m/s)",
 )
 
-pn.Column(
+pn.ui.Column(
     "# Wind Speed",
     button,
-    pn.Row(pn.panel(plot, sizing_mode="stretch_width"), pn.panel(data)),
+    pn.ui.Row(pn.panel(plot, sizing_mode="stretch_width"), pn.panel(data)),
 ).servable()
 ```
 
@@ -237,14 +237,14 @@ pn.Column(
 
 Panel provides a vast collection of layouts to suit your needs.
 
-Click [this link](../../reference/index.rst#layouts) to explore available layouts and their detailed reference guides.
+Click [this link](../../reference/index.md#layouts) to explore available layouts and their detailed reference guides.
 
 ## Recap
 
 In this guide, we have learned:
 
 - **Layouts**: Available in the `pn` namespace.
-- **Layout Techniques**: Utilize `pn.Column` and `pn.Row` to structure your content.
+- **Layout Techniques**: Utilize `pn.ui.Column` and `pn.ui.Row` to structure your content.
 - **Automatic Display**: Layouts use `pn.panel` to determine the optimal display for Python objects.
 - **List-like Behavior**: Layouts like `Column` and `Row` behave like lists, allowing for flexible manipulation.
 - **Complex Layouts**: Combine and nest layouts for more intricate arrangements.
@@ -271,4 +271,4 @@ Now, you're equipped to create dynamic and visually appealing layouts for your P
 
 ### Component Gallery
 
-- [Layouts](../../reference/index.rst#layouts)
+- [Layouts](../../reference/index.md#layouts)

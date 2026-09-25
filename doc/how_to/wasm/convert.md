@@ -48,7 +48,7 @@ pn.state.template.param.update(site="Panel in the Browser", title="XGBoost Examp
 
 iris_df = load_iris(as_frame=True)
 
-trees = pn.widgets.IntSlider(start=2, end=30, label="Number of trees")
+trees = pn.ui.IntSlider(start=2, end=30, label="Number of trees")
 
 def pipeline(trees):
     model = XGBClassifier(max_depth=2, n_estimators=trees)
@@ -61,7 +61,7 @@ def pipeline(trees):
         colors=[(97.5, "red"), (99.0, "orange"), (100, "green")],
     )
 
-pn.Column(
+pn.ui.Column(
     "Simple example of training an XGBoost classification model on the small Iris dataset.",
     iris_df.data.head(),
     "Move the slider below to change the number of training rounds for the XGBoost classifier. The training accuracy score will adjust accordingly.",

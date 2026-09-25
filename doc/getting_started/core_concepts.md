@@ -73,7 +73,7 @@ Reactivity is a key concept in both Param and Panel. This means changes in one p
 In Panel, understanding the distinction between a Parameter's value and the Parameter object itself is important. The value represents the current value at a specific moment, while the object contains information about the Parameter and serves as a reference to its value over time. In many cases, you can utilize a Parameter object, and Panel will handle updating the value reactively as it changes. For instance, consider a widget:
 
 ```python
-text = pn.widgets.TextInput()
+text = pn.ui.TextInput()
 
 text.value  # 👈 The current value of the widget
 text.param.value  # 👈 A reference to the "value" Parameter, used in Panel to bind to the "value"
@@ -104,7 +104,7 @@ df_pane = pn.panel(df)
 To inspect the type of an object, simply `print` it:
 
 ```python
->>> print(pn.Row(df))
+>>> print(pn.ui.Row(df))
 Row
     [0] DataFrame(DataFrame)
 ```
@@ -118,7 +118,7 @@ At times, an object may have multiple possible representations to choose from. I
 :::{tab-item} DataFrame Pane
 
 ```python
-pn.pane.DataFrame(df)
+pn.ui.DataFrame(df)
 ```
 
 <table border="0" class="dataframe panel-df">
@@ -158,7 +158,7 @@ pn.pane.DataFrame(df)
 :::{tab-item} HTML Pane
 
 ```python
-pn.pane.HTML(df)
+pn.ui.HTML(df)
 ```
 
 <div>
@@ -213,7 +213,7 @@ pn.pane.HTML(df)
 :::{tab-item} Str Pane
 
 ```python
-pn.pane.Str(df)
+pn.ui.Str(df)
 ```
 
 <pre>
@@ -251,12 +251,12 @@ To craft an interactive application, you'll typically add widget components (suc
 ```{pyodide}
 import panel as pn
 
-x = pn.widgets.IntSlider(label='x', start=0, end=100)
+x = pn.ui.IntSlider(label='x', start=0, end=100)
 
 def square(x):
     return f'{x} squared is {x**2}'
 
-pn.Row(x, pn.bind(square, x))
+pn.ui.Row(x, pn.bind(square, x))
 ```
 
 The `pn.bind` function allows us to bind a widget or a *Parameter* **object** to a function that returns an item to be displayed. Once bound, the function can be added to a layout or rendered directly using `pn.panel` and `.servable()`. This enables you to express reactivity between widgets and output very easily.
@@ -272,8 +272,8 @@ While the binding approach above works, it can be somewhat heavy-handed. Wheneve
 ```{pyodide}
 import panel as pn
 
-x = pn.widgets.IntSlider(label='x', start=0, end=100)
-background = pn.widgets.ColorPicker(label='Background', value='lightgray')
+x = pn.ui.IntSlider(label='x', start=0, end=100)
+background = pn.ui.ColorPicker(label='Background', value='lightgray')
 
 def square(x):
     return f'{x} squared is {x**2}'
@@ -281,10 +281,10 @@ def square(x):
 def styles(background):
     return {'background-color': background, 'padding': '0 10px'}
 
-pn.Column(
+pn.ui.Column(
     x,
     background,
-    pn.pane.Markdown(pn.bind(square, x), styles=pn.bind(styles, background))
+    pn.ui.Markdown(pn.bind(square, x), styles=pn.bind(styles, background))
 )
 ```
 
@@ -311,11 +311,11 @@ import panel as pn
 
 pn.extension(template='fast')
 
-freq = pn.widgets.FloatSlider(
+freq = pn.ui.FloatSlider(
     label='Frequency', start=0, end=10, value=5
 ).servable(target='sidebar')
 
-ampl = pn.widgets.FloatSlider(
+ampl = pn.ui.FloatSlider(
     label='Amplitude', start=0, end=1, value=0.5
 ).servable(target='sidebar')
 
@@ -327,11 +327,11 @@ def plot(freq, ampl):
     ax.plot(xs, ys)
     return fig
 
-mpl = pn.pane.Matplotlib(
+mpl = pn.ui.Matplotlib(
     pn.bind(plot, freq, ampl)
 )
 
-pn.Column(
+pn.ui.Column(
     '# Sine curve', mpl
 ).servable(target='main')
 ```
@@ -344,7 +344,7 @@ In this **Getting Started** guide, you've installed Panel, built a simple app, a
 
 For a hands-on approach to **learning Panel**, dive into our [Tutorials](../tutorials/index.md). If you seek clarity or wish to deepen your understanding of specific topics, refer to the [Explanation](../explanation/index.md) section of the docs.
 
-During **Panel usage**, consult the [Component Gallery](../reference/index.rst) reference guides, find solutions to specific problems in the [How-to](../how_to/index.md) guides, or explore the [API Reference](../api/index.md) sections for technical specifications and descriptions.
+During **Panel usage**, consult the [Component Gallery](../reference/index.md) reference guides, find solutions to specific problems in the [How-to](../how_to/index.md) guides, or explore the [API Reference](../api/index.md) sections for technical specifications and descriptions.
 
 ## Getting Help
 

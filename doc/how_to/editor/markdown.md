@@ -28,12 +28,12 @@ Once we have initialized the extension any subsequent Markdown will be rendered 
 This application provides a minimal example demonstrating how to write an app in a Markdown file.
 
 ```.py
-widget = pn.widgets.TextInput(value='world')
+widget = pn.ui.TextInput(value='world')
 
 def hello_world(text):
     return f'Hello {text}!'
 
-pn.Row(widget, pn.bind(hello_world, widget)).servable()
+pn.ui.Row(widget, pn.bind(hello_world, widget)).servable()
 ```
 ````
 
@@ -41,12 +41,12 @@ Now we can add some actual Panel contents, again inside a `python` code block:
 
 ````markdown
 ```python
-widget = pn.widgets.TextInput(value='world')
+widget = pn.ui.TextInput(value='world')
 
 def hello_world(text):
     return f'Hello {text}!'
 
-pn.Row(widget, pn.bind(hello_world, widget)).servable()
+pn.ui.Row(widget, pn.bind(hello_world, widget)).servable()
 ```
 ````
 
@@ -65,21 +65,21 @@ pn.extension(template='fast')
 This application provides a minimal example demonstrating how to write an app in a Markdown file.
 
 ```.py
-widget = pn.widgets.TextInput(value='world')
+widget = pn.ui.TextInput(value='world')
 
 def hello_world(text):
     return f'Hello {text}!'
 
-pn.Row(widget, pn.bind(hello_world, widget)).servable()
+pn.ui.Row(widget, pn.bind(hello_world, widget)).servable()
 ```
 
 ```python
-widget = pn.widgets.TextInput(value='world')
+widget = pn.ui.TextInput(value='world')
 
 def hello_world(text):
     return f'Hello {text}!'
 
-pn.Row(widget, pn.bind(hello_world, widget)).servable()
+pn.ui.Row(widget, pn.bind(hello_world, widget)).servable()
 ```
 ````
 :::

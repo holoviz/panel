@@ -95,13 +95,13 @@ CARD_STYLE = {
   "border-radius": "5px"
 }
 
-header = pn.Row(
-    pn.pane.Markdown(
+header = pn.ui.Row(
+    pn.ui.Markdown(
         "# Wind Turbine Report", styles={"color": BRAND_TEXT_ON_COLOR}, margin=(5, 20)
     ),
     styles={"background": BRAND_COLOR},
 )
-indicators = pn.FlexBox(
+indicators = pn.ui.FlexBox(
     pn.indicators.Number(
         value=total_capacity / 1e6,
         label="Total Capacity (GW)",
@@ -135,17 +135,17 @@ indicators = pn.FlexBox(
     margin=(20, 5),
 )
 
-plot = pn.pane.Vega(
+plot = pn.ui.Vega(
     fig,
     styles=CARD_STYLE,
     margin=10,
 )
 
-table = pn.pane.DataFrame(example_df, styles=CARD_STYLE)
+table = pn.ui.DataFrame(example_df, styles=CARD_STYLE)
 
 ## Put the components together
 
-main = pn.Column(
+main = pn.ui.Column(
     "# Summary",
     indicators,
     TEXT,
@@ -155,12 +155,12 @@ main = pn.Column(
     table,
 )
 
-main_container = pn.Row(
+main_container = pn.ui.Row(
     main,
     max_width=1024,
     styles={"margin-right": "auto", "margin-left": "auto", "margin-top": "10px", "margin-bottom": "20px"},
 )
-report = pn.Column(header, main_container)
+report = pn.ui.Column(header, main_container)
 
 ## Export and save it
 
@@ -287,8 +287,8 @@ CARD_STYLE = {
   "border-radius": "5px"
 }
 
-header = pn.Row(
-    pn.pane.Markdown(
+header = pn.ui.Row(
+    pn.ui.Markdown(
         "# Wind Turbine Report", styles={"color": BRAND_TEXT_ON_COLOR}, margin=(5, 20)
     ),
     styles={"background": BRAND_COLOR},
@@ -298,7 +298,7 @@ header = pn.Row(
 Here, we define some styling constants and create a header for the report, which consists of a Markdown title styled with the brand color and a teal background.
 
 ```{pyodide}
-indicators = pn.FlexBox(
+indicators = pn.ui.FlexBox(
     pn.indicators.Number(
         value=total_capacity / 1e6,
         label="Total Capacity (GW)",
@@ -332,18 +332,18 @@ indicators = pn.FlexBox(
     margin=(20, 5),
 )
 
-plot = pn.pane.Vega(
+plot = pn.ui.Vega(
     fig,
     styles=CARD_STYLE,
     margin=10,
 )
-table = pn.pane.DataFrame(example_df, styles=CARD_STYLE)
+table = pn.ui.DataFrame(example_df, styles=CARD_STYLE)
 ```
 
 We create various components for the report, including a set of indicators (total capacity, average capacity, etc.), a Vega plot (`plot`) displaying the capacity by manufacturer, and a DataFrame (`table`) showing example turbine data.
 
 ```{pyodide}
-main = pn.Column(
+main = pn.ui.Column(
     "# Summary",
     indicators,
     TEXT,
@@ -357,12 +357,12 @@ main = pn.Column(
 We assemble the main content of the report (`main`) as a Column layout, including the summary section, the indicators, the Markdown text, the plot, and the table.
 
 ```{pyodide}
-main_container = pn.Row(
+main_container = pn.ui.Row(
     main,
     max_width=1024,
     styles={"margin-right": "auto", "margin-left": "auto", "margin-top": "10px", "margin-bottom": "20px"},
 )
-report = pn.Column(header, main_container)
+report = pn.ui.Column(header, main_container)
 report
 ```
 

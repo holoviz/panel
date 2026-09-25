@@ -74,8 +74,8 @@ class StockExplorer(param.Parameterized):
 
 explorer = StockExplorer()
 
-pn.Row(
-    pn.Column(explorer.param),
+pn.ui.Row(
+    pn.ui.Column(explorer.param),
     pn.panel(explorer.plot, sizing_mode='stretch_width'),
 ).servable()
 ```

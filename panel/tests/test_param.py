@@ -14,7 +14,7 @@ from bokeh.models import (
 )
 from packaging.version import Version
 
-from panel import config
+from panel import config, widgets as panel_widgets
 from panel.depends import bind
 from panel.io.state import set_curdoc, state
 from panel.layout import Row, Tabs
@@ -23,7 +23,8 @@ from panel.pane import (
     HTML, Bokeh, Markdown, Matplotlib, PaneBase, Str, panel,
 )
 from panel.param import (
-    JSONInit, Param, ParamFunction, ParamMethod, Skip,
+    JSONInit, LiteralInputTyped, Param, ParamFunction, ParamMethod,
+    SingleFileSelector, Skip,
 )
 from panel.tests.util import async_wait_until, mpl_available, mpl_figure
 from panel.widgets import (
@@ -31,6 +32,42 @@ from panel.widgets import (
     EditableFloatSlider, EditableRangeSlider, LiteralInput, NumberInput,
     RangeSlider,
 )
+
+CLASSIC_MAPPING = {
+    param.Action: panel_widgets.Button,
+    param.Boolean: panel_widgets.Checkbox,
+    param.Bytes: panel_widgets.FileInput,
+    param.CalendarDate: panel_widgets.DatePicker,
+    param.Color: panel_widgets.ColorPicker,
+    param.Date: panel_widgets.DatetimeInput,
+    param.Dict: LiteralInputTyped,
+    param.Event: panel_widgets.Button,
+    param.FileSelector: SingleFileSelector,
+    param.Filename: panel_widgets.TextInput,
+    param.Foldername: panel_widgets.TextInput,
+    param.Integer: panel_widgets.IntSlider,
+    param.List: LiteralInputTyped,
+    param.ListSelector: panel_widgets.MultiSelect,
+    param.Number: panel_widgets.FloatSlider,
+    param.ObjectSelector: panel_widgets.Select,
+    param.Parameter: LiteralInputTyped,
+    param.Range: panel_widgets.RangeSlider,
+    param.Selector: panel_widgets.Select,
+    param.String: panel_widgets.TextInput,
+}
+CLASSIC_INPUT_WIDGETS = {
+    float: panel_widgets.FloatInput,
+    int: panel_widgets.IntInput,
+    'literal': panel_widgets.LiteralInput,
+}
+
+
+@pytest.fixture(autouse=True)
+def classic_design(monkeypatch):
+    monkeypatch.setattr(Param, 'mapping', {**Param.mapping, **CLASSIC_MAPPING})
+    monkeypatch.setattr(Param, 'input_widgets', {**Param.input_widgets, **CLASSIC_INPUT_WIDGETS})
+    with config.set(design=None):
+        yield
 
 
 def Pane(obj, **kwargs):

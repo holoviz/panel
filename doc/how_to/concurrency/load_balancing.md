@@ -41,7 +41,7 @@ An example is given below with [ipywidget_bokeh](https://github.com/bokeh/ipywid
 import ipywidgets
 import panel as pn
 
-pn.Row(ipywidgets.HTML("This is an IPywidget served with Panel")).servable()
+pn.ui.Row(ipywidgets.HTML("This is an IPywidget served with Panel")).servable()
 ```
 
 :::

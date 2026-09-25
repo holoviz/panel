@@ -142,20 +142,25 @@ def test_design_apply(document, comm):
 def test_design_apply_not_isolated(document, comm):
     widget = TextInput()
     model = widget.get_root(document, comm=comm)
+    initial_stylesheets = list(model.stylesheets)
 
     DesignTest().apply(widget, model, isolated=False)
 
-    assert len(model.stylesheets) == 4
-    s1, s2, s3, s4 = model.stylesheets
+    s1, s2, *remaining = model.stylesheets
     assert isinstance(s1, str)
     assert 'pn-loading' in s1
     assert isinstance(s2, ImportedStyleSheet)
     assert _is_loading_css(s2.url)
-    assert isinstance(s3, ImportedStyleSheet)
-    assert s3.url.endswith('foo.css')
-    assert s4 == '.bk-input {\n  color: red;\n}\n'
-
-    assert model.styles == {'color': 'green'}
+    if any(isinstance(sheet, ImportedStyleSheet) and sheet.url.endswith('material.css') for sheet in initial_stylesheets):
+        assert model.stylesheets == initial_stylesheets
+        assert model.styles == {}
+    else:
+        assert len(remaining) == 2
+        s3, s4 = remaining
+        assert isinstance(s3, ImportedStyleSheet)
+        assert s3.url.endswith('foo.css')
+        assert s4 == '.bk-input {\n  color: red;\n}\n'
+        assert model.styles == {'color': 'green'}
 
 def test_design_apply_inherited(document, comm):
     widget = FloatSlider()
@@ -221,18 +226,23 @@ def test_design_apply_with_dark_theme_not_isolated(document, comm):
     widget = TextInput()
     model = widget.get_root(document, comm=comm)
     model.document = document
+    initial_stylesheets = list(model.stylesheets)
 
     DesignTest(theme='dark').apply(widget, model, isolated=False)
 
-    assert len(model.stylesheets) == 4
-    s1, s2, s3, s4 = model.stylesheets
+    s1, s2, *remaining = model.stylesheets
     assert isinstance(s1, str)
     assert 'pn-loading' in s1
     assert isinstance(s2, ImportedStyleSheet)
     assert _is_loading_css(s2.url)
-    assert isinstance(s3, ImportedStyleSheet)
-    assert s3.url.endswith('foo.css')
-    assert s4 == '.bk-input {\n  color: red;\n}\n'
+    if any(isinstance(sheet, ImportedStyleSheet) and sheet.url.endswith('material.css') for sheet in initial_stylesheets):
+        assert model.stylesheets == initial_stylesheets
+    else:
+        assert len(remaining) == 2
+        s3, s4 = remaining
+        assert isinstance(s3, ImportedStyleSheet)
+        assert s3.url.endswith('foo.css')
+        assert s4 == '.bk-input {\n  color: red;\n}\n'
 
     assert document.theme._json == BOKEH_DARK
 

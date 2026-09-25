@@ -78,8 +78,8 @@ if pn.state.served:
     parameters = pn.Param(
         button, parameters=["gain", "duration", "size", "animate"]
     )
-    settings=pn.Column(parameters, "Credits: Trevor Manz")
-    pn.FlexBox(settings, button).servable()
+    settings=pn.ui.Column(parameters, "Credits: Trevor Manz")
+    pn.ui.FlexBox(settings, button).servable()
 ```
 
 ### Explanation - Python

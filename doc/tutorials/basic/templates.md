@@ -9,7 +9,7 @@ Templates offer a streamlined approach to app layout and design, providing:
 
 ## Crafting a Hello World App
 
-Let's start by creating a basic app using the [`FastListTemplate`](../../reference/templates/FastListTemplate.md). Copy the following code into a file named `app.py`:
+Let's start by creating a basic app using the [`FastListTemplate`](../../reference/classic/templates/FastListTemplate.md). Copy the following code into a file named `app.py`:
 
 ```python
 import panel as pn
@@ -40,14 +40,14 @@ In the code snippet:
 - `title` sets an optional title for the top header.
 - `sidebar` and `main` designate content areas for the sidebar and main section, respectively.
 
-For additional configuration options, refer to the [`FastListTemplate` reference guide](../../reference/templates/FastListTemplate.md).
+For additional configuration options, refer to the [`FastListTemplate` reference guide](../../reference/classic/templates/FastListTemplate.md).
 :::
 
 :::{tip}
-Panel offers a rich assortment of built-in templates, including a versatile [`Slides`](../../reference/templates/Slides.md) template.
+Panel offers a rich assortment of built-in templates, including a versatile [`Slides`](../../reference/classic/templates/Slides.md) template.
 :::
 
-Take a moment to explore the [Templates Section](../../reference/index.rst#templates) in the [Component Gallery](../../reference/index.rst), then return here.
+Take a moment to explore the [Templates Section](../../reference/index.md#templates) in the [Component Gallery](../../reference/index.md), then return here.
 
 ## Integrating Templates in a Notebook
 
@@ -88,7 +88,7 @@ pn.extension("vega")
 
 ACCENT = "teal"
 
-image = pn.pane.JPG("https://assets.holoviz.org/panel/tutorials/wind_turbines_sunset.png")
+image = pn.ui.JPG("https://assets.holoviz.org/panel/tutorials/wind_turbines_sunset.png")
 
 if pn.config.theme=="dark":
     alt.theme.enable("dark")
@@ -124,7 +124,7 @@ fig = (
         width="container",
     )
 )
-plot = pn.pane.Vega(fig, sizing_mode="stretch_both", max_height=800, margin=20)
+plot = pn.ui.Vega(fig, sizing_mode="stretch_both", max_height=800, margin=20)
 
 pn.template.FastListTemplate(
     title="Wind Turbine Manufacturers",
@@ -157,7 +157,7 @@ In the code:
 - `accent` sets the primary or accent color for the template, allowing quick branding of the app.
 - `main_layout` specifies a layout to wrap each object in the main list. Choose from `"card"` (default) or `None`.
 
-Note that `accent` and `main_layout` are exclusive to Fast templates like [FastListTemplate](../../reference/templates/FastListTemplate.md) and [FastGridTemplate](../../reference/templates/FastGridTemplate.md).
+Note that `accent` and `main_layout` are exclusive to Fast templates like [FastListTemplate](../../reference/classic/templates/FastListTemplate.md) and [FastGridTemplate](../../reference/classic/templates/FastGridTemplate.md).
 :::
 
 ## Recap
@@ -165,7 +165,7 @@ Note that `accent` and `main_layout` are exclusive to Fast templates like [FastL
 In this tutorial, we've explored the power of pre-made templates for structuring your app with ease:
 
 - Templates are available in the `pn.template` namespace.
-- Find a variety of templates in the [Templates Section](../../reference/index.rst#templates) of the [Component Gallery](../../reference/index.rst).
+- Find a variety of templates in the [Templates Section](../../reference/index.md#templates) of the [Component Gallery](../../reference/index.md).
 - Templates offer high customizability.
 
 ## References
@@ -189,4 +189,4 @@ In this tutorial, we've explored the power of pre-made templates for structuring
 
 ### Component Gallery
 
-- Explore the [Templates Section](../../reference/index.rst#templates) in the [Component Gallery](../../reference/index.rst) for more options.
+- Explore the [Templates Section](../../reference/index.md#templates) in the [Component Gallery](../../reference/index.md) for more options.

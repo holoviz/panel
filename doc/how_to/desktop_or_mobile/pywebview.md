@@ -77,9 +77,9 @@ def create_app():
     """Example Panel app with exit functionality."""
     pn.extension(design="material")
 
-    pn.pane.Markdown.disable_anchors = True
+    pn.ui.Markdown.disable_anchors = True
 
-    slider = pn.widgets.IntSlider(value=3, start=1, end=5)
+    slider = pn.ui.IntSlider(value=3, start=1, end=5)
     stars = pn.bind(lambda n: "⭐" * n, slider)
 
     def exit_app(event):
@@ -89,9 +89,9 @@ def create_app():
         # import webview
         # webview.windows[0].destroy()
 
-    exit_btn = pn.widgets.Button(label="Exit", on_click=exit_app, color="primary")
+    exit_btn = pn.ui.Button(label="Exit", on_click=exit_app, color="primary")
 
-    return pn.Column(
+    return pn.ui.Column(
         "# Desktop Panel Application",
         "This is a Panel app running in a native window!",
         slider, stars, exit_btn

@@ -34,8 +34,8 @@ Create the files `app.py` and `convert.py` in the root of the project.
 
 ```python
 import panel as pn
-button = pn.widgets.Button(label="Click Me!")
-pn.Row(button, pn.bind(lambda c: c, button.param.clicks)).servable();
+button = pn.ui.Button(label="Click Me!")
+pn.ui.Row(button, pn.bind(lambda c: c, button.param.clicks)).servable();
 ```
 
 `convert.py`

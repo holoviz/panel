@@ -103,14 +103,14 @@ class ServerVideoStream(pn.viewable.Viewer):
         cv.destroyAllWindows()
 
     def __panel__(self):
-        settings = pn.Column(
+        settings = pn.ui.Column(
             self.param.paused,
             self.param.fps,
             self.param.camera_index,
             width=300,
         )
-        image = pn.pane.Image(self.param.value, sizing_mode="stretch_both")
-        return pn.Row(settings, image)
+        image = pn.ui.Image(self.param.value, sizing_mode="stretch_both")
+        return pn.ui.Row(settings, image)
 
 
 server_video_stream = ServerVideoStream()
@@ -305,14 +305,14 @@ The `_take_images` method runs in a loop within a separate thread, capturing ima
 
 ```python
     def __panel__(self):
-        settings = pn.Column(
+        settings = pn.ui.Column(
             self.param.paused,
             self.param.fps,
             self.param.camera_index,
             width=300,
         )
-        image = pn.pane.Image(self.param.value, sizing_mode="stretch_both")
-        return pn.Row(settings, image)
+        image = pn.ui.Image(self.param.value, sizing_mode="stretch_both")
+        return pn.ui.Row(settings, image)
 ```
 
 The `__panel__` method defines how the class is rendered in a web page. It creates a user interface with controls for the camera settings and displays the current video frame.

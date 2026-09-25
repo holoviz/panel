@@ -24,8 +24,8 @@ template = pn.template.BootstrapTemplate(title='Bootstrap Template')
 
 # Data and Widgets
 xs = np.linspace(0, np.pi)
-freq = pn.widgets.FloatSlider(label="Frequency", start=0, end=10, value=2)
-phase = pn.widgets.FloatSlider(label="Phase", start=0, end=np.pi)
+freq = pn.ui.FloatSlider(label="Frequency", start=0, end=10, value=2)
+phase = pn.ui.FloatSlider(label="Phase", start=0, end=np.pi)
 
 # Interactive data pipeline
 def sine(freq, phase):
@@ -36,7 +36,7 @@ dfi_sine = hvplot.bind(sine, freq, phase).interactive()
 # Add components to the sidebar, main, and header
 template.sidebar.extend([freq, phase])
 template.main.append(
-    pn.Card(dfi_sine.hvplot(heiht=200, min_height=400).output(), title='Sine')
+    pn.ui.Card(dfi_sine.hvplot(heiht=200, min_height=400).output(), title='Sine')
 )
 template.header.append('## Header')
 
@@ -44,7 +44,7 @@ template.header.append('## Header')
 template.modal.append("## This is a modal")
 
 # Create a button
-modal_btn = pn.widgets.Button(label="Click for modal")
+modal_btn = pn.ui.Button(label="Click for modal")
 
 # Callback that will open the modal when the button is clicked
 def about_callback(event):
