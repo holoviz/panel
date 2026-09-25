@@ -32,4 +32,4 @@ body_mass
 
 ## Related Resources
 
-- Learn about building interactive data pipelines [How-To > Interactivity -> ](../how_to/interactivity/hvplot_interactive.md).
+- Learn about building interactive data pipelines [How-To > Interactivity -> ](../interactivity/hvplot_interactive.md).
