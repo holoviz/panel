@@ -204,6 +204,10 @@ def test_reuses_classic_notebook_without_copying_source(gallery):
     ui_reference.prepare_ui_gallery(app)
     gallery_conf = app.config.nbsite_gallery_conf['galleries']['reference']
     assert 'classic/index' in gallery_conf['intro']
+    from nbsite.gallery.gen import DEFAULT_GALLERY_CONF
+
+    assert gallery_conf['thumbnail_url'] == DEFAULT_GALLERY_CONF['thumbnail_url']
+    assert gallery_conf['thumbnail_source'] == 'reference/ui'
     assert 'classic component gallery' not in gallery_conf['intro']
     assert (Path(gallery_conf['source']) / 'widgets/Tabulator.ipynb').is_symlink()
     assert not (Path(app.builder.srcdir) / 'reference/ui/index.md').exists()

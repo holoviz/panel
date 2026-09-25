@@ -491,7 +491,8 @@ def prepare_ui_gallery(app):
     gallery['extensions'] = ['*.ipynb', '*.py']
     gallery['as_pyodide'] = False
     gallery['skip_rst_notebook_directive'] = True
-    gallery['thumbnail_url'] = 'https://assets.holoviz.org/panel-material-ui/thumbnails'
+    gallery['thumbnail_url'] = conf.get('thumbnail_url', DEFAULT_GALLERY_CONF['thumbnail_url'])
+    gallery['thumbnail_source'] = 'reference/ui'
     gallery['normalize_titles'] = False
     gallery['no_image_thumb'] = True
     gallery['intro'] = ('The components below use ``panel.ui``.\n\n'
