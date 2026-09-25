@@ -6,6 +6,8 @@ import typing as t
 
 import param
 
+from packaging.version import Version
+
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(pathlib.Path(__file__).parent / '_ext'))
 
@@ -209,7 +211,10 @@ if panel.__version__ != version and (PANEL_ROOT / 'dist' / 'wheels').is_dir():
     bokeh_req = f'./wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 else:
     panel_req = f'{CDN_ROOT}wheels/panel-{PY_VERSION}-py3-none-any.whl'
-    bokeh_req = f'{CDN_ROOT}wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
+    bokeh_req = (
+        f'bokeh=={BOKEH_VERSION}' if Version(BOKEH_VERSION).is_prerelease
+        else f'{CDN_ROOT}wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
+    )
 
 def get_requirements():
     with open('pyodide_dependencies.json') as deps:
