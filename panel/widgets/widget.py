@@ -10,7 +10,7 @@ empty = Parameter.empty
 
 import param
 
-from .base import Widget
+from .base import Widget, WidgetBase
 from .input import Checkbox, TextInput
 from .select import Select
 from .slider import DiscreteSlider, FloatSlider, IntSlider
@@ -23,7 +23,7 @@ class fixed(param.Parameterized):
 
     description = param.String(default='')
 
-    value: t.Any = param.Parameter(doc="Any Python object")  # type: ignore[assignment]
+    value: t.Any = param.Parameter(allow_refs=False, doc="Any Python object")  # type: ignore[assignment]
 
     def __init__(self, value: t.Any, **kwargs: t.Any):
         super().__init__(value=value, **kwargs)
@@ -108,7 +108,7 @@ class widget(param.ParameterizedFunction):
     def __call__(self, value: t.Any, label: str, default=empty, **params) -> Widget | fixed | None:
         """Build a ValueWidget instance given an abbreviation or Widget."""
         widget: Widget | fixed | None
-        if isinstance(value, Widget):
+        if isinstance(value, WidgetBase):
             widget = value
         elif isinstance(value, tuple):
             widget = self.widget_from_tuple(value, label, default)

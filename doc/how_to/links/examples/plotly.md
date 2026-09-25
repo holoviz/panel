@@ -19,12 +19,12 @@ plotly_pane = pn.ui.Plotly(fig, width=600, height=500)
 buttons = pn.ui.RadioButtonGroup(value='Medium', options=['Low', 'Medium', 'High'], color="success")
 
 range_callback = """
-var ncontours = [2, 5, 10]
-target.data[0].ncontours = ncontours[source.active]
+var ncontours = {Low: 2, Medium: 5, High: 10}
+target.data[0].ncontours = ncontours[source.value]
 target.properties.data.change.emit()
 """
 
-buttons.jslink(plotly_pane, code={'active': range_callback})
+buttons.jslink(plotly_pane, code={'value': range_callback})
 
 pn.ui.Column(buttons, plotly_pane).servable()
 ```
