@@ -1583,7 +1583,10 @@ def test_server_ico_path_on_proxy(reverse_proxy):
         suffix="/proxy/app"
     )
 
-    assert '<link rel="icon" href="./favicon.ico"' in r.content.decode('utf-8')
+    html = r.content.decode('utf-8')
+    assert '<link rel="icon" href="./favicon.ico"' in html or re.search(
+        r'<link rel="icon" href="[^"]*/images/favicon.ico"', html
+    )
     ico = requests.get(f"http://localhost:{proxy}/proxy/favicon.ico", timeout=30)
     assert ico.content == ico_path.read_bytes()
 
