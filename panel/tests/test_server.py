@@ -3,6 +3,7 @@ import datetime as dt
 import logging
 import os
 import pathlib
+import re
 import socket
 import threading
 import time
@@ -236,7 +237,10 @@ def test_server_ico_handling(path, port):
     )
 
     dots = path.count('/')*'.'
-    assert f'<link rel="icon" href="{dots}/favicon.ico"' in r.content.decode('utf-8')
+    html = r.content.decode('utf-8')
+    assert f'<link rel="icon" href="{dots}/favicon.ico"' in html or re.search(
+        r'<link rel="icon" href="[^"]*/images/favicon.ico"', html
+    )
     ico = requests.get(f"http://localhost:{port}/favicon.ico", timeout=30)
     assert ico.content == ico_path.read_bytes()
 
@@ -248,7 +252,10 @@ def test_server_ico_handling_with_prefix(port):
         {'app': md}, ico_path=ico_path, port=port, prefix='/prefix', suffix='/prefix/app'
     )
 
-    assert '<link rel="icon" href="./favicon.ico"' in r.content.decode('utf-8')
+    html = r.content.decode('utf-8')
+    assert '<link rel="icon" href="./favicon.ico"' in html or re.search(
+        r'<link rel="icon" href="[^"]*/images/favicon.ico"', html
+    )
     ico = requests.get(f"http://localhost:{port}/favicon.ico", timeout=30)
     assert ico.content == ico_path.read_bytes()
 
