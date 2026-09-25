@@ -105,9 +105,9 @@ class widget(param.ParameterizedFunction):
     Widget
     """
 
-    def __call__(self, value: t.Any, label: str, default=empty, **params) -> Widget | fixed | None:
+    def __call__(self, value: t.Any, label: str, default=empty, **params) -> WidgetBase | fixed | None:
         """Build a ValueWidget instance given an abbreviation or Widget."""
-        widget: Widget | fixed | None
+        widget: WidgetBase | fixed | None
         if isinstance(value, WidgetBase):
             widget = value
         elif isinstance(value, tuple):
