@@ -61,6 +61,13 @@ no-default-feature = true
 features = ["py312", "required", "optional", "doc"]
 no-default-feature = true
 
+# The homepage builds with Node and deploys to the site root on a different schedule than
+# the versioned docs, so it gets an environment of its own rather than riding along in
+# `docs`, whose example and Sphinx stack it needs none of.
+[environments.homepage]
+features = ["homepage"]
+no-default-feature = true
+
 [environments.build]
 features = ["py312", "required", "build"]
 no-default-feature = true
@@ -81,7 +88,7 @@ pip = "*"
 # Required
 nh3 = "*"
 bokeh = ">=3.10.0,<3.11.0a0"
-panel-material-ui = ">=0.15.1a0,<0.16"
+panel-material-ui = ">=0.15.1a1,<0.16"
 linkify-it-py = "*"
 markdown = "*"
 markdown-it-py = "*"
@@ -328,13 +335,15 @@ SPHINX_APIDOC_OPTIONS = "members,show-inheritance"
 lxml = "*"
 nbsite = ">=0.10.0a7"
 nodejs = ">=18"
-panel-material-ui = ">=0.15.1a0,<0.16"
+panel-material-ui = ">=0.15.1a1,<0.16"
+pip = "*"
 selenium = "*"
 numpydoc = "*"
 pydeck = ">=0.8"  # Add back to examples, when it support ipywidgets 8.0
 sphinx = ">=9"
 
 [feature.doc.tasks]
+install = 'python -m pip install --no-deps --disable-pip-version-check -e .'
 _docs-pyodide-npm = 'npm install --no-save --no-package-lock --prefix . pyodide@314.0.7'
 _docs-pyodide-wheels = "bash -c 'if test -d panel/dist/wheels; then mkdir -p builtdocs/wheels && cp panel/dist/wheels/*.whl builtdocs/wheels/; fi'"
 _docs-refmanual = 'sphinx-apidoc -e -o doc/api/ panel/ panel/tests --ext-autodoc --ext-intersphinx'
@@ -365,6 +374,28 @@ depends-on = [
     '_docs-pyodide',
     '_docs_markdown',
 ]
+
+# =============================================
+# ================= HOMEPAGE ==================
+# =============================================
+[feature.homepage.dependencies]
+nodejs = ">=20"
+# Python only for the Playwright checks and the social-card generator; the site itself is Node.
+python = "3.12.*"
+pytest = "*"
+pytest-playwright = "*"
+
+[feature.homepage.tasks]
+_homepage-install = { cmd = 'npm ci', cwd = 'doc/homepage', inputs = [
+    'doc/homepage/package.json',
+    'doc/homepage/package-lock.json',
+], outputs = ['doc/homepage/node_modules/.package-lock.json'] }
+homepage-serve = { cmd = 'npm run dev', cwd = 'doc/homepage', depends-on = ['_homepage-install'] }
+homepage-preview = { cmd = 'npm run preview', cwd = 'doc/homepage' }
+homepage-typecheck = { cmd = 'npm run typecheck', cwd = 'doc/homepage', depends-on = ['_homepage-install'] }
+homepage-build = { cmd = 'npm run build', cwd = 'doc/homepage', depends-on = ['_homepage-install'] }
+homepage-test = 'pytest doc/homepage/tests --browser chromium'
+homepage-og-image = 'python doc/homepage/scripts/og-image.py'
 
 # =============================================
 # ================== BUILD ====================

@@ -52,7 +52,7 @@ dependencies = [
     'pyviz_comms >=2.0.0',
     # panel.ui re-exports the Material components from panel-material-ui;
     # the upper bound is deliberate, see panel/ui/__init__.py.
-    'panel-material-ui >=0.15.1a0,<0.16',
+    'panel-material-ui >=0.15.1a1,<0.16',
     'markdown',
     'markdown-it-py',
     'linkify-it-py',

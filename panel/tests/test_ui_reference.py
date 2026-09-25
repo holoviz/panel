@@ -70,7 +70,8 @@ def gallery(tmp_path):
             },
         }),
     )
-    return app, examples
+    yield app, examples
+    ui_reference.cleanup_ui_gallery(app, None)
 
 
 def test_material_notebook_preserves_narrative_and_rewrites_code(gallery):
@@ -123,6 +124,37 @@ def test_material_source_takes_precedence_over_classic(gallery):
     assert 'Material button examples.' in content
     assert 'pn.ui.Button(label="Modern")' in content
     assert 'Classic' not in content
+
+
+def test_nbsite_generates_cards_for_material_notebooks(gallery, monkeypatch):
+    from nbsite.gallery import gen
+
+    app, _ = gallery
+    source = Path(app.config.ui_reference_pmui_source)
+    notebook(source / 'widgets' / 'Button.ipynb',
+             ('markdown', 'Material button guide.'),
+             ('code', 'import panel as pn\nimport panel_material_ui as pmui\npmui.Button()'))
+    app.config.nbsite_gallery_conf = dict(gen.DEFAULT_GALLERY_CONF, **app.config.nbsite_gallery_conf)
+    app.config.nbsite_gallery_conf['galleries']['reference']['title'] = 'Component Gallery'
+    app.config.nbsite_gallery_conf['only_use_existing'] = True
+    app.config.html_static_path = ['_static']
+    app.config.html_theme_options = {}
+    monkeypatch.setattr(gen, '_resolve_thumbnail', lambda *args, **kwargs: (1, '', 'png', 'Unavailable'))
+
+    ui_reference.prepare_ui_gallery(app)
+    gen.generate_gallery(app, 'reference')
+    ui_reference.generate_ui_reference(app)
+
+    index = (Path(app.builder.srcdir) / 'reference/index.rst').read_text()
+    page = (Path(app.builder.srcdir) / 'reference/widgets/Button.md').read_text()
+    assert '.. grid-item-card:: Button' in index
+    assert ':link: widgets/Button\n        :link-type: doc' in index
+    assert 'Templates' in index
+    assert index.index('Templates') < index.index('Classic Reference')
+    assert '.. grid-item-card:: Classic Component Gallery' in index
+    assert ':link: classic/index.html' in index
+    assert 'Material button guide.' in page
+    assert 'pn.ui.Button()' in page
 
 
 def test_renamed_and_menu_notebooks_use_ui_exports(gallery):
@@ -198,9 +230,15 @@ def test_reuses_classic_notebook_without_copying_source(gallery):
     ui_reference.generate_ui_reference(app)
     generated = Path(app.builder.srcdir) / 'reference/widgets/Tabulator.md'
     assert 'pn.ui.Tabulator()' in generated.read_text()
-    landing = (Path(app.builder.srcdir) / 'reference/index.md').read_text()
-    assert '(classic/index)' in landing
-    assert '(widgets/Tabulator)' in landing
+    ui_reference.prepare_ui_gallery(app)
+    gallery_conf = app.config.nbsite_gallery_conf['galleries']['reference']
+    assert 'classic/index' in gallery_conf['intro']
+    from nbsite.gallery.gen import DEFAULT_GALLERY_CONF
+
+    assert gallery_conf['thumbnail_url'] == DEFAULT_GALLERY_CONF['thumbnail_url']
+    assert gallery_conf['thumbnail_source'] == 'reference/ui'
+    assert 'classic component gallery' not in gallery_conf['intro']
+    assert (Path(gallery_conf['source']) / 'widgets/Tabulator.ipynb').is_symlink()
     assert not (Path(app.builder.srcdir) / 'reference/ui/index.md').exists()
     assert len(list(examples.rglob('Tabulator.ipynb'))) == 1
 
@@ -231,17 +269,18 @@ def test_ui_only_exports_and_manual_page(gallery):
         assert (Path(app.builder.srcdir) / f'reference/{section}/{name}.md').exists()
 
 
-def test_gallery_banner_and_classic_templates_at_end(gallery):
+def test_classic_gallery_follows_templates(gallery):
     app, examples = gallery
     notebook(examples / 'templates' / 'FastListTemplate.ipynb',
              ('code', 'import panel as pn\npn.template.FastListTemplate()'))
-    ui_reference.generate_ui_reference(app)
-    landing = (Path(app.builder.srcdir) / 'reference/index.md').read_text()
-    assert ':::{important}\nLooking for the original Panel components?' in landing
-    assert '[classic component gallery](classic/index)' in landing
-    assert landing.index('## Templates') > landing.index('## Wrappers')
-    assert '[`pn.ui.Page`](templates/Page)' in landing
-    assert '[FastListTemplate](classic/templates/FastListTemplate)' in landing
+    ui_reference.prepare_ui_gallery(app)
+    gallery_conf = app.config.nbsite_gallery_conf['galleries']['reference']
+    assert gallery_conf['sections'][-2]['title'] == 'Templates'
+    assert 'pn.ui.Page' in gallery_conf['sections'][-2]['description']
+    assert (Path(gallery_conf['source']) / 'templates/Page.ipynb').is_symlink() or (
+        Path(gallery_conf['source']) / 'templates/Page.py').exists()
+    assert gallery_conf['sections'][-1]['title'] == 'Classic Reference'
+    assert gallery_conf['sections'][-1]['items'][0]['url'] == 'classic/index.html'
 
 
 def test_unsafe_code_is_not_rewritten(gallery):
@@ -320,7 +359,8 @@ def test_generation_order_and_nonexecuting_fallback(gallery):
     callbacks = []
     ui_reference.setup(SimpleNamespace(connect=lambda *args, **kwargs: callbacks.append((args, kwargs))))
     assert callbacks[0][0][0] == 'builder-inited'
-    assert callbacks[0][1]['priority'] > 500
+    assert callbacks[0][1]['priority'] < 500
+    assert callbacks[1][1]['priority'] > 500
     app, _ = gallery
     ui_reference.generate_ui_reference(app)
     content = (Path(app.builder.srcdir) / 'reference/panes/ParamMethod.md').read_text()
@@ -328,16 +368,14 @@ def test_generation_order_and_nonexecuting_fallback(gallery):
     assert '```{pyodide}' not in content
 
 
-def test_gallery_index_is_generated_without_nbsite_stub(gallery):
-    """The default landing is generated, while authored pages remain untouched."""
+def test_gallery_index_is_owned_by_nbsite(gallery):
+    """The landing is generated by nbsite while authored pages remain untouched."""
     app, _ = gallery
     index = Path(app.builder.srcdir) / 'reference/index.rst'
     index.parent.mkdir(parents=True)
     ui_reference.generate_ui_reference(app)
     assert not index.exists()
-    landing = (index.parent / 'index.md').read_text()
-    assert 'classic/index' in landing
-    assert 'widgets/index' in landing
+    assert not (index.parent / 'index.md').exists()
     authored = index.parent / 'widgets/Button.md'
     authored.write_text('# Custom button\n')
     ui_reference.generate_ui_reference(app)
@@ -406,4 +444,13 @@ def test_source_read_hook_registered(gallery):
     """Relocation runs when Sphinx reads nbsite's generated classic Markdown."""
     callbacks = []
     ui_reference.setup(SimpleNamespace(connect=lambda *args, **kwargs: callbacks.append((args, kwargs))))
-    assert callbacks[1][0] == ('source-read', ui_reference.relocate_classic_links)
+    assert callbacks[2][0] == ('source-read', ui_reference.relocate_classic_links)
+    assert callbacks[3][0] == ('source-read', ui_reference.resolve_gallery_index_links)
+    assert callbacks[4][0] == ('build-finished', ui_reference.cleanup_ui_gallery)
+
+
+def test_existing_gallery_index_links_resolve_to_nbsite(gallery):
+    app, _ = gallery
+    source = ['[Gallery](../../reference/index.md#widgets) [Page](../reference/index.md)']
+    ui_reference.resolve_gallery_index_links(app, 'tutorials/basic/widgets', source)
+    assert source[0] == '[Gallery](../../reference/index.rst#widgets) [Page](../reference/index.rst)'

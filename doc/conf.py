@@ -110,7 +110,15 @@ extensions = [
     'ui_reference',
     'nbsite.pyodide',
     'nbsite.analytics',
+    'material_reference',
 ]
+
+# Resolves the cross-links material_reference adds from a classic reference page
+# to its Material counterpart. The 'external+' form is required because Sphinx
+# disables implicit intersphinx resolution of :doc: references by default.
+intersphinx_mapping = {
+    'panel_material_ui': ('https://panel-material-ui.holoviz.org', None),
+}
 
 numpydoc_show_inherited_class_members = False
 numpydoc_class_members_toctree = False
@@ -197,7 +205,11 @@ nbsite_gallery_conf = {
             },
             'as_pyodide': True,
             'normalize_titles': False,
-        }
+        },
+        'reference': {
+            'title': 'Component Gallery',
+            'sections': [],
+        },
     },
     'thumbnail_url': 'https://assets.holoviz.org/panel/thumbnails',
     'deployment_url': gallery_url,
