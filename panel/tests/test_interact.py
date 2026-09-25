@@ -1,3 +1,6 @@
+import subprocess
+import sys
+
 from datetime import date
 
 from bokeh.models import Column as BkColumn, Div as BkDiv
@@ -19,11 +22,14 @@ def test_fixed_widget_preserves_parameter_reference():
 
 def test_interact_accepts_material_widget():
     """Material widgets implement WidgetBase but not the classic Widget class."""
-    import panel as pn
-
-    color = pn.ui.ColorPicker(value='#4f4fdf')
-    result = interactive(lambda c: c, c=color)
-    assert result._widgets['c'] is color
+    subprocess.run([
+        sys.executable, '-c',
+        'import panel as pn\n'
+        'from panel.interact import interactive\n'
+        "color = pn.ui.ColorPicker(value='#4f4fdf')\n"
+        'result = interactive(lambda c: c, c=color)\n'
+        "assert result._widgets['c'] is color\n",
+    ], check=True)
 
 
 def test_interact_title():
