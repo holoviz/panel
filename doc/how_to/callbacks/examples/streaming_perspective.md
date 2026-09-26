@@ -13,9 +13,9 @@ This example demonstrates how to use `add_periodic_callback` to stream data to a
 ```{pyodide}
 df = pd.DataFrame(np.random.randn(10, 4), columns=list('ABCD')).cumsum()
 
-rollover = pn.widgets.IntInput(label='Rollover', value=15)
+rollover = pn.ui.IntInput(label='Rollover', value=15)
 
-perspective = pn.pane.Perspective(df, height=400)
+perspective = pn.ui.Perspective(df, height=400)
 
 def stream():
     data = df.iloc[-1] + np.random.randn(4)
@@ -23,8 +23,8 @@ def stream():
 
 cb = pn.state.add_periodic_callback(stream, 50)
 
-pn.Column(
-    pn.Row(cb.param.period, rollover, perspective.param.theme),
+pn.ui.Column(
+    pn.ui.Row(cb.param.period, rollover, perspective.param.theme),
     perspective
 ).servable()
 ```

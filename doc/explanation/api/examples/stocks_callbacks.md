@@ -58,9 +58,9 @@ This example demonstrates how APIs in Panel differ, to see the same app implemen
 Other APIs in Panel are all reactive in some way, triggering actions whenever manipulating a widget causes a parameter to change, without users writing code to trigger callbacks explicitly. On the other hand, the callback based API allows complete low-level control of precisely how the different components of the app are updated, but this can quickly become unmaintainable because the complexity increases dramatically as more callbacks are added. The approach works by defining callbacks using the ``.param.watch`` API that either updates or replaces	 the already rendered components when a watched parameter changes:
 
 ```{pyodide}
-backend = pn.widgets.Select(label='Backend', options=plot_fns)
-ticker = pn.widgets.Select(label='Ticker', options=['AAPL', 'FB', 'GOOG', 'IBM', 'MSFT'])
-window = pn.widgets.IntSlider(label='Window', value=6, start=1, end=21)
+backend = pn.ui.Select(label='Backend', options=plot_fns)
+ticker = pn.ui.Select(label='Ticker', options=['AAPL', 'FB', 'GOOG', 'IBM', 'MSFT'])
+window = pn.ui.IntSlider(label='Window', value=6, start=1, end=21)
 
 def update(event):
     row[1] = pn.panel(backend.value(ticker.value, window.value), sizing_mode='stretch_width')
@@ -69,8 +69,8 @@ backend.param.watch(update, 'value')
 ticker.param.watch(update, 'value')
 window.param.watch(update, 'value')
 
-row = pn.Row(
-    pn.Column(backend, ticker, window),
+row = pn.ui.Row(
+    pn.ui.Column(backend, ticker, window),
     pn.panel(backend.value(ticker.options[0], window.value))
 )
 

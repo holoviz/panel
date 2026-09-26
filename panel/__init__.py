@@ -45,6 +45,8 @@ https://blog.holoviz.org/panel_0.12.0.html#JupyterLab-previews
 To learn more about Panel check out
 https://panel.holoviz.org/getting_started/index.html
 """
+from typing import TYPE_CHECKING
+
 from param import rx
 
 from . import layout  # noqa
@@ -120,3 +122,17 @@ __all__ = (
     "widgets",
     "widget"
 )
+
+if TYPE_CHECKING:
+    from . import ui  # noqa
+
+
+def __getattr__(name: str):
+    # panel.ui is resolved on first access rather than imported eagerly,
+    # because importing it selects the Material design and, until Panel 2.0,
+    # imports panel-material-ui, which imports panel. It is not in __all__, so
+    # that `from panel import *` does not pull it in either.
+    if name == 'ui':
+        import importlib
+        return importlib.import_module('panel.ui')
+    raise AttributeError(f'module {__name__!r} has no attribute {name!r}')

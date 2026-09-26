@@ -20,10 +20,10 @@ pn.extension("tabulator")
 
 df = pd.read_csv("https://datasets.holoviz.org/penguins/v1/penguins.csv")
 
-slider = pn.widgets.IntSlider(value=5, start=1, end=10, label='page_size')
-tabulator = pn.widgets.Tabulator(df, page_size=slider, pagination="remote")
+slider = pn.ui.IntSlider(value=5, start=1, end=10, label='page_size')
+tabulator = pn.ui.Tabulator(df, page_size=slider, pagination="remote")
 
-pn.Column(slider, tabulator)
+pn.ui.Column(slider, tabulator)
 ```
 
 ## Binding bound function on components
@@ -46,12 +46,12 @@ object_creator('🐘', 5)
 Now we can bind `IntSlider` and the `Select` widgets to the `object_creator` to create an interactive string. Once we have a reactive function we can pass it to a component, e.g. `Markdown` to render this:
 
 ```{pyodide}
-slider = pn.widgets.IntSlider(value=5, start=1, end=10)
-select = pn.widgets.Select(value="⭐", options=["⭐", "🐘"])
+slider = pn.ui.IntSlider(value=5, start=1, end=10)
+select = pn.ui.Select(value="⭐", options=["⭐", "🐘"])
 
 iobject = pn.bind(object_creator, select, slider)
 
-pn.Row(slider, select, pn.pane.Markdown(iobject))
+pn.ui.Row(slider, select, pn.ui.Markdown(iobject))
 ```
 
 This approach is preferred over rendering reactive functions directly because it is more efficient and updates only the specific *Parameters* that are being changed.
@@ -60,9 +60,9 @@ If you want to update multiple *Parameters* at the same time you can pass a reac
 
 
 ```{pyodide}
-slider = pn.widgets.IntSlider(value=5, start=1, end=10, label='Number')
-select = pn.widgets.RadioButtonGroup(value="⭐", options=["⭐", "🐘"], label='String', align='center')
-size = pn.widgets.IntSlider(value=12, start=6, end=24, label='Size')
+slider = pn.ui.IntSlider(value=5, start=1, end=10, label='Number')
+select = pn.ui.RadioButtonGroup(value="⭐", options=["⭐", "🐘"], label='String', align='center')
+size = pn.ui.IntSlider(value=12, start=6, end=24, label='Size')
 
 def refs(string, number, size):
     return {
@@ -72,7 +72,7 @@ def refs(string, number, size):
 
 irefs = pn.bind(refs, select, slider, size)
 
-pn.Row(slider, size, select, pn.pane.Markdown(refs=irefs))
+pn.ui.Row(slider, size, select, pn.ui.Markdown(refs=irefs))
 ```
 
 In this way we can update both the current `object` and the `styles` **Parameter** of the `Markdown` pane simultaneously.
@@ -93,7 +93,7 @@ A better approach is to assign the bound function directly to the component para
 def update_value(select_value, slider_value):
     return select_value * slider_value
 
-text = pn.widgets.StaticText(value=pn.bind(update_value, select, slider))
+text = pn.ui.StaticText(value=pn.bind(update_value, select, slider))
 ```
 
 This keeps the component reactive while avoiding unnecessary object recreation and ensures that only the relevant parameter is updated.

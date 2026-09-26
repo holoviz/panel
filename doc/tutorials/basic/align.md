@@ -21,9 +21,9 @@ import panel as pn
 
 pn.extension()
 
-pn.Column(
-    pn.pane.PNG("https://assets.holoviz.org/panel/tutorials/wind_turbine.png", height=150, sizing_mode="scale_width"),
-    pn.widgets.Button(label="Stop the Turbine", icon="hand-stop",),
+pn.ui.Column(
+    pn.ui.PNG("https://assets.holoviz.org/panel/tutorials/wind_turbine.png", height=150, sizing_mode="scale_width"),
+    pn.ui.Button(label="Stop the Turbine", icon="hand-stop",),
     sizing_mode="fixed", width=400, height=400, styles={"border": "1px solid black"}
 ).servable()
 ```
@@ -45,9 +45,9 @@ import panel as pn
 
 pn.extension()
 
-pn.Column(
-    pn.pane.PNG("https://assets.holoviz.org/panel/tutorials/wind_turbine.png", height=150, sizing_mode="scale_width"),
-    pn.widgets.Button(label="Stop the Turbine", icon="hand-stop", align="center"),
+pn.ui.Column(
+    pn.ui.PNG("https://assets.holoviz.org/panel/tutorials/wind_turbine.png", height=150, sizing_mode="scale_width"),
+    pn.ui.Button(label="Stop the Turbine", icon="hand-stop", align="center"),
     sizing_mode="fixed", width=400, height=400, styles={"border": "1px solid black"}
 ).servable()
 ```
@@ -63,12 +63,12 @@ import panel as pn
 
 pn.extension()
 
-pn.Column(
-    pn.pane.PNG("https://assets.holoviz.org/panel/tutorials/wind_turbine.png", height=150, sizing_mode="scale_width"),
-    pn.Row(
-        pn.Spacer(sizing_mode="stretch_width"),
-        pn.widgets.Button(label="Stop the Turbine", icon="hand-stop"),
-        pn.Spacer(sizing_mode="stretch_width")
+pn.ui.Column(
+    pn.ui.PNG("https://assets.holoviz.org/panel/tutorials/wind_turbine.png", height=150, sizing_mode="scale_width"),
+    pn.ui.Row(
+        pn.ui.Spacer(sizing_mode="stretch_width"),
+        pn.ui.Button(label="Stop the Turbine", icon="hand-stop"),
+        pn.ui.Spacer(sizing_mode="stretch_width")
     ),
     sizing_mode="fixed", width=400, height=400, styles={"border": "1px solid black", "border-radius": "5px"}
 ).servable()
@@ -85,9 +85,9 @@ pn.extension()
 
 margin = int((400-147)/2) # The Button is 147 pixels wide
 
-pn.Column(
-    pn.pane.PNG("https://assets.holoviz.org/panel/tutorials/wind_turbine.png", height=150, sizing_mode="scale_width"),
-    pn.widgets.Button(label="Stop the Turbine", icon="hand-stop", margin=(5,margin)),
+pn.ui.Column(
+    pn.ui.PNG("https://assets.holoviz.org/panel/tutorials/wind_turbine.png", height=150, sizing_mode="scale_width"),
+    pn.ui.Button(label="Stop the Turbine", icon="hand-stop", margin=(5,margin)),
     sizing_mode="fixed", width=400, height=400, styles={"border": "1px solid black"}
 ).servable()
 ```
@@ -117,12 +117,12 @@ import panel as pn
 
 pn.extension()
 
-image = pn.pane.PNG("https://assets.holoviz.org/panel/tutorials/wind_turbine.png", height=150, sizing_mode="scale_width")
+image = pn.ui.PNG("https://assets.holoviz.org/panel/tutorials/wind_turbine.png", height=150, sizing_mode="scale_width")
 
-card1 = pn.Card(image, title='Turbine 1', width=200)
-card2 = pn.Card(image, title='Turbine 2', width=200)
+card1 = pn.ui.Card(image, title='Turbine 1', width=200)
+card2 = pn.ui.Card(image, title='Turbine 2', width=200)
 
-pn.Column(
+pn.ui.Column(
     card1, card2,
     sizing_mode="fixed", width=400, height=400, styles={"border": "1px solid black"}
 ).servable()
@@ -143,15 +143,15 @@ import panel as pn
 
 pn.extension()
 
-image = pn.pane.PNG("https://assets.holoviz.org/panel/tutorials/wind_turbine.png", sizing_mode="scale_both")
+image = pn.ui.PNG("https://assets.holoviz.org/panel/tutorials/wind_turbine.png", sizing_mode="scale_both")
 
-card1 = pn.Card(image, title='Turbine 1', height=150, width=200, align="center")
-card2 = pn.Card(image, title='Turbine 2', height=150, width=200, align="center")
-spacer1 = pn.Spacer(height=33)
-spacer2 = pn.Spacer(height=33)
-spacer3 = pn.Spacer(height=33)
+card1 = pn.ui.Card(image, title='Turbine 1', height=150, width=200, align="center")
+card2 = pn.ui.Card(image, title='Turbine 2', height=150, width=200, align="center")
+spacer1 = pn.ui.Spacer(height=33)
+spacer2 = pn.ui.Spacer(height=33)
+spacer3 = pn.ui.Spacer(height=33)
 
-pn.Column(
+pn.ui.Column(
     spacer1, card1, spacer2, card2, spacer3,
     sizing_mode="fixed", width=400, height=400, styles={"border": "1px solid black"}
 ).servable()
@@ -166,12 +166,12 @@ import panel as pn
 
 pn.extension()
 
-image = pn.pane.PNG("https://assets.holoviz.org/panel/tutorials/wind_turbine.png", sizing_mode="scale_both")
+image = pn.ui.PNG("https://assets.holoviz.org/panel/tutorials/wind_turbine.png", sizing_mode="scale_both")
 
-card1 = pn.Card(image, title='Turbine 1', height=150, width=200, align="center", margin=(33,0,17,0))
-card2 = pn.Card(image, title='Turbine 2', height=150, width=200, align="center", margin=(16,0,33,0))
+card1 = pn.ui.Card(image, title='Turbine 1', height=150, width=200, align="center", margin=(33,0,17,0))
+card2 = pn.ui.Card(image, title='Turbine 2', height=150, width=200, align="center", margin=(16,0,33,0))
 
-pn.Column(
+pn.ui.Column(
     card1, card2,
     sizing_mode="fixed", width=400, height=400, styles={"border": "1px solid black"}
 ).servable()

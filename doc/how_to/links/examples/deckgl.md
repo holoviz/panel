@@ -38,19 +38,19 @@ json_spec = {
 }
 
 
-view_editor = pn.widgets.CodeEditor(
+view_editor = pn.ui.CodeEditor(
     value=json.dumps(json_spec['initialViewState'], indent=4),
     theme= 'monokai', width=500, height=225
 )
-layer_editor = pn.widgets.CodeEditor(
+layer_editor = pn.ui.CodeEditor(
     value=json.dumps(json_spec['layers'][0], indent=4),
     theme= 'monokai', width=500, height=365
 )
 
-deck_gl = pn.pane.DeckGL(json_spec, mapbox_api_key=MAPBOX_KEY, sizing_mode='stretch_width', height=600)
+deck_gl = pn.ui.DeckGL(json_spec, mapbox_api_key=MAPBOX_KEY, sizing_mode='stretch_width', height=600)
 
 view_editor.jscallback(args={'deck_gl': deck_gl}, value="deck_gl.initialViewState = JSON.parse(cb_obj.code)")
 layer_editor.jscallback(args={'deck_gl': deck_gl}, value="deck_gl.layers = [JSON.parse(cb_obj.code)]")
 
-pn.Row(pn.Column(view_editor, layer_editor), deck_gl).servable()
+pn.ui.Row(pn.ui.Column(view_editor, layer_editor), deck_gl).servable()
 ```

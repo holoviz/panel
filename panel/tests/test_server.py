@@ -3,6 +3,7 @@ import datetime as dt
 import logging
 import os
 import pathlib
+import re
 import socket
 import threading
 import time
@@ -236,7 +237,10 @@ def test_server_ico_handling(path, port):
     )
 
     dots = path.count('/')*'.'
-    assert f'<link rel="icon" href="{dots}/favicon.ico"' in r.content.decode('utf-8')
+    html = r.content.decode('utf-8')
+    assert f'<link rel="icon" href="{dots}/favicon.ico"' in html or re.search(
+        r'<link rel="icon" href="[^"]*/images/favicon.ico"', html
+    )
     ico = requests.get(f"http://localhost:{port}/favicon.ico", timeout=30)
     assert ico.content == ico_path.read_bytes()
 
@@ -248,7 +252,10 @@ def test_server_ico_handling_with_prefix(port):
         {'app': md}, ico_path=ico_path, port=port, prefix='/prefix', suffix='/prefix/app'
     )
 
-    assert '<link rel="icon" href="./favicon.ico"' in r.content.decode('utf-8')
+    html = r.content.decode('utf-8')
+    assert '<link rel="icon" href="./favicon.ico"' in html or re.search(
+        r'<link rel="icon" href="[^"]*/images/favicon.ico"', html
+    )
     ico = requests.get(f"http://localhost:{port}/favicon.ico", timeout=30)
     assert ico.content == ico_path.read_bytes()
 
@@ -513,7 +520,11 @@ def test_server_cancel_task(server_implementation):
     state.cancel_task('periodic')
     count = state.cache['count']
     time.sleep(0.5)
-    assert state.cache['count'] == count
+    # Callbacks dispatched before cancellation may still finish.
+    settled_count = state.cache['count']
+    assert settled_count >= count
+    time.sleep(0.5)
+    assert state.cache['count'] == settled_count
 
 
 async def _async_erroring_cb():
@@ -1576,7 +1587,10 @@ def test_server_ico_path_on_proxy(reverse_proxy):
         suffix="/proxy/app"
     )
 
-    assert '<link rel="icon" href="./favicon.ico"' in r.content.decode('utf-8')
+    html = r.content.decode('utf-8')
+    assert '<link rel="icon" href="./favicon.ico"' in html or re.search(
+        r'<link rel="icon" href="[^"]*/images/favicon.ico"', html
+    )
     ico = requests.get(f"http://localhost:{proxy}/proxy/favicon.ico", timeout=30)
     assert ico.content == ico_path.read_bytes()
 

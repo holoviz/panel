@@ -6,7 +6,7 @@ If you want to serve more than one app on a single server you can use the ``pn.s
 import panel as pn
 pn.serve({
     'markdown': '# This is a Panel app',
-    'json': pn.pane.JSON({'abc': 123})
+    'json': pn.ui.JSON({'abc': 123})
 })
 ```
 
@@ -18,7 +18,7 @@ def markdown_app():
     return '# This is a Panel app'
 
 def json_app():
-    return pn.pane.JSON({'abc': 123})
+    return pn.ui.JSON({'abc': 123})
 
 pn.serve({
     'markdown': markdown_app,
@@ -31,7 +31,7 @@ You can customize the HTML title of each application by supplying a dictionary w
 ```python
 pn.serve({
     'markdown': '# This is a Panel app',
-    'json': pn.pane.JSON({'abc': 123})
+    'json': pn.ui.JSON({'abc': 123})
 }, title={'markdown': 'A Markdown App', 'json': 'A JSON App'}
 )
 ```

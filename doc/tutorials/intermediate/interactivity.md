@@ -33,7 +33,7 @@ data_url = 'https://assets.holoviz.org/panel/tutorials/turbines.csv.gz'
 
 turbines = pn.cache(pd.read_csv)(data_url)
 
-cols = pn.widgets.MultiChoice(
+cols = pn.ui.MultiChoice(
     options=turbines.columns.to_list(), value=['p_name', 't_state', 't_county', 'p_year', 't_manu', 'p_cap'],
     width=500, height=100, label='Columns'
 )
@@ -42,14 +42,14 @@ cols = pn.widgets.MultiChoice(
 In the imperative approach, we use `.param.watch` to set up a callback that updates the data when the widget changes:
 
 ```{pyodide}
-table = pn.widgets.Tabulator(turbines[cols.value], page_size=5, pagination="remote")
+table = pn.ui.Tabulator(turbines[cols.value], page_size=5, pagination="remote")
 
 def update_data(event):
     table.value = turbines[event.new]
 
 cols.param.watch(update_data, 'value')
 
-pn.Column(cols, table).servable()
+pn.ui.Column(cols, table).servable()
 ```
 
 ### Declarative
@@ -59,7 +59,7 @@ The declarative and reactive approach involves declaring what we want to display
 ```{pyodide}
 dfrx = pn.rx(turbines)[cols]
 
-pn.Column(cols, pn.widgets.Tabulator(dfrx, page_size=5, pagination="remote")).servable()
+pn.ui.Column(cols, pn.ui.Tabulator(dfrx, page_size=5, pagination="remote")).servable()
 ```
 
 Note how we pass the reactive DataFrame `dfrx` to the `Tabulator` widget. This aligns with the concept of passing references, which Param and Panel resolve. Valid references include:
@@ -91,7 +91,7 @@ data_url = "https://assets.holoviz.org/panel/tutorials/turbines.csv.gz"
 
 turbines = pn.cache(pd.read_csv)(data_url)
 
-cols = pn.widgets.MultiChoice(
+cols = pn.ui.MultiChoice(
     options=turbines.columns.to_list(),
     value=["p_name", "t_state", "t_county", "p_year", "t_manu", "p_cap"],
     width=500,
@@ -99,18 +99,18 @@ cols = pn.widgets.MultiChoice(
     label="Columns",
 )
 p_year_options = sorted(int(year) for year in turbines.p_year.unique() if not pd.isna(year))
-p_year = pn.widgets.Select(value=max(p_year_options), options=p_year_options, label="Year")
+p_year = pn.ui.Select(value=max(p_year_options), options=p_year_options, label="Year")
 
 p_cap_bounds = (turbines.p_cap.min(), turbines.p_cap.max())
-p_cap = pn.widgets.RangeSlider(value=p_cap_bounds, start=p_cap_bounds[0], end=p_cap_bounds[1])
+p_cap = pn.ui.RangeSlider(value=p_cap_bounds, start=p_cap_bounds[0], end=p_cap_bounds[1])
 
 dfrx = pn.rx(turbines)
 dfrx = dfrx[
     (dfrx.p_year == p_year)
     & (dfrx.p_cap.between(p_cap.param.value_start, p_cap.param.value_end))
 ][cols]
-pn.Column(
-    cols, p_year, p_cap, pn.widgets.Tabulator(dfrx, pagination="remote", page_size=5)
+pn.ui.Column(
+    cols, p_year, p_cap, pn.ui.Tabulator(dfrx, pagination="remote", page_size=5)
 ).servable()
 ```
 
@@ -128,7 +128,7 @@ data_url = "https://assets.holoviz.org/panel/tutorials/turbines.csv.gz"
 
 turbines = pn.cache(pd.read_csv)(data_url)
 
-cols = pn.widgets.MultiChoice(
+cols = pn.ui.MultiChoice(
     options=turbines.columns.to_list(),
     value=["p_name", "t_state", "t_county", "p_year", "t_manu", "p_cap"],
     width=500,
@@ -138,16 +138,16 @@ cols = pn.widgets.MultiChoice(
 p_year_options = sorted(
     int(year) for year in turbines.p_year.unique() if not pd.isna(year)
 )
-p_year = pn.widgets.Select(
+p_year = pn.ui.Select(
     value=max(p_year_options), options=p_year_options, label="Year"
 )
 
 p_cap_bounds = (turbines.p_cap.min(), turbines.p_cap.max())
-p_cap = pn.widgets.RangeSlider(
+p_cap = pn.ui.RangeSlider(
     value=p_cap_bounds, start=p_cap_bounds[0], end=p_cap_bounds[1], label="Capacity"
 )
 
-table = pn.widgets.Tabulator(turbines[cols.value], page_size=5, pagination="remote")
+table = pn.ui.Tabulator(turbines[cols.value], page_size=5, pagination="remote")
 
 
 def update_data(event):
@@ -163,7 +163,7 @@ cols.param.watch(update_data, "value")
 p_year.param.watch(update_data, "value")
 p_cap.param.watch(update_data, "value")
 
-pn.Column(cols, p_year, p_cap, table).servable()
+pn.ui.Column(cols, p_year, p_cap, table).servable()
 ```
 
 :::
@@ -224,13 +224,13 @@ class DataExplorer(Viewer):
         return f"Rows: {len(self.filtered_data())}"
 
     def __panel__(self):
-        return pn.Column(
-            pn.Row(
-                pn.widgets.MultiChoice.from_param(self.param.columns, width=400),
-                pn.Column(self.param.year, self.param.capacity),
+        return pn.ui.Column(
+            pn.ui.Row(
+                pn.ui.MultiChoice.from_param(self.param.columns, width=400),
+                pn.ui.Column(self.param.year, self.param.capacity),
             ),
             self.number_of_rows,
-            pn.widgets.Tabulator(self.filtered_data, page_size=10, pagination="remote"),
+            pn.ui.Tabulator(self.filtered_data, page_size=10, pagination="remote"),
         )
 
 
@@ -283,13 +283,13 @@ class DataExplorer(Viewer):
         return f"Rows: {len(self.filtered_data)}"
 
     def __panel__(self):
-        return pn.Column(
-            pn.Row(
-                pn.widgets.MultiChoice.from_param(self.param.columns, width=400),
-                pn.Column(self.param.year, self.param.capacity),
+        return pn.ui.Column(
+            pn.ui.Row(
+                pn.ui.MultiChoice.from_param(self.param.columns, width=400),
+                pn.ui.Column(self.param.year, self.param.capacity),
             ),
             self.number_of_rows,
-            pn.widgets.Tabulator(self.param.filtered_data, page_size=10, pagination="remote"),
+            pn.ui.Tabulator(self.param.filtered_data, page_size=10, pagination="remote"),
         )
 
 DataExplorer(data=turbines).servable()
@@ -348,13 +348,13 @@ class DataExplorer(Viewer):
         )
 
     def __panel__(self):
-        return pn.Column(
-            pn.Row(
-                pn.widgets.MultiChoice.from_param(self.param.columns, width=400),
-                pn.Column(self.param.year, self.param.capacity),
+        return pn.ui.Column(
+            pn.ui.Row(
+                pn.ui.MultiChoice.from_param(self.param.columns, width=400),
+                pn.ui.Column(self.param.year, self.param.capacity),
             ),
             self.number_of_rows,
-            pn.widgets.Tabulator(self.filtered_data, page_size=10, pagination="remote"),
+            pn.ui.Tabulator(self.filtered_data, page_size=10, pagination="remote"),
         )
 
 
@@ -430,13 +430,13 @@ class DataExplorer(Viewer):
         return self.filtered_data.hvplot.hist("p_cap", height=400)
 
     def __panel__(self):
-        return pn.Column(
-            pn.Row(
-                pn.widgets.MultiChoice.from_param(self.param.columns, width=400),
-                pn.Column(self.param.year, self.param.capacity),
+        return pn.ui.Column(
+            pn.ui.Row(
+                pn.ui.MultiChoice.from_param(self.param.columns, width=400),
+                pn.ui.Column(self.param.year, self.param.capacity),
             ),
-            pn.widgets.Tabulator(self.table, page_size=10, pagination="remote"),
-            pn.pane.HoloViews(self.plot),
+            pn.ui.Tabulator(self.table, page_size=10, pagination="remote"),
+            pn.ui.HoloViews(self.plot),
         )
 
 

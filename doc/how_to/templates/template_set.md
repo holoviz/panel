@@ -24,8 +24,8 @@ import panel as pn
 template = pn.template.BootstrapTemplate(title='Bootstrap Template')
 
 xs = np.linspace(0, np.pi)
-freq = pn.widgets.FloatSlider(label="Frequency", start=0, end=10, value=2)
-phase = pn.widgets.FloatSlider(label="Phase", start=0, end=np.pi)
+freq = pn.ui.FloatSlider(label="Frequency", start=0, end=10, value=2)
+phase = pn.ui.FloatSlider(label="Phase", start=0, end=np.pi)
 
 def sine(freq, phase):
     return pd.DataFrame(dict(y=np.sin(xs*freq+phase)), index=xs)
@@ -42,9 +42,9 @@ template.sidebar.append(freq)
 template.sidebar.append(phase)
 
 template.main.append(
-    pn.Row(
-        pn.Card(dfi_sine.hvplot(**plot_opts).output(), title='Sine'),
-        pn.Card(dfi_cosine.hvplot(**plot_opts).output(), title='Cosine'),
+    pn.ui.Row(
+        pn.ui.Card(dfi_sine.hvplot(**plot_opts).output(), title='Sine'),
+        pn.ui.Card(dfi_cosine.hvplot(**plot_opts).output(), title='Cosine'),
     )
 )
 template.servable();
@@ -79,8 +79,8 @@ import panel as pn
 pn.extension(template='bootstrap')
 
 xs = np.linspace(0, np.pi)
-freq = pn.widgets.FloatSlider(label="Frequency", start=0, end=10, value=2).servable(target='sidebar')
-phase = pn.widgets.FloatSlider(label="Phase", start=0, end=np.pi).servable(target='sidebar')
+freq = pn.ui.FloatSlider(label="Frequency", start=0, end=10, value=2).servable(target='sidebar')
+phase = pn.ui.FloatSlider(label="Phase", start=0, end=np.pi).servable(target='sidebar')
 
 def sine(freq, phase):
     return pd.DataFrame(dict(y=np.sin(xs*freq+phase)), index=xs)
@@ -93,9 +93,9 @@ dfi_cosine = hvplot.bind(cosine, freq, phase).interactive()
 
 plot_opts = dict(responsive=True, min_height=400)
 
-pn.Row(
-    pn.Card(dfi_sine.hvplot(**plot_opts).output(), title='Sine'),
-    pn.Card(dfi_cosine.hvplot(**plot_opts).output(), title='Cosine'),
+pn.ui.Row(
+    pn.ui.Card(dfi_sine.hvplot(**plot_opts).output(), title='Sine'),
+    pn.ui.Card(dfi_cosine.hvplot(**plot_opts).output(), title='Cosine'),
 ).servable(target='main');
 ```
 :::

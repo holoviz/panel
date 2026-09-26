@@ -27,7 +27,7 @@ pn.extension() # for notebook
 Next, let's display a simple component and set `loading=True`:
 
 ```{pyodide}
-pn.pane.HTML(styles={'background': '#00aa41'}, width=100, height=100, loading=True)
+pn.ui.HTML(styles={'background': '#00aa41'}, width=100, height=100, loading=True)
 ```
 
 :::{admonition} Attention

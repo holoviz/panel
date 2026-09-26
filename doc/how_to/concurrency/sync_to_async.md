@@ -13,7 +13,7 @@ import pandas as pd
 from asyncer import asyncify
 import panel as pn
 
-widget = pn.widgets.IntSlider(value=5, start=0, end=10)
+widget = pn.ui.IntSlider(value=5, start=0, end=10)
 
 def do_sync_work(it, n):
     return sum(pd.DataFrame(np.random.rand(n,n)).sum().sum() for _ in range(it))
@@ -23,7 +23,7 @@ async def create_result():
     result = await asyncify(do_sync_work)(it=5, n=10000)
     yield f"Wow. That was slow.\n\nThe sum is **{result:.2f}**"
 
-pn.Column(widget.rx() + 1, create_result).servable()
+pn.ui.Column(widget.rx() + 1, create_result).servable()
 ```
 
 <video muted controls loop poster="../../_static/images/asyncify.png" style="max-height: 400px; max-width: 100%;">

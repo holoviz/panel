@@ -53,12 +53,12 @@ and then you can use the `pyodide` as an RST directive:
 
    import panel as pn
 
-   slider = pn.widgets.FloatSlider(start=0, end=10, label='Amplitude')
+   slider = pn.ui.FloatSlider(start=0, end=10, label='Amplitude')
 
    def callback(new):
        return f'Amplitude is: {new}'
 
-   pn.Row(slider, pn.bind(callback, slider))
+   pn.ui.Row(slider, pn.bind(callback, slider))
 ```
 
 ## Examples
@@ -71,12 +71,12 @@ import panel as pn
 
 
 ```{pyodide}
-slider = pn.widgets.FloatSlider(start=0, end=10, label='Amplitude')
+slider = pn.ui.FloatSlider(start=0, end=10, label='Amplitude')
 
 def callback(new):
     return f'Amplitude is: {new}'
 
-pn.Row(slider, pn.bind(callback, slider))
+pn.ui.Row(slider, pn.bind(callback, slider))
 ```
 
 In addition to rendering Panel components it also renders regular Python

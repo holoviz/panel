@@ -24,7 +24,7 @@ class Input(param.Parameterized):
     value2 = param.Integer(default=3, bounds=(0,10))
 
     def panel(self):
-        return pn.Column(self.param.value1, self.param.value2)
+        return pn.ui.Column(self.param.value1, self.param.value2)
 
 class Multiply(param.Parameterized):
 
@@ -33,7 +33,7 @@ class Multiply(param.Parameterized):
     operator = param.String(default='*')
 
     def panel(self):
-        return pn.pane.Markdown(f'# {self.value1} * {self.value2}')
+        return pn.ui.Markdown(f'# {self.value1} * {self.value2}')
 
     @param.output('result')
     def output(self):
@@ -46,7 +46,7 @@ class Add(param.Parameterized):
     operator = param.String(default='+')
 
     def panel(self):
-        return pn.pane.Markdown(f'# {self.value1} + {self.value2}')
+        return pn.ui.Markdown(f'# {self.value1} + {self.value2}')
 
     @param.output('result')
     def output(self):
@@ -60,7 +60,7 @@ class Result(param.Parameterized):
     result = param.Integer(default=0)
 
     def panel(self):
-        return pn.pane.Markdown(f'# {self.value1} {self.operator} {self.value2} = {self.result}')
+        return pn.ui.Markdown(f'# {self.value1} {self.operator} {self.value2} = {self.result}')
 ```
 
 Now let's add these stages to a new Pipeline:
@@ -99,7 +99,7 @@ class Input(param.Parameterized):
     value2 = param.Integer(default=3, bounds=(0,10))
 
     def panel(self):
-        return pn.Column(self.param.value1, self.param.value2)
+        return pn.ui.Column(self.param.value1, self.param.value2)
 
 class Multiply(param.Parameterized):
 
@@ -108,7 +108,7 @@ class Multiply(param.Parameterized):
     operator = param.String(default='*')
 
     def panel(self):
-        return pn.pane.Markdown(f'# {self.value1} * {self.value2}')
+        return pn.ui.Markdown(f'# {self.value1} * {self.value2}')
 
     @param.output('result')
     def output(self):
@@ -121,7 +121,7 @@ class Add(param.Parameterized):
     operator = param.String(default='+')
 
     def panel(self):
-        return pn.pane.Markdown(f'# {self.value1} + {self.value2}')
+        return pn.ui.Markdown(f'# {self.value1} + {self.value2}')
 
     @param.output('result')
     def output(self):
@@ -135,7 +135,7 @@ class Result(param.Parameterized):
     result = param.Integer(default=0)
 
     def panel(self):
-        return pn.pane.Markdown(f'# {self.value1} {self.operator} {self.value2} = {self.result}')
+        return pn.ui.Markdown(f'# {self.value1} {self.operator} {self.value2} = {self.result}')
 
 dag = pn.pipeline.Pipeline()
 

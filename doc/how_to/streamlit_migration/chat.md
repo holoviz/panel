@@ -37,7 +37,7 @@ import panel as pn
 
 pn.extension(design="material")
 
-message = pn.Column(
+message = pn.ui.Column(
     "https://panel.holoviz.org/_images/logo_horizontal_light_theme.png",
     "# The powerful data exploration & web app framework for Python"
 )
@@ -95,7 +95,7 @@ chat_interface = pn.chat.ChatInterface(
     callback=echo,
 )
 
-pn.Column(
+pn.ui.Column(
     "# Echo Bot",
     chat_interface,
 ).servable()

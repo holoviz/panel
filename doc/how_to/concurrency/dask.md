@@ -102,9 +102,9 @@ async def get_client():
         DASK_SCHEDULER_ADDRESS, asynchronous=True
     )
 
-n_input = pn.widgets.IntInput(value=0, width=100, sizing_mode="fixed", label="n")
-submit_button = pn.widgets.Button(label="SUBMIT", color="primary", align="end")
-terminal_widget = pn.widgets.Terminal(
+n_input = pn.ui.IntInput(value=0, width=100, sizing_mode="fixed", label="n")
+submit_button = pn.ui.Button(label="SUBMIT", color="primary", align="end")
+terminal_widget = pn.ui.Terminal(
     height=200,
 )
 
@@ -131,9 +131,9 @@ async def _handle_click(_):
     terminal_widget.write(f"fibonacci({n})={fib_n} in {duration}sec\n")
 
 
-pn.Column(
+pn.ui.Column(
     "# Fibonacci Tasks",
-    pn.Row(n_input, submit_button),
+    pn.ui.Row(n_input, submit_button),
     pn.rx("## Task queue: {}").format(queue),
     "## Results",
     terminal_widget,
@@ -210,10 +210,10 @@ class DaskViewer(pn.viewable.Viewer):
         super().__init__(**viewer_params)
 
         view = pn.bind(dask_dashboard_view, self.param.path, self.param.url)
-        self._iframe =  pn.pane.HTML(view, sizing_mode="stretch_both")
-        self._select = pn.widgets.Select.from_param(self.param.path, size=size, width=300, sizing_mode="fixed", margin=(20,5,10,5))
+        self._iframe =  pn.ui.HTML(view, sizing_mode="stretch_both")
+        self._select = pn.ui.Select.from_param(self.param.path, size=size, width=300, sizing_mode="fixed", margin=(20,5,10,5))
         self._link = pn.panel(f"""<a href="{DASK_DASHBOARD_ADDRESS}" target="_blank">Dask Dashboard</a>""", height=50, margin=(0,20))
-        self._panel = pn.Column(pn.Row(self._iframe, self._select, sizing_mode="stretch_both"), self._link, **layout_params)
+        self._panel = pn.ui.Column(pn.ui.Row(self._iframe, self._select, sizing_mode="stretch_both"), self._link, **layout_params)
 
     def __panel__(self):
         return self._panel
