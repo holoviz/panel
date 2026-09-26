@@ -197,7 +197,11 @@ nbsite_gallery_conf = {
             },
             'as_pyodide': True,
             'normalize_titles': False,
-        }
+        },
+        'reference': {
+            'title': 'Component Gallery',
+            'sections': [],
+        },
     },
     'thumbnail_url': 'https://assets.holoviz.org/panel/thumbnails',
     'deployment_url': gallery_url,
