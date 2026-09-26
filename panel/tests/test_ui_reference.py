@@ -4,6 +4,7 @@ import importlib.util
 import io
 import json
 import tarfile
+import zipfile
 
 from pathlib import Path
 from types import SimpleNamespace
@@ -15,6 +16,9 @@ import panel.io.convert
 import panel.io.resources
 
 from panel.config import config
+from panel.io.convert import (
+    BOKEH_VERSION, PANEL_LOCAL_WHL, collect_python_requirements, convert_app,
+)
 from panel.pane import HoloViews
 from panel.param import Param
 
@@ -23,6 +27,65 @@ spec = importlib.util.spec_from_file_location('ui_reference', EXTENSION)
 assert spec is not None and spec.loader is not None
 ui_reference = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(ui_reference)
+
+
+def test_docs_panel_wheel_matches_checkout():
+    """Non-release docs use a trimmed wheel for the checked-out Panel version."""
+    if not PANEL_LOCAL_WHL.is_file():
+        pytest.skip('Build the Panel Pyodide wheel before checking its contents')
+    with zipfile.ZipFile(PANEL_LOCAL_WHL) as wheel:
+        assert not any(name.startswith('panel/tests/') for name in wheel.namelist())
+        assert not any(name.endswith('.whl') for name in wheel.namelist())
+        metadata = next(name for name in wheel.namelist() if name.endswith('.dist-info/METADATA'))
+        assert 'Requires-Dist: bokeh >=3.10.0,<3.11.0' in wheel.read(metadata).decode()
+
+
+def test_docs_converted_apps_use_local_panel_wheel():
+    """The converted Pyodide apps pack the same Panel wheel as the docs gallery."""
+    if not PANEL_LOCAL_WHL.is_file():
+        pytest.skip('Build the Panel Pyodide wheel before checking conversion')
+    requirements = collect_python_requirements('examples/gallery/altair_brushing.ipynb', [], panel_version='local')
+    assert f'file:{PANEL_LOCAL_WHL.resolve()}' in requirements
+    assert f'bokeh=={BOKEH_VERSION}' in requirements
+
+
+def test_local_panel_wheel_without_bokeh_wheel(tmp_path, monkeypatch):
+    """A dev docs build uses the branch wheel without requiring a Bokeh wheel."""
+    panel_wheel = tmp_path / 'panel-1.0-py3-none-any.whl'
+    panel_wheel.touch()
+    monkeypatch.setattr(panel.io.convert, 'PANEL_LOCAL_WHL', panel_wheel)
+    monkeypatch.setattr(panel.io.convert, 'BOKEH_LOCAL_WHL', tmp_path / 'missing-bokeh.whl')
+
+    requirements = collect_python_requirements('examples/gallery/altair_brushing.ipynb', [], panel_version='local')
+    assert requirements == [f'bokeh=={BOKEH_VERSION}', f'file:{panel_wheel.resolve()}', 'pyodide-http']
+
+
+def test_local_panel_wheel_missing(tmp_path, monkeypatch):
+    """A missing branch wheel must fail before publishing released Panel code."""
+    monkeypatch.setattr(panel.io.convert, 'PANEL_LOCAL_WHL', tmp_path / 'missing-panel.whl')
+
+    with pytest.raises(FileNotFoundError, match='Panel Pyodide wheel not found'):
+        collect_python_requirements('examples/gallery/altair_brushing.ipynb', [], panel_version='local')
+
+
+def test_converted_app_packs_local_panel_wheel(tmp_path, monkeypatch):
+    """Converted docs apps ship the built wheel instead of requesting the CDN release."""
+    wheel = tmp_path / 'panel-1.0-py3-none-any.whl'
+    wheel.write_bytes(b'branch wheel')
+    monkeypatch.setattr(panel.io.convert, 'PANEL_LOCAL_WHL', wheel)
+    monkeypatch.setattr(panel.io.convert, 'BOKEH_LOCAL_WHL', tmp_path / 'missing-bokeh.whl')
+    requirements = []
+
+    def render(app, **kwargs):
+        requirements.extend(kwargs['requirements'])
+        return '<html></html>', None
+
+    monkeypatch.setattr(panel.io.convert, 'script_to_html', render)
+    convert_app('examples/gallery/altair_brushing.ipynb', tmp_path, requirements=[], panel_version='local')
+
+    assert 'emfs:packed_wheels/panel-1.0-py3-none-any.whl' in requirements
+    with zipfile.ZipFile(tmp_path / 'altair_brushing.resources.zip') as resources:
+        assert resources.read('packed_wheels/panel-1.0-py3-none-any.whl') == b'branch wheel'
 
 
 @pytest.fixture(autouse=True)

@@ -200,8 +200,10 @@ def collect_python_requirements(
     """
     # Environment
     if panel_version == 'local':
-        panel_req = './' + str(PANEL_LOCAL_WHL.as_posix()).split('/')[-1]
-        bokeh_req = './' + str(BOKEH_LOCAL_WHL.as_posix()).split('/')[-1]
+        if not PANEL_LOCAL_WHL.is_file():
+            raise FileNotFoundError(f'Panel Pyodide wheel not found: {PANEL_LOCAL_WHL}')
+        panel_req = f'file:{PANEL_LOCAL_WHL.resolve()}'
+        bokeh_req = f'file:{BOKEH_LOCAL_WHL.resolve()}' if BOKEH_LOCAL_WHL.is_file() else f'bokeh=={BOKEH_VERSION}'
     elif panel_version == 'auto':
         panel_req = PANEL_CDN_WHL
         bokeh_req = BOKEH_CDN_WHL

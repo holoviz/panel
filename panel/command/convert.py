@@ -45,6 +45,11 @@ class Convert(Subcommand):
             action  = 'store_true',
             help    = "Whether to use the compiled and faster version of Pyodide."
         )),
+        ('--panel-version', Argument(
+            type=str,
+            default='auto',
+            help="Panel wheel to use: 'auto' for a release or 'local' for a built wheel",
+        )),
         ('--out', Argument(
             action  = 'store',
             type    = str,
@@ -147,6 +152,7 @@ class Convert(Subcommand):
                     build_pwa=args.pwa,
                     title=args.title,
                     max_workers=args.num_procs,
+                    panel_version=args.panel_version,
                     http_patch=not args.disable_http_patch,
                     compiled=args.compiled,
                     verbose=True

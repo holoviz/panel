@@ -209,10 +209,14 @@ nbsite_gallery_conf = {
     'only_use_existing': True,
 }
 
-if panel.__version__ != version and (PANEL_ROOT / 'dist' / 'wheels').is_dir():
+if panel.__version__ != version and (PANEL_ROOT / 'dist' / 'wheels' / f'panel-{panel.__version__.replace("-dirty", "")}-py3-none-any.whl').is_file():
     py_version = panel.__version__.replace("-dirty", "")
     panel_req = f'./wheels/panel-{py_version}-py3-none-any.whl'
-    bokeh_req = f'./wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
+    bokeh_req = (
+        f'./wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
+        if (PANEL_ROOT / 'dist' / 'wheels' / f'bokeh-{BOKEH_VERSION}-py3-none-any.whl').is_file()
+        else f'bokeh=={BOKEH_VERSION}'
+    )
 else:
     panel_req = f'{CDN_ROOT}wheels/panel-{PY_VERSION}-py3-none-any.whl'
     bokeh_req = (
