@@ -265,6 +265,7 @@ pytest-github-actions-annotate-failures = "*"
 pytest-rerunfailures = "*"
 pytest-timeout = "*"
 pytest-xdist = "*"
+starlette = "*"
 
 [feature.test-unit-task.tasks] # So it is not showing up in the test-ui environment
 test-unit = 'pytest panel/tests -n logical --dist loadgroup'
