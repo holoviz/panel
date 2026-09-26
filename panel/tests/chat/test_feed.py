@@ -94,6 +94,42 @@ class TestChatFeed:
         assert message.user == user
         assert message.avatar == avatar
 
+    async def test_user_messages_styles(self, chat_feed):
+        chat_feed.user_messages_styles = {
+            "Bob": {"background": "red", "color": "white"},
+            "Alice": {"background": "blue", "color": "yellow"},
+        }
+        chat_feed.send("Hi", user="Bob")
+        chat_feed.send("Hello", user="Alice")
+        assert chat_feed.objects[0].styles["background"] == "red"
+        assert chat_feed.objects[0].styles["color"] == "white"
+        assert chat_feed.objects[1].styles["background"] == "blue"
+        assert chat_feed.objects[1].styles["color"] == "yellow"
+
+    async def test_user_messages_stylesheets(self, chat_feed):
+        chat_feed.user_messages_stylesheets = {
+            "Bob": ["bob.css"],
+            "Alice": ["alice.css", "common.css"],
+        }
+        chat_feed.send("Hi", user="Bob")
+        chat_feed.send("Hello", user="Alice")
+        assert chat_feed.objects[0].stylesheets == ["bob.css"]
+        assert chat_feed.objects[1].stylesheets == ["alice.css", "common.css"]
+
+    async def test_user_messages_styles_and_stylesheets_absent(self, chat_feed):
+        chat_feed.user_messages_styles = {"Bob": {"background": "red"}}
+        chat_feed.user_messages_stylesheets = {"Bob": ["bob.css"]}
+        chat_feed.send("Hi", user="Charlie")
+        assert "background" not in chat_feed.objects[0].styles
+        assert not chat_feed.objects[0].stylesheets
+
+    async def test_user_messages_styles_and_stylesheets_together(self, chat_feed):
+        chat_feed.user_messages_styles = {"Bob": {"background": "red"}}
+        chat_feed.user_messages_stylesheets = {"Bob": ["bob.css"]}
+        chat_feed.send("Hi", user="Bob")
+        assert chat_feed.objects[0].styles["background"] == "red"
+        assert chat_feed.objects[0].stylesheets == ["bob.css"]
+
     async def test_send_dict(self, chat_feed):
         message = chat_feed.send({"object": "Message", "user": "Bob", "avatar": "👨"})
         assert len(chat_feed.objects) == 1
