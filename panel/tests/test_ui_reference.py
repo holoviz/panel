@@ -189,13 +189,15 @@ def test_material_source_takes_precedence_over_classic(gallery):
     assert 'Classic' not in content
 
 
-def test_nbsite_generates_ui_gallery_cards(gallery, monkeypatch):
+def test_nbsite_generates_cards_only_for_notebooks(gallery, monkeypatch):
     from nbsite.gallery import gen
 
-    app, _ = gallery
+    app, examples = gallery
     source = Path(app.config.ui_reference_pmui_source)
     notebook(source / 'widgets' / 'Button.ipynb',
              ('code', 'import panel as pn\nimport panel_material_ui as pmui\npmui.Button()'))
+    notebook(examples / 'widgets' / 'Tabulator.ipynb',
+             ('code', 'import panel as pn\npn.widgets.Tabulator()'))
     app.config.nbsite_gallery_conf = dict(gen.DEFAULT_GALLERY_CONF, **app.config.nbsite_gallery_conf)
     app.config.nbsite_gallery_conf['galleries']['reference']['title'] = 'Component Gallery'
     app.config.nbsite_gallery_conf['only_use_existing'] = True
@@ -204,11 +206,16 @@ def test_nbsite_generates_ui_gallery_cards(gallery, monkeypatch):
     monkeypatch.setattr(gen, '_resolve_thumbnail', lambda *args, **kwargs: (1, '', 'png', 'Unavailable'))
 
     ui_reference.prepare_ui_gallery(app)
+    gallery_source = Path(app.config.nbsite_gallery_conf['galleries']['reference']['source'])
+    assert sorted(path.name for path in (gallery_source / 'widgets').iterdir()) == ['Button.ipynb', 'Tabulator.ipynb']
+    assert app.config.nbsite_gallery_conf['galleries']['reference']['extensions'] == ['*.ipynb']
     gen.generate_gallery(app, 'reference')
     ui_reference.generate_ui_reference(app)
 
     index = (Path(app.builder.srcdir) / 'reference/index.rst').read_text()
     assert '.. grid-item-card:: Button' in index
+    assert '.. grid-item-card:: Tabulator' in index
+    assert '.. grid-item-card:: TextInput' not in index
     assert ':link: widgets/Button\n        :link-type: doc' in index
     assert index.index('Templates') < index.index('Classic Reference')
     assert '.. grid-item-card:: Classic Component Gallery' in index

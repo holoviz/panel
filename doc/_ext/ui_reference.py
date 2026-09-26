@@ -473,8 +473,6 @@ def prepare_ui_gallery(app):
                 notebook = examples / section / f'{name}.ipynb'
             if notebook.is_file():
                 (directory / f'{name}.ipynb').symlink_to(notebook)
-            else:
-                (directory / f'{name}.py').touch()
     gallery = app.config.nbsite_gallery_conf['galleries']['reference']
     gallery['source'] = str(root)
     gallery['sections'] = [
@@ -488,7 +486,7 @@ def prepare_ui_gallery(app):
          'items': [{'title': 'Classic Component Gallery', 'url': 'classic/index.html',
                     'thumbnail': 'https://assets.holoviz.org/panel/thumbnails/reference/widgets/Button.png'}]},
     ]
-    gallery['extensions'] = ['*.ipynb', '*.py']
+    gallery['extensions'] = ['*.ipynb']
     gallery['as_pyodide'] = False
     gallery['skip_rst_notebook_directive'] = True
     gallery['thumbnail_url'] = conf.get('thumbnail_url', DEFAULT_GALLERY_CONF['thumbnail_url'])
