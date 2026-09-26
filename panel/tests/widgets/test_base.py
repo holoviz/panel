@@ -7,7 +7,7 @@ from panel.links import CallbackGenerator
 from panel.tests.util import check_layoutable_properties
 from panel.util import _descendents
 from panel.widgets import (
-    CompositeWidget, Dial, FileDownload, FloatSlider, LinearGauge,
+    Button, CompositeWidget, Dial, FileDownload, FloatSlider, LinearGauge,
     LoadingSpinner, Terminal, TextInput, ToggleGroup, Tqdm, Widget,
 )
 from panel.widgets.tables import BaseTable
@@ -46,7 +46,7 @@ def test_widget_untracked_watchers(widget, document, comm):
 @pytest.mark.parametrize('widget', all_widgets)
 def test_widget_linkable_params(widget, document, comm):
     w = widget()
-    controls = w.controls(jslink=True)
+    controls = w.controls(jslink=True, widgets={'value': Button}) if widget is Button else w.controls(jslink=True)
     layout = Row(w, controls)
 
     try:

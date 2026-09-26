@@ -256,6 +256,7 @@ setup-dev = { depends-on = ["install", "lint-install"] }
 # =================== TESTS ===================
 # =============================================
 [feature.test-core.dependencies]
+nbsite = ">=0.10.0a8"
 psutil = "*"
 pytest = "*"
 pytest-asyncio = "*"
@@ -302,6 +303,7 @@ depends-on = ["_install-ui"]
 [feature.type.dependencies]
 mypy = "*"
 libcst = ">=1.1"
+nbsite = ">=0.10.0a8"
 pytest = "*"
 pandas-stubs = "*"
 types-croniter = "*"

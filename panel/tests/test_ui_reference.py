@@ -190,7 +190,7 @@ def test_material_source_takes_precedence_over_classic(gallery):
 
 
 def test_nbsite_generates_cards_only_for_notebooks(gallery, monkeypatch):
-    from nbsite.gallery import gen
+    from nbsite.gallery import gen  # type: ignore[import-untyped]
 
     app, examples = gallery
     source = Path(app.config.ui_reference_pmui_source)

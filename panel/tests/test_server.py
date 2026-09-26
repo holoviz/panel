@@ -520,7 +520,11 @@ def test_server_cancel_task(server_implementation):
     state.cancel_task('periodic')
     count = state.cache['count']
     time.sleep(0.5)
-    assert state.cache['count'] == count
+    # Callbacks dispatched before cancellation may still finish.
+    settled_count = state.cache['count']
+    assert settled_count >= count
+    time.sleep(0.5)
+    assert state.cache['count'] == settled_count
 
 
 async def _async_erroring_cb():
