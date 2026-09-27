@@ -36,6 +36,39 @@ def test_import_path_rewrite_from_panel_widgets_import_button():
     assert 'pn.ui.Button()' in result.source
 
 
+def test_reassigned_import_is_not_rewritten():
+    """A reassigned Panel import may refer to a different class at call time."""
+    source = (
+        'from panel.widgets import Button, TextInput\n'
+        'Button()\n'
+        'Button = MyButton\n'
+        'Button()\n'
+        'TextInput()\n'
+    )
+    result = migrate_source(source)
+    assert 'pn.ui.Button()\nButton = MyButton\nButton()' in result.source
+    assert 'pn.ui.TextInput()' in result.source
+
+
+def test_annotated_reassignment_is_not_rewritten():
+    """Annotated assignments can replace an imported component too."""
+    source = 'from panel.widgets import Button\nButton: type = MyButton\nButton()\n'
+    result = migrate_source(source)
+    assert result.source == source
+
+
+def test_unpacking_reassignment_is_not_rewritten():
+    """Unpacking can also replace a Panel import."""
+    source = 'from panel.widgets import Button\nButton, other = MyButton, None\nButton()\n'
+    assert migrate_source(source).source == source
+
+
+def test_reassigned_pn_is_not_used_for_new_rewrites():
+    """Inserted imports cannot fix a name that the application rebinds."""
+    source = 'from panel.widgets import TextInput\npn = other\nTextInput()\n'
+    assert migrate_source(source).source == source
+
+
 def test_import_path_rewrite_uses_existing_panel_import():
     source = 'import panel\npanel.widgets.Button()\n'
     result = migrate_source(source)

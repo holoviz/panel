@@ -42,7 +42,9 @@ import dataclasses
 
 import libcst as cst
 
-from libcst.metadata import MetadataWrapper, PositionProvider
+from libcst.metadata import (
+    MetadataWrapper, ParentNodeProvider, PositionProvider,
+)
 
 from . import compat
 from .report import ManualReview, Rewrite
@@ -90,8 +92,37 @@ class _ImportAliasCollector(cst.CSTVisitor):
     codemod.
     """
 
+    METADATA_DEPENDENCIES = (ParentNodeProvider, PositionProvider)
+
     def __init__(self) -> None:
         self.aliases: dict[str, str] = {}
+        self.reassigned: dict[str, int] = {}
+        self.ambiguous: set[str] = set()
+
+    def _record_target(self, target: cst.BaseAssignTargetExpression, assignment: cst.CSTNode) -> None:
+        if isinstance(target, cst.Name):
+            statement = self.get_metadata(ParentNodeProvider, assignment)
+            if isinstance(statement, cst.SimpleStatementLine) and isinstance(
+                self.get_metadata(ParentNodeProvider, statement), cst.Module
+            ):
+                line = self.get_metadata(PositionProvider, assignment).start.line
+                self.reassigned[target.value] = min(self.reassigned.get(target.value, line), line)
+            else:
+                self.ambiguous.add(target.value)
+        elif isinstance(target, (cst.Tuple, cst.List)):
+            for element in target.elements:
+                if isinstance(element, (cst.Element, cst.StarredElement)):
+                    self._record_target(element.value, assignment)
+
+    def visit_AssignTarget(self, node: cst.AssignTarget) -> None:
+        self._record_target(node.target, self.get_metadata(ParentNodeProvider, node))
+
+    def visit_AnnAssign(self, node: cst.AnnAssign) -> None:
+        if node.value is not None:
+            self._record_target(node.target, node)
+
+    def visit_AugAssign(self, node: cst.AugAssign) -> None:
+        self._record_target(node.target, node)
 
     def visit_Import(self, node: cst.Import) -> None:
         for alias in node.names:
@@ -198,9 +229,10 @@ class _PanelMigrateTransformer(cst.CSTTransformer):
 
     METADATA_DEPENDENCIES = (PositionProvider,)
 
-    def __init__(self, aliases: dict[str, str]) -> None:
+    def __init__(self, aliases: dict[str, str], reassigned: dict[str, int]) -> None:
         super().__init__()
         self._aliases = aliases
+        self._reassigned = reassigned
         self.needs_panel_import = False
         self.rewrites: list[Rewrite] = []
         self.manual_reviews: list[ManualReview] = []
@@ -209,6 +241,11 @@ class _PanelMigrateTransformer(cst.CSTTransformer):
         return self.get_metadata(PositionProvider, node).start.line
 
     def leave_Call(self, original_node: cst.Call, updated_node: cst.Call) -> cst.BaseExpression:
+        func = original_node.func
+        while isinstance(func, cst.Attribute):
+            func = func.value
+        if isinstance(func, cst.Name) and self._line(original_node) >= self._reassigned.get(func.value, float('inf')):
+            return updated_node
         dotted = _resolve_dotted(original_node.func, self._aliases)
         if dotted is None:
             return updated_node
@@ -457,14 +494,18 @@ def migrate_source(source: str) -> MigrationResult:
             source=source, changed=False, rewrites=[], manual_reviews=[], parse_error=str(exc),
         )
 
-    alias_collector = _ImportAliasCollector()
-    module.visit(alias_collector)
-
     wrapper = MetadataWrapper(module)
-    transformer = _PanelMigrateTransformer(alias_collector.aliases)
+    alias_collector = _ImportAliasCollector()
+    wrapper.visit(alias_collector)
+    aliases = {name: path for name, path in alias_collector.aliases.items()
+               if name not in alias_collector.ambiguous}
+    if 'pn' in alias_collector.reassigned or 'pn' in alias_collector.ambiguous:
+        aliases = {}
+
+    transformer = _PanelMigrateTransformer(aliases, alias_collector.reassigned)
     new_module = wrapper.visit(transformer)
 
-    if transformer.needs_panel_import and alias_collector.aliases.get('pn') != 'panel':
+    if transformer.needs_panel_import and aliases.get('pn') != 'panel':
         new_module = _insert_panel_import(new_module)
 
     new_source = new_module.code

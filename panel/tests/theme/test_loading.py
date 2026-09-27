@@ -139,6 +139,19 @@ def test_jslink_loading_uses_design(default_loading_config):
     assert json.dumps(['pn-loading', 'pn-material']) in code
 
 
+def test_jslink_loading_prefers_target_design(default_loading_config):
+    """A link uses the target's spinner even when the global design differs."""
+    from panel.links import JSLinkCallbackGenerator
+
+    generator = JSLinkCallbackGenerator
+    with config.set(design=None):
+        code = generator._get_code(
+            generator, None, TextInput(), 'value', Column(design=LoadingDesign), 'loading'
+        )
+    assert json.dumps(['pn-loading', 'pn-material']) in code
+    assert json.dumps(['pn-loading', 'pn-arc']) not in code
+
+
 @pytest.mark.skipif(
     _convert_resources.__module__ != 'panel.io.convert',
     reason='panel.io.convert.loading_resources was replaced by another library'

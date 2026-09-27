@@ -14,7 +14,7 @@ import param
 from bokeh.models import CustomJS, LayoutDOM, Model as BkModel
 
 from .io.datamodel import create_linked_datamodel
-from .io.loading import loading_css_classes
+from .io.loading import _loading_css_classes
 from .models import ReactiveESM, ReactiveHTML
 from .reactive import Reactive
 from .util.warnings import warn
@@ -764,7 +764,7 @@ class JSLinkCallbackGenerator(JSCallbackGenerator):
         if tgt_spec == 'loading':
             return self._loading_link_template.format(
                 src_attr=src_spec, src_transform=src_transform,
-                loading_classes=json.dumps(loading_css_classes())
+                loading_classes=json.dumps(_loading_css_classes(target))
             )
         else:
             if src_spec and src_spec.startswith('event:'):
