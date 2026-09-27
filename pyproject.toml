@@ -305,7 +305,6 @@ module = [
     "pydeck.*",
     "pyarrow.*",
     "pyecharts.*",
-    "pyodide_http.*",
     "pyodide.*",
     "pyscript.*",
     "pyvista.*",

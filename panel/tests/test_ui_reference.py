@@ -57,7 +57,7 @@ def test_local_panel_wheel_without_bokeh_wheel(tmp_path, monkeypatch):
     monkeypatch.setattr(panel.io.convert, 'BOKEH_LOCAL_WHL', tmp_path / 'missing-bokeh.whl')
 
     requirements = collect_python_requirements('examples/gallery/altair_brushing.ipynb', [], panel_version='local')
-    assert requirements == [f'bokeh=={BOKEH_VERSION}', f'file:{panel_wheel.resolve()}', 'pyodide-http']
+    assert requirements == [f'bokeh=={BOKEH_VERSION}', f'file:{panel_wheel.resolve()}']
 
 
 def test_local_panel_wheel_missing(tmp_path, monkeypatch):
