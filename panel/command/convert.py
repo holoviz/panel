@@ -74,11 +74,6 @@ class Convert(Subcommand):
                 "JSON file containing requirements per app. By default requirements are inferred from the code."
             )
         )),
-        ('--disable-http-patch', Argument(
-            default = False,
-            action  = 'store_true',
-            help    = "Whether to disable patching http requests using the pyodide-http library."
-        )),
         ('--resources', Argument(
             nargs   = '+',
             help    = (
@@ -147,7 +142,6 @@ class Convert(Subcommand):
                     build_pwa=args.pwa,
                     title=args.title,
                     max_workers=args.num_procs,
-                    http_patch=not args.disable_http_patch,
                     compiled=args.compiled,
                     verbose=True
                 )

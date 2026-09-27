@@ -267,16 +267,9 @@ def test_pyodide_test_convert_tabulator_app(http_serve, page, runtime):
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
 
-@pytest.mark.parametrize(
-    'runtime, http_patch', [
-        ('pyodide', False),
-        ('pyodide', True),
-        ('pyodide-worker', False),
-        ('pyodide-worker', True)
-    ]
-)
-def test_pyodide_test_convert_csv_app(http_serve, page, runtime, http_patch):
-    msgs = wait_for_app(http_serve, csv_app, page, runtime, http_patch=http_patch)
+@pytest.mark.parametrize('runtime', ['pyodide', 'pyodide-worker'])
+def test_pyodide_test_convert_csv_app(http_serve, page, runtime):
+    msgs = wait_for_app(http_serve, csv_app, page, runtime)
 
     expected_titles = ['index', 'date', 'Temperature', 'Humidity', 'Light', 'CO2', 'HumidityRatio', 'Occupancy']
 
