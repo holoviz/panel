@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import hashlib
 import importlib
 import inspect
@@ -25,6 +24,7 @@ from .io.model import apply_changes_without_dispatch
 from .io.resource_spec import resource_spec
 from .io.resources import component_resource_path
 from .io.state import state
+from .io.watcher import get_path_watcher
 from .layout.base import Panel
 from .models import (
     AnyWidgetComponent as _BkAnyWidgetComponent,
@@ -410,31 +410,8 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
                                 child._cleanup(root)
         super()._cleanup(root)
         if not self._models and self._watching_esm:
-            self._watching_esm.set()
-            if self._watching_esm in state._watch_events:
-                state._watch_events.remove(self._watching_esm)
+            self._watching_esm.unsubscribe(self, '_update_esm')
             self._watching_esm = None
-
-    async def _watch_esm(self):
-        import watchfiles
-        path = self._esm_path(compiled=False)
-        async for changes in watchfiles.awatch(path, stop_event=self._watching_esm):
-            update = False
-            for (change, path) in changes:
-                if change != watchfiles.Change.modified:
-                    continue
-                # Ensure that the file exists (in case filesystem write is not atomic)
-                retries = 0
-                while not os.path.exists(path):
-                    await asyncio.sleep(0.1)
-                    retries += 1
-                    if retries == 5:
-                        break
-                # Ignore change if file is not written within 0.5 seconds
-                if retries != 5:
-                    update = True
-            if update:
-                self._update_esm()
 
     def _update_esm(self):
         for ref, (model, _) in self._models.copy().items():
@@ -562,10 +539,12 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         if not ((config.autoreload or getattr(self, '_debug', False)) and import_available('watchfiles')):
             return
         super()._setup_autoreload()
-        if (self._esm_path(compiled=False) and not self._watching_esm):
-            self._watching_esm = event = asyncio.Event()
-            state._watch_events.append(event)
-            state.execute(self._watch_esm)
+        esm_path = self._esm_path(compiled=False)
+        if esm_path and not self._watching_esm:
+            # Components rendering from the same file, e.g. all components in
+            # a shared bundle, subscribe to a single watcher for that path.
+            self._watching_esm = watcher = get_path_watcher(esm_path)
+            watcher.subscribe(self, '_update_esm')
 
     def _get_model(
         self, doc: Document, root: Model | None = None,
