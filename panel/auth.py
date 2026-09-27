@@ -779,6 +779,29 @@ class AzureAdLoginHandler(OAuthLoginHandler):
     def _OAUTH_LOGOUT_URL(self):
         return self._OAUTH_LOGOUT_URL_.format(**config.oauth_extra_params)
 
+    async def get_authenticated_user(self, redirect_uri, client_id, state,
+                                     client_secret=None, code=None):
+        if code:
+            return await super().get_authenticated_user(redirect_uri, client_id, state,
+                                                       client_secret, code)
+        params = {
+            'redirect_uri': redirect_uri,
+            'client_id': client_id,
+            'client_secret': client_secret,
+            'response_type': 'code',
+            'extra_params': {
+                'state': state,
+                'prompt': 'select_account',
+            }
+        }
+        for key, value in config.oauth_extra_params.items():
+            if key not in RESERVED_OAUTH_PARAMS:
+                params['extra_params'][key] = value
+        if self._SCOPE is not None:
+            params['scope'] = self._SCOPE
+        log.debug("%s making authorize request", type(self).__name__)
+        self.authorize_redirect(**params)
+
 
 class AzureAdV2LoginHandler(OAuthLoginHandler):
 
