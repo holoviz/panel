@@ -419,6 +419,45 @@ def test_lazy_component_ignores_stale_notebook_default(page):
         resources_module.NOTEBOOK_RESOURCES = old_notebook_resources
 
 
+@pytest.mark.parametrize('live_notebook', [False, True])
+def test_notebook_resource_urls(page, live_notebook):
+    """Exports use the CDN; live notebooks keep their server endpoint."""
+    serve_component(page, lambda: pn.pane.Markdown('export'))
+    requests = []
+    page.on('request', lambda request: requests.append(request.url))
+    page.route('**/bundled/export-test/*', lambda route: route.fulfill(
+        status=200,
+        content_type='text/css' if route.request.url.endswith('.css') else 'text/javascript',
+        body='window.exportTestLoaded = true' if route.request.url.endswith('.js') else 'body {}',
+    ))
+    result = page.evaluate("""async (liveNotebook) => {
+        const endpoint = '/panel-preview/static/extensions/panel/bundled/export-test/'
+        window.__panel_live_notebook__ = liveNotebook
+        window.__panel_cdn_dist__ = location.origin + '/static/extensions/panel/'
+        const registry = window.__panel_resources__
+        await registry.ensure({v: 1, libs: [{name: 'export-test', js: [endpoint + 'script.js']}],
+                               css: [endpoint + 'style.css']})
+        return window.exportTestLoaded
+    }""", live_notebook)
+    assert result
+    assert len([url for url in requests if '/bundled/export-test/' in url]) == 2
+    shim = page.evaluate("""async () => {
+        const importShim = window.importShim
+        window.importShim = undefined
+        const registry = new window.__panel_resources__.constructor()
+        try {
+            await registry.ensure_shim('/panel-preview/static/extensions/panel/bundled/export-test/shim.js')
+            return document.querySelector('script[src*="/bundled/export-test/shim.js"]').src
+        } finally {
+            window.importShim = importShim
+        }
+    }""")
+    prefix = '/panel-preview' if live_notebook else ''
+    assert shim.endswith(f'{prefix}/static/extensions/panel/bundled/export-test/shim.js')
+    assert all(f'{prefix}/static/extensions/panel/bundled/export-test/' in url
+               for url in requests if '/bundled/export-test/' in url)
+
+
 def test_library_not_loaded_until_module_exports_assigned(page):
     def app():
         extension()

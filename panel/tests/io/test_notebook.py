@@ -181,6 +181,10 @@ def test_notebook_endpoint_alert_stays_in_notebook_output(monkeypatch, notebook_
     assert "root.Jupyter?.notebook != null || document.querySelector('.jp-LabShell') != null" in bootstrap
     assert 'if (live_notebook) {' in bootstrap
     assert 'if (!live_notebook) {' in bootstrap
+    assert 'element.src = resource_url(url)' in bootstrap
+    assert 'element.href = resource_url(url)' in bootstrap
+    assert 'new URL(resource_url(url), document.baseURI)' in bootstrap
+    assert 'require_config.paths[name] = Array.isArray(path) ? path.map(resource_url) : resource_url(path)' in bootstrap
 
 
 def test_notebook_vscode_resources_use_cdn(monkeypatch, notebook_bootstrap):

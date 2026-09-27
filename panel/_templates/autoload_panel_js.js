@@ -28,12 +28,16 @@ calls it with the rendered model.
   const PN_RE = /^https:\/\/cdn\.holoviz\.org\/panel\/[^/]+\/dist\/panel/i;
   const JUPYTER_EXTENSION_PATH = "/panel-preview/static/extensions/panel/";
   const CDN_DIST = {{ cdn_dist|json }};
-  // Exported notebooks retain the kernel bootstrap but have no Jupyter server.
+  // Executed notebooks retain this bootstrap when published as static pages.
   const live_notebook = root.Jupyter?.notebook != null || document.querySelector('.jp-LabShell') != null;
-  // Exposed so the lazy-resource registry (models/resources.ts) can fall
-  // back to the CDN for the same endpoint, not just the eager bootstrap
-  // resources loaded below.
+  root.__panel_live_notebook__ = live_notebook;
+  // The lazy-resource registry needs the same export routing and CDN fallback.
   root.__panel_cdn_dist__ = CDN_DIST;
+
+  function resource_url(url) {
+    const index = url.indexOf(JUPYTER_EXTENSION_PATH);
+    return !live_notebook && index !== -1 ? CDN_DIST + url.slice(index + JUPYTER_EXTENSION_PATH.length) : url;
+  }
 
   // Set a timeout for this load but only if we are not already initializing
   if (typeof (root._bokeh_timeout) === "undefined" || (force || !root._bokeh_is_initializing)) {
@@ -137,7 +141,7 @@ calls it with the rendered model.
         }
       };
       element.async = false;
-      element.src = url;
+      element.src = resource_url(url);
       console.debug("Bokeh: injecting script tag for BokehJS library: ", url);
       document.head.appendChild(element);
     }
@@ -147,7 +151,11 @@ calls it with the rendered model.
     // by on_load() at the end of this function.
     root._bokeh_is_loading = 1;
     if (window.requirejs) {
-      window.requirejs.config({{ config|conffilter }});
+      const require_config = {{ config|conffilter }};
+      for (const [name, path] of Object.entries(require_config.paths || {})) {
+        require_config.paths[name] = Array.isArray(path) ? path.map(resource_url) : resource_url(path);
+      }
+      window.requirejs.config(require_config);
       {% if requirements %}
       // Assigns each library's global as its own module resolves, since a
       // library whose factory reads another's global (e.g. deck.gl's carto
@@ -228,7 +236,7 @@ calls it with the rendered model.
       };
       element.rel = "stylesheet";
       element.type = "text/css";
-      element.href = url;
+      element.href = resource_url(url);
       console.debug("Bokeh: injecting link tag for BokehJS stylesheet: ", url);
       document.body.appendChild(element);
     }
@@ -290,7 +298,7 @@ calls it with the rendered model.
       element.type = "module";
       if (name == null) {
         element.onload = on_load;
-        element.src = url;
+        element.src = resource_url(url);
       } else {
         // Namespace import rather than a default import, matching what the
         // resource registry's module wrapper assigns, so a library that only
@@ -300,7 +308,7 @@ calls it with the rendered model.
         // import map unless it starts with a scheme, / or ./, whereas a src
         // resolves against the document.
         element.textContent = `
-        import * as ns from "${new URL(url, document.baseURI).href}"
+        import * as ns from "${new URL(resource_url(url), document.baseURI).href}"
         window.${name} = ns.default ?? ns
         window._bokeh_on_load()
         `
