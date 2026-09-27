@@ -39,7 +39,7 @@ export type ResourceSpec = {
 
 function url_key(url: string): string {
   try {
-    return new URL(url, document.baseURI).href
+    return new URL(resource_url(url), document.baseURI).href
   } catch (e) {
     return url
   }
@@ -56,6 +56,7 @@ function url_key(url: string): string {
  * the document is safe.
  */
 function module_url(url: string): string {
+  url = resource_url(url)
   return /^[a-z][a-z0-9+.-]*:/i.test(url) ? url : url_key(url)
 }
 
@@ -71,6 +72,13 @@ function existing_urls(selector: string, attr: "src" | "href"): Set<string> {
 }
 
 const JUPYTER_EXTENSION_PATH = "/panel-preview/static/extensions/panel/"
+
+function resource_url(url: string): string {
+  const global = globalThis as any
+  const index = url.indexOf(JUPYTER_EXTENSION_PATH)
+  return global.__panel_live_notebook__ === false && index !== -1 && typeof global.__panel_cdn_dist__ === "string"
+    ? global.__panel_cdn_dist__ + url.slice(index + JUPYTER_EXTENSION_PATH.length) : url
+}
 
 /**
  * Rewrites a failed Jupyter-extension-endpoint url to its CDN equivalent,
@@ -130,7 +138,7 @@ function inject(el: HTMLScriptElement | HTMLLinkElement): Promise<void> {
 function inject_script(url: string): Promise<void> {
   const el = document.createElement("script")
   el.async = false
-  el.src = url
+  el.src = resource_url(url)
   return inject(el)
 }
 
@@ -155,7 +163,7 @@ function inject_module(url: string, name?: string): Promise<void> {
   el.type = "module"
   el.async = false
   if (name == null) {
-    el.src = url
+    el.src = resource_url(url)
     return inject(el)
   }
   url = module_url(url)
@@ -168,7 +176,7 @@ function inject_link(url: string): Promise<void> {
   const el = document.createElement("link")
   el.rel = "stylesheet"
   el.type = "text/css"
-  el.href = url
+  el.href = resource_url(url)
   return inject(el)
 }
 
