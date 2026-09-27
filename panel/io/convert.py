@@ -180,7 +180,6 @@ def collect_python_requirements(
     code: str | os.PathLike | t.IO,
     requirements: list[str] | t.Literal['auto'] | os.PathLike = 'auto',
     panel_version: t.Literal['auto', 'local'] | str = 'auto',
-    http_patch: bool = True,
 ) -> list[str]:
     """
     Make sense of python requirements for our Panel script.
@@ -193,9 +192,6 @@ def collect_python_requirements(
         The list of requirements to include (in addition to Panel).
     panel_version: Literal['auto', 'local'] | str
         The panel release version to use in the exported HTML.
-    http_patch: bool
-        Whether to patch the HTTP request stack with the pyodide-http library
-        to allow urllib3 and requests to work.
     """
     # Environment
     if panel_version == 'local':
@@ -208,8 +204,6 @@ def collect_python_requirements(
         panel_req = f'panel=={panel_version}'
         bokeh_req = f'bokeh=={BOKEH_VERSION}'
     collected_requirements = [bokeh_req, panel_req]
-    if http_patch:
-        collected_requirements.append('pyodide-http')
 
     requirements_root = os.getcwd()
     resolved_reqs: list[str]
@@ -505,7 +499,6 @@ def convert_app(
     manifest: str | None = None,
     panel_version: t.Literal['auto', 'local'] | str = 'auto',
     local_prefix: str = LOCAL_PREFIX,
-    http_patch: bool = True,
     inline: bool = False,
     compiled: bool = False,
     verbose: bool = True,
@@ -520,7 +513,7 @@ def convert_app(
 
     # Obtain source
     parsed_requirements = collect_python_requirements(
-        app, requirements, panel_version=panel_version, http_patch=http_patch
+        app, requirements, panel_version=panel_version
     )
     # prepare wheels to be available via emscripten MEMFS
     parsed_requirements_rewritten = []
@@ -647,7 +640,6 @@ def convert_apps(
     max_workers: int = 4,
     panel_version: t.Literal['auto', 'local'] | str = 'auto',
     local_prefix: str = LOCAL_PREFIX,
-    http_patch: bool = True,
     inline: bool = False,
     compiled: bool = False,
     verbose: bool = True,
@@ -688,9 +680,6 @@ def convert_apps(
 '       The panel version to include.
     local_prefix: str
         Prefix for the path to serve local wheel files from.
-    http_patch: bool
-        Whether to patch the HTTP request stack with the pyodide-http library
-        to allow urllib3 and requests to work.
     inline: bool
         Whether to inline resources.
     compiled: bool
@@ -724,7 +713,6 @@ def convert_apps(
         'prerender': prerender,
         'manifest': manifest,
         'panel_version': panel_version,
-        'http_patch': http_patch,
         'inline': inline,
         'verbose': verbose,
         'compiled': compiled,

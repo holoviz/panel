@@ -227,7 +227,7 @@ html_js_files = [
 nbsite_pyodide_conf = {
     'PYODIDE_URL': PYODIDE_MODULE_URL,
     'lockfile': True,
-    'requirements': [bokeh_req, panel_req, 'pyodide-http'],
+    'requirements': [bokeh_req, panel_req],
     'requires': get_requirements(),
 }
 
