@@ -1035,7 +1035,7 @@ class DataFrame(BaseTable):
 
     .. deprecated:: 1.10.0
         Use `Tabulator` instead. The `DataFrame` widget will be removed in
-        version 3.0.
+        version 2.0.
 
     Reference: https://panel.holoviz.org/reference/widgets/DataFrame.html
 
