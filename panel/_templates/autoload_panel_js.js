@@ -28,6 +28,8 @@ calls it with the rendered model.
   const PN_RE = /^https:\/\/cdn\.holoviz\.org\/panel\/[^/]+\/dist\/panel/i;
   const JUPYTER_EXTENSION_PATH = "/panel-preview/static/extensions/panel/";
   const CDN_DIST = {{ cdn_dist|json }};
+  // Exported notebooks retain the kernel bootstrap but have no Jupyter server.
+  const live_notebook = root.Jupyter?.notebook != null || document.querySelector('.jp-LabShell') != null;
   // Exposed so the lazy-resource registry (models/resources.ts) can fall
   // back to the CDN for the same endpoint, not just the eager bootstrap
   // resources loaded below.
@@ -52,6 +54,9 @@ calls it with the rendered model.
   }
 
   function show_jupyter_extension_error() {
+    if (!live_notebook) {
+      return;
+    }
     const element = document.getElementById("{{ error_id }}");
     if (element == null || !element.hidden) {
       return;
@@ -69,11 +74,13 @@ calls it with the rendered model.
   // Proactively checks the extension is actually installed, rather than
   // waiting for some resource's load to fail. A plain HEAD request for the
   // bundle every notebook session needs is enough to tell.
-  fetch(JUPYTER_EXTENSION_PATH + "panel.min.js", {method: "HEAD"}).then((response) => {
-    if (!response.ok) {
-      show_jupyter_extension_error();
-    }
-  }).catch(() => show_jupyter_extension_error());
+  if (live_notebook) {
+    fetch(JUPYTER_EXTENSION_PATH + "panel.min.js", {method: "HEAD"}).then((response) => {
+      if (!response.ok) {
+        show_jupyter_extension_error();
+      }
+    }).catch(() => show_jupyter_extension_error());
+  }
   {% endif %}
 
   function load_libs(css_urls, js_urls, js_modules, Bokeh, callback) {

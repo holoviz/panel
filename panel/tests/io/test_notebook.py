@@ -178,6 +178,9 @@ def test_notebook_endpoint_alert_stays_in_notebook_output(monkeypatch, notebook_
     assert 'function fallback_to_cdn(element, url, attribute, parent)' in bootstrap
     assert 'element.dataset.panelCdnFallback != null' in bootstrap
     assert 'const CDN_DIST = "https://cdn.holoviz.org/panel/' in bootstrap
+    assert "root.Jupyter?.notebook != null || document.querySelector('.jp-LabShell') != null" in bootstrap
+    assert 'if (live_notebook) {' in bootstrap
+    assert 'if (!live_notebook) {' in bootstrap
 
 
 def test_notebook_vscode_resources_use_cdn(monkeypatch, notebook_bootstrap):
