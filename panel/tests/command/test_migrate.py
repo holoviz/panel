@@ -32,8 +32,8 @@ def test_migrate_rewrites_file_in_place(py_file):
     assert ret == 0
 
     content = pathlib.Path(py_file.name).read_text()
-    assert "pnui.Button(label='Click me')" in content
-    assert 'import panel.ui as pnui' in content
+    assert "pn.ui.Button(label='Click me')" in content
+    assert content.count('import panel as pn') == 1
 
 
 def test_migrate_check_reports_without_modifying(py_file):
@@ -65,7 +65,7 @@ def test_migrate_diff_prints_unified_diff_and_does_not_modify(py_file, capsys):
     assert ret == 0
     out = capsys.readouterr().out
     assert '-pn.widgets.Button' in out
-    assert '+pnui.Button' in out
+    assert '+pn.ui.Button' in out
     assert pathlib.Path(py_file.name).read_text() == original
 
 
@@ -81,8 +81,8 @@ def test_migrate_directory_argument_is_walked_recursively(tmp_path):
     ret = _invoke([str(tmp_path)])
     assert ret == 0
 
-    assert "pnui.Button(label='Top')" in (tmp_path / 'top.py').read_text()
-    assert "pnui.Button(label='Nested')" in (sub / 'nested.py').read_text()
+    assert "pn.ui.Button(label='Top')" in (tmp_path / 'top.py').read_text()
+    assert "pn.ui.Button(label='Nested')" in (sub / 'nested.py').read_text()
 
 
 def test_migrate_command_subprocess_smoke(py_file):
@@ -93,7 +93,7 @@ def test_migrate_command_subprocess_smoke(py_file):
     p = subprocess.run(cmd, cwd=CWD, capture_output=True, text=True)
     assert p.returncode == 0, p.stderr
     content = pathlib.Path(py_file.name).read_text()
-    assert "pnui.Button(label='Click me')" in content
+    assert "pn.ui.Button(label='Click me')" in content
 
 
 def test_migrate_file_with_syntax_error_reports_and_exits_non_zero(py_file, capsys):
@@ -143,7 +143,7 @@ def test_migrate_directory_with_one_bad_file_still_migrates_the_rest(tmp_path, c
     ret = _invoke([str(tmp_path)])
     assert ret != 0
 
-    assert "pnui.Button(label='Click me')" in good.read_text()
+    assert "pn.ui.Button(label='Click me')" in good.read_text()
     assert bad.read_text() == "def broken(:\n    pass\n"
 
     out = capsys.readouterr().out

@@ -16,8 +16,8 @@ def _rules(result):
 def test_import_path_rewrite_import_panel_as_pn():
     result = migrate_source("import panel as pn\npn.widgets.TextInput()\n")
     assert result.changed
-    assert 'import panel.ui as pnui' in result.source
-    assert 'pnui.TextInput()' in result.source
+    assert result.source.count('import panel as pn') == 1
+    assert 'pn.ui.TextInput()' in result.source
     assert result.rewrites and result.rewrites[0].rule == 'import-path'
 
 
@@ -25,28 +25,36 @@ def test_import_path_rewrite_from_panel_import_widgets_as_alias():
     source = "from panel import widgets as w\nw.TextInput()\n"
     result = migrate_source(source)
     assert result.changed
-    assert 'pnui.TextInput()' in result.source
+    assert 'import panel as pn' in result.source
+    assert 'pn.ui.TextInput()' in result.source
 
 
 def test_import_path_rewrite_from_panel_widgets_import_button():
     source = "from panel.widgets import Button\nButton()\n"
     result = migrate_source(source)
     assert result.changed
-    assert 'pnui.Button()' in result.source
+    assert 'pn.ui.Button()' in result.source
+
+
+def test_import_path_rewrite_uses_existing_panel_import():
+    source = 'import panel\npanel.widgets.Button()\n'
+    result = migrate_source(source)
+    assert result.source == 'import panel\nimport panel as pn\npn.ui.Button()\n'
+    assert not migrate_source(result.source).changed
 
 
 def test_import_path_rewrite_bare_panel_layout_shortcut():
     source = "import panel as pn\npn.Row('a', 'b')\n"
     result = migrate_source(source)
     assert result.changed
-    assert "pnui.Row('a', 'b')" in result.source
+    assert "pn.ui.Row('a', 'b')" in result.source
 
 
 def test_import_path_rewrite_indicators_alias():
     source = "import panel as pn\npn.indicators.Number(value=1)\n"
     result = migrate_source(source)
     assert result.changed
-    assert 'pnui.Number(value=1)' in result.source
+    assert 'pn.ui.Number(value=1)' in result.source
 
 
 def test_non_panel_call_is_left_alone():
@@ -59,7 +67,7 @@ def test_name_to_label_rewrite_on_widget():
     source = "import panel as pn\npn.widgets.Button(name='Click me')\n"
     result = migrate_source(source)
     assert result.changed
-    assert "pnui.Button(label='Click me')" in result.source
+    assert "pn.ui.Button(label='Click me')" in result.source
     assert 'name-to-label' in _rules(result)
 
 
@@ -72,7 +80,7 @@ def test_name_is_not_touched_on_layouts():
     """
     source = "import panel as pn\npn.Row(name='Tab 1')\n"
     result = migrate_source(source)
-    assert "pnui.Row(name='Tab 1')" in result.source
+    assert "pn.ui.Row(name='Tab 1')" in result.source
     assert 'label' not in result.source
     assert 'name-to-label' not in _rules(result)
 
@@ -85,21 +93,21 @@ def test_button_widget_name_rewritten_but_row_name_is_not():
         "pn.Row(name='Tab 1')\n"
     )
     result = migrate_source(source)
-    assert "pnui.Button(label='Click me')" in result.source
-    assert "pnui.Row(name='Tab 1')" in result.source
+    assert "pn.ui.Button(label='Click me')" in result.source
+    assert "pn.ui.Row(name='Tab 1')" in result.source
 
 
 def test_button_type_rewrite():
     source = "import panel as pn\npn.widgets.Button(button_type='primary')\n"
     result = migrate_source(source)
-    assert "pnui.Button(color='primary')" in result.source
+    assert "pn.ui.Button(color='primary')" in result.source
     assert 'button-appearance' in _rules(result)
 
 
 def test_button_style_rewrite():
     source = "import panel as pn\npn.widgets.Button(button_style='outline')\n"
     result = migrate_source(source)
-    assert "pnui.Button(variant='outline')" in result.source
+    assert "pn.ui.Button(variant='outline')" in result.source
 
 
 def test_button_type_and_style_together_with_name():
@@ -108,7 +116,7 @@ def test_button_type_and_style_together_with_name():
     assert "label='Go'" in result.source
     assert "color='primary'" in result.source
     assert "variant='outline'" in result.source
-    assert 'pnui.Button(' in result.source
+    assert 'pn.ui.Button(' in result.source
 
 
 @pytest.mark.parametrize('group', ['RadioButtonGroup', 'CheckButtonGroup'])
@@ -135,7 +143,7 @@ def test_dynamic_button_group_variant_requires_review(keyword):
 def test_menu_button_split_true_becomes_split_button():
     source = "import panel as pn\npn.widgets.MenuButton(name='Menu', items=[('A', 'a')], split=True)\n"
     result = migrate_source(source)
-    assert 'pnui.SplitButton(' in result.source
+    assert 'pn.ui.SplitButton(' in result.source
     assert 'split=' not in result.source
     assert "label='Menu'" in result.source
     assert 'menu-button-split' in _rules(result)
@@ -144,7 +152,7 @@ def test_menu_button_split_true_becomes_split_button():
 def test_menu_button_without_split_stays_menu_button():
     source = "import panel as pn\npn.widgets.MenuButton(name='Menu', items=[('A', 'a')])\n"
     result = migrate_source(source)
-    assert 'pnui.MenuButton(' in result.source
+    assert 'pn.ui.MenuButton(' in result.source
     assert 'menu-button-split' not in _rules(result)
 
 
@@ -169,7 +177,7 @@ def test_template_rewritten_to_page_when_kwargs_are_safe():
     )
     result = migrate_source(source)
     assert result.changed
-    assert "pnui.Page(title='App', sidebar_width=350)" in result.source
+    assert "pn.ui.Page(title='App', sidebar_width=350)" in result.source
     assert 'template-to-page' in _rules(result)
 
 
@@ -189,7 +197,7 @@ def test_template_with_meta_kwargs_rewritten_to_page():
     assert result.changed
     assert not result.manual_reviews
     assert (
-        "pnui.Page(title='App', meta_description='desc', meta_keywords='a,b')" in result.source
+        "pn.ui.Page(title='App', meta_description='desc', meta_keywords='a,b')" in result.source
     )
     assert 'template-to-page' in _rules(result)
 
@@ -201,7 +209,7 @@ def test_template_with_unsafe_kwarg_is_not_rewritten():
     )
     result = migrate_source(source)
     assert not result.changed
-    assert 'pnui' not in result.source
+    assert 'pn.ui' not in result.source
     assert result.manual_reviews
     assert 'accent_base_color' in result.manual_reviews[0].message
 
@@ -213,26 +221,20 @@ def test_template_with_positional_args_is_not_rewritten():
     assert result.manual_reviews
 
 
-def test_dropped_param_progress_max_is_not_rewritten():
-    """
-    Progress(value=1, max=100) must not be rewritten: panel.ui.Progress has
-    no `max` parameter, so rewriting the import path would silently break
-    the call. This is the flagship example from plan §8.1/§10.1.
-    """
+def test_progress_max_is_rewritten():
+    """Progress max is supported by the Material component."""
     source = "import panel as pn\npn.widgets.Progress(value=1, max=100)\n"
     result = migrate_source(source)
-    assert not result.changed
-    assert 'pnui' not in result.source
-    assert len(result.manual_reviews) == 1
-    assert 'max' in result.manual_reviews[0].message
-    assert 'Progress' in result.manual_reviews[0].message
+    assert result.changed
+    assert 'pn.ui.Progress(value=1, max=100)' in result.source
+    assert not result.manual_reviews
 
 
 def test_progress_without_dropped_param_is_rewritten():
     source = "import panel as pn\npn.widgets.Progress(value=50)\n"
     result = migrate_source(source)
     assert result.changed
-    assert 'pnui.Progress(value=50)' in result.source
+    assert 'pn.ui.Progress(value=50)' in result.source
 
 
 def test_identical_component_is_still_namespace_unified():
@@ -241,7 +243,7 @@ def test_identical_component_is_still_namespace_unified():
     source = "import panel as pn\npn.widgets.Tabulator()\n"
     result = migrate_source(source)
     assert result.changed
-    assert 'pnui.Tabulator()' in result.source
+    assert 'pn.ui.Tabulator()' in result.source
     rewrite = next(r for r in result.rewrites if r.rule == 'import-path')
     assert 'namespace unification only' in rewrite.message
 
@@ -253,7 +255,7 @@ def test_star_args_are_left_alone_and_reported():
     assert result.manual_reviews
 
 
-def test_existing_panel_ui_import_alias_is_reused():
+def test_existing_panel_ui_import_alias_is_preserved():
     source = (
         "import panel.ui as ui\n"
         "import panel as pn\n"
@@ -261,15 +263,23 @@ def test_existing_panel_ui_import_alias_is_reused():
     )
     result = migrate_source(source)
     assert result.source.count('import panel.ui') == 1
-    assert 'ui.Button(' in result.source
+    assert 'pn.ui.Button(' in result.source
+    assert result.source.count('import panel as pn') == 1
 
 
 def test_plain_panel_ui_import_does_not_reuse_panel_name():
     source = 'import panel.ui\nimport panel as pn\npn.widgets.Button()\n'
     result = migrate_source(source)
-    assert 'import panel.ui as pnui\n' in result.source
-    assert 'pnui.Button()' in result.source
+    assert 'import panel as pn\n' in result.source
+    assert 'pn.ui.Button()' in result.source
     assert 'panel.Button()' not in result.source
+    assert not migrate_source(result.source).changed
+
+
+def test_from_panel_import_ui_still_uses_canonical_pn_ui():
+    source = 'from panel import ui\nfrom panel.widgets import Button\nButton()\n'
+    result = migrate_source(source)
+    assert result.source == 'from panel import ui\nfrom panel.widgets import Button\nimport panel as pn\npn.ui.Button()\n'
     assert not migrate_source(result.source).changed
 
 
@@ -292,7 +302,7 @@ def test_explicit_design_settings_removed(design):
     assert 'config.design' not in result.source
     assert 'design=' not in result.source
     assert 'pn.extension(sizing_mode="stretch_width")' in result.source
-    assert 'pnui.Button()' in result.source
+    assert 'pn.ui.Button()' in result.source
     assert sum(rewrite.rule == 'remove-design' for rewrite in result.rewrites) == 2
     assert not result.manual_reviews
 

@@ -4,7 +4,7 @@ The ``libcst`` codemod implementing the migration rewrite rules:
 1. Rewrite classic import/access paths (``panel.widgets.X``, ``panel.pane.X``,
    ``panel.layout.X``, bare ``panel.X`` layout shortcuts, ``panel.chat.X``,
     ``panel.indicators.X``) to the ``panel.ui`` equivalent, inserting
-   ``import panel.ui as pnui`` once per file.
+   ``import panel as pn`` when needed.
 2. ``name=`` to ``label=`` on calls resolved to a class with a ``label`` param.
 3. ``button_type=``/``button_style=`` to ``color=``/``variant=``.
 4. ``MenuButton(split=True)`` to ``SplitButton(...)``.
@@ -32,7 +32,7 @@ with rules 1-4 and are handled as an independent branch. Explicit design
 arguments (rule 6) are handled separately from component and template calls.
 
 Running the codemod on already-migrated code is a no-op: every rewrite target
-lives under the inserted ``panel.ui`` alias, whose dotted path (``panel.ui``)
+lives under ``pn.ui``, whose dotted path (``panel.ui``)
 never matches a classic access path in :mod:`.compat`, so a second pass finds
 nothing left to resolve.
 """
@@ -53,8 +53,6 @@ RULE_BUTTON_APPEARANCE = 'button-appearance'
 RULE_MENU_BUTTON_SPLIT = 'menu-button-split'
 RULE_TEMPLATE_TO_PAGE = 'template-to-page'
 RULE_REMOVE_DESIGN = 'remove-design'
-
-DEFAULT_PANEL_UI_ALIAS = 'pnui'
 
 
 @dataclasses.dataclass
@@ -90,15 +88,10 @@ class _ImportAliasCollector(cst.CSTVisitor):
     widgets as w``, and ``from panel.widgets import Button as B``. Only names
     rooted at ``panel`` are tracked; everything else is irrelevant to this
     codemod.
-
-    Also records the local alias already bound to ``panel.ui`` (if any), so
-    the codemod reuses an existing ``import panel.ui as pnui``-style import
-    instead of inserting a second one.
     """
 
     def __init__(self) -> None:
         self.aliases: dict[str, str] = {}
-        self.panel_ui_alias: str | None = None
 
     def visit_Import(self, node: cst.Import) -> None:
         for alias in node.names:
@@ -113,8 +106,6 @@ class _ImportAliasCollector(cst.CSTVisitor):
                 # top-level name `panel`.
                 bound = dotted.split('.')[0]
                 self.aliases[bound] = bound
-            if dotted == 'panel.ui' and alias.asname is not None:
-                self.panel_ui_alias = bound
 
     def visit_ImportFrom(self, node: cst.ImportFrom) -> None:
         if node.module is None or node.relative:
@@ -133,8 +124,6 @@ class _ImportAliasCollector(cst.CSTVisitor):
             else:
                 bound = imported_name
             self.aliases[bound] = f'{module_dotted}.{imported_name}'
-            if module_dotted == 'panel' and imported_name == 'ui':
-                self.panel_ui_alias = bound
 
 
 def _resolve_dotted(expr: cst.BaseExpression, aliases: dict[str, str]) -> str | None:
@@ -162,8 +151,11 @@ def _resolve_dotted(expr: cst.BaseExpression, aliases: dict[str, str]) -> str | 
     return resolved_base + '.' + '.'.join(rest)
 
 
-def _attribute(alias: str, name: str) -> cst.Attribute:
-    return cst.Attribute(value=cst.Name(alias), attr=cst.Name(name))
+def _attribute(name: str) -> cst.Attribute:
+    return cst.Attribute(
+        value=cst.Attribute(value=cst.Name('pn'), attr=cst.Name('ui')),
+        attr=cst.Name(name),
+    )
 
 
 def _is_true(expr: cst.BaseExpression) -> bool:
@@ -206,11 +198,10 @@ class _PanelMigrateTransformer(cst.CSTTransformer):
 
     METADATA_DEPENDENCIES = (PositionProvider,)
 
-    def __init__(self, aliases: dict[str, str], existing_pnui_alias: str | None) -> None:
+    def __init__(self, aliases: dict[str, str]) -> None:
         super().__init__()
         self._aliases = aliases
-        self.pnui_alias = existing_pnui_alias or DEFAULT_PANEL_UI_ALIAS
-        self.needs_pnui_import = False
+        self.needs_panel_import = False
         self.rewrites: list[Rewrite] = []
         self.manual_reviews: list[ManualReview] = []
 
@@ -381,7 +372,7 @@ class _PanelMigrateTransformer(cst.CSTTransformer):
                     }[value])))
 
         # Rule 1: rewrite the access path itself.
-        self.needs_pnui_import = True
+        self.needs_panel_import = True
         note = (
             f' (panel.ui.{final_ui_name} is the same class; namespace unification only, no behavior change)'
             if match.identical else ''
@@ -389,7 +380,7 @@ class _PanelMigrateTransformer(cst.CSTTransformer):
         self.rewrites.append(Rewrite(
             line, RULE_IMPORT_PATH, f'{dotted} -> panel.ui.{final_ui_name}{note}'
         ))
-        return node.with_changes(func=_attribute(self.pnui_alias, final_ui_name), args=new_args)
+        return node.with_changes(func=_attribute(final_ui_name), args=new_args)
 
     def _handle_template(
         self, node: cst.Call, template_match: compat.TemplateMatch,
@@ -409,11 +400,11 @@ class _PanelMigrateTransformer(cst.CSTTransformer):
             ))
             return node
 
-        self.needs_pnui_import = True
+        self.needs_panel_import = True
         self.rewrites.append(Rewrite(
             line, RULE_TEMPLATE_TO_PAGE, f'{template_match.classic_path} -> panel.ui.{compat.PAGE_UI_NAME}'
         ))
-        return node.with_changes(func=_attribute(self.pnui_alias, compat.PAGE_UI_NAME))
+        return node.with_changes(func=_attribute(compat.PAGE_UI_NAME))
 
 
 def _is_docstring(stmt: cst.BaseStatement) -> bool:
@@ -431,16 +422,16 @@ def _is_import(stmt: cst.BaseStatement) -> bool:
     )
 
 
-def _insert_pnui_import(module: cst.Module, alias: str) -> cst.Module:
+def _insert_panel_import(module: cst.Module) -> cst.Module:
     """
-    Insert ``import panel.ui as pnui`` after the module docstring (if any) and
+    Insert ``import panel as pn`` after the module docstring (if any) and
     the contiguous block of leading imports, so it lands with the rest of the
     file's imports rather than at the very top or in the middle of the code.
     """
     import_stmt = cst.SimpleStatementLine(body=[
         cst.Import(names=[cst.ImportAlias(
-            name=cst.Attribute(value=cst.Name('panel'), attr=cst.Name('ui')),
-            asname=cst.AsName(name=cst.Name(alias)),
+            name=cst.Name('panel'),
+            asname=cst.AsName(name=cst.Name('pn')),
         )])
     ])
     body = list(module.body)
@@ -470,11 +461,11 @@ def migrate_source(source: str) -> MigrationResult:
     module.visit(alias_collector)
 
     wrapper = MetadataWrapper(module)
-    transformer = _PanelMigrateTransformer(alias_collector.aliases, alias_collector.panel_ui_alias)
+    transformer = _PanelMigrateTransformer(alias_collector.aliases)
     new_module = wrapper.visit(transformer)
 
-    if transformer.needs_pnui_import and alias_collector.panel_ui_alias is None:
-        new_module = _insert_pnui_import(new_module, transformer.pnui_alias)
+    if transformer.needs_panel_import and alias_collector.aliases.get('pn') != 'panel':
+        new_module = _insert_panel_import(new_module)
 
     new_source = new_module.code
     return MigrationResult(
