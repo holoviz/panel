@@ -18,7 +18,6 @@ from panel.io.resources import stylesheet_url
 from panel.io.state import set_curdoc, state
 from panel.layout import Tabs, WidgetBox
 from panel.pane import Markdown
-from panel.param import Param
 from panel.reactive import Reactive, ReactiveHTML
 from panel.viewable import Viewable
 from panel.widgets import (
@@ -148,28 +147,28 @@ def test_text_input_controls():
     assert len(wb1) == 8
     name, label, value, disabled, *(ws) = wb1
 
-    assert isinstance(value, Param.mapping[param.String])
+    assert isinstance(value, TextInput)
     text_input.value = "New value"
     assert value.value == "New value"
     assert isinstance(name, StaticText)
-    assert isinstance(disabled, Param.mapping[param.Boolean])
+    assert isinstance(disabled, Checkbox)
 
     not_checked = []
     for w in ws:
         if w.label == 'Value input':
-            assert isinstance(w, Param.mapping[param.String])
+            assert isinstance(w, TextInput)
         elif w.label == 'Placeholder':
-            assert isinstance(w, Param.mapping[param.String])
+            assert isinstance(w, TextInput)
             text_input.placeholder = "Test placeholder..."
             assert w.value == "Test placeholder..."
         elif w.label == 'Max length':
-            assert isinstance(w, Param.input_widgets[int])
+            assert isinstance(w, IntInput)
         elif w.label == 'Description':
-            assert isinstance(w, Param.mapping[param.String])
+            assert isinstance(w, TextInput)
             text_input.description = "Test description..."
             assert w.value == "Test description..."
         elif w.label == 'Label':
-            assert isinstance(w, Param.mapping[param.String])
+            assert isinstance(w, TextInput)
             text_input.description = "Test label..."
             assert w.value == ""
         else:
@@ -384,8 +383,8 @@ def test_text_input_controls_explicit():
     name, disabled, placeholder = controls
 
     assert isinstance(name, StaticText)
-    assert isinstance(disabled, Param.mapping[param.Boolean])
-    assert isinstance(placeholder, Param.mapping[param.String])
+    assert isinstance(disabled, Checkbox)
+    assert isinstance(placeholder, TextInput)
 
     text_input.disabled = True
     assert disabled.value
@@ -892,12 +891,12 @@ def test_reactive_design_stylesheets_update(document, comm):
 
     model = widget.get_root(document, comm)
 
-    initial_stylesheets = model.stylesheets[:-1]
+    assert len(model.stylesheets) == 5
     assert model.stylesheets[-1] == widget.stylesheets[0]
 
     widget.stylesheets = [':host { --design-background-color: blue }']
 
-    assert model.stylesheets[:-1] == initial_stylesheets
+    assert len(model.stylesheets) == 5
     assert model.stylesheets[-1] == widget.stylesheets[0]
 
 

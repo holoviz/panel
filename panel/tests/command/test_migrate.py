@@ -10,6 +10,9 @@ import pytest
 
 pytest.importorskip("libcst")
 
+# The codemod introspects panel.ui.
+pytestmark = pytest.mark.panel_ui
+
 from panel.command.migrate import Migrate
 
 CWD = pathlib.Path(__file__).parent

@@ -32,6 +32,7 @@ import panel as pn
 import panel.chat as pn_chat
 import panel.io.convert as pn_convert
 import panel.io.resources as pn_resources
+import panel.io.server as pn_server
 import panel.layout as pn_layout
 import panel.pane as pn_pane
 import panel.template as pn_template
@@ -47,6 +48,7 @@ _patched_globals = (
     (pn_convert, 'loading_resources'),
     (pn_convert, 'BASE_TEMPLATE'),
     (pn_resources, 'BASE_TEMPLATE'),
+    (pn_server, 'BASE_TEMPLATE'),
 )
 _prior_globals = [
     (obj, attr, dict(value) if isinstance(value := getattr(obj, attr), dict) else value)

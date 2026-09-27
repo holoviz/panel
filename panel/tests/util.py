@@ -19,6 +19,7 @@ from queue import Empty, Queue
 from threading import Thread
 
 import numpy as np
+import param
 import pytest
 import requests
 
@@ -84,6 +85,78 @@ unix_only = pytest.mark.skipif(platform.system() == 'Windows', reason="Only supp
 from panel.pane.alert import Alert
 from panel.pane.markup import Markdown
 from panel.widgets.button import _ButtonBase
+
+
+def _pmui_patched_globals():
+    """
+    The globals panel-material-ui replaces when it is imported (plan section
+    6.3). Left patched, every later test would render Material widgets from
+    Param and HoloViews and the Material page template from the server.
+    """
+    import panel.io.convert
+    import panel.io.resources
+    import panel.io.server
+
+    from panel.pane import HoloViews
+    from panel.param import Param
+
+    return (
+        (Param, 'mapping'),
+        (Param, 'input_widgets'),
+        (HoloViews, 'default_widgets'),
+        (panel.io.convert, 'loading_resources'),
+        (panel.io.convert, 'BASE_TEMPLATE'),
+        (panel.io.resources, 'BASE_TEMPLATE'),
+        (panel.io.server, 'BASE_TEMPLATE'),
+    )
+
+
+def _copy(value):
+    # The mappings are patched in place, the templates cannot be copied.
+    return dict(value) if isinstance(value, dict) else value
+
+
+# Captured when the test suite loads, before any test can import panel.ui.
+CLASSIC_GLOBALS = [
+    (obj, attr, _copy(getattr(obj, attr))) for obj, attr in _pmui_patched_globals()
+]
+
+
+def restore_classic_globals() -> list[str]:
+    """
+    Undoes panel-material-ui's import-time patches, returning the names of
+    the globals that had been patched.
+    """
+    patched = []
+    for obj, attr, value in CLASSIC_GLOBALS:
+        if getattr(obj, attr) != value:
+            patched.append(f'{obj.__name__}.{attr}')
+            setattr(obj, attr, _copy(value))
+    return patched
+
+
+def global_design():
+    """The global design, bypassing the per-session lookup."""
+    return param.Parameterized.__getattribute__(pn.config, 'design')
+
+
+def set_global_design(design):
+    param.Parameterized.__setattr__(pn.config, 'design', design)
+
+
+def import_panel_ui():
+    """
+    Imports panel.ui without letting it change what the classic suite
+    renders: the patches are undone and the design it selects is reverted,
+    so tests opt into MaterialUIDesign explicitly.
+    """
+    prior_design = global_design()
+    try:
+        import panel.ui
+    finally:
+        restore_classic_globals()
+        set_global_design(prior_design)
+    return panel.ui
 
 
 def mpl_figure():

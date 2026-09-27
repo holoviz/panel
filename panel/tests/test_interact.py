@@ -17,11 +17,9 @@ def test_fixed_widget_preserves_parameter_reference():
     assert result.param.value.allow_refs is False
 
 
-def test_interact_accepts_material_widget():
+def test_interact_accepts_material_widget(panel_ui):
     """Material widgets implement WidgetBase but not the classic Widget class."""
-    import panel as pn
-
-    color = pn.ui.ColorPicker(value='#4f4fdf')
+    color = panel_ui.ColorPicker(value='#4f4fdf')
     result = interactive(lambda c: c, c=color)
     assert result._widgets['c'] is color
 

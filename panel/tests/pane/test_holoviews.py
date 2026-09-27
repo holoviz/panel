@@ -608,10 +608,10 @@ def test_holoviews_widgets_explicit_widget_instance_override():
 
 
 @hv_available
-def test_holoviews_widgets_explicit_constant_name_override():
+def test_holoviews_widgets_explicit_constant_name_override(panel_ui):
     """Explicit widgets use their label without changing a constant name."""
     hmap = hv.HoloMap({i: hv.Curve([i]) for i in range(3)}, kdims=['X'])
-    widget = pn.ui.FloatInput()
+    widget = panel_ui.FloatInput()
     assert widget.param.name.constant
 
     widgets, _ = HoloViews.widgets_from_dimensions(hmap, widget_types={'X': widget})

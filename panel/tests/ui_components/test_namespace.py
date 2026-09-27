@@ -6,8 +6,7 @@ importing it has no side effect other than selecting the design.
 panel.ui is imported through a fixture rather than at module scope. Importing it
 imports panel-material-ui, which unconditionally patches Panel and assigns
 config.design, and doing that during collection would change what the rest of
-the suite collects. The fixture also undoes those patches, since they otherwise
-leak into every test that runs after this module.
+the suite collects. The fixture undoes both, see panel.tests.util.import_panel_ui.
 """
 import inspect
 import sys
@@ -19,6 +18,10 @@ import param
 import pytest
 
 import panel as pn
+
+from panel.tests.util import import_panel_ui
+
+pytestmark = pytest.mark.panel_ui
 
 CLASSIC_MODULES = {
     'widgets': pn.widgets,
@@ -59,55 +62,9 @@ NOT_FLAT = {
 }
 
 
-def patched_globals():
-    """
-    The globals panel-material-ui replaces at import time, which the
-    ui fixture restores so that the patches do not reach the rest of the suite.
-    Leaving Param.mapping patched, for instance, makes Widget.controls(jslink=True)
-    raise for every classic widget with an Action or Event parameter.
-    """
-    import panel.io.convert
-    import panel.io.resources
-
-    from panel.pane import HoloViews
-    from panel.param import Param
-
-    return (
-        (Param, 'mapping'),
-        (Param, 'input_widgets'),
-        (HoloViews, 'default_widgets'),
-        (panel.io.convert, 'loading_resources'),
-        (panel.io.convert, 'BASE_TEMPLATE'),
-        (panel.io.resources, 'BASE_TEMPLATE'),
-    )
-
-
-def snapshot(obj, attr):
-    value = getattr(obj, attr)
-    # The mappings are patched in place, the rest are rebound, and the templates
-    # are jinja2 Templates which cannot be copied.
-    return dict(value) if isinstance(value, dict) else value
-
-
-# Filled in by the ui fixture with the globals the import actually patched.
-PATCHED: list[str] = []
-
-
 @pytest.fixture(scope='module')
 def ui():
-    prior = [(obj, attr, snapshot(obj, attr)) for obj, attr in patched_globals()]
-    prior_design = param.Parameterized.__getattribute__(pn.config, 'design')
-    try:
-        import panel.ui
-    finally:
-        for obj, attr, value in prior:
-            if getattr(obj, attr) != value:
-                PATCHED.append(f'{obj.__name__}.{attr}')
-            setattr(obj, attr, value)
-        # Selecting the design is the one intended side effect of the import,
-        # but it must not leak out of this module either.
-        param.Parameterized.__setattr__(pn.config, 'design', prior_design)
-    return panel.ui
+    return import_panel_ui()
 
 
 @pytest.fixture(scope='module')
@@ -310,14 +267,20 @@ def test_explicit_design_survives_importing_panel_ui():
 
 
 @pytest.mark.xfail(
-    reason='panel-material-ui patches Panel at import time',
-    strict=False
+    reason='panel-material-ui patches Panel at import time (plan section 6.3)',
+    strict=True
 )
-def test_importing_panel_ui_does_not_patch_core(ui):
-    # The patches are replaced by the extension points added in Phase 1, in the
-    # upstream closeout window (plan section 6.3). This starts passing then, at
-    # which point the restore in the ui fixture can go too.
-    assert PATCHED == []
+def test_importing_panel_ui_does_not_patch_core():
+    # Runs in a subprocess so the result does not depend on whether an earlier
+    # test on this worker already imported panel.ui.
+    output = run_check("""\
+    from panel.tests.util import restore_classic_globals
+
+    import panel.ui
+
+    print(restore_classic_globals(), end='')
+    """)
+    assert output == '[]'
 
 
 def test_panel_ui_has_no_config_side_effects():
