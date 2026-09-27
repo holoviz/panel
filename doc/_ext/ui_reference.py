@@ -596,7 +596,13 @@ def generate_ui_reference(app):
                     if candidate.is_file():
                         material_notebook = candidate
                         break
-            if material_notebook.is_file():
+            if component.__module__.startswith('panel.') and notebook.is_file():
+                destination = f'../classic/{section}/{name}.html'
+                content = (
+                    f'```{{raw}} html\n<meta http-equiv="refresh" content="0; url={destination}">\n```\n\n'
+                    f'See the [classic {name} reference]({destination}).'
+                )
+            elif material_notebook.is_file():
                 try:
                     content = _material_page(material_notebook, material, ui, name)
                 except (ValueError, SyntaxError) as exc:
@@ -605,14 +611,6 @@ def generate_ui_reference(app):
                 content = _notebook_page(notebook, examples, pn, ui) if notebook.is_file() else None
             if content is None:
                 content = _api_page(name, component)
-                if notebook.is_file() and any(
-                    getattr(getattr(pn, module_name, None), name, None) is component
-                    for module_name in SECTIONS
-                ):
-                    content = (
-                        f'This component is also available in the '
-                        f'[classic reference](../classic/{section}/{name}).\n\n{content}'
-                    )
             _write_generated(section_dir / f'{name}.md', f'# {name}\n\n{content}\n')
     old_index = output / 'index.md'
     if old_index.is_file() and old_index.read_text(encoding='utf-8').startswith(GENERATED):

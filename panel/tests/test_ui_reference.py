@@ -277,7 +277,7 @@ def test_installed_material_source_archive_fallback(gallery, monkeypatch):
 
 
 def test_reuses_classic_notebook_without_copying_source(gallery):
-    """Identity-compatible code renders the UI component and retains classic links."""
+    """Classic-only components link to their original notebook instead of duplicating it."""
     import panel as pn
     import panel.ui as ui
 
@@ -294,13 +294,30 @@ def test_reuses_classic_notebook_without_copying_source(gallery):
     assert '(../../how_to/index.md)' in content
     ui_reference.generate_ui_reference(app)
     generated = Path(app.builder.srcdir) / 'reference/widgets/Tabulator.md'
-    assert 'pn.ui.Tabulator()' in generated.read_text()
+    assert '<meta http-equiv="refresh" content="0; url=../classic/widgets/Tabulator.html">' in generated.read_text()
+    assert '[classic Tabulator reference](../classic/widgets/Tabulator.html)' in generated.read_text()
+    assert 'pn.ui.Tabulator()' not in generated.read_text()
     ui_reference.prepare_ui_gallery(app)
     gallery_conf = app.config.nbsite_gallery_conf['galleries']['reference']
     assert gallery_conf['thumbnail_source'] == 'reference/ui'
     assert (Path(gallery_conf['source']) / 'widgets/Tabulator.ipynb').is_symlink()
     assert not (Path(app.builder.srcdir) / 'reference/ui/index.md').exists()
     assert len(list(examples.rglob('Tabulator.ipynb'))) == 1
+
+
+def test_other_classic_only_components_redirect(gallery):
+    """Non-MUI panes and layouts with notebooks use their classic pages."""
+    app, examples = gallery
+    for section, name in [('panes', 'DataFrame'), ('layouts', 'GridSpec')]:
+        notebook(examples / section / f'{name}.ipynb',
+                 ('code', f'import panel as pn\npn.{section[:-1]}.{name}()'))
+
+    ui_reference.generate_ui_reference(app)
+
+    for section, name in [('panes', 'DataFrame'), ('layouts', 'GridSpec')]:
+        content = (Path(app.builder.srcdir) / f'reference/{section}/{name}.md').read_text()
+        assert f'url=../classic/{section}/{name}.html' in content
+        assert f'[classic {name} reference](../classic/{section}/{name}.html)' in content
 
 
 def test_different_class_falls_back_to_api(gallery):
