@@ -6,7 +6,15 @@ import pytest
 
 pytest.importorskip("libcst")
 
-from panel.command._migrate.codemod import migrate_source
+# The codemod introspects panel.ui.
+pytestmark = pytest.mark.panel_ui
+
+
+def migrate_source(source):
+    # Not imported at collection time: the codemod imports panel.ui, which would
+    # add the Material widgets to every test parametrized over Widget subclasses.
+    from panel.command._migrate.codemod import migrate_source
+    return migrate_source(source)
 
 
 def _rules(result):
@@ -61,6 +69,24 @@ def test_unpacking_reassignment_is_not_rewritten():
     """Unpacking can also replace a Panel import."""
     source = 'from panel.widgets import Button\nButton, other = MyButton, None\nButton()\n'
     assert migrate_source(source).source == source
+
+
+@pytest.mark.parametrize('source', [
+    'from panel.widgets import Button\ndef make(Button):\n    return Button()\n',
+    'from panel.widgets import Button\nf = lambda Button: Button()\n',
+    'from panel.widgets import Button\nfor Button in factories:\n    Button()\n',
+    'from panel.widgets import Button\nwidgets = [Button() for Button in factories]\n',
+    'from panel.widgets import Button\nwith factory() as Button:\n    Button()\n',
+    'from panel.widgets import Button\ndef f():\n    class Button: pass\n    Button()\n',
+])
+def test_locally_rebound_import_is_not_rewritten(source):
+    assert migrate_source(source).source == source
+
+
+def test_module_level_def_shadows_later_calls_only():
+    source = 'from panel.widgets import Button\nButton()\ndef Button():\n    pass\nButton()\n'
+    result = migrate_source(source)
+    assert 'pn.ui.Button()\ndef Button():\n    pass\nButton()\n' in result.source
 
 
 def test_reassigned_pn_is_not_used_for_new_rewrites():
@@ -341,9 +367,44 @@ def test_explicit_design_settings_removed(design):
 
 
 def test_design_only_extension_call_is_kept_without_design():
-    result = migrate_source('import panel as pn\npn.extension(design="fast")\n')
+    result = migrate_source('import panel as pn\npn.extension(design="fast")\npn.widgets.Button()\n')
     assert 'pn.extension()' in result.source
     assert 'import panel.ui' not in result.source
+
+
+def test_design_is_kept_when_nothing_is_migrated():
+    """Without panel.ui components the app would lose its design, not switch to Material."""
+    source = (
+        'import panel as pn\n'
+        'pn.config.design = "fast"\n'
+        'pn.extension(design="fast")\n'
+        'pn.widgets.Button(**kwargs)\n'
+    )
+    result = migrate_source(source)
+    assert result.source == source
+    assert not [r for r in result.rewrites if r.rule == 'remove-design']
+
+
+def test_template_migration_removes_design():
+    source = 'import panel as pn\npn.extension(design="fast")\npn.template.BootstrapTemplate(title="App")\n'
+    result = migrate_source(source)
+    assert 'pn.extension()' in result.source
+    assert 'pn.ui.Page(title="App")' in result.source
+
+
+def test_user_defined_design_is_reported_not_removed():
+    source = (
+        'import panel as pn\n'
+        'from corporate import CorporateDesign\n'
+        'pn.config.design = CorporateDesign\n'
+        'pn.extension(design=CorporateDesign)\n'
+        'pn.widgets.Button()\n'
+    )
+    result = migrate_source(source)
+    assert 'pn.config.design = CorporateDesign' in result.source
+    assert 'pn.extension(design=CorporateDesign)' in result.source
+    assert 'pn.ui.Button()' in result.source
+    assert len(result.manual_reviews) == 2
 
 
 def test_design_setting_aliases_and_semicolon_siblings():
@@ -352,6 +413,7 @@ def test_design_setting_aliases_and_semicolon_siblings():
         'from panel import config as settings, extension as init\n'
         'settings.design = "fast"; print("keep")\n'
         'init(sizing_mode="stretch_width", design="fast")\n'
+        'pn.widgets.Button()\n'
     )
     result = migrate_source(source)
     assert 'settings.design' not in result.source
@@ -360,10 +422,10 @@ def test_design_setting_aliases_and_semicolon_siblings():
 
 
 def test_config_module_import_design_assignment_removed():
-    source = 'from panel.config import config\nconfig.design = "fast"\n'
+    source = 'from panel.config import config\nfrom panel.widgets import Button\nconfig.design = "fast"\nButton()\n'
     result = migrate_source(source)
-    assert result.source == 'from panel.config import config\n'
-    assert [rewrite.rule for rewrite in result.rewrites] == ['remove-design']
+    assert 'config.design' not in result.source
+    assert [rewrite.rule for rewrite in result.rewrites] == ['remove-design', 'import-path']
 
 
 def test_dynamic_design_settings_are_reported_not_removed():
@@ -371,10 +433,10 @@ def test_dynamic_design_settings_are_reported_not_removed():
         'import panel as pn\n'
         'pn.config.design = select_design()\n'
         'pn.extension(design=select_design())\n'
+        'pn.widgets.Button()\n'
     )
     result = migrate_source(source)
-    assert not result.changed
-    assert result.source == source
+    assert result.source == source.replace('pn.widgets.Button', 'pn.ui.Button')
     assert len(result.manual_reviews) == 2
 
 

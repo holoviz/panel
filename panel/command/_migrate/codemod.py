@@ -10,8 +10,9 @@ The ``libcst`` codemod implementing the migration rewrite rules:
 4. ``MenuButton(split=True)`` to ``SplitButton(...)``.
 5. Classic template instantiation to ``panel.ui.Page(...)`` when every keyword
    used is confirmed compatible.
-6. Remove explicit design selections so migrated apps use the ``panel.ui``
-   default, reporting expressions with side effects for manual review.
+6. Remove explicit selections of Panel's own designs from files that now use
+   ``panel.ui``, so they get its default, reporting any other design for
+   manual review.
 
 Resolution of a call's callee back to its classic dotted path (through
 ``import panel as pn``, ``from panel import widgets as w``,
@@ -99,16 +100,23 @@ class _ImportAliasCollector(cst.CSTVisitor):
         self.reassigned: dict[str, int] = {}
         self.ambiguous: set[str] = set()
 
-    def _record_target(self, target: cst.BaseAssignTargetExpression, assignment: cst.CSTNode) -> None:
+    def _record_rebinding(self, name: str, node: cst.CSTNode, module_level: bool) -> None:
+        # A module-level rebinding only shadows the calls after it; anywhere
+        # else the scope it shadows is not tracked, so the name is not migrated.
+        if module_level:
+            line = self.get_metadata(PositionProvider, node).start.line
+            self.reassigned[name] = min(self.reassigned.get(name, line), line)
+        else:
+            self.ambiguous.add(name)
+
+    def _is_module_statement(self, node: cst.CSTNode) -> bool:
+        return isinstance(self.get_metadata(ParentNodeProvider, node), cst.Module)
+
+    def _record_target(self, target: cst.BaseExpression, assignment: cst.CSTNode) -> None:
         if isinstance(target, cst.Name):
             statement = self.get_metadata(ParentNodeProvider, assignment)
-            if isinstance(statement, cst.SimpleStatementLine) and isinstance(
-                self.get_metadata(ParentNodeProvider, statement), cst.Module
-            ):
-                line = self.get_metadata(PositionProvider, assignment).start.line
-                self.reassigned[target.value] = min(self.reassigned.get(target.value, line), line)
-            else:
-                self.ambiguous.add(target.value)
+            module_level = isinstance(statement, cst.SimpleStatementLine) and self._is_module_statement(statement)
+            self._record_rebinding(target.value, assignment, module_level)
         elif isinstance(target, (cst.Tuple, cst.List)):
             for element in target.elements:
                 if isinstance(element, (cst.Element, cst.StarredElement)):
@@ -123,6 +131,29 @@ class _ImportAliasCollector(cst.CSTVisitor):
 
     def visit_AugAssign(self, node: cst.AugAssign) -> None:
         self._record_target(node.target, node)
+
+    def visit_Param(self, node: cst.Param) -> None:
+        self.ambiguous.add(node.name.value)
+
+    def visit_For(self, node: cst.For) -> None:
+        self._record_target(node.target, node)
+
+    def visit_CompFor(self, node: cst.CompFor) -> None:
+        self._record_target(node.target, node)
+
+    def visit_NamedExpr(self, node: cst.NamedExpr) -> None:
+        self._record_target(node.target, node)
+
+    def visit_AsName(self, node: cst.AsName) -> None:
+        # Import aliases are tracked by the import visitors.
+        if not isinstance(self.get_metadata(ParentNodeProvider, node), cst.ImportAlias):
+            self._record_target(node.name, node)
+
+    def visit_FunctionDef(self, node: cst.FunctionDef) -> None:
+        self._record_rebinding(node.name.value, node, self._is_module_statement(node))
+
+    def visit_ClassDef(self, node: cst.ClassDef) -> None:
+        self._record_rebinding(node.name.value, node, self._is_module_statement(node))
 
     def visit_Import(self, node: cst.Import) -> None:
         for alias in node.names:
@@ -193,10 +224,15 @@ def _is_true(expr: cst.BaseExpression) -> bool:
     return isinstance(expr, cst.Name) and expr.value == 'True'
 
 
-def _safe_design_value(expr: cst.BaseExpression) -> bool:
-    return isinstance(expr, (cst.SimpleString, cst.Name)) or (
-        isinstance(expr, cst.Attribute) and _dotted_name_to_str(expr) is not None
-    )
+def _is_panel_design(expr: cst.BaseExpression, aliases: dict[str, str]) -> bool:
+    """
+    Whether the design is a string or one of Panel's own designs, which
+    panel.ui supersedes. A user-defined design is left for manual review.
+    """
+    if isinstance(expr, cst.SimpleString):
+        return True
+    dotted = _resolve_dotted(expr, aliases) if isinstance(expr, (cst.Name, cst.Attribute)) else None
+    return dotted is not None and dotted.startswith('panel.')
 
 
 def _rename_kwarg(args: list[cst.Arg], old: str, new: str) -> tuple[list[cst.Arg], bool]:
@@ -229,10 +265,13 @@ class _PanelMigrateTransformer(cst.CSTTransformer):
 
     METADATA_DEPENDENCIES = (PositionProvider,)
 
-    def __init__(self, aliases: dict[str, str], reassigned: dict[str, int]) -> None:
+    def __init__(
+        self, aliases: dict[str, str], reassigned: dict[str, int], remove_design: bool = True
+    ) -> None:
         super().__init__()
         self._aliases = aliases
         self._reassigned = reassigned
+        self._remove_design = remove_design
         self.needs_panel_import = False
         self.rewrites: list[Rewrite] = []
         self.manual_reviews: list[ManualReview] = []
@@ -255,12 +294,12 @@ class _PanelMigrateTransformer(cst.CSTTransformer):
                 arg for arg in original_node.args
                 if arg.keyword is not None and arg.keyword.value == 'design'
             ]
-            if design_args:
+            if design_args and self._remove_design:
                 line = self._line(original_node)
-                if not all(_safe_design_value(arg.value) for arg in design_args):
+                if not all(_is_panel_design(arg.value, self._aliases) for arg in design_args):
                     self.manual_reviews.append(ManualReview(
-                        line, 'panel.extension(design=...) uses an expression; remove the design '
-                        'setting manually to preserve its side effects.'
+                        line, 'panel.extension(design=...) is not one of Panel\'s designs; '
+                        'decide whether to keep it alongside panel.ui components.'
                     ))
                 else:
                     self.rewrites.append(Rewrite(line, RULE_REMOVE_DESIGN, 'removed panel.extension(design=...)'))
@@ -336,6 +375,8 @@ class _PanelMigrateTransformer(cst.CSTTransformer):
     def leave_SimpleStatementLine(
         self, original_node: cst.SimpleStatementLine, updated_node: cst.SimpleStatementLine,
     ) -> cst.BaseStatement | cst.RemovalSentinel:
+        if not self._remove_design:
+            return updated_node
         body = []
         for stmt in original_node.body:
             if not isinstance(stmt, cst.Assign) or len(stmt.targets) != 1 or (
@@ -345,10 +386,10 @@ class _PanelMigrateTransformer(cst.CSTTransformer):
                 body.append(stmt)
                 continue
             line = self._line(stmt)
-            if not _safe_design_value(stmt.value):
+            if not _is_panel_design(stmt.value, self._aliases):
                 self.manual_reviews.append(ManualReview(
-                    line, 'panel.config.design uses an expression; remove the design '
-                    'setting manually to preserve its side effects.'
+                    line, 'panel.config.design is not one of Panel\'s designs; '
+                    'decide whether to keep it alongside panel.ui components.'
                 ))
                 body.append(stmt)
                 continue
@@ -502,8 +543,13 @@ def migrate_source(source: str) -> MigrationResult:
     if 'pn' in alias_collector.reassigned or 'pn' in alias_collector.ambiguous:
         aliases = {}
 
-    transformer = _PanelMigrateTransformer(aliases, alias_collector.reassigned)
+    transformer = _PanelMigrateTransformer(aliases, alias_collector.reassigned, remove_design=False)
     new_module = wrapper.visit(transformer)
+    # Dropping the design only makes sense if the file now uses panel.ui,
+    # which is only known once every call has been visited.
+    if any(r.rule in (RULE_IMPORT_PATH, RULE_TEMPLATE_TO_PAGE) for r in transformer.rewrites):
+        transformer = _PanelMigrateTransformer(aliases, alias_collector.reassigned)
+        new_module = wrapper.visit(transformer)
 
     if transformer.needs_panel_import and aliases.get('pn') != 'panel':
         new_module = _insert_panel_import(new_module)
