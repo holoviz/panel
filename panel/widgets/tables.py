@@ -1116,7 +1116,7 @@ class DataFrame(BaseTable):
     }
 
     def __init__(self, value=None, **params):
-        deprecated('3.0', 'DataFrame', 'Tabulator')
+        deprecated('2.0', 'DataFrame', 'Tabulator')
         super().__init__(value=value, **params)
 
     @property
