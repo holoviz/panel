@@ -53,13 +53,18 @@ class PathWatcher:
         """
         if method is None:
             self._subscribers.pop(obj, None)
-            return
-        methods = self._subscribers.get(obj)
-        if methods is None:
-            return
-        methods.discard(method)
-        if not methods:
-            self._subscribers.pop(obj, None)
+        else:
+            methods = self._subscribers.get(obj)
+            if methods is None:
+                return
+            methods.discard(method)
+            if not methods:
+                self._subscribers.pop(obj, None)
+        if not self._subscribers:
+            if _watchers.get(self.path) is self:
+                del _watchers[self.path]
+            if self._stop_event is not None:
+                self._stop_event.set()
 
     @property
     def running(self) -> bool:

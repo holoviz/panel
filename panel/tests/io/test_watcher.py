@@ -55,7 +55,8 @@ def test_get_path_watcher_is_shared_per_path(tmp_path):
 
 
 def test_subscribe_and_unsubscribe(tmp_path):
-    watcher = get_path_watcher(tmp_path / 'bundle.js')
+    path = tmp_path / 'bundle.js'
+    watcher = get_path_watcher(path)
     sub = Subscriber()
 
     watcher.subscribe(sub, '_update')
@@ -65,6 +66,7 @@ def test_subscribe_and_unsubscribe(tmp_path):
 
     watcher.unsubscribe(sub, '_update')
     assert list(watcher._subscribers) == []
+    assert path not in current_path_watchers()
 
 
 def test_subscribers_are_held_weakly(tmp_path):
@@ -162,6 +164,30 @@ async def test_watcher_task_is_shared(tmp_path):
 
     assert watcher._task is task
     assert len([e for e in state._watch_events if e is watcher._stop_event]) == 1
+
+
+@pytest.mark.skipif(not import_available('watchfiles'), reason='watchfiles is not installed')
+async def test_unsubscribe_stops_idle_watcher(tmp_path):
+    path = tmp_path / 'bundle.js'
+    path.write_text('export default {}')
+    watcher = get_path_watcher(path)
+    first, second = Subscriber(), Subscriber()
+    watcher.subscribe(first, '_update')
+    watcher.subscribe(second, '_update')
+    task = watcher._task
+    stop_event = watcher._stop_event
+
+    watcher.unsubscribe(first)
+    assert watcher.running
+    assert get_path_watcher(path) is watcher
+
+    watcher.unsubscribe(second, '_update')
+    assert path not in current_path_watchers()
+    assert stop_event.is_set()
+    await task
+    assert stop_event not in state._watch_events
+    assert not watcher.running
+    assert get_path_watcher(path) is not watcher
 
 
 @pytest.mark.skipif(not import_available('watchfiles'), reason='watchfiles is not installed')
