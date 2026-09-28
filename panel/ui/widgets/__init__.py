@@ -21,12 +21,13 @@ from panel_material_ui.widgets import (
 )
 
 from ...widgets import (
-    BooleanStatus, CodeEditor, CompositeWidget, Debugger, Dial, FileDropper,
-    Gauge, Grammar, GrammarList, JSONEditor, LinearGauge, Number, SpeechToText,
+    BooleanStatus, CodeEditor, CompositeWidget, Dial, FileDropper, Gauge,
+    Grammar, GrammarList, JSONEditor, LinearGauge, Number, SpeechToText,
     Tabulator, Terminal, TextEditor, TextToSpeech, TooltipIcon, Trend,
     Utterance, VideoStream, Voice, Widget, WidgetBase,
 )
 from ..indicators import Tqdm
+from .debugger import Debugger
 
 __all__ = (
     "ArrayInput",
