@@ -198,3 +198,28 @@ def test_tabulator_keeps_material_theme(panel_ui):
     params = panel_ui.MaterialUIDesign().params(panel_ui.Tabulator())[0]
 
     assert params['theme'] == 'materialize'
+
+
+def test_widgetbox_disables_its_widgets(panel_ui):
+    text, button = panel_ui.TextInput(), panel_ui.Button()
+    box = panel_ui.WidgetBox(text, panel_ui.Row(button), disabled=True)
+    assert text.disabled and button.disabled
+
+    box.disabled = False
+    assert not text.disabled and not button.disabled
+
+    box.disabled = True
+    added = panel_ui.Select()
+    box.append(added)
+    assert added.disabled
+
+
+def test_widgetbox_keeps_widget_state_when_enabled(panel_ui):
+    text = panel_ui.TextInput(disabled=True)
+    panel_ui.WidgetBox(text)
+    assert text.disabled
+
+
+def test_widgetbox_disabled_is_not_synced(panel_ui, document, comm):
+    model = panel_ui.WidgetBox(disabled=True).get_root(document, comm=comm)
+    assert 'disabled' not in model.data.properties()

@@ -11,8 +11,7 @@ from ...layout import (
     Swipe, VSpacer,
 )
 from .modal import Modal
-
-WidgetBox = Paper
+from .widgetbox import WidgetBox
 
 __all__ = (
     "Accordion",

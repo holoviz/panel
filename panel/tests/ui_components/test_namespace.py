@@ -133,7 +133,9 @@ def test_material_components_come_from_panel_material_ui(ui, pmui):
     assert ui.widgets.Button is pmui.Button
     for name in ('ArrayInput', 'ColorMap', 'DatetimeRangeInput', 'DiscretePlayer', 'FileSelector', 'Player'):
         assert getattr(ui, name) is getattr(ui.widgets, name) is getattr(pmui, name)
-    assert ui.WidgetBox is ui.layout.WidgetBox is ui.Paper is pmui.Paper
+    assert ui.WidgetBox is ui.layout.WidgetBox
+    assert issubclass(ui.WidgetBox, pmui.Paper)
+    assert ui.Paper is pmui.Paper
 
 
 def test_material_tqdm_uses_material_progress(ui):

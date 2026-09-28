@@ -70,3 +70,14 @@ def test_modal_background_close(page, panel_ui):
 
     expect(page.locator('.MuiDialog-root')).to_contain_text('Modal content')
     assert modal.open
+
+
+def test_widgetbox_disables_widgets(page, panel_ui):
+    box = panel_ui.WidgetBox(panel_ui.TextInput(label='Name'), disabled=True)
+    serve_component(page, box)
+
+    expect(page.locator('input')).to_be_disabled()
+
+    box.disabled = False
+
+    expect(page.locator('input')).to_be_enabled()
