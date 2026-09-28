@@ -191,6 +191,17 @@ def test_parse_notebook_markdown_escaped():
 
     assert code == f"_pn__state._cell_outputs['{cell.id}'].append(\"\"\"This is a test of markdown terminated by a quote\\\"\"\"\")"
 
+@nbformat_available
+def test_parse_notebook_strips_line_magics():
+    cell = nbformat.v4.new_code_cell('%load_ext autoreload\n%autoreload 2\nimport panel as pn\n%run ./other.ipynb\npn.Row(1)')
+    nb = nbformat.v4.new_notebook(cells=[cell])
+    sio = StringIO(nbformat.v4.writes(nb))
+    nb, code, layout = parse_notebook(sio)
+
+    assert '%' not in code
+    assert 'import panel as pn' in code
+    compile(code, 'test.ipynb', 'exec')
+
 def test_create_copy_button():
     """Test that _create_copy_button creates a ButtonIcon with correct properties."""
 
