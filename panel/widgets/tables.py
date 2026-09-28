@@ -34,6 +34,9 @@ from ..util import (
     clone_model, datetime_as_utctimestamp, isdatetime, lazy_load,
     styler_update, updating,
 )
+from ..util.dataframe import (
+    column_names, dtype_kind, has_index, is_dataframe, to_narwhals,
+)
 from ..util.warnings import warn
 from .base import Widget
 from .button import Button
@@ -93,6 +96,20 @@ def _get_value_from_keys(d:dict, key1, key2, default=None):
         warn(msg, DeprecationWarning)
         return d[key2]
     return default
+
+def _coerce_filter_value(dtype, val):
+    """
+    Cast a header filter value to the column's own type.
+
+    Tabulator sends every filter value as a string, so a numeric column would
+    otherwise be compared against text.
+    """
+    if isinstance(val, str) and dtype.is_integer():
+        return int(val)
+    elif isinstance(val, str) and dtype.is_float():
+        return float(val)
+    return val
+
 
 @contextmanager
 def _stringdtype_error(df: pd.DataFrame, column: str, array):
@@ -225,14 +242,14 @@ class BaseTable(ReactiveData, Widget):
     def _validate(self, *events: param.parameterized.Event):
         if self.value is None:
             return
-        cols = self.value.columns
-        if len(cols) != len(cols.drop_duplicates()):
-            raise ValueError('Cannot display a pandas.DataFrame with '
+        cols = column_names(self.value)
+        if len(cols) != len(set(cols)):
+            raise ValueError('Cannot display a DataFrame with '
                              'duplicate column names.')
 
     def _get_fields(self) -> list[str]:
         indexes = self.indexes
-        col_names = [] if self.value is None else list(self.value.columns)
+        col_names = [] if self.value is None else column_names(self.value)
         if not self.hierarchical or len(indexes) == 1:
             col_names = indexes + col_names
         else:
@@ -248,28 +265,44 @@ class BaseTable(ReactiveData, Widget):
         df = self.value.reset_index() if len(indexes) > 1 else self.value
         return self._get_column_definitions(fields, df)
 
-    def _get_column_definitions(self, col_names: list[str], df: pd.DataFrame) -> list[TableColumn]:
+    def _get_column_values(self, col: str, df, nw_df) -> tuple[t.Any, str]:
+        """
+        The values behind a field and their numpy style dtype kind.
+
+        A frame without an index goes through narwhals, since every field is
+        then a real column and its dtype is not a numpy dtype.
+        """
+        if nw_df is not None:
+            data = nw_df[col]
+            return data, dtype_kind(data.dtype)
+
         import pandas as pd
+        if col in df.columns:
+            data = df[col]
+        elif col in self.indexes:
+            if len(self.indexes) == 1:
+                data = df.index
+            elif df.index.nlevels == 1:
+                # Look in the column with the tuple format
+                index_col = tuple([col[: -(df.columns.nlevels - 1)]] + [""] * (df.columns.nlevels - 1))
+                data = df[index_col]
+            else:
+                data = df.index.get_level_values(self.indexes.index(col))
+
+        if isinstance(data, pd.DataFrame):
+            raise ValueError("DataFrame contains duplicate column names.")
+        return data, data.dtype.kind
+
+    def _get_column_definitions(self, col_names: list[str], df: pd.DataFrame) -> list[TableColumn]:
         indexes = self.indexes
         columns = []
+        # Without an index every field is a real column, and the dtype has to
+        # be read through narwhals because it is not a numpy dtype.
+        nw_df = None if has_index(df) else to_narwhals(df)
         for col in col_names:
-            if col in df.columns:
-                data: pd.Series | pd.Index = df[col]
-            elif col in self.indexes:
-                if len(self.indexes) == 1:
-                    data = df.index
-                elif df.index.nlevels == 1:
-                    # Look in the column with the tuple format
-                    index_col = tuple([col[: -(df.columns.nlevels - 1)]] + [""] * (df.columns.nlevels - 1))
-                    data = df[index_col]
-                else:
-                    data = df.index.get_level_values(self.indexes.index(col))
-
-            if isinstance(data, pd.DataFrame):
-                raise ValueError("DataFrame contains duplicate column names.")
+            data, kind = self._get_column_values(col, df, nw_df)
 
             col_kwargs: dict[str, t.Any] = {}
-            kind = data.dtype.kind
             editor: CellEditor
             formatter: CellFormatter | None = self.formatters.get(col)
             if kind == 'i':
@@ -299,10 +332,14 @@ class BaseTable(ReactiveData, Widget):
                 elif kind == 'f':
                     formatter = NumberFormatter(format='0,0.0[00000]', text_align='right')
                 elif isdatetime(data) or kind == 'M':
-                    if len(data) and isinstance(data.values[0], dt.date):
-                        date_format = '%Y-%m-%d'
+                    if nw_df is None:
+                        date_only = bool(len(data)) and isinstance(data.values[0], dt.date)
                     else:
-                        date_format = '%Y-%m-%d %H:%M:%S'
+                        # narwhals returns real datetimes, and datetime is a
+                        # subclass of date, so the two have to be told apart.
+                        first = data[0] if len(data) else None
+                        date_only = isinstance(first, dt.date) and not isinstance(first, dt.datetime)
+                    date_format = '%Y-%m-%d' if date_only else '%Y-%m-%d %H:%M:%S'
                     formatter = DateFormatter(format=date_format, text_align='right')
                 else:
                     formatter = StringFormatter(null_format='')
@@ -385,6 +422,11 @@ class BaseTable(ReactiveData, Widget):
         if self._processed is None or isinstance(self._processed, list) and not self._processed:
             self._index_mapping = {}
             return
+        if not has_index(self._processed):
+            # Without labels a row is only identified by where it sits, so the
+            # mapping from display position to row is the identity.
+            self._index_mapping = {i: i for i in range(len(self._processed))}
+            return
         self._index_mapping = {
             i: index
             for i, index in enumerate(self._processed.index)
@@ -448,9 +490,40 @@ class BaseTable(ReactiveData, Widget):
             else:
                 self._update_columns(event, model)
 
+    def _sort_frame_without_index(self, df):
+        """
+        Sort a frame that has no row index, using Narwhals.
+
+        Mirrors the pandas implementation: string columns sort case
+        insensitively to match Tabulator's own ordering, and the original
+        row position breaks ties so the sort stays stable.
+        """
+        import narwhals.stable.v2 as nw
+        nw_df = to_narwhals(df).with_row_index('_index_')
+        schema = nw_df.schema
+        keys, descending, helpers = [], [], []
+        for sorter in self.sorters:
+            field = self._renamed_cols.get(sorter['field'], sorter['field'])
+            if field not in nw_df.columns:
+                continue
+            if dtype_kind(schema[field]) == 'O':
+                helper = f'_sort_{field}_'
+                nw_df = nw_df.with_columns(nw.col(field).str.to_lowercase().alias(helper))
+                helpers.append(helper)
+                keys.append(helper)
+            else:
+                keys.append(field)
+            descending.append(sorter['dir'] != 'asc')
+        keys.append('_index_')
+        descending.append(False)
+        sorted_df = nw_df.sort(by=keys, descending=descending)
+        return sorted_df.drop('_index_', *helpers).to_native()
+
     def _sort_df(self, df: pd.DataFrame) -> pd.DataFrame:
         if not self.sorters:
             return df
+        if is_dataframe(df) and not has_index(df):
+            return self._sort_frame_without_index(df)
         fields = [self._renamed_cols.get(s['field'], s['field']) for s in self.sorters]
         ascending = [s['dir'] == 'asc' for s in self.sorters]
 
@@ -509,6 +582,10 @@ class BaseTable(ReactiveData, Widget):
         DataFrame
             The filtered DataFrame
         """
+        # value may also be None or a dict, which the pandas path already
+        # handles, so this only diverts real frames that have no index.
+        if is_dataframe(df) and not has_index(df):
+            return self._filter_frame_without_index(df, header_filters, internal_filters)
         filters = []
         for col_name, filt in (self._filters if internal_filters else []):
             if col_name is not None and col_name not in df.columns:
@@ -564,13 +641,141 @@ class BaseTable(ReactiveData, Widget):
             df = df[mask]
         return df
 
-    def _get_header_filters(self, df: pd.DataFrame) -> list[pd.Series | np.ndarray]:
-        filters = []
+    def _filter_frame_without_index(self, df, header_filters: bool, internal_filters: bool):
+        """
+        Filter a frame that has no row index, using Narwhals expressions.
+
+        Kept separate from the pandas implementation rather than unified with
+        it: the two build masks in different ways, and the pandas path has
+        years of behaviour that a shared abstraction would put at risk. The
+        two must agree on results, which the backend parametrised tests check.
+        """
+        import narwhals.stable.v2 as nw
+        nw_df = to_narwhals(df)
+        exprs = []
+        for col_name, filt in (self._filters if internal_filters else []):
+            if col_name is not None and col_name not in nw_df.columns:
+                continue
+            if isinstance(filt, (FunctionType, MethodType, partial)):
+                # User code gets the native frame, never a Narwhals wrapper.
+                res = filt(nw_df.to_native())
+                if type(res) is type(df):
+                    nw_df = to_narwhals(res)
+                else:
+                    exprs.append(res)
+                continue
+            if isinstance(filt, param.Parameter):
+                if filt.name is None:
+                    continue
+                val = getattr(filt.owner, filt.name)
+            else:
+                val = filt
+            if val is None:
+                continue
+            col = nw.col(col_name)
+            if np.isscalar(val):
+                exprs.append(col == val)
+            elif isinstance(val, (list, set)):
+                if not val:
+                    continue
+                exprs.append(col.is_in(list(val)))
+            elif isinstance(val, tuple):
+                start, end = val
+                if start is None and end is None:
+                    continue
+                elif start is None:
+                    exprs.append(col <= end)
+                elif end is None:
+                    exprs.append(col >= start)
+                else:
+                    exprs.append((col >= start) & (col <= end))
+            else:
+                raise ValueError(f"'{col_name} filter value not "
+                                 "understood. Must be either a scalar, "
+                                 "tuple or list.")
+
+        if header_filters:
+            exprs.extend(self._get_header_filter_exprs(nw_df))
+
+        if not exprs:
+            return nw_df.to_native()
+        combined = exprs[0]
+        for expr in exprs[1:]:
+            combined = combined & expr
+        return nw_df.filter(combined).to_native()
+
+    def _get_header_filter_exprs(self, nw_df) -> list[t.Any]:
+        """Narwhals equivalents of the Tabulator header filters."""
+        import narwhals.stable.v2 as nw
+        exprs = []
+        schema = nw_df.schema
+        # header_filters is either a bool or a per column config dict, and only
+        # the dict form carries options for the keywords filter.
+        header_filters = getattr(self, 'header_filters', None)
+        filt_def = header_filters if isinstance(header_filters, dict) else {}
         for filt in getattr(self, 'filters', []):
             col_name = filt['field']
             op = filt['type']
             val = filt['value']
-            filt_def = getattr(self, 'header_filters', {}) or {}
+            if col_name not in nw_df.columns:
+                continue
+            col = nw.col(col_name)
+            if isinstance(val, list):
+                if len(val) == 1:
+                    val = val[0]
+                elif not val:
+                    continue
+            if not schema[col_name].is_temporal() and not isinstance(val, list):
+                # Tabulator sends filter values as strings; coerce to the
+                # column's own type so comparisons are not string comparisons.
+                val = _coerce_filter_value(schema[col_name], val)
+            if op == '=':
+                exprs.append(col == val)
+            elif op == '!=':
+                exprs.append(col != val)
+            elif op == '<':
+                exprs.append(col < val)
+            elif op == '>':
+                exprs.append(col > val)
+            elif op == '>=':
+                exprs.append(col >= val)
+            elif op == '<=':
+                exprs.append(col <= val)
+            elif op == 'in':
+                exprs.append(col.is_in(val if isinstance(val, list) else [val]))
+            elif op == 'like':
+                exprs.append(col.str.to_lowercase().str.contains(str(val).lower(), literal=True))
+            elif op == 'starts':
+                exprs.append(col.str.to_lowercase().str.starts_with(str(val).lower()))
+            elif op == 'ends':
+                exprs.append(col.str.to_lowercase().str.ends_with(str(val).lower()))
+            elif op == 'keywords':
+                sep = filt_def.get(col_name, {}).get('separator', ' ')
+                matches = [m.lower() for m in str(val).split(sep)]
+                lowered = col.str.to_lowercase()
+                if filt_def.get(col_name, {}).get('matchAll', False):
+                    exprs.extend(lowered.str.contains(m, literal=True) for m in matches)
+                else:
+                    keyword_expr = lowered.str.contains(matches[0], literal=True)
+                    for match in matches[1:]:
+                        keyword_expr = keyword_expr | lowered.str.contains(match, literal=True)
+                    exprs.append(keyword_expr)
+            elif op == 'regex':
+                raise ValueError("Regex filtering not supported.")
+            else:
+                raise ValueError(f"Filter type {op!r} not recognized.")
+        return exprs
+
+    def _get_header_filters(self, df: pd.DataFrame) -> list[pd.Series | np.ndarray]:
+        filters = []
+        # header_filters is either a bool or a per column config dict, and only
+        # the dict form carries options for the keywords filter.
+        header_filters = getattr(self, 'header_filters', None)
+        filt_def = header_filters if isinstance(header_filters, dict) else {}
+        for filt in getattr(self, 'filters', []):
+            col_name = filt['field']
+            op = filt['type']
+            val = filt['value']
             if col_name in df.columns:
                 col = df[col_name]
             elif col_name in self.indexes:
@@ -721,6 +926,11 @@ class BaseTable(ReactiveData, Widget):
         df = self._filter_dataframe(df, header_filters=False)
         if df is None:
             return [], {}
+        if not has_index(df):
+            # Bokeh serializes any Narwhals compatible frame, and without an
+            # index there is nothing to flatten into columns first.
+            data = ColumnDataSource.from_df(df)
+            return df, {str(k): self._process_column(v, k, df) for k, v in data.items()}
         indexes: list[t.Any]
         if isinstance(self.value.index, pd.MultiIndex):
             indexes = [
@@ -752,7 +962,7 @@ class BaseTable(ReactiveData, Widget):
     @property
     def indexes(self):
         import pandas as pd
-        if self.value is None or not self.show_index:
+        if self.value is None or not self.show_index or not has_index(self.value):
             return []
         elif isinstance(self.value.index, pd.MultiIndex):
             indexes = [
@@ -1897,20 +2107,27 @@ class Tabulator(BaseTable):
         if self.value is not None:
             # Compute integer indexes of the selected rows
             # on the displayed page
-            index = self.value.iloc[self.selection].index
-            indices = []
-            for ind in index.values:
-                try:
-                    iloc = self._processed.index.get_loc(ind)
-                    self._validate_iloc(ind, iloc)
-                    indices.append((ind, iloc))
-                except KeyError:
-                    continue
+            if has_index(self.value):
+                index = self.value.iloc[self.selection].index
+                indices = []
+                for ind in index.values:
+                    try:
+                        iloc = self._processed.index.get_loc(ind)
+                        self._validate_iloc(ind, iloc)
+                        indices.append((ind, iloc))
+                    except KeyError:
+                        continue
+            else:
+                # Without labels a selected row is already its own position.
+                indices = [(i, i) for i in self.selection]
             if self.pagination == 'remote':
                 nrows = self.page_size or self.initial_page_size
                 start = (self.page - 1) * nrows
                 end = start+nrows
-                p_range = self._processed.index[start:end]
+                p_range = (
+                    self._processed.index[start:end] if has_index(self._processed)
+                    else range(start, end)
+                )
                 indices = [iloc - start for ind, iloc in indices
                            if ind in p_range]
             else:
@@ -2181,16 +2398,18 @@ class Tabulator(BaseTable):
                 col_dict['titleFormatterParams'] = title_formatter
             if field in self.indexes:
                 if len(self.indexes) == 1:
-                    dtype = self.value.index.dtype
+                    kind = self.value.index.dtype.kind
                 else:
-                    dtype = self.value.index.get_level_values(self.indexes.index(field)).dtype
+                    kind = self.value.index.get_level_values(self.indexes.index(field)).dtype.kind
+            elif has_index(self.value):
+                kind = self.value.dtypes[index].kind
             else:
-                dtype = self.value.dtypes[index]
-            if dtype.kind == 'M':
+                kind = dtype_kind(to_narwhals(self.value).schema[index])
+            if kind == 'M':
                 col_dict['sorter'] = 'timestamp'
-            elif dtype.kind in 'iuf':
+            elif kind in 'iuf':
                 col_dict['sorter'] = 'number'
-            elif dtype.kind == 'b':
+            elif kind == 'b':
                 col_dict['sorter'] = 'boolean'
             if index in self.editables or field in self.editables:
                 col_dict['editable'] = _get_value_from_keys(self.editables, index, field)
