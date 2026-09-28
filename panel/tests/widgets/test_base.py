@@ -124,11 +124,13 @@ def test_widget_triggers_events(document, comm):
     with block_comm():
         text.value = '123'
 
-    assert len(document.callbacks._held_events) == 1
-    event = document.callbacks._held_events[0]
+    assert len(document.callbacks._held_events) == 2
+    event, input_event = document.callbacks._held_events
     assert event.attr == 'value'
     assert event.model is widget
     assert event.new == '123'
+    assert input_event.attr == 'value_input'
+    assert input_event.new == '123'
 
 
 def test_widget_from_param_cls():
