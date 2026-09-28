@@ -266,10 +266,6 @@ def test_explicit_design_survives_importing_panel_ui():
     assert output == 'Fast'
 
 
-@pytest.mark.xfail(
-    reason='panel-material-ui patches Panel at import time (plan section 6.3)',
-    strict=True
-)
 def test_importing_panel_ui_does_not_patch_core():
     # Runs in a subprocess so the result does not depend on whether an earlier
     # test on this worker already imported panel.ui.
@@ -277,10 +273,15 @@ def test_importing_panel_ui_does_not_patch_core():
     from panel.tests.util import restore_classic_globals
 
     import panel.ui
+    import panel_material_ui.theme
 
-    print(restore_classic_globals(), end='')
+    patched = restore_classic_globals()
+    print(hasattr(panel_material_ui.theme, 'PANEL_DESIGN_HOOKS'), patched, end='')
     """)
-    assert output == '[]'
+    guarded, patched = output.split(' ', 1)
+    if guarded == 'False':
+        pytest.xfail('panel-material-ui predates the Design hooks (plan section 6.3)')
+    assert patched == '[]'
 
 
 def test_panel_ui_has_no_config_side_effects():
