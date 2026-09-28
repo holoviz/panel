@@ -1,7 +1,8 @@
 import pytest
 
+from panel.config import config
 from panel.widgets.indicators import (
-    Dial, Gauge, Number, Tqdm,
+    Dial, Gauge, LinearGauge, Number, Tqdm,
 )
 
 
@@ -170,3 +171,38 @@ def test_tqdm_color():
     for _ in tqdm(range(2)):
         pass
     assert tqdm.text_pane.styles["color"]=="green"
+
+
+@pytest.mark.parametrize(('theme', 'text', 'unfilled'), [
+    ('default', 'black', 'whitesmoke'), ('dark', 'white', '#424242')
+])
+def test_dial_colors_follow_theme(document, comm, theme, text, unfilled):
+    with config.set(theme=theme):
+        model = Dial(value=25).get_root(document, comm)
+
+    labels = model.select_one({'name': 'label_source'}).data['color']
+    annulus = model.select_one({'name': 'annulus_source'}).data['color']
+    needle = model.select_one({'name': 'needle_renderer'}).glyph
+    assert labels[0] == labels[2] == text
+    assert annulus[-1] == unfilled
+    assert needle.fill_color == text
+
+
+def test_dial_explicit_colors_override_theme(document, comm):
+    with config.set(theme='dark'):
+        model = Dial(value=25, label_color='red', needle_color='blue', unfilled_color='grey').get_root(document, comm)
+
+    assert model.select_one({'name': 'label_source'}).data['color'][0] == 'red'
+    assert model.select_one({'name': 'annulus_source'}).data['color'][-1] == 'grey'
+    assert model.select_one({'name': 'needle_renderer'}).glyph.fill_color == 'blue'
+
+
+def test_linear_gauge_is_transparent(document, comm):
+    model = LinearGauge(value=25).get_root(document, comm)
+
+    assert model.background_fill_alpha == 0
+    assert model.border_fill_alpha == 0
+
+
+def test_gauge_background_is_transparent():
+    assert Gauge(value=25)._process_param_change({})['data']['backgroundColor'] == 'transparent'

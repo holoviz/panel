@@ -33,6 +33,7 @@ import param
 from bokeh.models import ColumnDataSource, FixedTicker, Tooltip
 
 from .._param import Align, Margin
+from ..config import config
 from ..io.resources import CDN_DIST
 from ..layout import Column, Panel, Row
 from ..models import (
@@ -264,6 +265,11 @@ class LoadingSpinner(BooleanIndicator):
         return msg
 
 
+def _theme_text_color() -> str:
+    # Bokeh glyph colors cannot reference the CSS variables of the theme.
+    return 'white' if config.theme == 'dark' else 'black'
+
+
 class ValueIndicator(Indicator):
     """
     A ValueIndicator provides a visual representation for a numeric
@@ -273,6 +279,16 @@ class ValueIndicator(Indicator):
     value = param.Number(default=None, allow_None=True)
 
     __abstract = True
+
+    @property
+    def _needle_color(self) -> str:
+        return getattr(self, 'needle_color', None) or _theme_text_color()
+
+    @property
+    def _unfilled_color(self) -> str:
+        if getattr(self, 'unfilled_color', None):
+            return self.unfilled_color
+        return '#424242' if config.theme == 'dark' else 'whitesmoke'
 
 
 class Progress(ValueIndicator):
@@ -547,6 +563,8 @@ class Gauge(ValueIndicator):
         props = super()._process_param_change(params)
         vmin, vmax = props.pop('bounds', self.bounds)
         props['data'] = data = {
+            # Keeps the surrounding surface visible under dark ECharts themes.
+            'backgroundColor': 'transparent',
             'tooltip': {
                 'formatter': props.pop('tooltip_format', self.tooltip_format)
             },
@@ -630,14 +648,16 @@ class Dial(ValueIndicator):
 
     height = param.Integer(default=250, allow_None=True, bounds=(1, None))
 
-    label_color = param.String(default='black', doc="""
-      Color for all extraneous labels.""")
+    label_color = param.String(default=None, allow_None=True, doc="""
+      Color for all extraneous labels. Defaults to black, or white in
+      the dark theme.""")
 
     nan_format = param.String(default='-', doc="""
       How to format nan values.""")
 
-    needle_color = param.String(default='black', doc="""
-      Color of the Dial needle.""")
+    needle_color = param.String(default=None, allow_None=True, doc="""
+      Color of the Dial needle. Defaults to black, or white in the dark
+      theme.""")
 
     needle_width = param.Number(default=0.1, doc="""
       Radial width of the needle.""")
@@ -651,8 +671,9 @@ class Dial(ValueIndicator):
     title_size = param.String(default=None, doc="""
       Font size of the Dial title.""")
 
-    unfilled_color = param.String(default='whitesmoke', doc="""
-      Color of the unfilled region of the Dial.""")
+    unfilled_color = param.String(default=None, allow_None=True, doc="""
+      Color of the unfilled region of the Dial. Defaults to a light or
+      dark grey depending on the theme.""")
 
     value_size = param.String(default=None, doc="""
       Font size of the Dial value label.""")
@@ -707,7 +728,7 @@ class Dial(ValueIndicator):
         annulus_data = {
             'starts': np.array([start, angle]),
             'ends' :  np.array([angle, end]),
-            'color':  [color, self.unfilled_color],
+            'color':  [color, self._unfilled_color],
             'radius': np.array([inner_radius, inner_radius])
         }
 
@@ -752,13 +773,14 @@ class Dial(ValueIndicator):
         value_size = self.value_size if self.value_size else '%spt' % (scale*48)
         tick_size = self.tick_size if self.tick_size else '%spt' % (scale*18)
 
+        label_color = self.label_color or _theme_text_color()
         text_data= {
             'x':    np.array([0, 0, tminx, tmaxx]),
             'y':    np.array([-.2, -.5, tminy, tmaxy]),
             'text': [self.label, value, min_value, max_value],
             'rot':  np.array([0, 0, tmin_angle, tmax_angle]),
             'size': [title_size, value_size, tick_size, tick_size],
-            'color': [self.label_color, color, self.label_color, self.label_color]
+            'color': [label_color, color, label_color, label_color]
         }
         return annulus_data, needle_data, threshold_data, text_data
 
@@ -793,7 +815,7 @@ class Dial(ValueIndicator):
         needle_source = ColumnDataSource(data=needle, name='needle_source')
         model.wedge(
             x='x', y='y', radius='radius', start_angle='start', end_angle='end',
-            fill_color=self.needle_color, line_color=self.needle_color,
+            fill_color=self._needle_color, line_color=self._needle_color,
             source=needle_source, name='needle_renderer'
         )
 
@@ -829,8 +851,8 @@ class Dial(ValueIndicator):
                 update_data = True
             elif event.name == 'needle_color':
                 needle_r = model.select(name='needle_renderer')
-                needle_r.glyph.line_color = event.new
-                needle_r.glyph.fill_color = event.new
+                needle_r.glyph.line_color = self._needle_color
+                needle_r.glyph.fill_color = self._needle_color
         if not update_data:
             return
         properties = self._get_properties(doc)
@@ -875,14 +897,16 @@ class LinearGauge(ValueIndicator):
     nan_format = param.String(default='-', doc="""
       How to format nan values.""")
 
-    needle_color = param.String(default='black', doc="""
-      Color of the gauge needle.""")
+    needle_color = param.String(default=None, allow_None=True, doc="""
+      Color of the gauge needle. Defaults to black, or white in the dark
+      theme.""")
 
     show_boundaries = param.Boolean(default=False, doc="""
       Whether to show the boundaries between colored regions.""")
 
-    unfilled_color = param.String(default='whitesmoke', doc="""
-      Color of the unfilled region of the LinearGauge.""")
+    unfilled_color = param.String(default=None, allow_None=True, doc="""
+      Color of the unfilled region of the LinearGauge. Defaults to a
+      light or dark grey depending on the theme.""")
 
     title_size = param.String(default=None, doc="""
       Font size of the gauge title.""")
@@ -944,7 +968,7 @@ class LinearGauge(ValueIndicator):
             intervals = [
                 (fraction, self.default_color)
             ]
-            intervals.append((1, self.unfilled_color))
+            intervals.append((1, self._unfilled_color))
         elif self.show_boundaries:
             intervals = [
                 c if isinstance(c, tuple) else ((i+1)/(ncolors), c)
@@ -955,7 +979,7 @@ class LinearGauge(ValueIndicator):
                 self.colors[idx] if isinstance(self.colors[0], tuple)
                 else (fraction, self.colors[idx])
             ]
-            intervals.append((1, self.unfilled_color))
+            intervals.append((1, self._unfilled_color))
         return intervals
 
     def _get_data(self, properties):
@@ -974,7 +998,7 @@ class LinearGauge(ValueIndicator):
                     colors.append(color)
                     values.append(value)
                     above = True
-                color = self.unfilled_color
+                color = self._unfilled_color
             colors.append(color)
             values.append(val)
             prev = val
@@ -990,7 +1014,8 @@ class LinearGauge(ValueIndicator):
         params = self._get_properties(doc)
         model = figure(
             outline_line_color=None, toolbar_location=None, tools=[],
-            x_axis_location='above', y_axis_location='right', **params
+            x_axis_location='above', y_axis_location='right',
+            background_fill_alpha=0, border_fill_alpha=0, **params
         )
         model.grid.visible = False
         model.xaxis.major_label_standoff = 2
@@ -1050,14 +1075,14 @@ class LinearGauge(ValueIndicator):
                 'text_baseline': 'bottom', 'angle': np.deg2rad(90)
             }
         model.scatter(
-            fill_color=self.needle_color, line_color=self.needle_color,
+            fill_color=self._needle_color, line_color=self._needle_color,
             source=needle_source, name='needle_renderer', marker='triangle',
             size=int(self.width/8), level='overlay', **wedge_params
         )
         value_size = self.value_size or f'{self.width/8}px'
         model.text(
             text='text', source=needle_source, text_font_size=value_size,
-            **text_params
+            text_color=_theme_text_color(), **text_params
         )
 
     def _update_bounds(self, model):
@@ -1105,8 +1130,8 @@ class LinearGauge(ValueIndicator):
                 update_data = True
             elif event.name == 'needle_color':
                 needle_r = model.select(name='needle_renderer')
-                needle_r.glyph.line_color = event.new
-                needle_r.glyph.fill_color = event.new
+                needle_r.glyph.line_color = self._needle_color
+                needle_r.glyph.fill_color = self._needle_color
             elif event.name == 'horizontal':
                 self._update_bounds(model)
                 self._update_figure(model)
