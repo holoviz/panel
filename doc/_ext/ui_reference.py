@@ -405,7 +405,7 @@ def _material_examples(app):
     return None
 
 
-def _api_page(name, component):
+def _api_page(name, component, api=True):
     description = inspect.getdoc(component) or ''
     description = description.split('\n\n')[0].replace('\n', ' ').strip()
     example = EXAMPLES.get(name)
@@ -420,10 +420,67 @@ def _api_page(name, component):
         sample = (
             f'Use `pn.ui.{name}` to create this component.\n\n'
         )
-    return (
-        (f'{description}\n\n' if description else '') + sample + '## API\n\n'
-        f'```{{autoclass}} {component.__module__}.{component.__name__}\n   :members:\n```\n'
-    )
+    content = (f'{description}\n\n' if description else '') + sample
+    if api:
+        content += (
+            '## API\n\n'
+            f'```{{autoclass}} {component.__module__}.{component.__name__}\n   :members:\n```\n'
+        )
+    return content
+
+
+def ui_components():
+    """Yield ``(section, name, component)`` for each panel.ui component with a reference page."""
+    import panel.ui as ui
+
+    from panel.viewable import Viewable
+
+    for module_name, section in SECTIONS.items():
+        module = getattr(ui, module_name)
+        for name in sorted(ui.__all__):
+            component = getattr(ui, name)
+            if (getattr(module, name, None) is component and inspect.isclass(component)
+                and issubclass(component, Viewable)):
+                yield section, name, component
+
+
+def material_notebook(material, section, name, component):
+    """Return the PMUI notebook documenting a component; it may not exist."""
+    material_section = {'templates': 'page'}.get(section, section)
+    notebook = material / material_section / f'{name}.ipynb'
+    if not notebook.is_file():
+        notebook = material / material_section / f'{component.__name__}.ipynb'
+    if not notebook.is_file():
+        notebook = next((candidate for other in ('widgets', 'indicators', 'menus')
+                         if (candidate := material / other / f'{component.__name__}.ipynb').is_file()), notebook)
+    return notebook
+
+
+def reference_pages(examples, material, api=True):
+    """Yield ``(section, name, content, classic)`` for each panel.ui reference page.
+
+    ``classic`` is the classic notebook a page redirects to, in which case
+    ``content`` is None; otherwise ``content`` is the page's MyST Markdown body.
+    """
+    import panel as pn
+    import panel.ui as ui
+
+    for section, name, component in ui_components():
+        notebook = examples / section / f'{name}.ipynb'
+        if component.__module__.startswith('panel.') and notebook.is_file():
+            yield section, name, None, notebook
+            continue
+        pmui_notebook = material_notebook(material, section, name, component)
+        if pmui_notebook.is_file():
+            try:
+                content = _material_page(pmui_notebook, material, ui, name)
+            except (ValueError, SyntaxError) as exc:
+                raise ValueError(f'Cannot convert PMUI notebook {pmui_notebook}: {exc}') from exc
+        else:
+            content = _notebook_page(notebook, examples, pn, ui) if notebook.is_file() else None
+        if content is None:
+            content = _api_page(name, component, api)
+        yield section, name, content, None
 
 
 def _write_generated(path, content):
@@ -438,10 +495,6 @@ def prepare_ui_gallery(app):
     """Let nbsite discover UI pages from a temporary view of the original notebooks."""
     from nbsite.gallery.gen import DEFAULT_GALLERY_CONF
 
-    import panel.ui as ui
-
-    from panel.viewable import Viewable
-
     material = _material_examples(app)
     if material is None:
         raise FileNotFoundError('PMUI reference notebooks are unavailable.')
@@ -451,28 +504,14 @@ def prepare_ui_gallery(app):
     examples = (Path(app.builder.srcdir) / conf.get('examples_dir', DEFAULT_GALLERY_CONF['examples_dir']) / source).resolve()
     app._ui_reference_gallery = tempfile.TemporaryDirectory(prefix='panel-ui-gallery-')
     root = Path(app._ui_reference_gallery.name)
-    for module_name, section in SECTIONS.items():
-        module = getattr(ui, module_name)
-        names = sorted(name for name in ui.__all__ if (
-            getattr(module, name, None) is getattr(ui, name)
-            and inspect.isclass(component := getattr(ui, name))
-            and issubclass(component, Viewable)
-        ))
-        directory = root / section
-        directory.mkdir()
-        for name in names:
-            component = getattr(ui, name)
-            material_section = {'templates': 'page'}.get(section, section)
-            notebook = material / material_section / f'{name}.ipynb'
-            if not notebook.is_file():
-                notebook = material / material_section / f'{component.__name__}.ipynb'
-            if not notebook.is_file():
-                notebook = next((candidate for other in ('widgets', 'indicators', 'menus')
-                                 if (candidate := material / other / f'{component.__name__}.ipynb').is_file()), notebook)
-            if not notebook.is_file():
-                notebook = examples / section / f'{name}.ipynb'
-            if notebook.is_file():
-                (directory / f'{name}.ipynb').symlink_to(notebook)
+    for section in SECTIONS.values():
+        (root / section).mkdir()
+    for section, name, component in ui_components():
+        notebook = material_notebook(material, section, name, component)
+        if not notebook.is_file():
+            notebook = examples / section / f'{name}.ipynb'
+        if notebook.is_file():
+            (root / section / f'{name}.ipynb').symlink_to(notebook)
     gallery = app.config.nbsite_gallery_conf['galleries']['reference']
     gallery['source'] = str(root)
     gallery['sections'] = [
@@ -503,6 +542,10 @@ def relocate_classic_links(app, docname, source):
         return
     if not (Path(app.builder.srcdir) / f'{docname}.md').is_file():
         return
+
+    # nbsite derives the Jupyterlite path from the gallery source, but Panelite
+    # mirrors the site and serves panel.ui notebooks at reference/<section>.
+    source[0] = source[0].replace('?path=/reference/', '?path=/reference/classic/')
 
     original = posixpath.dirname(docname.replace('reference/classic/', 'reference/', 1))
     depth = len(original.split('/')) - 1
@@ -553,11 +596,6 @@ def resolve_gallery_index_links(app, docname, source):
 
 def generate_ui_reference(app):
     """Run after nbsite generates classic pages, before Sphinx scans sources."""
-    import panel as pn
-    import panel.ui as ui
-
-    from panel.viewable import Viewable
-
     gallery_conf = app.config.nbsite_gallery_conf
     source = gallery_conf['galleries']['reference/classic']['source']
     examples = (Path(app.builder.srcdir) / gallery_conf['examples_dir'] / source).resolve()
@@ -569,49 +607,22 @@ def generate_ui_reference(app):
             'notebooks in the installed panel_material_ui package.'
         )
     output = Path(app.builder.srcdir) / 'reference'
-    for module_name, section in SECTIONS.items():
-        module = getattr(ui, module_name)
-        names = sorted(name for name in ui.__all__ if (
-            getattr(module, name, None) is getattr(ui, name)
-            and inspect.isclass(component := getattr(ui, name))
-            and issubclass(component, Viewable)
-        ))
-        if not names:
-            continue
+    sections = set()
+    for section, name, content, classic in reference_pages(examples, material):
         section_dir = output / section
-        section_dir.mkdir(parents=True, exist_ok=True)
-        old_section_index = section_dir / 'index.md'
-        if old_section_index.is_file() and old_section_index.read_text(encoding='utf-8').startswith(GENERATED):
-            old_section_index.unlink()
-        for name in names:
-            component = getattr(ui, name)
-            notebook = examples / section / f'{name}.ipynb'
-            material_section = {'templates': 'page'}.get(section, section)
-            material_notebook = material / material_section / f'{name}.ipynb'
-            if not material_notebook.is_file() and component.__name__ != name:
-                material_notebook = material / material_section / f'{component.__name__}.ipynb'
-            if not material_notebook.is_file():
-                for other_section in ('widgets', 'indicators', 'menus'):
-                    candidate = material / other_section / f'{component.__name__}.ipynb'
-                    if candidate.is_file():
-                        material_notebook = candidate
-                        break
-            if component.__module__.startswith('panel.') and notebook.is_file():
-                destination = f'../classic/{section}/{name}.html'
-                content = (
-                    f'```{{raw}} html\n<meta http-equiv="refresh" content="0; url={destination}">\n```\n\n'
-                    f'See the [classic {name} reference]({destination}).'
-                )
-            elif material_notebook.is_file():
-                try:
-                    content = _material_page(material_notebook, material, ui, name)
-                except (ValueError, SyntaxError) as exc:
-                    raise ValueError(f'Cannot convert PMUI notebook {material_notebook}: {exc}') from exc
-            else:
-                content = _notebook_page(notebook, examples, pn, ui) if notebook.is_file() else None
-            if content is None:
-                content = _api_page(name, component)
-            _write_generated(section_dir / f'{name}.md', f'# {name}\n\n{content}\n')
+        if section not in sections:
+            sections.add(section)
+            section_dir.mkdir(parents=True, exist_ok=True)
+            old_section_index = section_dir / 'index.md'
+            if old_section_index.is_file() and old_section_index.read_text(encoding='utf-8').startswith(GENERATED):
+                old_section_index.unlink()
+        if classic:
+            destination = f'../classic/{section}/{name}.html'
+            content = (
+                f'```{{raw}} html\n<meta http-equiv="refresh" content="0; url={destination}">\n```\n\n'
+                f'See the [classic {name} reference]({destination}).'
+            )
+        _write_generated(section_dir / f'{name}.md', f'# {name}\n\n{content}\n')
     old_index = output / 'index.md'
     if old_index.is_file() and old_index.read_text(encoding='utf-8').startswith(GENERATED):
         old_index.unlink()
