@@ -137,6 +137,10 @@ class Design(param.Parameterized, ResourceComponent):
     # Defines the resources required to render this theme
     _resources = {}
 
+    # Default variables for page templates, e.g. the material_ui flag that
+    # enables the Material UI document styles in base.html.
+    _template_variables: t.ClassVar[dict[str, t.Any]] = {}
+
     # Overrides the loading indicator defaults, i.e. the spinner, color
     # and max_height config values. Explicit user settings always win.
     _loading_options: t.ClassVar[dict[str, t.Any]] = {}
@@ -711,6 +715,15 @@ def resolve_component(component: T) -> T:
     if design is None:
         return component
     return design.resolve_component(component)
+
+
+def design_template_variables() -> dict[str, t.Any]:
+    """
+    Returns the page template variables declared by the currently active
+    design system.
+    """
+    design = config.design
+    return dict(design._template_variables) if design else {}
 
 
 def resolve_widget(parameter: param.Parameter) -> type[Viewable] | None:

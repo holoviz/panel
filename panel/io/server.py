@@ -338,7 +338,8 @@ def html_page_for_render_items(
 
     script = wrap_in_script_tag(script_for_render_items(json_id, render_items))
 
-    context = template_variables.copy()
+    from ..theme.base import design_template_variables
+    context = {**design_template_variables(), **template_variables}
 
     context.update(dict(
         title = title,

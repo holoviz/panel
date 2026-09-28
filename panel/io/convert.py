@@ -451,8 +451,9 @@ def script_to_html(
     bokeh_css = '\n'.join([bokeh_css]+css_resources)
 
     # Configure template
-    template_variables = document._template_variables
-    context = template_variables.copy()
+    from ..theme.base import design_template_variables
+    with set_curdoc(document):
+        context = {**design_template_variables(), **document._template_variables}
     context.update(dict(
         title=document.title,
         bokeh_js=bokeh_js,
