@@ -15,15 +15,19 @@ from panel.widgets import (
 )
 
 
+def noop(*args) -> None:
+    pass
+
+
 class Params(param.Parameterized):
 
-    action = param.Action(lambda self: None)
+    action = param.Action(noop)
     boolean = param.Boolean()
     dictionary = param.Dict({})
     integer = param.Integer(1)
     listing = param.List([])
     number = param.Number(1, bounds=(0, 10))
-    selector = param.Selector(objects=['a', 'b'])
+    selector: param.Selector[str] = param.Selector(default='a', objects=['a', 'b'])
     span = param.Range((0, 1), bounds=(0, 2))
     string = param.String()
     pair = param.Tuple((1, 2))
