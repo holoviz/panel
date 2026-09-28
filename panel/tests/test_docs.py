@@ -114,7 +114,9 @@ def test_markdown_indexed(doc_file):
 @pytest.mark.parametrize(
     "file", doc_files, ids=[str(f.relative_to(DOC_PATH)) for f in doc_files]
 )
-async def test_markdown_codeblocks(file, tmp_path):
+async def test_markdown_codeblocks(file, tmp_path, panel_ui):
+    # The docs use pn.ui throughout, which has to be imported without its
+    # side effects leaking into the classic suite.
     from markdown_it import MarkdownIt
 
     exceptions = ("await", "pn.serve", "django", "raise", "display(")
