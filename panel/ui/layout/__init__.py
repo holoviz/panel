@@ -7,9 +7,10 @@ from panel_material_ui.layout import (
 )
 
 from ...layout import (
-    GridBox, GridSpec, GridStack, HSpacer, ListLike, ListPanel, Modal, Panel,
-    Spacer, Swipe, VSpacer,
+    GridBox, GridSpec, GridStack, HSpacer, ListLike, ListPanel, Panel, Spacer,
+    Swipe, VSpacer,
 )
+from .modal import Modal
 
 WidgetBox = Paper
 
