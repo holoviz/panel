@@ -15,15 +15,16 @@ from panel_material_ui.widgets import (
     MenuButton, MenuList, MenuToggle, MultiChoice, MultiPill, MultiSelect,
     NestedBreadcrumbs, NestedSelect, NumberInput, Pagination, PasswordInput,
     Pill, Player, Progress, RadioBoxGroup, RadioButtonGroup, RangeSlider,
-    Rating, Select, SpeedDial, SplitButton, StepperMenu, Switch, TabMenu,
-    TextAreaInput, TextInput, TimePicker, Toggle, ToggleIcon, Tree, TupleInput,
+    Rating, Select, SpeedDial, SplitButton, StaticText, StepperMenu, Switch,
+    TabMenu, TextAreaInput, TextInput, TimePicker, Toggle, ToggleGroup,
+    ToggleIcon, Tree, TupleInput,
 )
 
 from ...widgets import (
     BooleanStatus, CodeEditor, CompositeWidget, Debugger, Dial, FileDropper,
     Gauge, Grammar, GrammarList, JSONEditor, LinearGauge, Number, SpeechToText,
-    StaticText, Tabulator, Terminal, TextEditor, TextToSpeech, ToggleGroup,
-    TooltipIcon, Trend, Utterance, VideoStream, Voice, Widget, WidgetBase,
+    Tabulator, Terminal, TextEditor, TextToSpeech, TooltipIcon, Trend,
+    Utterance, VideoStream, Voice, Widget, WidgetBase,
 )
 from ..indicators import Tqdm
 

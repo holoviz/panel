@@ -25,8 +25,8 @@ from ..config import config
 # public surface is versioned by another repository for the 1.x cycle, so a pmui
 # minor must not be able to change panel's documented API without a panel
 # release. Keep in sync with the pin in pyproject.toml.
-_PMUI_MIN_VERSION = '0.15.1a0'
-_PMUI_NEXT_VERSION = '0.16'
+_PMUI_MIN_VERSION = '0.16.0rc0'
+_PMUI_NEXT_VERSION = '0.17'
 
 
 def _check_panel_material_ui() -> None:
