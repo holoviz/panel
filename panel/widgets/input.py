@@ -67,6 +67,23 @@ class _TextInputBase(Widget):
       Width of this component. If sizing_mode is set to stretch
       or scale mode this will merely be used as a suggestion.""")
 
+    def __init__(self, **params):
+        if 'value' in params and 'value_input' not in params:
+            params['value_input'] = params['value']
+        super().__init__(**params)
+        self._internal_callbacks.append(
+            self.param.watch(self._sync_value_input, 'value')
+        )
+
+    def _sync_value_input(self, event):
+        # A `value` assigned from Python must also update `value_input`,
+        # otherwise pressing Enter in the browser submits the stale
+        # `value_input` and reverts `value`. Changes driven by the frontend
+        # arrive inside param's `_syncing` context and are left alone.
+        if 'value' in self._param__private.syncing:
+            return
+        self.value_input = event.new
+
     @classmethod
     def from_param(
         cls,
