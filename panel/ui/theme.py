@@ -9,13 +9,15 @@ from panel_material_ui.theme import (
 
 from .. import widgets as _classic_widgets
 from ..io.resources import CDN_DIST
+from ..theme.base import Inherit
 from . import widgets as _widgets
 from .layout import (
     Alert, Card, Details, Paper,
 )
-from .pane import DataFrame
+from .pane import JSON, DataFrame, Markdown
 from .widgets import (
-    Button, DictInput, ListInput, TupleInput,
+    Button, CodeEditor, DictInput, FileDropper, JSONEditor, ListInput,
+    Tabulator, Terminal, TextEditor, TupleInput,
 )
 
 
@@ -74,6 +76,34 @@ class MaterialUIDesign(MaterialDesign):
         },
         DataFrame: {
             'stylesheets': [f'{CDN_DIST}css/dataframe_mui.css'],
+        },
+        # The classic components below keep the Material stylesheet and
+        # override its colors with the MUI palette variables, which follow
+        # theme toggles unlike the theme dependent parameters.
+        CodeEditor: {
+            'stylesheets': [Inherit, f'{CDN_DIST}css/codeeditor_mui.css'],
+        },
+        FileDropper: {
+            'stylesheets': [Inherit, f'{CDN_DIST}css/filedropper_mui.css'],
+        },
+        JSON: {
+            'stylesheets': [Inherit, f'{CDN_DIST}css/json_mui.css'],
+        },
+        JSONEditor: {
+            'stylesheets': [Inherit, f'{CDN_DIST}css/jsoneditor_mui.css'],
+        },
+        Markdown: {
+            'stylesheets': [Inherit, f'{CDN_DIST}css/markdown_mui.css'],
+        },
+        Tabulator: {
+            **MaterialDesign.modifiers.get(Tabulator, {}),
+            'stylesheets': [Inherit, f'{CDN_DIST}css/tabulator_mui.css'],
+        },
+        Terminal: {
+            'stylesheets': [Inherit, f'{CDN_DIST}css/terminal_mui.css'],
+        },
+        TextEditor: {
+            'stylesheets': [Inherit, f'{CDN_DIST}css/texteditor_mui.css'],
         },
     }
 

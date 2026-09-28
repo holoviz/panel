@@ -1,12 +1,15 @@
 """
 Tests the components panel.ui implements itself or takes from panel-material-ui
-in place of the classic ones.
+in place of the classic ones, and the Material stylesheets it applies to the
+classic components it keeps.
 """
 import logging
 
 import pytest
 
 import panel as pn
+
+from panel.io.resources import CDN_DIST, stylesheet_url
 
 
 @pytest.fixture
@@ -167,3 +170,31 @@ def test_debugger_detaches_handler_on_cleanup(panel_ui, document, comm, logger):
 
     debugger.get_root(document, comm=comm)
     assert debugger.stream_handler in panel_logger.handlers
+
+
+@pytest.mark.parametrize(('component', 'stylesheet'), [
+    ('CodeEditor', 'codeeditor_mui.css'),
+    ('FileDropper', 'filedropper_mui.css'),
+    ('JSON', 'json_mui.css'),
+    ('JSONEditor', 'jsoneditor_mui.css'),
+    ('Markdown', 'markdown_mui.css'),
+    ('Tabulator', 'tabulator_mui.css'),
+    ('Terminal', 'terminal_mui.css'),
+    ('TextEditor', 'texteditor_mui.css'),
+])
+def test_classic_components_get_material_stylesheets(panel_ui, component, stylesheet):
+    cls = getattr(panel_ui, component)
+    stylesheets = [
+        stylesheet_url(s) for s in panel_ui.MaterialUIDesign().params(cls())[0]['stylesheets']
+        if not isinstance(s, str)
+    ]
+
+    assert f'{CDN_DIST}css/{stylesheet}' in stylesheets
+    # The Material stylesheet the MUI overrides build on is kept.
+    assert f'{CDN_DIST}bundled/theme/material.css' in stylesheets
+
+
+def test_tabulator_keeps_material_theme(panel_ui):
+    params = panel_ui.MaterialUIDesign().params(panel_ui.Tabulator())[0]
+
+    assert params['theme'] == 'materialize'

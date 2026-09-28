@@ -1,0 +1,186 @@
+/* Aligns Tabulator with the Material UI DataFrame; :host outranks the
+   Tabulator theme stylesheet, which is applied after this one. Backgrounds
+   are transparent so the table picks up the elevation of its container. */
+
+:host .pnx-tabulator.tabulator {
+  background-color: transparent;
+  border: 1px solid var(--mui-palette-divider);
+  border-radius: var(--mui-shape-borderRadius);
+  color: var(--mui-palette-text-primary);
+  font: var(--mui-font-body2);
+}
+
+:host .pnx-tabulator.tabulator .tabulator-header {
+  background-color: var(--mui-palette-action-hover);
+  border-bottom: 1px solid var(--mui-palette-divider);
+  color: var(--mui-palette-text-secondary);
+}
+
+:host .pnx-tabulator.tabulator .tabulator-header .tabulator-headers,
+:host .pnx-tabulator.tabulator .tabulator-header .tabulator-header-contents,
+:host .pnx-tabulator.tabulator .tabulator-header .tabulator-col {
+  background-color: transparent;
+  border-color: var(--mui-palette-divider);
+  color: var(--mui-palette-text-secondary);
+}
+
+:host
+  .pnx-tabulator.tabulator
+  .tabulator-header
+  .tabulator-col
+  .tabulator-col-title {
+  font: var(--mui-font-overline);
+  font-weight: 500;
+  letter-spacing: 0.08333em;
+  text-transform: uppercase;
+}
+
+:host
+  .pnx-tabulator.tabulator
+  .tabulator-header
+  .tabulator-col.tabulator-sortable:hover {
+  background-color: var(--mui-palette-action-selected);
+  color: var(--mui-palette-text-primary);
+}
+
+:host
+  .pnx-tabulator.tabulator
+  .tabulator-header
+  .tabulator-col
+  .tabulator-col-sorter
+  .tabulator-arrow {
+  border-bottom-color: var(--mui-palette-text-disabled);
+}
+
+:host
+  .pnx-tabulator.tabulator
+  .tabulator-header
+  .tabulator-col[aria-sort='ascending']
+  .tabulator-col-sorter
+  .tabulator-arrow {
+  border-bottom-color: var(--mui-palette-primary-main);
+}
+
+:host
+  .pnx-tabulator.tabulator
+  .tabulator-header
+  .tabulator-col[aria-sort='descending']
+  .tabulator-col-sorter
+  .tabulator-arrow {
+  border-top-color: var(--mui-palette-primary-main);
+}
+
+:host .pnx-tabulator.tabulator .tabulator-tableholder,
+:host .pnx-tabulator.tabulator .tabulator-tableholder .tabulator-table {
+  background-color: transparent;
+  color: var(--mui-palette-text-primary);
+}
+
+:host
+  .pnx-tabulator.tabulator
+  .tabulator-tableholder
+  .tabulator-table
+  .tabulator-row,
+:host
+  .pnx-tabulator.tabulator
+  .tabulator-tableholder
+  .tabulator-table
+  .tabulator-row.tabulator-row-even {
+  background-color: transparent;
+  border-bottom: 1px solid var(--mui-palette-divider);
+  color: var(--mui-palette-text-primary);
+}
+
+:host
+  .pnx-tabulator.tabulator
+  .tabulator-tableholder
+  .tabulator-table
+  .tabulator-row
+  .tabulator-cell {
+  border-color: var(--mui-palette-divider);
+}
+
+:host
+  .pnx-tabulator.tabulator
+  .tabulator-tableholder
+  .tabulator-table
+  .tabulator-row
+  .tabulator-cell.tabulator-row-header,
+:host
+  .pnx-tabulator.tabulator
+  .tabulator-tableholder
+  .tabulator-table
+  .tabulator-row
+  .tabulator-cell[tabulator-field='index'] {
+  color: var(--mui-palette-text-secondary);
+}
+
+:host
+  .pnx-tabulator.tabulator
+  .tabulator-tableholder
+  .tabulator-table
+  .tabulator-row.tabulator-selectable:hover {
+  background-color: var(--mui-palette-action-hover);
+  color: var(--mui-palette-text-primary);
+}
+
+:host
+  .pnx-tabulator.tabulator
+  .tabulator-tableholder
+  .tabulator-table
+  .tabulator-row.tabulator-selected,
+:host
+  .pnx-tabulator.tabulator
+  .tabulator-tableholder
+  .tabulator-table
+  .tabulator-row.tabulator-selected.tabulator-row-even,
+:host
+  .pnx-tabulator.tabulator
+  .tabulator-tableholder
+  .tabulator-table
+  .tabulator-row.tabulator-selected.tabulator-selectable:hover {
+  background-color: rgba(
+    var(--mui-palette-primary-mainChannel) /
+      var(--mui-palette-action-selectedOpacity)
+  );
+  color: var(--mui-palette-text-primary);
+}
+
+:host
+  .pnx-tabulator.tabulator
+  .tabulator-row
+  .tabulator-cell.tabulator-editing {
+  border: 1px solid var(--mui-palette-primary-main);
+}
+
+:host
+  .pnx-tabulator.tabulator
+  .tabulator-row
+  .tabulator-cell.tabulator-editing
+  input {
+  color: var(--mui-palette-text-primary);
+}
+
+:host .pnx-tabulator.tabulator .tabulator-footer {
+  background-color: transparent;
+  border-top: 1px solid var(--mui-palette-divider);
+  color: var(--mui-palette-text-secondary);
+}
+
+:host .pnx-tabulator.tabulator .tabulator-footer .tabulator-page {
+  border-radius: var(--mui-shape-borderRadius);
+  color: var(--mui-palette-text-primary);
+}
+
+:host
+  .pnx-tabulator.tabulator
+  .tabulator-footer
+  .tabulator-page:not([disabled]):hover {
+  background-color: var(--mui-palette-action-hover);
+  color: var(--mui-palette-text-primary);
+}
+
+:host .pnx-tabulator.tabulator .tabulator-footer .tabulator-page.active {
+  background-color: var(--mui-palette-primary-main);
+  color: var(--mui-palette-primary-contrastText);
+}
