@@ -198,9 +198,16 @@ def test_parse_notebook_strips_line_magics():
     sio = StringIO(nbformat.v4.writes(nb))
     nb, code, layout = parse_notebook(sio)
 
-    assert '%' not in code
-    assert 'import panel as pn' in code
-    compile(code, 'test.ipynb', 'exec')
+    assert code == f"""\
+import panel as pn
+_pn__state._cell_outputs['{cell.id}'].append((pn.Row(1)))
+for _cell__out in _CELL__DISPLAY:
+    _pn__state._cell_outputs['{cell.id}'].append(_cell__out)
+_CELL__DISPLAY.clear()
+_fig__out = _get__figure()
+if _fig__out:
+    _pn__state._cell_outputs['{cell.id}'].append(_fig__out)
+"""
 
 def test_create_copy_button():
     """Test that _create_copy_button creates a ButtonIcon with correct properties."""
