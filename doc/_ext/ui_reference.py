@@ -30,6 +30,13 @@ REFERENCE = re.compile(r'(?<![\w.])pn\.(?:(widgets|layout|pane|chat|indicators|t
 LINK = re.compile(r'(?<!!)\]\(([^)]+)\)')
 CLASSIC_LINK = re.compile(r'\]\((?P<target><[^>]+>|[^\s()]+)(?P<title>\s+"[^"]*")?\)')
 FENCE = re.compile(r'^ {0,3}(`{3,}|~{3,})')
+CLASSIC_BANNER = """:::{{admonition}} This component replaces a classic Panel component
+:class: tip
+
+`pn.ui.{name}` supersedes `pn.{module}.{name}`, which remains available and is documented in the [classic {name} reference](../classic/{section}/{name}.md).
+:::
+
+"""
 
 # Only these fallbacks execute; other components may require positional arguments.
 EXAMPLES = {
@@ -532,8 +539,8 @@ def prepare_ui_gallery(app):
     gallery['thumbnail_source'] = 'reference/ui'
     gallery['normalize_titles'] = False
     gallery['no_image_thumb'] = True
-    gallery['intro'] = ('The components below use ``panel.ui``.\n\n'
-                        '.. toctree::\n   :hidden:\n\n   classic/index\n')
+    gallery['intro'] = ('The component gallery covers the newly introduced ``panel.ui`` namespace. '
+                        'For the classic gallery `click here <classic/index.html>`_.')
 
 
 def relocate_classic_links(app, docname, source):
@@ -622,6 +629,9 @@ def generate_ui_reference(app):
                 f'```{{raw}} html\n<meta http-equiv="refresh" content="0; url={destination}">\n```\n\n'
                 f'See the [classic {name} reference]({destination}).'
             )
+        elif (examples / section / f'{name}.ipynb').is_file():
+            module = next(key for key, value in SECTIONS.items() if value == section)
+            content = CLASSIC_BANNER.format(name=name, module=module, section=section) + content
         _write_generated(section_dir / f'{name}.md', f'# {name}\n\n{content}\n')
     old_index = output / 'index.md'
     if old_index.is_file() and old_index.read_text(encoding='utf-8').startswith(GENERATED):
