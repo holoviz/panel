@@ -155,3 +155,19 @@ def test_file_path_download():
     file_download._clicks += 1
     assert file_download.data
     assert file_download._transfers == 1
+
+
+def test_file_download_color_renders_to_bokeh_model(document, comm):
+    file_download = FileDownload(color="primary", filename="x.txt", callback=lambda: "")
+    widget = file_download.get_root(document, comm=comm)
+    assert widget.button_type == "primary"
+    file_download.color = "danger"
+    assert widget.button_type == "danger"
+
+
+def test_file_download_variant_renders_to_css_class(document, comm):
+    file_download = FileDownload(variant="outline", filename="x.txt", callback=lambda: "")
+    widget = file_download.get_root(document, comm=comm)
+    assert "outline" in widget.css_classes
+    file_download.variant = "solid"
+    assert "solid" in widget.css_classes
