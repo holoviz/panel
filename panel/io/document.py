@@ -629,8 +629,8 @@ def _suppress_property_callbacks(
     events: list[DocumentChangedEvent]
 ) -> list[DocumentChangedEvent]:
     """
-    Clears the ``callback_invoker`` on patch events so that handing them
-    to bokeh only serializes and writes them.
+    Clears the ``callback_invoker`` on Python-side patch events so that
+    handing them to bokeh only serializes and writes them.
 
     A held ModelChangedEvent carries the invoker that runs the
     property-level ``on_change`` callbacks, which bokeh defers until the
@@ -639,9 +639,13 @@ def _suppress_property_callbacks(
     the time the dispatch happens, so letting the invoker run makes
     ``Syncable._server_change`` treat the Python update as a frontend
     change and boomerang it back into the parameter.
+
+    Frontend patches applied while the Document is held carry the session
+    as their ``setter`` and keep their invoker, otherwise the change would
+    never reach Python.
     """
     for event in events:
-        if isinstance(event, DocumentPatchedEvent):
+        if isinstance(event, DocumentPatchedEvent) and event.setter is None:
             event.callback_invoker = None
     return events
 
@@ -840,6 +844,7 @@ def hold(
                     if _client_has_document(doc):
                         def _unhold(lock=hold_lock, doc=doc):
                             with lock:
+                                _suppress_property_callbacks(doc.callbacks._held_events)
                                 doc.unhold()
                         with hold_lock:
                             # Clear the hold around scheduling the callback

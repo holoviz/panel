@@ -1,6 +1,7 @@
 import asyncio
 import gc
 import threading
+import time
 import weakref
 
 from concurrent.futures import ThreadPoolExecutor
@@ -10,7 +11,7 @@ import pytest
 import tornado.locks
 
 from bokeh.document import Document
-from bokeh.document.events import MessageSentEvent
+from bokeh.document.events import MessageSentEvent, ModelChangedEvent
 from bokeh.protocol import Protocol
 
 import panel as pn
@@ -18,9 +19,9 @@ import panel as pn
 from panel.io.document import (
     _UNCONNECTED_EVENTS, _WRITE_BLOCK, MockSessionContext, _cleanup_doc,
     _client_has_document, _destroy_document, _is_write_blocked,
-    _keep_unsent_models_new, _socket_dispatcher, _write_tasks, dispatch_django,
-    dispatch_tornado, extra_socket_handlers, hold, init_doc,
-    schedule_write_events, unlocked, write_events,
+    _keep_unsent_models_new, _socket_dispatcher, _suppress_property_callbacks,
+    _write_tasks, dispatch_django, dispatch_tornado, extra_socket_handlers,
+    hold, init_doc, schedule_write_events, unlocked, write_events,
 )
 from panel.io.state import _state, set_curdoc, state
 from panel.tests.util import serve_and_request, wait_until
@@ -376,6 +377,61 @@ def test_unlocked_dispatches_from_worker_thread():
     # thread the locked callback body ran on.
     wait_until(lambda: model.value == 3)
     assert 'on_loop' in seen
+
+
+@pytest.mark.xdist_group(name="server")
+def test_threaded_hold_does_not_boomerang_python_changes():
+    """
+    A Python-side change made inside a hold on a worker thread is
+    released on a later tick, after ``Syncable._changing`` is torn down,
+    so it must not be re-processed as a frontend change.
+    """
+    slider = IntSlider()
+
+    serve_and_request(slider)
+    wait_until(lambda: bool(slider._documents))
+
+    doc, model = list(slider._documents.items())[0]
+    # Stands in for a client, so the hold is released on a later tick
+    state._connected[doc] = True
+
+    received = []
+    process_events = slider._process_events
+    slider._process_events = lambda events: received.append(events) or process_events(events)
+
+    seen = {}
+
+    def callback():
+        # Bokeh runs locked next-tick callbacks on a worker thread
+        seen['on_loop'] = state._on_loop_thread
+        with hold(doc):
+            slider.value = 3
+
+    doc.add_next_tick_callback(callback)
+
+    wait_until(lambda: model.value == 3 and not doc.callbacks.hold_value)
+    # Leave time for a boomerang to pass through the change debounce
+    time.sleep(0.5)
+
+    assert seen['on_loop'] is False
+    assert received == []
+
+
+def test_suppress_property_callbacks_keeps_frontend_changes():
+    doc = Document()
+    model = IntSlider().get_root(doc)
+    doc.add_root(model)
+
+    def invoker():
+        pass
+
+    python_event = ModelChangedEvent(doc, model, 'value', 1, callback_invoker=invoker)
+    frontend_event = ModelChangedEvent(doc, model, 'value', 2, setter=object(), callback_invoker=invoker)
+
+    _suppress_property_callbacks([python_event, frontend_event])
+
+    assert python_event.callback_invoker is None
+    assert frontend_event.callback_invoker is invoker
 
 
 def test_write_events_shares_one_message_across_connections():

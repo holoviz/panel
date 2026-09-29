@@ -264,6 +264,8 @@ class _state(param.Parameterized):
     # Watchers
     _watch_events: t.ClassVar[list[asyncio.Event]] = []
     _busy_cleanup_scheduled: t.ClassVar[PeriodicCallback | None] = None
+    # Reentrant since the _busy_counter watcher prunes the counter again
+    _busy_lock: t.ClassVar[threading.RLock] = threading.RLock()
 
     # Types
     _notification_type: t.ClassVar[type[NotificationAreaBase] | None] = None
@@ -429,22 +431,27 @@ class _state(param.Parameterized):
             self.busy = bool(self._busy_counter)
 
     def _add_busy_event(self, event_id: str) -> None:
-        self._cleanup_busy_counter()
-        with edit_readonly(self):
-            self._busy_counter = [*self._busy_counter, (event_id, time.monotonic())]
+        # Busy events are added and removed from any thread, so without the
+        # lock a concurrent update could resurrect an event that was removed
+        # and leave state.busy stuck until the event expires.
+        with self._busy_lock:
+            self._cleanup_busy_counter()
+            with edit_readonly(self):
+                self._busy_counter = [*self._busy_counter, (event_id, time.monotonic())]
         self._schedule_busy_cleanup()
 
     def _remove_busy_event(self, event_id: str) -> None:
         self._cleanup_busy_counter(event_id)
 
     def _cleanup_busy_counter(self, event_id: str | None = None, timeout: float = 30.0) -> None:
-        now = time.monotonic()
-        with edit_readonly(self):
-            self._busy_counter = [
-                (eid, started_at)
-                for eid, started_at in self._busy_counter
-                if now - started_at <= timeout and eid != event_id
-            ]
+        with self._busy_lock:
+            now = time.monotonic()
+            with edit_readonly(self):
+                self._busy_counter = [
+                    (eid, started_at)
+                    for eid, started_at in self._busy_counter
+                    if now - started_at <= timeout and eid != event_id
+                ]
 
     def _schedule_busy_cleanup(self) -> None:
         if _state._busy_cleanup_scheduled:
