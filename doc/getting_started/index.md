@@ -46,6 +46,8 @@ As the next step after this Getting Started guide, we recommend learning the bas
 ## Additional Resources
 
 - The [original announcement of Panel from 2019](https://blog.holoviz.org/panel_announcement.html).
+- Learn how to [build an interactive machine-learning dashboard](https://blog.holoviz.org/building_an_interactive_ml_dashboard_in_panel.html) with Panel.
+- Watch [three ways to build a Panel visualization dashboard](https://www.youtube.com/watch?v=8du4NNoOtII) from PyTexas 2023.
 
 ```{toctree}
 :titlesonly:
