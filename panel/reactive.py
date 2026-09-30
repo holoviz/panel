@@ -36,7 +36,7 @@ from param.parameterized import (
 )
 
 from .io.document import hold, unlocked
-from .io.notebook import push
+from .io.notebook import push, replace_inline_css
 from .io.resource_spec import lazy_load_available, resource_spec
 from .io.resources import (
     CDN_DIST, get_dist_path, loading_css, patch_stylesheet, process_raw_css,
@@ -714,6 +714,9 @@ class Reactive(Syncable, Viewable):
             dist_url = doc._template_variables['dist_url']
         else:
             dist_url = CDN_DIST
+        # Documents rendered with inline resources, e.g. in a notebook, must
+        # keep inlining updates since the CDN may not serve these files.
+        inline_cache = state._inline_stylesheets.get(doc) if doc else None
         stylesheets = []
         for stylesheet in properties['stylesheets']:
             if isinstance(stylesheet, ImportedStyleSheet):
@@ -732,6 +735,8 @@ class Reactive(Syncable, Viewable):
                         stylesheet = ImportedStyleSheet(url=url)
                     css_cache[url] = stylesheet
                 patch_stylesheet(stylesheet, dist_url)
+                if inline_cache is not None:
+                    stylesheet = replace_inline_css(stylesheet, inline_cache)
             stylesheets.append(stylesheet)
         properties['stylesheets'] = stylesheets
 
