@@ -125,6 +125,16 @@ panel convert script.py --to pyodide-worker --out pyodide --resources iris.csv
 The included resources need to be located in the directory of the main panel app or its subdirectories.
 :::
 
+## Air-gapped environments
+
+By default converted applications load Pyodide from `https://cdn.jsdelivr.net/pyodide/`. If that CDN is not reachable, e.g. in an air-gapped network, host a copy of the Pyodide distribution yourself and set the `PANEL_PYODIDE_CDN_ROOT` environment variable when converting:
+
+```bash
+PANEL_PYODIDE_CDN_ROOT="https://intranet.example.com/pyodide/" panel convert script.py --to pyodide-worker --out pyodide
+```
+
+The self-hosted copy has to mirror the layout of the jsDelivr CDN, i.e. Pyodide is loaded from `<root>/<version>/full/` (or `<root>/<version>/pyc/` for `--compiled` builds), where the version is the one in `panel.io.convert.PYODIDE_VERSION`. The Panel and Bokeh wheels are loaded from the Panel CDN, which can be configured in the same way with `PANEL_CDN_ROOT`.
+
 ## Index
 
 If you convert multiple applications at once you may want to add an index to be able to navigate between the applications easily. To enable the index simply pass `--index` to the convert command.

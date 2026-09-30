@@ -55,10 +55,23 @@ PANEL_LOCAL_WHL = WHL_PATH / f'panel-{__version__.replace("-dirty", "")}-py3-non
 BOKEH_LOCAL_WHL = WHL_PATH / f'bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 PANEL_CDN_WHL = f'{CDN_DIST}wheels/panel-{PY_VERSION}-py3-none-any.whl'
 BOKEH_CDN_WHL = f'{CDN_ROOT}wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
-PYODIDE_URL = f'https://cdn.jsdelivr.net/pyodide/{PYODIDE_VERSION}/full/pyodide.js'
-PYODIDE_PYC_URL = f'https://cdn.jsdelivr.net/pyodide/{PYODIDE_VERSION}/pyc/pyodide.js'
-PYODIDE_MODULE_URL = f'https://cdn.jsdelivr.net/pyodide/{PYODIDE_VERSION}/full/pyodide.mjs'
-PYODIDE_PYC_MODULE_URL = f'https://cdn.jsdelivr.net/pyodide/{PYODIDE_VERSION}/pyc/pyodide.mjs'
+
+
+def _pyodide_url(compiled: bool = False, module: bool = False) -> str:
+    """
+    Returns the URL to load Pyodide from, resolved against the
+    configured `config.pyodide_cdn_root`.
+    """
+    root = config.pyodide_cdn_root.rstrip('/')
+    dist = 'pyc' if compiled else 'full'
+    ext = 'mjs' if module else 'js'
+    return f'{root}/{PYODIDE_VERSION}/{dist}/pyodide.{ext}'
+
+
+PYODIDE_URL = _pyodide_url()
+PYODIDE_PYC_URL = _pyodide_url(compiled=True)
+PYODIDE_MODULE_URL = _pyodide_url(module=True)
+PYODIDE_PYC_MODULE_URL = _pyodide_url(compiled=True, module=True)
 PYSCRIPT_CSS = f'<link rel="stylesheet" href="https://pyscript.net/releases/{PYSCRIPT_VERSION}/core.css" />'
 PYSCRIPT_CSS_OVERRIDES = f'<link rel="stylesheet" href="{CDN_DIST}css/pyscript.css" />'
 PYSCRIPT_JS = f'<script type="module" src="https://pyscript.net/releases/{PYSCRIPT_VERSION}/core.js" defer></script>'
@@ -410,7 +423,7 @@ def script_to_html(
                 'loading_spinner': config.loading_spinner
             })
             web_worker = WEB_WORKER_TEMPLATE.render({
-                'PYODIDE_URL': PYODIDE_PYC_MODULE_URL if compiled else PYODIDE_MODULE_URL,
+                'PYODIDE_URL': _pyodide_url(compiled=compiled, module=True),
                 'data_archives': data_archives,
                 'env_spec': env_spec,
                 'code': code
@@ -418,7 +431,7 @@ def script_to_html(
             plot_script = wrap_in_script_tag(worker_handler)
         else:
             if js_resources == 'auto':
-                js_resources = [PYODIDE_PYC_JS if compiled else PYODIDE_JS]
+                js_resources = [f'<script src="{_pyodide_url(compiled=compiled)}" defer></script>']
             script_template = _pn_env.from_string(PYODIDE_SCRIPT)
             plot_script = script_template.render({
                 'data_archives': data_archives,

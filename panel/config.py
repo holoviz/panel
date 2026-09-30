@@ -274,6 +274,11 @@ class _config(_base_config):
         The root path of the CDN. Configurable to support air-gapped and
         sandboxed environments.""")
 
+    _pyodide_cdn_root = param.String(
+        default="https://cdn.jsdelivr.net/pyodide/", doc="""
+        The root path of the CDN that converted apps load Pyodide from.
+        Configurable to support air-gapped and sandboxed environments.""")
+
     _comms: t.Literal['default', 'ipywidgets', 'vscode', 'colab'] = param.Selector(
         default='default', objects=['default', 'ipywidgets', 'vscode', 'colab'], doc="""
         Whether to render output in Jupyter with the default Jupyter
@@ -390,7 +395,8 @@ class _config(_base_config):
         'oauth_secret', 'oauth_jwt_user', 'oauth_redirect_uri',
         'oauth_encryption_key', 'oauth_extra_params', 'npm_cdn',
         'layout_compatibility', 'oauth_refresh_tokens', 'oauth_guest_endpoints',
-        'oauth_optional', 'admin', 'index_titles', 'disable_validation'
+        'oauth_optional', 'admin', 'index_titles', 'disable_validation',
+        'pyodide_cdn_root'
     }
 
     _truthy = ['True', 'true', '1', True, 1]
@@ -558,6 +564,10 @@ class _config(_base_config):
     @property
     def cdn_root(self):
         return os.environ.get('PANEL_CDN_ROOT', self._cdn_root)
+
+    @property
+    def pyodide_cdn_root(self):
+        return os.environ.get('PANEL_PYODIDE_CDN_ROOT', self._pyodide_cdn_root)
 
     @property
     def console_output(self):
