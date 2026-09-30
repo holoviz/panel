@@ -7,6 +7,7 @@ import pytest
 
 pytest.importorskip("playwright")
 
+from bokeh.plotting import figure
 from playwright.sync_api import expect
 
 from panel.config import config
@@ -16,7 +17,7 @@ from panel.custom import (
 from panel.io.compile import compile_components
 from panel.layout import Row
 from panel.layout.base import ListLike
-from panel.pane import Markdown
+from panel.pane import Bokeh, Markdown
 from panel.tests.util import serve_component, wait_until
 
 pytestmark = pytest.mark.ui
@@ -889,6 +890,50 @@ def test_children_append_without_rerender(page, component):
 
     assert child.render_count == 1
     assert example.render_count == 2
+
+
+# Counts layout passes of layout roots, i.e. ESM views laying out their own
+# tree, from the moment the Bokeh bundles have loaded.
+COUNT_ROOT_LAYOUTS = """
+window.__root_layouts = 0
+document.addEventListener('DOMContentLoaded', () => {
+  const view_cls = Bokeh.Models.get('panel.models.esm.ReactiveESM').prototype.default_view
+  const compute_layout = view_cls.prototype.compute_layout
+  view_cls.prototype.compute_layout = function() {
+    if (!this.is_managed) { window.__root_layouts++ }
+    return compute_layout.call(this)
+  }
+})
+"""
+
+@pytest.mark.internet
+@pytest.mark.parametrize('component', [JSChildren, ReactChildren])
+def test_children_initial_render_layout_passes_independent_of_count(page, component):
+    page.add_init_script(COUNT_ROOT_LAYOUTS)
+    example = component(objects=[f'<div class="item">{i}</div>' for i in range(50)])
+
+    serve_component(page, example)
+
+    expect(page.locator('.item')).to_have_count(50)
+    page.wait_for_function('Bokeh.index.roots[0].is_idle')
+    page.wait_for_timeout(200)
+
+    # Each mounted child used to lay out the whole root, one pass per child.
+    assert page.evaluate('window.__root_layouts') < 10
+
+@pytest.mark.internet
+@pytest.mark.parametrize('component', [JSChildren, ReactChildren])
+def test_children_bokeh_plot_laid_out_after_mount(page, component):
+    plot = figure(width=300, height=200)
+    plot.line([0, 1], [0, 1])
+    example = component(objects=['<div class="item">A</div>', Bokeh(plot)])
+
+    serve_component(page, example)
+
+    canvas = page.locator('.bk-Canvas').first
+    expect(canvas).to_be_visible()
+    wait_until(lambda: (canvas.bounding_box() or {}).get('width') == 300, page)
+    assert canvas.bounding_box()['height'] == 200
 
 
 JS_CODE_BEFORE = """

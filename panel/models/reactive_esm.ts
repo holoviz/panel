@@ -17,7 +17,7 @@ import type {UIElement} from "@bokehjs/models/ui/ui_element"
 
 import {serializeEvent} from "./event-to-object"
 import {DOMEvent} from "./html"
-import {HTMLBox, HTMLBoxView, set_size} from "./layout"
+import {HTMLBox, HTMLBoxView, rerender_view, set_size} from "./layout"
 import {resources} from "./resources"
 import {convertUndefined, formatError} from "./util"
 
@@ -194,6 +194,7 @@ export class ReactiveESMView extends HTMLBoxView {
   _stale_children: boolean = false
   _mounted: Map<string, Set<string>> = new Map()
   _update_children_chain: Promise<void> = Promise.resolve()
+  _layout_pending: boolean = false
 
   override initialize(): void {
     super.initialize()
@@ -391,7 +392,41 @@ export class ReactiveESMView extends HTMLBoxView {
     return this.parent instanceof LayoutDOMView && !(this.parent instanceof ReactiveESMView)
   }
 
+  /**
+   * Renders a child without laying it out and schedules a single layout pass
+   * instead. Children mount one at a time (e.g. once per React
+   * `componentDidMount`), and a child's `compute_layout` lays out, and so
+   * measures, the whole tree; doing that per child is quadratic in the
+   * number of children.
+   */
+  render_child(view: DOMView): void {
+    rerender_view(view, false)
+    this.schedule_layout()
+  }
+
+  /**
+   * Lays out once all synchronous work queued in the current task (such as
+   * a React commit mounting every child) has run. A pass that happens in the
+   * meantime, e.g. `_on_mounted`'s, makes the scheduled one a no-op.
+   */
+  schedule_layout(): void {
+    if (this._layout_pending) {
+      return
+    }
+    this._layout_pending = true
+    queueMicrotask(() => {
+      if (!this._layout_pending || this.is_destroyed) {
+        return
+      }
+      this.compute_layout()
+      // `finish()` may already have run and found the layout missing, and
+      // nothing else re-checks once it exists.
+      this.notify_finished()
+    })
+  }
+
   override compute_layout(): void {
+    this._layout_pending = false
     if (this.is_managed) {
       super.compute_layout()
       return
@@ -464,7 +499,7 @@ export class ReactiveESMView extends HTMLBoxView {
         const parent = view.el.parentNode
         if (parent) {
           this._child_rendered.set(view, false)
-          this.rerender_(view)
+          this.render_child(view)
           this._child_rendered.set(view, true)
         }
       }

@@ -525,7 +525,7 @@ async function render(id) {
         this.updateElement()
         if (this.use_shadow_dom) {
           this.props.parent.flush_scheduled_removals()
-          this.props.parent.rerender_(view)
+          this.props.parent.render_child(view)
           this.props.parent._child_rendered.set(view, true)
         } else {
           view.patch_container(this.containerRef.current)
@@ -547,7 +547,7 @@ async function render(id) {
       this.props.parent.flush_scheduled_removals()
       if (this.use_shadow_dom) {
         this.updateElement()
-        this.props.parent.rerender_(view)
+        this.props.parent.render_child(view)
         this.props.parent._child_rendered.set(view, true)
         this.props.parent.notify_mount(this.props.name, view.model.id)
       } else {
