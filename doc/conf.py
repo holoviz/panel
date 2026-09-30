@@ -8,7 +8,6 @@ import param
 
 from packaging.version import Version
 
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(pathlib.Path(__file__).parent / '_ext'))
 
 param.parameterized.docstring_signature = False
@@ -209,12 +208,14 @@ nbsite_gallery_conf = {
     'only_use_existing': True,
 }
 
-if panel.__version__ != version and (PANEL_ROOT / 'dist' / 'wheels' / f'panel-{panel.__version__.replace("-dirty", "")}-py3-none-any.whl').is_file():
-    py_version = panel.__version__.replace("-dirty", "")
+WHEELS_DIR = PANEL_ROOT / 'dist' / 'wheels'
+py_version = panel.__version__.replace("-dirty", "")
+
+if panel.__version__ != version and (WHEELS_DIR / f'panel-{py_version}-py3-none-any.whl').is_file():
     panel_req = f'./wheels/panel-{py_version}-py3-none-any.whl'
     bokeh_req = (
         f'./wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
-        if (PANEL_ROOT / 'dist' / 'wheels' / f'bokeh-{BOKEH_VERSION}-py3-none-any.whl').is_file()
+        if (WHEELS_DIR / f'bokeh-{BOKEH_VERSION}-py3-none-any.whl').is_file()
         else f'bokeh=={BOKEH_VERSION}'
     )
 else:

@@ -14,6 +14,17 @@ from panel.tests.util import wait_until
 pytestmark = pytest.mark.jupyter
 
 
+def _assert_serves_mjs_as_javascript():
+    conn = HTTPConnection("localhost:8123")
+    try:
+        conn.request("HEAD", '/static/pyodide/pyodide.mjs')
+        response = conn.getresponse()
+    finally:
+        conn.close()
+    assert response.status == 200
+    assert response.getheader('Content-Type', '').startswith(('text/javascript', 'application/javascript'))
+
+
 @pytest.fixture()
 def launch_jupyterlite():
     process = Popen(
@@ -42,14 +53,7 @@ def launch_jupyterlite():
         process.wait()
         raise RuntimeError("Failed to start http server") from e
     try:
-        conn = HTTPConnection("localhost:8123")
-        try:
-            conn.request("HEAD", '/static/pyodide/pyodide.mjs')
-            response = conn.getresponse()
-            assert response.status == 200
-            assert response.getheader('Content-Type', '').startswith(('text/javascript', 'application/javascript'))
-        finally:
-            conn.close()
+        _assert_serves_mjs_as_javascript()
         yield
     finally:
         process.terminate()

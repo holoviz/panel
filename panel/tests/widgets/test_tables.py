@@ -30,9 +30,6 @@ from panel.widgets.tables import DataFrame, Tabulator
 pd_old = pytest.mark.skipif(Version(pd.__version__) < Version('1.3'),
                             reason="Requires latest pandas")
 
-# The DataFrame widget is deprecated in favour of Tabulator but still has to be
-# tested until it is removed; test_dataframe_widget_is_deprecated asserts the
-# warning itself.
 pytestmark = pytest.mark.filterwarnings(
     "ignore:'DataFrame' is deprecated:panel.util.warnings.PanelDeprecationWarning"
 )

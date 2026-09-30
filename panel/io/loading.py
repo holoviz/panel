@@ -28,7 +28,7 @@ def loading_options() -> dict[str, t.Any]:
     return _design().loading_options()
 
 
-def loading_css_classes() -> list[str]:
+def _loading_css_classes() -> list[str]:
     """
     Returns the CSS classes that mark a component as loading.
     """
@@ -66,13 +66,13 @@ def loading_resources(
     )
 
 
-def _loading_css_classes(item) -> list[str]:
+def _item_loading_css_classes(item) -> list[str]:
     """
     Resolves the loading CSS classes for a specific component, honoring
     the Design it was rendered with over the globally configured Design.
     """
     design = getattr(item, '_design', None)
-    return design.loading_css_classes() if design else loading_css_classes()
+    return design.loading_css_classes() if design else _loading_css_classes()
 
 
 def _add_css_classes(item, css_classes):
@@ -110,7 +110,7 @@ def start_loading_spinner(*objects):
     """
     for item in objects:
         if hasattr(item, "css_classes"):
-            _add_css_classes(item, _loading_css_classes(item))
+            _add_css_classes(item, _item_loading_css_classes(item))
 
 def stop_loading_spinner(*objects):
     """
@@ -123,4 +123,4 @@ def stop_loading_spinner(*objects):
     """
     for item in objects:
         if hasattr(item, "css_classes"):
-            _remove_css_classes(item, _loading_css_classes(item))
+            _remove_css_classes(item, _item_loading_css_classes(item))

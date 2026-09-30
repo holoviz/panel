@@ -5,7 +5,7 @@ import pytest
 from panel.config import config
 from panel.io.convert import loading_resources as _convert_resources
 from panel.io.loading import (
-    loading_css, loading_css_classes, loading_options, loading_resources,
+    _loading_css_classes, loading_css, loading_options, loading_resources,
     start_loading_spinner, stop_loading_spinner,
 )
 from panel.io.resources import CDN_DIST
@@ -69,10 +69,10 @@ def test_material_design_declares_material_spinner(default_loading_config):
 def test_module_level_helpers_follow_design(default_loading_config):
     with config.set(design=None):
         assert loading_options()['spinner'] == 'arc'
-        assert loading_css_classes() == ['pn-loading', 'pn-arc']
+        assert _loading_css_classes() == ['pn-loading', 'pn-arc']
     with config.set(design=LoadingDesign):
         assert loading_options()['spinner'] == 'material'
-        assert loading_css_classes() == ['pn-loading', 'pn-material']
+        assert _loading_css_classes() == ['pn-loading', 'pn-material']
         assert '#ff0000' in loading_css()
 
 

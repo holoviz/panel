@@ -89,9 +89,8 @@ from panel.widgets.button import _ButtonBase
 
 def _pmui_patched_globals():
     """
-    The globals panel-material-ui replaces when it is imported (plan section
-    6.3). Left patched, every later test would render Material widgets from
-    Param and HoloViews and the Material page template from the server.
+    Globals panel-material-ui patches on import, which would otherwise leak
+    Material widgets and templates into every later test.
     """
     import panel.io.convert
     import panel.io.resources

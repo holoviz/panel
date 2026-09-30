@@ -1,6 +1,6 @@
 """
 CLI subcommand rewriting classic Panel source code to the ``panel.ui``
-namespace (plan §10.1).
+namespace.
 
 The heavy lifting lives in :mod:`panel.command._migrate`, which is only
 imported inside :meth:`Migrate.invoke`: ``libcst`` is an optional dependency
@@ -27,25 +27,29 @@ _INSTALL_MESSAGE = (
 )
 
 
+# Directories holding environments, dependencies or build output rather than
+# user source, which would otherwise be rewritten when migrating a project root.
+_SKIPPED_DIRS = frozenset({
+    '__pycache__', 'build', 'dist', 'env', 'node_modules', 'site-packages', 'venv',
+})
+
+
+def _skip_dir(name: str) -> bool:
+    return name.startswith('.') or name in _SKIPPED_DIRS
+
+
 def _iter_python_files(paths: list[str]) -> list[pathlib.Path]:
     """
-    Expand a list of file and/or directory arguments into a sorted, deduped
-    list of ``*.py`` files, walking directories recursively and skipping
-    ``__pycache__``, hidden directories, and anything under ``.git``.
+    Expand file and directory arguments into a sorted, deduplicated list of
+    ``*.py`` files. Explicitly passed paths are always included.
     """
     files: set[pathlib.Path] = set()
     for raw in paths:
         path = pathlib.Path(raw)
         if path.is_dir():
             for root, dirs, filenames in os.walk(path):
-                root_path = pathlib.Path(root)
-                if '.git' in root_path.parts:
-                    dirs[:] = []
-                    continue
-                dirs[:] = [d for d in dirs if d != '__pycache__' and not d.startswith('.')]
-                for filename in filenames:
-                    if filename.endswith('.py'):
-                        files.add(root_path / filename)
+                dirs[:] = [d for d in dirs if not _skip_dir(d)]
+                files.update(pathlib.Path(root) / f for f in filenames if f.endswith('.py'))
         elif path.is_file():
             files.add(path)
         else:
@@ -68,13 +72,13 @@ class Migrate(Subcommand):
             nargs   = '+',
             help    = "Files and/or directories to migrate; directories are walked recursively for *.py files.",
         )),
-        ('--check', Argument(
+        ('--fix', Argument(
             action  = 'store_true',
-            help    = "Report which files would change without modifying them; exits non-zero if any file would change.",
+            help    = "Write the changes to disk. Without it the command only reports them and exits non-zero if any file would change.",
         )),
         ('--diff', Argument(
             action  = 'store_true',
-            help    = "Print a unified diff of the changes without modifying any file.",
+            help    = "Print a unified diff of the changes.",
         )),
     )
 
@@ -115,14 +119,14 @@ class Migrate(Subcommand):
                     fromfile=str(path), tofile=str(path),
                 )
                 sys.stdout.writelines(diff)
-            elif not args.check:
+            if args.fix:
                 path.write_text(result.source, encoding='utf-8')
 
         if not args.diff:
-            print(report.render())  # noqa
+            print(report.render(fixed=args.fix))  # noqa
+        if any_changed and not args.fix:
+            print('Run again with --fix to apply these changes.')  # noqa
 
         if any_parse_error:
             return 1
-        if args.check:
-            return 1 if any_changed else 0
-        return 0
+        return 1 if any_changed and not args.fix else 0

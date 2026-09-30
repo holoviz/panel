@@ -1,9 +1,8 @@
 """
 Structural tests for panel.command._migrate.compat.
 
-These assert properties of the *introspected* data rather than hardcoding
-names or counts from the plan doc, which predate panel.ui existing and would
-go stale as panel.ui grows. See plan §10.1 / §2.
+These assert properties of the introspected data rather than hardcoded
+names or counts, which would go stale as panel.ui grows.
 """
 import subprocess
 import sys

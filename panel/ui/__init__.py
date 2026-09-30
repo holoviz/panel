@@ -12,47 +12,9 @@ Components are available both flat and per module::
     from panel.ui import Button
     from panel.ui.widgets import Button
 """
-import importlib.metadata
-import warnings
-
 import param
 
-from packaging.version import Version
-
 from ..config import config
-
-# The supported panel-material-ui range. Both bounds are enforced: panel.ui's
-# public surface is versioned by another repository for the 1.x cycle, so a pmui
-# minor must not be able to change panel's documented API without a panel
-# release. Keep in sync with the pin in pyproject.toml.
-_PMUI_MIN_VERSION = '0.16.0rc0'
-_PMUI_NEXT_VERSION = '0.17'
-
-
-def _check_panel_material_ui() -> None:
-    """
-    Validates the installed panel-material-ui version, so that a version skew
-    surfaces here rather than as a missing name further down.
-    """
-    try:
-        version = importlib.metadata.version('panel-material-ui')
-    except importlib.metadata.PackageNotFoundError:
-        return
-    if Version(version) < Version(_PMUI_MIN_VERSION):
-        raise ImportError(
-            f'panel.ui requires panel-material-ui >={_PMUI_MIN_VERSION}, but '
-            f'{version} is installed. Upgrade it with '
-            '`pip install -U panel-material-ui`.'
-        )
-    elif Version(version) >= Version(_PMUI_NEXT_VERSION):
-        warnings.warn(
-            f'panel.ui supports panel-material-ui >={_PMUI_MIN_VERSION},'
-            f'<{_PMUI_NEXT_VERSION}, but {version} is installed. Components may '
-            'not behave as documented; upgrade Panel or pin panel-material-ui '
-            f'below {_PMUI_NEXT_VERSION}.',
-            RuntimeWarning,
-            stacklevel=2
-        )
 
 
 def _global_design():
@@ -70,8 +32,6 @@ def _set_global_design(design):
     """
     param.Parameterized.__setattr__(config, 'design', design)
 
-
-_check_panel_material_ui()
 
 # Captured before panel-material-ui is imported below, since it assigns
 # config.design unconditionally at import time.

@@ -60,7 +60,7 @@ class Report:
             parse_error=parse_error,
         ))
 
-    def render(self) -> str:
+    def render(self, fixed: bool = True) -> str:
         lines: list[str] = []
         for file in self.files:
             if file.parse_error or not (file.rewrites or file.manual_reviews):
@@ -79,10 +79,10 @@ class Report:
                 lines.append(f'  {file.path}: {file.parse_error}')
             lines.append('')
 
-        lines.append(self.summary())
+        lines.append(self.summary(fixed))
         return '\n'.join(lines).rstrip() + '\n'
 
-    def summary(self) -> str:
+    def summary(self, fixed: bool = True) -> str:
         files_scanned = len(self.files)
         files_changed = sum(1 for f in self.files if f.changed and not f.parse_error)
         parse_errors = sum(1 for f in self.files if f.parse_error)
@@ -100,6 +100,7 @@ class Report:
             rule_summary = 'none'
         parse_error_summary = f', {parse_errors} could not be parsed' if parse_errors else ''
         return (
-            f'Summary: {files_scanned} file(s) scanned, {files_changed} changed{parse_error_summary}, '
+            f'Summary: {files_scanned} file(s) scanned, {files_changed} '
+            f'{"changed" if fixed else "would change"}{parse_error_summary}, '
             f'rewrites: {rule_summary}, manual review items: {manual_count}.'
         )

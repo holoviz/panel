@@ -1,5 +1,5 @@
 """
-In-process tests of the panel migrate codemod (plan §10.1) on small source
+In-process tests of the panel migrate codemod on small source
 strings, covering each rewrite rule individually and in combination.
 """
 import pytest
@@ -135,7 +135,7 @@ def test_name_is_not_touched_on_layouts():
     Row(name=...) is left alone (the name= rename never fires): layout
     `name` is a distinct tab-title/hierarchy-name concept, not the widget
     `label`. The import path itself is still safe to unify, since it is a
-    plain namespace change (§3.4).
+    plain namespace change.
     """
     source = "import panel as pn\npn.Row(name='Tab 1')\n"
     result = migrate_source(source)
@@ -145,7 +145,6 @@ def test_name_is_not_touched_on_layouts():
 
 
 def test_button_widget_name_rewritten_but_row_name_is_not():
-    """Direct contrast in a single file, per the plan's example."""
     source = (
         "import panel as pn\n"
         "pn.widgets.Button(name='Click me')\n"
@@ -476,3 +475,44 @@ def test_syntax_error_is_reported_as_parse_error_not_silently_skipped():
     assert not result.manual_reviews
     assert result.parse_error is not None
     assert result.parse_error.strip()
+
+
+def test_pmui_module_alias_rewritten_and_import_removed():
+    result = migrate_source("import panel_material_ui as pmu\npmu.DatePicker(label='Date')\n")
+    assert result.source == "import panel as pn\npn.ui.DatePicker(label='Date')\n"
+    assert _rules(result) == {'pmui-import-path'}
+
+
+def test_pmui_submodule_access_rewritten():
+    result = migrate_source("import panel as pn\nimport panel_material_ui as pmu\npmu.widgets.Button()\n")
+    assert result.source == "import panel as pn\npn.ui.Button()\n"
+
+
+def test_pmui_from_import_rewritten_and_import_removed():
+    source = "import panel as pn\nfrom panel_material_ui import Button as B, Page\nB(label='a')\nPage(main=[])\n"
+    result = migrate_source(source)
+    assert result.source == "import panel as pn\npn.ui.Button(label='a')\npn.ui.Page(main=[])\n"
+
+
+def test_pmui_import_kept_while_still_referenced():
+    source = (
+        "import panel as pn\n"
+        "from panel_material_ui import Button, ThemeToggle\n"
+        "Button()\n"
+        "isinstance(obj, ThemeToggle)\n"
+    )
+    result = migrate_source(source)
+    assert 'from panel_material_ui import ThemeToggle\n' in result.source
+    assert 'pn.ui.Button()' in result.source
+
+
+def test_pmui_keywords_are_not_rewritten():
+    # panel.ui re-exports the same class, so keywords are already correct.
+    result = migrate_source("import panel_material_ui as pmu\npmu.Button(name='x', button_type='primary')\n")
+    assert "pn.ui.Button(name='x', button_type='primary')" in result.source
+    assert _rules(result) == {'pmui-import-path'}
+
+
+def test_pmui_migration_is_idempotent():
+    first = migrate_source("import panel_material_ui as pmu\npmu.Button()\n")
+    assert not migrate_source(first.source).changed

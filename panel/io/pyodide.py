@@ -33,7 +33,7 @@ from js import JSON, XMLHttpRequest
 from ..util import edit_readonly, isurl
 from . import resources
 from .document import MockSessionContext
-from .loading import loading_css_classes
+from .loading import _loading_css_classes
 from .mime_render import WriteCallbackStream, exec_with_return, format_mime
 from .state import state
 
@@ -550,7 +550,7 @@ def hide_loader() -> None:
     from js import document
 
     body = document.getElementsByTagName('body')[0]
-    body.classList.remove(*loading_css_classes())
+    body.classList.remove(*_loading_css_classes())
 
 def sync_location():
     """

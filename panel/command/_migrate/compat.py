@@ -2,11 +2,9 @@
 Introspects the installed ``panel`` and ``panel.ui`` namespaces to build the
 lookup data the ``panel migrate`` codemod and its report need.
 
-Everything here is derived at import time by walking ``param.Parameterized``
-subclasses and comparing their ``.param`` members, the same technique used by
-``plans/scripts/panel_ui_api_audit.py``. Keeping it data-driven means this
-module can't silently drift from ``panel.ui`` as components are added,
-dropped parameters are restored, etc.
+Everything here is derived at import time by comparing the ``.param``
+members of classic and ``panel.ui`` classes, so it cannot drift from
+``panel.ui`` as components are added or parameters restored.
 
 The only genuinely hardcoded pieces are the handful of rules that cannot be
 derived generically: the ``MenuButton`` -> ``SplitButton`` special case, the
@@ -24,6 +22,7 @@ without the optional ``migrate`` dependency installed.
 from __future__ import annotations
 
 import dataclasses
+import importlib
 import typing as t
 
 import param
@@ -178,6 +177,36 @@ COMPONENT_MATCHES: dict[str, ComponentMatch] = _build_component_matches()
 UI_ALL: frozenset[str] = frozenset(pn_ui.__all__)
 
 
+PMUI_MODULE = 'panel_material_ui'
+
+_PMUI_SUBMODULES = (
+    'base', 'chat', 'layout', 'notifications', 'pane', 'template', 'theme',
+    'widgets', 'wrappers',
+)
+
+
+def _build_pmui_paths() -> dict[str, str]:
+    ui_objects = {id(getattr(pn_ui, name)): name for name in UI_ALL}
+    paths: dict[str, str] = {}
+    for sub in ('', *_PMUI_SUBMODULES):
+        module_path = f'{PMUI_MODULE}.{sub}' if sub else PMUI_MODULE
+        try:
+            mod = importlib.import_module(module_path)
+        except ImportError:
+            continue
+        for name in dir(mod):
+            # Only exact re-exports are safe to rewrite without touching arguments.
+            ui_name = ui_objects.get(id(getattr(mod, name)))
+            if ui_name == name:
+                paths[f'{module_path}.{name}'] = ui_name
+    return paths
+
+
+#: Maps a `panel_material_ui` access path to the `panel.ui` name exporting the
+#: same class.
+PMUI_PATHS: dict[str, str] = _build_pmui_paths()
+
+
 # ---------------------------------------------------------------------------
 # MenuButton(split=True) -> SplitButton(...)
 # ---------------------------------------------------------------------------
@@ -215,7 +244,7 @@ _TEMPLATE_CLASS_NAMES = (
 )
 
 #: Candidate keywords confirmed by hand to be directly analogous between a
-#: classic template and `Page` (plan §10.1). Membership here is necessary but
+#: classic template and `Page`. Membership here is necessary but
 #: not sufficient: `_build_template_matches` re-verifies that each name is
 #: actually present on both the specific template class and `Page` before
 #: allowing it, so a template missing one of these still gets the rest.

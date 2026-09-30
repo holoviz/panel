@@ -23,20 +23,20 @@ Material components can be mixed with classic components in an app. Panel 1.9 ad
 
 #### Migrate Python files
 
-Install the migration tool's optional dependency, then preview the changes before rewriting files:
+Install the migration tool's optional dependency, preview the changes, then apply them:
 
 ```bash
 pip install 'panel[migrate]'
-panel migrate --check my_app/
-panel migrate --diff my_app/
 panel migrate my_app/
+panel migrate --diff my_app/
+panel migrate --fix my_app/
 ```
 
-`panel migrate` accepts Python files or directories (searched recursively for `*.py`). `--check` reports proposed rewrites without editing files and exits with a non-zero status if anything would change. `--diff` prints a unified diff without editing files. The command reports rewrites and items that need manual review; a successful exit does not mean there are no manual review items.
+`panel migrate` accepts Python files or directories, searched recursively for `*.py` files while skipping hidden directories such as `.venv` and `.pixi`, as well as `venv`, `node_modules`, `build` and `dist`. By default it only reports the proposed rewrites and exits with a non-zero status if anything would change. `--diff` also prints a unified diff, and `--fix` writes the changes to disk. The report lists rewrites and items that need manual review; a successful exit does not mean there are no manual review items.
 
-For example, a classic `pn.widgets.Button(name='Run')` call becomes `pn.ui.Button(label='Run')`. If the file does not already import `panel as pn`, the tool adds that import. Where supported, the tool also renames `button_type` to `color` and `button_style` to `variant`, converts `MenuButton(split=True)` to `SplitButton`, and replaces compatible classic template calls with `pn.ui.Page(...)`. In files it migrates to `pn.ui`, it removes explicit selections of Panel's built-in designs so the app uses the Material UI design, and reports custom designs for manual review. Review the diff, especially button callbacks, templates, and any design settings you need to retain. Calls with unsupported parameters, argument unpacking, or template options that cannot be confirmed compatible are left unchanged and reported for manual review. The tool changes Python source, not notebooks.
+For example, a classic `pn.widgets.Button(name='Run')` call becomes `pn.ui.Button(label='Run')`. If the file does not already import `panel as pn`, the tool adds that import. Where supported, the tool also renames `button_type` to `color` and `button_style` to `variant`, maps the `solid` and `outline` variants of `RadioButtonGroup` and `CheckButtonGroup` to `contained` and `outlined` (the Material constructors also accept the classic spellings), converts `MenuButton(split=True)` to `SplitButton`, and replaces compatible classic template calls with `pn.ui.Page(...)`. Components imported from `panel_material_ui` are rewritten to the same class under `pn.ui`, and `panel_material_ui` imports left unused are removed. In files it migrates to `pn.ui`, it removes explicit selections of Panel's built-in designs so the app uses the Material UI design, and reports custom designs for manual review. Calls with unsupported parameters, argument unpacking, dynamic `variant` values, or template options that cannot be confirmed compatible are left unchanged and reported for manual review. The tool changes Python source, not notebooks.
 
-For `RadioButtonGroup` and `CheckButtonGroup`, classic `variant='solid'` maps to `variant='contained'` and `variant='outline'` maps to `variant='outlined'`. The new component constructors also accept the classic spellings. `panel migrate` converts literal `variant` and `button_style` values for these groups; dynamic expressions need manual review.
+The tool rewrites Python calls, so it cannot migrate anything that depends on the classic DOM or Bokeh models. Material components render different markup, so custom `stylesheets`, `css_classes` and `config.raw_css` that target classic class names or model internals need to be rewritten by hand. The same applies to custom `Design` and `Theme` subclasses, template subclasses and Jinja templates, and to `jslink` and `jscallback` code that references properties of the classic models.
 
 (panel-ui-compatibility)=
 

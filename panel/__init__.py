@@ -128,10 +128,7 @@ if TYPE_CHECKING:
 
 
 def __getattr__(name: str):
-    # panel.ui is resolved on first access rather than imported eagerly,
-    # because importing it selects the Material design and, until Panel 2.0,
-    # imports panel-material-ui, which imports panel. It is not in __all__, so
-    # that `from panel import *` does not pull it in either.
+    # Lazy import until Panel 2.0.
     if name == 'ui':
         import importlib
         return importlib.import_module('panel.ui')

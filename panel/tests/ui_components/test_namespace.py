@@ -128,7 +128,7 @@ def test_classic_components_are_not_wrapped(ui):
 
 def test_material_components_come_from_panel_material_ui(ui, pmui):
     # True only while panel.ui is a composition layer over the dependency; when
-    # the implementation is vendored the identity flips (plan section 7.5).
+    # the implementation is vendored the identity flips.
     assert ui.Button is pmui.Button
     assert ui.widgets.Button is pmui.Button
     for name in ('ArrayInput', 'ColorMap', 'DatetimeRangeInput', 'DiscretePlayer', 'FileSelector', 'Player'):
@@ -167,7 +167,7 @@ def test_all_is_sorted_and_unique(ui, module):
 @pytest.mark.parametrize('module', (None, *SUBMODULES))
 def test_no_module_getattr(ui, module):
     # Every export is a real import, so that type checkers and language
-    # servers resolve them (plan section 3.2).
+    # servers resolve them.
     obj = ui if module is None else getattr(ui, module)
     assert '__getattr__' not in vars(obj)
 
@@ -282,7 +282,7 @@ def test_importing_panel_ui_does_not_patch_core():
     """)
     guarded, patched = output.split(' ', 1)
     if guarded == 'False':
-        pytest.xfail('panel-material-ui predates the Design hooks (plan section 6.3)')
+        pytest.xfail('panel-material-ui predates the Design hooks')
     assert patched == '[]'
 
 

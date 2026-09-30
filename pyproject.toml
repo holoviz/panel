@@ -50,8 +50,6 @@ dependencies = [
     'bokeh >=3.10.0,<3.11.0',
     'param >=2.1.0,<3.0',
     'pyviz_comms >=2.0.0',
-    # panel.ui re-exports the Material components from panel-material-ui;
-    # the upper bound is deliberate, see panel/ui/__init__.py.
     'panel-material-ui >=0.16.0rc0,<0.17',
     'markdown',
     'markdown-it-py',
@@ -99,7 +97,6 @@ tests = [
     'pytest-asyncio',
     'pytest-rerunfailures <16.0',
     'pytest-xdist',
-    'libcst >=1.1',
 ]
 mypy = [
     "mypy",

@@ -70,8 +70,7 @@ BOKEH_DARK['attrs']['Plot'].update({
 
 THEME_CSS = pathlib.Path(__file__).parent / 'css'
 
-# Maps the config parameters that control the loading indicator to the
-# keys of the options dictionary a Design declares them with.
+# Config parameter -> Design._loading_options key.
 _LOADING_CONFIG = {
     'loading_spinner': 'spinner',
     'loading_color': 'color',
@@ -122,27 +121,21 @@ class Design(param.Parameterized, ResourceComponent):
     # Defines parameter overrides to apply to each model
     modifiers: t.ClassVar[dict[type[Viewable], dict[str, t.Any]]] = {}
 
-    # Maps a component type to the equivalent component in this design
-    # system, e.g. to substitute a Material UI widget for a classic one
-    # when a widget is generated on the user's behalf.
+    # Substitutes for classic components in generated widgets.
     component_mapping: t.ClassVar[dict[type, type]] = {}
 
-    # Maps a Parameter type to the widget type to generate for it, or to
-    # a callable which is given the Parameter and returns a widget type.
-    # Takes precedence over the component_mapping since a design system
-    # may split or merge the classic mapping, e.g. by resolving separate
-    # widgets for dict, list and tuple parameters.
+    # Parameter type -> widget type (or callable returning one). Takes
+    # precedence over component_mapping since a design may split or merge
+    # the classic mapping.
     widget_mapping: t.ClassVar[dict[type[param.Parameter], type | t.Callable[[param.Parameter], type | None]]] = {}
 
     # Defines the resources required to render this theme
     _resources = {}
 
-    # Default variables for page templates, e.g. the material_ui flag that
-    # enables the Material UI document styles in base.html.
+    # Default variables for page templates.
     _template_variables: t.ClassVar[dict[str, t.Any]] = {}
 
-    # Overrides the loading indicator defaults, i.e. the spinner, color
-    # and max_height config values. Explicit user settings always win.
+    # Loading indicator defaults; explicit config values take precedence.
     _loading_options: t.ClassVar[dict[str, t.Any]] = {}
 
     # Declares valid themes for this Design
@@ -636,11 +629,7 @@ THEMES = {
     'dark': DarkTheme
 }
 
-# Maps a design name to the Design class implementing it, declared as a
-# 'module.path.ClassName' or 'module.path:ClassName' reference. Allows
-# design systems that do not live in panel.theme, and designs whose class
-# name does not match the name they are referenced by, to be resolved,
-# e.g. in pn.extension(design=...).
+# Designs resolvable by name that live outside panel.theme.
 DESIGN_ALIASES: dict[str, str] = {
     'material-ui': 'panel.ui.theme.MaterialUIDesign',
 }

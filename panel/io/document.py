@@ -27,7 +27,7 @@ from bokeh.model.util import visit_immediate_value_references
 from bokeh.models import CustomJS
 
 from ..config import config
-from .loading import loading_css_classes
+from .loading import _loading_css_classes
 from .model import monkeypatch_events  # noqa: F401 API import
 from .state import state
 
@@ -528,7 +528,7 @@ def init_doc(doc: Document | None) -> Document:
         curdoc.js_on_event(
             'document_ready', CustomJS(code=f"""
             const body = document.getElementsByTagName('body')[0]
-            body.classList.remove(...{json.dumps(loading_css_classes())})
+            body.classList.remove(...{json.dumps(_loading_css_classes())})
             """)
         )
 

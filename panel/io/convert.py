@@ -29,7 +29,7 @@ from ..util import base_version
 from .application import Application, build_single_handler_application
 from .document import MockSessionContext
 from .loading import (
-    loading_css_classes, loading_resources as _design_loading_resources,
+    _loading_css_classes, loading_resources as _design_loading_resources,
 )
 from .mime_render import find_requirements
 from .resources import (
@@ -400,7 +400,7 @@ def script_to_html(
                 js_resources = []
             worker_handler = WORKER_HANDLER_TEMPLATE.render({
                 'name': app_name,
-                'loading_classes': json.dumps(loading_css_classes())
+                'loading_classes': json.dumps(_loading_css_classes())
             })
             web_worker = WEB_WORKER_TEMPLATE.render({
                 'PYODIDE_URL': PYODIDE_PYC_MODULE_URL if compiled else PYODIDE_MODULE_URL,
@@ -471,7 +471,7 @@ def script_to_html(
     # Render
     html = template.render(context)
     html = (html
-        .replace('<body>', f'<body class="{" ".join(loading_css_classes())}">')
+        .replace('<body>', f'<body class="{" ".join(_loading_css_classes())}">')
     )
     if runtime == 'pyscript-worker':
         # pyscript-worker apps must have strict cross-origin policies

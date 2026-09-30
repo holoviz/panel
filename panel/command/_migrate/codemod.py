@@ -13,6 +13,8 @@ The ``libcst`` codemod implementing the migration rewrite rules:
 6. Remove explicit selections of Panel's own designs from files that now use
    ``panel.ui``, so they get its default, reporting any other design for
    manual review.
+7. Rewrite ``panel_material_ui`` components re-exported by ``panel.ui`` to
+   their ``panel.ui`` path, removing ``panel_material_ui`` imports left unused.
 
 Resolution of a call's callee back to its classic dotted path (through
 ``import panel as pn``, ``from panel import widgets as w``,
@@ -43,6 +45,8 @@ import dataclasses
 
 import libcst as cst
 
+from libcst.codemod import CodemodContext
+from libcst.codemod.visitors import RemoveImportsVisitor
 from libcst.metadata import (
     MetadataWrapper, ParentNodeProvider, PositionProvider,
 )
@@ -56,6 +60,9 @@ RULE_BUTTON_APPEARANCE = 'button-appearance'
 RULE_MENU_BUTTON_SPLIT = 'menu-button-split'
 RULE_TEMPLATE_TO_PAGE = 'template-to-page'
 RULE_REMOVE_DESIGN = 'remove-design'
+RULE_PMUI_IMPORT_PATH = 'pmui-import-path'
+
+_TRACKED_ROOTS = ('panel', compat.PMUI_MODULE)
 
 
 @dataclasses.dataclass
@@ -67,6 +74,10 @@ class MigrationResult:
     rewrites: list[Rewrite]
     manual_reviews: list[ManualReview]
     parse_error: str | None = None
+
+
+def _is_tracked(dotted: str) -> bool:
+    return any(dotted == root or dotted.startswith(f'{root}.') for root in _TRACKED_ROOTS)
 
 
 def _dotted_name_to_str(node: cst.BaseExpression) -> str | None:
@@ -158,7 +169,7 @@ class _ImportAliasCollector(cst.CSTVisitor):
     def visit_Import(self, node: cst.Import) -> None:
         for alias in node.names:
             dotted = _dotted_name_to_str(alias.name)
-            if dotted is None or not (dotted == 'panel' or dotted.startswith('panel.')):
+            if dotted is None or not _is_tracked(dotted):
                 continue
             if alias.asname is not None and isinstance(alias.asname.name, cst.Name):
                 bound = alias.asname.name.value
@@ -173,7 +184,7 @@ class _ImportAliasCollector(cst.CSTVisitor):
         if node.module is None or node.relative:
             return
         module_dotted = _dotted_name_to_str(node.module)
-        if module_dotted is None or not (module_dotted == 'panel' or module_dotted.startswith('panel.')):
+        if module_dotted is None or not _is_tracked(module_dotted):
             return
         if isinstance(node.names, cst.ImportStar):
             return
@@ -288,6 +299,14 @@ class _PanelMigrateTransformer(cst.CSTTransformer):
         dotted = _resolve_dotted(original_node.func, self._aliases)
         if dotted is None:
             return updated_node
+
+        pmui_name = compat.PMUI_PATHS.get(dotted)
+        if pmui_name is not None:
+            self.needs_panel_import = True
+            self.rewrites.append(Rewrite(
+                self._line(original_node), RULE_PMUI_IMPORT_PATH, f'{dotted} -> panel.ui.{pmui_name}'
+            ))
+            return updated_node.with_changes(func=_attribute(pmui_name))
 
         if dotted == 'panel.extension':
             design_args = [
@@ -418,7 +437,7 @@ class _PanelMigrateTransformer(cst.CSTTransformer):
                 self.rewrites.append(Rewrite(
                     line, RULE_MENU_BUTTON_SPLIT,
                     f'{dotted}(split=True, ...) -> panel.ui.{final_ui_name}(...); '
-                    "review 'clicked'/callback semantics by hand (plan §8.2)",
+                    "review 'clicked'/callback semantics by hand",
                 ))
 
         # Rule 2: name= -> label=
@@ -523,6 +542,43 @@ def _insert_panel_import(module: cst.Module) -> cst.Module:
     return module.with_changes(body=body)
 
 
+class _PmuiImportCollector(cst.CSTVisitor):
+    """Collects every ``panel_material_ui`` import as a removal candidate."""
+
+    def __init__(self) -> None:
+        self.imports: list[tuple[str, str | None, str | None]] = []
+
+    @staticmethod
+    def _asname(alias: cst.ImportAlias) -> str | None:
+        return alias.asname.name.value if alias.asname and isinstance(alias.asname.name, cst.Name) else None
+
+    def visit_Import(self, node: cst.Import) -> None:
+        for alias in node.names:
+            dotted = _dotted_name_to_str(alias.name)
+            if dotted and dotted.split('.')[0] == compat.PMUI_MODULE:
+                self.imports.append((dotted, None, self._asname(alias)))
+
+    def visit_ImportFrom(self, node: cst.ImportFrom) -> None:
+        if node.module is None or node.relative or isinstance(node.names, cst.ImportStar):
+            return
+        module = _dotted_name_to_str(node.module)
+        if not module or module.split('.')[0] != compat.PMUI_MODULE:
+            return
+        for alias in node.names:
+            if isinstance(alias.name, cst.Name):
+                self.imports.append((module, alias.name.value, self._asname(alias)))
+
+
+def _remove_unused_pmui_imports(module: cst.Module) -> cst.Module:
+    collector = _PmuiImportCollector()
+    module.visit(collector)
+    context = CodemodContext()
+    for module_path, obj, asname in collector.imports:
+        # Only removed if no reference to the bound name remains.
+        RemoveImportsVisitor.remove_unused_import(context, module_path, obj, asname)
+    return RemoveImportsVisitor(context).transform_module(module)
+
+
 def migrate_source(source: str) -> MigrationResult:
     """
     Run the ``panel migrate`` codemod over one file's source and return the
@@ -553,6 +609,9 @@ def migrate_source(source: str) -> MigrationResult:
 
     if transformer.needs_panel_import and aliases.get('pn') != 'panel':
         new_module = _insert_panel_import(new_module)
+
+    if any(r.rule == RULE_PMUI_IMPORT_PATH for r in transformer.rewrites):
+        new_module = _remove_unused_pmui_imports(new_module)
 
     new_source = new_module.code
     return MigrationResult(
