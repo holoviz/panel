@@ -80,7 +80,9 @@ Widgets **all** have a `value` *Parameter* that holds the widget state and that 
 
 :::{note}
 
-One gotcha that doesn't only apply to the `value` *Parameter* , but that you are more likely to encounter with this *Parameter* than others is when it is referencing a mutable data structure that you mutate in-place. Take for example a `MultiSelect` widget whose `value` is a `list`. If you programmatically update that list directly, with for example `append` or `extend`, Panel will not be able to detect that change. In which case you need to explicitly trigger updates with `w_multiselect.param.trigger('value')` that will run all the same underlying machinery as if you were setting the *Parameter* to a new value. A notable widget that holds a multable datastructure is the `Tabulator` widget whose `value` is a Pandas DataFrame that can be updated in-place with e.g. `df.loc[0, 'A'] = new_value`, its `patch` method allows to both update the data and the user interface.
+One gotcha that doesn't only apply to the `value` *Parameter* , but that you are more likely to encounter with this *Parameter* than others, is when a widget is referencing a mutable data structure that you mutate in-place. Take for example a `MultiSelect` widget whose `value` is a `list`. If you programmatically update that list directly, with for example, `append` or `extend`, Panel will not be able to detect that change.
+
+Instead, you need to explicitly trigger updates with `w_multiselect.param.trigger('value')` (insert link to .param or param.trigger method or tutorial here), that will run all the same underlying Panel machinery, as if you were setting the *Parameter* to a new value. A notable widget that holds a mutable datastructure is the `Tabulator` widget, whose `value` is a Pandas DataFrame that can be updated in-place with e.g. `df.loc[0, 'A'] = new_value`, its `patch` method allows to both update the data and the user interface.
 :::
 
 ```{pyodide}
