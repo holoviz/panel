@@ -111,6 +111,15 @@ def test_parse_query_singe_quoted():
     assert expected_results == results
 
 
+def test_parse_query_negative_int():
+    assert parse_query('?neg=-5&pos=5') == {'neg': -5, 'pos': 5}
+    assert type(parse_query('?neg=-5')['neg']) is int
+
+
+def test_parse_query_non_ascii_digits_stay_strings():
+    assert parse_query('?sup=%C2%B2') == {'sup': '\u00b2'}
+
+
 @mpl_available
 def test_styler_update(dataframe):
     styler = dataframe.style.background_gradient('Reds')
