@@ -15,7 +15,7 @@ from panel.custom import (
     AnyWidgetComponent, Child, Children, JSComponent, ReactComponent,
 )
 from panel.io.compile import compile_components
-from panel.layout import Row
+from panel.layout import Column, Row
 from panel.layout.base import ListLike
 from panel.pane import Bokeh, Markdown
 from panel.tests.util import serve_component, wait_until
@@ -1730,3 +1730,90 @@ def test_children_updates_do_not_overlap(page):
             return new Promise(r => setTimeout(() => r(resolved), 100))
         }
     """, timeout=10000)
+
+
+class ReactChildrenList(ListLike, ReactComponent):
+
+    objects = Children()
+
+    _esm = """
+    export function render({ model }) {
+      return <div id="container">{model.get_child("objects")}</div>
+    }
+    """
+
+
+@pytest.mark.internet
+def test_react_children_shrink_from_end(page):
+    example = ReactChildrenList(objects=[
+        ReactChildInner(text="child-0"), ReactChildInner(text="child-1")
+    ])
+
+    serve_component(page, example)
+
+    expect(page.locator('.inner')).to_have_count(2)
+    expect(page.locator('#container > .child-wrapper')).to_have_count(2)
+
+    example.pop(-1)
+
+    # A list that only shrank has to drop the trailing wrapper too.
+    expect(page.locator('#container > .child-wrapper')).to_have_count(1)
+    expect(page.locator('.inner')).to_have_text('child-0')
+
+
+class ReactChildrenWatcher(ListLike, ReactComponent):
+
+    objects = Children()
+
+    _esm = """
+    import {useEffect, useState} from "react"
+
+    export function render({ model }) {
+      const [changes, setChanges] = useState(0)
+      useEffect(() => {
+        const cb = () => setChanges((c) => c + 1)
+        model.on("objects", cb)
+        return () => model.off("objects", cb)
+      }, [])
+      return (
+        <div>
+          <div id="changes">{changes}</div>
+          {model.get_child("objects")}
+        </div>
+      )
+    }
+    """
+
+
+@pytest.mark.internet
+def test_react_children_watcher_fires(page):
+    example = ReactChildrenWatcher(objects=[ReactChildInner(text="child-0")])
+
+    serve_component(page, example)
+
+    expect(page.locator('#changes')).to_have_text('0')
+
+    example.append(ReactChildInner(text="child-1"))
+
+    expect(page.locator('.inner')).to_have_count(2)
+    expect(page.locator('#changes')).to_have_text('1')
+
+
+class JSDuplicateDisplay(JSComponent):
+
+    _esm = """
+    export function render({ el }) {
+      const div = document.createElement("div")
+      div.className = "duplicate"
+      return div
+    }
+    """
+
+
+def test_esm_component_displayed_twice_renders_both_views(page):
+    component = JSDuplicateDisplay()
+
+    serve_component(page, Row(Column(component), Column(component)))
+
+    # Both views of the one model render, not just the first one found.
+    expect(page.locator('.duplicate')).to_have_count(2)
