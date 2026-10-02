@@ -28,13 +28,19 @@ import {
  * tile-based plots, a division by zero width puts NaN into the ranges with no
  * recovery path). Updating the layout first means `after_render` measures
  * elements where they will actually live.
+ *
+ * `layout=false` skips `compute_layout`, for callers that render several
+ * children in a row and lay out once afterwards: a child's `compute_layout`
+ * lays out its whole root, so rendering N children would cost N full passes.
  */
-export function rerender_view(view: DOMView): void {
+export function rerender_view(view: DOMView, layout: boolean = true): void {
   if (view instanceof LayoutDOMView) {
     view.render()
     view.update_layout()
     view.r_after_render()
-    view.compute_layout()
+    if (layout) {
+      view.compute_layout()
+    }
   } else if (view.rerender) {
     // Can be removed when Bokeh>3.7 (see https://github.com/holoviz/panel/pull/7815)
     view.rerender()

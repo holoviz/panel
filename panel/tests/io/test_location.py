@@ -85,6 +85,13 @@ def test_location_sync_query_init_rename(location):
     assert location._synced == []
     assert location.search == ""
 
+def test_location_sync_query_init_negative_integer(location):
+    location.search = "?integer=-3"
+    p = SyncParameterized()
+    location.sync(p, ['integer'])
+    assert p.integer == -3
+    assert location.search == "?integer=-3"
+
 def test_location_sync_query(location):
     p = SyncParameterized()
     location.sync(p)

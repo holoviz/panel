@@ -654,10 +654,10 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         """
         ref = root.ref['id']
         if changed is not None and ref in changed._models and ref in state._views:
-            _, _, _, comm = state._views[ref]
+            _, _, doc, comm = state._views[ref]
             if comm is not None and config.inline:
                 for model in changed._models[ref][0].select({'type': UIElement}):
-                    patch_inline_stylesheets(model)
+                    patch_inline_stylesheets(model, doc)
 
         changed = self if changed is None else changed
         hooks = self._preprocessing_hooks+self._hooks
@@ -893,7 +893,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
             for submodel in model.select({'type': UIElement}):
                 if not isinstance(submodel, UIElement):
                     continue
-                patch_inline_stylesheets(submodel)
+                patch_inline_stylesheets(submodel, doc)
 
         bundle, meta = self._render_mimebundle(model, doc, comm, location)
 

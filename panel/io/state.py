@@ -43,7 +43,7 @@ if t.TYPE_CHECKING:
     from bokeh.application.application import SessionContext
     from bokeh.document import Document
     from bokeh.model import Model
-    from bokeh.models import ImportedStyleSheet
+    from bokeh.models import ImportedStyleSheet, InlineStyleSheet
     from bokeh.server.contexts import ApplicationContext, BokehSessionContext
     from bokeh.server.session import ServerSession
     from IPython.display import DisplayHandle
@@ -237,6 +237,10 @@ class _state(param.Parameterized):
 
     # Style cache
     _stylesheets: t.ClassVar[WeakKeyDictionary[Document, dict[str, ImportedStyleSheet]]] = WeakKeyDictionary()
+
+    # Inlined copies of the CDN stylesheets on Documents rendered with
+    # inline resources, keyed by the url they replace.
+    _inline_stylesheets: t.ClassVar[WeakKeyDictionary[Document, dict[str, InlineStyleSheet]]] = WeakKeyDictionary()
 
     # Loaded extensions
     _extensions_: t.ClassVar[WeakKeyDictionary[Document, list[str]]] = WeakKeyDictionary()
@@ -519,6 +523,9 @@ class _state(param.Parameterized):
 
         if doc in self._stylesheets:
             del self._stylesheets[doc]
+
+        if doc in self._inline_stylesheets:
+            del self._inline_stylesheets[doc]
 
     @property
     def _current_stack(self):
@@ -1065,6 +1072,7 @@ class _state(param.Parameterized):
         self._on_session_created.clear()
         self._on_session_destroyed.clear()
         self._stylesheets.clear()
+        self._inline_stylesheets.clear()
         self._scheduled.clear()
         self._periodic.clear()
 

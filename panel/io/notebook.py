@@ -513,19 +513,31 @@ class Mimebundle:
     def _repr_mimebundle_(self, include=None, exclude=None):
         return self._mimebundle
 
-def replace_inline_css(stylesheet: ImportedStyleSheet):
+def replace_inline_css(
+    stylesheet: ImportedStyleSheet, cache: dict[str, InlineStyleSheet] | None = None
+) -> ImportedStyleSheet | InlineStyleSheet:
     if not stylesheet.url.startswith(CDN_DIST):
         return stylesheet
-    path = DIST_DIR / stylesheet.url.replace(CDN_DIST, '').split('?')[0]  # type: ignore
+    url = stylesheet.url.split('?')[0]
+    if cache is not None and url in cache:
+        return cache[url]
+    path = DIST_DIR / url.replace(CDN_DIST, '')  # type: ignore
     if not path.exists():
         return stylesheet
-    return InlineStyleSheet(css=path.read_text(encoding='utf-8'))
+    inlined = InlineStyleSheet(css=path.read_text(encoding='utf-8'))
+    if cache is not None:
+        cache[url] = inlined
+    return inlined
 
-def patch_inline_stylesheets(model: UIElement):
+def patch_inline_stylesheets(model: UIElement, doc: Document | None = None):
+    doc = doc or model.document
+    # Registering the Document makes later updates, which re-resolve
+    # stylesheets to CDN urls, inline them too (see Reactive._resolve_stylesheets).
+    cache = None if doc is None else state._inline_stylesheets.setdefault(doc, {})
     stylesheets = []
     for sts in model.stylesheets:
         if isinstance(sts, ImportedStyleSheet):
-            sts = replace_inline_css(sts)
+            sts = replace_inline_css(sts, cache)
         stylesheets.append(sts)
     if stylesheets != model.stylesheets:
         model.stylesheets = stylesheets
