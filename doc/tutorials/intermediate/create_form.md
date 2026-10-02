@@ -92,31 +92,31 @@ class FormState(param.Parameterized):
 
 ### 4. Build the Form Layout
 
-We use `pn.widgets` to create form inputs and buttons.
+We use `pn.ui` to create form inputs and buttons.
 
 ```python
 def create_form():
     form_state = FormState()
 
-    header = pn.Row(
-        pn.pane.SVG(FORM_ICON, margin=0, height=80, sizing_mode="fixed"),
+    header = pn.ui.Row(
+        pn.ui.SVG(FORM_ICON, margin=0, height=80, sizing_mode="fixed"),
         FORM_TEXT,
     )
 
-    error_pane = pn.pane.Alert(
+    error_pane = pn.ui.Alert(
         object=form_state.param.validation_message,
         visible=form_state.param.is_not_valid,
         alert_type="danger",
         stylesheets=["p {margin-bottom: 0}"]
     )
 
-    name_input = pn.widgets.TextInput.from_param(form_state.param.name, label="Name*", placeholder="User Name")
-    email_input = pn.widgets.TextInput.from_param(form_state.param.email, label="Email*", placeholder="Email Address")
-    message_input = pn.widgets.TextAreaInput.from_param(form_state.param["message"], placeholder="An optional message")
+    name_input = pn.ui.TextInput.from_param(form_state.param.name, label="Name*", placeholder="User Name")
+    email_input = pn.ui.TextInput.from_param(form_state.param.email, label="Email*", placeholder="Email Address")
+    message_input = pn.ui.TextAreaInput.from_param(form_state.param["message"], placeholder="An optional message")
 
-    submit_button = pn.widgets.Button(label="Send", on_click=form_state.submit, color="primary")
+    submit_button = pn.ui.Button(label="Send", on_click=form_state.submit, color="primary")
 
-    return pn.Column(
+    return pn.ui.Column(
         header,
         error_pane,
         name_input,
@@ -224,25 +224,25 @@ class FormState(param.Parameterized):
 def create_form():
     form_state = FormState()
 
-    header = pn.Row(
-        pn.pane.SVG(FORM_ICON, margin=0, height=80, sizing_mode="fixed"),
+    header = pn.ui.Row(
+        pn.ui.SVG(FORM_ICON, margin=0, height=80, sizing_mode="fixed"),
         FORM_TEXT,
     )
 
-    error_pane = pn.pane.Alert(
+    error_pane = pn.ui.Alert(
         object=form_state.param.validation_message,
         visible=form_state.param.is_not_valid,
         alert_type="danger",
         stylesheets=["p {margin-bottom: 0}"]
     )
 
-    name_input = pn.widgets.TextInput.from_param(form_state.param.name, label="Name*", placeholder="User Name")
-    email_input = pn.widgets.TextInput.from_param(form_state.param.email, label="Email*", placeholder="Email Address")
-    message_input = pn.widgets.TextAreaInput.from_param(form_state.param["message"], placeholder="An optional message")
+    name_input = pn.ui.TextInput.from_param(form_state.param.name, label="Name*", placeholder="User Name")
+    email_input = pn.ui.TextInput.from_param(form_state.param.email, label="Email*", placeholder="Email Address")
+    message_input = pn.ui.TextAreaInput.from_param(form_state.param["message"], placeholder="An optional message")
 
-    submit_button = pn.widgets.Button(label="Send", on_click=form_state.submit, color="primary")
+    submit_button = pn.ui.Button(label="Send", on_click=form_state.submit, color="primary")
 
-    return pn.Column(
+    return pn.ui.Column(
         header,
         error_pane,
         name_input,

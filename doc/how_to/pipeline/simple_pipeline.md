@@ -39,16 +39,16 @@ class Stage1(param.Parameterized):
     @param.depends('a', 'b')
     def view(self):
         c, d = self.output()
-        c_out = pn.pane.LaTeX('${a} * {b} = {c}$'.format(
+        c_out = pn.ui.LaTeX('${a} * {b} = {c}$'.format(
             a=self.a, b=self.b, c=c), styles={'font-size': '2em'})
-        d_out = pn.pane.LaTeX('${a}^{{{b}}} = {d}$'.format(
+        d_out = pn.ui.LaTeX('${a}^{{{b}}} = {d}$'.format(
             a=self.a, b=self.b, d=d), styles={'font-size': '2em'})
-        return pn.Column(
+        return pn.ui.Column(
 		    c_out, d_out,  margin=(40, 10), styles={'background': '#f0f0f0'}
 		)
 
     def panel(self):
-        return pn.Row(self.param, self.view,)
+        return pn.ui.Row(self.param, self.view,)
 ```
 
 We can now render this stage on its own:
@@ -89,12 +89,12 @@ class Stage2(param.Parameterized):
 
     @param.depends('c', 'exp')
     def view(self):
-        out = pn.pane.LaTeX('${%s}^{%s}={%.3f}$' % (self.c, self.exp, self.c**self.exp),
+        out = pn.ui.LaTeX('${%s}^{%s}={%.3f}$' % (self.c, self.exp, self.c**self.exp),
                       styles={'font-size': '2em'})
-        return pn.Column(out, margin=(40, 10), styles={'background': '#f0f0f0'})
+        return pn.ui.Column(out, margin=(40, 10), styles={'background': '#f0f0f0'})
 
     def panel(self):
-        return pn.Row(self.param, self.view)
+        return pn.ui.Row(self.param, self.view)
 ```
 
 Now let's add our stages to our `Pipeline` using the `add_stage` method
@@ -133,14 +133,14 @@ class Stage1(param.Parameterized):
     @param.depends('a', 'b')
     def view(self):
         c, d = self.output()
-        c_out = pn.pane.LaTeX('${a} * {b} = {c}$'.format(
+        c_out = pn.ui.LaTeX('${a} * {b} = {c}$'.format(
             a=self.a, b=self.b, c=c), styles={'font-size': '2em'})
-        d_out = pn.pane.LaTeX('${a}^{{{b}}} = {d}$'.format(
+        d_out = pn.ui.LaTeX('${a}^{{{b}}} = {d}$'.format(
             a=self.a, b=self.b, d=d), styles={'font-size': '2em'})
-        return pn.Column(c_out, d_out,  margin=(40, 10), styles={'background': '#f0f0f0'})
+        return pn.ui.Column(c_out, d_out,  margin=(40, 10), styles={'background': '#f0f0f0'})
 
     def panel(self):
-        return pn.Row(self.param, self.view,)
+        return pn.ui.Row(self.param, self.view,)
 
 class Stage2(param.Parameterized):
 
@@ -149,12 +149,12 @@ class Stage2(param.Parameterized):
 
     @param.depends('c', 'exp')
     def view(self):
-        out = pn.pane.LaTeX('${%s}^{%s}={%.3f}$' % (self.c, self.exp, self.c**self.exp),
+        out = pn.ui.LaTeX('${%s}^{%s}={%.3f}$' % (self.c, self.exp, self.c**self.exp),
                       styles={'font-size': '2em'})
-        return pn.Column(out, margin=(40, 10), styles={'background': '#f0f0f0'})
+        return pn.ui.Column(out, margin=(40, 10), styles={'background': '#f0f0f0'})
 
     def panel(self):
-        return pn.Row(self.param, self.view)
+        return pn.ui.Row(self.param, self.view)
 
 pipeline.add_stage('Stage 1', Stage1)
 pipeline.add_stage('Stage 2', Stage2)

@@ -1,0 +1,38 @@
+/* Overrides both the light and dark formatter themes, which are picked once
+   from the initial theme and would not follow a Material theme toggle. */
+
+:host .json-formatter-row,
+:host .json-formatter-row a,
+:host .json-formatter-row a:hover {
+  color: var(--mui-palette-text-primary);
+}
+
+:host .json-formatter-row .json-formatter-key {
+  color: var(--mui-palette-primary-main);
+}
+
+:host .json-formatter-row .json-formatter-bracket {
+  color: var(--mui-palette-text-secondary);
+}
+
+:host .json-formatter-row .json-formatter-string,
+:host .json-formatter-row .json-formatter-stringifiable {
+  color: var(--mui-palette-success-main);
+}
+
+:host .json-formatter-row .json-formatter-number {
+  color: var(--mui-palette-info-main);
+}
+
+:host .json-formatter-row .json-formatter-boolean {
+  color: var(--mui-palette-warning-main);
+}
+
+:host .json-formatter-row .json-formatter-null,
+:host .json-formatter-row .json-formatter-undefined {
+  color: var(--mui-palette-text-disabled);
+}
+
+:host .json-formatter-row .json-formatter-url {
+  color: var(--mui-palette-primary-main);
+}

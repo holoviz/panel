@@ -17,7 +17,7 @@ user = pn.state.user or "Guest User"
 access_token = pn.state.access_token or "No access token"
 refresh_token = pn.state.refresh_token or "No refresh token"
 user_info = pn.state.user_info or "No user info"
-pn.Column(
+pn.ui.Column(
     "Hello World\n\n[logout](./logout)",
     user,
     access_token,

@@ -86,9 +86,9 @@ Great! Now, let's explore how different values for `window` and `sigma` affect t
 Let's create some Panel slider widgets to explore the range of parameter values:
 
 ```{pyodide}
-variable_widget = pn.widgets.Select(label="variable", value="Temperature", options=list(data.columns))
-window_widget = pn.widgets.IntSlider(label="window", value=30, start=1, end=60)
-sigma_widget = pn.widgets.IntSlider(label="sigma", value=10, start=0, end=20)
+variable_widget = pn.ui.Select(label="variable", value="Temperature", options=list(data.columns))
+window_widget = pn.ui.IntSlider(label="window", value=30, start=1, end=60)
+sigma_widget = pn.ui.IntSlider(label="sigma", value=10, start=0, end=20)
 ```
 
 Now, let's link these widgets to our plotting function so that updates to the widgets rerun the function. We can achieve this easily in Panel using `pn.bind`:
@@ -102,8 +102,8 @@ bound_plot = pn.bind(
 Once we've bound the widgets to the function's arguments, we can layout the resulting `bound_plot` component along with the `widgets` using a Panel layout such as `Column`:
 
 ```{pyodide}
-widgets = pn.Column(variable_widget, window_widget, sigma_widget, sizing_mode="fixed", width=300)
-pn.Column(widgets, bound_plot)
+widgets = pn.ui.Column(variable_widget, window_widget, sigma_widget, sizing_mode="fixed", width=300)
+pn.ui.Column(widgets, bound_plot)
 ```
 
 As long as you have a live Python process running, dragging these widgets will trigger a call to the `get_plot` callback function, evaluating it for whatever combination of parameter values you select and displaying the results.
@@ -177,9 +177,9 @@ def get_plot(variable="Temperature", window=30, sigma=10):
         height=300, legend=False, color=PRIMARY_COLOR
     ) * highlight.hvplot.scatter(color=SECONDARY_COLOR, padding=0.1, legend=False)
 
-variable_widget = pn.widgets.Select(label="variable", value="Temperature", options=list(data.columns))
-window_widget = pn.widgets.IntSlider(label="window", value=30, start=1, end=60)
-sigma_widget = pn.widgets.IntSlider(label="sigma", value=10, start=0, end=20)
+variable_widget = pn.ui.Select(label="variable", value="Temperature", options=list(data.columns))
+window_widget = pn.ui.IntSlider(label="window", value=30, start=1, end=60)
+sigma_widget = pn.ui.IntSlider(label="sigma", value=10, start=0, end=20)
 
 bound_plot = pn.bind(
     get_plot, variable=variable_widget, window=window_widget, sigma=sigma_widget

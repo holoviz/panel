@@ -10,7 +10,7 @@ pn.extension(template='fast')
 This example demonstrates how to use `add_periodic_callback` to stream data to the `Trend` indicator.
 
 ```{pyodide}
-layout = pn.layout.FlexBox(*(
+layout = pn.ui.FlexBox(*(
     pn.indicators.Trend(
         data={'x': list(range(10)), 'y': np.random.randn(10).cumsum()},
         width=150,
@@ -25,10 +25,10 @@ def stream():
 
 cb = pn.state.add_periodic_callback(stream, 500)
 
-pn.Column(
-  pn.Row(
+pn.ui.Column(
+  pn.ui.Row(
       cb.param.period,
-	  pn.widgets.Toggle.from_param(cb.param.running, align='end')
+	  pn.ui.Toggle.from_param(cb.param.running, align='end')
   ),
   layout
 ).servable()

@@ -569,7 +569,7 @@ class PanelCodeHandler(CodeHandler):
         if runner:
             self._runner = runner
         elif source is not None:
-            self._runner = PanelCodeRunner(source, filename, argv, package=package)
+            self._runner = PanelCodeRunner(source, filename, list(argv), package=package)
         else:
             raise ValueError("Must provide source code to PanelCodeHandler")
 

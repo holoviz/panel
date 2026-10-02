@@ -90,9 +90,9 @@ def plot(data, bins):
 pn.extension(sizing_mode="stretch_width", template="bootstrap")
 
 data = get_data()
-bins = pn.widgets.IntSlider(value=20, start=10, end=30, step=1)
+bins = pn.ui.IntSlider(value=20, start=10, end=30, step=1)
 bplot = pn.bind(plot, data, bins)
-pn.Column(bins, pn.panel(bplot, loading_indicator=True)).servable()
+pn.ui.Column(bins, pn.panel(bplot, loading_indicator=True)).servable()
 ```
 
 ![Panel Cache Example](https://assets.holoviz.org/panel/gifs/panel_cache_example.gif)

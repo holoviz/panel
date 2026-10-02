@@ -95,9 +95,9 @@ pn.state.add_periodic_callback(update_wind_speed, period=1000)
 
 # Layout the app
 
-pn.Column(
+pn.ui.Column(
     "# WTG Monitoring Dashboard",
-    pn.FlexBox(wind_speed_view, power_output_view),
+    pn.ui.FlexBox(wind_speed_view, power_output_view),
 ).servable()
 ```
 

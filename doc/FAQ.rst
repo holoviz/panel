@@ -43,7 +43,7 @@ Conversely, what Panel adds on top of Bokeh is full bidirectional communication 
 
 **Q: Why is my object being shown using the wrong type of pane?**
 
-**A:** A global set of precedence values is used to ensure that the richest representation of a given object is chosen when you pass it to a Row or Column. For instance, if ``obj`` is "# Some text", it be displayed as a ``pn.Str``, ``pn.HTML``, or ``pn.Markdown``, all of which can render a Python string like that.  By default, something like ``pn.Row(obj)`` will select a Markdown pane for the obj, because Markdown has a higher precedence than the other options.  If you want to override the default pane type selected, you can specify the precise Pane type you wish, as in ``pn.Row(pane.Str("# Some text"))``, which also allows you to pass in options like ``pn.Row(pane.Str("# Some text", height=300))``.  If the default Pane type is fine but you still want to be able to pass specific options like width or height in this way, you can invoke the ``pn.panel`` function to create a default pane with the supplied arguments, as in  ``pn.Row(pn.panel(obj, height=300))``.
+**A:** A global set of precedence values is used to ensure that the richest representation of a given object is chosen when you pass it to a Row or Column. For instance, if ``obj`` is "# Some text", it be displayed as a ``pn.ui.Str``, ``pn.ui.HTML``, or ``pn.ui.Markdown``, all of which can render a Python string like that.  By default, something like ``pn.ui.Row(obj)`` will select a Markdown pane for the obj, because Markdown has a higher precedence than the other options.  If you want to override the default pane type selected, you can specify the precise Pane type you wish, as in ``pn.ui.Row(pn.ui.Str("# Some text"))``, which also allows you to pass in options like ``pn.ui.Row(pn.ui.Str("# Some text", height=300))``.  If the default Pane type is fine but you still want to be able to pass specific options like width or height in this way, you can invoke the ``pn.panel`` function to create a default pane with the supplied arguments, as in  ``pn.ui.Row(pn.panel(obj, height=300))``.
 
 
 **Q: For Matplotlib plots in a notebook, why do I get no plot, two plots, or plots that fail to update?**
@@ -58,13 +58,13 @@ As an example creating a simple plot might look like this::
     fig = Figure(figsize=(10, 6))
     ax = fig.subplots()
     ax.plot([1, 2, 3])
-    pn.pane.Matplotlib(fig)
+    pn.ui.Matplotlib(fig)
 
 When using the pandas plotting API we create the figure and axes in the same way as before but then pass the axis to the plotting call::
 
     df = pd.DataFrame({"x": [1, 2, 3])
     df.plot(ax=ax)
-    pn.pane.Matplotlib(fig)
+    pn.ui.Matplotlib(fig)
 
 **Q: How do I debug error messages in a notebook?**
 
@@ -94,7 +94,7 @@ That said, Panel is in no way a clone of Shiny; Panel is a complete solution for
 
 **Q: Can Panel be used like Powerpoint?**
 
-**A:** Panel works very well with `RISE <https://github.com/damianavila/RISE>`__, which lets a Jupyter notebook (including any Panel layouts) be used for a fully interactive full-screen presentation. Panel 1.0 also includes a native `SlidesTemplate <https://panel.holoviz.org/reference/templates/Slides.html>`__ similar to RISE.
+**A:** Panel works very well with `RISE <https://github.com/damianavila/RISE>`__, which lets a Jupyter notebook (including any Panel layouts) be used for a fully interactive full-screen presentation. Panel 1.0 also includes a native `SlidesTemplate <https://panel.holoviz.org/reference/classic/templates/Slides.html>`__ similar to RISE.
 
 
 **Q: What performance limitations does Panel have?**

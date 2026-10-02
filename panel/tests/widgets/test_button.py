@@ -1,6 +1,13 @@
+import warnings
+
+import pytest
+
 from bokeh.events import ButtonClick, MenuItemClick
 
 from panel.widgets import Button, MenuButton, Toggle
+from panel.widgets.button import (
+    _normalize_button_appearance_constructor_params,
+)
 from panel.widgets.icon import ButtonIcon
 
 
@@ -173,3 +180,24 @@ def test_menu_variant_renders_to_css_class(document, comm):
     assert "outline" in widget.css_classes
     menu_button.variant = "solid"
     assert "solid" in widget.css_classes
+
+
+def test_button_appearance_aliases_normalize_once():
+    # Subclasses whose constructor chain runs the normalization twice, such as
+    # a Material FileDownload, must not warn about aliases they did not pass.
+    params = {'color': 'primary', 'variant': 'outlined'}
+    with warnings.catch_warnings():
+        warnings.simplefilter('error')
+        _normalize_button_appearance_constructor_params(params)
+        _normalize_button_appearance_constructor_params(params)
+    assert params == {
+        'color': 'primary', 'button_type': 'primary',
+        'variant': 'outlined', 'button_style': 'outlined',
+    }
+
+
+def test_button_conflicting_appearance_aliases_warn():
+    params = {'color': 'primary', 'button_type': 'danger'}
+    with pytest.warns(PendingDeprecationWarning, match="Both 'color' and 'button_type'"):
+        _normalize_button_appearance_constructor_params(params)
+    assert params['color'] == 'primary'

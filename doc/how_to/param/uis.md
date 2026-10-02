@@ -63,7 +63,7 @@ pn.Param(BaseClass.param.num_int)
 Passing the ``.param`` object renders the full set of widgets, while passing a single parameter will display just one widget. In this way we can easily declare exactly which parameters to display:
 
 ```{pyodide}
-pn.Row(BaseClass.param.float_range, BaseClass.param.num_int)
+pn.ui.Row(BaseClass.param.float_range, BaseClass.param.num_int)
 ```
 
 ## Advanced parameters

@@ -991,7 +991,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
 
     def save(
         self, filename: str | os.PathLike | t.IO, title: str | None = None,
-        resources: Resources | None = None, template: str | Template | None = None,
+        resources: Resources | str | None = None, template: str | Template | None = None,
         template_variables: dict[str, t.Any] = {}, embed: bool = False,
         max_states: int = 1000, max_opts: int = 3, embed_json: bool = False,
         json_prefix: str='', save_path: str='./', load_path: str | None = None,

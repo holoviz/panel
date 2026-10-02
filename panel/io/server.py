@@ -70,7 +70,7 @@ from .document import (  # noqa
     _cleanup_doc, init_doc, unlocked, with_lock,
 )
 from .liveness import LivenessHandler
-from .loading import LOADING_INDICATOR_CSS_CLASS
+from .loading import _loading_css_classes
 from .logging import LOG_SESSION_CREATED
 from .reload import record_modules
 from .resources import (
@@ -338,7 +338,8 @@ def html_page_for_render_items(
 
     script = wrap_in_script_tag(script_for_render_items(json_id, render_items))
 
-    context = template_variables.copy()
+    from ..theme.base import design_template_variables
+    context = {**design_template_variables(), **template_variables}
 
     context.update(dict(
         title = title,
@@ -408,7 +409,7 @@ def server_html_page_for_session(
         )
         if config.global_loading_spinner:
             html = html.replace(
-                '<body>', f'<body class="{LOADING_INDICATOR_CSS_CLASS} pn-{config.loading_spinner}">'
+                '<body>', f'<body class="{" ".join(_loading_css_classes())}">'
             )
     return html
 

@@ -128,7 +128,7 @@ from .sinewave import SineWave
 
 def createApp():
     sw = SineWave()
-    return pn.Row(sw.param, sw.plot).servable()
+    return pn.ui.Row(sw.param, sw.plot).servable()
 ```
 
 We now need to return to our `main.py` and import the createApp function. Add the following import near the other imports:
@@ -202,7 +202,7 @@ from .sinewave import SineWave
 
 def createApp2():
     sw = SineWave()
-    return pn.Row(sw.param, sw.plot).servable()
+    return pn.ui.Row(sw.param, sw.plot).servable()
 ```
 
 With this as your new file structure:

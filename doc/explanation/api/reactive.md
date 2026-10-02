@@ -27,7 +27,7 @@ import panel as pn
 pn.extension()
 
 def fn(a,b): return f'Arguments: {a,b}'
-slider = pn.widgets.FloatSlider(value=0.5)
+slider = pn.ui.FloatSlider(value=0.5)
 
 bound_fn = pn.bind(fn, a=slider, b=2)
 bound_fn()
@@ -38,7 +38,7 @@ Here we can see that although `fn` required two arguments, `bound_fn` takes no a
 If we display the slider and bound function in Panel, we can see that everything will update reactively as you use the widget, reevaluating the function whenever the bound argument changes:
 
 ```{pyodide}
-pn.Row(slider, bound_fn)
+pn.ui.Row(slider, bound_fn)
 ```
 
 ## Example
@@ -52,12 +52,12 @@ from bokeh.sampledata.autompg import autompg
 
 columns = list(autompg.columns[:-2])
 
-x = pn.widgets.Select(value='mpg', options=columns, label='x')
-y = pn.widgets.Select(value='hp', options=columns, label='y')
-color = pn.widgets.ColorPicker(label='Color', value='#AA0505')
+x = pn.ui.Select(value='mpg', options=columns, label='x')
+y = pn.ui.Select(value='hp', options=columns, label='y')
+color = pn.ui.ColorPicker(label='Color', value='#AA0505')
 
-pn.Row(
-    pn.Column('## MPG Explorer', x, y, color),
+pn.ui.Row(
+    pn.ui.Column('## MPG Explorer', x, y, color),
     pn.bind(autompg.hvplot.scatter, x, y, c=color)
 )
 ```
@@ -67,16 +67,16 @@ Notice how here we were able to bind widget values to the existing method `autom
 If you are writing code specifically for building an app, and do not wish to keep domain and GUI code separate even in one direction, the functionality of `pn.bind` is also available as a decorator `@pn.depends`:
 
 ```{pyodide}
-x = pn.widgets.Select(value='mpg', options=columns, label='x')
-y = pn.widgets.Select(value='hp', options=columns, label='y')
-color = pn.widgets.ColorPicker(label='Color', value='#AA0505')
+x = pn.ui.Select(value='mpg', options=columns, label='x')
+y = pn.ui.Select(value='hp', options=columns, label='y')
+color = pn.ui.ColorPicker(label='Color', value='#AA0505')
 
 @pn.depends(x, y, color)
 def plot(xval, yval, colorval):
     return autompg.hvplot.scatter(xval, yval, c=colorval)
 
-pn.Row(
-    pn.Column('## MPG Explorer', x, y, color),
+pn.ui.Row(
+    pn.ui.Column('## MPG Explorer', x, y, color),
     plot
 )
 ```

@@ -28,13 +28,13 @@ Components usually have a link to their documentation page in their docstring, u
 All components in Panel are built on the [Param](https://param.holoviz.org/) library. Each component declares a set of *Parameters* that control the behavior and output of the component. The basic idea however is that the *Parameter* values can be controlled both at the class-level:
 
 ```{pyodide}
-pn.widgets.IntRangeSlider.width = 350
+pn.ui.IntRangeSlider.width = 350
 ```
 
 and on each instance:
 
 ```{pyodide}
-pn.widgets.IntRangeSlider(width=100)
+pn.ui.IntRangeSlider(width=100)
 ```
 
 ## State syncing
@@ -42,7 +42,7 @@ pn.widgets.IntRangeSlider(width=100)
 Be it in a notebook, in a served app, or in a Pyodide/PyScript app, Panel components sync their state between all views of the object. To better understand what that means, we create a `TextInput` widget and display it two times. Run the two following cells to render two views of the same widget.
 
 ```{pyodide}
-w_text = pn.widgets.TextInput()
+w_text = pn.ui.TextInput()
 w_text
 ```
 
@@ -72,7 +72,7 @@ w_text.value
 
 ### Widgets
 
-More than 50 different widgets are available in the `pn.widgets` subpackage, varying from a simple text input to a more complex chat bot. The widget classes use a consistent API that allows treating broad categories of widgets as interchangeable. For instance, to select a value from a list of options, you can interchangeably use a `Select` widget, a `RadioButtonGroup`, or a range of other equivalent widgets.
+More than 50 different widgets are available in the `pn.ui` namespace, varying from a simple text input to a more complex chat bot. The widget classes use a consistent API that allows treating broad categories of widgets as interchangeable. For instance, to select a value from a list of options, you can interchangeably use a `Select` widget, a `RadioButtonGroup`, or a range of other equivalent widgets.
 
 #### `value`
 
@@ -84,7 +84,7 @@ One gotcha that doesn't only apply to the `value` *Parameter* but that you are m
 :::
 
 ```{pyodide}
-w_multi = pn.widgets.MultiSelect(options=list('abc'))
+w_multi = pn.ui.MultiSelect(options=list('abc'))
 w_multi
 ```
 
@@ -115,11 +115,11 @@ pn.config.throttled = True
 ```
 
 ```{pyodide}
-slider = pn.widgets.IntSlider(start=0, end=10)
+slider = pn.ui.IntSlider(start=0, end=10)
 ```
 
 ```{pyodide}
-text = pn.widgets.TextInput()
+text = pn.ui.TextInput()
 ```
 
 ```{pyodide}
@@ -135,11 +135,11 @@ slider.param.value_throttled
 Most widgets can have a caption that is set with the `label` parameter. The `name` parameter is deprecated but is still accepted as an alias for `label`.
 
 ```{pyodide}
-pn.widgets.Button(label='Click me!')
+pn.ui.Button(label='Click me!')
 ```
 
 ```{pyodide}
-pn.widgets.TextInput(label='Age:')
+pn.ui.TextInput(label='Age:')
 ```
 
 #### `description`
@@ -147,7 +147,7 @@ pn.widgets.TextInput(label='Age:')
 The `description` *Parameter* was added in Panel 1.0 to some widgets. It adds a tooltip icon next to the widget label, it supports rendering HTML content.
 
 ```{pyodide}
-pn.widgets.Select(
+pn.ui.Select(
     label='Mode', description='<ul><li>Mode 1: ...</li><li>Mode 2: ...</li></ul>',
     options=[1, 2]
 )
@@ -155,7 +155,7 @@ pn.widgets.Select(
 
 ### Panes
 
-Pane objects makes it possible to display a wide range of plots and other media on a page, including plots (e.g. Matplotlib, Bokeh, Vega/Altair, HoloViews, Plotly, Vizzu), images (e.g. PNGs, SVGs, GIFs, JPEGs), various markup languages (e.g. Markdown, HTML, LaTeX) and DataFrames. Panes are available under the `pn.pane` subpackage.
+Pane objects makes it possible to display a wide range of plots and other media on a page, including plots (e.g. Matplotlib, Bokeh, Vega/Altair, HoloViews, Plotly, Vizzu), images (e.g. PNGs, SVGs, GIFs, JPEGs), various markup languages (e.g. Markdown, HTML, LaTeX) and DataFrames. Panes are available under the `pn.ui` namespace.
 
 #### `pn.panel()`
 
@@ -167,7 +167,7 @@ png
 ```
 
 ```{pyodide}
-row = pn.Row('# Title')
+row = pn.ui.Row('# Title')
 ```
 
 We can check that `PNG` is indeed the Pane type inferred by the utility.
@@ -181,7 +181,7 @@ print(png)
 Panes **all** store the object they are wrapping on the `object` *Parameter*. Existing views of a pane will update when `object` is set to a new value. Let's verify that with the `Markdown` pane, run the next cells to display two views of the same pane and update both of them by setting `object` with a new string.
 
 ```{pyodide}
-p_md = pn.pane.Markdown('# Title')
+p_md = pn.ui.Markdown('# Title')
 p_md
 ```
 
@@ -234,7 +234,7 @@ All the layout objects can be initialized as empty. When initialized with some o
 List-like layouts can be initialized with a variable number of objects. To start with, we will declare a `Column` and populate it with a title and a widget.
 
 ```{pyodide}
-column = pn.Column('# A title', pn.widgets.FloatSlider())
+column = pn.ui.Column('# A title', pn.ui.FloatSlider())
 column
 ```
 
@@ -247,13 +247,13 @@ column.append('* Item 1\n* Item 2')
 Then we add a few more widgets.
 
 ```{pyodide}
-column.extend([pn.widgets.TextInput(), pn.widgets.Checkbox(label='Tick this!')])
+column.extend([pn.ui.TextInput(), pn.ui.Checkbox(label='Tick this!')])
 ```
 
 And finally we change our mind and replace the `Checkbox` with a button.
 
 ```{pyodide}
-column[4] = pn.widgets.Button(label='Click here')
+column[4] = pn.ui.Button(label='Click here')
 ```
 
 The ability to add, remove, and replace items using list operations opens up the possibility of building rich and responsive GUIs with the ease of manipulating a Python list! You can inspect the structure of a layout calling `print`.
@@ -265,13 +265,13 @@ print(column)
 The `Tabs` and `Accordion` layouts behave similarly, however, when adding or replacing items, it is also possible to pass a tuple providing a custom title for the tab
 
 ```{pyodide}
-tabs = pn.Tabs(('Text', 'Some text'))
+tabs = pn.ui.Tabs(('Text', 'Some text'))
 tabs
 ```
 
 ```{pyodide}
 # Insert a tab with a title
-tabs.insert(0, ('Slider', pn.widgets.FloatSlider()))
+tabs.insert(0, ('Slider', pn.ui.FloatSlider()))
 ```
 
 #### Grid-like API
@@ -289,16 +289,16 @@ pn.extension('gridstack')
 ```
 
 ```{pyodide}
-gspec = pn.GridStack(sizing_mode='stretch_width', height=500)
-gspec[0, :3] = pn.Spacer(styles=dict(background='#FF0000'))
-gspec[1:3, 0] = pn.Spacer(styles=dict(background='#0000FF'))
+gspec = pn.ui.GridStack(sizing_mode='stretch_width', height=500)
+gspec[0, :3] = pn.ui.Spacer(styles=dict(background='#FF0000'))
+gspec[1:3, 0] = pn.ui.Spacer(styles=dict(background='#0000FF'))
 gspec[1:3, 1:3] = hv.Scatter([0, 1, 0]).opts(shared_axes=False)
 gspec[3:5, 0] = hv.Curve([1, 2, 3])
 gspec[3:5, 1] = 'https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png'
-gspec[4:5, 2] = pn.Column(
-    pn.widgets.FloatSlider(),
-    pn.widgets.ColorPicker(),
-    pn.widgets.Toggle(label='Toggle Me!'))
+gspec[4:5, 2] = pn.ui.Column(
+    pn.ui.FloatSlider(),
+    pn.ui.ColorPicker(),
+    pn.ui.Toggle(label='Toggle Me!'))
 
 gspec
 ```
@@ -312,7 +312,7 @@ Widgets, indicators, panes and layouts all share a set of *Parameters* which are
 Loading spinners are everywhere on modern apps and for good reasons, they let your users know that your app is doing some work for them! Fortunately they are very easy to set up in Panel, just set the `loading` *Parameter* to `True` or `False` on a component to display and hide its loading spinner.
 
 ```{pyodide}
-p_md = pn.pane.Markdown('# Title', loading=True)
+p_md = pn.ui.Markdown('# Title', loading=True)
 p_md
 ```
 
@@ -330,7 +330,7 @@ p_md.loading = False
 Sometimes it's useful to just completely hide a component, for instance to hide some advanced options. Again that's very easy to do, just set the `visible` *Parameter* to `False` on a component you want to hide.
 
 ```{pyodide}
-w_text = pn.widgets.TextInput(label='Advanced')
+w_text = pn.ui.TextInput(label='Advanced')
 w_text
 ```
 
@@ -350,7 +350,7 @@ custom_style = {
     'box-shadow': '5px 5px 5px #bcbcbc'
 }
 
-pn.widgets.FloatSlider(label='Number', styles=custom_style)
+pn.ui.FloatSlider(label='Number', styles=custom_style)
 ```
 
 #### Size and responsivity
@@ -362,7 +362,7 @@ A few *Parameters* allow to control the size and responsivity of components, inc
 The `margin` *Parameter* can be used to create space around an element defined as the number of pixels at the (top, right, bottom, and left). When you set it with a single value, the margin is going to be applied to each side of the element. `margin` allows for more fine-grained distributio of the margin.
 
 ```{pyodide}
-pn.widgets.Button(label='Click', margin=(25, 0, 0, 0))
+pn.ui.Button(label='Click', margin=(25, 0, 0, 0))
 ```
 
 #### `align`
@@ -370,9 +370,9 @@ pn.widgets.Button(label='Click', margin=(25, 0, 0, 0))
 The `align` *Parameter* controls how components align vertically and horizontally. It supports `‘start’`, `‘center’`, and `‘end’` values and can be set for both horizontal and vertical directions at once or for each separately by passing in a tuple of the form `(horizontal, vertical)`.
 
 ```{pyodide}
-pn.Row(
-    pn.widgets.IntSlider(),
-    pn.widgets.IntSlider(align=('center', 'start')),
+pn.ui.Row(
+    pn.ui.IntSlider(),
+    pn.ui.IntSlider(align=('center', 'start')),
     height=100,
     styles={'background': 'lightgrey'},
 )
@@ -421,7 +421,7 @@ def compute(i):
     return '❤️' * i
 
 
-w_number = pn.widgets.IntSlider(value=5, start=1, end=5)
+w_number = pn.ui.IntSlider(value=5, start=1, end=5)
 p_hearts = pn.panel(pn.bind(compute, w_number))
 
 template.sidebar.append(w_number)

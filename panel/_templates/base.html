@@ -10,34 +10,77 @@ Renders Bokeh models into a basic .html file.
 :param plot_script: typically the output of PLOT_SCRIPT
 :type plot_script: str
 
+:param meta: mapping of metadata to render as ``<meta>`` tags, supporting
+    the title, name, description, keywords, author, refresh and viewport keys
+:type meta: dict
+
+:param theme_managed: whether the design system manages theming itself,
+    exposed to the client as the data-theme-managed attribute
+:type theme_managed: bool
+
+:param material_ui: set by the Material UI design, styles the document from
+    its CSS variables
+:type material_ui: bool
+
+:param resources: extra css, raw_css, js and js_modules to load, as resolved
+    by a component rendering its own page
+:type resources: dict
+
+``favicon``, ``apple_touch_icon`` and ``is_page`` are accepted as aliases of
+``app_favicon``, ``apple_icon`` and ``theme_managed``.
+
 Users can customize the file output by providing their own Jinja2 template
 that accepts these same parameters.
 
 #}
 {% from macros import embed %}
 <!DOCTYPE html>
-<html lang="en" {{ html_attrs | default("", true) }}>
+<html lang="en" {{ html_attrs | default("", true) }} data-theme-managed="{{ 'true' if theme_managed or is_page else 'false' }}">
   {% block head %}
   <head>
   {% block inner_head %}
     <meta charset="utf-8">
     <title>{% block title %}{{ title | e if title else "Panel App" }}{% endblock %}</title>
-    {% if apple_icon is not defined -%}
+    {% if apple_icon is not defined and not apple_touch_icon -%}
     <link rel="apple-touch-icon" sizes="180x180" href="{{ dist_url }}images/apple-touch-icon.png">
     {%- endif %}
-    {% if app_favicon is not defined -%}
+    {% if app_favicon is not defined and not favicon -%}
     <link rel="icon" type="image/png" sizes="32x32" href="{{ dist_url }}images/favicon.ico">
     {%- endif %}
     {% if manifest_url %}<link rel="manifest" href="{{ manifest_url }}">{% endif %}
-    {% if theme_name == "dark"%}<style>html { background-color: #121212 }</style>{% endif %}
-  {%  block preamble -%}
-    {% if apple_icon is not defined -%}
-    <link rel="apple-touch-icon" href="{{apple_icon}}">
-    {%- endif %}
-    {% if app_favicon -%}
-    <link rel="icon" href="{{app_favicon}}">
-    {%- endif %}
-  {%- endblock %}
+  {%  block meta %}
+    {% if meta is defined and meta %}
+    {% if meta.title %}
+    <meta name="title" content="{{ meta.title }}">
+    {% endif %}
+    {% if meta.name %}
+    <meta name="name" content="{{ meta.name }}">
+    {% endif %}
+    {% if meta.description %}
+    <meta name="description" content="{{ meta.description }}">
+    {% endif %}
+    {% if meta.keywords %}
+    <meta name="keywords" content="{{ meta.keywords }}">
+    {% endif %}
+    {% if meta.author %}
+    <meta name="author" content="{{ meta.author }}">
+    {% endif %}
+    {% if meta.refresh %}
+    <meta http-equiv="refresh" content="{{ meta.refresh }}">
+    {% endif %}
+    {% if meta.viewport %}
+    <meta name="viewport" content="{{ meta.viewport }}">
+    {% endif %}
+    {% endif %}
+  {%  endblock meta %}
+  {%  block preamble %}
+    {% if apple_touch_icon or apple_icon %}
+    <link rel="apple-touch-icon" href="{{ apple_touch_icon or apple_icon }}">
+    {% endif %}
+    {% if favicon or app_favicon %}
+    <link rel="icon" href="{{ favicon or app_favicon }}">
+    {% endif %}
+  {%  endblock preamble %}
   {%  block resources %}
     <style>
       html, body {
@@ -47,7 +90,56 @@ that accepts these same parameters.
         margin: 0;
         padding: 0;
       }
+      {% if theme_name == "dark" %}
+      html { background-color: #121212 }
+      body { background-color: #121212; color: #fff }
+      {% endif %}
+      {% block loader_css %}
+      #loader {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+        flex-direction: column;
+        gap: 16px;
+      }
+      #loader.error {
+        background: none;
+      }
+      #loader .spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid #3498db;
+        border-radius: 50%;
+        animation: pn-loader-spin 1s linear infinite;
+      }
+      #loader-error {
+        display: none;
+        color: #d32f2f;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-size: 14px;
+        text-align: center;
+        padding: 12px 20px;
+        background: rgba(211, 47, 47, 0.08);
+        border: 1px solid rgba(211, 47, 47, 0.3);
+        border-radius: 8px;
+      }
+      @keyframes pn-loader-spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+      {% endblock %}
     </style>
+    {% if material_ui and not (theme_managed or is_page) %}
+    <link rel="stylesheet" href="{{ dist_url }}bundled/theme/{{ theme_name }}.css">
+    {% endif %}
   {%   block css_resources -%}
     {{- bokeh_css if bokeh_css }}
   {%-  endblock css_resources %}
@@ -55,13 +147,52 @@ that accepts these same parameters.
     {{  bokeh_js if bokeh_js }}
   {%-  endblock js_resources %}
   {%  endblock resources %}
-  {%  block postamble %}{% endblock %}
+  {%  block postamble %}
+    {% if resources %}
+    {% for css in resources.css.values() %}
+    <link rel="stylesheet" href="{{ css }}">
+    {% endfor %}
+    {% block custom_css %}{% endblock %}
+    {% for raw_css in resources.raw_css %}
+    <style type="text/css">
+    {{ raw_css }}
+    </style>
+    {% endfor %}
+    {% for src in resources.js.values() %}
+    <script src="{{ src }}"></script>
+    {% endfor %}
+    {% for src in resources.js_modules.values() %}
+    <script src="{{ src }}" type="module"></script>
+    {% endfor %}
+    {% endif %}
+  {%  endblock postamble %}
+  {% if material_ui %}
+    <style id="template-styles">
+      html, body {
+        color: var(--mui-palette-text-primary);
+        background-color: var(--mui-palette-background-default);
+        font: var(--mui-font-body1);
+      }
+      h1 { font: var(--mui-font-h1) }
+      h2 { font: var(--mui-font-h2) }
+      h3 { font: var(--mui-font-h3) }
+      h4 { font: var(--mui-font-h4) }
+      h5 { font: var(--mui-font-h5) }
+      h6 { font: var(--mui-font-h6) }
+    </style>
+  {% endif %}
   {% endblock inner_head %}
   </head>
   {% endblock head%}
   {% block body %}
   <body>
   {%  block inner_body %}
+  {%    block loader %}
+    <div id="loader" style="display: none;">
+      <div class="spinner"></div>
+      <div id="loader-error"></div>
+    </div>
+  {%    endblock loader %}
   {%    block contents %}
   {%      for doc in docs %}
   {{        embed(doc) if doc.elementid }}
@@ -72,7 +203,65 @@ that accepts these same parameters.
   {%        endfor %}
   {%      endfor %}
   {%    endblock contents %}
+  {%    block connection_script %}
+  <script>
+    (function() {
+      // Records failed connections so the loader can report them instead
+      // of spinning until it times out.
+      const NativeWebSocket = window.WebSocket;
+      function TrackedWebSocket(...args) {
+        const ws = new NativeWebSocket(...args);
+        ws.addEventListener('error', () => { window._panelConnectionError = true; });
+        ws.addEventListener('close', (e) => { if (e.code !== 1000) { window._panelConnectionError = true; } });
+        return ws;
+      }
+      TrackedWebSocket.prototype = NativeWebSocket.prototype;
+      for (const state of ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED']) {
+        Object.defineProperty(TrackedWebSocket, state, {value: NativeWebSocket[state]});
+      }
+      window.WebSocket = TrackedWebSocket;
+    })();
+  </script>
+  {%    endblock connection_script %}
   {{ plot_script | indent(4) }}
+  {%    block loader_script %}
+  <script>
+    (function() {
+      const loader = document.getElementById('loader');
+      if (!loader) { return; }
+      let timeout = 0;
+      function showError(message) {
+        const errorEl = document.getElementById('loader-error');
+        loader.style.display = 'flex';
+        loader.classList.add('error');
+        loader.querySelector('.spinner').style.display = 'none';
+        errorEl.style.display = 'block';
+        errorEl.textContent = message;
+      }
+      function checkIdle() {
+        if (typeof Bokeh === 'undefined') {
+          if (timeout > 10000) {
+            showError('Resources could not be loaded.');
+            return;
+          }
+        } else if (window._panelConnectionError) {
+          showError('Connection with the server could not be established.');
+          return;
+        } else if (Bokeh.index && Bokeh.index.roots[0] && Bokeh.index.roots[0].is_idle) {
+          loader.style.display = 'none';
+          return;
+        } else if (timeout > 30000) {
+          loader.style.display = 'none';
+          return;
+        }
+        timeout += 100;
+        loader.style.display = 'flex';
+        setTimeout(checkIdle, 100);
+      }
+      setTimeout(checkIdle, 100);
+    })();
+  </script>
+  {%    endblock loader_script %}
   {%  endblock inner_body %}
   </body>
   {% endblock body%}

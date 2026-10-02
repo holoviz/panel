@@ -42,12 +42,12 @@ def plot(style, color):
 
 
 styles = sorted(plt.style.available)
-style = pn.widgets.Select(value="dark_background", options=styles, label="Style")
-color = pn.widgets.ColorPicker(value="#F08080", label="Color")
+style = pn.ui.Select(value="dark_background", options=styles, label="Style")
+color = pn.ui.ColorPicker(value="#F08080", label="Color")
 
-pn.Column(
-    pn.Row(style, color),
-    pn.pane.Matplotlib(
+pn.ui.Column(
+    pn.ui.Row(style, color),
+    pn.ui.Matplotlib(
         pn.bind(plot, style=style, color=color),
         height=400,
         sizing_mode="fixed",

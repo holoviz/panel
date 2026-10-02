@@ -6,6 +6,69 @@ Welcome to the Upgrade Guide for Panel! When we make backward-incompatible chang
 
 Panel 1.10.0 requires Bokeh 3.10 and serves its applications on its own [ASGI](https://asgi.readthedocs.io/) application in addition to the existing Tornado server. This means the FastAPI and Django integrations are now implemented in Panel itself, so the `bokeh-fastapi` and `bokeh-django` packages are no longer used and are no longer installed by `panel[fastapi]` or the new `panel[django]` extra. If your environment pins either of them you can remove them.
 
+### Moving to `panel.ui`
+
+`panel.ui` is an opt-in component namespace built from Material UI components and classic Panel components without a Material equivalent. Existing `pn.widgets`, `pn.layout`, `pn.pane`, and other classic imports continue to work; importing `panel` alone does not switch them to Material components. Use `pn.ui` or import from a submodule such as `panel.ui.widgets` when adopting the new components. Flat and submodule imports refer to the same class.
+
+```python
+import pandas as pd
+import panel as pn
+
+pn.ui.Button(label='Run')           # Material UI button
+pn.ui.widgets.Button(label='Run')   # same class
+pn.ui.Tabulator(value=pd.DataFrame({'value': [1, 2]}))  # classic component, re-exported unchanged
+```
+
+Material components can be mixed with classic components in an app. Panel 1.9 added `label` as an alias for `name` on classic components, so you can adopt that spelling before switching namespaces. We have made a best effort to keep classic and Material components compatible, but they are not 1:1 everywhere. Check {ref}`panel-ui-compatibility` for known parameter and default differences, and test callback behavior before replacing a classic widget. Importing `panel.ui` selects the Material UI design if you have not explicitly configured another design. To keep a chosen design, set it before importing `panel.ui`.
+
+#### Migrate Python files
+
+Install the migration tool's optional dependency, preview the changes, then apply them:
+
+```bash
+pip install 'panel[migrate]'
+panel migrate my_app/
+panel migrate --diff my_app/
+panel migrate --fix my_app/
+```
+
+`panel migrate` accepts Python files or directories, searched recursively for `*.py` files while skipping hidden directories such as `.venv` and `.pixi`, as well as `venv`, `node_modules`, `build` and `dist`. By default it only reports the proposed rewrites and exits with a non-zero status if anything would change. `--diff` also prints a unified diff, and `--fix` writes the changes to disk. The report lists rewrites and items that need manual review; a successful exit does not mean there are no manual review items.
+
+For example, a classic `pn.widgets.Button(name='Run')` call becomes `pn.ui.Button(label='Run')`. If the file does not already import `panel as pn`, the tool adds that import. Where supported, the tool also renames `button_type` to `color` and `button_style` to `variant`, maps the `solid` and `outline` variants of `RadioButtonGroup` and `CheckButtonGroup` to `contained` and `outlined` (the Material constructors also accept the classic spellings), converts `MenuButton(split=True)` to `SplitButton`, and replaces compatible classic template calls with `pn.ui.Page(...)`. Components imported from `panel_material_ui` are rewritten to the same class under `pn.ui`, and `panel_material_ui` imports left unused are removed. In files it migrates to `pn.ui`, it removes explicit selections of Panel's built-in designs so the app uses the Material UI design, and reports custom designs for manual review. Calls with unsupported parameters, argument unpacking, dynamic `variant` values, or template options that cannot be confirmed compatible are left unchanged and reported for manual review. The tool changes Python source, not notebooks.
+
+The tool rewrites Python calls, so it cannot migrate anything that depends on the classic DOM or Bokeh models. Material components render different markup, so custom `stylesheets`, `css_classes` and `config.raw_css` that target classic class names or model internals need to be rewritten by hand. The same applies to custom `Design` and `Theme` subclasses, template subclasses and Jinja templates, and to `jslink` and `jscallback` code that references properties of the classic models.
+
+(panel-ui-compatibility)=
+
+#### Classic and `panel.ui` compatibility
+
+The following tables compare the public Param parameters of classic components with their `panel.ui` counterparts. A component re-exported unchanged from classic Panel has the same Python class and parameter API. For Material replacements, a matching parameter name does not guarantee identical validation or behavior; compare the individual component references and test the result in your app. The differences below reflect the updated `panel-material-ui` implementation; install a release containing those changes before relying on the restored parameters and defaults.
+
+| Classic component | Parameters absent from `panel.ui` | Migration consideration |
+| --- | --- | --- |
+| `widgets.DatetimePicker` | `allow_input`, `mode` | Review date entry and picker mode. |
+| `widgets.DatetimeRangePicker` | `allow_input`, `as_numpy_datetime64`, `enable_time`, `mode` | Check output types as well as input behavior. |
+| `widgets.EditableFloatSlider`, `widgets.EditableIntSlider`, `widgets.EditableRangeSlider` | `editable` | Material editable sliders do not offer this switch. |
+| `widgets.LoadingSpinner` | `throttle` | Review loading timing. |
+| `widgets.MenuButton` | `clicked`, `split` | Use `SplitButton` for `split=True`; review callback semantics. |
+| `widgets.Progress` | `bar_color` | Review color selection; `max` is supported. |
+| `layout.Accordion`, `layout.Tabs` | `scroll` | Review overflow behavior. |
+| `layout.Card` | `active_header_background`, `auto_scroll_limit`, `button_css_classes`, `scroll`, `scroll_button_threshold`, `scroll_position`, `view_latest` | Review header styling and auto-scrolling. |
+
+| Component | Classic default or parameter type | `panel.ui` default or parameter type |
+| --- | --- | --- |
+| `widgets.Button` | `color='default'`, `variant='solid'` | `color='primary'`, `variant='contained'` |
+| `widgets.FloatSlider` | `width=None` | `width=300` |
+| `widgets.IntSlider` | `width=None` | `width=300` |
+| `widgets.DatetimeRangeSlider` | `step=60000` | `step=60` |
+| `widgets.LoadingSpinner` | Boolean `value`, `size=125` | Number `value`, `size=40` |
+| `widgets.Select` | Integer `size` | Selector `size` |
+| `widgets.Switch` | Integer `width` | Boolean `width` |
+| `layout.Feed` | `load_buffer=50` | `load_buffer=10` |
+| `chat.ChatStep` | `margin=(5, 5, 5, 10)`, `sizing_mode=None` | `margin=(5, 0, 0, 0)`, `sizing_mode='stretch_width'` |
+
+The flat namespace also has name collisions: `pn.ui.DataFrame` is the classic **pane**, not `pn.widgets.DataFrame` (use `pn.ui.Tabulator` for an editable table), and `pn.ui.Alert` is the Material layout, not `pn.pane.Alert`. Review these calls manually: `panel migrate` may rewrite them if their arguments do not reveal the mismatch. Classic templates are not same-named `panel.ui` classes; use `pn.ui.Page` and review template-specific options manually. The command flags unsupported arguments it can identify, but it cannot detect changes to defaults or runtime behavior.
+
 ### FastAPI
 
 The public API of `panel.io.fastapi` is unchanged, i.e. `add_application`, `add_applications`, `get_server` and `serve` behave as they did before, and you no longer have to install `bokeh-fastapi` alongside Panel. The applications are now dispatched by a middleware rather than a mount, which means it no longer matters whether you call `add_applications` before or after registering your own routes. See the [FastAPI how-to guide](how_to/integrations/FastAPI) for details.

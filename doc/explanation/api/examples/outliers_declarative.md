@@ -78,7 +78,7 @@ obj
 The `RoomOccupancy` class and the `obj` instance have no direct dependency on Panel, Jupyter, or any other GUI toolkit. They solely declare facts about a specific domain, such as the parameters required for smoothing. This information is sufficient for Panel to create an interactive representation without needing domain-specific details encapsulated in `obj`:
 
 ```{pyodide}
-pn.Column(obj.param, obj.view)
+pn.ui.Column(obj.param, obj.view)
 ```
 
 To support various domains, you can create hierarchies of classes encapsulating parameters and functionality across different object families. Parameters and code can inherit across classes as needed, without depending on any specific GUI library. This approach facilitates the maintenance of large codebases, all displayable and editable with Panel, adaptable over time. For a more complex illustration, refer to the [Attractors Panel app](https://examples.holoviz.org/gallery/attractors/attractors_panel.html) ([source](https://github.com/holoviz-topics/examples/tree/main/attractors)), and explore the Panel codebase itself for extensive usage of Param throughout the codebase.
