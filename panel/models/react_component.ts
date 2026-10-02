@@ -2,6 +2,7 @@ import type {BuildResult, Options, ViewStorage} from "@bokehjs/core/build_views"
 import {build_views} from "@bokehjs/core/build_views"
 import type {HasProps} from "@bokehjs/core/has_props"
 import type {ViewOf} from "@bokehjs/core/view"
+import {View} from "@bokehjs/core/view"
 import type {StyleSheetLike} from "@bokehjs/core/dom"
 import type {DOMView} from "@bokehjs/core/dom_view"
 import {ClassList, InlineStyleSheet, ImportedStyleSheet} from "@bokehjs/core/dom"
@@ -186,11 +187,17 @@ export class ReactComponentView extends ReactiveESMView {
     // A view removed before it mounted still owes a resolution to the promise
     // handed to `_await_ready`, otherwise the root never reaches idle.
     this._resolve_mounted()
-    if (this.react_root && this.use_shadow_dom) {
+    if (this.use_shadow_dom) {
       super.remove()
-      this.react_root.then((root: any) => root?.unmount?.())
+      this.react_root?.then((root: any) => root?.unmount?.())
       this.flush_scheduled_removals()
-    } else {
+    } else if (!this.is_destroyed) {
+      // The el of a view nested in its parent's React tree is a container
+      // owned by that tree, so DOMView.remove must not detach it; React does
+      // on unmount. View.remove still disconnects signals, watchers and the
+      // event dispatch, and removes the child views.
+      this._resize_observer.disconnect()
+      View.prototype.remove.call(this)
       this._applied_stylesheets.forEach((stylesheet) => stylesheet.uninstall())
       for (const cb of (this._lifecycle_handlers.get("remove") || [])) {
         cb()
@@ -426,7 +433,12 @@ import { createRoot } from "react-dom/client"
 export default {React, createRoot}`
 }
 
-type ReactWrappers = {Child: any, Component: any, ErrorBoundary: any}
+type ReactWrappers = {
+  Child: any
+  Component: any
+  ErrorBoundary: any
+  emotion_components: WeakMap<object, any>
+}
 
 // Keyed by React so each React instance (one per bundle) gets its own
 // classes, defined once rather than per render: a component type that is new
@@ -448,8 +460,45 @@ function view_key(view: ReactComponentView): number {
   return key
 }
 
-function emotion_key(id: string): string {
-  return `css-${id.replace("-", "").replace(/\d/g, (digit) => String.fromCharCode(digit.charCodeAt(0) + 49)).toLowerCase()}`
+// One emotion key for every component: class names only have to be unique
+// within a shadow root, and a shared key makes the compiled CSS of a style
+// identical across components, so it can be compiled once and replayed.
+const EMOTION_KEY = "pnl"
+
+// Compiled rules by selector and style hash, per emotion instance.
+const EMOTION_RULES = new WeakMap<object, Map<string, string[]>>()
+
+/**
+ * Wraps an emotion cache so that each style is compiled by stylis once per
+ * page and its rules replayed into the other components' sheets. Each
+ * component still gets its own rules in its own shadow root, so the cascade
+ * is unchanged.
+ */
+function share_emotion_rules(cache: any, createCache: object): any {
+  let compiled = EMOTION_RULES.get(createCache)
+  if (compiled == null) {
+    compiled = new Map()
+    EMOTION_RULES.set(createCache, compiled)
+  }
+  const rules_cache = compiled
+  const insert = cache.insert
+  cache.insert = (selector: string, serialized: any, sheet: any, should_cache: boolean) => {
+    const key = `${selector}\u0000${serialized.name}`
+    const rules = rules_cache.get(key)
+    if (rules == null) {
+      const recorded: string[] = []
+      insert(selector, serialized, {insert: (rule: string) => { recorded.push(rule); sheet.insert(rule) }}, should_cache)
+      rules_cache.set(key, recorded)
+      return
+    }
+    for (const rule of rules) {
+      sheet.insert(rule)
+    }
+    if (should_cache) {
+      cache.inserted[serialized.name] = true
+    }
+  }
+  return cache
 }
 
 function react_wrappers(libs: ReactLibs): ReactWrappers {
@@ -457,7 +506,7 @@ function react_wrappers(libs: ReactLibs): ReactWrappers {
   if (cached != null) {
     return cached
   }
-  const {React, createCache, CacheProvider} = libs
+  const {React} = libs
 
   class Child extends React.PureComponent {
     declare props: any
@@ -508,15 +557,21 @@ function react_wrappers(libs: ReactLibs): ReactWrappers {
     _render_nested(view: any, flush: boolean) {
       view.patch_container(this.containerRef.current)
       const apply = (mod: any) => {
+        if (view.is_destroyed) {
+          return
+        }
         if (flush) {
           this.props.parent.flush_scheduled_removals()
         }
         this.setState(
           {rendered: mod.default.render(view)},
           () => {
+            if (view.is_destroyed) {
+              return
+            }
             this.props.parent.notify_mount(this.props.name, view.model.id)
-            this.view.r_after_render()
-            this.view.after_rendered()
+            view.r_after_render()
+            view.after_rendered()
           },
         )
       }
@@ -618,7 +673,37 @@ function react_wrappers(libs: ReactLibs): ReactWrappers {
     }
   }
 
-  class Component extends React.Component {
+  const wrappers = {
+    Child,
+    ErrorBoundary,
+    Component: define_component(React, ErrorBoundary, null, null),
+    emotion_components: new WeakMap(),
+  }
+  REACT_WRAPPERS.set(React, wrappers)
+  return wrappers
+}
+
+/**
+ * Returns the Component type for a view. Non-bundled components with and
+ * without MUI share one React instance from the same import map URL but load
+ * different libs, so emotion is chosen per view rather than per React.
+ */
+function component_type(view: ReactComponentView, libs: ReactLibs): any {
+  const wrappers = react_wrappers(libs)
+  const {createCache, CacheProvider} = libs
+  if (!view.model.usesMui || createCache == null || CacheProvider == null) {
+    return wrappers.Component
+  }
+  let Component = wrappers.emotion_components.get(createCache)
+  if (Component == null) {
+    Component = define_component(libs.React, wrappers.ErrorBoundary, createCache, CacheProvider)
+    wrappers.emotion_components.set(createCache, Component)
+  }
+  return Component
+}
+
+function define_component(React: any, ErrorBoundary: any, createCache: any, CacheProvider: any): any {
+  return class Component extends React.Component {
     declare props: any
     declare forceUpdate: any
 
@@ -630,11 +715,11 @@ function react_wrappers(libs: ReactLibs): ReactWrappers {
     _init_cache() {
       const {view} = this.props
       if (createCache != null && view.use_shadow_dom) {
-        view.mui_cache = createCache({
-          key: emotion_key(view.model.id),
+        view.mui_cache = share_emotion_rules(createCache({
+          key: EMOTION_KEY,
           prepend: true,
           container: view.style_cache,
-        })
+        }), createCache)
       }
     }
 
@@ -662,10 +747,6 @@ function react_wrappers(libs: ReactLibs): ReactWrappers {
       return rendered
     }
   }
-
-  const wrappers = {Child, Component, ErrorBoundary}
-  REACT_WRAPPERS.set(React, wrappers)
-  return wrappers
 }
 
 function css_class_name(class_name: string): string {
@@ -770,7 +851,8 @@ function render_react(view: ReactComponentView, libs: ReactLibs): any {
     return null
   }
   const {React, createRoot} = libs
-  const {Child, Component} = react_wrappers(libs)
+  const {Child} = react_wrappers(libs)
+  const Component = component_type(view, libs)
   const props = {view, model: react_model_proxy(view, libs, Child), data: view.model.data, el: view.container}
   const rendered = React.createElement(Component, {...props, key: view_key(view)})
   if (!view.model.use_shadow_dom && ((view.parent as any)?.react_root !== undefined)) {
