@@ -36,10 +36,11 @@ from param.parameterized import (
 )
 
 from .io.document import hold, unlocked
-from .io.notebook import push
+from .io.loading import loading_css
+from .io.notebook import push, replace_inline_css
 from .io.resource_spec import lazy_load_available, resource_spec
 from .io.resources import (
-    CDN_DIST, get_dist_path, loading_css, patch_stylesheet, process_raw_css,
+    CDN_DIST, get_dist_path, patch_stylesheet, process_raw_css,
     resolve_stylesheet, stylesheet_url,
 )
 from .io.state import set_curdoc, state
@@ -215,9 +216,9 @@ class Syncable(Renderable):
             properties['min_height'] = properties['height']
         if 'stylesheets' in properties:
             from .config import config
-            stylesheets = [loading_css(
-                config.loading_spinner, config.loading_color, config.loading_max_height
-            ), f'{get_dist_path()}css/loading.css']
+            design = getattr(self, '_design', None)
+            spinner_css = design.loading_css() if design else loading_css()
+            stylesheets = [spinner_css, f'{get_dist_path()}css/loading.css']
             stylesheets += process_raw_css(config.raw_css)
             stylesheets += config.css_files
             stylesheets += [
@@ -714,6 +715,9 @@ class Reactive(Syncable, Viewable):
             dist_url = doc._template_variables['dist_url']
         else:
             dist_url = CDN_DIST
+        # Documents rendered with inline resources, e.g. in a notebook, must
+        # keep inlining updates since the CDN may not serve these files.
+        inline_cache = state._inline_stylesheets.get(doc) if doc else None
         stylesheets = []
         for stylesheet in properties['stylesheets']:
             if isinstance(stylesheet, ImportedStyleSheet):
@@ -732,6 +736,8 @@ class Reactive(Syncable, Viewable):
                         stylesheet = ImportedStyleSheet(url=url)
                     css_cache[url] = stylesheet
                 patch_stylesheet(stylesheet, dist_url)
+                if inline_cache is not None:
+                    stylesheet = replace_inline_css(stylesheet, inline_cache)
             stylesheets.append(stylesheet)
         properties['stylesheets'] = stylesheets
 
@@ -1111,7 +1117,7 @@ class SyncableData(Reactive):
             viewable, root, doc, comm = state._views[ref]
             if comm or not doc.session_context or state._unblocked(doc):
                 with unlocked():
-                    m.source.stream(stream, rollover)
+                    self._apply_stream(ref, m, stream, rollover)
                 if comm and 'embedded' not in root.tags:
                     push(doc, comm)
             else:
@@ -1134,7 +1140,7 @@ class SyncableData(Reactive):
             viewable, root, doc, comm = state._views[ref]
             if comm or not doc.session_context or state._unblocked(doc):
                 with unlocked():
-                    m.source.patch(patch)
+                    self._apply_patch(ref, m, patch)
                 if comm and 'embedded' not in root.tags:
                     push(doc, comm)
             else:

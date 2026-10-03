@@ -28,7 +28,7 @@ fig = Figure(figsize=(8, 4))
 ax = fig.subplots()
 ax.hist(data, bins=20, color=ACCENT)
 
-component = pn.pane.Matplotlib(fig, format='svg', sizing_mode='scale_both')
+component = pn.ui.Matplotlib(fig, format='svg', sizing_mode='scale_both')
 
 pn.template.FastListTemplate(
     title="My App", sidebar=[LOGO], main=[component], accent=ACCENT
@@ -82,8 +82,8 @@ import panel as pn
 pn.extension(design="material")
 
 component = pn.panel("Hello World")
-layout = pn.Column(
-    component, pn.widgets.IntSlider(value=2, start=0, end=10, label="Value")
+layout = pn.ui.Column(
+    component, pn.ui.IntSlider(value=2, start=0, end=10, label="Value")
 )
 print(layout)
 layout.servable()
@@ -126,8 +126,8 @@ pn.extension(design="material")
 
 component = pn.panel("Hello World")
 
-pn.Row(
-    component.param, pn.pane.HTML(component.param._repr_html_())
+pn.ui.Row(
+    component.param, pn.ui.HTML(component.param._repr_html_())
 ).servable()
 ```
 

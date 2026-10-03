@@ -1,0 +1,46 @@
+:host {
+  display: block;
+  overflow: auto;
+}
+
+:host table.panel-df {
+  background: transparent;
+  border: 1px solid var(--mui-palette-divider);
+  border-collapse: separate;
+  border-radius: var(--mui-shape-borderRadius);
+  border-spacing: 0;
+  color: var(--mui-palette-text-primary);
+  font: var(--mui-font-body2);
+  margin: 0;
+  overflow: hidden;
+  width: 100%;
+}
+
+:host .panel-df th,
+:host .panel-df td {
+  border-bottom: 1px solid var(--mui-palette-divider);
+  padding: 10px 16px;
+}
+
+:host .panel-df thead th {
+  background: var(--mui-palette-action-hover);
+  color: var(--mui-palette-text-secondary);
+  font: var(--mui-font-overline);
+  font-weight: 500;
+  letter-spacing: 0.08333em;
+  text-transform: uppercase;
+}
+
+:host .panel-df tbody th {
+  color: var(--mui-palette-text-secondary);
+  font-weight: 500;
+}
+
+:host .panel-df tbody tr:last-child th,
+:host .panel-df tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+:host .panel-df tbody tr:hover {
+  background: var(--mui-palette-action-hover);
+}

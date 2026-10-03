@@ -10,7 +10,7 @@ empty = Parameter.empty
 
 import param
 
-from .base import Widget
+from .base import Widget, WidgetBase
 from .input import Checkbox, TextInput
 from .select import Select
 from .slider import DiscreteSlider, FloatSlider, IntSlider
@@ -23,7 +23,7 @@ class fixed(param.Parameterized):
 
     description = param.String(default='')
 
-    value: t.Any = param.Parameter(doc="Any Python object")  # type: ignore[assignment]
+    value: t.Any = param.Parameter(allow_refs=False, doc="Any Python object")  # type: ignore[assignment]
 
     def __init__(self, value: t.Any, **kwargs: t.Any):
         super().__init__(value=value, **kwargs)
@@ -105,10 +105,10 @@ class widget(param.ParameterizedFunction):
     Widget
     """
 
-    def __call__(self, value: t.Any, label: str, default=empty, **params) -> Widget | fixed | None:
+    def __call__(self, value: t.Any, label: str, default=empty, **params) -> WidgetBase | fixed | None:
         """Build a ValueWidget instance given an abbreviation or Widget."""
-        widget: Widget | fixed | None
-        if isinstance(value, Widget):
+        widget: WidgetBase | fixed | None
+        if isinstance(value, WidgetBase):
             widget = value
         elif isinstance(value, tuple):
             widget = self.widget_from_tuple(value, label, default)
@@ -141,22 +141,24 @@ class widget(param.ParameterizedFunction):
     @staticmethod
     def widget_from_single_value(o, label: str) -> Widget | None:
         """Make widgets from single values, which can be used as parameter defaults."""
+        from ..theme.base import resolve_component
         if isinstance(o, str):
-            return TextInput(value=str(o), label=label)
+            return resolve_component(TextInput)(value=str(o), label=label)
         elif isinstance(o, bool):
-            return Checkbox(value=o, label=label)
+            return resolve_component(Checkbox)(value=o, label=label)
         elif isinstance(o, Integral):
             min, max, value = _get_min_max_value(None, None, o)  # type: ignore[arg-type]
-            return IntSlider(value=o, start=min, end=max, label=label)
+            return resolve_component(IntSlider)(value=o, start=min, end=max, label=label)
         elif isinstance(o, Real):
             min, max, value = _get_min_max_value(None, None, o)  # type: ignore[arg-type]
-            return FloatSlider(value=o, start=min, end=max, label=label)
+            return resolve_component(FloatSlider)(value=o, start=min, end=max, label=label)
         else:
             return None
 
     @staticmethod
     def widget_from_tuple(o, label: str, default=empty) -> Widget | None:
         """Make widgets from a tuple abbreviation."""
+        from ..theme.base import resolve_component
         int_default = (default is empty or isinstance(default, int))
         cls: type[Widget]
         if _matches(o, (Real, Real)):
@@ -165,7 +167,7 @@ class widget(param.ParameterizedFunction):
                 cls = IntSlider
             else:
                 cls = FloatSlider
-            return cls(value=value, start=min, end=max, label=label)
+            return resolve_component(cls)(value=value, start=min, end=max, label=label)
         elif _matches(o, (Real, Real, Real)):
             step = o[2]
             if step <= 0:
@@ -175,7 +177,7 @@ class widget(param.ParameterizedFunction):
                 cls = IntSlider
             else:
                 cls = FloatSlider
-            return cls(value=value, start=min, end=max, step=step, label=label)
+            return resolve_component(cls)(value=value, start=min, end=max, step=step, label=label)
         elif _matches(o, (Real, Real, Real, Real)):
             step = o[2]
             if step <= 0:
@@ -185,24 +187,28 @@ class widget(param.ParameterizedFunction):
                 cls = IntSlider
             else:
                 cls = FloatSlider
-            return cls(value=value, start=min, end=max, step=step, label=label)
+            return resolve_component(cls)(value=value, start=min, end=max, step=step, label=label)
         elif len(o) == 4:
             min, max, value = _get_min_max_value(o[0], o[1], value=o[3])
             if all(isinstance(_, Integral) for _ in [o[0], o[1], o[3]]):
                 cls = IntSlider
             else:
                 cls = FloatSlider
-            return cls(value=value, start=min, end=max, label=label)
+            return resolve_component(cls)(value=value, start=min, end=max, label=label)
         return None
 
     @staticmethod
     def widget_from_iterable(o, label: str) -> Widget | None:
         """Make widgets from an iterable. This should not be done for
         a string or tuple."""
+        from ..theme.base import resolve_component
+
         # Select expects a dict or list, so we convert an arbitrary
         # iterable to either of those.
         values = list(o.values()) if isinstance(o, Mapping) else list(o)
-        widget_type = DiscreteSlider if all(param._is_number(v) for v in values) else Select
+        widget_type = resolve_component(
+            DiscreteSlider if all(param._is_number(v) for v in values) else Select
+        )
         if isinstance(o, (list, dict)):
             return widget_type(options=o, label=label)
         elif isinstance(o, Mapping):

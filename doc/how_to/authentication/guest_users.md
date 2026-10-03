@@ -20,10 +20,10 @@ pn.extension(template='material')
 pn.state.template.title = 'Optional Auth'
 
 if pn.state.user == 'guest':
-    button = pn.widgets.Button(label='Login').servable(target='header')
+    button = pn.ui.Button(label='Login').servable(target='header')
     button.js_on_click(code='window.location.href="/login"')
 
-pn.Column(f'# Hello {pn.state.user}!', pn.state.user_info).servable()
+pn.ui.Column(f'# Hello {pn.state.user}!', pn.state.user_info).servable()
 ```
 
 Serving this app with `panel serve app.py ... --oauth-optional` and then visiting the `/app` endpoint will show the following:
@@ -46,7 +46,7 @@ pn.extension(authorize_callback=authorize, template='material')
 
 pn.state.template.title = 'Admin'
 
-pn.Column(f'# Hello {pn.state.user}!', pn.state.user_info).servable()
+pn.ui.Column(f'# Hello {pn.state.user}!', pn.state.user_info).servable()
 ```
 
 ## Guest Endpoints

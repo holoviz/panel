@@ -14,8 +14,8 @@ Check out the [Panes Section](../../reference/index.md#panes) of the [Component 
 To display content in Panel:
 
 - Replace your Streamlit `st.some_object` *snake cased* functions with the corresponding Panel
-`pn.pane.SomeObject` *CamelCased* classes.
-- Replace your Streamlit text elements with `pn.pane.Markdown`.
+`pn.ui.SomeObject` *CamelCased* classes.
+- Replace your Streamlit text elements with `pn.ui.Markdown`.
 
 Identify the relevant Panel *pane*s in the [Panes Section](../../reference/index.md#panes) of the [Component Gallery](../../reference/index).
 
@@ -42,7 +42,7 @@ st.pyplot(fig)
 
 #### Panel Matplotlib Example
 
-You will find Panels *panes* in the `pn.pane` module.
+You will find Panel's *panes* in the `pn.ui` namespace.
 
 We use Matplotlibs `Figure` interface instead of the `pyplot` interface to
 avoid memory leaks if you forget to close the figure. This is all described in the
@@ -61,18 +61,18 @@ fig = Figure(figsize=(8,4))
 ax = fig.subplots()
 ax.hist(data, bins=20)
 
-pn.pane.Matplotlib(fig, format='svg', sizing_mode='scale_both').servable()
+pn.ui.Matplotlib(fig, format='svg', sizing_mode='scale_both').servable()
 ```
 
 ![Panel Matplotlib Example](../../_static/images/panel_mpl_example.png)
 
 ### Markdown Pane
 
-You can replace `st.markdown` with [`pn.pane.Markdown`](../../reference/panes/Markdown).
+You can replace `st.markdown` with [`pn.ui.Markdown`](../../reference/panes/Markdown).
 
 You can also use the `Markdown` pane to replace the text elements `st.title`, `st.header`, `st.sub_header`, `st.code` and `st.text`.
 
-You may use the `Markdown` pane to replace `st.divider` and `st.latex`, but you can also use the *specialized* Panel components [`pn.layout.Divider`](../../reference/layouts/Divider) and [`pn.pane.LaTeX`](../../reference/panes/LaTeX).
+You may use the `Markdown` pane to replace `st.divider` and `st.latex`, but you can also use the *specialized* Panel components [`pn.ui.Divider`](../../reference/layouts/Divider) and [`pn.ui.LaTeX`](../../reference/panes/LaTeX).
 
 Here is how to do it
 
@@ -81,7 +81,7 @@ import panel as pn
 
 pn.extension("mathjax", sizing_mode="stretch_width", template="bootstrap")
 
-pn.pane.Markdown(r"""
+pn.ui.Markdown(r"""
 # Title
 
 ## Header

@@ -71,15 +71,15 @@ canvas = Canvas(width=400, height=400)
 
 # We create a separate HTML element which syncs with the uri parameter of the Canvas
 
-png_view = pn.pane.HTML(height=400)
+png_view = pn.ui.HTML(height=400)
 
 canvas.jslink(png_view, code={'uri': "target.text = `<img src='${source.uri}'></img>`"})
 
-pn.Row(
+pn.ui.Row(
     canvas.controls(['color', 'line_width']).servable(target='sidebar'),
-    pn.Column(
+    pn.ui.Column(
         '# Drag on canvas to draw\n To export the drawing to a png click save.',
-        pn.Row(
+        pn.ui.Row(
             canvas,
             png_view
         ),

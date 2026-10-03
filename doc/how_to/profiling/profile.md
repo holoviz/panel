@@ -39,14 +39,14 @@ The user profiling may also be used in an interactive session, e.g. we might dec
 ```python
 import time
 
-slider = pn.widgets.FloatSlider(label='Test')
+slider = pn.ui.FloatSlider(label='Test')
 
 @pn.io.profile('formatting')
 def format_value(value):
     time.sleep(1)
     return f'Value: {value+1}'
 
-pn.Row(slider, pn.bind(format_value, slider))
+pn.ui.Row(slider, pn.bind(format_value, slider))
 ```
 
 Then we can request the named profile 'formatting' using the `pn.state.get_profile` function:

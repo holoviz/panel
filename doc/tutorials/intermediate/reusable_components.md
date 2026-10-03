@@ -45,7 +45,7 @@ This explorer doesn't do anything yet, so let's learn how we can turn the UI-agn
 Let's start with the simplest case:
 
 ```{pyodide}
-pn.Param(explorer.param, widgets={"page_size": pn.widgets.IntInput}).servable()
+pn.Param(explorer.param, widgets={"page_size": pn.ui.IntInput}).servable()
 ```
 
 Notice that each parameter was mapped to a widget appropriate for editing its value, i.e., the `data` was mapped to a `Tabulator` widget, and the `page_size` was mapped to an `IntInput` widget.
@@ -55,9 +55,9 @@ If you try playing with the `page_size` widget, you will notice that it doesn't 
 So next, let's explicitly map the parameter to a widget using the `Widget.from_param` method. This will also let us provide additional options, e.g., to provide `start` and `end` values for the slider and layout options for the table.
 
 ```{pyodide}
-pn.Column(
-    pn.widgets.IntSlider.from_param(explorer.param.page_size, start=5, end=20, step=5),
-    pn.widgets.Tabulator.from_param(explorer.param.data, page_size=explorer.param.page_size, sizing_mode='stretch_width')
+pn.ui.Column(
+    pn.ui.IntSlider.from_param(explorer.param.page_size, start=5, end=20, step=5),
+    pn.ui.Tabulator.from_param(explorer.param.data, page_size=explorer.param.page_size, sizing_mode='stretch_width')
 ).servable()
 ```
 
@@ -132,9 +132,9 @@ class DataExplorer(pn.viewable.Viewer):
     page_size = param.Integer(default=10, doc="Number of rows per page.", bounds=(1, None))
 
     def __panel__(self):
-        return pn.Column(
-            pn.widgets.IntSlider.from_param(self.param.page_size, start=5, end=25, step=5),
-            pn.widgets.Tabulator.from_param(self.param.data, page_size=self.param.page_size, sizing_mode='stretch_width')
+        return pn.ui.Column(
+            pn.ui.IntSlider.from_param(self.param.page_size, start=5, end=25, step=5),
+            pn.ui.Tabulator.from_param(self.param.data, page_size=self.param.page_size, sizing_mode='stretch_width')
         )
 
 data_url = "https://assets.holoviz.org/panel/tutorials/turbines.csv.gz"
@@ -173,7 +173,7 @@ class DataExplorer(pn.viewable.Viewer):
     )
 
     def __panel__(self):
-        return pn.Column(
+        return pn.ui.Column(
             IntSlider.from_param(self.param.page_size, start=5, end=25, step=5),
             self.param.theme,
             self.param.show_index,
@@ -230,15 +230,15 @@ class GoogleMapViewer(Viewer):
         super().__init__(**params)
 
         map_iframe_rx = pn.rx(map_iframe).format(country=self.param.country)
-        self._layout = pn.pane.HTML(map_iframe_rx)
+        self._layout = pn.ui.HTML(map_iframe_rx)
 
     def __panel__(self):
         return self._layout
 
 
-country = pn.widgets.Select(options=["Germany", "Nigeria", "Thailand"], label="Country")
+country = pn.ui.Select(options=["Germany", "Nigeria", "Thailand"], label="Country")
 view = GoogleMapViewer(name="Google Map viewer", country=country)
-pn.Column(country, view).servable()
+pn.ui.Column(country, view).servable()
 ```
 
 If you want to learn more about references try using other types of references as input to the `GoogleMapViewer`.

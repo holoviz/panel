@@ -109,7 +109,7 @@ def abbreviated_repr(value, max_length=25, natural_breaks=(',', ' ')):
     """
     if isinstance(value, list):
         vrepr = '[' + ', '.join([abbreviated_repr(v) for v in value]) + ']'
-    if isinstance(value, param.Parameterized):
+    elif isinstance(value, param.Parameterized):
         vrepr = type(value).__name__
     else:
         vrepr = repr(value)
@@ -211,7 +211,7 @@ def parse_query(query: str) -> dict[str, t.Any]:
     query_dict = dict(urlparse.parse_qsl(query[1:]))
     parsed_query: dict[str, t.Any] = {}
     for k, v in query_dict.items():
-        if v.isdigit():
+        if re.fullmatch(r'-?[0-9]+', v):
             parsed_query[k] = int(v)
         elif is_number(v):
             parsed_query[k] = float(v)
@@ -590,7 +590,7 @@ def _descendents(class_: type, concrete: bool = False) -> list[type]:
         x = q.pop(0)
         out.insert(0, x)
         try:
-            subclasses = x.__subclasses__()
+            subclasses: list[type] = x.__subclasses__()
         except TypeError:
             # TypeError raised when __subclasses__ is called on unbound methods,
             # on `type` for example.

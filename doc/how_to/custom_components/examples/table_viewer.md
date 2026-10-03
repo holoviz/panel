@@ -54,14 +54,14 @@ class ReactiveTables(Viewer):
         return self.data().iloc[: self.rows]
 
     def __panel__(self):
-        return pn.Row(
+        return pn.ui.Row(
             pn.Param(self, name="Settings", width=300),
-            pn.Spacer(width=10),
-            pn.Column(
+            pn.ui.Spacer(width=10),
+            pn.ui.Column(
                 "## Description",
-                pn.pane.DataFrame(self.summary, sizing_mode="stretch_width"),
+                pn.ui.DataFrame(self.summary, sizing_mode="stretch_width"),
                 "## Table",
-                pn.pane.DataFrame(self.table, sizing_mode="stretch_width"),
+                pn.ui.DataFrame(self.table, sizing_mode="stretch_width"),
             ),
         )
 ```

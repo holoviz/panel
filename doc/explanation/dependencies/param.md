@@ -18,9 +18,9 @@ A *Parameterized* class, i.e. a class on which *Parameters* can be set, is creat
 
 ```{pyodide}
 print(
-    issubclass(pn.widgets.FloatSlider, param.Parameterized),
-    issubclass(pn.pane.Matplotlib, param.Parameterized),
-    issubclass(pn.Column, param.Parameterized),
+    issubclass(pn.ui.FloatSlider, param.Parameterized),
+    issubclass(pn.ui.Matplotlib, param.Parameterized),
+    issubclass(pn.ui.Column, param.Parameterized),
     issubclass(pn.template.BootstrapTemplate, param.Parameterized)
 )
 ```
@@ -88,8 +88,8 @@ For an object attribute to be powered by Param you must declare it as a *Paramet
 ```python
 class P(param.Parameterized):
     x = param.Number()  # Good
-    w1 = pn.widgets.FloatSlider()  # Very likely you DO NOT want this
-    w2 = param.ClassSelector(class_=pn.widgets.FloatSlider)  # Much better!
+    w1 = pn.ui.FloatSlider()  # Very likely you DO NOT want this
+    w2 = param.ClassSelector(class_=pn.ui.FloatSlider)  # Much better!
 
 ```
 :::
@@ -238,37 +238,37 @@ pn.panel(d.param)
 Panel, when given a method decorated with `@param.depends`, will re-run the method and render its new output every time one of the *Parameters* it depends on change:
 
 ```{pyodide}
-pn.Row(d.param.t, d.param.i, d.compute)
+pn.ui.Row(d.param.t, d.param.i, d.compute)
 ```
 
 Because the displayable objects provided by Panel are all *Parameterized* objects with their own set of *Parameters*, they can all be watched. We can for instance hide a widget (setting `widget.visible` to `False`) by watching the value of another widget:
 
 ```{pyodide}
-checkbox = pn.widgets.Checkbox(value=True)
-slider = pn.widgets.FloatSlider()
+checkbox = pn.ui.Checkbox(value=True)
+slider = pn.ui.FloatSlider()
 
 def hide(event):
     slider.visible = event.new
 
 checkbox.param.watch(hide, 'value')
 
-pn.Row(checkbox, slider)
+pn.ui.Row(checkbox, slider)
 ```
 
 Using `.param.watch` as done just above is a valid (albeit pretty verbose!) way to set up some interactivity between Panel components. Panel also provides a much more natural "reactive" API, allowing you to bind the value of two *Parameters* together, or to bind the value of a *Parameter* to a callback that depends on some additional *Parameters*. In the example below, `tinput.visible` and `output.visible` will be updated whenever `checkbox.value` changes (clicking on the checkbox), and the value of `output.object` will be updated whenever `tinput.value` changes, that value being transformed by the `boldit` callback.
 
 ```{pyodide}
-checkbox = pn.widgets.Checkbox(value=True)
-tinput = pn.widgets.TextInput(value='some text always bold', visible=checkbox.param.value)
+checkbox = pn.ui.Checkbox(value=True)
+tinput = pn.ui.TextInput(value='some text always bold', visible=checkbox.param.value)
 
 def boldit(value):
     return f'**{value}**'
 
-output = pn.pane.Markdown(object=pn.bind(boldit, tinput.param.value), visible=checkbox.param.value)
+output = pn.ui.Markdown(object=pn.bind(boldit, tinput.param.value), visible=checkbox.param.value)
 ```
 
 ```{pyodide}
-pn.Row(checkbox, tinput, output)
+pn.ui.Row(checkbox, tinput, output)
 ```
 
 As you can see, *Parameters* offer a very generic mechanism for your Python code to declare options that control it, and Panel's Param support allows you to work naturally with any combination of objects and their *Parameters*.

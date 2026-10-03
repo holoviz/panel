@@ -73,7 +73,7 @@ To make the Streaming Chat Bot scale to many users you should be using `async`. 
 
 ## Learn More
 
-We can learn more about the `ChatInterface` via its [*reference guide*](../../reference/chat/ChatInterface.md). We find the *reference guide* in the [Chat Section](../../reference/index.rst#chat) of the [Component Gallery](../../reference/index.rst).
+We can learn more about the `ChatInterface` via its [*reference guide*](../../reference/chat/ChatInterface.md). We find the *reference guide* in the [Chat Section](../../reference/index.md#chat) of the [Component Gallery](../../reference/index.md).
 
 ## Find Inspiration
 
@@ -90,5 +90,5 @@ In this section, we have used the *easy to use*, *high-level* [`ChatInterface`](
 
 ## Resources
 
-- [Chat Component Gallery](../../reference/index.rst#chat)
+- [Chat Component Gallery](../../reference/index.md#chat)
 - [Panel-Chat-Examples](https://holoviz-topics.github.io/panel-chat-examples/)

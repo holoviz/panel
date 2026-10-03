@@ -1,9 +1,14 @@
 import json
 import os
 import pathlib
+import sys
 import typing as t
 
 import param
+
+from packaging.version import Version
+
+sys.path.insert(0, str(pathlib.Path(__file__).parent / '_ext'))
 
 param.parameterized.docstring_signature = False
 param.parameterized.docstring_describe_params = False
@@ -101,6 +106,7 @@ extensions = [
     'sphinx_copybutton',
     'sphinxext.rediraffe',
     'nbsite.gallery',
+    'ui_reference',
     'nbsite.pyodide',
     'nbsite.analytics',
 ]
@@ -135,8 +141,10 @@ nbsite_gallery_conf = {
     'github_org': 'holoviz',
     'github_project': 'panel',
     'galleries': {
-        'reference': {
-            'title': 'Component Gallery',
+        'reference/classic': {
+            'title': 'Classic Component Reference',
+            'source': 'reference',
+            'thumbnail_source': 'reference',
             'extensions': ['*.ipynb', '*.py', '*.md'],
             'sections': [
                 'panes',
@@ -188,7 +196,11 @@ nbsite_gallery_conf = {
             },
             'as_pyodide': True,
             'normalize_titles': False,
-        }
+        },
+        'reference': {
+            'title': 'Component Gallery',
+            'sections': [],
+        },
     },
     'thumbnail_url': 'https://assets.holoviz.org/panel/thumbnails',
     'deployment_url': gallery_url,
@@ -196,13 +208,22 @@ nbsite_gallery_conf = {
     'only_use_existing': True,
 }
 
-if panel.__version__ != version and (PANEL_ROOT / 'dist' / 'wheels').is_dir():
-    py_version = panel.__version__.replace("-dirty", "")
+WHEELS_DIR = PANEL_ROOT / 'dist' / 'wheels'
+py_version = panel.__version__.replace("-dirty", "")
+
+if panel.__version__ != version and (WHEELS_DIR / f'panel-{py_version}-py3-none-any.whl').is_file():
     panel_req = f'./wheels/panel-{py_version}-py3-none-any.whl'
-    bokeh_req = f'./wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
+    bokeh_req = (
+        f'./wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
+        if (WHEELS_DIR / f'bokeh-{BOKEH_VERSION}-py3-none-any.whl').is_file()
+        else f'bokeh=={BOKEH_VERSION}'
+    )
 else:
     panel_req = f'{CDN_ROOT}wheels/panel-{PY_VERSION}-py3-none-any.whl'
-    bokeh_req = f'{CDN_ROOT}wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
+    bokeh_req = (
+        f'bokeh=={BOKEH_VERSION}' if Version(BOKEH_VERSION).is_prerelease
+        else f'{CDN_ROOT}wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
+    )
 
 def get_requirements():
     with open('pyodide_dependencies.json') as deps:

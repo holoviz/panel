@@ -29,7 +29,7 @@ class IrisDashboard(Viewer):
         return flowers.hvplot.scatter(x=self.X_variable, y=self.Y_variable, by='species').opts(height=600)
 
     def __panel__(self):
-        return pn.Row(
+        return pn.ui.Row(
             pn.Param(self, width=300, name="Plot Settings"),
             self.plot
         )

@@ -20,7 +20,7 @@ from panel.layout import Column
 from panel.models.echarts import ECharts
 from panel.models.perspective import Perspective
 from panel.models.tabulator import DataTabulator
-from panel.pane import Str
+from panel.pane import DataFrame, Str
 from panel.widgets import TextEditor
 
 from ..util import jb_available
@@ -111,6 +111,30 @@ def test_notebook_inline_css_stylesheets(nb_loaded):
     model = list(widget._models.values())[0][0]
     for stylesheet in model.stylesheets[:len(model.__css__)]:
         assert isinstance(stylesheet, InlineStyleSheet)
+
+def test_notebook_inline_css_stylesheets_kept_on_update(nb_loaded):
+    pd = pytest.importorskip('pandas')
+    pane = DataFrame(pd.DataFrame({'a': [1, 2]}))
+    with config.set(inline=True):
+        pane._repr_mimebundle_()
+    model = list(pane._models.values())[0][0]
+    stylesheets = list(model.stylesheets)
+    assert not any(isinstance(sts, ImportedStyleSheet) for sts in stylesheets)
+
+    pane.object = pd.DataFrame({'a': [3, 4]})
+
+    assert model.stylesheets == stylesheets
+
+def test_notebook_cdn_css_stylesheets_not_inlined_on_update(nb_loaded):
+    pd = pytest.importorskip('pandas')
+    pane = DataFrame(pd.DataFrame({'a': [1, 2]}))
+    with config.set(inline=False):
+        pane._repr_mimebundle_()
+    model = list(pane._models.values())[0][0]
+
+    pane.object = pd.DataFrame({'a': [3, 4]})
+
+    assert not any(isinstance(sts, InlineStyleSheet) for sts in model.stylesheets)
 
 
 def test_notebook_inline_resources_shadow_amd_globals(monkeypatch, notebook_bootstrap):

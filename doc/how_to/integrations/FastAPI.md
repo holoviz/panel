@@ -52,7 +52,7 @@ from panel.io.fastapi import add_application
 
 @add_application('/panel', app=app, title='My Panel App')
 def create_panel_app():
-    slider = pn.widgets.IntSlider(label='Slider', start=0, end=10, value=3)
+    slider = pn.ui.IntSlider(label='Slider', start=0, end=10, value=3)
     return slider.rx() * '⭐'
 ```
 
@@ -74,7 +74,7 @@ async def read_root():
 
 @add_application('/panel', app=app, title='My Panel App')
 def create_panel_app():
-    slider = pn.widgets.IntSlider(label='Slider', start=0, end=10, value=3)
+    slider = pn.ui.IntSlider(label='Slider', start=0, end=10, value=3)
     return slider.rx() * '⭐'
 ```
 
@@ -149,12 +149,12 @@ async def read_root():
     return {"Hello": "World"}
 
 def create_panel_app():
-    slider = pn.widgets.IntSlider(label='Slider', start=0, end=10, value=3)
+    slider = pn.ui.IntSlider(label='Slider', start=0, end=10, value=3)
     return slider.rx() * '⭐'
 
 add_applications({
     "/panel_app1": create_panel_app,
-    "/panel_app2": pn.Column('I am a Panel object!'),
+    "/panel_app2": pn.ui.Column('I am a Panel object!'),
     "/panel_app3": "my_panel_app.py"
 }, app=app)
 ```
@@ -199,7 +199,7 @@ from panel.io.fastapi import add_applications
 app = FastAPI()
 
 def greet():
-    return pn.pane.Markdown(f"# Hello {pn.state.route_params['name']}!")
+    return pn.ui.Markdown(f"# Hello {pn.state.route_params['name']}!")
 
 add_applications({"/user/{name}": greet}, app=app)
 ```

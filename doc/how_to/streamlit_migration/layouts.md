@@ -11,7 +11,7 @@ Panel provides layouts similar to the ones you know from Streamlit and many uniq
 To migrate your layouts to Panel
 
 - replace your Streamlit `st.some_layout` *snake cased* function with the corresponding Panel
-`pn.SomeLayout` *CamelCased* class.
+`pn.ui.SomeLayout` *CamelCased* class.
 
 You can identify the relevant layout to migrate to in the [Layouts Section](../../reference/index.md#layouts) of the [Component Gallery](../../reference/index).
 
@@ -39,29 +39,29 @@ with col2:
 
 #### Panel Columns Example
 
-You can access Panel's *layouts* in the top-level `pn` namespace:
+You can access Panel's *layouts* in the `pn.ui` namespace:
 
 ```python
 import panel as pn
 
 pn.extension(sizing_mode="stretch_width", template="bootstrap")
 
-row1 = pn.Row(
-    pn.pane.Image(
+row1 = pn.ui.Row(
+    pn.ui.Image(
         "https://streamlit.io/images/brand/streamlit-logo-primary-colormark-darktext.png",
         align="center",
     ),
-    pn.pane.Image(
+    pn.ui.Image(
         "https://panel.holoviz.org/_images/logo_horizontal_light_theme.png",
         align="center",
     ),
 )
-row2 = pn.Row(
+row2 = pn.ui.Row(
     "# A faster way to build and share data apps",
     "# The powerful data exploration & web app framework for Python",
 )
 
-pn.Column(row1, row2).servable()
+pn.ui.Column(row1, row2).servable()
 ```
 
 ![Panel Layout Example](../../_static/images/panel_layout_example.png)

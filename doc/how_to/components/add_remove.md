@@ -10,7 +10,7 @@ To start, we will declare a ``Column`` and populate it with some text and a widg
 import panel as pn
 pn.extension() # for notebook
 
-column = pn.Column('some text', pn.widgets.FloatSlider())
+column = pn.ui.Column('some text', pn.ui.FloatSlider())
 
 column
 ```
@@ -26,7 +26,7 @@ column
 Next, we add a few more widgets:
 
 ```{pyodide}
-column.extend([pn.widgets.TextInput(), pn.widgets.Checkbox(label='Tick this!')])
+column.extend([pn.ui.TextInput(), pn.ui.Checkbox(label='Tick this!')])
 
 column
 ```
@@ -34,7 +34,7 @@ column
 Now, we change our mind and replace the ``Checkbox`` with a button:
 
 ```{pyodide}
-column[4] = pn.widgets.Button(label='Click here')
+column[4] = pn.ui.Button(label='Click here')
 
 column
 ```
@@ -59,10 +59,10 @@ Here is the complete code for this subsection in case you want to easily copy it
 import panel as pn
 pn.extension() # for notebook
 
-column = pn.Column('some text', pn.widgets.FloatSlider())
+column = pn.ui.Column('some text', pn.ui.FloatSlider())
 column.append('* Item 1\n* Item 2')
-column.extend([pn.widgets.TextInput(), pn.widgets.Checkbox(label='Tick this!')])
-column[4] = pn.widgets.Button(label='Click here')
+column.extend([pn.ui.TextInput(), pn.ui.Checkbox(label='Tick this!')])
+column[4] = pn.ui.Button(label='Click here')
 column.pop(1)
 
 column
@@ -78,7 +78,7 @@ from bokeh.plotting import figure
 p1 = figure(width=300, height=300)
 p1.line([1, 2, 3], [1, 2, 3])
 
-tabs = pn.Tabs(p1)
+tabs = pn.ui.Tabs(p1)
 
 tabs
 ```
@@ -86,7 +86,7 @@ tabs
 Then, add a new tab for a slider widget and include a title for this new tab:
 
 ```{pyodide}
-tabs.append(('Slider', pn.widgets.FloatSlider()))
+tabs.append(('Slider', pn.ui.FloatSlider()))
 
 tabs
 ```
@@ -95,8 +95,8 @@ Finally, add multiple additional tabs at once using `.extend`, passing titles fo
 
 ```{pyodide}
 tabs.extend([
-    ('Text', pn.widgets.TextInput()),
-    ('Color', pn.widgets.ColorPicker())
+    ('Text', pn.ui.TextInput()),
+    ('Color', pn.ui.ColorPicker())
 ])
 
 tabs
@@ -111,11 +111,11 @@ from bokeh.plotting import figure
 p1 = figure(width=300, height=300)
 p1.line([1, 2, 3], [1, 2, 3])
 
-tabs = pn.Tabs(p1)
-tabs.append(('Slider', pn.widgets.FloatSlider()))
+tabs = pn.ui.Tabs(p1)
+tabs.append(('Slider', pn.ui.FloatSlider()))
 tabs.extend([
-    ('Text', pn.widgets.TextInput()),
-    ('Color', pn.widgets.ColorPicker())
+    ('Text', pn.ui.TextInput()),
+    ('Color', pn.ui.ColorPicker())
 ])
 
 tabs
@@ -128,10 +128,10 @@ A ``GridSpec`` behaves like a 2D array. The indexing is zero-based and specifies
 First, declare a ``GridSpec`` and add red and blue blocks. The red block goes in the first row and spans 3 columns. The blue block spans from the second to fourth row, but only occupies the first column:
 
 ```{pyodide}
-gridspec = pn.GridSpec(sizing_mode='stretch_both', min_height=600)
+gridspec = pn.ui.GridSpec(sizing_mode='stretch_both', min_height=600)
 
-gridspec[0, :3] = pn.Spacer(styles={'background': '#FF0000'})
-gridspec[1:3, 0] = pn.Spacer(styles={'background': '#0000FF'})
+gridspec[0, :3] = pn.ui.Spacer(styles={'background': '#FF0000'})
+gridspec[1:3, 0] = pn.ui.Spacer(styles={'background': '#0000FF'})
 
 gridspec
 ```
@@ -147,10 +147,10 @@ gridspec
 Then, place an image and a ``Column`` of widgets under the plot:
 
 ```{pyodide}
-gridspec[3, 2] = pn.Column(
-    pn.widgets.FloatSlider(),
-    pn.widgets.ColorPicker(),
-    pn.widgets.Toggle(label='Toggle Me!'))
+gridspec[3, 2] = pn.ui.Column(
+    pn.ui.FloatSlider(),
+    pn.ui.ColorPicker(),
+    pn.ui.Toggle(label='Toggle Me!'))
 gridspec[3, 1] = 'https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png'
 
 gridspec
@@ -171,17 +171,17 @@ Here is the complete code for this subsection in case you want to easily copy it
 import panel as pn
 pn.extension() # for notebook
 
-gridspec = pn.GridSpec(sizing_mode='stretch_both', max_height=400)
+gridspec = pn.ui.GridSpec(sizing_mode='stretch_both', max_height=400)
 
-gridspec[0, :3] = pn.Spacer(styles={'background': '#FF0000'})
-gridspec[1:3, 0] = pn.Spacer(styles={'background': '#0000FF'})
+gridspec[0, :3] = pn.ui.Spacer(styles={'background': '#FF0000'})
+gridspec[1:3, 0] = pn.ui.Spacer(styles={'background': '#0000FF'})
 
 gridspec[1:3, 1:3] = p1
 
-gridspec[3, 2] = pn.Column(
-    pn.widgets.FloatSlider(),
-    pn.widgets.ColorPicker(),
-    pn.widgets.Toggle(label='Toggle Me!'))
+gridspec[3, 2] = pn.ui.Column(
+    pn.ui.FloatSlider(),
+    pn.ui.ColorPicker(),
+    pn.ui.Toggle(label='Toggle Me!'))
 gridspec[3, 1] = 'https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png'
 
 del gridspec[0, :3]

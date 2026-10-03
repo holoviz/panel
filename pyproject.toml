@@ -50,7 +50,7 @@ dependencies = [
     'bokeh >=3.10.0,<3.11.0',
     'param >=2.1.0,<3.0',
     'pyviz_comms >=2.0.0',
-    'panel-material-ui >=0.10.0',
+    'panel-material-ui >=0.16.0rc0,<0.17',
     'markdown',
     'markdown-it-py',
     'linkify-it-py',
@@ -84,8 +84,12 @@ django = [
     'django',
     'uvicorn',
 ]
+migrate = [
+    'libcst >=1.1',
+]
 dev = [
     'watchfiles',
+    'libcst >=1.1',
 ]
 tests = [
     'psutil' ,

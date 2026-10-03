@@ -39,9 +39,9 @@ def run(event):
             time.sleep(0.01)
             progress.value = i
 
-button = pn.widgets.Button(label="Run", on_click=run)
+button = pn.ui.Button(label="Run", on_click=run)
 progress = pn.indicators.Progress(value=100, active=False, bar_color="dark")
-pn.Row(button, progress)
+pn.ui.Row(button, progress)
 ```
 
 ### Okay
@@ -60,9 +60,9 @@ def run(event):
         progress.bar_color = "dark"
         progress.active = False
 
-button = pn.widgets.Button(label="Run", on_click=run)
+button = pn.ui.Button(label="Run", on_click=run)
 progress = pn.indicators.Progress(value=100, active=False, bar_color="dark")
-pn.Row(button, progress)
+pn.ui.Row(button, progress)
 ```
 
 ## Throttle slider callbacks
@@ -78,9 +78,9 @@ def callback(value):
     time.sleep(2)
     return f"# {value}"
 
-slider = pn.widgets.IntSlider(end=10)
+slider = pn.ui.IntSlider(end=10)
 output = pn.bind(callback, slider)
-pn.Row(slider, output)
+pn.ui.Row(slider, output)
 ```
 
 ### Good
@@ -92,9 +92,9 @@ def callback(value):
     time.sleep(2)
     return f"# {value}"
 
-slider = pn.widgets.IntSlider(end=10)
+slider = pn.ui.IntSlider(end=10)
 output = pn.bind(callback, slider.param.value_throttled)
-pn.Row(slider, output)
+pn.ui.Row(slider, output)
 ```
 
 ### Bad
@@ -106,9 +106,9 @@ def callback(value):
     time.sleep(2)
     return f"# {value}"
 
-slider = pn.widgets.IntSlider(end=10)
+slider = pn.ui.IntSlider(end=10)
 output = pn.bind(callback, slider.param.value)
-pn.Row(slider, output)
+pn.ui.Row(slider, output)
 ```
 
 ## Defer expensive operations
@@ -122,11 +122,11 @@ pn.extension(defer_load=True, loading_indicator=True)
 
 def onload():
     time.sleep(5)  # simulate expensive operations
-    return pn.Column(
+    return pn.ui.Column(
         "Welcome to this app!",
     )
 
-layout = pn.Column("Check this out!", onload)
+layout = pn.ui.Column("Check this out!", onload)
 # layout.show()
 ```
 
@@ -141,7 +141,7 @@ def onload():
     time.sleep(1)  # simulate expensive operations
     layout[:] = ["Welcome to this app!"]
 
-layout = pn.Column("Loading...")
+layout = pn.ui.Column("Loading...")
 display(layout)
 pn.state.onload(onload)
 ```
@@ -156,8 +156,8 @@ Set `loading=pn.state.param.busy` to overlay a spinner while processing to let t
 def process_load(event):
     time.sleep(3)
 
-button = pn.widgets.Button(label="Click me", on_click=process_load)
-widget_box = pn.WidgetBox(button, loading=pn.state.param.busy, height=300, width=300)
+button = pn.ui.Button(label="Click me", on_click=process_load)
+widget_box = pn.ui.WidgetBox(button, loading=pn.state.param.busy, height=300, width=300)
 widget_box
 ```
 
@@ -171,8 +171,8 @@ def compute(event):
         time.sleep(3)
         layout.append("Computation complete!")
 
-button = pn.widgets.Button(label="Compute", on_click=compute)
-layout = pn.Column("Click below to compute", button)
+button = pn.ui.Button(label="Compute", on_click=compute)
+layout = pn.ui.Column("Click below to compute", button)
 
 layout
 ```
@@ -190,8 +190,8 @@ def compute(event):
     finally:
         layout.loading = False
 
-button = pn.widgets.Button(label="Compute", on_click=compute)
-layout = pn.Column("Click below to compute", button)
+button = pn.ui.Button(label="Compute", on_click=compute)
+layout = pn.ui.Column("Click below to compute", button)
 
 layout
 ```
@@ -219,13 +219,13 @@ def compute(divisor):
         busy.value = False
     return f"Output: {output}"
 
-busy = pn.widgets.LoadingSpinner(width=10, height=10)
-text = pn.widgets.StaticText()
+busy = pn.ui.LoadingSpinner(width=10, height=10)
+text = pn.ui.StaticText()
 
-slider = pn.widgets.IntSlider(label="Divisor")
+slider = pn.ui.IntSlider(label="Divisor")
 output = pn.bind(compute, slider)
 
-layout = pn.Column(pn.Row(busy, text), slider, output)
+layout = pn.ui.Column(pn.ui.Row(busy, text), slider, output)
 layout
 ```
 
@@ -241,9 +241,9 @@ def callback(value):
     time.sleep(2)
     return f"# {value}"
 
-slider = pn.widgets.IntSlider(end=3)
+slider = pn.ui.IntSlider(end=3)
 output = pn.bind(callback, slider.param.value_throttled)
-pn.Row(slider, output)
+pn.ui.Row(slider, output)
 ```
 
 ### Okay
@@ -259,9 +259,9 @@ def callback(value):
         pn.state.cache[value] = output
     return output
 
-slider = pn.widgets.IntSlider(end=3)
+slider = pn.ui.IntSlider(end=3)
 output = pn.bind(callback, slider.param.value_throttled)
-pn.Row(slider, output)
+pn.ui.Row(slider, output)
 ```
 
 ## Preserve axes ranges on update
@@ -281,9 +281,9 @@ def add_point(clicks):
     data.append((np.random.random(), (np.random.random())))
     return hv.Scatter(data)
 
-button = pn.widgets.Button(label="Add point")
+button = pn.ui.Button(label="Add point")
 plot = hv.DynamicMap(pn.bind(add_point, button.param.clicks))
-pn.Column(button, plot)
+pn.ui.Column(button, plot)
 ```
 
 ### Okay
@@ -302,36 +302,36 @@ def add_point(clicks):
     data.append((np.random.random(), (np.random.random())))
     return hv.Scatter(data)
 
-button = pn.widgets.Button(label="Add point")
+button = pn.ui.Button(label="Add point")
 plot = pn.bind(add_point, button.param.clicks)
-pn.Column(button, plot)
+pn.ui.Column(button, plot)
 ```
 
 ## FlexBox instead of Column/Row
 
 ### Good
 
-`pn.FlexBox` automatically moves objects to another row/column, depending on the space available.
+`pn.ui.FlexBox` automatically moves objects to another row/column, depending on the space available.
 
 ```{pyodide}
 rcolor = lambda: "#%06x" % random.randint(0, 0xFFFFFF)
 
-pn.FlexBox(
-    pn.pane.HTML(str(5), styles=dict(background=rcolor()), width=1000, height=100),
-    pn.pane.HTML(str(5), styles=dict(background=rcolor()), width=1000, height=100)
+pn.ui.FlexBox(
+    pn.ui.HTML(str(5), styles=dict(background=rcolor()), width=1000, height=100),
+    pn.ui.HTML(str(5), styles=dict(background=rcolor()), width=1000, height=100)
 )
 ```
 
 ### Okay
 
-`pn.Column`/`pn.Row` will overflow if the content is too long/wide.
+`pn.ui.Column`/`pn.ui.Row` will overflow if the content is too long/wide.
 
 ```{pyodide}
 rcolor = lambda: "#%06x" % random.randint(0, 0xFFFFFF)
 
-pn.Row(
-    pn.pane.HTML(str(5), styles=dict(background=rcolor()), width=1000, height=100),
-    pn.pane.HTML(str(5), styles=dict(background=rcolor()), width=1000, height=100)
+pn.ui.Row(
+    pn.ui.HTML(str(5), styles=dict(background=rcolor()), width=1000, height=100),
+    pn.ui.HTML(str(5), styles=dict(background=rcolor()), width=1000, height=100)
 )
 ```
 
@@ -345,24 +345,24 @@ Imagine Panel components as placeholders and use them as such, rather than re-cr
 def randomize(event):
     df_pane.object = pd.DataFrame(np.random.randn(10, 3), columns=list("ABC"))
 
-button = pn.widgets.Button(label="Compute", on_click=randomize)
-df_pane = pn.pane.DataFrame()
+button = pn.ui.Button(label="Compute", on_click=randomize)
+df_pane = pn.ui.DataFrame()
 button.param.trigger("clicks")  # initialize
 
-pn.Column(button, df_pane)
+pn.ui.Column(button, df_pane)
 ```
 
 ### Okay
 
-If your callback returns a Panel object rather than the underlying object being displayed, you'll end up instantiating the `pn.pane.DataFrame` on every click (which is typically slower and will often have distracting flickering).
+If your callback returns a Panel object rather than the underlying object being displayed, you'll end up instantiating the `pn.ui.DataFrame` on every click (which is typically slower and will often have distracting flickering).
 
 ```{pyodide}
 def randomize(clicks):
-    return pn.pane.DataFrame(pd.DataFrame(np.random.randn(10, 3), columns=list("ABC")))
+    return pn.ui.DataFrame(pd.DataFrame(np.random.randn(10, 3), columns=list("ABC")))
 
-button = pn.widgets.Button(label="Compute")
+button = pn.ui.Button(label="Compute")
 df_pane = pn.bind(randomize, button.param.clicks)
 button.param.trigger("clicks")  # initialize
 
-pn.Column(button, df_pane)
+pn.ui.Column(button, df_pane)
 ```

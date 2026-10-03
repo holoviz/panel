@@ -17,7 +17,7 @@ import panel as pn
 
 pn.extension()
 
-wind_speed = pn.widgets.FloatSlider(
+wind_speed = pn.ui.FloatSlider(
     value=5, start=0, end=20, step=1, label="Wind Speed (m/s)"
 )
 
@@ -31,7 +31,7 @@ power_text = pn.rx(
     "Power Generation: {power:.1f} kW"
 ).format(wind_speed=wind_speed, efficiency=efficiency, power=power)
 
-pn.Column(power_text).servable()
+pn.ui.Column(power_text).servable()
 ```
 
 You will notice how adding `power_text` to the `Column` displays both the widget and the bound function.
@@ -43,7 +43,7 @@ import panel as pn
 
 pn.extension()
 
-wind_speed = pn.widgets.FloatSlider(
+wind_speed = pn.ui.FloatSlider(
     value=5, start=0, end=20, step=1, label="Wind Speed (m/s)"
 )
 
@@ -57,9 +57,9 @@ power_text = pn.rx(
     "Power Generation: {power:.1f} kW"
 ).format(wind_speed=wind_speed, efficiency=efficiency, power=power)
 
-power_md = pn.pane.Markdown(power_text)
+power_md = pn.ui.Markdown(power_text)
 
-pn.Column(wind_speed, power_md).servable()
+pn.ui.Column(wind_speed, power_md).servable()
 ```
 
 You can of course write expressions with multiple widgets. Lets make the `efficiency` a widget:
@@ -69,10 +69,10 @@ import panel as pn
 
 pn.extension()
 
-wind_speed = pn.widgets.FloatSlider(
+wind_speed = pn.ui.FloatSlider(
     value=5, start=0, end=20, step=1, label="Wind Speed (m/s)"
 )
-efficiency = pn.widgets.FloatInput(value=0.3, start=0.0, end=1.0, label="Efficiency (kW/(m/s))")
+efficiency = pn.ui.FloatInput(value=0.3, start=0.0, end=1.0, label="Efficiency (kW/(m/s))")
 
 power = wind_speed.rx() * efficiency.rx()
 
@@ -82,9 +82,9 @@ power_text = pn.rx(
     "Power Generation: {power:.1f} kW"
 ).format(wind_speed=wind_speed, efficiency=efficiency, power=power)
 
-power_md = pn.pane.Markdown(power_text)
+power_md = pn.ui.Markdown(power_text)
 
-pn.Column(wind_speed, efficiency, power_md).servable()
+pn.ui.Column(wind_speed, efficiency, power_md).servable()
 ```
 
 ## Crafting Interactive Forms
@@ -96,13 +96,13 @@ import panel as pn
 
 pn.extension()
 
-wind_speed = pn.widgets.FloatSlider(
+wind_speed = pn.ui.FloatSlider(
     value=5, start=0, end=20, step=1, label="Wind Speed (m/s)"
 )
-efficiency = pn.widgets.FloatInput(
+efficiency = pn.ui.FloatInput(
     value=0.3, start=0.0, end=1.0, label="Efficiency (kW/(m/s))"
 )
-submit = pn.widgets.Button(label="Submit", color="primary")
+submit = pn.ui.Button(label="Submit", color="primary")
 
 power = wind_speed.rx() * efficiency.rx()
 
@@ -116,8 +116,8 @@ power_text = pn.rx(
     power=power
 ).rx.when(submit)
 
-pn.Column(
-    wind_speed, efficiency, submit, pn.pane.Markdown(power_text)
+pn.ui.Column(
+    wind_speed, efficiency, submit, pn.ui.Markdown(power_text)
 ).servable()
 ```
 
@@ -132,7 +132,7 @@ import panel as pn
 
 pn.extension()
 
-wind_speed = pn.widgets.FloatSlider(
+wind_speed = pn.ui.FloatSlider(
     value=5, start=0, end=20, step=1, label="Wind Speed (m/s)"
 )
 efficiency = 0.3
@@ -149,8 +149,8 @@ power_text = pn.rx(
     power=power
 )
 
-pn.Column(
-    wind_speed, pn.pane.Markdown(power_text)
+pn.ui.Column(
+    wind_speed, pn.ui.Markdown(power_text)
 ).servable()
 ```
 
@@ -170,14 +170,14 @@ is_stopped = pn.rx(True)
 
 rx_name = is_stopped.rx.where("Start the wind turbine", "Stop the wind turbine")
 
-submit = pn.widgets.Button(label=rx_name)
+submit = pn.ui.Button(label=rx_name)
 
 def toggle_wind_turbine(clicked):
     is_stopped.rx.value = not is_stopped.rx.value
 
 submit.rx.watch(toggle_wind_turbine)
 
-pn.Column(submit).servable()
+pn.ui.Column(submit).servable()
 ```
 
 Here we store the state of the windturbine in a separate `rx` variable, whenever the submit button is clicked we toggle the state.
@@ -200,7 +200,7 @@ pn.extension()
 
 is_stopped = pn.rx(True)
 
-submit = pn.widgets.Button(
+submit = pn.ui.Button(
     label=is_stopped.rx.where("Start the wind turbine", "Stop the wind turbine"),
 )
 
@@ -211,7 +211,7 @@ async def start_stop_wind_turbine(clicked):
 
 submit.rx.watch(start_stop_wind_turbine)
 
-pn.Column(submit).servable()
+pn.ui.Column(submit).servable()
 ```
 
 :::{note}

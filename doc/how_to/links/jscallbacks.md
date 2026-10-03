@@ -17,11 +17,11 @@ import panel as pn
 
 pn.extension()
 
-value1 =   pn.widgets.Spinner(value=0, width=75)
-operator = pn.widgets.Select(value='*', options=['*', '+'], width=50, align='center')
-value2 =   pn.widgets.Spinner(value=0, width=75)
-button =   pn.widgets.Button(label='=', width=50)
-result =   pn.widgets.StaticText(value='0', width=50, align='center')
+value1 =   pn.ui.IntInput(value=0, width=75)
+operator = pn.ui.Select(value='*', options=['*', '+'], width=50, align='center')
+value2 =   pn.ui.IntInput(value=0, width=75)
+button =   pn.ui.Button(label='=', width=50)
+result =   pn.ui.StaticText(value='0', width=50, align='center')
 
 button.jscallback(clicks="""
 if (op.value == '*')
@@ -30,7 +30,7 @@ else
   result.text = (v1.value + v2.value).toString()
 """, args={'op': operator, 'result': result, 'v1': value1, 'v2': value2})
 
-pn.Row(value1, operator, value2, button, result)
+pn.ui.Row(value1, operator, value2, button, result)
 ```
 
 ## Related Resources

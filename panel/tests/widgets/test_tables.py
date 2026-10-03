@@ -30,6 +30,10 @@ from panel.widgets.tables import DataFrame, Tabulator
 pd_old = pytest.mark.skipif(Version(pd.__version__) < Version('1.3'),
                             reason="Requires latest pandas")
 
+pytestmark = pytest.mark.filterwarnings(
+    "ignore:'DataFrame' is deprecated:panel.util.warnings.PanelDeprecationWarning"
+)
+
 
 def makeMixedDataFrame():
     data = {
@@ -39,6 +43,13 @@ def makeMixedDataFrame():
         "D": pd.bdate_range("1/1/2009", periods=5).astype("datetime64[ns]"),
     }
     return pd.DataFrame(data)
+
+
+def test_dataframe_widget_is_deprecated(dataframe):
+    from panel.util.warnings import PanelDeprecationWarning
+
+    with pytest.warns(PanelDeprecationWarning, match="use 'Tabulator' instead"):
+        DataFrame(dataframe)
 
 
 def test_dataframe_widget(dataframe, document, comm):
@@ -167,6 +178,37 @@ def test_dataframe_process_data_event(dataframe):
     table._process_events({'data': {'int': {1: 3, 2: 4, 0: 1}}})
     df['int'] = [1, 3, 4]
     pd.testing.assert_frame_equal(table.value, df)
+
+
+@pytest.mark.parametrize('pagination', [None, 'local', 'remote'])
+def test_tabulator_process_data_ignores_stale_length(dataframe, pagination):
+    table = Tabulator(dataframe.copy(), pagination=pagination)
+    table._process_events({'data': {'int': [5, 7, 9, 11]}})
+    pd.testing.assert_frame_equal(table.value, dataframe)
+
+
+@pytest.mark.parametrize('method, arg', [
+    ('stream', {'int': [4], 'float': [4.0], 'str': ['D']}),
+    ('patch', {'int': [(1, 5)]}),
+])
+def test_tabulator_stream_patch_does_not_echo_as_edit(document, comm, dataframe, method, arg):
+    table = Tabulator(dataframe.copy())
+    table.get_root(document, comm)
+    edits = []
+    table.on_edit(edits.append)
+    calls = []
+    process_data = table._process_data
+
+    def traced(data):
+        calls.append(data)
+        process_data(data)
+
+    table._process_data = traced  # type: ignore[method-assign]
+
+    getattr(table, method)(arg)
+
+    assert calls == []
+    assert edits == []
 
 
 @pytest.mark.parametrize('widget', [DataFrame, Tabulator])

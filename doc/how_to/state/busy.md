@@ -17,13 +17,13 @@ def processing(event):
     # Some longer running task
     time.sleep(1)
 
-button = pn.widgets.Button(label='Click me!')
+button = pn.ui.Button(label='Click me!')
 button.on_click(processing)
 
 def indicator(busy):
     return "I'm busy" if busy else "I'm idle"
 
-pn.Row(button, pn.bind(indicator, pn.state.param.busy)).servable()
+pn.ui.Row(button, pn.bind(indicator, pn.state.param.busy)).servable()
 ```
 
 This way we can create a global indicator for the busy state instead of modifying all our callbacks.
@@ -40,13 +40,13 @@ pn.extension() # for notebook
 def processing(event):
     time.sleep(1)
 
-button = pn.widgets.Button(label='Click me!')
+button = pn.ui.Button(label='Click me!')
 button.on_click(processing)
 
 busy = pn.indicators.LoadingSpinner(value=False, size=30)
 pn.state.sync_busy(busy)
 
-pn.Row(button, busy).servable()
+pn.ui.Row(button, busy).servable()
 ```
 
 `sync_busy` accepts any indicator whose `value` parameter is `Boolean`, and keeps multiple synced indicators in step with `pn.state.busy`.

@@ -34,11 +34,11 @@ city = pn.state.session_args.get('city', [b'Berlin'])[0].decode('utf-8')
 
 pn.state.template.title = f'{city} Weather'
 
-pn.FlexBox(
-    pn.Card(pn.indicators.Number(
+pn.ui.FlexBox(
+    pn.ui.Card(pn.indicators.Number(
         label='Temperature', value=random.randint(-20, 45), format='{value} °C'
     ), hide_header=True),
-    pn.Card(pn.indicators.Number(
+    pn.ui.Card(pn.indicators.Number(
         label='Humidity', value=random.randint(0, 100), format='{value}%'
     ), hide_header=True)
 ).servable()

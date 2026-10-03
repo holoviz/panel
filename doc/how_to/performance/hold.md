@@ -18,10 +18,10 @@ def increment(e):
     for obj in column_0:
         obj.object = str(e.new)
 
-column_0 = pn.FlexBox(*['0']*100)
-button = pn.widgets.Button(label='Increment', on_click=increment)
+column_0 = pn.ui.FlexBox(*['0']*100)
+button = pn.ui.Button(label='Increment', on_click=increment)
 
-pn.Column(column_0, button).servable()
+pn.ui.Column(column_0, button).servable()
 ```
 
 ## Using `hold`
@@ -39,10 +39,10 @@ def increment(e):
     for obj in column_1:
         obj.object = str(e.new)
 
-column_1 = pn.FlexBox(*['0']*100)
-button = pn.widgets.Button(label='Increment', on_click=increment)
+column_1 = pn.ui.FlexBox(*['0']*100)
+button = pn.ui.Button(label='Increment', on_click=increment)
 
-pn.Column(column_1, button).servable()
+pn.ui.Column(column_1, button).servable()
 ```
 
 Applying the `hold` decorator means all the updates are sent in a single WebSocket message and applied on the frontend simultaneously.
@@ -63,10 +63,10 @@ def increment(e):
             for obj in column_2:
                 obj.object = str(e.new)
 
-column_2 = pn.FlexBox(*['0']*100)
-button = pn.widgets.Button(label='Increment', on_click=increment)
+column_2 = pn.ui.FlexBox(*['0']*100)
+button = pn.ui.Button(label='Increment', on_click=increment)
 
-pn.Column(column_2, button).servable()
+pn.ui.Column(column_2, button).servable()
 ```
 
 Here the updates to the `Button` are dispatched immediately, while the updates to the counters are batched.
