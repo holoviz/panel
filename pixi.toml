@@ -335,7 +335,7 @@ SPHINX_APIDOC_OPTIONS = "members,show-inheritance"
 
 [feature.doc.dependencies]
 lxml = "*"
-nbsite = ">=0.10.0a8"
+nbsite = ">=0.10.0a9"
 nodejs = ">=18"
 panel-material-ui = ">=0.16.0rc0,<0.17"
 pip = "*"
