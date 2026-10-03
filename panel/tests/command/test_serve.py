@@ -378,6 +378,25 @@ def test_serve_basic_auth(server, tmp_path, monkeypatch):
 
 
 @linux_only
+def test_serve_page_config(server, tmp_path):
+    app = "import panel as pn; pn.Row('# Example').servable(title='A')"
+    (tmp_path / "app.py").write_text(app)
+    (tmp_path / "other.py").write_text(app)
+    (tmp_path / "page.json").write_text(
+        '{"title": "Acme Analytics", "theme_config": {"palette": {"primary": {"main": "#ff5722"}}}}'
+    )
+
+    args = ["--port", "0", "--server", server, "app.py", "other.py", "--page-config", "page.json"]
+    with run_panel_serve(args, cwd=tmp_path) as p:
+        port = wait_for_port(p.stdout)
+        r = requests.get(f"http://localhost:{port}/")
+        assert r.status_code == 200
+        html = r.content.decode('utf-8')
+        assert "<title>Acme Analytics</title>" in html
+        assert "--pn-primary: #ff5722;" in html
+
+
+@linux_only
 @pytest.mark.parametrize('args', [
     ['--plugins', 'some.module'],
     ['--rest-provider', 'param'],
