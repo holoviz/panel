@@ -180,6 +180,37 @@ def test_dataframe_process_data_event(dataframe):
     pd.testing.assert_frame_equal(table.value, df)
 
 
+@pytest.mark.parametrize('pagination', [None, 'local', 'remote'])
+def test_tabulator_process_data_ignores_stale_length(dataframe, pagination):
+    table = Tabulator(dataframe.copy(), pagination=pagination)
+    table._process_events({'data': {'int': [5, 7, 9, 11]}})
+    pd.testing.assert_frame_equal(table.value, dataframe)
+
+
+@pytest.mark.parametrize('method, arg', [
+    ('stream', {'int': [4], 'float': [4.0], 'str': ['D']}),
+    ('patch', {'int': [(1, 5)]}),
+])
+def test_tabulator_stream_patch_does_not_echo_as_edit(document, comm, dataframe, method, arg):
+    table = Tabulator(dataframe.copy())
+    table.get_root(document, comm)
+    edits = []
+    table.on_edit(edits.append)
+    calls = []
+    process_data = table._process_data
+
+    def traced(data):
+        calls.append(data)
+        process_data(data)
+
+    table._process_data = traced  # type: ignore[method-assign]
+
+    getattr(table, method)(arg)
+
+    assert calls == []
+    assert edits == []
+
+
 @pytest.mark.parametrize('widget', [DataFrame, Tabulator])
 def test_dataframe_process_data_no_unsync(dataframe, widget):
     df = dataframe.copy()
