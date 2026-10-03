@@ -7,12 +7,12 @@ from panel.io.state import state
 
 
 @pytest.fixture
-def page_template(server_document):
+def page_template(panel_ui, server_document):
     with config.set(template='page'):
         yield
 
 
-def test_page_template_name_resolves_to_page():
+def test_page_template_name_resolves_to_page(panel_ui):
     with config.set(template='page'):
         assert config.template is pn.ui.Page
 
