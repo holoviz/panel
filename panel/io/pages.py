@@ -213,7 +213,7 @@ def theme_css(theme_config: dict | None, dark_theme: bool | None = None) -> str:
     the operating system, otherwise the given scheme is forced.
     """
     rules = []
-    split = bool(theme_config) and ('light' in theme_config or 'dark' in theme_config)
+    split = bool(theme_config and ('light' in theme_config or 'dark' in theme_config))
     if dark_theme is not None:
         variables = {
             'color-scheme': 'dark' if dark_theme else 'light',

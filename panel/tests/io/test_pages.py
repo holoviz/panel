@@ -4,15 +4,18 @@ import json
 import pytest
 
 from panel.config import config
-from panel.io.jupyter_server_extension import KERNEL_ERROR_TEMPLATE
 from panel.io.pages import (
     _BASE_CSS, ROBOTO_URL, contrast_text, load_page_config, page_theme,
     theme_css,
 )
 from panel.io.resources import (
     BASIC_LOGIN_TEMPLATE, ERROR_TEMPLATE, INDEX_TEMPLATE, LOGOUT_TEMPLATE,
+    _env,
 )
 from panel.io.server import INDEX_HTML, render_auth_error, render_index_page
+
+# Loaded directly since the Jupyter server extension requires jupyter_server.
+KERNEL_ERROR_TEMPLATE = _env.get_template('kernel_error.html')
 
 PIXEL_PNG = bytes.fromhex(
     '89504e470d0a1a0a0000000d4948445200000001000000010806000000'
