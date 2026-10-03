@@ -58,7 +58,7 @@ jobs:
     steps:
       - uses: holoviz-dev/holoviz_tasks/optimize-png@e9aaca7738db5d27bf34d0f69e25990b74a85eaf # v1.0.7
         with:
-          oxipng-version: "10.1.1"
+          oxipng-version: "8.0.0"
 
   setup:
     name: Setup workflow
