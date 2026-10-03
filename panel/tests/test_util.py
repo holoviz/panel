@@ -84,6 +84,14 @@ def test_abbreviated_repr_dict():
 def test_abbreviated_repr_list():
     assert abbreviated_repr(['some really, really long string']) == "['some really, ...]"
 
+def test_abbreviated_repr_list_of_parameterized():
+    class Foo(param.Parameterized):
+        pass
+
+    foo = Foo()
+    assert abbreviated_repr(foo) == 'Foo'
+    assert abbreviated_repr([foo, foo]) == '[Foo, Foo]'
+
 def test_abbreviated_repr_ordereddict():
     result = abbreviated_repr(OrderedDict([('key', 'some really, really long string')]))
     assert result == "OrderedDict({'key': 'some ...])"
