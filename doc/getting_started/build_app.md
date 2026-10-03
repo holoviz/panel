@@ -31,10 +31,10 @@ CSV_FILE = (
 )
 ```
 
-Next, we'll import the Panel JavaScript dependencies using `pn.extension(...)`. For a visually appealing and responsive user experience, we'll set the `design` to `"material"` and the `sizing_mode` to `stretch_width`:
+Next, we'll load the Panel JavaScript dependencies using `pn.extension(...)`. We set `sizing_mode="stretch_width"` so components fill the available width, and `throttled=True` so sliders only trigger updates when released rather than on every pixel of a drag:
 
 ```{pyodide}
-pn.extension(design="material", sizing_mode="stretch_width")
+pn.extension(sizing_mode="stretch_width", throttled=True)
 ```
 
 ## Fetching the Data
@@ -69,8 +69,10 @@ def get_plot(variable="Temperature", window=30, sigma=10):
     """Plots the rolling average and the outliers"""
     avg, highlight = transform_data(variable, window, sigma)
     return avg.hvplot(
-        height=300, legend=False, color=PRIMARY_COLOR
-    ) * highlight.hvplot.scatter(color=SECONDARY_COLOR, padding=0.1, legend=False)
+        height=300, responsive=True, legend=False, color=PRIMARY_COLOR
+    ) * highlight.hvplot.scatter(
+        responsive=True, color=SECONDARY_COLOR, padding=(0, 0.1), legend=False
+    )
 ```
 
 Now, we can call our `get_plot` function with specific parameters to obtain a plot with a single set of parameters:
@@ -99,26 +101,26 @@ bound_plot = pn.bind(
 )
 ```
 
-Once we've bound the widgets to the function's arguments, we can layout the resulting `bound_plot` component along with the `widgets` using a Panel layout such as `Column`:
+`bound_plot` is a reference: it doesn't hold a plot, it knows how to compute one from the current widget values. We pass it to a `HoloViews` pane, which is created once and re-renders its content whenever a widget changes. Then we lay out the pane alongside the widgets using a `Column`:
 
 ```{pyodide}
+plot = pn.ui.HoloViews(bound_plot)
 widgets = pn.ui.Column(variable_widget, window_widget, sigma_widget, sizing_mode="fixed", width=300)
-pn.ui.Column(widgets, bound_plot)
+pn.ui.Column(widgets, plot)
 ```
 
-As long as you have a live Python process running, dragging these widgets will trigger a call to the `get_plot` callback function, evaluating it for whatever combination of parameter values you select and displaying the results.
+As long as you have a live Python process running, dragging these widgets will trigger a call to the `get_plot` callback function, evaluating it for whatever combination of parameter values you select and updating the plot in place.
 
 ## Serving the Notebook
 
-We'll organize our components in a nicely styled template (`MaterialTemplate`) and mark it `.servable()` to add it to our served app:
+We'll arrange our components in a `Page`, which provides a header, a collapsible sidebar and a light/dark theme toggle, and mark it `.servable()` to add it to our served app. A `Page` also renders inline in the notebook, so you can preview the final layout before serving it:
 
 ```python
-pn.template.MaterialTemplate(
-    site="Panel",
+pn.ui.Page(
     title="Getting Started App",
     sidebar=[variable_widget, window_widget, sigma_widget],
-    main=[bound_plot],
-).servable(); # The ; is needed in the notebook to not display the template. Its not needed in a script
+    main=[plot],
+).servable()
 ```
 
 Save the notebook with the name `app.ipynb`.
@@ -153,7 +155,7 @@ CSV_FILE = (
     "https://raw.githubusercontent.com/holoviz/panel/main/examples/assets/occupancy.csv"
 )
 
-pn.extension(design="material", sizing_mode="stretch_width")
+pn.extension(sizing_mode="stretch_width", throttled=True)
 
 @pn.cache
 def get_data():
@@ -174,8 +176,10 @@ def get_plot(variable="Temperature", window=30, sigma=10):
     """Plots the rolling average and the outliers"""
     avg, highlight = transform_data(variable, window, sigma)
     return avg.hvplot(
-        height=300, legend=False, color=PRIMARY_COLOR
-    ) * highlight.hvplot.scatter(color=SECONDARY_COLOR, padding=0.1, legend=False)
+        height=300, responsive=True, legend=False, color=PRIMARY_COLOR
+    ) * highlight.hvplot.scatter(
+        responsive=True, color=SECONDARY_COLOR, padding=(0, 0.1), legend=False
+    )
 
 variable_widget = pn.ui.Select(label="variable", value="Temperature", options=list(data.columns))
 window_widget = pn.ui.IntSlider(label="window", value=30, start=1, end=60)
@@ -184,13 +188,13 @@ sigma_widget = pn.ui.IntSlider(label="sigma", value=10, start=0, end=20)
 bound_plot = pn.bind(
     get_plot, variable=variable_widget, window=window_widget, sigma=sigma_widget
 )
+plot = pn.ui.HoloViews(bound_plot)
 
-pn.template.MaterialTemplate(
-    site="Panel",
+pn.ui.Page(
     title="Getting Started App",
     sidebar=[variable_widget, window_widget, sigma_widget],
-    main=[bound_plot],
-).servable(); # The ; is needed in the notebook to not display the template. Its not needed in a script
+    main=[plot],
+).servable()
 ```
 
 :::

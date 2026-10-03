@@ -3,9 +3,9 @@
 ```{pyodide}
 import panel as pn
 
-pn.extension(design='material', template='material')
+pn.extension(template='page')
 
-pn.state.template.main_max_width = '768px'
+pn.state.template.main_width = '768px'
 ```
 
 This example demonstrates how to sync widget state with the URL bar, restoring it from the URL parameters on page load and updating it when the widgets change.

@@ -64,7 +64,7 @@ import random
 
 import panel as pn
 
-pn.extension(sizing_mode="stretch_width", template='bootstrap')
+pn.extension(sizing_mode="stretch_width", template='page')
 
 def create_row(event):
     value = random.randint(0, 100)

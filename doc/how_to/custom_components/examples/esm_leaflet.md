@@ -93,7 +93,7 @@ Some of the concepts this component demonstrates:
 Now let's try this component:
 
 ```{pyodide}
-pn.extension(template='bootstrap')
+pn.extension(template='page')
 
 url = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.csv"
 
