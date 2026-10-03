@@ -112,6 +112,7 @@ doc/**/*.rst
 doc/**/*.ipynb
 doc/**/*.json
 !doc/_static/json/*.json
+!doc/_static/switcher.json
 jupyter_execute
 # this dir contains the whole website and should not be checked in on main
 builtdocs/
