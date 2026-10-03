@@ -7,6 +7,8 @@
  * plans/docs-homepage-and-versioning.md §1.
  */
 
+import {asset} from './assets'
+
 export const DOCS = '/en/docs/latest'
 export const GITHUB = 'https://github.com/holoviz/panel'
 
@@ -25,13 +27,13 @@ export const social = [
 ]
 
 export const hero = {
-  title: 'Data apps that keep their shape as they grow.',
+  title: 'Python data apps that keep their shape as they grow.',
   lede:
-    'Panel starts in a notebook cell and does not make you rewrite when the app reaches twelve screens. State is declarative, nothing reruns top to bottom, and the layout is yours.',
+    'Panel is an open-source Python library for dashboards and data apps. An app starts in a notebook cell and grows into a multi-page application without a rewrite, because state is declarative, nothing reruns top to bottom, and the layout is yours.',
   install: 'pip install panel',
   installConda: 'conda install -c conda-forge panel',
   primary: {label: 'Get started', href: `${DOCS}/getting_started/index.html`},
-  secondary: {label: 'Run an example in your browser', href: `${DOCS}/gallery/index.html`},
+  secondary: {label: 'See example apps', href: `${DOCS}/gallery/index.html`},
 }
 
 /**
@@ -51,7 +53,8 @@ export const heroCode: {key: HeroKey | null; text: string}[] = [
   {key: 'widgets', text: 'ticker = pn.ui.RadioButtonGroup(name="Series", options=["AAPL", "MSFT", "NVDA"])'},
   {key: null, text: ''},
   {key: 'bind', text: 'def series(window, sigma, ticker):'},
-  {key: 'bind', text: '    walk = np.cumsum(rng(ticker).normal(0, sigma, 400))'},
+  {key: 'bind', text: '    rng = np.random.default_rng(sum(map(ord, ticker)))'},
+  {key: 'bind', text: '    walk = np.cumsum(rng.normal(0, sigma, 400))'},
   {key: 'bind', text: '    smooth = np.convolve(walk, np.ones(window) / window, "same")'},
   {key: 'bind', text: '    return hv.Curve(walk).opts(alpha=0.4) * hv.Curve(smooth)'},
   {key: null, text: ''},
@@ -103,20 +106,23 @@ export const execution = {
   title: 'A slider move should not re-run your app',
   lede:
     'Most Python app frameworks answer a widget change by executing your script again from the first line. It works until the script does something expensive, and from then on you are managing caches instead of writing the app.',
-  blocks: ['load 4M rows', 'clean and join', 'fit the model', 'draw the chart', 'draw the table'],
+  // The changed widget is a model hyperparameter, so exactly the model and what reads its
+  // output are downstream of it.
+  trigger: 'alpha = 0.1 → 0.5',
+  blocks: ['load 4M rows', 'clean and join', 'fit the model', 'draw the forecast', 'draw the data table'],
   traces: [
     {
       id: 'rerun',
       label: 'Script re-executed top to bottom',
-      // Indices into `blocks` that run again when the model's one parameter changes.
+      // Indices into `blocks` that run again when alpha changes.
       runs: [0, 1, 2, 3, 4],
-      note: 'Every block runs again, including the four that could not have changed. Caching decorators exist to undo this.',
+      note: 'Every block runs again, including the three that could not have changed. Caching decorators exist to undo this.',
     },
     {
       id: 'panel',
       label: 'Panel',
       runs: [2, 3],
-      note: 'The widget is bound to the model, and the chart depends on the model. Nothing else is asked to do anything.',
+      note: 'The widget is bound to the model, and only the forecast reads the model. The data and the table are left alone.',
     },
   ],
   link: {
@@ -157,7 +163,7 @@ export const growth = {
     {
       title: 'Components made of components',
       body:
-        'Hand one component a reference to another one\'s state and they stay in step, however deep the tree goes. Twelve screens is twelve of these, not twelve branches in one callback.',
+        'Hand one component a reference to another one\'s state and they stay in step, however deep the tree goes. A large app is many of these, not one callback with a branch per page.',
       code: [
         'class Dashboard(pn.viewable.Viewer):',
         '    data = param.DataFrame()',
@@ -177,58 +183,47 @@ export const growth = {
   },
 }
 
-/**
- * Reference thumbnails come from assets.holoviz.org, which is where nbsite_gallery_conf
- * already points them, and the path segment doubles as the docs reference section.
- */
-const thumb = (section: string, name: string) =>
-  `https://assets.holoviz.org/panel/thumbnails/reference/${section}/${name}.png`
 const reference = (section: string, name: string) => `${DOCS}/reference/${section}/${name}.html`
 
 /**
  * Where a pn.ui component is the Material implementation rather than a re-export of the classic
- * one, its picture and its page have to come from panel-material-ui, which is where that
- * implementation and its reference page currently live. Otherwise a tile would show a widget
- * that does not look like the one the snippets on this page produce.
+ * one, its reference page lives in panel-material-ui.
  */
-const materialThumb = (section: string, name: string) =>
-  `https://assets.holoviz.org/panel-material-ui/thumbnails/reference/${section}/${name}.png`
 const materialReference = (section: string, name: string) =>
   `https://panel-material-ui.holoviz.org/reference/${section}/${name}.html`
 
 /**
- * Plotnine and Seaborn are absent as entries because they draw through Matplotlib and share
- * its pane rather than having one of their own.
+ * Eight panes get a picture and the rest a mention: eleven pictures left a ragged last row,
+ * and the eight shown are the ones most readers arrive with.
  */
 export const panes = {
   title: 'Bring the plotting library you already use',
   lede:
     'Panel renders the objects your library already produces, rather than asking you to port your figures to a chart API of its own. Where the library supports it the pane is two-way, so clicks, selections and ranges come back to Python.',
   items: [
-    {name: 'Matplotlib', file: 'Matplotlib', note: 'Any Figure, including what Plotnine and Seaborn draw.'},
-    {name: 'Plotly', file: 'Plotly', note: 'Click, hover, selection and relayout events come back.'},
-    {name: 'Bokeh', file: 'Bokeh', note: 'Bokeh figures and models, with no wrapper in between.'},
-    {name: 'HoloViews', file: 'HoloViews', note: 'hvPlot and HoloViews objects, with their widgets generated for you.'},
-    {name: 'Altair and Vega', file: 'Vega', note: 'Altair charts and raw Vega-Lite specs, selections included.'},
-    {name: 'ECharts', file: 'ECharts', note: 'ECharts option dictionaries and pyecharts objects.'},
-    {name: 'Deck.gl', file: 'DeckGL', note: 'Large geographic scenes, drawn on the GPU.'},
-    {name: 'VTK', file: 'VTK', note: 'Volumes and meshes, rotatable in the browser.'},
-    {name: 'Perspective', file: 'Perspective', note: 'Pivot, filter and chart a dataframe in place.'},
-    {name: 'Vizzu', file: 'Vizzu', note: 'Animated transitions between chart types.'},
-    {name: 'ipywidgets', file: 'IPyWidget', note: 'Any ipywidget, so ipyleaflet and pydeck come along too.'},
+    {name: 'Matplotlib', file: 'Matplotlib', note: 'Any Figure, including Seaborn and Plotnine'},
+    {name: 'Plotly', file: 'Plotly', note: 'Click, hover and selection events'},
+    {name: 'Bokeh', file: 'Bokeh', note: 'Figures and models, unwrapped'},
+    {name: 'hvPlot and HoloViews', file: 'HoloViews', note: 'Widgets generated for you'},
+    {name: 'Altair and Vega', file: 'Vega', note: 'Selections come back to Python'},
+    {name: 'ECharts', file: 'ECharts', note: 'Option dicts and pyecharts objects'},
+    {name: 'Deck.gl', file: 'DeckGL', note: 'Large geographic scenes on the GPU'},
+    {name: 'Vizzu', file: 'Vizzu', note: 'Animated transitions between charts'},
   ].map((p) => ({
     ...p,
-    // pn.ui re-exports the panes unchanged rather than reimplementing them, so the reference
-    // page under panes/ documents the same class this names.
     api: `pn.ui.${p.file}`,
-    image: thumb('panes', p.file),
+    image: asset(`panes/${p.file}.webp`),
     href: reference('panes', p.file),
   })),
+  more: [
+    {name: 'VTK', href: reference('panes', 'VTK')},
+    {name: 'ipywidgets', href: reference('panes', 'IPyWidget')},
+    {name: 'Folium', href: reference('panes', 'Folium')},
+  ],
 }
 
 /**
- * A dozen of the components from the reference gallery, chosen because they read at
- * thumbnail size and because each one is a thing people otherwise stop and build.
+ * A dozen components, chosen because each one is a thing people otherwise stop and build.
  *
  * The count is examples/reference/{widgets,panes,layouts,indicators,chat}, which stood at
  * 134 on 2026-09-05. Rounded down in the copy so it stays true as things are added.
@@ -236,9 +231,9 @@ export const panes = {
 export const components = {
   title: 'The component you were about to build is already here',
   lede:
-    'More than 130 components ship in pn.ui, Panel\'s Material UI component namespace, each documented on its own page with the code that produced it. These are the ones people are surprised to find.',
+    'More than 130 components ship with Panel, each documented on its own page with the code that produced it. These are the ones people are surprised to find.',
   items: [
-    {name: 'Tabulator', section: 'widgets', note: 'Millions of rows, edited in place'},
+    {name: 'Tabulator', section: 'widgets', note: 'Sort, filter and edit large tables'},
     {name: 'ChatInterface', section: 'chat', note: 'Streaming tokens and nested steps', material: true},
     {name: 'Terminal', section: 'widgets', note: 'Stream stdout, or take input'},
     {name: 'JSONEditor', section: 'widgets', note: 'Nested config, validated as you type'},
@@ -246,13 +241,13 @@ export const components = {
     {name: 'Gauge', section: 'indicators', note: 'One bounded value, at a glance'},
     {name: 'Swipe', section: 'layouts', note: 'Two views, split by a slider'},
     {name: 'TextEditor', section: 'widgets', note: 'Rich text in, HTML out'},
-    {name: 'FileDropper', section: 'widgets', note: 'Chunked uploads with progress'},
+    {name: 'Perspective', section: 'panes', note: 'Pivot, filter and chart a dataframe'},
     {name: 'CrossSelector', section: 'widgets', note: 'Move items between two lists', material: true},
     {name: 'NestedSelect', section: 'widgets', note: 'Dependent dropdowns from a dict', material: true},
-    {name: 'Player', section: 'widgets', note: 'Step or animate through a range'},
+    {name: 'Player', section: 'widgets', note: 'Step or animate through a range', material: true},
   ].map((c) => ({
     ...c,
-    image: (c.material ? materialThumb : thumb)(c.section, c.name),
+    image: asset(`components/${c.name}.webp`),
     href: (c.material ? materialReference : reference)(c.section, c.name),
   })),
   link: {label: 'Browse all components', href: `${DOCS}/reference/index.html`},
@@ -274,7 +269,7 @@ export const capabilities = [
   {
     title: 'Runs with no server at all',
     body:
-      'panel convert compiles an app to WebAssembly and runs it in the browser through Pyodide, which is how every example in these docs is editable in place.',
+      'panel convert compiles an app to WebAssembly and runs it in the browser through Pyodide, which is how the component reference pages in these docs run live.',
     href: `${DOCS}/how_to/wasm/index.html`,
   },
   {
@@ -286,35 +281,36 @@ export const capabilities = [
 ]
 
 /**
- * Screenshots come from assets.holoviz.org, which is where nbsite_gallery_conf already
- * points, and they are all square thumbnails. Links go to the docs gallery pages rather
- * than the panel-gallery deployment, which is currently returning 404 for every path.
+ * Full-window screenshots of the served gallery apps, taken by scripts/thumbnails.py. Links
+ * go to the docs gallery pages rather than the panel-gallery deployment, which is currently
+ * returning 404 for every path. The first entry is the featured tile.
  */
-const shot = (name: string) => `https://assets.holoviz.org/panel/gallery/${name}.png`
 const galleryPage = (name: string) => `${DOCS}/gallery/${name}.html`
 
 export const gallery = [
-  {name: 'portfolio_analyzer', title: 'Portfolio analyzer', note: 'Tabulator and streaming quotes'},
-  {name: 'penguin_crossfilter', title: 'Penguin crossfilter', note: 'Linked selections across four plots'},
-  {name: 'windturbines', title: 'Wind turbines', note: '60k points, rendered server side'},
-  {name: 'vtk_slicer', title: 'Volume slicer', note: 'VTK, in the browser'},
-  {name: 'hvplot_explorer', title: 'hvPlot explorer', note: 'A UI generated from a dataframe'},
-  {name: 'deckgl_game_of_life', title: 'Game of life', note: 'Deck.gl on a periodic callback'},
-  {name: 'xgboost_classifier', title: 'XGBoost classifier', note: 'Retrains on every widget change'},
-  {name: 'glaciers', title: 'Glaciers', note: 'Geographic crossfiltering'},
-].map((g) => ({...g, image: shot(g.name), href: galleryPage(g.name)}))
+  {
+    name: 'gaia_million_star_atlas',
+    title: 'Gaia million star atlas',
+    note: 'A million Gaia DR3 measurements, brushed across the sky map and the color–magnitude diagram at once.',
+  },
+  {name: 'model_serving_monitor', title: 'Model serving monitor', note: 'Live latency, drift and alerts'},
+  {name: 'portfolio_analyzer', title: 'Portfolio analyzer', note: 'Tabulator linked to price charts'},
+  {name: 'glaciers', title: 'Glaciers of the world', note: '200,000 glaciers, crossfiltered'},
+  {name: 'penguin_crossfilter', title: 'Penguin crossfilter', note: 'One selection across four plots'},
+  {name: 'storm_surge_studio', title: 'Storm surge studio', note: 'A flood model you can steer'},
+].map((g) => ({...g, image: asset(`gallery/${g.name}.webp`), href: galleryPage(g.name)}))
 
 export const adoption = {
-  title: 'Panel is used where the analysis matters more than the framework',
+  title: 'Developed in the open since 2018',
   body:
-    'It is part of HoloViz, has been developed in the open since 2018, and is maintained by a team at Anaconda together with contributors from research labs, banks, and instrument makers. Questions get answered on Discourse and Discord, usually the same day.',
-  // Checked against the GitHub API on 2026-09-05. Worth refreshing whenever this page is
+    'Panel is maintained by a team at Anaconda together with contributors from research labs, banks, and instrument makers. Ask questions on Discourse or Discord, and report bugs on GitHub.',
+  // Checked against the GitHub API on 2026-10-03. Worth refreshing whenever this page is
   // touched; nothing here reads it live.
   stats: [
     {value: '5.8k', label: 'GitHub stars'},
     {value: '2018', label: 'First release'},
     {value: '220+', label: 'Contributors'},
-    {value: 'BSD-3', label: 'Licence'},
+    {value: 'BSD-3', label: 'License'},
   ],
 }
 

@@ -22,19 +22,19 @@ export function App() {
       <CssBaseline />
       <Header />
       {/*
-        The argument follows the headline: how updates work, then how the code grows, then how
-        it ships. Sections alternate between the white page and a washed band, so the reader
-        always knows where one ended.
+        How updates work, then real apps as proof before the longer argument about how the code
+        grows and ships. Sections alternate between the white page and a washed band, so the
+        reader always knows where one ended.
       */}
       <main>
         <Hero />
         <Execution wash />
-        <Growth />
-        <Paths wash />
-        <Panes />
-        <Components wash />
-        <Capabilities />
-        <Gallery wash />
+        <Gallery />
+        <Growth wash />
+        <Paths />
+        <Panes wash />
+        <Components />
+        <Capabilities wash />
         <Adoption />
       </main>
       <Footer />

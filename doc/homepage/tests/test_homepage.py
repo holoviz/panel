@@ -11,7 +11,6 @@ complaining, and the interactive parts have to keep working after it does.
 from __future__ import annotations
 
 import http.server
-import re
 import socket
 import threading
 
@@ -135,36 +134,46 @@ def test_the_rerun_contrast_still_contrasts(home: Page) -> None:
     assert 0 < panel_runs < rerun_runs
 
 
-def test_selecting_a_plotting_library_changes_the_picture(home: Page) -> None:
-    shown = home.locator('#pane-panel img')
-    matplotlib = shown.get_attribute('src')
-    assert matplotlib and 'Matplotlib' in matplotlib
-
-    home.get_by_role('tab', name='Deck.gl', exact=True).click()
-    expect(shown).to_have_attribute('src', re.compile('DeckGL'))
-    expect(home.locator('#pane-panel')).to_contain_text('pn.ui.DeckGL')
+def test_every_pane_and_component_has_a_picture(home: Page) -> None:
+    expect(home.locator('#panes [data-tile]')).to_have_count(8)
+    expect(home.locator('#components [data-tile]')).to_have_count(12)
+    expect(home.locator('#panes')).to_contain_text('pn.ui.DeckGL')
 
 
-def test_every_thumbnail_loads(home: Page) -> None:
-    """The pictures are remote, and a renamed reference page turns one into a blank tile.
-
-    Needs the network: the reference and gallery thumbnails are served from
-    assets.holoviz.org rather than bundled, so this fails offline.
-    """
-    home.get_by_role('tab', name='ipywidgets', exact=True).click()
-    home.wait_for_timeout(200)
-    # The component tiles load lazily, so they have to be scrolled past first.
-    home.evaluate("""async () => {
-        for (let y = 0; y < document.body.scrollHeight; y += 400) {
-            window.scrollTo(0, y)
-            await new Promise((r) => setTimeout(r, 40))
-        }
+def test_every_picture_loads_from_the_hashed_prefix(home: Page) -> None:
+    """The edge redirector only passes /_home/ through, so a picture anywhere else 404s live."""
+    # Lazy tiles only fetch near the viewport, so make them all eager and wait for each.
+    images = home.evaluate("""async () => {
+        const imgs = [...document.querySelectorAll('main img')]
+        imgs.forEach((i) => { i.loading = 'eager' })
+        await Promise.all(imgs.map((i) => i.decode().catch(() => null)))
+        return imgs.map((i) => [i.getAttribute('src'), i.naturalWidth])
     }""")
-    home.wait_for_load_state('networkidle')
-    broken = home.eval_on_selector_all(
-        'img', 'els => els.filter(e => !e.naturalWidth).map(e => e.currentSrc || e.src)'
+    assert len(images) == 26
+    assert not [src for src, width in images if not width], 'broken pictures'
+    # Vite inlines anything under 4 kB as a data: URI, which needs no route at all.
+    assert all(src.startswith(('/_home/', 'data:image/')) for src, _ in images), images
+
+
+def test_featured_app_ends_level_with_its_neighbours(home: Page) -> None:
+    """The featured screenshot stretches to the two tiles beside it rather than overhanging."""
+    def bottom(name: str) -> float:
+        box = home.locator(f'[data-gallery-app="{name}"]').bounding_box()
+        return box['y'] + box['height']
+
+    assert abs(bottom('gaia_million_star_atlas') - bottom('portfolio_analyzer')) <= 1
+
+
+@pytest.mark.parametrize('width', [1440, 390])
+def test_no_code_scrolls_sideways(page: Page, site: str, width: int) -> None:
+    """Hero and growth snippets wrap rather than hiding the ends of their lines."""
+    page.set_viewport_size({'width': width, 'height': 900})
+    page.goto(site, wait_until='networkidle')
+    clipped = page.eval_on_selector_all(
+        '#growth pre, [data-hero-row] pre',
+        'els => els.filter(e => e.scrollWidth > e.clientWidth + 1).map(e => e.textContent.slice(0, 40))',
     )
-    assert not broken, broken
+    assert not clipped, clipped
 
 
 def test_install_command_copies(home: Page) -> None:

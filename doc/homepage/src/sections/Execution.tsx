@@ -52,7 +52,7 @@ export function Execution({wash}: Band) {
                 color: 'text.secondary',
               }}
             >
-              window = 30 → 45
+              {execution.trigger}
             </Box>
             <Box sx={{display: 'flex', flexDirection: 'column', gap: 1}}>
               {execution.blocks.map((block, i) => {

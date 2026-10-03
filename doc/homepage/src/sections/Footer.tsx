@@ -69,7 +69,7 @@ export function Footer() {
         >
           © HoloViz contributors, 2018 onward.{' '}
           <Link href={`${GITHUB}/blob/main/LICENSE.txt`} sx={{color: 'inherit', textDecoration: 'underline'}}>
-            Licence
+            License
           </Link>
         </Typography>
       </Container>

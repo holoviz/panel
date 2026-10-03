@@ -70,14 +70,36 @@ export function Code({source}: {source: string}) {
   )
 }
 
+/**
+ * One block per source line, with a hanging indent four columns past the line's own, so a
+ * wrapped continuation reads as belonging to its line rather than as a dedent.
+ */
+function WrappedLines({source}: {source: string}) {
+  return (
+    <>
+      {source.split('\n').map((line, i) => {
+        const hang = `${line.length - line.trimStart().length + 4}ch`
+        return (
+          <Box key={i} component="span" sx={{display: 'block', pl: hang, textIndent: `-${hang}`}}>
+            {line ? <Code source={line} /> : ' '}
+          </Box>
+        )
+      })}
+    </>
+  )
+}
+
 export function CodeBlock({
   source,
   sx,
   fontSize = '0.875rem',
+  wrap = false,
 }: {
   source: string
   sx?: SxProps<Theme>
   fontSize?: string | Record<string, string>
+  /** Wrap long lines instead of scrolling, for code that has to stay readable on a phone. */
+  wrap?: boolean
 }) {
   return (
     <Box
@@ -89,15 +111,15 @@ export function CodeBlock({
           fontSize,
           lineHeight: 1.75,
           color: 'text.primary',
-          overflowX: 'auto',
+          overflowX: wrap ? 'visible' : 'auto',
+          whiteSpace: wrap ? 'pre-wrap' : 'pre',
+          overflowWrap: wrap ? 'anywhere' : 'normal',
           tabSize: 4,
         },
         ...(Array.isArray(sx) ? sx : [sx]),
       ]}
     >
-      <code>
-        <Code source={source} />
-      </code>
+      <code>{wrap ? <WrappedLines source={source} /> : <Code source={source} />}</code>
     </Box>
   )
 }

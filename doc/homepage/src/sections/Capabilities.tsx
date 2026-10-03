@@ -26,15 +26,13 @@ export function Capabilities({wash}: Band) {
               display: 'grid',
               gridTemplateColumns: {xs: '1fr', md: '20rem 1fr'},
               gap: {xs: 0.75, md: 5},
-              px: {xs: 0, md: 2},
-              mx: {xs: 0, md: -2},
               py: {xs: 2.5, md: 3},
               textDecoration: 'none',
               color: 'inherit',
+              // Rules span the content width, the same as the top rule, so no hover wash that
+              // would need padding past the text edge.
               borderBottom: '1px solid',
               borderColor: 'divider',
-              transition: 'background-color 160ms ease',
-              '&:hover': {backgroundColor: 'action.hover'},
               '&:hover .cap-title': {color: 'primary.main'},
             }}
           >

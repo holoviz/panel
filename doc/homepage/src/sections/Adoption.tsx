@@ -24,14 +24,19 @@ export function Adoption({wash}: Band) {
             {adoption.body}
           </Typography>
           <Box sx={{display: 'flex', flexWrap: 'wrap', gap: 1.5, mt: 3.5}}>
-            <Button variant="contained" size="large" href={`${DOCS}/getting_started/index.html`}>
+            <Button
+              variant="contained"
+              size="large"
+              href={`${DOCS}/getting_started/index.html`}
+              sx={{flex: {xs: '1 1 100%', sm: '0 0 auto'}}}
+            >
               Get started
             </Button>
             <Button
               size="large"
               variant="outlined"
               href={GITHUB}
-              sx={{color: 'text.primary', borderColor: 'divider'}}
+              sx={{color: 'text.primary', borderColor: 'divider', flex: {xs: '1 1 100%', sm: '0 0 auto'}}}
             >
               Read the source
             </Button>

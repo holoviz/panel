@@ -56,14 +56,14 @@ export function Hero() {
               {hero.lede}
             </Typography>
             <Box sx={{display: 'flex', flexWrap: 'wrap', gap: 1.5, mt: 3.5, alignItems: 'center'}}>
-              <Button variant="contained" size="large" href={hero.primary.href}>
+              <Button variant="contained" size="large" href={hero.primary.href} sx={{flex: {xs: '1 1 100%', sm: '0 0 auto'}}}>
                 {hero.primary.label}
               </Button>
               <Button
                 size="large"
                 variant="outlined"
                 href={hero.secondary.href}
-                sx={{color: 'text.primary', borderColor: 'divider'}}
+                sx={{color: 'text.primary', borderColor: 'divider', flex: {xs: '1 1 100%', sm: '0 0 auto'}}}
               >
                 {hero.secondary.label}
               </Button>
@@ -115,7 +115,7 @@ export function Hero() {
               >
                 {row.key ? heroRegions[row.key] : 'Two imports and one line of setup.'}
               </Typography>
-              <CodeBlock source={row.source} fontSize={{xs: '0.8125rem', md: '0.875rem'}} />
+              <CodeBlock source={row.source} fontSize={{xs: '0.8125rem', md: '0.875rem'}} wrap />
             </Box>
           ))}
         </Box>
