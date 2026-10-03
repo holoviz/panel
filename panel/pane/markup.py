@@ -178,7 +178,7 @@ class HTMLBasePane(ModelPane):
         if html != old_html:
             start, end, patch = splice_diff(old_html, html)
             start, end = utf16_offset(old_html, start), utf16_offset(old_html, end)
-            version = model.stream_version + 1
+            version = model._property_values.get('stream_version', 0) + 1
             props['run_scripts'] = False
             # Bypass the property setters so no full text update is sent
             model._property_values['text'] = text
@@ -764,10 +764,11 @@ class Markdown(HTMLBasePane):
         tail_src = src[len(prefix_src):]
         env: dict[str, t.Any] = {}
         tokens = parser.parse(tail_src, env)
-        split = next((
-            i for i in range(len(tokens)-1, 0, -1)
-            if tokens[i].level == 0 and tokens[i].map is not None
-        ), 0)
+        # Index and first source line of the last top-level block
+        split, line = next((
+            (i, token.map[0]) for i in range(len(tokens)-1, 0, -1)
+            if (token := tokens[i]).level == 0 and token.map is not None
+        ), (0, 0))
         render = parser.renderer.render
         stable_html = render(tokens[:split], parser.options, env) if split else ''
         tail_html = render(tokens[split:], parser.options, env)
@@ -778,7 +779,6 @@ class Markdown(HTMLBasePane):
                 self._block_cache = None
                 return self._render_incremental(parser, src)
         if split:
-            line = tokens[split].map[0]
             offset = 0
             for _ in range(line):
                 offset = tail_src.index('\n', offset) + 1

@@ -620,13 +620,17 @@ async def test_html_stream_flushes_when_loop_blocked(document, comm):
 def test_html_base_pane_subclass_without_transform(document, comm, enable_streaming):
     from panel.pane.markup import HTMLBasePane
 
+    class Text(str):
+        pass
+
+    # Pane types are registered globally, so only apply to a private type
     class Custom(HTMLBasePane):
         @classmethod
         def applies(cls, obj):
-            return isinstance(obj, str)
+            return isinstance(obj, Text)
 
-    pane = Custom('&lt;b&gt;a&lt;/b&gt;', enable_streaming=enable_streaming)
+    pane = Custom(Text('&lt;b&gt;a&lt;/b&gt;'), enable_streaming=enable_streaming)
     model = pane.get_root(document, comm=comm)
     assert model.text == '&lt;b&gt;a&lt;/b&gt;'
-    pane.object = '&lt;b&gt;ab&lt;/b&gt;'
+    pane.object = Text('&lt;b&gt;ab&lt;/b&gt;')
     assert model.text == '&lt;b&gt;ab&lt;/b&gt;'
