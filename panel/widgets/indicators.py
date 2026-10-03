@@ -720,8 +720,12 @@ class Dial(ValueIndicator):
             distance = (pi*2)-distance
         return start, end, distance
 
+    def _size(self) -> tuple[int, int]:
+        height = self.height or self.width or 250
+        return self.width or height, height
+
     def _font_sizes(self) -> tuple[str, str, str]:
-        scale = (self.height/400)
+        scale = (self._size()[1]/400)
         title_size = self.title_size if self.title_size else '%spt' % (scale*32)
         value_size = self.value_size if self.value_size else '%spt' % (scale*48)
         tick_size = self.tick_size if self.tick_size else '%spt' % (scale*18)
@@ -760,7 +764,7 @@ class Dial(ValueIndicator):
     def _text_height(self, size: str) -> float:
         # Font sizes are in screen units, so convert them with the
         # resolution the dial would have if it filled the plot.
-        width, height = self.width or self.height, self.height
+        width, height = self._size()
         return self._font_px(size)*1.2*2/min(width, height)
 
     def _value_y(self, start: float, end: float) -> float:
@@ -779,7 +783,7 @@ class Dial(ValueIndicator):
         value_bottom = self._value_y(start, end) - self._text_height(self._font_sizes()[1])
         ymin = min(ys.min(), value_bottom)
 
-        width, height = self.width or self.height, self.height
+        width, height = self._size()
         pad = 0.03
         units = max((xmax-xmin+2*pad)/width, (ymax-ymin+2*pad)/height)
         cx, cy = (xmin+xmax)/2, (ymin+ymax)/2
