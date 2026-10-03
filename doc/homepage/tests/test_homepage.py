@@ -224,3 +224,64 @@ def test_docs_links_are_absolute_and_versioned(home: Page) -> None:
     internal = [h for h in hrefs if h.startswith('/')]
     assert internal, 'expected some site-internal links'
     assert all(h == '/' or h.startswith('/en/docs/') for h in internal), internal
+
+
+# What gh-pages serves at /PyodideServiceWorker.js today, trimmed to the behaviour that
+# matters: it claims every page and answers from its cache first.
+LEGACY_WORKER = """
+self.addEventListener('install', (e) => self.skipWaiting())
+self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()))
+self.addEventListener('fetch', (e) => e.respondWith((async () => {
+  const cache = await caches.open('Panel-1.9.4')
+  return (await cache.match(e.request)) || fetch(e.request)
+})()))
+"""
+
+
+@pytest.mark.parametrize('script', ['/PyodideServiceWorker.js', '/pyodide/serviceWorker.js'])
+def test_legacy_service_workers_retire_themselves(page: Page, site: str, script: str) -> None:
+    """A worker left behind by the gh-pages site must give way to the retiring one on update."""
+    legacy = {'active': True}
+
+    def serve(route):
+        if legacy['active']:
+            route.fulfill(body=LEGACY_WORKER, content_type='text/javascript')
+        else:
+            route.continue_()
+
+    page.context.route(f'**{script}', serve)
+    page.goto(site, wait_until='networkidle')
+    page.evaluate(
+        """async (script) => {
+            await (await caches.open('Panel-1.9.4')).put('/stale', new Response('old site'))
+            const registration = await navigator.serviceWorker.register(script)
+            const worker = registration.installing || registration.waiting || registration.active
+            if (worker.state !== 'activated') {
+                await new Promise((resolve) => worker.addEventListener('statechange', () => {
+                    if (worker.state === 'activated') resolve()
+                }))
+            }
+        }""",
+        script,
+    )
+
+    legacy['active'] = False
+    page.evaluate('async () => (await navigator.serviceWorker.getRegistrations())[0].update()')
+
+    # The retiring worker reloads the pages it controlled, so poll in short evaluations.
+    def state() -> list:
+        try:
+            return page.evaluate(
+                """async () => [
+                    (await navigator.serviceWorker.getRegistrations()).length,
+                    (await caches.keys()).filter((name) => name.startsWith('Panel')),
+                ]"""
+            )
+        except Exception:
+            return [-1, ['navigating']]
+
+    for _ in range(50):
+        if state() == [0, []]:
+            break
+        page.wait_for_timeout(200)
+    assert state() == [0, []]

@@ -138,6 +138,8 @@ doc/homepage/dist-ssr/
 /tmp
 .devcontainer/*
 pyodide/
+# The homepage's retirement worker for the old /pyodide/ scope.
+!doc/homepage/public/pyodide/
 script.*
 doc/_build/*
 doc/gallery/*

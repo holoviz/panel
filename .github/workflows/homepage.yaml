@@ -93,19 +93,19 @@ jobs:
         run: |
           aws s3 sync $DRYRUN --delete dist/_home/ "s3://$BUCKET/_home/" \
             --cache-control max-age=31536000,public
-      - name: Upload root files
+      # Includes /PyodideServiceWorker.js and /pyodide/serviceWorker.js, which retire the
+      # workers the old gh-pages site registered.
+      - name: Upload unhashed files
         run: |
-          for f in dist/*; do
-            [ -f "$f" ] && [ "$f" != dist/index.html ] || continue
-            aws s3 cp $DRYRUN "$f" "s3://$BUCKET/${f#dist/}" --cache-control max-age=300,public
-          done
+          aws s3 cp $DRYRUN --recursive dist/ "s3://$BUCKET/" --exclude "_home/*" --exclude index.html \
+            --cache-control max-age=300,public
           aws s3 cp $DRYRUN dist/index.html "s3://$BUCKET/index.html" --cache-control max-age=300,public
       # /_home/ needs no invalidation: its filenames change whenever their content does.
       - name: Invalidate CloudFront
         if: env.DRYRUN == ''
         run: |
           paths=("/")
-          for f in dist/*; do
-            [ -f "$f" ] && paths+=("/${f#dist/}")
-          done
+          while IFS= read -r f; do
+            paths+=("/${f#dist/}")
+          done < <(find dist -type f -not -path 'dist/_home/*')
           aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_ID" --paths "${paths[@]}"
