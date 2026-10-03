@@ -130,6 +130,9 @@ discover/
 node_modules
 # The homepage's SSR bundle exists only to feed scripts/prerender.mjs; dist/ is already ignored.
 doc/homepage/dist-ssr/
+# Re-include homepage sources caught by the Python lib/ and nbsite doc/**/*.json rules above.
+!doc/homepage/*.json
+!doc/homepage/src/lib/
 .bokeh
 /tmp
 .devcontainer/*

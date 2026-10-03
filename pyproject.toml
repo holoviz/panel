@@ -214,7 +214,7 @@ include_trailing_comma = true
 
 [tool.codespell]
 ignore-words-list = "nd,doubleclick,ser"
-skip = "doc/generate_modules.py,examples/reference/templates/FastGridTemplate.ipynb,panel/.eslintrc.js,panel/package-lock.json,panel/package.json"
+skip = "doc/generate_modules.py,examples/reference/templates/FastGridTemplate.ipynb,panel/.eslintrc.js,panel/package-lock.json,panel/package.json,doc/homepage/package-lock.json"
 write-changes = true
 
 [tool.pytest.ini_options]
