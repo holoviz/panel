@@ -153,6 +153,15 @@ class Serve(_BkServe):
                    "to the title to show on the Multi Page App index page."
                    ),
         )),
+        ('--page-config', Argument(
+            metavar="JSON",
+            action='store',
+            type=str,
+            help=("Theme, logo and title of the index, login, logout and "
+                  "error pages, as a JSON string or the path to a JSON file "
+                  "with the keys theme_config, dark_theme, logo, title, "
+                  "favicon, site_url, css_files and raw_css."),
+        )),
         ('--static-dirs', Argument(
             metavar="KEY=VALUE",
             nargs='+',
@@ -498,6 +507,9 @@ class Serve(_BkServe):
             for item in args.index_titles:
                 slug, title = item.split('=', 1)
                 config.index_titles[slug] = title
+
+        if args.page_config:
+            config.page_config = args.page_config
 
         config.global_loading_spinner = args.global_loading_spinner
         config.reuse_sessions = args.reuse_sessions

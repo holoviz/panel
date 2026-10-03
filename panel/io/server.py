@@ -72,6 +72,7 @@ from .document import (  # noqa
 from .liveness import LivenessHandler
 from .loading import _loading_css_classes
 from .logging import LOG_SESSION_CREATED
+from .pages import page_theme
 from .reload import record_modules
 from .resources import (
     BASE_TEMPLATE, CDN_DIST, COMPONENT_PATH, DIST_DIR, ERROR_TEMPLATE,
@@ -658,7 +659,7 @@ def render_index_page(
     root = os.path.dirname(t.cast('str', bokeh.server.views.__file__))
     template = Loader(root).load(index or 'app_index.html')
     return template.generate(
-        prefix=prefix, items=items, PANEL_CDN=CDN_DIST
+        prefix=prefix, items=items, PANEL_CDN=CDN_DIST, page=page_theme
     ).decode('utf-8')
 
 
@@ -1047,6 +1048,7 @@ class RootHandler(LoginUrlMixin, BkRootHandler):
 
     def render(self, *args, **kwargs):
         kwargs['PANEL_CDN'] = CDN_DIST
+        kwargs['page'] = page_theme
         return super().render(*args, **kwargs)
 
 toplevel_patterns[0] = (r'/?', RootHandler)

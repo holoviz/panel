@@ -37,6 +37,7 @@ from markupsafe import Markup
 
 from ..config import config, panel_extension as extension
 from ..util import _descendents, isurl, url_path
+from .pages import page_theme
 from .state import state
 
 if t.TYPE_CHECKING:
@@ -91,6 +92,9 @@ _env.lstrip_blocks = True
 _env.filters['json'] = lambda obj: Markup(json.dumps(obj, cls=json_dumps))
 _env.filters['conffilter'] = conffilter
 _env.filters['sorted'] = sorted
+# A global so that user supplied auth, logout and error templates can use the
+# page theme without every handler passing it.
+_env.globals['page'] = page_theme
 
 @functools.cache
 def parse_template(*args, **kwargs):

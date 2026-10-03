@@ -336,6 +336,13 @@ class _config(_base_config):
     _index_titles = param.Dict(default={}, doc="""
         Custom titles to use for Multi Page Apps index page.""")
 
+    _page_config = param.Dict(default={}, doc="""
+        Theming of the pages Panel serves outside of applications, i.e.
+        the index, login, logout and error pages. Mirrors the panel.ui
+        Page parameters and accepts the keys 'theme_config', 'dark_theme',
+        'logo', 'title', 'favicon', 'site_url', 'css_files' and 'raw_css'.
+        May also be set to a JSON string or the path to a JSON file.""")
+
     _basic_auth = param.ClassSelector(default=None, class_=(dict, str), allow_None=True, doc="""
         Password, dictionary with a mapping from username to password
         or filepath containing JSON to use with the basic auth
@@ -395,7 +402,7 @@ class _config(_base_config):
         'oauth_encryption_key', 'oauth_extra_params', 'npm_cdn',
         'layout_compatibility', 'oauth_refresh_tokens', 'oauth_guest_endpoints',
         'oauth_optional', 'admin', 'index_titles', 'disable_validation',
-        'pyodide_cdn_root'
+        'pyodide_cdn_root', 'page_config'
     }
 
     _truthy = ['True', 'true', '1', True, 1]
@@ -577,6 +584,10 @@ class _config(_base_config):
             return self.param.template.names[value]
         return value
 
+    def _page_config_hook(self, value):
+        from .io.pages import load_page_config
+        return load_page_config(value)
+
     def _design_hook(self, value):
         if isinstance(value, str):
             from .theme import resolve_design
@@ -646,6 +657,13 @@ class _config(_base_config):
     @property
     def index_titles(self):
         return self._index_titles
+
+    @property
+    def page_config(self):
+        if 'PANEL_PAGE_CONFIG' in os.environ:
+            from .io.pages import load_page_config
+            return load_page_config(os.environ['PANEL_PAGE_CONFIG'])
+        return self._page_config
 
     @property
     def inline(self):
