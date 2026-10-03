@@ -1662,6 +1662,40 @@ def test_tabulator_theming(page, df_mixed, df_mixed_as_string, theme):
     assert response.status
 
 
+def test_tabulator_hidden_until_stylesheet_loads(page, df_mixed):
+    # The theme CSS is also linked from the document head, and whether the
+    # table then requests it again depends on the browser cache, so hold a
+    # stylesheet only the table links.
+    held = []
+    page.route('https://example.com/held.css', lambda route: held.append(route))
+    widget = Tabulator(df_mixed, stylesheets=['https://example.com/held.css'])
+
+    serve_component(page, widget, wait=False)
+
+    table = page.locator('.pnx-tabulator.tabulator')
+    expect(page.locator('.tabulator-row')).to_have_count(len(df_mixed))
+    # wait_until waits for the network to idle, which the held request prevents.
+    for _ in range(50):
+        if held:
+            break
+        page.wait_for_timeout(100)
+    assert held
+    page.wait_for_timeout(200)
+    expect(table).to_have_css('visibility', 'hidden')
+
+    for route in held:
+        route.fulfill(content_type='text/css', body='.tabulator-cell { padding: 12px; }')
+
+    expect(table).to_have_css('visibility', 'visible')
+    widths = table.locator('.tabulator-col').evaluate_all(
+        'cols => cols.map(c => c.getBoundingClientRect().width)'
+    )
+    page.wait_for_timeout(200)
+    assert table.locator('.tabulator-col').evaluate_all(
+        'cols => cols.map(c => c.getBoundingClientRect().width)'
+    ) == widths
+
+
 def test_tabulator_selection_selectable_by_default(page, df_mixed):
     widget = Tabulator(df_mixed)
 
