@@ -150,7 +150,6 @@ myst_enable_extensions = ["colon_fence", "deflist"]
 gallery_endpoint = 'panel-gallery-dev' if is_dev else 'panel-gallery'
 gallery_url = f'https://{gallery_endpoint}.holoviz-demo.anaconda.com'
 jlite_url = 'https://holoviz-dev.github.io/panelite-dev/lab' if is_dev else 'https://panelite.holoviz.org/lab'
-pyodide_url = f"{DOCS_ORIGIN}/en/docs/{'dev' if is_dev else 'latest'}/pyodide"
 
 rediraffe_redirects = {
     # Removal of the developer testing page
@@ -293,7 +292,6 @@ html_context.update({
     "default_mode": "light",
     "panelite_endpoint": jlite_url,
     "gallery_url": gallery_url,
-    "pyodide_url": pyodide_url
 })
 
 nbbuild_patterns_to_take_along = ["simple.html", "*.json", "json_*"]
