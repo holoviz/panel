@@ -225,19 +225,34 @@ class BaseTable(ReactiveData, Widget):
     def _validate(self, *events: param.parameterized.Event):
         if self.value is None:
             return
+        import pandas as pd
+        if not isinstance(self.value, pd.DataFrame):
+            raise ValueError(
+                f"Tabulator only accepts a pandas DataFrame as its value. "
+                f"Got type {type(self.value).__name__!r} instead. "
+                f"Convert your data to a pandas DataFrame first, e.g. "
+                f"`pd.DataFrame(your_data)`. "
+                f"See https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html"
+            )
         cols = self.value.columns
         if len(cols) != len(cols.drop_duplicates()):
             raise ValueError('Cannot display a pandas.DataFrame with '
                              'duplicate column names.')
 
+
     def _get_fields(self) -> list[str]:
+        import pandas as pd
         indexes = self.indexes
-        col_names = [] if self.value is None else list(self.value.columns)
+        if self.value is None or not isinstance(self.value, pd.DataFrame):
+            col_names = []
+        else:
+            col_names = list(self.value.columns)
         if not self.hierarchical or len(indexes) == 1:
             col_names = indexes + col_names
         else:
             col_names = indexes[-1:] + col_names
         return col_names
+
 
     def _get_columns(self) -> list[TableColumn]:
         if self.value is None:
@@ -752,7 +767,7 @@ class BaseTable(ReactiveData, Widget):
     @property
     def indexes(self):
         import pandas as pd
-        if self.value is None or not self.show_index:
+        if self.value is None or not self.show_index or not isinstance(self.value, pd.DataFrame):
             return []
         elif isinstance(self.value.index, pd.MultiIndex):
             indexes = [
@@ -1427,6 +1442,9 @@ class Tabulator(BaseTable):
         Ensure large tables automatically enable remote pagination.
         """
         if self.value is None or self._explicit_pagination:
+            return
+        import pandas as pd
+        if not isinstance(self.value, pd.DataFrame):
             return
         with param.parameterized.discard_events(self):
             if self.hierarchical:
