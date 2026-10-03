@@ -18,3 +18,10 @@ const page = template.replace('<!--app-head-->', head).replace('<!--app-html-->'
 
 await writeFile(resolve(root, 'dist/index.html'), page)
 console.log(`prerendered dist/index.html (${(page.length / 1024).toFixed(1)} kB)`)
+
+// Vite copies public/ verbatim, so the 404 page's docs links need the same retargeting.
+const docs = process.env.VITE_DOCS_PATH
+if (docs) {
+  const notFound = resolve(root, 'dist/404.html')
+  await writeFile(notFound, (await readFile(notFound, 'utf8')).replaceAll('/en/docs/latest', docs))
+}

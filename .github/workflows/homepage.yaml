@@ -1,0 +1,111 @@
+name: homepage
+
+# Builds doc/homepage and publishes it to the root of the panel-dev.holoviz.org staging
+# site. It shares the bucket with the docs workflow, which owns /en/docs/**, /switcher.json,
+# /sitemap.xml and /robots.txt, so nothing here may sync with --delete outside /_home/.
+
+on:
+  push:
+    branches:
+      - main
+      # Staging previews for the homepage PR; drop once it is merged.
+      - feat/homepage
+    paths:
+      - "doc/homepage/**"
+      - ".github/workflows/homepage.yaml"
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Site to deploy to"
+        type: choice
+        options:
+          - dev
+          - dryrun
+        required: true
+        default: dryrun
+
+defaults:
+  run:
+    shell: bash -e {0}
+
+permissions: {}
+
+# Never cancel a deploy halfway through its uploads.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+env:
+  BUCKET: panel-dev.holoviz.org
+  CLOUDFRONT_ID: E148PSI2XBBCSY
+  # panel-dev has no latest docs build, only dev.
+  VITE_DOCS_PATH: /en/docs/dev
+
+jobs:
+  pixi_lock:
+    name: Pixi lock
+    runs-on: ubuntu-latest
+    steps:
+      - uses: holoviz-dev/holoviz_tasks/pixi-lock@11eb638302f76ec64217e2eeddfb11df1f788b54 # v1.0.2
+
+  homepage_build:
+    name: Build homepage
+    needs: [pixi_lock]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@11eb638302f76ec64217e2eeddfb11df1f788b54 # v1.0.2
+        with:
+          environments: homepage
+          install: false
+          download-data: false
+      - name: Typecheck
+        run: pixi run -e homepage homepage-typecheck
+      - name: Build
+        run: pixi run -e homepage homepage-build
+      - name: Test
+        run: |
+          pixi run -e homepage playwright install --with-deps chromium
+          pixi run -e homepage homepage-test
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: homepage
+          if-no-files-found: error
+          path: doc/homepage/dist
+
+  homepage_publish:
+    name: Publish homepage
+    needs: [homepage_build]
+    runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_DEFAULT_REGION: us-east-1
+      DRYRUN: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'dryrun' && '--dryrun' || '' }}
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: homepage
+          path: dist/
+      # Hashed assets go up before the HTML that references them, so a visitor never gets
+      # an index.html pointing at files that are not there yet.
+      - name: Upload hashed assets
+        run: |
+          aws s3 sync $DRYRUN --delete dist/_home/ "s3://$BUCKET/_home/" \
+            --cache-control max-age=31536000,public
+      - name: Upload root files
+        run: |
+          for f in dist/*; do
+            [ -f "$f" ] && [ "$f" != dist/index.html ] || continue
+            aws s3 cp $DRYRUN "$f" "s3://$BUCKET/${f#dist/}" --cache-control max-age=300,public
+          done
+          aws s3 cp $DRYRUN dist/index.html "s3://$BUCKET/index.html" --cache-control max-age=300,public
+      # /_home/ needs no invalidation: its filenames change whenever their content does.
+      - name: Invalidate CloudFront
+        if: env.DRYRUN == ''
+        run: |
+          paths=("/")
+          for f in dist/*; do
+            [ -f "$f" ] && paths+=("/${f#dist/}")
+          done
+          aws cloudfront create-invalidation --distribution-id "$CLOUDFRONT_ID" --paths "${paths[@]}"

@@ -9,7 +9,8 @@
 
 import {asset} from './assets'
 
-export const DOCS = '/en/docs/latest'
+// The panel-dev staging site has no latest build, so its homepage links into dev.
+export const DOCS = import.meta.env.VITE_DOCS_PATH ?? '/en/docs/latest'
 export const GITHUB = 'https://github.com/holoviz/panel'
 
 export const nav = [
