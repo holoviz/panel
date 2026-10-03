@@ -1,9 +1,45 @@
 # App Gallery
 
-These Panel applications demonstrate what you can build with Panel and how to do it. Click on each thumbnail to see the app running live, and click on "See source" to look at how each of the components are configured and put together. The source is fully runnable in your browser thanks to [WASM & Pyodide](../how_to/wasm/index.md); just press the <span style="color:green">▶</span> button on the first code cell to run all the cells.
+These Panel applications demonstrate what you can build with Panel and how to do it. Click on a thumbnail to see the app running live, and click on "See source" to look at how each of the components are configured and put together. The source is fully runnable in your browser thanks to [WASM & Pyodide](../how_to/wasm/index.md); just press the <span style="color:green">▶</span> button on the first code cell to run all the cells.
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
+
+:::{grid-item-card} Gaia Million Star Atlas
+
+```{image} https://assets.holoviz.org/panel/gallery/gaia_million_star_atlas.png
+:target: gaia_million_star_atlas.html
+:width: 100%
+```
+
+A million Gaia DR3 measurements, brushed across the sky map, the color–magnitude diagram and the latitude distribution at once.
++++
+[See source](gaia_million_star_atlas)
+:::
+
+:::{grid-item-card} Model Serving Monitor
+
+```{image} https://assets.holoviz.org/panel/gallery/model_serving_monitor.png
+:target: model_serving_monitor.html
+:width: 100%
+```
+
+A live operations view for a simulated model service, with latency, error rate, drift, threshold alerts and replica scaling.
++++
+[See source](model_serving_monitor)
+:::
+
+:::{grid-item-card} Storm Surge Studio
+
+```{image} https://assets.holoviz.org/panel/gallery/storm_surge_studio.png
+:target: storm_surge_studio.html
+:width: 100%
+```
+
+Steer a synthetic coastal storm and watch the flood extent, shoreline profile and exposure estimates update in place.
++++
+[See source](storm_surge_studio)
+:::
 
 :::{grid-item-card} Portfolio Optimizer
 
@@ -36,7 +72,7 @@ Applying face detection and other image transforms on your webcam input using sc
 :width: 100%
 ```
 
-Visually explore a dataset of US Windturbines.
+Explore the US Wind Turbine Database, with a map selection filtering the table and a Vizzu chart.
 +++
 [See source](windturbines)
 :::
@@ -60,7 +96,7 @@ Analyze a stock portfolio using Plotly and Tabulator components.
 :width: 100%
 ```
 
-Visually explore the worlds glaciers in this application built in collaboration with OGGM.
+Visually explore the world's glaciers in this application built in collaboration with OGGM.
 +++
 [See source](glaciers)
 :::
@@ -96,7 +132,7 @@ NYC Taxi trips visualized and animated using Deck.GL.
 :width: 100%
 ```
 
-Visualizing the Gapminders data using the most common Python plotting libraries.
+The Gapminder data rendered with Matplotlib, Plotly, Altair and hvPlot, all driven by the same widgets.
 +++
 [See source](gapminders)
 :::
@@ -113,6 +149,18 @@ Visualizing the surface of Mount St. Helens using VTK and linked widgets to cont
 [See source](vtk_interactive)
 :::
 
+:::{grid-item-card} VTK: Warped Surface
+
+```{image} https://assets.holoviz.org/panel/gallery/vtk_warp.png
+:target: https://|gallery-endpoint|.holoviz-demo.anaconda.com/vtk_warp
+:width: 100%
+```
+
+Animate a warped PyVista surface with a `Player` widget.
++++
+[See source](vtk_warp)
+:::
+
 :::{grid-item-card} Penguin Crossfiltering
 
 ```{image} https://assets.holoviz.org/panel/gallery/penguin_crossfilter.png
@@ -123,6 +171,18 @@ Visualizing the surface of Mount St. Helens using VTK and linked widgets to cont
 Palmer Penguins data visualized using a set of linked cross-filtering plots.
 +++
 [See source](penguin_crossfilter)
+:::
+
+:::{grid-item-card} Penguin KMeans Clustering
+
+```{image} https://assets.holoviz.org/panel/gallery/penguin_kmeans.png
+:target: https://|gallery-endpoint|.holoviz-demo.anaconda.com/penguin_kmeans
+:width: 100%
+```
+
+k-means clustering of the Palmer Penguins dataset, with brushing on the Altair chart filtering a linked table.
++++
+[See source](penguin_kmeans)
 :::
 
 :::{grid-item-card} Deck.GL: Game of Life
@@ -144,7 +204,7 @@ Game of Life simulation rendered on a 3D plane using Deck.gl.
 :width: 100%
 ```
 
-Use the hvPlot explorer to interactive visualize your dataset.
+Use the hvPlot explorer to interactively visualize your own dataset.
 +++
 [See source](hvplot_explorer)
 :::
@@ -289,15 +349,18 @@ The gluoNNet aviation tracking application visualizes airplane positioning (ADS-
 
 altair_brushing
 deckgl_game_of_life
+gaia_million_star_atlas
 gapminders
 glaciers
 hvplot_explorer
 iris_kmeans
+model_serving_monitor
 nyc_deckgl
 penguin_crossfilter
 penguin_kmeans
 portfolio_analyzer
 portfolio_optimizer
+storm_surge_studio
 streaming_videostream
 vtk_interactive
 vtk_slicer
