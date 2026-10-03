@@ -15,7 +15,7 @@ Panel will now let the user access all endpoints without being redirected to the
 ```python
 import panel as pn
 
-pn.extension(template='material')
+pn.extension(template='page')
 
 pn.state.template.title = 'Optional Auth'
 
@@ -42,7 +42,7 @@ def authorize(user_info, path):
         return '/login'
     return True
 
-pn.extension(authorize_callback=authorize, template='material')
+pn.extension(authorize_callback=authorize, template='page')
 
 pn.state.template.title = 'Admin'
 

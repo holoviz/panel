@@ -77,7 +77,7 @@ class LeafletHeatMap(ReactiveHTML):
         'https://cdn.jsdelivr.net/npm/leaflet.heat@0.2.0/dist/leaflet-heat.min.js'
     ]
 
-pn.extension('leaflet', template='bootstrap')
+pn.extension('leaflet', template='page')
 ```
 
 This example demonstrates how to build a custom component wrapping leaflet.js.

@@ -7,7 +7,7 @@ import holoviews as hv
 import numpy as np
 import holoviews.plotting.bokeh
 
-pn.extension(loading_spinner='dots', loading_color='#00aa41', template='bootstrap')
+pn.extension(loading_spinner='dots', loading_color='#00aa41', template='page')
 hv.extension('bokeh')
 ```
 

@@ -18,7 +18,7 @@ class MaterialComponent(ReactComponent):
         }
     }
 
-pn.extension(template='material')
+pn.extension(template='page')
 ```
 
 This example demonstrates how to wrap Material UI components using `ReactComponent`.
