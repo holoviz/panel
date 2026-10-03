@@ -119,6 +119,10 @@ class ChatInterface(ChatFeed):
     user = param.String(default="User", doc="""
         Name of the ChatInterface user.""")
 
+    widget_placeholder = param.String(default="Send a message", doc="""
+        The placeholder text to display in the default input widget.
+        Has no effect when a custom widget is provided via the `widgets` parameter.""")
+
     widgets = param.ClassSelector(class_=(WidgetBase, list), allow_refs=False, doc="""
         Widgets to use for the input. If not provided, defaults to
         `[TextInput]`.""")
@@ -172,7 +176,8 @@ class ChatInterface(ChatFeed):
     def __init__(self, *objects, **params):
         widgets = params.get("widgets")
         if widgets is None:
-            params["widgets"] = [self._input_type(placeholder="Send a message")]
+            placeholder = params.get("widget_placeholder", "Send a message")
+            params["widgets"] = [self._input_type(placeholder=placeholder)]
         elif not isinstance(widgets, list):
             params["widgets"] = [widgets]
         active = params.pop("active", None)
@@ -208,6 +213,16 @@ class ChatInterface(ChatFeed):
         """
         if self.show_button_name is None:
             self.show_button_name = self.width is None or self.width >= 400
+
+    @param.depends("widget_placeholder", watch=True)
+    def _update_widget_placeholder(self):
+        """
+        Update the placeholder of the default input widget when
+        `widget_placeholder` changes after construction.
+        """
+        for widget in self._widgets.values():
+            if isinstance(widget, self._input_type) and hasattr(widget, "placeholder"):
+                widget.placeholder = self.widget_placeholder
 
     def _init_button_data(self):
         default_button_properties = {

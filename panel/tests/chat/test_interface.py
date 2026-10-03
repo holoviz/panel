@@ -59,6 +59,29 @@ class TestChatInterface:
         assert isinstance(chat_interface._widgets["FileInput"], FileInput)
         assert chat_interface.active == 0
 
+    def test_widget_placeholder_default(self, chat_interface):
+        """Default widget has 'Send a message' placeholder (#6357)."""
+        active_widget = chat_interface.active_widget
+        assert active_widget.placeholder == "Send a message"
+
+    def test_widget_placeholder_custom(self):
+        """Custom placeholder is passed to the default input widget (#6357)."""
+        chat_interface = ChatInterface(widget_placeholder="Type here...")
+        assert chat_interface.active_widget.placeholder == "Type here..."
+
+    def test_widget_placeholder_ignored_with_custom_widget(self):
+        """widget_placeholder has no effect when a custom widget is supplied (#6357)."""
+        custom_widget = ChatAreaInput(placeholder="My own placeholder")
+        chat_interface = ChatInterface(
+            widgets=[custom_widget], widget_placeholder="Should be ignored"
+        )
+        assert chat_interface.active_widget.placeholder == "My own placeholder"
+
+    def test_widget_placeholder_dynamic_update(self, chat_interface):
+        """Changing widget_placeholder after construction updates the default widget (#6357)."""
+        chat_interface.widget_placeholder = "New placeholder"
+        assert chat_interface.active_widget.placeholder == "New placeholder"
+
     def test_active_in_constructor(self):
         widgets = [TextInput(label="Text"), FileInput()]
         chat_interface = ChatInterface(widgets=widgets, active=1)
