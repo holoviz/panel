@@ -277,6 +277,12 @@ nbsite_pyodide_conf = {
     'lockfile': True,
     'requirements': [bokeh_req, panel_req],
     'requires': get_requirements(),
+    # Every version is published side by side on one origin (holoviz-dev/nbsite#373).
+    'pwa_scope_caches': True,
+    'pwa_fetch_cache': 'no-cache',
+    'pwa_manifest_scope': './',
+    # Re-publishing a version must still replace the worker returning visitors have.
+    'pwa_cache_version': f"{version}+{os.environ['GITHUB_RUN_ID']}" if 'GITHUB_RUN_ID' in os.environ else None,
 }
 
 templates_path += [
