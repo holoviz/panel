@@ -97,7 +97,7 @@ html_theme_options = {
     ],
     "pygments_light_style": "material",
     "pygments_dark_style": "material",
-    "header_links_before_dropdown": 5,
+    "header_links_before_dropdown": 6,
     'secondary_sidebar_items': [
         "github-stars-button",
         "panelitelink",

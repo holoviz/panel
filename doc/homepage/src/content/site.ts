@@ -15,9 +15,9 @@ export const GITHUB = 'https://github.com/holoviz/panel'
 
 export const nav = [
   {label: 'Docs', href: `${DOCS}/`},
-  {label: 'Components', href: `${DOCS}/reference/index.html`},
   {label: 'How-to', href: `${DOCS}/how_to/index.html`},
-  {label: 'Examples', href: `${DOCS}/gallery/index.html`},
+  {label: 'Components', href: `${DOCS}/reference/index.html`},
+  {label: 'App Gallery', href: `${DOCS}/gallery/index.html`},
   {label: 'API', href: `${DOCS}/api/index.html`},
 ]
 
@@ -270,7 +270,7 @@ export const capabilities = [
   {
     title: 'Runs with no server at all',
     body:
-      'panel convert compiles an app to WebAssembly and runs it in the browser through Pyodide, which is how the component reference pages in these docs run live.',
+      'panel convert compiles an app to WebAssembly and runs it in the browser through Pyodide, which is how the example apps in these docs run without a server.',
     href: `${DOCS}/how_to/wasm/index.html`,
   },
   {
@@ -283,8 +283,8 @@ export const capabilities = [
 
 /**
  * Full-window screenshots of the served gallery apps, taken by scripts/thumbnails.py. Links
- * go to the docs gallery pages rather than the panel-gallery deployment, which is currently
- * returning 404 for every path. The first entry is the featured tile.
+ * go to the docs gallery pages rather than the panel-gallery deployment, which does not serve
+ * the newest apps yet. The first entry is the featured tile.
  */
 const galleryPage = (name: string) => `${DOCS}/gallery/${name}.html`
 
