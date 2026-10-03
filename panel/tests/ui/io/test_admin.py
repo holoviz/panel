@@ -8,7 +8,9 @@ from panel.config import config
 from panel.io.state import state
 from panel.tests.util import serve_and_wait
 
-pytestmark = pytest.mark.ui
+# The admin panel renders panel.ui components, whose registration cannot be
+# undone, so these tests have to run after the classic suite.
+pytestmark = [pytest.mark.ui, pytest.mark.usefixtures('panel_ui')]
 
 PASSWORD = 'admin-secret'
 

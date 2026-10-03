@@ -22,6 +22,10 @@ from panel.io.admin_auth import (
 from panel.io.state import set_curdoc, state
 from panel.tests.util import serve_and_wait
 
+# The admin panel renders panel.ui components, whose registration cannot be
+# undone, so these tests have to run after the classic suite.
+pytestmark = pytest.mark.usefixtures('panel_ui')
+
 PASSWORD = 'admin-secret'
 
 ADMIN_CONFIG = ('_admin', '_admin_password', '_admin_users', '_cookie_secret', '_page_config', 'admin_plugins')
