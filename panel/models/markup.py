@@ -12,16 +12,26 @@ from bokeh.models.widgets import Markup
 
 
 class HTMLStreamEvent(ModelEvent):
+    """
+    Replaces the characters between start and end of the unescaped
+    text with the (escaped) patch, producing the given stream_version
+    of the text.
+    """
 
     event_name = 'html_stream'
 
-    def __init__(self, model, patch=None, start=None):
+    def __init__(self, model, patch=None, start=None, end=None, version=None):
         self.patch = patch
         self.start = start
+        self.end = end
+        self.version = version
         super().__init__(model=model)
 
     def event_values(self) -> dict[str, t.Any]:
-        return dict(super().event_values(), patch=self.patch, start=self.start)
+        return dict(
+            super().event_values(), patch=self.patch, start=self.start,
+            end=self.end, version=self.version
+        )
 
 
 class HTML(Markup):
@@ -32,6 +42,10 @@ class HTML(Markup):
     events = Dict(String, List(String))
 
     run_scripts = Bool(True, help="Whether to run scripts defined within the HTML")
+
+    stream_version = Int(0, help="""
+        Number of HTMLStreamEvents applied to the text, allowing the
+        frontend to apply events in order and exactly once.""")
 
 
 class JSON(Markup):
