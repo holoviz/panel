@@ -590,7 +590,7 @@ def _descendents(class_: type, concrete: bool = False) -> list[type]:
         x = q.pop(0)
         out.insert(0, x)
         try:
-            subclasses = x.__subclasses__()
+            subclasses: list[type] = x.__subclasses__()
         except TypeError:
             # TypeError raised when __subclasses__ is called on unbound methods,
             # on `type` for example.
