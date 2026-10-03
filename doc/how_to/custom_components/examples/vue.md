@@ -63,7 +63,7 @@ class BootstrapVueComponent(BasicVueComponent):
         "https://unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.min.css",
     ]
 
-pn.extension('vue', sizing_mode="stretch_width", template="bootstrap")
+pn.extension('vue', sizing_mode="stretch_width", template="page")
 ```
 
 In this example we are building a Vue.js component containing an input field and a button that will update the `value` parameter of the `PDBInput` component:

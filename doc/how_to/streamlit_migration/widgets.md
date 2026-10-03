@@ -40,7 +40,7 @@ You will find Panel's input *widgets* in the `pn.ui` namespace.
 ```python
 import panel as pn
 
-pn.extension(sizing_mode="stretch_width", template="bootstrap")
+pn.extension(sizing_mode="stretch_width", template="page")
 
 bins = pn.ui.IntSlider(value=20, start=10, end=30, step=1, label="Bins")
 

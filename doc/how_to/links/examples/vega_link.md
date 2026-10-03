@@ -3,7 +3,7 @@
 ```{pyodide}
 import panel as pn
 
-pn.extension('vega', template='bootstrap')
+pn.extension('vega', template='page')
 ```
 
 This example demonstrates how to link Panel widgets to a Vega pane by editing the Vega spec using callbacks and triggering updates in the plot.

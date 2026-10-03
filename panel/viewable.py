@@ -439,7 +439,27 @@ class ServableMixin:
                 for obj in self.select():
                     if not obj.design:
                         obj.design = template.design
-                if area == 'main':
+                from .template.base import BaseTemplate
+                if not isinstance(template, BaseTemplate):
+                    # Page-like templates hold areas as Children lists, which
+                    # must be reassigned so a render already in flight updates.
+                    if isinstance(self, type(template)):
+                        raise RuntimeError(
+                            f'Cannot mark a {type(self).__name__} as servable while '
+                            'it is also set as `pn.config.template`. Either serve '
+                            'the page explicitly OR set `pn.config.template`, not both.'
+                        )
+                    areas = [
+                        name for name, p in template.param.objects().items()
+                        if isinstance(p, Children) and not name.startswith('_')
+                    ]
+                    if area not in areas:
+                        raise ValueError(
+                            f'{type(template).__name__} has no {area!r} area to '
+                            f'serve to; valid targets are {areas}.'
+                        )
+                    setattr(template, area, [*getattr(template, area), self])
+                elif area == 'main':
                     template.main.append(self)
                 elif area == 'sidebar':
                     template.sidebar.append(self)

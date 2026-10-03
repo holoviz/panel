@@ -6,7 +6,7 @@ import panel as pn
 
 from panel.reactive import ReactiveHTML
 
-pn.extension(template='bootstrap')
+pn.extension(template='page')
 ```
 
 This example shows how to use the `ReactiveHTML` component to develop a **Drawable Canvas**.

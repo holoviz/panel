@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import panel as pn
 
-pn.extension('deckgl', 'echarts', 'plotly', 'vega', template='material')
+pn.extension('deckgl', 'echarts', 'plotly', 'vega', template='page')
 ```
 
 This example demonstrates **how to efficiently render a number of complex components in ``Tabs``** by using the `dynamic` parameter.

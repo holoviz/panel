@@ -54,7 +54,7 @@ import numpy as np
 
 from matplotlib.figure import Figure
 
-pn.extension(sizing_mode="stretch_width", template="bootstrap")
+pn.extension(sizing_mode="stretch_width", template="page")
 
 data = np.random.normal(1, 1, size=100)
 fig = Figure(figsize=(8,4))
@@ -79,7 +79,7 @@ Here is how to do it
 ````python
 import panel as pn
 
-pn.extension("mathjax", sizing_mode="stretch_width", template="bootstrap")
+pn.extension("mathjax", sizing_mode="stretch_width", template="page")
 
 pn.ui.Markdown(r"""
 # Title

@@ -79,7 +79,7 @@ import numpy as np
 
 from matplotlib.figure import Figure
 
-pn.extension(sizing_mode="stretch_width", template="bootstrap")
+pn.extension(sizing_mode="stretch_width", template="page")
 
 def plot(data, bins):
     fig = Figure(figsize=(8,4))
@@ -150,8 +150,8 @@ import random
 
 import panel as pn
 
-pn.extension(sizing_mode="stretch_width", template="bootstrap")
-pn.state.template.param.update(site="Panel", title="Calculation Runner")
+pn.extension(sizing_mode="stretch_width", template="page")
+pn.state.template.param.update(title="Calculation Runner")
 
 def notify_choice(calculation):
     return f"You chose: {calculation}"
@@ -215,8 +215,8 @@ import random
 
 import panel as pn
 
-pn.extension(template="bootstrap")
-pn.state.template.param.update(site="Panel", title="Calculation Runner")
+pn.extension(template="page")
+pn.state.template.param.update(title="Calculation Runner")
 
 def notify_choice(calculation):
     return f"You chose: {calculation}"
@@ -303,7 +303,7 @@ import time
 
 import panel as pn
 
-pn.extension(sizing_mode="stretch_width", template="bootstrap")
+pn.extension(sizing_mode="stretch_width", template="page")
 
 def model():
     time.sleep(1)

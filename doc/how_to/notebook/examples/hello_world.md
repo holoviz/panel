@@ -3,7 +3,7 @@
 ```python
 import panel as pn
 
-pn.extension(template='fast')
+pn.extension(template='page')
 ```
 
 This application provides a minimal example demonstrating how to write an app in a Markdown file.

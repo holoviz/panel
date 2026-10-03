@@ -87,7 +87,7 @@ def plot(data, bins):
     ax.hist(data, bins=bins)
     return fig
 
-pn.extension(sizing_mode="stretch_width", template="bootstrap")
+pn.extension(sizing_mode="stretch_width", template="page")
 
 data = get_data()
 bins = pn.ui.IntSlider(value=20, start=10, end=30, step=1)
