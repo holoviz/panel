@@ -1662,20 +1662,13 @@ def test_tabulator_theming(page, df_mixed, df_mixed_as_string, theme):
     assert response.status
 
 
-def test_tabulator_hidden_until_theme_stylesheet_loads(page, df_mixed):
-    held, seen = [], []
-
-    # The document head links the theme too and would block the page load,
-    # so only hold the request of the table's own stylesheet that follows it.
-    def hold(route):
-        seen.append(route)
-        if len(seen) == 1:
-            route.continue_()
-        else:
-            held.append(route)
-
-    page.route('**/tabulator_simple.min.css*', hold)
-    widget = Tabulator(df_mixed)
+def test_tabulator_hidden_until_stylesheet_loads(page, df_mixed):
+    # The theme CSS is also linked from the document head, and whether the
+    # table then requests it again depends on the browser cache, so hold a
+    # stylesheet only the table links.
+    held = []
+    page.route('https://example.com/held.css', lambda route: held.append(route))
+    widget = Tabulator(df_mixed, stylesheets=['https://example.com/held.css'])
 
     serve_component(page, widget, wait=False)
 
@@ -1691,7 +1684,7 @@ def test_tabulator_hidden_until_theme_stylesheet_loads(page, df_mixed):
     expect(table).to_have_css('visibility', 'hidden')
 
     for route in held:
-        route.continue_()
+        route.fulfill(content_type='text/css', body='.tabulator-cell { padding: 12px; }')
 
     expect(table).to_have_css('visibility', 'visible')
     widths = table.locator('.tabulator-col').evaluate_all(
