@@ -108,7 +108,8 @@ def render_memray(name, sessions, show_memory_leaks=True, merge_threads=True, re
     return out.read(), ""
 
 def get_profiles(profilers, **kwargs):
-    from ..pane import HTML, Markdown
+    from .admin import _ui
+    ui = _ui()
     profiles = []
     for (path, engine), sessions in profilers.items():
         if not sessions:
@@ -116,8 +117,7 @@ def get_profiles(profilers, **kwargs):
         if engine == 'memray':
             src, style = render_memray(path, sessions, **kwargs)
             if kwargs.get('reporter', 'tree') not in ('flamegraph', 'table'):
-                from ..widgets import Terminal
-                term = Terminal(sizing_mode='stretch_both', margin=0, min_height=600)
+                term = ui.Terminal(sizing_mode='stretch_both', margin=0, min_height=600)
                 term.write(src)
                 profiles.append((path, term))
                 continue
@@ -127,15 +127,13 @@ def get_profiles(profilers, **kwargs):
             src, style = render_pyinstrument(sessions, **kwargs)
         elif engine == 'snakeviz':
             src, style = render_snakeviz(path, sessions)
-        html = HTML(
+        html = ui.HTML(
             f'<iframe srcdoc="{src}" width="100%" height="100%" frameBorder="0" style="{style}"></iframe>',
             sizing_mode='stretch_both',
             margin=0,
             min_height=800
         )
         profiles.append((path, html))
-    if not profiles:
-        profiles.append(('', Markdown('No profiling output available')))
     return profiles
 
 
@@ -145,54 +143,43 @@ def get_sessions(allow=None, deny=None):
 
 
 def profiling_tabs(state, allow=None, deny=[]):
-    from ..layout import (
-        Accordion, Column, Row, Tabs,
-    )
-    from ..widgets import Checkbox, Select
-    tabs = Tabs(
-        *get_profiles(get_sessions(allow, deny)),
-        margin=(0, 5),
+    from .admin import _ui
+    ui = _ui()
+    tabs = ui.Tabs(margin=0, sizing_mode='stretch_width')
+    empty = ui.Alert(
+        'No profiling output available.', severity='info', margin=(0, 0, 15, 0),
         sizing_mode='stretch_width'
     )
-    def update_profiles(*args, **kwargs):
-        tabs[:] = get_profiles(
-            get_sessions(allow, deny), **kwargs
-
-        )
-    state.param.watch(update_profiles, '_profiles')
+    body = ui.Column(margin=0, sizing_mode='stretch_width')
 
     if config.profiler == 'pyinstrument':
-        def update_pyinstrument(*args):
-            update_profiles(timeline=timeline.value, show_all=show_all.value)
-        timeline = Checkbox(label='Enable timeline', margin=(5, 0))
-        timeline.param.watch(update_pyinstrument, 'value')
-        show_all = Checkbox(label='Show All', margin=(5, 0))
-        show_all.param.watch(update_pyinstrument, 'value')
-        config_panel = Row(
-            timeline,
-            show_all,
-            sizing_mode='stretch_width'
-        )
+        options = {
+            'timeline': ui.Switch(label='Timeline'),
+            'show_all': ui.Switch(label='Show all'),
+        }
     elif config.profiler == 'memray':
-        def update_memray(*args):
-            update_profiles(reporter=reporter.value)
-        reporter = Select(label='Reporter', options=['flamegraph', 'table', 'tree'], value='tree')
-        reporter.param.watch(update_memray, 'value')
-        config_panel = reporter
+        options = {
+            'reporter': ui.Select(
+                label='Reporter', options=['flamegraph', 'table', 'tree'], value='tree'
+            )
+        }
     else:
-        config_panel = Row(sizing_mode='stretch_width')
-    return Column(
-        Accordion(
-            ('Config', config_panel),
-            active=[],
-            active_header_background='#444444',
-            header_background='#333333',
-            sizing_mode='stretch_width',
-            margin=0
-        ),
-        tabs,
-        sizing_mode='stretch_width'
-    )
+        options = {}
+
+    def update_profiles(*args):
+        kwargs = {name: widget.value for name, widget in options.items()}
+        tabs[:] = profiles = get_profiles(get_sessions(allow, deny), **kwargs)
+        body[:] = [tabs if profiles else empty]
+
+    for widget in options.values():
+        widget.param.watch(update_profiles, 'value')
+    watcher = state.param.watch(update_profiles, '_profiles')
+    if state.curdoc:
+        state.curdoc.on_session_destroyed(lambda session_context: state.param.unwatch(watcher))
+    update_profiles()
+    if options:
+        return ui.Column(ui.Row(*options.values(), margin=0), body, margin=0, sizing_mode='stretch_width')
+    return body
 
 
 @contextmanager

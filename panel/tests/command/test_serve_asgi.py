@@ -236,6 +236,39 @@ def test_serve_asgi_admin(invoke_asgi):
     assert asgi.core._applications['/admin'] is state._admin_context
 
 
+@pytest.fixture
+def admin_access_cleanup():
+    try:
+        yield
+    finally:
+        config.param.update(_admin_password=None, _admin_users=[])
+
+
+def test_serve_asgi_admin_password(invoke_asgi, admin_access_cleanup):
+    from starlette.testclient import TestClient
+
+    asgi = _panel_asgi(invoke_asgi('--admin', '--admin-password', 'pw'))
+    assert config.admin_password == 'pw'
+    with TestClient(asgi) as client:
+        r = client.get('/admin', follow_redirects=False)
+        assert r.status_code == 302
+        assert r.headers['location'] == 'admin/login'
+        assert client.get('/admin/login').status_code == 200
+
+
+def test_serve_asgi_admin_users_requires_server_auth(invoke_asgi, admin_access_cleanup):
+    with pytest.raises(ValueError, match='requires server authentication'):
+        invoke_asgi('--admin', '--admin-users', 'alice')
+
+
+def test_serve_asgi_admin_users(invoke_asgi, admin_access_cleanup):
+    invoke_asgi(
+        '--admin', '--admin-users', 'alice', 'bob', '--basic-auth', 'pw',
+        '--cookie-secret', 'secret'
+    )
+    assert config.admin_users == ['alice', 'bob']
+
+
 def test_serve_fastapi_wraps_panel_asgi(invoke_asgi):
     pytest.importorskip('fastapi')
     from fastapi import FastAPI

@@ -64,6 +64,12 @@ from tornado.wsgi import WSGIContainer
 from ..config import config
 from ..util import HTML_SANITIZER, edit_readonly, fullpath
 from ..util.warnings import warn
+from .admin_auth import (
+    ADMIN_COOKIE, INVALID_PASSWORD, LOGIN_ENDPOINT, LOGOUT_ENDPOINT,
+    AdminAccess, admin_cookie, admin_document_url, admin_protected,
+    check_admin_access, create_admin_token, is_admin_application,
+    relative_endpoint, render_admin_login, validate_admin_password,
+)
 from .application import build_applications
 from .auth import configure_auth
 from .document import (  # noqa
@@ -831,6 +837,16 @@ def _set_request_route_context(handler: t.Any, *args, suffix: str = '', **kwargs
     request.route_params, request.app_path = _sanitize_route_context(raw_route_params, raw_app_path)
 
 
+def _admin_access(handler: t.Any) -> AdminAccess:
+    """
+    Checks a request to an application route against the admin access
+    configuration, which only restricts the admin application.
+    """
+    if not admin_protected() or not is_admin_application(handler.application_context.application):
+        return AdminAccess(True)
+    return check_admin_access(handler.current_user, handler.get_cookie(ADMIN_COOKIE))
+
+
 class DocHandler(LoginUrlMixin, BkDocHandler):
 
     @authenticated  # type: ignore
@@ -862,6 +878,15 @@ class DocHandler(LoginUrlMixin, BkDocHandler):
         # logout/login cycle would carry a stale token and the subsequent
         # WebSocket connection would fail (see e.g. holoviz/panel#8634).
         self.set_header("Cache-Control", "no-store")
+        access = _admin_access(self)
+        if access.login:
+            self.redirect(relative_endpoint(self.request.path, LOGIN_ENDPOINT))
+            return
+        elif not access.allowed:
+            self.set_status(403)
+            self.set_header("Content-Type", 'text/html')
+            self.write(self._render_auth_error(t.cast('str', access.error)))
+            return
         prefix = self.application.prefix
         if prefix and self.request.path == prefix and not prefix.endswith('/'):
             query_string = self.request.query if self.request.query else ''
@@ -944,6 +969,9 @@ class AutoloadJsHandler(BkAutoloadJsHandler):
 
     async def get(self, *args, **kwargs) -> None:
         _set_request_route_context(self, *args, suffix='/autoload.js', **kwargs)
+        if not _admin_access(self).allowed:
+            self.send_error(status_code=403, reason='Not authorized to access the admin panel')
+            return
         element_id = self.get_argument("bokeh-autoload-element", default=None)
         if not element_id:
             self.send_error(status_code=400, reason='No bokeh-autoload-element query parameter')
@@ -987,6 +1015,13 @@ class WSHandler(BkWSHandler):
             )
             self.set_status(403)
             self.finish()
+        elif not _admin_access(self).allowed:
+            logger.debug(
+                "Rejecting unauthorized WebSocket connection to admin panel %r with 403.",
+                self.request.path
+            )
+            self.set_status(403)
+            self.finish()
 
     def open(self, *args, **kwargs):
         _set_request_route_context(self, *args, suffix='/ws', **kwargs)
@@ -1023,6 +1058,49 @@ per_app_patterns[:] = [
     (r'/autoload.js', AutoloadJsHandler),
     (r'/?', DocHandler),
 ]
+
+class AdminLoginHandler(RequestHandler):
+    """
+    Serves the password login page of the admin panel.
+    """
+
+    def get(self):
+        self.set_header("Cache-Control", "no-store")
+        self.write(render_admin_login())
+
+    def post(self):
+        if validate_admin_password(self.get_argument('password', '')):
+            secure = self.request.protocol == 'https'
+            self.add_header('Set-Cookie', admin_cookie(create_admin_token(), secure=secure))
+            self.redirect(admin_document_url(self.request.path))
+            return
+        self.set_status(401)
+        self.write(render_admin_login(INVALID_PASSWORD))
+
+
+class AdminLogoutHandler(RequestHandler):
+    """
+    Clears the admin cookie and returns to the admin login page.
+    """
+
+    def get(self):
+        self.add_header('Set-Cookie', admin_cookie(None))
+        self.redirect(LOGIN_ENDPOINT)
+
+
+def admin_auth_patterns(admin_path: str) -> list[tuple[str, type[RequestHandler]]]:
+    """
+    The routes of the admin login and logout pages, if the admin panel is
+    password protected.
+    """
+    if not config.admin_password:
+        return []
+    admin_path = admin_path.rstrip('/')
+    return [
+        (f'{admin_path}/{LOGIN_ENDPOINT}', AdminLoginHandler),
+        (f'{admin_path}/{LOGOUT_ENDPOINT}', AdminLogoutHandler),
+    ]
+
 
 class RootHandler(LoginUrlMixin, BkRootHandler):
     """
@@ -1547,6 +1625,9 @@ def get_server(
     if liveness:
         liveness_endpoint = 'liveness' if isinstance(liveness, bool) else liveness
         extra_patterns += [(rf"/{liveness_endpoint}", LivenessHandler, dict(applications=apps))]
+
+    if admin:
+        extra_patterns += admin_auth_patterns('/admin')
 
     opts = dict(kwargs)
     if loop:
