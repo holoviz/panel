@@ -103,7 +103,8 @@ html_theme_options = {
         "panelitelink",
         "page-toc",
     ],
-    "announcement": announcement_text,
+    # A dev build would announce its own dev version as a release.
+    "announcement": "" if is_dev else announcement_text,
 }
 
 
