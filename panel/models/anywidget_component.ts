@@ -123,6 +123,19 @@ class AnyWidgetAdapter extends AnyWidgetModelAdapter {
 
 }
 
+function render_anywidget(view: AnyWidgetComponentView): void {
+  if (view.is_destroyed) {
+    return
+  }
+  const out = Promise.resolve(view.render_fn!({
+    view, model: view.adapter, data: view.model.data, el: view.container,
+  }) || null)
+  view.destroyer = out
+  out.then(() => view.after_rendered())
+}
+
+const ANYWIDGET_RENDER_MODULE = Promise.resolve({default: {render: render_anywidget}})
+
 export class AnyWidgetComponentView extends ReactiveESMView {
   declare model: AnyWidgetComponent
   adapter: AnyWidgetAdapter
@@ -162,20 +175,8 @@ export class AnyWidgetComponent extends ReactiveESM {
     super(attrs)
   }
 
-  protected override _render_code(): string {
-    return `
-function render(id) {
-  const view = Bokeh.index.find_one_by_id(id)
-  if (!view) { return }
-
-  const out = Promise.resolve(view.render_fn({
-    view, model: view.adapter, data: view.model.data, el: view.container
-  }) || null)
-  view.destroyer = out
-  out.then(() => view.after_rendered())
-}
-
-export default {render}`
+  protected override _render_module(): Promise<any> {
+    return ANYWIDGET_RENDER_MODULE
   }
 
   protected override _run_initializer(initialize: (props: any) => void): void {

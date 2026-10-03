@@ -2,6 +2,7 @@ import type {BuildResult, Options, ViewStorage} from "@bokehjs/core/build_views"
 import {build_views} from "@bokehjs/core/build_views"
 import type {HasProps} from "@bokehjs/core/has_props"
 import type {ViewOf} from "@bokehjs/core/view"
+import {View} from "@bokehjs/core/view"
 import type {StyleSheetLike} from "@bokehjs/core/dom"
 import type {DOMView} from "@bokehjs/core/dom_view"
 import {ClassList, InlineStyleSheet, ImportedStyleSheet} from "@bokehjs/core/dom"
@@ -9,7 +10,7 @@ import type {CSSStyles, CSSStyleSheetDecl} from "@bokehjs/core/css"
 import type * as p from "@bokehjs/core/properties"
 import {difference} from "@bokehjs/core/util/array"
 import {assert} from "@bokehjs/core/util/assert"
-import {isString} from "@bokehjs/core/util/types"
+import {isArray, isString} from "@bokehjs/core/util/types"
 import type {UIElementView} from "@bokehjs/models/ui/ui_element"
 import type {Transform} from "sucrase"
 
@@ -99,6 +100,7 @@ export class ReactComponentView extends ReactiveESMView {
   _force_update_callbacks: (() => void)[] = []
   _mounted_resolve: (() => void) | null = null
   _scheduled_removals: DOMView[] = []
+  _dom_sentinel: HTMLStyleElement | null = null
 
   override initialize(): void {
     super.initialize()
@@ -141,7 +143,7 @@ export class ReactComponentView extends ReactiveESMView {
         this._resolve_mounted()
         return
       }
-      this.react_root = mod.default.render(this.model.id)
+      this.react_root = Promise.resolve(mod.default.render(this))
     }).catch((e: unknown) => {
       this._resolve_mounted()
       throw e
@@ -185,11 +187,17 @@ export class ReactComponentView extends ReactiveESMView {
     // A view removed before it mounted still owes a resolution to the promise
     // handed to `_await_ready`, otherwise the root never reaches idle.
     this._resolve_mounted()
-    if (this.react_root && this.use_shadow_dom) {
+    if (this.use_shadow_dom) {
       super.remove()
-      this.react_root.then((root: any) => root && root.unmount())
+      this.react_root?.then((root: any) => root?.unmount?.())
       this.flush_scheduled_removals()
-    } else {
+    } else if (!this.is_destroyed) {
+      // The el of a view nested in its parent's React tree is a container
+      // owned by that tree, so DOMView.remove must not detach it; React does
+      // on unmount. View.remove still disconnects signals, watchers and the
+      // event dispatch, and removes the child views.
+      this._resize_observer.disconnect()
+      View.prototype.remove.call(this)
       this._applied_stylesheets.forEach((stylesheet) => stylesheet.uninstall())
       for (const cb of (this._lifecycle_handlers.get("remove") || [])) {
         cb()
@@ -252,7 +260,7 @@ export class ReactComponentView extends ReactiveESMView {
 
   override render(): void {
     if (this.react_root) {
-      this.react_root.then((root: any) => root.unmount())
+      this.react_root.then((root: any) => root?.unmount?.())
     }
     this._force_update_callbacks = []
     this.mounted = false
@@ -269,9 +277,32 @@ export class ReactComponentView extends ReactiveESMView {
     // structure (e.g. emotion caches) is updated
     if (!this.model.use_shadow_dom) { this._apply_visible() }
     super.r_after_render()
-    if (this.use_shadow_dom) {
+    if (this.use_shadow_dom && this._dom_reinserted()) {
       this.force_update()
+      this._mark_dom()
     }
+  }
+
+  /**
+   * Re-inserting a node recreates the style sheets in its shadow root from
+   * their text, dropping rules added through the CSSOM, which is how emotion
+   * injects styles. A sentinel holding one CSSOM rule detects exactly that,
+   * so that the parent re-rendering, which walks every child, only forces an
+   * update (and a rebuild of the emotion cache) on the children it moved.
+   */
+  protected _dom_reinserted(): boolean {
+    const sheet = this._dom_sentinel?.sheet
+    return sheet == null || sheet.cssRules.length === 0
+  }
+
+  protected _mark_dom(): void {
+    let sentinel = this._dom_sentinel
+    if (sentinel == null || sentinel.parentNode !== this.shadow_el) {
+      sentinel = document.createElement("style")
+      this.shadow_el.append(sentinel)
+      this._dom_sentinel = sentinel
+    }
+    sentinel.sheet?.insertRule(":host {}")
   }
 
   override _update_layout(): void {
@@ -308,22 +339,7 @@ export class ReactComponentView extends ReactiveESMView {
   protected override async _update_children_pass(): Promise<void> {
     const created_children = new Set(await this.build_child_views())
 
-    const new_views = new Map()
-    for (const child_view of this.child_views) {
-      if (!created_children.has(child_view)) {
-        continue
-      }
-      const child = this._lookup_child(child_view)
-      if (!child) {
-        continue
-      }
-
-      if (new_views.has(child)) {
-        new_views.get(child).push(child_view)
-      } else {
-        new_views.set(child, [child_view])
-      }
-    }
+    const new_views = this._group_new_views(created_children)
 
     for (const child of this.model.children) {
       const callbacks = this._child_callbacks.get(child) || []
@@ -393,90 +409,115 @@ export class ReactComponentView extends ReactiveESMView {
   }
 }
 
-export namespace ReactComponent {
-  export type Attrs = p.AttrsOf<Props>
-
-  export type Props = ReactiveESM.Props & {
-    root_node: p.Property<string | null>
-    use_shadow_dom: p.Property<boolean>
-  }
+type ReactLibs = {
+  React: any
+  createRoot: any
+  createCache?: any
+  CacheProvider?: any
 }
 
-export interface ReactComponent extends ReactComponent.Attrs {}
+const REACT_PACKAGES = ["react", "react-dom/client", "@emotion/cache", "@emotion/react"]
 
-export class ReactComponent extends ReactiveESM {
-  declare properties: ReactComponent.Props
-  override sucrase_transforms: Transform[] = ["typescript", "jsx"]
-
-  constructor(attrs?: Partial<ReactComponent.Attrs>) {
-    super(attrs)
-  }
-
-  get usesMui(): boolean {
-    if (this.importmap?.imports) {
-      return Object.keys(this.importmap?.imports).some(k => k.startsWith("@mui"))
-    }
-    return false
-  }
-
-  protected override _render_code(): string {
-    let [import_code, bundle_code] = ["", ""]
-    const cache_key = (this.bundle === "url") ? this.esm : (this.bundle || `${this.class_name}-${this.esm.length}`)
-    if (this.bundle) {
-      bundle_code = `
-  const ns = await view._module_cache.get("${cache_key}")
-  const {React, createRoot} = ns.default`
-    } else {
-      import_code = `
-import * as React from "react"
-import { createRoot } from "react-dom/client"`
-    }
-    let init_code = ""
-    let render_code = ""
-    if (this.usesMui) {
-      if (this.bundle) {
-        bundle_code = `
-  const ns = await view._module_cache.get("${cache_key}")
-  const {CacheProvider, React, createCache, createRoot} = ns.default`
-      } else {
-        import_code = `
-${import_code}
-import createCache from "@emotion/cache"
-import { CacheProvider } from "@emotion/react"`
-      }
-      init_code = `
-  if (view.use_shadow_dom) {
-    const css_key = id.replace("-", "").replace(/\d/g, (digit) => String.fromCharCode(digit.charCodeAt(0) + 49)).toLowerCase()
-    view.mui_cache = createCache({
-      key: 'css-'+css_key,
-      prepend: true,
-      container: view.style_cache,
-    })
-  }`
-      render_code = `
-  if (rendered && ((view.parent?.react_root === undefined) || view.model.use_shadow_dom)) {
-    rendered = React.createElement(CacheProvider, {value: view.mui_cache}, rendered)
-  }`
-    }
+function react_libs_code(mui: boolean): string {
+  if (mui) {
     return `
-${import_code}
-
-async function render(id) {
-  const view = Bokeh.index.find_one_by_id(id)
-  if (view == null) {
-    return null
+import * as React from "react"
+import { createRoot } from "react-dom/client"
+import createCache from "@emotion/cache"
+import { CacheProvider } from "@emotion/react"
+export default {React, createRoot, createCache, CacheProvider}`
   }
+  return `
+import * as React from "react"
+import { createRoot } from "react-dom/client"
+export default {React, createRoot}`
+}
 
-  ${bundle_code}
+type ReactWrappers = {
+  Child: any
+  Component: any
+  ErrorBoundary: any
+  emotion_components: WeakMap<object, any>
+}
+
+// Keyed by React so each React instance (one per bundle) gets its own
+// classes, defined once rather than per render: a component type that is new
+// on every render makes React remount the subtree and drop its state.
+const REACT_WRAPPERS = new WeakMap<object, ReactWrappers>()
+
+// A Component element is keyed by its view, so a view that replaces another
+// in the same slot remounts instead of inheriting the old view's hook state.
+const VIEW_KEYS = new WeakMap<ReactComponentView, number>()
+
+let view_key_counter = 0
+
+function view_key(view: ReactComponentView): number {
+  let key = VIEW_KEYS.get(view)
+  if (key === undefined) {
+    key = view_key_counter++
+    VIEW_KEYS.set(view, key)
+  }
+  return key
+}
+
+// One emotion key for every component: class names only have to be unique
+// within a shadow root, and a shared key makes the compiled CSS of a style
+// identical across components, so it can be compiled once and replayed.
+const EMOTION_KEY = "pnl"
+
+// Compiled rules by selector and style hash, per emotion instance.
+const EMOTION_RULES = new WeakMap<object, Map<string, string[]>>()
+
+/**
+ * Wraps an emotion cache so that each style is compiled by stylis once per
+ * page and its rules replayed into the other components' sheets. Each
+ * component still gets its own rules in its own shadow root, so the cascade
+ * is unchanged.
+ */
+function share_emotion_rules(cache: any, createCache: object): any {
+  let compiled = EMOTION_RULES.get(createCache)
+  if (compiled == null) {
+    compiled = new Map()
+    EMOTION_RULES.set(createCache, compiled)
+  }
+  const rules_cache = compiled
+  const insert = cache.insert
+  cache.insert = (selector: string, serialized: any, sheet: any, should_cache: boolean) => {
+    const key = `${selector}\u0000${serialized.name}`
+    const rules = rules_cache.get(key)
+    if (rules == null) {
+      const recorded: string[] = []
+      insert(selector, serialized, {insert: (rule: string) => { recorded.push(rule); sheet.insert(rule) }}, should_cache)
+      rules_cache.set(key, recorded)
+      return
+    }
+    for (const rule of rules) {
+      sheet.insert(rule)
+    }
+    if (should_cache) {
+      cache.inserted[serialized.name] = true
+    }
+  }
+  return cache
+}
+
+function react_wrappers(libs: ReactLibs): ReactWrappers {
+  const cached = REACT_WRAPPERS.get(libs.React)
+  if (cached != null) {
+    return cached
+  }
+  const {React} = libs
 
   class Child extends React.PureComponent {
+    declare props: any
+    declare state: any
+    declare setState: any
+    render_callback: ((new_views: UIElementView[]) => void) | null = null
+    containerRef: any = React.createRef()
 
-    state = {rendered: null}
-
-    constructor(props) {
+    constructor(props: any) {
       super(props)
-      this.render_callback = null
-      this.containerRef = React.createRef()
+      this.state = {rendered: null}
       // Registers the child as tracked but not yet rendered. React's render
       // phase has to stay free of side effects, since a render may be
       // discarded without ever committing, so the flag is only ever flipped
@@ -492,17 +533,15 @@ async function render(id) {
     }
 
     updateElement() {
-      const childView = this.view
-      const el = childView?.el
+      const el = this.view?.el
       if (el && this.containerRef.current && !this.containerRef.current.contains(el)) {
         this.containerRef.current.innerHTML = ""
         this.containerRef.current.appendChild(el)
       }
     }
 
-    get view() {
-      const child = this.props.parent.model.data[this.props.name]
-      const model = this.props.id == null ? child : child.find(item => item.id === this.props.id)
+    get view(): any {
+      const model = this.props.model ?? this.props.parent.model.data[this.props.name]
       return this.props.parent.get_child_view(model)
     }
 
@@ -515,9 +554,40 @@ async function render(id) {
       return this.view?.model.use_shadow_dom || (this.view?.react_root === undefined)
     }
 
+    _render_nested(view: any, flush: boolean) {
+      view.patch_container(this.containerRef.current)
+      const apply = (mod: any) => {
+        if (view.is_destroyed) {
+          return
+        }
+        if (flush) {
+          this.props.parent.flush_scheduled_removals()
+        }
+        this.setState(
+          {rendered: mod.default.render(view)},
+          () => {
+            if (view.is_destroyed) {
+              return
+            }
+            this.props.parent.notify_mount(this.props.name, view.model.id)
+            view.r_after_render()
+            view.after_rendered()
+          },
+        )
+      }
+      // Rendering synchronously once the module is loaded lets a nested tree
+      // mount in one commit instead of one commit per level.
+      const mod = view.model.resolved_render_module
+      if (mod != null) {
+        apply(mod)
+      } else {
+        view.model.render_module.then(apply)
+      }
+    }
+
     componentDidMount() {
       const view = this.view
-      this.render_callback = (new_views) => {
+      this.render_callback = (new_views: UIElementView[]) => {
         const view = this.view
         if (!view || !new_views.includes(view)) {
           return
@@ -528,22 +598,13 @@ async function render(id) {
           this.props.parent.render_child(view)
           this.props.parent._child_rendered.set(view, true)
         } else {
-          view.patch_container(this.containerRef.current)
-          view.model.render_module.then(async (mod) => {
-            this.props.parent.flush_scheduled_removals()
-            this.setState(
-              {rendered: await mod.default.render(view.model.id)},
-              () => {
-                this.props.parent.notify_mount(this.props.name, view.model.id)
-                this.view.r_after_render()
-                this.view.after_rendered()
-              }
-            )
-          })
+          this._render_nested(view, true)
         }
       }
       this.props.parent.on_child_render(this.props.name, this.render_callback)
-      if (view == null) { return }
+      if (view == null) {
+        return
+      }
       this.props.parent.flush_scheduled_removals()
       if (this.use_shadow_dom) {
         this.updateElement()
@@ -551,17 +612,7 @@ async function render(id) {
         this.props.parent._child_rendered.set(view, true)
         this.props.parent.notify_mount(this.props.name, view.model.id)
       } else {
-        view.patch_container(this.containerRef.current)
-        view.model.render_module.then(async (mod) => {
-          this.setState(
-            {rendered: await mod.default.render(view.model.id)},
-            () => {
-              this.props.parent.notify_mount(this.props.name, view.model.id)
-              this.view.r_after_render()
-              this.view.after_rendered()
-            }
-          )
-        })
+        this._render_nested(view, false)
       }
     }
 
@@ -592,180 +643,293 @@ async function render(id) {
     }
 
     render() {
-      const child = this.state.rendered
-      const class_name = (this.use_shadow_dom ?
-        "child-wrapper" : this.view.model.class_name.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase()
-      )
-      return React.createElement('div', {id: this.view?.model.id, className: class_name, ref: this.containerRef}, child)
+      const class_name = this.use_shadow_dom ? "child-wrapper" : css_class_name(this.view.model.class_name)
+      return React.createElement("div", {id: this.view?.model.id, className: class_name, ref: this.containerRef}, this.state.rendered)
     }
   }
 
-  function react_getter(target, name) {
-    if (name === "useMount") {
-      return (callback) => React.useEffect(() => {
-        target.model_proxy.on('lifecycle:mounted', callback)
-        return () => target.model_proxy.off('lifecycle:mounted', callback)
-      }, [])
-    } if (name == "useState") {
-      return (prop) => {
-        const data_model = target.model.data
-        const propPath = prop.split(".")
-        let targetModel = data_model
-        let resolvedProp = null
+  class ErrorBoundary extends React.Component {
+    declare props: any
+    declare state: any
 
-        for (let i = 0; i < propPath.length - 1; i++) {
-          if (targetModel && targetModel.properties && propPath[i] in targetModel.properties) {
-            targetModel = targetModel[propPath[i]]
-          } else {
-            // Stop if any part of the path is missing
-            targetModel = null
-            break
+    constructor(props: any) {
+      super(props)
+      this.state = {hasError: false}
+    }
+
+    static getDerivedStateFromError() {
+      return {hasError: true}
+    }
+
+    componentDidCatch(error: any) {
+      this.props.view.render_error(error)
+    }
+
+    render() {
+      if (this.state.hasError) {
+        return React.createElement("div")
+      }
+      return React.createElement("div", {className: "error-wrapper"}, this.props.children)
+    }
+  }
+
+  const wrappers = {
+    Child,
+    ErrorBoundary,
+    Component: define_component(React, ErrorBoundary, null, null),
+    emotion_components: new WeakMap(),
+  }
+  REACT_WRAPPERS.set(React, wrappers)
+  return wrappers
+}
+
+/**
+ * Returns the Component type for a view. Non-bundled components with and
+ * without MUI share one React instance from the same import map URL but load
+ * different libs, so emotion is chosen per view rather than per React.
+ */
+function component_type(view: ReactComponentView, libs: ReactLibs): any {
+  const wrappers = react_wrappers(libs)
+  const {createCache, CacheProvider} = libs
+  if (!view.model.usesMui || createCache == null || CacheProvider == null) {
+    return wrappers.Component
+  }
+  let Component = wrappers.emotion_components.get(createCache)
+  if (Component == null) {
+    Component = define_component(libs.React, wrappers.ErrorBoundary, createCache, CacheProvider)
+    wrappers.emotion_components.set(createCache, Component)
+  }
+  return Component
+}
+
+function define_component(React: any, ErrorBoundary: any, createCache: any, CacheProvider: any): any {
+  return class Component extends React.Component {
+    declare props: any
+    declare forceUpdate: any
+
+    constructor(props: any) {
+      super(props)
+      this._init_cache()
+    }
+
+    _init_cache() {
+      const {view} = this.props
+      if (createCache != null && view.use_shadow_dom) {
+        view.mui_cache = share_emotion_rules(createCache({
+          key: EMOTION_KEY,
+          prepend: true,
+          container: view.style_cache,
+        }), createCache)
+      }
+    }
+
+    componentDidMount() {
+      const {view} = this.props
+      if (!view.use_shadow_dom) {
+        return
+      }
+      view.on_force_update(() => {
+        this._init_cache()
+        this.forceUpdate()
+      })
+      view.after_rendered()
+    }
+
+    render() {
+      const {view} = this.props
+      let rendered = React.createElement(view.render_fn, this.props)
+      if (view.model.dev) {
+        rendered = React.createElement(ErrorBoundary, {view}, rendered)
+      }
+      if (CacheProvider != null && rendered && (view.parent?.react_root === undefined || view.model.use_shadow_dom)) {
+        rendered = React.createElement(CacheProvider, {value: view.mui_cache}, rendered)
+      }
+      return rendered
+    }
+  }
+}
+
+function css_class_name(class_name: string): string {
+  return class_name.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase()
+}
+
+function react_model_proxy(view: ReactComponentView, libs: ReactLibs, Child: any): any {
+  const {React} = libs
+  const react_proxy: any = new Proxy(view, {
+    get(target: ReactComponentView, name: string) {
+      if (name === "useMount") {
+        return (callback: () => void) => React.useEffect(() => {
+          target.model_proxy.on("lifecycle:mounted", callback)
+          return () => target.model_proxy.off("lifecycle:mounted", callback)
+        }, [])
+      } else if (name === "useState") {
+        return (prop: string) => {
+          const path = prop.split(".")
+          let model: any = target.model.data
+          for (let i = 0; i < path.length - 1; i++) {
+            if (model && model.properties && path[i] in model.properties) {
+              model = model[path[i]]
+            } else {
+              model = null
+              break
+            }
           }
-        }
-        if (targetModel && targetModel.attributes && propPath[propPath.length - 1] in targetModel.attributes) {
-          resolvedProp = propPath[propPath.length - 1]
-        }
-        if (resolvedProp && targetModel) {
-          const [value, setValue] = React.useState(targetModel.attributes[resolvedProp])
+          const attr = path[path.length - 1]
+          if (model == null || model.attributes == null || !(attr in model.attributes)) {
+            throw ReferenceError(`Could not resolve ${prop} on ${target.model.class_name}`)
+          }
+          const [value, setValue] = React.useState(model.attributes[attr])
 
           React.useEffect(() => {
             const cb = () => {
-              if (target.model.events.includes(resolvedProp)) {
-                targetModel.attributes[resolvedProp] && (setValue((v) => v+1) || targetModel.setv({[resolvedProp]: false}))
+              if (target.model.events.includes(attr)) {
+                model.attributes[attr] && (setValue((v: number) => v+1) || model.setv({[attr]: false}))
               } else {
-                setValue(targetModel.attributes[resolvedProp])
+                setValue(model.attributes[attr])
               }
             }
             react_proxy.on(prop, cb, true)
             return () => react_proxy.off(prop, cb)
           }, [])
 
-          let initialized = React.useRef(false)
+          const initialized = React.useRef(false)
           React.useEffect(() => {
-            if (!target.model.events.includes(resolvedProp) && initialized.current) {
-              targetModel.setv({ [resolvedProp]: value })
-            } else { initialized.current = true }
+            if (!target.model.events.includes(attr) && initialized.current) {
+              model.setv({[attr]: value})
+            } else {
+              initialized.current = true
+            }
           }, [value])
 
           return [value, setValue]
         }
-        throw ReferenceError("Could not resolve " + prop + " on " + target.model.class_name)
-      }
-    } else if (name === "get_child") {
-      return (child) => {
-        const data_model = target.model.data
-        const value = data_model.attributes[child]
-        if (Array.isArray(value)) {
-          const [children_state, set_children] = React.useState(value.map((model) =>
-            React.createElement(Child, { parent: target, name: child, key: model.id, id: model.id })
+      } else if (name === "get_child") {
+        return (child: string) => {
+          const data_model = target.model.data
+          const value = data_model.attributes[child]
+          if (!isArray(value)) {
+            return React.createElement(Child, {parent: target, name: child})
+          }
+          const [children_state, set_children] = React.useState(() => value.map((model: any) =>
+            React.createElement(Child, {parent: target, name: child, key: model.id, id: model.id, model}),
           ))
           React.useEffect(() => {
-            target.on_child_render(child, () => {
+            // Compares against the latest state, not the closure's initial
+            // one, and catches lists that only shrank.
+            const cb = () => {
               const current_models = data_model.attributes[child]
-              const previous_models = children_state.map(child => child.props.id)
-              if (current_models.some((model, i) => model.id !== previous_models[i])) {
-                set_children(current_models.map((model, i) => (
-                  React.createElement(Child, { parent: target, name: child, key: model.id, id: model.id })
-                )))
-              }
-            })
+              set_children((previous: any[]) => {
+                if (previous.length === current_models.length &&
+                    current_models.every((model: any, i: number) => model.id === previous[i].props.id)) {
+                  return previous
+                }
+                return current_models.map((model: any) => (
+                  React.createElement(Child, {parent: target, name: child, key: model.id, id: model.id, model})
+                ))
+              })
+            }
+            target.on_child_render(child, cb)
+            return () => target.remove_on_child_render(child, cb)
           }, [])
           return children_state
-        } else {
-          return React.createElement(Child, {parent: target, name: child})
         }
       }
-    }
-    return target.model_getter(target, name)
-  }
-
-  const react_proxy = new Proxy(view, {
-    get: react_getter,
-    set: view.model_setter
+      return model_getter(target, name)
+    },
+    set: model_setter,
   })
+  return react_proxy
+}
 
-  class ErrorBoundary extends React.Component {
-    constructor(props) {
-      super(props)
-      // initialize the error state
-      this.state = { hasError: false }
-    }
-
-    // if an error happened, set the state to true
-    static getDerivedStateFromError(error) {
-      return { hasError: true }
-    }
-
-    componentDidCatch(error) {
-      this.props.view.render_error(error)
-    }
-
-    render() {
-      if (this.state.hasError) {
-        return React.createElement('div')
-      }
-      return React.createElement('div', {className: "error-wrapper"}, this.props.children)
-    }
+/**
+ * Renders a view into a new React root, or, for a view nested in a parent
+ * React tree without its own shadow root, returns the element for the parent
+ * to render.
+ */
+function render_react(view: ReactComponentView, libs: ReactLibs): any {
+  if (view.is_destroyed) {
+    return null
   }
-
-  class Component extends React.Component {
-
-    constructor(props) {
-      super(props)
-      ${init_code}
-    }
-
-    componentDidMount() {
-      if (!this.props.view.use_shadow_dom) { return }
-      this.props.view.on_force_update(() => {
-        ${init_code}
-        this.forceUpdate()
-      })
-      this.props.view.after_rendered()
-    }
-
-    render() {
-      let rendered = React.createElement(this.props.view.render_fn, this.props)
-      if (this.props.view.model.dev) {
-        rendered = React.createElement(ErrorBoundary, {view}, rendered)
-      }
-      ${render_code}
-      return rendered
-    }
-  }
-
-  const props = {view, model: react_proxy, data: view.model.data, el: view.container}
-  const rendered = React.createElement(Component, props)
-  if (!view.model.use_shadow_dom && (view.parent?.react_root !== undefined)) {
+  const {React, createRoot} = libs
+  const {Child} = react_wrappers(libs)
+  const Component = component_type(view, libs)
+  const props = {view, model: react_model_proxy(view, libs, Child), data: view.model.data, el: view.container}
+  const rendered = React.createElement(Component, {...props, key: view_key(view)})
+  if (!view.model.use_shadow_dom && ((view.parent as any)?.react_root !== undefined)) {
     return rendered
   }
-  if (rendered) {
-    let container
-    if (view.model.root_node) {
-      container = document.querySelector(view.model.root_node)
-      if (container == null) {
-        container = document.createElement("div")
-        container.id = view.model.root_node.replace("#", "")
-        document.body.append(container)
-      }
-    } else if (view.container == null) {
-      view._resolve_mounted()
-      return null
-    } else {
-      container = view.container
+  let container
+  if (view.model.root_node) {
+    container = document.querySelector(view.model.root_node)
+    if (container == null) {
+      container = document.createElement("div")
+      container.id = view.model.root_node.replace("#", "")
+      document.body.append(container)
     }
-    const root = createRoot(container)
-    try {
-      root.render(rendered)
-    } catch(e) {
-      view._resolve_mounted()
-      view.render_error(e)
-    }
-    return root
+  } else if (view.container == null) {
+    view._resolve_mounted()
+    return null
+  } else {
+    container = view.container
+  }
+  const root = createRoot(container)
+  try {
+    root.render(rendered)
+  } catch (e) {
+    view._resolve_mounted()
+    view.render_error(e as SyntaxError)
+  }
+  return root
+}
+
+export namespace ReactComponent {
+  export type Attrs = p.AttrsOf<Props>
+
+  export type Props = ReactiveESM.Props & {
+    root_node: p.Property<string | null>
+    use_shadow_dom: p.Property<boolean>
   }
 }
 
-export default {render}`
+export interface ReactComponent extends ReactComponent.Attrs {}
+
+export class ReactComponent extends ReactiveESM {
+  declare properties: ReactComponent.Props
+  override sucrase_transforms: Transform[] = ["typescript", "jsx"]
+
+  constructor(attrs?: Partial<ReactComponent.Attrs>) {
+    super(attrs)
+  }
+
+  get usesMui(): boolean {
+    if (this.importmap?.imports) {
+      return Object.keys(this.importmap?.imports).some(k => k.startsWith("@mui"))
+    }
+    return false
+  }
+
+  protected get _render_cache_key(): string {
+    if (this.bundle) {
+      return `react-${this.usesMui}-${this._module_cache_key}`
+    }
+    // Non-bundled components share one render module per set of React
+    // packages, which the import map decides.
+    const imports = this.importmap?.imports ?? {}
+    const packages = REACT_PACKAGES.map((name) => imports[name] ?? "").join("|")
+    return `react-${this.usesMui}-${packages}`
+  }
+
+  protected override _render_module(): Promise<any> {
+    return this._cached_module(this._render_cache_key, async () => {
+      let libs: ReactLibs
+      if (this.bundle) {
+        const ns = await this._cached_module(this._module_cache_key, () => Promise.resolve(null))
+        libs = ns.default
+      } else {
+        libs = (await this._import_source(react_libs_code(this.usesMui))).default
+      }
+      return {default: {render: (view: ReactComponentView) => render_react(view, libs)}}
+    })
   }
 
   override compile(): string | null {
@@ -779,11 +943,6 @@ export default {render}`
 import * as React from "react"
 
 ${compiled}`
-  }
-
-  protected override get _render_cache_key() {
-    const cache_key = (this.bundle === "url") ? this.esm : (this.bundle || `${this.class_name}-${this.esm.length}`)
-    return `react-${this.usesMui}-${cache_key}`
   }
 
   static override __module__ = "panel.models.esm"
