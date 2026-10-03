@@ -347,25 +347,25 @@ The gluoNNet aviation tracking application visualizes airplane positioning (ADS-
 :hidden:
 :maxdepth: 1
 
-altair_brushing
-deckgl_game_of_life
-gaia_million_star_atlas
-gapminders
-glaciers
-hvplot_explorer
-iris_kmeans
-model_serving_monitor
-nyc_deckgl
-penguin_crossfilter
-penguin_kmeans
-portfolio_analyzer
-portfolio_optimizer
-storm_surge_studio
-streaming_videostream
-vtk_interactive
-vtk_slicer
-vtk_warp
-webllm
-windturbines
-xgboost_classifier
+Gaia Million Star Atlas <gaia_million_star_atlas>
+Model Serving Monitor <model_serving_monitor>
+Storm Surge Studio <storm_surge_studio>
+Portfolio Optimizer <portfolio_optimizer>
+Streaming Videostream <streaming_videostream>
+Windturbines Explorer <windturbines>
+Portfolio Analyzer <portfolio_analyzer>
+OGGM Glaciers <glaciers>
+VTK Slicer <vtk_slicer>
+Deck.GL: NYC Taxi <nyc_deckgl>
+Gapminders <gapminders>
+VTK: St. Helens <vtk_interactive>
+VTK: Warped Surface <vtk_warp>
+Penguin Crossfiltering <penguin_crossfilter>
+Penguin KMeans Clustering <penguin_kmeans>
+Deck.GL: Game of Life <deckgl_game_of_life>
+hvPlot Explorer <hvplot_explorer>
+Iris KMeans Clustering <iris_kmeans>
+XGBoost Classifier <xgboost_classifier>
+WebLLM ChatInterface <webllm>
+Altair Brushing <altair_brushing>
 ```
