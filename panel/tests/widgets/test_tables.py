@@ -345,6 +345,46 @@ def test_tabulator_update_none_value(document, comm, df_mixed):
     assert model.columns == []
 
 
+def test_tabulator_unsupported_value_type_raises_on_construction():
+    """Tabulator raises a clear ValueError for non-DataFrame inputs (#8788)."""
+    bad_inputs = [
+        {'A': [1, 2]},
+        [1, 2],
+        [[1, 2], [3, 4]],
+        (1, 2),
+        'hello',
+        42,
+        pd.Series([1, 2, 3]),
+    ]
+    for bad in bad_inputs:
+        with pytest.raises(ValueError, match="Tabulator only accepts a pandas DataFrame"):
+            Tabulator(value=bad)
+
+
+def test_tabulator_valid_values_accepted():
+    """Tabulator accepts None and a proper DataFrame without error (#8788)."""
+    # None should always be valid
+    table = Tabulator(value=None)
+    assert table.value is None
+
+    # A proper DataFrame should be accepted
+    df = pd.DataFrame({'A': [1, 2], 'B': [3, 4]})
+    table = Tabulator(value=df)
+    pd.testing.assert_frame_equal(table.value, df)
+
+
+def test_tabulator_unsupported_value_type_raises_on_update():
+    """Tabulator raises a clear ValueError when value is updated to a non-DataFrame (#8788)."""
+    df = pd.DataFrame({'A': [1, 2]})
+    table = Tabulator(value=df)
+
+    with pytest.raises(ValueError, match="Tabulator only accepts a pandas DataFrame"):
+        table.value = {'A': [1, 2]}
+
+    with pytest.raises(ValueError, match="Tabulator only accepts a pandas DataFrame"):
+        table.value = [1, 2]
+
+
 def test_tabulator_selection_resets():
     df = makeMixedDataFrame()
     table = Tabulator(df, selection=list(range(len(df))))
