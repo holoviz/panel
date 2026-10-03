@@ -1,20 +1,17 @@
 {% extends "error.html" %}
 
-{% block extra_style %}
-  #kernel-select {
-      width: 200px;
-      height: 40px;
-      margin-bottom: 25px;
-  }
-{% endblock %}
-
-
 {% block content %}
-<h2>Select a valid kernel</h2>
-<select name="kernel" id="kernel-select" onchange="window.location.search = '?kernel='+event.target.value">
-  <option value="" disabled selected>-- Please choose an option --</option>
-  {% for kernel in kernels %}
-  <option value="{{ kernel }}">{{ kernel }}</option>
-  {% endfor %}
-</select>
+<hr class="pn-divider">
+<div class="pn-stack">
+  <p class="pn-body">Select one of the installed kernels to run this notebook.</p>
+  <div class="pn-field">
+    <select name="kernel" id="kernel-select" class="pn-select" onchange="window.location.search = '?kernel=' + encodeURIComponent(event.target.value)">
+      <option value="" disabled selected>Choose a kernel</option>
+      {% for kernel in kernels %}
+      <option value="{{ kernel }}">{{ kernel }}</option>
+      {% endfor %}
+    </select>
+    <label class="pn-label" for="kernel-select">Kernel</label>
+  </div>
+</div>
 {% endblock %}

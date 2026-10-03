@@ -37,6 +37,7 @@ from markupsafe import Markup
 
 from ..config import config, panel_extension as extension
 from ..util import _descendents, isurl, url_path
+from .pages import page_theme
 from .state import state
 
 if t.TYPE_CHECKING:
@@ -91,6 +92,9 @@ _env.lstrip_blocks = True
 _env.filters['json'] = lambda obj: Markup(json.dumps(obj, cls=json_dumps))
 _env.filters['conffilter'] = conffilter
 _env.filters['sorted'] = sorted
+# A global so that user supplied auth, logout and error templates can use the
+# page theme without every handler passing it.
+_env.globals['page'] = page_theme
 
 @functools.cache
 def parse_template(*args, **kwargs):
@@ -98,6 +102,7 @@ def parse_template(*args, **kwargs):
 
 # Handle serving of the panel extension before session is loaded
 RESOURCE_MODE: MODES = 'server'
+NOTEBOOK_RESOURCES = False
 PANEL_DIR = Path(__file__).parent.parent
 DIST_DIR = PANEL_DIR / 'dist'
 BUNDLE_DIR = DIST_DIR / 'bundled'
@@ -200,7 +205,11 @@ def get_resource_mode() -> MODES:
     """
     return RESOURCE_MODE
 
-def set_default_resource_mode(mode: MODES):
+def get_notebook_resources() -> bool:
+    """Whether resource urls should use the Jupyter extension endpoint."""
+    return NOTEBOOK_RESOURCES
+
+def set_default_resource_mode(mode: MODES, *, notebook: bool = False):
     """
     Sets the mode urls are resolved for outside a set_resource_mode block.
 
@@ -212,8 +221,9 @@ def set_default_resource_mode(mode: MODES):
     context manager either, because components created in a later cell
     resolve their resources long after ``pn.extension()`` returned.
     """
-    global RESOURCE_MODE
+    global NOTEBOOK_RESOURCES, RESOURCE_MODE
     RESOURCE_MODE = mode
+    NOTEBOOK_RESOURCES = notebook
 
 def use_cdn() -> bool:
     return _settings.resources(default="server") != 'server' or state._is_pyodide
@@ -844,6 +854,20 @@ class Resources(BkResources):
                     resource = f'{self.root_url}{resource}'
             if resource.endswith('.css') and not resource.startswith(('http:', 'https:')):
                 resource += version_suffix
+            if self.notebook:
+                # The render endpoint sets `rel_path` to its own
+                # `panel-preview` root already, so building on `base_url`
+                # there would double it. nbclassic never sets `rel_path`,
+                # so `base_url` is the raw server root there instead.
+                if state.rel_path and state.rel_path.rstrip('/').endswith('panel-preview'):
+                    endpoint = f"{state.rel_path.rstrip('/')}/static/extensions/panel/"
+                else:
+                    base_url = state.base_url.removesuffix('nbclassic/')
+                    endpoint = f'{base_url}panel-preview/static/extensions/panel/'
+                if resource.startswith(CDN_DIST):
+                    resource = endpoint + resource.removeprefix(CDN_DIST)
+                elif resource.startswith(LOCAL_DIST):
+                    resource = endpoint + resource.removeprefix(LOCAL_DIST)
             new_resources.append(resource)
         return new_resources
 
@@ -925,12 +949,8 @@ class Resources(BkResources):
 
         # Add loading spinner
         if config.global_loading_spinner:
-            loading_base = (DIST_DIR / "css" / "loading.css").read_text(encoding='utf-8').replace(
-                '../assets', self.dist_dir + 'assets'
-            )
-            raw.extend([loading_base, loading_css(
-                config.loading_spinner, config.loading_color, config.loading_max_height
-            )])
+            from .loading import loading_resources
+            raw.extend(loading_resources(inline=True, dist_path=self.dist_dir)['raw_css'])
         return raw + process_raw_css(config.raw_css) + process_raw_css(config.global_css)
 
     @property

@@ -19,10 +19,10 @@ colors = ["black", "red", "blue", "green", "gray"]
 markers = list(MarkerType)
 
 # Define widget for properties we want to change
-alpha_widget = pn.widgets.FloatSlider(value=0.5, start=0, end=1, label='Alpha')
-size_widget = pn.widgets.FloatSlider(value=12, start=3, end=20, label='Size')
-color_widget = pn.widgets.ColorPicker(value='#f80000', label='Color')
-marker_widget = pn.widgets.Select(options=markers, value='circle', label='Marker')
+alpha_widget = pn.ui.FloatSlider(value=0.5, start=0, end=1, label='Alpha')
+size_widget = pn.ui.FloatSlider(value=12, start=3, end=20, label='Size')
+color_widget = pn.ui.ColorPicker(value='#f80000', label='Color')
+marker_widget = pn.ui.Select(options=markers, value='circle', label='Marker')
 
 # Declare a Points object and apply some options
 points = hv.Points(np.random.randn(200, 2)).options(
@@ -34,5 +34,5 @@ size_widget.jslink(points, value='glyph.size')
 color_widget.jslink(points, value='glyph.fill_color')
 marker_widget.jslink(points, value='glyph.marker')
 
-pn.Row(pn.Column(alpha_widget, color_widget, marker_widget, size_widget), points).servable()
+pn.ui.Row(pn.ui.Column(alpha_widget, color_widget, marker_widget, size_widget), points).servable()
 ```

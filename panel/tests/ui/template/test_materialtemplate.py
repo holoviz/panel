@@ -8,7 +8,7 @@ from panel.pane import Markdown
 from panel.template import MaterialTemplate
 from panel.tests.util import serve_component
 
-pytestmark = pytest.mark.ui
+pytestmark = [pytest.mark.ui, pytest.mark.internet]
 
 
 def test_material_template_no_console_errors(page):

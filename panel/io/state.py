@@ -43,7 +43,7 @@ if t.TYPE_CHECKING:
     from bokeh.application.application import SessionContext
     from bokeh.document import Document
     from bokeh.model import Model
-    from bokeh.models import ImportedStyleSheet
+    from bokeh.models import ImportedStyleSheet, InlineStyleSheet
     from bokeh.server.contexts import ApplicationContext, BokehSessionContext
     from bokeh.server.session import ServerSession
     from IPython.display import DisplayHandle
@@ -238,6 +238,10 @@ class _state(param.Parameterized):
     # Style cache
     _stylesheets: t.ClassVar[WeakKeyDictionary[Document, dict[str, ImportedStyleSheet]]] = WeakKeyDictionary()
 
+    # Inlined copies of the CDN stylesheets on Documents rendered with
+    # inline resources, keyed by the url they replace.
+    _inline_stylesheets: t.ClassVar[WeakKeyDictionary[Document, dict[str, InlineStyleSheet]]] = WeakKeyDictionary()
+
     # Loaded extensions
     _extensions_: t.ClassVar[WeakKeyDictionary[Document, list[str]]] = WeakKeyDictionary()
 
@@ -264,6 +268,8 @@ class _state(param.Parameterized):
     # Watchers
     _watch_events: t.ClassVar[list[asyncio.Event]] = []
     _busy_cleanup_scheduled: t.ClassVar[PeriodicCallback | None] = None
+    # Reentrant since the _busy_counter watcher prunes the counter again
+    _busy_lock: t.ClassVar[threading.RLock] = threading.RLock()
 
     # Types
     _notification_type: t.ClassVar[type[NotificationAreaBase] | None] = None
@@ -375,6 +381,20 @@ class _state(param.Parameterized):
         return not bool(curdoc.session_context.server_context.sessions)
 
     @property
+    def _is_server_session(self) -> bool:
+        """
+        Whether the current document belongs to a genuine served session,
+        as opposed to a notebook comm-rendered document or the Jupyter
+        extension's own render endpoint (both leave ``server_context``
+        unset). Used to keep notebook-only resource defaults from leaking
+        into a server started from within that same notebook process.
+        """
+        curdoc = self.curdoc
+        return bool(
+            curdoc and curdoc.session_context and curdoc.session_context.server_context
+        )
+
+    @property
     def _is_pyodide(self) -> bool:
         return '_pyodide' in sys.modules
 
@@ -415,22 +435,27 @@ class _state(param.Parameterized):
             self.busy = bool(self._busy_counter)
 
     def _add_busy_event(self, event_id: str) -> None:
-        self._cleanup_busy_counter()
-        with edit_readonly(self):
-            self._busy_counter = [*self._busy_counter, (event_id, time.monotonic())]
+        # Busy events are added and removed from any thread, so without the
+        # lock a concurrent update could resurrect an event that was removed
+        # and leave state.busy stuck until the event expires.
+        with self._busy_lock:
+            self._cleanup_busy_counter()
+            with edit_readonly(self):
+                self._busy_counter = [*self._busy_counter, (event_id, time.monotonic())]
         self._schedule_busy_cleanup()
 
     def _remove_busy_event(self, event_id: str) -> None:
         self._cleanup_busy_counter(event_id)
 
     def _cleanup_busy_counter(self, event_id: str | None = None, timeout: float = 30.0) -> None:
-        now = time.monotonic()
-        with edit_readonly(self):
-            self._busy_counter = [
-                (eid, started_at)
-                for eid, started_at in self._busy_counter
-                if now - started_at <= timeout and eid != event_id
-            ]
+        with self._busy_lock:
+            now = time.monotonic()
+            with edit_readonly(self):
+                self._busy_counter = [
+                    (eid, started_at)
+                    for eid, started_at in self._busy_counter
+                    if now - started_at <= timeout and eid != event_id
+                ]
 
     def _schedule_busy_cleanup(self) -> None:
         if _state._busy_cleanup_scheduled:
@@ -498,6 +523,9 @@ class _state(param.Parameterized):
 
         if doc in self._stylesheets:
             del self._stylesheets[doc]
+
+        if doc in self._inline_stylesheets:
+            del self._inline_stylesheets[doc]
 
     @property
     def _current_stack(self):
@@ -1044,6 +1072,7 @@ class _state(param.Parameterized):
         self._on_session_created.clear()
         self._on_session_destroyed.clear()
         self._stylesheets.clear()
+        self._inline_stylesheets.clear()
         self._scheduled.clear()
         self._periodic.clear()
 

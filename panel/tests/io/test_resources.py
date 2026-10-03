@@ -113,6 +113,46 @@ def test_resources_cdn():
         f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-mathjax-{bokeh_version}.min.js',
     ]
 
+
+def test_notebook_resources_respect_jupyterhub_base_url():
+    resource = f'{CDN_DIST}bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js'
+    with edit_readonly(state):
+        state.base_url = '/user/alice/'
+    try:
+        resolved = Resources(mode='cdn', notebook=True).adjust_paths([resource])
+    finally:
+        with edit_readonly(state):
+            state.base_url = '/'
+
+    assert resolved == [
+        f'/user/alice/panel-preview/static/extensions/panel/bundled/datatabulator/'
+        f'tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js'
+    ]
+
+
+def test_notebook_resources_do_not_double_render_endpoint_root():
+    """
+    The render endpoint sets `rel_path` to its own `panel-preview` root
+    already, so it must not be appended a second time on top of
+    `base_url`, which the render endpoint also includes it in.
+    """
+    resource = f'{CDN_DIST}bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js'
+    with edit_readonly(state):
+        state.base_url = '/user/alice/panel-preview/'
+        state.rel_path = '/user/alice/panel-preview'
+    try:
+        resolved = Resources(mode='cdn', notebook=True).adjust_paths([resource])
+    finally:
+        with edit_readonly(state):
+            state.base_url = '/'
+            state.rel_path = ''
+
+    assert resolved == [
+        f'/user/alice/panel-preview/static/extensions/panel/bundled/datatabulator/'
+        f'tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js'
+    ]
+
+
 def test_resources_server_absolute():
     resources = Resources(mode='server', absolute=True, minified=True)
     assert resources.js_raw == ['Bokeh.set_log_level("info");']
@@ -274,17 +314,19 @@ def test_resolve_stylesheet_long_css():
     assert resolve_stylesheet(cls, stylesheet, "_stylesheets")==stylesheet
 
 def test_resources_global_loading_indicator_server():
+    nspinners = len(config.param['loading_spinner'].objects)
     resources = Resources(mode='server')
     with config.set(global_loading_spinner=True):
         assert len(resources.css_raw) == 2
-        assert resources.css_raw[0].count('static/extensions/panel/assets') == 5
+        assert resources.css_raw[0].count('static/extensions/panel/assets') == nspinners
 
 def test_resources_global_loading_indicator_cdn():
+    nspinners = len(config.param['loading_spinner'].objects)
     resources = Resources(mode='cdn')
     with config.set(global_loading_spinner=True):
         assert len(resources.css_raw) == 2
-        assert resources.css_raw[0].count('https://cdn.holoviz.org/panel/') == 5
-        assert resources.css_raw[0].count('/dist/assets/') == 5
+        assert resources.css_raw[0].count('https://cdn.holoviz.org/panel/') == nspinners
+        assert resources.css_raw[0].count('/dist/assets/') == nspinners
 
 def test_component_resource_path_ext_dir():
     assert component_resource_path(

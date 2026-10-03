@@ -134,6 +134,7 @@ def _assert_no_duplicates(page):
     assert not duplicates, f'resources loaded more than once: {sorted(duplicates)}'
 
 
+@pytest.mark.internet
 @pytest.mark.parametrize('name', list(COMPONENTS))
 def test_undeclared_component_renders(page, name):
     factory, selector = COMPONENTS[name]
@@ -148,6 +149,7 @@ def test_undeclared_component_renders(page, name):
     assert _errors(msgs) == []
 
 
+@pytest.mark.internet
 @pytest.mark.parametrize('name', list(COMPONENTS))
 def test_undeclared_component_renders_after_load(page, name):
     """
@@ -218,6 +220,7 @@ def test_late_component_reuses_loaded_library(page):
     assert _errors(msgs) == []
 
 
+@pytest.mark.internet
 def test_esm_components_share_one_shim(page):
     def app():
         extension()
@@ -389,3 +392,93 @@ def test_declared_extension_renders_with_lazy_resources_disabled(page):
         assert _errors(msgs) == []
     finally:
         pn.config.lazy_resources = True
+
+
+def test_lazy_component_ignores_stale_notebook_default(page):
+    """
+    A server started from a notebook's kernel process (``pn.serve``,
+    commonly with ``threaded=True``, exactly how ``serve_component``
+    starts one here) must not inherit that notebook's resource default:
+    it never registers the `panel-preview` endpoint, so every
+    lazily-loaded resource would 404.
+    """
+    from panel.io import resources as resources_module
+    old_notebook_resources = resources_module.NOTEBOOK_RESOURCES
+    resources_module.NOTEBOOK_RESOURCES = True
+    try:
+        def app():
+            extension()
+            _tabulator().servable()
+
+        msgs, _ = serve_component(page, app)
+
+        expect(page.locator('.pnx-tabulator.tabulator')).to_have_count(1, timeout=20000)
+        assert _errors(msgs) == []
+        assert _script_count(page, 'panel-preview') == 0
+    finally:
+        resources_module.NOTEBOOK_RESOURCES = old_notebook_resources
+
+
+@pytest.mark.parametrize('live_notebook', [False, True])
+def test_notebook_resource_urls(page, live_notebook):
+    """Exports use the CDN; live notebooks keep their server endpoint."""
+    serve_component(page, lambda: pn.pane.Markdown('export'))
+    requests = []
+    page.on('request', lambda request: requests.append(request.url))
+    page.route('**/bundled/export-test/*', lambda route: route.fulfill(
+        status=200,
+        content_type='text/css' if route.request.url.endswith('.css') else 'text/javascript',
+        body='window.exportTestLoaded = true' if route.request.url.endswith('.js') else 'body {}',
+    ))
+    result = page.evaluate("""async (liveNotebook) => {
+        const endpoint = '/panel-preview/static/extensions/panel/bundled/export-test/'
+        window.__panel_live_notebook__ = liveNotebook
+        window.__panel_cdn_dist__ = location.origin + '/static/extensions/panel/'
+        const registry = window.__panel_resources__
+        await registry.ensure({v: 1, libs: [{name: 'export-test', js: [endpoint + 'script.js']}],
+                               css: [endpoint + 'style.css']})
+        return window.exportTestLoaded
+    }""", live_notebook)
+    assert result
+    assert len([url for url in requests if '/bundled/export-test/' in url]) == 2
+    shim = page.evaluate("""async () => {
+        const importShim = window.importShim
+        window.importShim = undefined
+        const registry = new window.__panel_resources__.constructor()
+        try {
+            await registry.ensure_shim('/panel-preview/static/extensions/panel/bundled/export-test/shim.js')
+            return document.querySelector('script[src*="/bundled/export-test/shim.js"]').src
+        } finally {
+            window.importShim = importShim
+        }
+    }""")
+    prefix = '/panel-preview' if live_notebook else ''
+    assert shim.endswith(f'{prefix}/static/extensions/panel/bundled/export-test/shim.js')
+    assert all(f'{prefix}/static/extensions/panel/bundled/export-test/' in url
+               for url in requests if '/bundled/export-test/' in url)
+
+
+def test_library_not_loaded_until_module_exports_assigned(page):
+    def app():
+        extension()
+        return pn.pane.Markdown('text')
+
+    serve_component(page, app)
+
+    loaded = page.evaluate("""() => {
+        window.PanelTestLib = {}
+        const lib = {
+            name: 'panel-test-lib',
+            probe: {global: 'PanelTestLib'},
+            modules: [
+                {url: 'https://example.com/lib.js', export: 'PanelTestLib'},
+                {url: 'https://example.com/plugin.js', export: 'PanelTestPlugin'},
+            ],
+        }
+        const before = window.__panel_resources__.loaded(lib)
+        window.PanelTestPlugin = () => {}
+        const after = window.__panel_resources__.loaded(lib)
+        return [before, after]
+    }""")
+
+    assert loaded == [False, True]

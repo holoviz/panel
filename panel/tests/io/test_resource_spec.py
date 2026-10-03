@@ -1,9 +1,11 @@
 import pytest
 
 from bokeh.model import Model
+from bokeh.server.contexts import BokehSessionContext
 
 from panel.config import config, panel_extension as extension
 from panel.custom import JSComponent
+from panel.io import resources as resources_module
 from panel.io.resource_spec import (
     SPEC_VERSION, declared_specs, lazy_load_available, resource_spec,
 )
@@ -376,3 +378,41 @@ def test_resource_spec_respects_rel_path(document):
                 state.base_url = '/'
                 state.rel_path = ''
     assert all(url.startswith('../static/') for url in _spec_urls(spec))
+
+
+def test_resource_spec_ignores_stale_notebook_default_in_server_session(document):
+    """
+    A server started from within a notebook's kernel process (``pn.serve``,
+    commonly with ``threaded=True``) must not inherit the notebook's
+    process-wide resource default: a plain served app never registers the
+    `panel-preview` endpoint, so every lazily-loaded resource would 404.
+    """
+    server_doc = document
+    session_context = BokehSessionContext('test-session', object(), server_doc)
+    server_doc._session_context = lambda: session_context
+
+    old_notebook_resources = resources_module.NOTEBOOK_RESOURCES
+    resources_module.NOTEBOOK_RESOURCES = True
+    try:
+        assert state._is_server_session is False  # no curdoc bound yet
+
+        with set_curdoc(server_doc):
+            assert state._is_server_session is True
+            spec = resource_spec(DataTabulator, 'cdn')
+        assert not any(
+            'panel-preview/static/extensions/panel' in url for url in _spec_urls(spec)
+        )
+
+        # The same class, resolved for a plain notebook comm document (no
+        # session context at all), must still get the endpoint: the fix
+        # narrowly targets genuine server sessions, not every document.
+        from bokeh.document import Document
+        notebook_doc = Document()
+        with set_curdoc(notebook_doc):
+            assert state._is_server_session is False
+            spec = resource_spec(DataTabulator, 'cdn')
+        assert all(
+            'panel-preview/static/extensions/panel' in url for url in _spec_urls(spec)
+        )
+    finally:
+        resources_module.NOTEBOOK_RESOURCES = old_notebook_resources

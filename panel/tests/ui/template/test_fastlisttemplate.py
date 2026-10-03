@@ -2,9 +2,9 @@ import pytest
 
 try:
     from playwright.sync_api import expect
-    pytestmark = pytest.mark.ui
+    pytestmark = [pytest.mark.ui, pytest.mark.internet]
 except ImportError:
-    pytestmark = pytest.mark.skip('playwright not available')
+    pytestmark = [pytest.mark.skip('playwright not available')]
 
 from panel.pane import Markdown
 from panel.template import FastListTemplate

@@ -21,10 +21,10 @@ import panel as pn
 
 pn.extension() # for notebook
 
-pn.Row(
-    pn.Column(pn.widgets.Button(label='B1', width=100, margin=25), styles={'background': '#f0f0f0'}),
-    pn.Column(pn.widgets.Button(label='B2', width=100, margin=(40, 50)), styles={'background': '#f0f0f0'}),
-    pn.Column(pn.widgets.Button(label='B3', width=100, margin=(25, 50, 75, 100)), styles={'background': '#f0f0f0'}))
+pn.ui.Row(
+    pn.ui.Column(pn.ui.Button(label='B1', width=100, margin=25), styles={'background': '#f0f0f0'}),
+    pn.ui.Column(pn.ui.Button(label='B2', width=100, margin=(40, 50)), styles={'background': '#f0f0f0'}),
+    pn.ui.Column(pn.ui.Button(label='B3', width=100, margin=(25, 50, 75, 100)), styles={'background': '#f0f0f0'}))
 
 ```
 
@@ -35,15 +35,15 @@ Spacer components make it easy to put fixed or responsive spacing between object
 First, let's add fixed-width Spacers in between some numbers:
 
 ```{pyodide}
-pn.Row(
+pn.ui.Row(
     1,
-    pn.Spacer(width=200),
+    pn.ui.Spacer(width=200),
     2,
-    pn.Spacer(width=100),
+    pn.ui.Spacer(width=100),
     3,
-    pn.Spacer(width=50),
+    pn.ui.Spacer(width=50),
     4,
-    pn.Spacer(width=25),
+    pn.ui.Spacer(width=25),
     5
 )
 ```
@@ -51,12 +51,12 @@ pn.Row(
 Instead of absolute spacing, we could use ``VSpacer`` or ``HSpacer`` components to provide responsive vertical and horizontal spacing, respectively. Using these components we can space objects equidistantly in a layout and allow the empty space to shrink when the browser is resized.
 
 ```{pyodide}
-pn.Row(
-    pn.layout.HSpacer(),
+pn.ui.Row(
+    pn.ui.HSpacer(),
     '* Item 1\n* Item2',
-    pn.layout.HSpacer(),
+    pn.ui.HSpacer(),
     '1. First\n2. Second',
-    pn.layout.HSpacer()
+    pn.ui.HSpacer()
 )
 ```
 

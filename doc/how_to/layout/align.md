@@ -12,20 +12,20 @@ One common use-case where alignment is important is when placing multiple items 
 import panel as pn
 pn.extension() # for notebook
 
-button = pn.widgets.Button(label='Test', height=100)
-slider = pn.widgets.IntSlider(align='center')
+button = pn.ui.Button(label='Test', height=100)
+slider = pn.ui.IntSlider(align='center')
 
-pn.Row(button, slider, styles={'background': 'lightgrey'})
+pn.ui.Row(button, slider, styles={'background': 'lightgrey'})
 ```
 
 Now, let's look at aligning components in a grid with an instance of passing in `(horizontal, vertical)`:
 
 ```{pyodide}
-pn.GridBox(
-    pn.widgets.Button(label='Test', height=100),
-    pn.widgets.IntSlider(align='center'),
-    pn.widgets.TextInput(label='Test', height=100, width=100, align=('center')),
-    pn.widgets.TextInput(width=150, align=('start', 'end')),
+pn.ui.GridBox(
+    pn.ui.Button(label='Test', height=100),
+    pn.ui.IntSlider(align='center'),
+    pn.ui.TextInput(label='Test', height=100, width=100, align=('center')),
+    pn.ui.TextInput(width=150, align=('start', 'end')),
     ncols=2,
     styles={'background': 'lightgrey'}
 )

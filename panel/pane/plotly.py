@@ -150,11 +150,13 @@ class Plotly(ModelPane):
                 array = json.pop(key)
                 data[full_path] = [array]
             elif isinstance(value, dict):
-                # Recurse into dictionaries:
-                Plotly._get_sources_for_trace(value, data=data, parent_path=full_path)
+                # Nested containers may still belong to the original figure.
+                json[key] = dict(value)
+                Plotly._get_sources_for_trace(json[key], data=data, parent_path=full_path)
             elif isinstance(value, list) and value and isinstance(value[0], dict):
                 # recurse into object arrays:
-                for i, element in enumerate(value):
+                json[key] = [dict(element) for element in value]
+                for i, element in enumerate(json[key]):
                     element_path = full_path + '.' + str(i)
                     Plotly._get_sources_for_trace(
                         element, data=data, parent_path=element_path

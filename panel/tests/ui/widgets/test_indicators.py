@@ -1,8 +1,11 @@
+import io
+
 import pytest
 
 pytest.importorskip("playwright")
 
 from bokeh.models import Tooltip
+from PIL import Image
 from playwright.sync_api import expect
 
 import panel as pn
@@ -10,7 +13,7 @@ import panel as pn
 from panel.tests.util import serve_component, wait_until
 from panel.theme import Fast
 from panel.widgets import TooltipIcon
-from panel.widgets.indicators import Gauge, Progress
+from panel.widgets.indicators import Dial, Gauge, Progress
 
 pytestmark = pytest.mark.ui
 
@@ -121,7 +124,6 @@ def test_gauge_does_not_crash_other_widgets(page):
     expect(page.locator("canvas")).to_have_count(1, timeout=10000)
 
 
-@pytest.mark.flaky(reruns=2, reruns_delays=3)
 def test_gauge_value_update(page):
     gauge = Gauge(label="G", value=25, bounds=(0, 100))
 
@@ -155,3 +157,19 @@ def test_fast_progress_indicator_explicit_height(page):
     progress_el = page.locator("progress")
     expect(progress_el).to_have_count(1)
     expect(progress_el).to_have_css("height", "32px")
+
+
+def test_dial_frame_is_transparent_on_dark_background(page):
+    dial = Dial(value=25, width=200, height=200)
+    row = pn.Row(dial, styles={'background': 'rgb(0, 0, 0)'})
+
+    serve_component(page, row)
+
+    figure = page.locator('.bk-Figure')
+    expect(figure).to_have_count(1)
+    page.wait_for_timeout(500)
+    image = Image.open(io.BytesIO(figure.screenshot())).convert('RGB')
+    # The corners sit outside the arc, so anything but the page
+    # background there means the figure border is painted.
+    for xy in [(1, 1), (image.width-2, 1), (1, image.height-2), (image.width-2, image.height-2)]:
+        assert image.getpixel(xy) == (0, 0, 0)

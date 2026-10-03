@@ -7,6 +7,7 @@ import json
 import os
 import platform
 import re
+import signal
 import socket
 import subprocess
 import sys
@@ -18,6 +19,7 @@ from queue import Empty, Queue
 from threading import Thread
 
 import numpy as np
+import param
 import pytest
 import requests
 
@@ -83,6 +85,77 @@ unix_only = pytest.mark.skipif(platform.system() == 'Windows', reason="Only supp
 from panel.pane.alert import Alert
 from panel.pane.markup import Markdown
 from panel.widgets.button import _ButtonBase
+
+
+def _pmui_patched_globals():
+    """
+    Globals panel-material-ui patches on import, which would otherwise leak
+    Material widgets and templates into every later test.
+    """
+    import panel.io.convert
+    import panel.io.resources
+    import panel.io.server
+
+    from panel.pane import HoloViews
+    from panel.param import Param
+
+    return (
+        (Param, 'mapping'),
+        (Param, 'input_widgets'),
+        (HoloViews, 'default_widgets'),
+        (panel.io.convert, 'loading_resources'),
+        (panel.io.convert, 'BASE_TEMPLATE'),
+        (panel.io.resources, 'BASE_TEMPLATE'),
+        (panel.io.server, 'BASE_TEMPLATE'),
+    )
+
+
+def _copy(value):
+    # The mappings are patched in place, the templates cannot be copied.
+    return dict(value) if isinstance(value, dict) else value
+
+
+# Captured when the test suite loads, before any test can import panel.ui.
+CLASSIC_GLOBALS = [
+    (obj, attr, _copy(getattr(obj, attr))) for obj, attr in _pmui_patched_globals()
+]
+
+
+def restore_classic_globals() -> list[str]:
+    """
+    Undoes panel-material-ui's import-time patches, returning the names of
+    the globals that had been patched.
+    """
+    patched = []
+    for obj, attr, value in CLASSIC_GLOBALS:
+        if getattr(obj, attr) != value:
+            patched.append(f'{obj.__name__}.{attr}')
+            setattr(obj, attr, _copy(value))
+    return patched
+
+
+def global_design():
+    """The global design, bypassing the per-session lookup."""
+    return param.Parameterized.__getattribute__(pn.config, 'design')
+
+
+def set_global_design(design):
+    param.Parameterized.__setattr__(pn.config, 'design', design)
+
+
+def import_panel_ui():
+    """
+    Imports panel.ui without letting it change what the classic suite
+    renders: the patches are undone and the design it selects is reverted,
+    so tests opt into MaterialUIDesign explicitly.
+    """
+    prior_design = global_design()
+    try:
+        import panel.ui
+    finally:
+        restore_classic_globals()
+        set_global_design(prior_design)
+    return panel.ui
 
 
 def mpl_figure():
@@ -318,10 +391,17 @@ def serve_and_wait(app, page=None, prefix=None, port=None, proxy=None, **kwargs)
         serve_app = serve
     if proxy:
         kwargs['websocket_origin'] = [f'localhost:{proxy}']
+    # Tornado reuses the IPv4 port for IPv6, which another process may hold.
+    kwargs.setdefault('address', '127.0.0.1')
     serve_app(app, port=port or 0, threaded=True, show=False, liveness=True, server_id=server_id, prefix=prefix or "", **kwargs)
     wait_until(lambda: server_id in state._servers, page)
     server = state._servers[server_id][0]
+    if proxy:
+        # The proxy answers the paths it does not route itself
+        wait_for_server(server.port, prefix=prefix)
     port = proxy if proxy else server.port
+    if not proxy and hasattr(server, '_tornado'):
+        server._tornado.websocket_origins.add(f'127.0.0.1:{port}')
     wait_for_server(port, prefix=prefix)
     if page:
         page.wait_for_function("document.readyState === 'complete'", timeout=5000)
@@ -334,22 +414,41 @@ def serve_component(page, app, suffix='', wait=True, **kwargs):
     msgs = []
     page.on("console", lambda msg: msgs.append(msg))
     port = serve_and_wait(app, page, **kwargs)
-    page.goto(f"http://localhost:{port}{suffix}", wait_until="domcontentloaded")
+    host = 'localhost' if kwargs.get('proxy') else '127.0.0.1'
+    page.goto(f"http://{host}:{port}{suffix}", wait_until="domcontentloaded")
 
     if wait:
         wait_until(lambda: any("Websocket connection 0 is now open" in str(msg) for msg in msgs), page, interval=10)
 
     if page and wait:
-        page.wait_for_function("document.readyState === 'complete'", timeout=5000)
+        # Heavy bundles can take over 5s to load on a busy runner.
+        page.wait_for_function("document.readyState === 'complete'", timeout=15000)
         page.wait_for_load_state('networkidle')
+        # The views request their stylesheets only once they render.
+        wait_until(lambda: any(
+            "items were rendered successfully" in str(msg) or "Error rendering Bokeh items" in str(msg)
+            for msg in msgs
+        ), page, interval=10)
+        page.wait_for_function(_STYLESHEETS_SETTLED, timeout=15000)
     return msgs, port
+
+
+# Chromium also gives a stylesheet that failed to load an empty sheet, so
+# only one still in flight has none.
+_STYLESHEETS_SETTLED = """() => {
+    const settled = (root) => [...root.querySelectorAll('*')].every((el) => el.shadowRoot == null || (
+        [...el.shadowRoot.querySelectorAll('link[rel="stylesheet"]')].every((link) => link.sheet != null)
+        && settled(el.shadowRoot)
+    ))
+    return settled(document)
+}"""
 
 
 def serve_and_request(app, suffix="", n=1, port=None, proxy=None, **kwargs):
     port = serve_and_wait(app, port=port, proxy=proxy, **kwargs)
     if proxy:
         port = proxy
-    reqs = [r for _ in range(n) if (r := requests.get(f"http://localhost:{port}{suffix}")).ok]
+    reqs = [r for _ in range(n) if (r := requests.get(f"http://127.0.0.1:{port}{suffix}", timeout=30)).ok]
     assert len(reqs) == n, "Not all requests were successful"
     return reqs[0] if n == 1 else reqs
 
@@ -359,10 +458,10 @@ def wait_for_server(port, prefix=None, timeout=3):
     prefix = prefix or ""
     if not prefix.endswith('/'):
         prefix += '/'
-    url = f"http://localhost:{port}{prefix}liveness"
+    url = f"http://127.0.0.1:{port}{prefix}liveness"
     while True:
         try:
-            if requests.get(url).ok:
+            if requests.get(url, timeout=timeout).ok:
                 return
         except Exception:
             pass
@@ -371,15 +470,38 @@ def wait_for_server(port, prefix=None, timeout=3):
             raise RuntimeError(f'{url} did not respond before timeout.')
 
 
+def terminate_panel_serve(p):
+    pgid = None
+    if ON_POSIX:
+        try:
+            pgid = os.getpgid(p.pid)
+        except OSError:
+            pass
+    p.terminate()
+    try:
+        p.wait(timeout=20)
+    except subprocess.TimeoutExpired:
+        p.kill()
+        p.wait()
+    if pgid is not None:
+        # `--num-procs` forks children that outlive the process it started them from
+        try:
+            os.killpg(pgid, signal.SIGKILL)
+        except (ProcessLookupError, PermissionError):
+            pass
+
+
 @contextlib.contextmanager
 def run_panel_serve(args, cwd=None):
     cmd = [sys.executable, "-m", "panel", "serve", *map(str, args)]
-    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False, cwd=cwd, close_fds=ON_POSIX)
+    p = subprocess.Popen(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=False, cwd=cwd,
+        close_fds=ON_POSIX, start_new_session=ON_POSIX
+    )
     try:
         yield p
     except BaseException as e:
-        p.terminate()
-        p.wait()
+        terminate_panel_serve(p)
         print("An error occurred: %s", e)  # noqa: T201
         try:
             out = p.stdout.read().decode()
@@ -389,8 +511,7 @@ def run_panel_serve(args, cwd=None):
             pass
         raise
     else:
-        p.terminate()
-        p.wait()
+        terminate_panel_serve(p)
 
 
 class NBSR:
@@ -524,12 +645,23 @@ class _SimpleRequestHandler(http.server.SimpleHTTPRequestHandler):
 
 @contextlib.contextmanager
 def reverse_proxy(port=None, proxy_port=None):
-    if port is None and proxy_port is None:
-        port, proxy_port = get_open_ports(2)
-    elif proxy_port is None:
-        proxy_port, = get_open_ports(1)
-    elif port is None:
+    if port is None:
         port, = get_open_ports(1)
+    # A free port can be taken again before caddy binds it
+    for _ in range(5 if proxy_port is None else 1):
+        process, bound_port = _start_reverse_proxy(port, proxy_port or get_open_ports(1)[0])
+        if process.poll() is None:
+            break
+    else:
+        raise RuntimeError('caddy could not bind a port')
+    try:
+        yield port, bound_port
+    finally:
+        process.terminate()
+        process.wait()
+
+
+def _start_reverse_proxy(port, proxy_port):
     headers = {
         "request": {
             "set": {
@@ -564,7 +696,7 @@ def reverse_proxy(port=None, proxy_port=None):
         ]
     }
     proxy_config = {
-        "listen": [f":{proxy_port}"],
+        "listen": [f"127.0.0.1:{proxy_port}"],
         "routes": [route_config, ws_config]
     }
     config = {
@@ -573,12 +705,35 @@ def reverse_proxy(port=None, proxy_port=None):
     }
     process = subprocess.Popen(
         ['caddy', 'run', '--config', '-'],
-        stdin=subprocess.PIPE, close_fds=ON_POSIX, text=True
+        stdin=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=ON_POSIX, text=True
     )
     process.stdin.write(json.dumps(config))
     process.stdin.close()
-    try:
-        yield port, proxy_port
-    finally:
-        process.terminate()
-        process.wait()
+    lines: Queue[str | None] = Queue()
+    # Caddy logs after the test that started it, which only the stderr the
+    # test captured at the start keeps out of the test run.
+    log = os.fdopen(os.dup(2), 'w')
+
+    def forward_log():
+        with process.stderr, log:
+            for line in process.stderr:
+                log.write(line)
+                log.flush()
+                lines.put(line)
+        lines.put(None)
+
+    Thread(target=forward_log, daemon=True).start()
+    # Whatever else holds the port would answer a probe of it, so only
+    # caddy can tell whether it is serving.
+    deadline = time.monotonic() + 10
+    while (remaining := deadline - time.monotonic()) > 0:
+        try:
+            line = lines.get(timeout=remaining)
+        except Empty:
+            break
+        if line is None:
+            process.wait()
+            break
+        if 'serving initial configuration' in line:
+            break
+    return process, proxy_port

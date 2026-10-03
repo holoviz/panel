@@ -70,8 +70,9 @@ from .document import (  # noqa
     _cleanup_doc, init_doc, unlocked, with_lock,
 )
 from .liveness import LivenessHandler
-from .loading import LOADING_INDICATOR_CSS_CLASS
+from .loading import _loading_css_classes
 from .logging import LOG_SESSION_CREATED
+from .pages import page_theme
 from .reload import record_modules
 from .resources import (
     BASE_TEMPLATE, CDN_DIST, COMPONENT_PATH, DIST_DIR, ERROR_TEMPLATE,
@@ -338,7 +339,8 @@ def html_page_for_render_items(
 
     script = wrap_in_script_tag(script_for_render_items(json_id, render_items))
 
-    context = template_variables.copy()
+    from ..theme.base import design_template_variables
+    context = {**design_template_variables(), **template_variables}
 
     context.update(dict(
         title = title,
@@ -408,7 +410,7 @@ def server_html_page_for_session(
         )
         if config.global_loading_spinner:
             html = html.replace(
-                '<body>', f'<body class="{LOADING_INDICATOR_CSS_CLASS} pn-{config.loading_spinner}">'
+                '<body>', f'<body class="{" ".join(_loading_css_classes())}">'
             )
     return html
 
@@ -657,7 +659,7 @@ def render_index_page(
     root = os.path.dirname(t.cast('str', bokeh.server.views.__file__))
     template = Loader(root).load(index or 'app_index.html')
     return template.generate(
-        prefix=prefix, items=items, PANEL_CDN=CDN_DIST
+        prefix=prefix, items=items, PANEL_CDN=CDN_DIST, page=page_theme
     ).decode('utf-8')
 
 
@@ -716,21 +718,35 @@ class Server(BokehServer):
             self._autoreload_stop_event = stop_event = asyncio.Event()
             self._autoreload_task = self._loop.asyncio_loop.create_task(setup_autoreload_watcher(stop_event))
 
+    async def _stop_autoreload(self) -> None:
+        for event in state._watch_events:
+            event.set()
+        state._watch_events.clear()
+        self._autoreload_stop_event.set()
+        try:
+            await self._autoreload_task
+        except asyncio.CancelledError:
+            pass
+        except Exception:
+            # A failed watcher must not keep the server from stopping.
+            logger.exception('Autoreload watcher failed')
+
     def stop(self, wait: bool = True) -> None:
         if self._autoreload_stop_event:
             # For the stop event to be processed we have to restart
             # the IOLoop briefly, ensuring an orderly cleanup
-            async def stop_autoreload():
-                for event in state._watch_events:
-                    event.set()
-                state._watch_events = []
-                self._autoreload_stop_event.set()
-                await self._autoreload_task
             try:
-                self._loop.asyncio_loop.run_until_complete(stop_autoreload())
+                self._loop.asyncio_loop.run_until_complete(self._stop_autoreload())
             except RuntimeError:
                 pass # Ignore if the event loop is still running
         super().stop(wait=wait)
+        if state._admin_context:
+            state._admin_context.run_unload_hook()
+
+    async def stop_async(self) -> None:
+        if self._autoreload_stop_event:
+            await self._stop_autoreload()
+        await super().stop_async()
         if state._admin_context:
             state._admin_context.run_unload_hook()
 
@@ -1032,6 +1048,7 @@ class RootHandler(LoginUrlMixin, BkRootHandler):
 
     def render(self, *args, **kwargs):
         kwargs['PANEL_CDN'] = CDN_DIST
+        kwargs['page'] = page_theme
         return super().render(*args, **kwargs)
 
 toplevel_patterns[0] = (r'/?', RootHandler)
@@ -1133,9 +1150,8 @@ class ComponentResourceHandler(StaticFileHandler):
         '_css', '_js', 'base_css', 'css', '_stylesheets', 'modifiers', '_bundle_path', '_bundle_css'
     ]
 
-    def initialize(self, path: str | t.Literal['root'] = 'root', default_filename: str | None = None):
-        self.root = path
-        self.default_filename = default_filename
+    def initialize(self, path: str | t.Literal['root'] = 'root', default_filename: str | None = None, *args: t.Any, **kwargs: t.Any):
+        super().initialize(path, default_filename, *args, **kwargs)
 
     def parse_url_path(self, path: str) -> str:
         """

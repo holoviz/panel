@@ -109,7 +109,7 @@ def abbreviated_repr(value, max_length=25, natural_breaks=(',', ' ')):
     """
     if isinstance(value, list):
         vrepr = '[' + ', '.join([abbreviated_repr(v) for v in value]) + ']'
-    if isinstance(value, param.Parameterized):
+    elif isinstance(value, param.Parameterized):
         vrepr = type(value).__name__
     else:
         vrepr = repr(value)
@@ -211,7 +211,7 @@ def parse_query(query: str) -> dict[str, t.Any]:
     query_dict = dict(urlparse.parse_qsl(query[1:]))
     parsed_query: dict[str, t.Any] = {}
     for k, v in query_dict.items():
-        if v.isdigit():
+        if re.fullmatch(r'-?[0-9]+', v):
             parsed_query[k] = int(v)
         elif is_number(v):
             parsed_query[k] = float(v)
@@ -561,6 +561,62 @@ def prefix_length(a: str, b: str) -> int:
     return left
 
 
+def suffix_length(a: str, b: str, limit: int | None = None) -> int:
+    """
+    Searches for the length of the common suffix of strings a and b,
+    optionally capped at limit characters, using binary search.
+    """
+    la, lb = len(a), len(b)
+    right = min(la, lb)
+    if limit is not None:
+        right = min(right, limit)
+    # Common suffixes are usually short (closing tags), so gallop up
+    # from a small window to avoid slicing large parts of the strings.
+    left, probe = 0, 64
+    while probe < right and a[la-probe:] == b[lb-probe:]:
+        left, probe = probe, probe * 2
+    right = min(right, probe)
+    while left < right:
+        mid = (left + right + 1) // 2
+        if a[la-mid:] == b[lb-mid:]:
+            left = mid
+        else:
+            right = mid - 1
+    return left
+
+
+_ASTRAL = re.compile('[\U00010000-\U0010FFFF]')
+
+def utf16_offset(text: str, index: int) -> int:
+    """
+    Converts a code point index into text to the UTF-16 code unit
+    index JavaScript uses, where astral characters (e.g. emoji) take
+    up two units.
+    """
+    if text.isascii():
+        return index
+    return index + len(_ASTRAL.findall(text, 0, index))
+
+
+def splice_diff(old: str, new: str) -> tuple[int, int, str]:
+    """
+    Computes a single splice transforming old into new, such that
+    `new == old[:start] + patch + old[end:]`.
+
+    Returns
+    -------
+    start: int
+        Length of the common prefix.
+    end: int
+        Index in old where the common suffix begins.
+    patch: str
+        The replacement for old[start:end].
+    """
+    start = prefix_length(new, old)
+    suffix = suffix_length(new, old, min(len(old), len(new)) - start)
+    return start, len(old) - suffix, new[start:len(new)-suffix]
+
+
 def camel_to_kebab(name):
     # Use regular expressions to insert a hyphen before each uppercase letter not at the start,
     # and between a lowercase and uppercase letter.
@@ -590,7 +646,7 @@ def _descendents(class_: type, concrete: bool = False) -> list[type]:
         x = q.pop(0)
         out.insert(0, x)
         try:
-            subclasses = x.__subclasses__()
+            subclasses: list[type] = x.__subclasses__()
         except TypeError:
             # TypeError raised when __subclasses__ is called on unbound methods,
             # on `type` for example.

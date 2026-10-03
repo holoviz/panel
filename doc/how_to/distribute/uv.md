@@ -29,7 +29,7 @@ import panel as pn
 pn.extension(design="material")
 
 # Create interactive components
-slider = pn.widgets.IntSlider(
+slider = pn.ui.IntSlider(
     value=5,
     start=1,
     end=10,
@@ -41,7 +41,7 @@ def generate_stars(rating=5):
     return "⭐" * rating
 
 # Build the application layout
-app = pn.Column(
+app = pn.ui.Column(
     "## ⭐ Star Rating Demo",
     "Adjust the slider to see your rating in stars:",
     slider,

@@ -1,6 +1,7 @@
 import asyncio
 import gc
 import threading
+import time
 import weakref
 
 from concurrent.futures import ThreadPoolExecutor
@@ -10,15 +11,17 @@ import pytest
 import tornado.locks
 
 from bokeh.document import Document
-from bokeh.document.events import MessageSentEvent
+from bokeh.document.events import MessageSentEvent, ModelChangedEvent
+from bokeh.protocol import Protocol
 
 import panel as pn
 
 from panel.io.document import (
-    _UNCONNECTED_EVENTS, _WRITE_BLOCK, _cleanup_doc, _destroy_document,
-    _is_write_blocked, _socket_dispatcher, _write_tasks, dispatch_django,
-    dispatch_tornado, extra_socket_handlers, hold, schedule_write_events,
-    unlocked, write_events,
+    _UNCONNECTED_EVENTS, _WRITE_BLOCK, MockSessionContext, _cleanup_doc,
+    _client_has_document, _destroy_document, _is_write_blocked,
+    _keep_unsent_models_new, _socket_dispatcher, _suppress_property_callbacks,
+    _write_tasks, dispatch_django, dispatch_tornado, extra_socket_handlers,
+    hold, init_doc, schedule_write_events, unlocked, write_events,
 )
 from panel.io.state import _state, set_curdoc, state
 from panel.tests.util import serve_and_request, wait_until
@@ -376,6 +379,61 @@ def test_unlocked_dispatches_from_worker_thread():
     assert 'on_loop' in seen
 
 
+@pytest.mark.xdist_group(name="server")
+def test_threaded_hold_does_not_boomerang_python_changes():
+    """
+    A Python-side change made inside a hold on a worker thread is
+    released on a later tick, after ``Syncable._changing`` is torn down,
+    so it must not be re-processed as a frontend change.
+    """
+    slider = IntSlider()
+
+    serve_and_request(slider)
+    wait_until(lambda: bool(slider._documents))
+
+    doc, model = list(slider._documents.items())[0]
+    # Stands in for a client, so the hold is released on a later tick
+    state._connected[doc] = True
+
+    received = []
+    process_events = slider._process_events
+    slider._process_events = lambda events: received.append(events) or process_events(events)
+
+    seen = {}
+
+    def callback():
+        # Bokeh runs locked next-tick callbacks on a worker thread
+        seen['on_loop'] = state._on_loop_thread
+        with hold(doc):
+            slider.value = 3
+
+    doc.add_next_tick_callback(callback)
+
+    wait_until(lambda: model.value == 3 and not doc.callbacks.hold_value)
+    # Leave time for a boomerang to pass through the change debounce
+    time.sleep(0.5)
+
+    assert seen['on_loop'] is False
+    assert received == []
+
+
+def test_suppress_property_callbacks_keeps_frontend_changes():
+    doc = Document()
+    model = IntSlider().get_root(doc)
+    doc.add_root(model)
+
+    def invoker():
+        pass
+
+    python_event = ModelChangedEvent(doc, model, 'value', 1, callback_invoker=invoker)
+    frontend_event = ModelChangedEvent(doc, model, 'value', 2, setter=object(), callback_invoker=invoker)
+
+    _suppress_property_callbacks([python_event, frontend_event])
+
+    assert python_event.callback_invoker is None
+    assert frontend_event.callback_invoker is invoker
+
+
 def test_write_events_shares_one_message_across_connections():
     """
     Serializing a patch marks the models it defines as synced on the
@@ -497,3 +555,99 @@ async def test_dispatch_msgs_terminates_on_document_destroy():
         assert ref() is None
     finally:
         extra_socket_handlers.pop(_FakeSocket, None)
+
+
+def test_keep_unsent_models_new_across_client_patch():
+    doc = Document()
+    column = pn.Column()
+    root = column.get_root(doc)
+    doc.add_root(root)
+    _keep_unsent_models_new(doc)
+    doc.to_json()
+
+    with set_curdoc(doc):
+        column.append(pn.pane.Markdown('unsent'))
+    unsent = set(doc.models._new_models)
+    assert unsent
+
+    doc.apply_json_patch({'events': [
+        {'kind': 'ModelChanged', 'model': {'id': root.id}, 'attr': 'name', 'new': 'renamed'}
+    ]})
+
+    assert unsent <= doc.models._new_models
+
+
+def test_keep_unsent_models_new_still_flushes_own_patches():
+    doc = Document()
+    column = pn.Column()
+    doc.add_root(column.get_root(doc))
+    _keep_unsent_models_new(doc)
+    doc.to_json()
+
+    sizes = []
+    with set_curdoc(doc):
+        for i in range(3):
+            doc.hold()
+            column.append(pn.pane.Markdown(f'item {i}'))
+            events, doc.callbacks._held_events = list(doc.callbacks._held_events), []
+            sizes.append(len(Protocol().create('PATCH-DOC', events).content_json))
+            doc.callbacks._hold = None
+
+    assert sizes[2] == pytest.approx(sizes[1], abs=100)
+
+
+def test_client_has_document_handles_destroyed_document():
+    doc = Document()
+    doc.add_root(pn.Column().get_root(doc))
+    doc._session_context = lambda: MockSessionContext(doc)
+    assert not _client_has_document(doc)
+
+    doc.to_json()
+    assert _client_has_document(doc)
+
+    doc.models.destroy()
+    assert not _client_has_document(doc)
+
+
+def test_client_has_document_ignores_sessionless_document():
+    doc = Document()
+    doc.add_root(pn.Column().get_root(doc))
+
+    doc.to_json()
+    assert not _client_has_document(doc)
+
+
+def test_client_has_document_counts_a_notebook_comm():
+    doc = Document()
+    root = pn.Column().get_root(doc)
+    doc.add_root(root)
+
+    doc.to_json()
+    _state._views[root.ref['id']] = (None, root, doc, object())
+    try:
+        assert _client_has_document(doc)
+    finally:
+        del _state._views[root.ref['id']]
+
+
+def test_keep_unsent_models_new_skips_a_bokeh_without_new_models():
+    doc = Document()
+    doc.add_root(pn.Column().get_root(doc))
+    doc._session_context = lambda: MockSessionContext(doc)
+    del doc.models._new_models
+    _keep_unsent_models_new(doc)
+
+    assert not getattr(doc.apply_json_patch, '_panel_keeps_unsent', False)
+
+
+def test_init_doc_keeps_unsent_models_new_once():
+    doc = Document()
+    doc.add_root(pn.Column().get_root(doc))
+    doc._session_context = lambda: MockSessionContext(doc)
+
+    init_doc(doc)
+    wrapper = doc.apply_json_patch
+    assert getattr(wrapper, '_panel_keeps_unsent', False)
+
+    init_doc(doc)
+    assert doc.apply_json_patch is wrapper

@@ -230,7 +230,7 @@ class CustomComponent(ReactiveHTML):
 
 component = CustomComponent(width=500)
 
-pn.Column(component.param.color, component, )
+pn.ui.Column(component.param.color, component, )
 ```
 
 ## `_child_config`
@@ -292,7 +292,7 @@ svg = """<svg style="stroke: #e62f63;" width="18" height="18" viewBox="0 0 18 18
 CustomComponent(v_literal=svg, v_template=svg, width=500, height=200)
 ```
 
-Please note you cannot set `v_model=svg` because `ReactiveHTML` tries to set the `v_model` to a `pn.pane.SVG` pane.
+Please note you cannot set `v_model=svg` because `ReactiveHTML` tries to set the `v_model` to a `pn.ui.SVG` pane.
 
 ```{pyodide}
 try:
@@ -323,7 +323,7 @@ class CustomComponent(ReactiveHTML):
     _dom_events = {'input_el': ['change']}
 
 component=CustomComponent(width=500)
-pn.Column(component, component.param.value)
+pn.ui.Column(component, component.param.value)
 ```
 
 Once subscribed, the class may also define a method following the `_{element-id}_{event}` naming convention, which will fire when the DOM event triggers. For example we could define a `_input_el_change` method. Any such callback will be given a `DOMEvent` object as the first and only argument.
@@ -349,8 +349,8 @@ class CustomComponent(ReactiveHTML):
 
 
 component = CustomComponent(width=500)
-pn.Column(
-    component, component.param.value, pn.pane.JSON(component.param.event)
+pn.ui.Column(
+    component, component.param.value, pn.ui.JSON(component.param.event)
 )
 ```
 
@@ -410,7 +410,7 @@ class Counter(ReactiveHTML):
     }
 
 counter = Counter()
-pn.Column(counter, counter.param.count)
+pn.ui.Column(counter, counter.param.count)
 ```
 
 In this example, we have a `Counter` component that displays a count value and an *Increment* Button. The `_template` defines the HTML structure of the component, including the template variable `${count}` for the count value.
@@ -551,7 +551,7 @@ pn.extension('material-components') # for notebook
 
 text_field = MaterialTextField(value="Some value")
 
-pn.Column(text_field, text_field.param.value).servable()
+pn.ui.Column(text_field, text_field.param.value).servable()
 ```
 
 In a notebook dependencies for this component will not be loaded unless the user explicitly loads them with a `pn.extension('material-components')`. In a server context you will also have to explicitly load this extension unless the component is rendered on initial page load, i.e. if the component is only added to the page in a callback you will also have to explicitly run `pn.extension('material-components')`.

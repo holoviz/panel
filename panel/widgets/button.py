@@ -35,7 +35,10 @@ BUTTON_STYLES: list[str] = ['solid', 'outline']
 
 
 def _normalize_color_button_type_constructor_params(params: dict[str, t.Any]) -> None:
-    if "color" in params and "button_type" in params:
+    if "color" in params and params.get("button_type") == params["color"]:
+        # Already normalized, e.g. by a subclass constructor.
+        pass
+    elif "color" in params and "button_type" in params:
         warnings.warn(
             "Both 'color' and 'button_type' were provided; using 'color' "
             "and ignoring 'button_type'. Note that 'button_type' is deprecated and 'color' "
@@ -56,7 +59,10 @@ def _normalize_color_button_type_constructor_params(params: dict[str, t.Any]) ->
 
 
 def _normalize_variant_button_style_constructor_params(params: dict[str, t.Any]) -> None:
-    if "variant" in params and "button_style" in params:
+    if "variant" in params and params.get("button_style") == params["variant"]:
+        # Already normalized, e.g. by a subclass constructor.
+        pass
+    elif "variant" in params and "button_style" in params:
         warnings.warn(
             "Both 'variant' and 'button_style' were provided; using 'variant' "
             "and ignoring 'button_style'. Note that 'button_style' is deprecated and 'color' "
@@ -214,7 +220,7 @@ class IconMixin(Widget):
 
     icon = param.String(default=None, doc="""
         An icon to render to the left of the button label. Either an SVG or an
-        icon name which is loaded from https://tabler-icons.io.""")
+        icon name which is loaded from https://tabler.io/icons.""")
 
     icon_size = param.String(default='1em', doc="""
         Size of the icon as a string, e.g. 12px or 1em.""")

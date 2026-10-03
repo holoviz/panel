@@ -12,7 +12,7 @@ import panel as pn
 pn.extension()
 
 def app():
-    return pn.pane.JSON(
+    return pn.ui.JSON(
         {
             "route_params": pn.state.route_params,
             "app_url": pn.state.app_url,

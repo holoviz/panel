@@ -27,11 +27,7 @@ def test_json_editor_edit(page):
 
     expect(page.locator('.jsoneditor')).to_have_count(1)
 
-    page.locator('.jsoneditor-string').click()
-    ctrl_key = 'Meta' if sys.platform == 'darwin' else 'Control'
-    page.keyboard.press(f'{ctrl_key}+A')
-    page.keyboard.press('Backspace')
-    page.keyboard.type('new')
+    page.locator('.jsoneditor-string').fill('new')
     page.locator('.jsoneditor').click()
 
     wait_until(lambda: editor.value['str'] == 'new', page)

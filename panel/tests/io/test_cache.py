@@ -276,6 +276,36 @@ def test_cache_with_args():
     assert fn(0, 0) == 0
     assert fn(0, 0) == 0
 
+@pytest.mark.parametrize('module_name', [None, 'unregistered_cache_test', 'builtins'])
+def test_cache_function_without_module_file(module_name):
+    """Executed docs functions without a module file should cache independently."""
+    functions = []
+    for result in ('first', 'second'):
+        namespace = {'cache': cache, 'result': result, 'calls': []}
+        exec('def callback(value):\n    calls.append(value)\n    return result', namespace)
+        namespace['callback'].__module__ = module_name
+        functions.append((cache(namespace['callback']), namespace['calls']))
+
+    for (fn, calls), expected in zip(functions, ('first', 'second')):
+        assert fn(1) == expected
+        assert fn(1) == expected
+        assert calls == [1]
+
+def test_cache_moduleless_function_identity_reuse(monkeypatch):
+    """Moduleless callbacks must not share cached results if function IDs are reused."""
+    monkeypatch.setattr(cache_module, 'id', lambda obj: 1 if callable(obj) else id(obj), raising=False)
+
+    namespace = {'result': 'first'}
+    exec('def callback(value):\n    return result', namespace)
+    first = cache(namespace['callback'])
+    assert first(1) == 'first'
+
+    del first
+    namespace = {'result': 'second'}
+    exec('def callback(value):\n    return result', namespace)
+    second = cache(namespace['callback'])
+    assert second(1) == 'second'
+
 @pytest.mark.asyncio
 async def test_async_cache_with_args():
     global OFFSET

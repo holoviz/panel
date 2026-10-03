@@ -5,6 +5,7 @@ opens the server to the world and provide access to JupyterLab
 JavaScript objects through the global window variable.
 """
 
+c.ServerApp.ip = "127.0.0.1"
 c.ServerApp.port = 8888
 c.ServerApp.port_retries = 0
 c.ServerApp.open_browser = False

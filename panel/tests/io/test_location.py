@@ -85,6 +85,13 @@ def test_location_sync_query_init_rename(location):
     assert location._synced == []
     assert location.search == ""
 
+def test_location_sync_query_init_negative_integer(location):
+    location.search = "?integer=-3"
+    p = SyncParameterized()
+    location.sync(p, ['integer'])
+    assert p.integer == -3
+    assert location.search == "?integer=-3"
+
 def test_location_sync_query(location):
     p = SyncParameterized()
     location.sync(p)
@@ -175,7 +182,7 @@ def test_server_location_populate_from_request():
     loc = locs[0]
     assert loc.href == request.url
     assert loc.protocol == 'http:'
-    assert loc.hostname == 'localhost'
+    assert loc.hostname == '127.0.0.1'
     assert loc.pathname == '/'
     assert loc.search == '?foo=1'
 

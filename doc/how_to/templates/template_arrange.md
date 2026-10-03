@@ -23,8 +23,8 @@ import panel as pn
 
 # Data and Widgets
 xs = np.linspace(0, np.pi)
-freq = pn.widgets.FloatSlider(label="Frequency", start=0, end=10, value=2)
-phase = pn.widgets.FloatSlider(label="Phase", start=0, end=np.pi)
+freq = pn.ui.FloatSlider(label="Frequency", start=0, end=10, value=2)
+phase = pn.ui.FloatSlider(label="Phase", start=0, end=np.pi)
 
 # Interactive data pipeline
 def sine(freq, phase):
@@ -37,7 +37,7 @@ template = pn.template.BootstrapTemplate(title='BootstrapTemplate')
 # Add components to the sidebar, main, and header
 template.sidebar.extend([freq, phase])
 template.main.append(
-    pn.Card(dfi_sine.hvplot(min_height=400).output(), title='Sine')
+    pn.ui.Card(dfi_sine.hvplot(min_height=400).output(), title='Sine')
 )
 template.header.append('## Header')
 

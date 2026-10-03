@@ -150,7 +150,9 @@ class Feed(Column):
                     break
             else:
                 return super()._process_property_change(props)
-            offset = self._synced_range[0]
+            # The range the rendered children were synced from, which the
+            # current visible_range and load_buffer may no longer give.
+            offset = (self._last_synced or self._synced_range)[0]
             n = len(self.objects)
             visible_range = [
                 max(offset + indexes[0], 0),
@@ -208,21 +210,11 @@ class Feed(Column):
         if not self.visible_range:
             return
 
-        # need to get it all the way to the bottom rather
-        # than the center of the buffer zone
-        load_buffer = self.load_buffer
-        with param.discard_events(self):
-            self.load_buffer = 1
-
         n = len(self.objects)
         n_visible = self.visible_range[-1] - self.visible_range[0]
         with edit_readonly(self):
             # plus one to center on the last object
             self.visible_range = (min(max(n - n_visible + 1, 0), n), n)
-
-        with param.discard_events(self):
-            # reset the buffers and loaded objects
-            self.load_buffer = load_buffer
 
     def scroll_to_latest(self, scroll_limit: float | None = None) -> None:
         """

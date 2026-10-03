@@ -26,7 +26,7 @@ custom_style = {
     'box-shadow': '5px 5px 5px #bcbcbc'
 }
 
-pn.widgets.FloatSlider(label='Number', styles=custom_style)
+pn.ui.FloatSlider(label='Number', styles=custom_style)
 ```
 
 ## `stylesheets`
@@ -50,7 +50,7 @@ stylesheet = """
 }
 """
 
-pn.widgets.FloatSlider(
+pn.ui.FloatSlider(
     label='Number', styles=custom_style, stylesheets=[stylesheet]
 )
 ```
@@ -100,7 +100,7 @@ stylesheet = """
 }
 """
 
-pn.widgets.FloatSlider(
+pn.ui.FloatSlider(
     label='Number', styles=custom_style, stylesheets=[stylesheet]
 )
 ```
@@ -112,7 +112,7 @@ Inlining stylesheets provides a quick way to override the style of a component b
 You can either provide a full URL to the stylesheet and host it yourself or you can [serve static assets alongside your application](../server/static_files). Here we load the stylesheet from an external URL:
 
 ```{pyodide}
-pn.widgets.FloatSlider(
+pn.ui.FloatSlider(
     label='Number', stylesheets=['https://assets.holoviz.org/panel/how_to/styling/noUi.css']
 )
 ```
@@ -136,8 +136,8 @@ color_stylesheet = """
 }
 """
 
-pn.Column(
-    *(pn.widgets.FloatSlider(label='Number', stylesheets=[stylesheet, color_stylesheet], css_classes=[cls])
+pn.ui.Column(
+    *(pn.ui.FloatSlider(label='Number', stylesheets=[stylesheet, color_stylesheet], css_classes=[cls])
       for cls in ('red', 'green', 'blue'))
 )
 ```

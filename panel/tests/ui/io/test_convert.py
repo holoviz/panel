@@ -3,7 +3,6 @@ import pathlib
 import re
 import shutil
 import tempfile
-import time
 import uuid
 
 import pytest
@@ -12,8 +11,8 @@ pytest.importorskip("playwright")
 
 from playwright.sync_api import expect
 
-from panel.config import config
 from panel.io.convert import BOKEH_LOCAL_WHL, PANEL_LOCAL_WHL, convert_apps
+from panel.io.loading import _loading_css_classes
 from panel.tests.util import http_serve_directory
 
 if not (PANEL_LOCAL_WHL.is_file() and BOKEH_LOCAL_WHL.is_file()):
@@ -23,7 +22,7 @@ if not (PANEL_LOCAL_WHL.is_file() and BOKEH_LOCAL_WHL.is_file()):
         allow_module_level=True
     )
 
-pytestmark = [pytest.mark.ui, pytest.mark.flaky(max_runs=3)]
+pytestmark = [pytest.mark.ui, pytest.mark.flaky(reruns=3)]
 
 
 if os.name == "nt":
@@ -157,8 +156,6 @@ def http_serve():
 
     httpd, _ = http_serve_directory(str(temp_path), port=HTTP_PORT)
 
-    time.sleep(1)
-
     def write(app):
         app_name = uuid.uuid4().hex
         app_path = temp_path / f'{app_name}.py'
@@ -196,7 +193,7 @@ def wait_for_app(http_serve, app, page, runtime, wait=True, resources=None, **kw
 
     page.goto(f"{HTTP_URL}{app_path.name[:-3]}.html")
 
-    cls = f'pn-loading pn-{config.loading_spinner}'
+    cls = ' '.join(_loading_css_classes())
     expect(page.locator('body')).to_have_class(cls)
     if wait:
         expect(page.locator('body')).not_to_have_class(cls, timeout=TIMEOUT)
@@ -270,16 +267,9 @@ def test_pyodide_test_convert_tabulator_app(http_serve, page, runtime):
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
 
-@pytest.mark.parametrize(
-    'runtime, http_patch', [
-        ('pyodide', False),
-        ('pyodide', True),
-        ('pyodide-worker', False),
-        ('pyodide-worker', True)
-    ]
-)
-def test_pyodide_test_convert_csv_app(http_serve, page, runtime, http_patch):
-    msgs = wait_for_app(http_serve, csv_app, page, runtime, http_patch=http_patch)
+@pytest.mark.parametrize('runtime', ['pyodide', 'pyodide-worker'])
+def test_pyodide_test_convert_csv_app(http_serve, page, runtime):
+    msgs = wait_for_app(http_serve, csv_app, page, runtime)
 
     expected_titles = ['index', 'date', 'Temperature', 'Humidity', 'Light', 'CO2', 'HumidityRatio', 'Occupancy']
 

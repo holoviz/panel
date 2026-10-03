@@ -28,6 +28,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "Operating System :: OS Independent",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
@@ -49,7 +50,7 @@ dependencies = [
     'bokeh >=3.10.0,<3.11.0',
     'param >=2.1.0,<3.0',
     'pyviz_comms >=2.0.0',
-    'panel-material-ui >=0.10.0',
+    'panel-material-ui >=0.16.0rc0,<0.17',
     'markdown',
     'markdown-it-py',
     'linkify-it-py',
@@ -83,8 +84,12 @@ django = [
     'django',
     'uvicorn',
 ]
+migrate = [
+    'libcst >=1.1',
+]
 dev = [
     'watchfiles',
+    'libcst >=1.1',
 ]
 tests = [
     'psutil' ,
@@ -221,6 +226,7 @@ asyncio_default_fixture_loop_scope = "function"
 xfail_strict = true
 minversion = "7"
 log_cli_level = "INFO"
+timeout = 300
 filterwarnings = [
     "error",
     # 2023-11: `pkg_resources` is deprecated
@@ -296,7 +302,6 @@ module = [
     "pydeck.*",
     "pyarrow.*",
     "pyecharts.*",
-    "pyodide_http.*",
     "pyodide.*",
     "pyscript.*",
     "pyvista.*",

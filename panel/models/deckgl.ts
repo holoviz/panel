@@ -353,7 +353,7 @@ export class DeckGLPlot extends LayoutDOM {
     this.prototype.default_view = DeckGLPlotView
 
     this.define<DeckGLPlot.Props>(({Any, List, Str, Ref}) => ({
-      data:             [ Any                              ],
+      data:             [ Any,                          {} ],
       data_sources:     [ List(Ref(ColumnDataSource)), [] ],
       clickState:       [ Any,                          {} ],
       hoverState:       [ Any,                          {} ],

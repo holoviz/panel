@@ -389,12 +389,15 @@ export class DataTabulatorView extends HTMLBoxView {
   _lastHorizontalScrollbarLeftPosition: number = 0
   _applied_styles: boolean = false
   _building: boolean = false
+  _pending_data: boolean = false
   _redrawing: boolean = false
   /** Coalesced resize redraw; waits for `this.root.ready` (Bokeh view async chain) before redrawing. */
   _resize_pending: boolean = false
   _resize_flush: Promise<void> | null = null
   _restore_scroll: boolean | "horizontal" | "vertical" = false
   _updating_scroll: boolean = false
+  _pending_scroll_restores: number = 0
+  _restored_scroll: {top: number, left: number} = {top: NaN, left: NaN}
   _is_scrolling: boolean = false
   _automatic_page_size: boolean = false
   _last_after_resize_el_width: number | null = null
@@ -412,11 +415,6 @@ export class DataTabulatorView extends HTMLBoxView {
       this.invalidate_render()
     }, 20, false))
 
-    this.on_change(visible, () => {
-      if (this.model.visible) {
-        this.tabulator.element.style.visibility = "visible"
-      }
-    })
     this.on_change(columns, () => {
       this.tabulator.setColumns(this.getColumns())
       this.setHidden()
@@ -462,6 +460,7 @@ export class DataTabulatorView extends HTMLBoxView {
 
     this.on_change(cell_styles, () => {
       if (this._applied_styles) {
+        this.record_scroll()
         this._updating_scroll = true
         this.tabulator.redraw(true)
         this._updating_scroll = false
@@ -491,6 +490,8 @@ export class DataTabulatorView extends HTMLBoxView {
       }
       this._restore_scroll = "horizontal"
       this._selection_updating = true
+      // The scroll event of a scroll just before may not have been handled yet.
+      this.record_scroll()
       this._updating_scroll = true
       void this.setData().then(() => {
         this._selection_updating = false
@@ -501,6 +502,7 @@ export class DataTabulatorView extends HTMLBoxView {
     this.connect(this.model.source.streaming, () => this.addData())
     this.connect(this.model.source.patching, () => {
       const inds = this.model.source.selected.indices
+      this.record_scroll()
       this._updating_scroll = true
       this.updateOrAddData()
       this._updating_scroll = false
@@ -631,7 +633,7 @@ export class DataTabulatorView extends HTMLBoxView {
         this.container === null ||
         this.is_drawing ||
         this._has_active_editor() ||
-        ![...this._initialized_stylesheets.values()].every(v => v)
+        !this.stylesheets_settled
       ) {
         await defer()
         continue
@@ -669,7 +671,13 @@ export class DataTabulatorView extends HTMLBoxView {
       return false
     }
     // Tabulator marks the edited cell with `tabulator-editing` while an editor is active.
-    return this.container.querySelector(".tabulator-editing") !== null
+    // A header filter list is a popup outside the cell, which a redraw would close.
+    // A popup left behind hidden must not hold the redraw back forever.
+    const filter_lists = [...this.shadow_el.querySelectorAll(".tabulator-edit-list")]
+    return (
+      this.container.querySelector(".tabulator-editing") !== null ||
+      filter_lists.some((el) => el instanceof HTMLElement && el.offsetParent !== null)
+    )
   }
 
   override stylesheets(): StyleSheetLike[] {
@@ -712,12 +720,25 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   override style_redraw(): void {
-    if (this.model.visible) {
-      this.tabulator.element.style.visibility = "visible"
+    if (this.tabulator == null) {
+      return
     }
     if (!this._initializing && !this._building) {
       this.redraw()
     }
+    this.setVisibility()
+  }
+
+  /**
+   * The table stays hidden until it is built and its stylesheets have settled,
+   * otherwise its unstyled, unmeasured layout flashes before the final one.
+   */
+  setVisibility(): void {
+    if (this.tabulator == null) {
+      return
+    }
+    const ready = !this._building && this.stylesheets_settled
+    this.tabulator.element.style.visibility = this.model.visible && ready ? "visible" : "hidden"
   }
 
   tableInit(): void {
@@ -820,6 +841,10 @@ export class DataTabulatorView extends HTMLBoxView {
       this.tabulator.setPage(this.model.page)
     }
     this._initializing = this._building = false
+    this.setVisibility()
+    if (this._pending_data) {
+      void this.setData().then(() => this.postUpdate())
+    }
     this._request_resize_redraw()
   }
 
@@ -1310,8 +1335,11 @@ export class DataTabulatorView extends HTMLBoxView {
   // Update table
   setData(): Promise<void> {
     if (this._initializing || this._building || !this.tabulator.initialized) {
+      // The table keeps the data it was built with, so apply this once it is
+      this._pending_data = true
       return Promise.resolve(undefined)
     }
+    this._pending_data = false
     const data = this.getData()
     if (this.model.pagination != null) {
       return this.tabulator.rowManager.setData(data, true, false)
@@ -1341,12 +1369,10 @@ export class DataTabulatorView extends HTMLBoxView {
   postUpdate(): void {
     this.setSelection()
     this.setStyles()
-    if (this._restore_scroll) {
-      const vertical = this._restore_scroll === "horizontal" ? false : true
-      const horizontal = this._restore_scroll === "vertical" ? false : true
-      this.restore_scroll(horizontal, vertical)
-      this._restore_scroll = false
-    }
+    // Tabulator also redraws by itself, e.g. when resized, resetting the scroll.
+    const restore = this._restore_scroll || "horizontal"
+    this.restore_scroll(restore !== "vertical", restore !== "horizontal")
+    this._restore_scroll = false
   }
 
   updateOrAddData(): void {
@@ -1371,13 +1397,6 @@ export class DataTabulatorView extends HTMLBoxView {
     for (const row of this.model.frozen_rows) {
       this.tabulator.getRow(row).freeze()
     }
-  }
-
-  setVisibility(): void {
-    if (this.tabulator == null) {
-      return
-    }
-    this.tabulator.element.style.visibility = this.model.visible ? "visible" : "hidden"
   }
 
   updatePage(pageno: number): void {
@@ -1502,18 +1521,44 @@ export class DataTabulatorView extends HTMLBoxView {
     if (!(horizontal || vertical)) {
       return
     }
-    const opts: ScrollToOptions = {behavior: "instant"}
-    if (vertical) {
-      opts.top = this._lastVerticalScrollbarTopPosition
+    this._pending_scroll_restores += 1
+    const apply = (attempts: number) => {
+      requestAnimationFrame(() => {
+        const el = this.tabulator?.rowManager?.element
+        if (el == null) {
+          this._pending_scroll_restores -= 1
+          return
+        }
+        // Read when applied, so a scroll the user made meanwhile is kept.
+        const opts: ScrollToOptions = {behavior: "instant"}
+        if (vertical) {
+          opts.top = this._lastVerticalScrollbarTopPosition
+        }
+        if (horizontal) {
+          opts.left = this._lastHorizontalScrollbarLeftPosition
+        }
+        this._updating_scroll = true
+        el.scrollTo(opts)
+        this._updating_scroll = false
+        if (vertical) {
+          this._restored_scroll.top = el.scrollTop
+        }
+        if (horizontal) {
+          this._restored_scroll.left = el.scrollLeft
+        }
+        // Rows still rendering clamp the position; offsets are fractional when zoomed.
+        const restored = (
+          (opts.top == null || Math.abs(el.scrollTop - opts.top) < 1) &&
+          (opts.left == null || Math.abs(el.scrollLeft - opts.left) < 1)
+        )
+        if (!restored && attempts > 0) {
+          apply(attempts - 1)
+          return
+        }
+        this._pending_scroll_restores -= 1
+      })
     }
-    if (horizontal) {
-      opts.left = this._lastHorizontalScrollbarLeftPosition
-    }
-    requestAnimationFrame(() => {
-      this._updating_scroll = true
-      this.tabulator.rowManager.element.scrollTo(opts)
-      this._updating_scroll = false
-    })
+    apply(10)
   }
 
   // Update model
@@ -1522,8 +1567,17 @@ export class DataTabulatorView extends HTMLBoxView {
     if (this._updating_scroll) {
       return
     }
-    this._lastVerticalScrollbarTopPosition = this.tabulator.rowManager.element.scrollTop
-    this._lastHorizontalScrollbarLeftPosition = this.tabulator.rowManager.element.scrollLeft
+    const {scrollTop, scrollLeft} = this.tabulator.rowManager.element
+    // Scroll events arrive after _updating_scroll is cleared, so while restoring
+    // ignore the reset to the start and the clamped position.
+    const pending = this._pending_scroll_restores > 0
+    const restored = this._restored_scroll
+    if (!pending || (scrollTop !== 0 && scrollTop !== restored.top)) {
+      this._lastVerticalScrollbarTopPosition = scrollTop
+    }
+    if (!pending || (scrollLeft !== 0 && scrollLeft !== restored.left)) {
+      this._lastHorizontalScrollbarLeftPosition = scrollLeft
+    }
   }
 
   rowClicked(e: any, row: any) {

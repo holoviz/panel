@@ -35,11 +35,11 @@ pn.extension()
 def model(n=5):
     return "⭐" * n
 
-slider = pn.widgets.IntSlider(value=5, start=1, end=5)
+slider = pn.ui.IntSlider(value=5, start=1, end=5)
 
 interactive_model = pn.bind(model, n=slider)
 
-layout = pn.Column(slider, interactive_model)
+layout = pn.ui.Column(slider, interactive_model)
 
 pn.template.FastListTemplate(
     site="Panel", title="Example", main=[layout],

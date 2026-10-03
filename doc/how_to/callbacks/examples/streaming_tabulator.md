@@ -13,10 +13,10 @@ This example demonstrates how to use `add_periodic_callback` to stream data to a
 ```{pyodide}
 df = pd.DataFrame(np.random.randn(10, 4), columns=list('ABCD')).cumsum()
 
-rollover = pn.widgets.IntInput(label='Rollover', value=15)
-follow = pn.widgets.Checkbox(label='Follow', value=True, align='end')
+rollover = pn.ui.IntInput(label='Rollover', value=15)
+follow = pn.ui.Checkbox(label='Follow', value=True, align='end')
 
-tabulator = pn.widgets.Tabulator(df, height=450)
+tabulator = pn.ui.Tabulator(df, height=450)
 
 def color_negative_red(val):
     """
@@ -35,8 +35,8 @@ def stream():
 
 cb = pn.state.add_periodic_callback(stream, 200)
 
-pn.Column(
-    pn.Row(cb.param.period, rollover, follow, width=400),
+pn.ui.Column(
+    pn.ui.Row(cb.param.period, rollover, follow, width=400),
     tabulator
 ).servable()
 ```

@@ -900,6 +900,82 @@ def test_reactive_design_stylesheets_update(document, comm):
     assert model.stylesheets[-1] == widget.stylesheets[0]
 
 
+def test_reactive_stylesheets_shared_component_across_documents(document, comm):
+    """A reused component's stylesheets belong to each notebook output's document."""
+    other_doc = Document()
+    widget = TextInput(stylesheets=['https://example.com/custom.css'])
+
+    with set_curdoc(document):
+        model1 = widget.get_root(document, comm)
+        document.add_root(model1)
+        model2 = widget.get_root(other_doc, comm)
+        other_doc.add_root(model2)
+
+        widget.stylesheets = ['https://example.com/updated.css']
+
+    for model, doc in ((model1, document), (model2, other_doc)):
+        assert all(sts.document is doc for sts in model.stylesheets if isinstance(sts, ImportedStyleSheet))
+        assert any(
+            isinstance(sts, ImportedStyleSheet) and sts.url == 'https://example.com/updated.css'
+            for sts in model.stylesheets
+        )
+        doc.to_json()
+    assert not {
+        id(sts) for sts in model1.stylesheets if isinstance(sts, ImportedStyleSheet)
+    } & {
+        id(sts) for sts in model2.stylesheets if isinstance(sts, ImportedStyleSheet)
+    }
+
+
+def test_reactive_pane_stylesheets_shared_across_documents(document, comm):
+    """Updating a pane reused in notebook outputs keeps stylesheets document-local."""
+    other_doc = Document()
+    pane = Markdown('first')
+
+    with set_curdoc(document):
+        model1 = pane.get_root(document, comm)
+        document.add_root(model1)
+        model2 = pane.get_root(other_doc, comm)
+        other_doc.add_root(model2)
+        pane.object = 'second'
+
+    assert model1.text == model2.text
+    for model, doc in ((model1, document), (model2, other_doc)):
+        assert all(sts.document is doc for sts in model.stylesheets if isinstance(sts, ImportedStyleSheet))
+        doc.to_json()
+
+
+def test_reactive_html_stylesheet_updates_across_documents(document, comm):
+    """ReactiveHTML updates do not share stylesheet models across outputs."""
+    other_doc = Document()
+    component = ReactiveHTML(stylesheets=['https://example.com/first.css'])
+
+    with set_curdoc(document):
+        model1 = component.get_root(document, comm)
+        document.add_root(model1)
+        model2 = component.get_root(other_doc, comm)
+        other_doc.add_root(model2)
+        shared = ImportedStyleSheet(url='https://example.com/shared.css')
+        process = component._process_param_change
+
+        def add_shared(params):
+            props = process(params)
+            if 'stylesheets' in props:
+                props['stylesheets'].append(shared)
+            return props
+
+        component._process_param_change = add_shared
+        component.stylesheets = ['https://example.com/second.css']
+
+    for model, doc in ((model1, document), (model2, other_doc)):
+        assert any(
+            isinstance(sts, ImportedStyleSheet) and sts.url == 'https://example.com/shared.css'
+            for sts in model.stylesheets
+        )
+        assert all(sts.document is doc for sts in model.stylesheets if isinstance(sts, ImportedStyleSheet))
+        doc.to_json()
+
+
 def test_reactive_destroyed_stylesheet_dropped(document, comm):
     # Regression: https://github.com/holoviz/panel/issues/8106
     widget = Markdown('foo')

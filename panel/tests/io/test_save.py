@@ -8,6 +8,10 @@ import numpy as np
 from bokeh.resources import Resources
 
 from panel.config import config
+from panel.io.convert import (
+    PYODIDE_MODULE_URL, PYODIDE_PYC_MODULE_URL, PYODIDE_VERSION,
+    script_to_html,
+)
 from panel.io.resources import CDN_DIST
 from panel.models.vega import VegaPlot
 from panel.pane import Alert, Vega
@@ -40,6 +44,54 @@ def test_save_external():
     html = sio.read()
     for js in VegaPlot.__javascript_raw__:
         assert js.replace(config.npm_cdn, f'{CDN_DIST}bundled/vegaplot') in html
+
+
+def test_pyodide_worker_uses_module_loader():
+    """Pyodide 314 requires module workers for converted apps."""
+    html, worker = script_to_html(
+        StringIO("import panel as pn\npn.pane.Str('Ready').servable()"),
+        runtime='pyodide-worker', prerender=False, compiled=False
+    )
+
+    assert "{type: 'module'}" in html
+    assert f'import {{ loadPyodide }} from "{PYODIDE_MODULE_URL}"' in worker
+    assert 'importScripts' not in worker
+
+
+def test_pyodide_compiled_worker_uses_module_loader():
+    """Compiled Pyodide workers load the matching precompiled module."""
+    _, worker = script_to_html(
+        StringIO("import panel as pn\npn.pane.Str('Ready').servable()"),
+        runtime='pyodide-worker', prerender=False, compiled=True
+    )
+
+    assert f'import {{ loadPyodide }} from "{PYODIDE_PYC_MODULE_URL}"' in worker
+
+
+def test_pyodide_worker_uses_configured_cdn_root():
+    """Air-gapped deployments can load Pyodide from a self-hosted CDN."""
+    with config.set(pyodide_cdn_root='https://example.com/pyodide/'):
+        _, worker = script_to_html(
+            StringIO("import panel as pn\npn.pane.Str('Ready').servable()"),
+            runtime='pyodide-worker', prerender=False, compiled=True
+        )
+
+    url = f'https://example.com/pyodide/{PYODIDE_VERSION}/pyc/pyodide.mjs'
+    assert f'import {{ loadPyodide }} from "{url}"' in worker
+    assert 'cdn.jsdelivr.net' not in worker
+
+
+def test_pyodide_uses_cdn_root_from_env(monkeypatch):
+    # A missing trailing slash must not be glued onto the version
+    monkeypatch.setenv('PANEL_PYODIDE_CDN_ROOT', 'https://example.com/pyodide')
+    html, _ = script_to_html(
+        StringIO("import panel as pn\npn.pane.Str('Ready').servable()"),
+        runtime='pyodide', prerender=False, compiled=False
+    )
+
+    url = f'https://example.com/pyodide/{PYODIDE_VERSION}/full/pyodide.js'
+    assert f'<script src="{url}" defer></script>' in html
+    assert 'cdn.jsdelivr.net/pyodide' not in html
 
 
 def test_save_inline_resources():

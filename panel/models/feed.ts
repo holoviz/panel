@@ -28,24 +28,33 @@ export class ScrollLatestEvent extends ModelEvent {
 export class FeedView extends ColumnView {
   declare model: Feed
   _intersection_observer: IntersectionObserver
+  protected _visibility_pending: boolean = false
+  protected _visibility_listener: boolean = false
+  protected _latest_pending: boolean = false
   _last_visible: UIElementView | null
   _rendered: boolean = false
   _sync: boolean
   _reference: number | null = null
   _reference_view: UIElementView | null = null
+  protected _children_update: Promise<void> | null = null
+  protected _latest_scroll_pending: boolean = false
+  protected _latest_last: string | null = null
 
   override initialize(): void {
     super.initialize()
     this._sync = true
-    // The Feed only clips its children when it is a scroll container, whose css
-    // classes (see _SCROLL_MAPPING) all start with "scroll". Otherwise it grows
-    // to fit its content and an ancestor (e.g. the page) scrolls, so visibility
-    // must be measured against the viewport; rooting on this.el would treat
-    // every rendered child - including the load_buffer - as visible and expand
-    // visible_range until all objects load (#8661).
-    const is_scroll_container = this.model.css_classes.some((cls) => cls.startsWith("scroll"))
+    // A Feed that does not clip lets an ancestor scroll, and rooting on it
+    // would report every child visible until all objects load (#8661).
+    const is_scroll_container = this.is_scroll_container
     const root = is_scroll_container ? this.el : null
     this._intersection_observer = new IntersectionObserver((entries) => {
+      // Until its stylesheets load the Feed does not clip, so all children intersect.
+      // Before the initial scroll to the latest child the top children are
+      // visible; reporting them makes the server load the wrong range.
+      if (this._latest_pending || (is_scroll_container && getComputedStyle(this.el).overflowY === "visible")) {
+        this._visibility_pending = true
+        return
+      }
       const visible = [...this.model.visible_children]
       const nodes = this.node_map
 
@@ -79,11 +88,24 @@ export class FeedView extends ColumnView {
 
   override connect_signals(): void {
     super.connect_signals()
-    this.model.on_event(ScrollLatestEvent, (event: ScrollLatestEvent) => {
-      this.scroll_to_latest(event.scroll_limit)
+    this.model.on_event(ScrollLatestEvent, async (event: ScrollLatestEvent) => {
       if (event.rerender) {
         this._rendered = false
       }
+      const limit = event.scroll_limit
+      if (limit != null && this.distance_from_latest > limit) {
+        return
+      }
+      if (event.rerender) {
+        // The children it rerendered may not have arrived yet
+        this._latest_scroll_pending = true
+        this._latest_last = null
+      }
+      // Until the scroll lands, the children at the old position report as
+      // visible and make the server load that range again.
+      this._latest_pending = this.is_scroll_container
+      await this._children_update
+      this._scroll_to_latest_children()
     })
   }
 
@@ -96,6 +118,39 @@ export class FeedView extends ColumnView {
   }
 
   override async update_children(): Promise<void> {
+    const at_latest = this.distance_from_latest <= 1
+    const update = this._rebuild_children()
+    this._children_update = update
+    try {
+      await update
+    } finally {
+      if (this._children_update === update) {
+        this._children_update = null
+      }
+    }
+    if (this._latest_scroll_pending) {
+      // The server may still answer with another window
+      const last = this.child_views.at(-1)?.model.id ?? null
+      this._latest_scroll_pending = last !== this._latest_last
+      this._latest_last = last
+      this._scroll_to_latest_children()
+    } else if (at_latest && this.distance_from_latest > 1) {
+      // A rebuild can grow the children below a Feed at its latest one
+      this.scroll_to_latest()
+    }
+  }
+
+  _scroll_to_latest_children(): void {
+    // A Feed that cannot scroll yet reports nothing, so leave the retry to
+    // scroll_position rather than holding the visibility.
+    if (!this._latest_pending || !this._land_latest_scroll()) {
+      this._latest_pending = false
+      this._reobserve_children()
+      this.scroll_to_latest()
+    }
+  }
+
+  protected async _rebuild_children(): Promise<void> {
     const last = this._last_visible
     const scroll_top = this.el.scrollTop
     this._reference_view = last
@@ -150,11 +205,16 @@ export class FeedView extends ColumnView {
     this._sync = true
 
     // Ensure we adjust the scroll position in case we prepended items
-    if (is_prepended) {
+    // The reference child may have been removed, its offset is then meaningless.
+    const reference = this._reference_view
+    const reference_top = this._reference || 0
+    if (is_prepended && reference != null && this.child_views.includes(reference)) {
       requestAnimationFrame(() => {
-        const after_offset = this._reference_view?.el.offsetTop || 0
-        const offset = (after_offset-(this._reference || 0))
-        this.el.scrollTo({top: scroll_top + offset, behavior: "smooth"})
+        const offset = reference.el.offsetTop - reference_top
+        // A scroll to where it already is would cancel one in progress.
+        if (offset !== 0) {
+          this.el.scrollTo({top: scroll_top + offset, behavior: "smooth"})
+        }
       })
     }
   }
@@ -187,19 +247,58 @@ export class FeedView extends ColumnView {
 
   override render(): void {
     this._rendered = false
+    this._latest_pending = this.model.view_latest && this.is_scroll_container
     super.render()
+    if (!this._visibility_listener) {
+      this._visibility_listener = true
+      this.shadow_el.addEventListener("load", (event) => {
+        if (!(event.target instanceof HTMLLinkElement)) {
+          return
+        }
+        if (this._latest_pending) {
+          this._land_latest_scroll()
+        } else {
+          this._reobserve_children()
+        }
+      }, true)
+    }
+  }
+
+  _reobserve_children(): void {
+    if (!this._visibility_pending || getComputedStyle(this.el).overflowY === "visible") {
+      return
+    }
+    this._visibility_pending = false
+    // An observed child is only reported again once its intersection changes.
+    for (const view of this.child_views) {
+      this._intersection_observer.unobserve(view.el)
+      this._intersection_observer.observe(view.el)
+    }
   }
 
   override trigger_auto_scroll(): void {}
 
+  _land_latest_scroll(): boolean {
+    // Scroll now rather than frames later via scroll_position, so the
+    // children are measured at the latest position.
+    this.el.scrollTo({top: this.el.scrollHeight, behavior: "instant"})
+    // Until its stylesheets load the scroll is a no-op, so keep waiting.
+    if (getComputedStyle(this.el).overflowY === "visible") {
+      return false
+    }
+    this._latest_pending = false
+    this._reobserve_children()
+    return true
+  }
+
   override after_render(): void {
     BkColumnView.prototype.after_render.call(this)
     requestAnimationFrame(() => {
-      if (this.model.scroll_position) {
-        this.scroll_to_position()
-      }
       if (this.model.view_latest && !this._rendered) {
+        this._land_latest_scroll()
         this.scroll_to_latest()
+      } else if (this.model.scroll_position) {
+        this.scroll_to_position()
       }
       this.toggle_scroll_button()
       this._rendered = true

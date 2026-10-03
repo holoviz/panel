@@ -8,7 +8,6 @@ from __future__ import annotations
 import ast
 import builtins
 import copy
-import importlib
 import inspect
 import os
 import sys
@@ -176,9 +175,9 @@ class _config(_base_config):
         Whether a loading indicator is shown by default while panes are updating.""")
 
     loading_spinner: t.Literal[
-        'arc', 'arcs', 'bar', 'dots', 'petal'
+        'arc', 'arcs', 'bar', 'dots', 'material', 'petal'
     ] = param.Selector(default='arc', objects=[
-        'arc', 'arcs', 'bar', 'dots', 'petal'], doc="""
+        'arc', 'arcs', 'bar', 'dots', 'material', 'petal'], doc="""
         Loading indicator to use when component loading parameter is set.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     loading_color = param.Color(default='#c3c3c3', doc="""
@@ -274,6 +273,11 @@ class _config(_base_config):
         The root path of the CDN. Configurable to support air-gapped and
         sandboxed environments.""")
 
+    _pyodide_cdn_root = param.String(
+        default="https://cdn.jsdelivr.net/pyodide/", doc="""
+        The root path of the CDN that converted apps load Pyodide from.
+        Configurable to support air-gapped and sandboxed environments.""")
+
     _comms: t.Literal['default', 'ipywidgets', 'vscode', 'colab'] = param.Selector(
         default='default', objects=['default', 'ipywidgets', 'vscode', 'colab'], doc="""
         Whether to render output in Jupyter with the default Jupyter
@@ -331,6 +335,13 @@ class _config(_base_config):
 
     _index_titles = param.Dict(default={}, doc="""
         Custom titles to use for Multi Page Apps index page.""")
+
+    _page_config = param.Dict(default={}, doc="""
+        Theming of the pages Panel serves outside of applications, i.e.
+        the index, login, logout and error pages. Mirrors the panel.ui
+        Page parameters and accepts the keys 'theme_config', 'dark_theme',
+        'logo', 'title', 'favicon', 'site_url', 'css_files' and 'raw_css'.
+        May also be set to a JSON string or the path to a JSON file.""")
 
     _basic_auth = param.ClassSelector(default=None, class_=(dict, str), allow_None=True, doc="""
         Password, dictionary with a mapping from username to password
@@ -390,7 +401,8 @@ class _config(_base_config):
         'oauth_secret', 'oauth_jwt_user', 'oauth_redirect_uri',
         'oauth_encryption_key', 'oauth_extra_params', 'npm_cdn',
         'layout_compatibility', 'oauth_refresh_tokens', 'oauth_guest_endpoints',
-        'oauth_optional', 'admin', 'index_titles', 'disable_validation'
+        'oauth_optional', 'admin', 'index_titles', 'disable_validation',
+        'pyodide_cdn_root', 'page_config'
     }
 
     _truthy = ['True', 'true', '1', True, 1]
@@ -434,6 +446,40 @@ class _config(_base_config):
     def _enable_notifications(self):
         if self.disconnect_notification or self.ready_notification:
             self.notifications = True
+
+    def set_if_unset(self, **params) -> list[str]:
+        """
+        Sets config values only if they have not been modified from
+        their default, i.e. an explicit user setting always wins.
+
+        This allows extensions and design systems to declare the
+        defaults they prefer without clobbering the user's choices.
+
+        Parameters
+        ----------
+        params: dict[str, Any]
+            Mapping of config parameter names to the values to apply
+            if the parameter is still at its default.
+
+        Returns
+        -------
+        The names of the parameters that were applied.
+        """
+        applied = []
+        for k, v in params.items():
+            pname = k if k in self.param else f'_{k}'
+            if pname not in self.param:
+                raise AttributeError(f'{k!r} is not a valid config parameter.')
+            current, default = getattr(self, k), self.param[pname].default
+            try:
+                unset = bool(current == default)
+            except Exception:
+                unset = current is default
+            if not unset:
+                continue
+            setattr(self, k, v)
+            applied.append(k)
+        return applied
 
     @contextmanager
     def set(self, **kwargs):
@@ -538,6 +584,16 @@ class _config(_base_config):
             return self.param.template.names[value]
         return value
 
+    def _page_config_hook(self, value):
+        from .io.pages import load_page_config
+        return load_page_config(value)
+
+    def _design_hook(self, value):
+        if isinstance(value, str):
+            from .theme import resolve_design
+            return resolve_design(value)
+        return value
+
     @property
     def _doc_build(self):
         return os.environ.get('PANEL_DOC_BUILD')
@@ -558,6 +614,10 @@ class _config(_base_config):
     @property
     def cdn_root(self):
         return os.environ.get('PANEL_CDN_ROOT', self._cdn_root)
+
+    @property
+    def pyodide_cdn_root(self):
+        return os.environ.get('PANEL_PYODIDE_CDN_ROOT', self._pyodide_cdn_root)
 
     @property
     def console_output(self):
@@ -597,6 +657,13 @@ class _config(_base_config):
     @property
     def index_titles(self):
         return self._index_titles
+
+    @property
+    def page_config(self):
+        if 'PANEL_PAGE_CONFIG' in os.environ:
+            from .io.pages import load_page_config
+            return load_page_config(os.environ['PANEL_PAGE_CONFIG'])
+        return self._page_config
 
     @property
     def inline(self):
@@ -855,22 +922,7 @@ class panel_extension(_pyviz_extension):
                                    'will be skipped.')
 
         for k, v in params.items():
-            if k == 'design' and isinstance(v, str):
-                from .theme import Design
-                try:
-                    importlib.import_module(f'panel.theme.{self._design}')
-                except Exception:
-                    pass
-                designs = {
-                    t.__name__.lower(): t for t in _descendents(Design, concrete=True)
-                }
-                if v not in designs:
-                    raise ValueError(
-                        f'Design {v!r} was not recognized, available design '
-                        f'systems include: {list(designs)}.'
-                    )
-                setattr(config, k, designs[v])
-            elif k in ('css_files', 'raw_css', 'global_css'):
+            if k in ('css_files', 'raw_css', 'global_css'):
                 if not isinstance(v, list):
                     raise ValueError(f'{k} should be supplied as a list, '
                                      f'not as a {type(v).__name__} type.')

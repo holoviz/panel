@@ -821,7 +821,7 @@ class TestChatFeedCallback:
         chat_feed.callback = echo
         chat_feed.send("Message", respond=True)
         await async_wait_until(lambda: len(chat_feed.objects) == 2)
-        assert chat_feed.objects[1].object == "Message"
+        await async_wait_until(lambda: chat_feed.objects[1].object == "Message")
         assert chat_feed.objects[1].user == callback_avatar or "Assistant"
         assert chat_feed.objects[1].avatar == callback_avatar or "🤖"
 

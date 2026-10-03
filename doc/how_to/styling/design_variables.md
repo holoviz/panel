@@ -49,20 +49,20 @@ pn.extension(design='material', global_css=[':root { --design-primary-color: pur
 When defining design variable overrides globally use the `:root` CSS selector, which applies the variable from the root on down.
 
 ```{pyodide}
-pn.Tabs(
-    ('Slider', pn.widgets.FloatSlider(start=0, end=7, value=3)),
-    ('Button', pn.widgets.Button(label='Click me!', color='primary'))
+pn.ui.Tabs(
+    ('Slider', pn.ui.FloatSlider(start=0, end=7, value=3)),
+    ('Button', pn.ui.Button(label='Click me!', color='primary'))
 )
 ```
 
 Alternatively you can also define it directly on a component by adding it to the `stylesheets` and prefixing it with the `:host` selector:
 
 ```{pyodide}
-pn.Tabs(
-    ('Slider', pn.widgets.FloatSlider(
+pn.ui.Tabs(
+    ('Slider', pn.ui.FloatSlider(
 	    start=0, end=7, value=3, stylesheets=[':host { --design-primary-color: red; }']
 	)),
-    ('Button', pn.widgets.Button(label='Click me!', color='primary'))
+    ('Button', pn.ui.Button(label='Click me!', color='primary'))
 )
 ```
 

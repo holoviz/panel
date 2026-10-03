@@ -10,6 +10,7 @@ import re
 import shutil
 import signal
 import socket
+import sys
 import tempfile
 import time
 import unittest
@@ -37,7 +38,8 @@ from panel.io.resources import EXTENSION_CDN
 from panel.io.state import set_curdoc, state
 from panel.pane import HTML, Markdown
 from panel.tests.util import (
-    get_open_ports, reverse_proxy as reverse_proxy_ctx, serve_and_wait,
+    get_open_ports, global_design, import_panel_ui, restore_classic_globals,
+    reverse_proxy as reverse_proxy_ctx, serve_and_wait, set_global_design,
 )
 from panel.theme import Design
 
@@ -60,6 +62,11 @@ if os.name != 'nt':
 for e in os.environ:
     if e.startswith(('BOKEH_', "PANEL_")) and e not in ("PANEL_LOG_LEVEL", "PANEL_TEST_AUTH"):
         os.environ.pop(e, None)
+
+# The IPython shells of parallel test processes would otherwise share one history database
+IPYTHON_DIR = tempfile.mkdtemp(prefix="panel-ipython-")
+os.environ["IPYTHONDIR"] = IPYTHON_DIR
+atexit.register(shutil.rmtree, IPYTHON_DIR, ignore_errors=True)
 
 @cache
 def internet_available(host="8.8.8.8", port=53, timeout=3):
@@ -88,7 +95,10 @@ def get_default_port():
 
 def start_jupyter():
     global JUPYTER_PORT, JUPYTER_PROCESS
-    args = ['jupyter', 'server', '--port', str(JUPYTER_PORT), "--NotebookApp.token=''"]
+    args = [
+        'jupyter', 'server', '--port', str(JUPYTER_PORT), '--ip', '127.0.0.1',
+        "--NotebookApp.token=''", "--ServerApp.jpserver_extensions={'nbclassic': True}",
+    ]
     JUPYTER_PROCESS = process = Popen(args, stdout=PIPE, stderr=PIPE, bufsize=1, encoding='utf-8')
     deadline = time.monotonic() + JUPYTER_TIMEOUT
     while True:
@@ -114,7 +124,7 @@ def cleanup_jupyter():
 def jupyter_preview(request):
     path = pathlib.Path(request.fspath.dirname)
     rel = path.relative_to(pathlib.Path(request.config.invocation_dir).absolute())
-    return f'http://localhost:{JUPYTER_PORT}/panel-preview/render/{str(rel)}'
+    return f'http://127.0.0.1:{JUPYTER_PORT}/panel-preview/render/{str(rel)}'
 
 atexit.register(cleanup_jupyter)
 optional_markers = {
@@ -156,6 +166,8 @@ def pytest_configure(config):
         start_jupyter()
 
     config.addinivalue_line("markers", "internet: mark test as requiring an internet connection")
+    config.addinivalue_line("markers", "panel_ui: mark test as importing panel.ui")
+
 
 def pytest_generate_tests(metafunc):
     repeat = getattr(metafunc.config.option, 'repeat', None)
@@ -187,15 +199,42 @@ def pytest_collection_modifyitems(config, items):
         else:
             skipped.append(item)
 
+    for item in selected:
+        if item.get_closest_marker("internet") and not item.get_closest_marker("flaky"):
+            item.add_marker(pytest.mark.flaky(reruns=3, reason="Downloads remote files, which can fail on a bad connection"))
+
+    if 'panel_material_ui' in sys.modules:
+        raise pytest.UsageError(
+            'panel.ui was imported while collecting tests, which adds the Material '
+            'widgets to every test parametrized over Widget subclasses. Import it '
+            'inside the test or through the panel_ui fixture.'
+        )
+
+    for item in selected:
+        if 'panel_ui' in getattr(item, 'fixturenames', ()):
+            item.add_marker(pytest.mark.panel_ui)
+
     config.hook.pytest_deselected(items=skipped)
     # Sorted because pytest 8.4.0 and pytest-playwright
     # https://github.com/microsoft/playwright-pytest/pull/284
-    items[:] = sorted(selected, key=lambda x: x.path)
+    # Tests importing panel.ui run last: its components cannot be unregistered,
+    # and every later render on the same worker would include their resources.
+    items[:] = sorted(
+        selected, key=lambda x: (x.get_closest_marker('panel_ui') is not None, x.path)
+    )
 
 
 def pytest_runtest_setup(item):
     if "internet" in item.keywords and not internet_available():
         pytest.skip("Skipping test: No internet connection")
+
+
+@pytest.fixture(scope="session")
+def browser_type_launch_args(browser_type_launch_args, browser_name):
+    if browser_name != "chromium":
+        return browser_type_launch_args
+    args = [*browser_type_launch_args.get("args", []), "--host-resolver-rules=MAP localhost 127.0.0.1"]
+    return {**browser_type_launch_args, "args": args}
 
 
 @pytest.fixture
@@ -247,11 +286,22 @@ def stop_event():
 
 @pytest.fixture
 def asyncio_loop():
+    try:
+        previous = asyncio.get_event_loop()
+    except Exception:
+        previous = None
     loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(asyncio.new_event_loop())
-    yield
-    loop.stop()
-    loop.close()
+    asyncio.set_event_loop(loop)
+    try:
+        yield loop
+    finally:
+        # A server on this loop cannot be stopped once it is closed
+        state.kill_all_servers()
+        # Closing the loop leaves the threads of its default executor behind
+        loop.run_until_complete(loop.shutdown_default_executor())
+        loop.stop()
+        loop.close()
+        asyncio.set_event_loop(previous)
 
 @pytest.fixture
 async def watch_files():
@@ -481,6 +531,34 @@ def server_cleanup():
         _modules.clear()
         _local_modules.clear()
 
+@pytest.fixture
+def panel_ui():
+    """
+    panel.ui with the classic suite shielded from its import side effects.
+    Tests wanting the Material design have to select it explicitly.
+    """
+    return import_panel_ui()
+
+@pytest.fixture(autouse=True)
+def classic_isolation():
+    """
+    Fails a test that imports panel.ui without the panel_ui fixture, since the
+    patches would silently switch every later test on the worker to Material.
+    """
+    yield
+    if 'panel_material_ui' not in sys.modules:
+        return
+    patched = restore_classic_globals()
+    design = global_design()
+    leaked = getattr(design, '__module__', '').startswith(('panel_material_ui', 'panel.ui'))
+    if leaked:
+        set_global_design(None)
+    if patched or leaked:
+        pytest.fail(
+            'Test imported panel.ui without the panel_ui fixture, leaking '
+            f'{patched + ["config.design"] * leaked} into the classic suite.'
+        )
+
 @pytest.fixture(autouse=True)
 def cache_cleanup():
     state.clear_caches()
@@ -543,6 +621,8 @@ def threads():
     try:
         yield 4
     finally:
+        # A server still stopping needs the thread pool to discard its sessions
+        state.kill_all_servers()
         config.nthreads = None
 
 @pytest.fixture

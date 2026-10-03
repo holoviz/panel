@@ -3,7 +3,6 @@ import re
 import subprocess
 import sys
 import tempfile
-import time
 
 from textwrap import dedent
 
@@ -12,7 +11,7 @@ import requests
 
 from panel.tests.util import (
     NBSR, linux_only, run_panel_serve, unix_only, wait_for_port,
-    wait_for_regex, write_file,
+    wait_for_regex, wait_until, write_file,
 )
 
 
@@ -50,6 +49,7 @@ def test_autoreload_app(server, py_file):
 
 
 @linux_only
+@pytest.mark.flaky(reruns=3, reason="See test_reload_on_update_of_module_recorded_after_watching")
 def test_autoreload_app_local_module(py_files):
     py_file1, py_file2 = py_files
     app_name = os.path.basename(py_file1.name)[:-3]
@@ -66,11 +66,13 @@ def test_autoreload_app_local_module(py_files):
 
         write_file("title = 'B'", py_file2.file)
         py_file2.file.close()
-        time.sleep(1)
 
-        r2 = requests.get(f"http://localhost:{port}/{app_name}")
-        assert r2.status_code == 200
-        assert "<title>B</title>" in r2.content.decode('utf-8')
+        def reloaded():
+            r2 = requests.get(f"http://localhost:{port}/{app_name}")
+            assert r2.status_code == 200
+            assert "<title>B</title>" in r2.content.decode('utf-8')
+
+        wait_until(reloaded)
 
 
 @linux_only
@@ -373,6 +375,25 @@ def test_serve_basic_auth(server, tmp_path, monkeypatch):
         r = session.get(f"{url}/logout", allow_redirects=False)
         assert r.status_code in (200, 302)
         assert session.get(f"{url}/app", allow_redirects=False).status_code == 302
+
+
+@linux_only
+def test_serve_page_config(server, tmp_path):
+    app = "import panel as pn; pn.Row('# Example').servable(title='A')"
+    (tmp_path / "app.py").write_text(app)
+    (tmp_path / "other.py").write_text(app)
+    (tmp_path / "page.json").write_text(
+        '{"title": "Acme Analytics", "theme_config": {"palette": {"primary": {"main": "#ff5722"}}}}'
+    )
+
+    args = ["--port", "0", "--server", server, "app.py", "other.py", "--page-config", "page.json"]
+    with run_panel_serve(args, cwd=tmp_path) as p:
+        port = wait_for_port(p.stdout)
+        r = requests.get(f"http://localhost:{port}/")
+        assert r.status_code == 200
+        html = r.content.decode('utf-8')
+        assert "<title>Acme Analytics</title>" in html
+        assert "--pn-primary: #ff5722;" in html
 
 
 @linux_only

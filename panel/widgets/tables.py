@@ -34,7 +34,7 @@ from ..util import (
     clone_model, datetime_as_utctimestamp, isdatetime, lazy_load,
     styler_update, updating,
 )
-from ..util.warnings import warn
+from ..util.warnings import deprecated, warn
 from .base import Widget
 from .button import Button
 from .input import TextInput
@@ -1033,9 +1033,9 @@ class DataFrame(BaseTable):
     Note that editing is not possible for multi-indexed DataFrames, in which
     case you will need to reduce the DataFrame to a single index.
 
-    Also note that the `DataFrame` widget will eventually be replaced with the
-    `Tabulator` widget, and so new code should be written to use `Tabulator`
-    instead.
+    .. deprecated:: 1.10.0
+        Use `Tabulator` instead. The `DataFrame` widget will be removed in
+        version 2.0.
 
     Reference: https://panel.holoviz.org/reference/widgets/DataFrame.html
 
@@ -1114,6 +1114,10 @@ class DataFrame(BaseTable):
     _rename: t.ClassVar[Mapping[str, str | None]] = {
         'selection': None, 'sorters': None, 'text_align': None
     }
+
+    def __init__(self, value=None, **params):
+        deprecated('2.0', 'DataFrame', 'Tabulator')
+        super().__init__(value=value, **params)
 
     @property
     def _widget_type(self) -> type[Model] | None:  # type: ignore[override]
@@ -1921,23 +1925,25 @@ class Tabulator(BaseTable):
     def _update_column(self, column: str, array: TDataColumn) -> None:
         import pandas as pd
 
-        if self.pagination != 'remote':
-            index = self._processed.index.values
-            with _stringdtype_error(self.value, column, array):
-                self.value.loc[index, column] = array
-
-            with pd.option_context('mode.chained_assignment', None):
-                self._processed[column] = array
-        else:
+        remote = self.pagination == 'remote'
+        if remote:
             nrows = self.page_size or self.initial_page_size
             start = (self.page - 1) * nrows
-            end = start+nrows
-            index = self._processed.iloc[start:end].index.values
-            with _stringdtype_error(self.value, column, array):
-                self.value.loc[index, column] = array
+            index = self._processed.iloc[start:start+nrows].index.values
+        else:
+            index = self._processed.index.values
+        if len(index) != len(array):
+            # Data sent for the table before its value was replaced cannot
+            # be mapped onto the current rows.
+            return
 
-            with pd.option_context('mode.chained_assignment', None):
+        with _stringdtype_error(self.value, column, array):
+            self.value.loc[index, column] = array
+        with pd.option_context('mode.chained_assignment', None):
+            if remote:
                 self._processed.loc[index, column] = array
+            else:
+                self._processed[column] = array
         self._fire_pending_edits(column, index)
 
     def _map_indexes(self, indexes: list[int], existing: list[int] = [], add: bool = True) -> list[int]:

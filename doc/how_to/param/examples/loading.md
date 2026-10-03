@@ -28,14 +28,14 @@ pn.param.ParamMethod.loading_indicator = True
 Alternatively we can enable it for a specific function by passing the `loading_indicator=True` argument to `pn.panel` or directly to the underlying  `ParamMethod`/`ParamFunction` object:
 
 ```{pyodide}
-button = pn.widgets.Button(label="UPDATE", color="primary", sizing_mode='stretch_width')
+button = pn.ui.Button(label="UPDATE", color="primary", sizing_mode='stretch_width')
 
 def random_plot(event):
     if event: time.sleep(5)
     return hv.Points(np.random.rand(100, 2)).opts(
         responsive=True, height=400, size=8, color="green")
 
-pn.Column(
+pn.ui.Column(
     button,
     pn.param.ParamFunction(pn.bind(random_plot, button), loading_indicator=True)
 ).servable()

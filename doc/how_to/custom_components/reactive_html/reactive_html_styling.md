@@ -33,7 +33,7 @@ class SensorLayout(ReactiveHTML):
         .styled-object {display: inline-block;}
     """]
 
-dial = pn.widgets.Dial(
+dial = pn.ui.Dial(
     label="°C", value=37, format="{value}", colors=[(0.40, "green"), (1, "red")], bounds=(0, 100),
 )
 SensorLayout(

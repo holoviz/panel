@@ -36,7 +36,7 @@ pn.extension()
 # This object is defined each time the app loads and is shared only within that session
 data = {"__name__": __name__}
 
-pn.Column(
+pn.ui.Column(
     "## External Module", external_data, f"Object id: {id(external_data)}",
     "## App", data, f"Object id: {id(data)}",
 ).servable()
@@ -106,7 +106,7 @@ def get_data():
 
 data = get_data()
 
-pn.pane.JSON(data).servable()
+pn.ui.JSON(data).servable()
 ```
 
 Refresh the browser a few times and observe the loading time.
@@ -138,7 +138,7 @@ def get_data():
 
 data = get_data()
 
-pn.pane.JSON(data).servable()
+pn.ui.JSON(data).servable()
 ```
 
 :::::
@@ -166,7 +166,7 @@ get_data_cached = pn.cache(get_data)
 
 data = get_data_cached()
 
-pn.pane.JSON(data).servable()
+pn.ui.JSON(data).servable()
 ```
 
 :::::
@@ -188,8 +188,8 @@ def algo(value):
     sleep(1)
     return value
 
-slider = pn.widgets.IntSlider(label="Value", value=2, start=0, end=10)
-pn.Column(
+slider = pn.ui.IntSlider(label="Value", value=2, start=0, end=10)
+pn.ui.Column(
     slider, pn.bind(algo, slider)
 ).servable()
 ```

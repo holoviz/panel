@@ -27,7 +27,7 @@ from bokeh.model.util import visit_immediate_value_references
 from bokeh.models import CustomJS
 
 from ..config import config
-from .loading import LOADING_INDICATOR_CSS_CLASS
+from .loading import _loading_css_classes
 from .model import monkeypatch_events  # noqa: F401 API import
 from .state import state
 
@@ -101,6 +101,25 @@ def _cleanup_task(task):
         if task in tasks:
             tasks.remove(task)
             break
+
+def _client_has_document(doc: Document) -> bool:
+    """
+    Whether the client was sent the Document, after which held events
+    must not be dropped. ``state._connected`` is only set once it is ready.
+    """
+    if state._connected.get(doc):
+        return True
+    if doc.session_context is None and not any(
+        comm is not None and view_doc is doc
+        for _, _, view_doc, comm in state._views.values()
+    ):
+        # Serializing the document, e.g. to save it, also marks models sent
+        return False
+    live = getattr(doc.models, '_models', None)
+    unsent = getattr(doc.models, '_new_models', None)
+    if not live or unsent is None:
+        return False
+    return any(model not in unsent for model in live.values())
 
 def _dispatch_events(doc: Document, events: list[DocumentChangedEvent]) -> None:
     """
@@ -278,6 +297,39 @@ def _is_write_blocked(socket: t.Any) -> bool:
         return inner.locked()
     return False
 
+
+def _keep_unsent_models_new(doc: Document) -> None:
+    """
+    Keeps models Panel has not written yet unsent when a client patch is
+    applied, since bokeh then declares all models synced.
+    """
+    if getattr(doc.apply_json_patch, '_panel_keeps_unsent', False):
+        return
+    if not hasattr(doc.models, '_new_models'):
+        # A bokeh that tracks unsent models differently needs no patching
+        logger.debug('Could not keep unsent models unsent, bokeh changed')
+        return
+    # A bound method would keep the Document alive in a cycle.
+    apply_json_patch = type(doc).apply_json_patch
+    ref = weakref.ref(doc)
+
+    @wraps(apply_json_patch)
+    def _apply_json_patch(*args, **kwargs):
+        doc = ref()
+        if doc is None:
+            return None
+        unsent = set(doc.models._new_models)
+        try:
+            return apply_json_patch(doc, *args, **kwargs)
+        finally:
+            live = getattr(doc.models, '_models', None)
+            if unsent and live is not None:
+                doc.models._new_models |= {
+                    model for model in unsent if live.get(model.id) is model
+                }
+
+    _apply_json_patch._panel_keeps_unsent = True  # type: ignore[attr-defined]
+    doc.apply_json_patch = _apply_json_patch  # type: ignore[method-assign]
 
 async def _dispatch_msgs(doc):
     """
@@ -470,11 +522,13 @@ def init_doc(doc: Document | None) -> Document:
     if thread_id:
         state._thread_id_[curdoc] = thread_id
 
+    _keep_unsent_models_new(curdoc)
+
     if config.global_loading_spinner:
         curdoc.js_on_event(
             'document_ready', CustomJS(code=f"""
             const body = document.getElementsByTagName('body')[0]
-            body.classList.remove({LOADING_INDICATOR_CSS_CLASS!r}, {config.loading_spinner!r})
+            body.classList.remove(...{json.dumps(_loading_css_classes())})
             """)
         )
 
@@ -575,8 +629,8 @@ def _suppress_property_callbacks(
     events: list[DocumentChangedEvent]
 ) -> list[DocumentChangedEvent]:
     """
-    Clears the ``callback_invoker`` on patch events so that handing them
-    to bokeh only serializes and writes them.
+    Clears the ``callback_invoker`` on Python-side patch events so that
+    handing them to bokeh only serializes and writes them.
 
     A held ModelChangedEvent carries the invoker that runs the
     property-level ``on_change`` callbacks, which bokeh defers until the
@@ -585,9 +639,13 @@ def _suppress_property_callbacks(
     the time the dispatch happens, so letting the invoker run makes
     ``Syncable._server_change`` treat the Python update as a frontend
     change and boomerang it back into the parameter.
+
+    Frontend patches applied while the Document is held carry the session
+    as their ``setter`` and keep their invoker, otherwise the change would
+    never reach Python.
     """
     for event in events:
-        if isinstance(event, DocumentPatchedEvent):
+        if isinstance(event, DocumentPatchedEvent) and event.setter is None:
             event.callback_invoker = None
     return events
 
@@ -783,9 +841,10 @@ def hold(
                 pass
             elif threaded:
                 if not held or we_held:
-                    if state._connected.get(doc):
+                    if _client_has_document(doc):
                         def _unhold(lock=hold_lock, doc=doc):
                             with lock:
+                                _suppress_property_callbacks(doc.callbacks._held_events)
                                 doc.unhold()
                         with hold_lock:
                             # Clear the hold around scheduling the callback
@@ -802,7 +861,7 @@ def hold(
             elif comm is not None:
                 from .notebook import push
                 push(doc, comm)
-            elif not state._connected.get(doc):
+            elif not _client_has_document(doc):
                 _dispatch_events(doc, _drain_unconnected_events(doc, hold_lock))
             else:
                 doc.unhold()

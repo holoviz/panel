@@ -68,16 +68,16 @@ pn.extension(sizing_mode="stretch_width", template='bootstrap')
 
 def create_row(event):
     value = random.randint(0, 100)
-    row = pn.widgets.TextInput(label="Enter a number", value=str(value))
+    row = pn.ui.TextInput(label="Enter a number", value=str(value))
     rows.append(row)
 
-rows = pn.Column()
-add_row = pn.widgets.Button(label="Add new row", on_click=create_row)
-clear_rows = pn.widgets.Button(label="Clear all rows", on_click=lambda event: rows.clear())
+rows = pn.ui.Column()
+add_row = pn.ui.Button(label="Add new row", on_click=create_row)
+clear_rows = pn.ui.Button(label="Clear all rows", on_click=lambda event: rows.clear())
 
-pn.Column(
+pn.ui.Column(
     "# Dynamically add new rows",
-    pn.Row(add_row, clear_rows),
+    pn.ui.Row(add_row, clear_rows),
     rows
 ).servable()
 ```

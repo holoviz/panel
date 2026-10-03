@@ -444,7 +444,7 @@ def parse_notebook(
         out all magics (i.e IPython specific syntax).
         """
 
-        _magic_pattern = re.compile(r'^\s*(?P<magic>%%\w\w+)($|(\s+))')
+        _magic_pattern = re.compile(r'^\s*(?P<magic>%%?\w+)($|(\s+))')
 
         def strip_magics(self, source: str) -> str:
             """
@@ -569,7 +569,7 @@ class PanelCodeHandler(CodeHandler):
         if runner:
             self._runner = runner
         elif source is not None:
-            self._runner = PanelCodeRunner(source, filename, argv, package=package)
+            self._runner = PanelCodeRunner(source, filename, list(argv), package=package)
         else:
             raise ValueError("Must provide source code to PanelCodeHandler")
 

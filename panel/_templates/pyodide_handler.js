@@ -1,4 +1,4 @@
-const pyodideWorker = new Worker("./{{ name }}.js");
+const pyodideWorker = new Worker("./{{ name }}.js", {type: 'module'});
 pyodideWorker.busy = false
 pyodideWorker.queue = []
 
@@ -76,7 +76,7 @@ pyodideWorker.onmessage = async (event) => {
     const [views] = await Bokeh.embed.embed_items(docs_json, render_items)
 
     // Remove loading spinner and message
-    body.classList.remove("pn-loading", "{{ loading_spinner }}")
+    body.classList.remove(...{{ loading_classes }})
     for (const loading_msg of loading_msgs) {
       loading_msg.remove()
     }

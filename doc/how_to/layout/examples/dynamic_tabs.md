@@ -23,7 +23,7 @@ chart = alt.Chart(cars).mark_circle(size=60).encode(
     tooltip=['Name', 'Origin', 'Horsepower', 'Miles_per_Gallon']
 ).properties(width='container', height='container').interactive()
 
-altair_pane = pn.pane.Vega(chart)
+altair_pane = pn.ui.Vega(chart)
 
 altair_pane
 ```
@@ -65,7 +65,7 @@ p.axis.axis_label=None
 p.axis.visible=False
 p.grid.grid_line_color = None
 
-bokeh_pane = pn.pane.Bokeh(p, sizing_mode="stretch_both", max_width=1300)
+bokeh_pane = pn.ui.Bokeh(p, sizing_mode="stretch_both", max_width=1300)
 
 bokeh_pane
 ```
@@ -101,7 +101,7 @@ json_spec = {
     "views": [{"@@type": "MapView", "controller": True}]
 }
 
-deck_gl = pn.pane.DeckGL(json_spec, mapbox_api_key=MAPBOX_KEY, sizing_mode='stretch_both')
+deck_gl = pn.ui.DeckGL(json_spec, mapbox_api_key=MAPBOX_KEY, sizing_mode='stretch_both')
 
 deck_gl
 ```
@@ -126,7 +126,7 @@ echart = {
         }],
     }
 
-echarts_pane = pn.pane.ECharts(echart, sizing_mode='stretch_both')
+echarts_pane = pn.ui.ECharts(echart, sizing_mode='stretch_both')
 
 echarts_pane
 ```
@@ -144,9 +144,9 @@ def sine(frequency=1.0, amplitude=1.0, function='sin'):
 dmap = hv.DynamicMap(sine, kdims=['frequency', 'amplitude', 'function']).redim.range(
     frequency=(0.1, 10), amplitude=(1, 10)).redim.values(function=['sin', 'cos', 'tan']).opts(responsive=True, line_width=4)
 
-hv_panel = pn.pane.HoloViews(dmap, widgets={
-    'amplitude': pn.widgets.LiteralInput(value=1., type=(float, int)),
-    'function': pn.widgets.RadioButtonGroup,
+hv_panel = pn.ui.HoloViews(dmap, widgets={
+    'amplitude': pn.ui.LiteralInput(value=1., type=(float, int)),
+    'function': pn.ui.RadioButtonGroup,
     'frequency': {'value': 5},
 }, center=True, sizing_mode='stretch_both').layout
 
@@ -170,7 +170,7 @@ fig0, ax0 = plt.subplots()
 strm = ax0.streamplot(X, Y, U, V, color=U, linewidth=2, cmap=plt.cm.autumn)
 fig0.colorbar(strm.lines)
 
-mpl_pane = pn.pane.Matplotlib(fig0, format='svg', sizing_mode='stretch_both')
+mpl_pane = pn.ui.Matplotlib(fig0, format='svg', sizing_mode='stretch_both')
 
 mpl_pane
 ```
@@ -191,13 +191,13 @@ layout = go.Layout(
 )
 fig = dict(data=[surface], layout=layout)
 
-plotly_pane = pn.pane.Plotly(fig)
+plotly_pane = pn.ui.Plotly(fig)
 
 plotly_pane
 ```
 
 ```{pyodide}
-pn.Tabs(
+pn.ui.Tabs(
     ('Altair', altair_pane),
     ('Bokeh', bokeh_pane),
     ('deck.GL', deck_gl),

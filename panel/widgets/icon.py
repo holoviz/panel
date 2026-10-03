@@ -21,11 +21,11 @@ class _ClickableIcon(Widget):
 
     active_icon = param.String(default='', doc="""
         The name of the icon to display when toggled from
-        [tabler-icons.io](https://tabler-icons.io)/ or an SVG.""")
+        [tabler.io/icons](https://tabler.io/icons)/ or an SVG.""")
 
     icon = param.String(default='heart', doc="""
         The name of the icon to display from
-        [tabler-icons.io](https://tabler-icons.io)/ or an SVG.""")
+        [tabler.io/icons](https://tabler.io/icons)/ or an SVG.""")
 
     size = param.String(default=None, doc="""
         An explicit size specified as a CSS font-size, e.g. '1.5em' or '20px'.""")

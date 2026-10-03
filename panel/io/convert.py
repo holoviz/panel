@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import base64
 import concurrent.futures
 import dataclasses
 import json
@@ -29,11 +28,13 @@ from .. import __version__, config
 from ..util import base_version
 from .application import Application, build_single_handler_application
 from .document import MockSessionContext
-from .loading import LOADING_INDICATOR_CSS_CLASS
+from .loading import (
+    _loading_css_classes, loading_resources as _design_loading_resources,
+)
 from .mime_render import find_requirements
 from .resources import (
     BASE_TEMPLATE, CDN_DIST, CDN_ROOT, DIST_DIR, INDEX_TEMPLATE, Resources,
-    _env as _pn_env, bundle_resources, loading_css, set_resource_mode,
+    _env as _pn_env, bundle_resources, set_resource_mode,
 )
 from .state import set_curdoc, state
 
@@ -48,15 +49,30 @@ WORKER_HANDLER_TEMPLATE = _pn_env.get_template('pyodide_handler.js')
 PANEL_ROOT = pathlib.Path(__file__).parent.parent
 BOKEH_VERSION = base_version(bokeh.__version__)
 PY_VERSION = base_version(__version__)
-PYODIDE_VERSION = 'v0.29.3'
+PYODIDE_VERSION = 'v314.0.7'
 PYSCRIPT_VERSION = '2026.2.1'
 WHL_PATH = DIST_DIR / 'wheels'
 PANEL_LOCAL_WHL = WHL_PATH / f'panel-{__version__.replace("-dirty", "")}-py3-none-any.whl'
 BOKEH_LOCAL_WHL = WHL_PATH / f'bokeh-{BOKEH_VERSION}-py3-none-any.whl'
 PANEL_CDN_WHL = f'{CDN_DIST}wheels/panel-{PY_VERSION}-py3-none-any.whl'
 BOKEH_CDN_WHL = f'{CDN_ROOT}wheels/bokeh-{BOKEH_VERSION}-py3-none-any.whl'
-PYODIDE_URL = f'https://cdn.jsdelivr.net/pyodide/{PYODIDE_VERSION}/full/pyodide.js'
-PYODIDE_PYC_URL = f'https://cdn.jsdelivr.net/pyodide/{PYODIDE_VERSION}/pyc/pyodide.js'
+
+
+def _pyodide_url(compiled: bool = False, module: bool = False) -> str:
+    """
+    Returns the URL to load Pyodide from, resolved against the
+    configured `config.pyodide_cdn_root`.
+    """
+    root = config.pyodide_cdn_root.rstrip('/')
+    dist = 'pyc' if compiled else 'full'
+    ext = 'mjs' if module else 'js'
+    return f'{root}/{PYODIDE_VERSION}/{dist}/pyodide.{ext}'
+
+
+PYODIDE_URL = _pyodide_url()
+PYODIDE_PYC_URL = _pyodide_url(compiled=True)
+PYODIDE_MODULE_URL = _pyodide_url(module=True)
+PYODIDE_PYC_MODULE_URL = _pyodide_url(compiled=True, module=True)
 PYSCRIPT_CSS = f'<link rel="stylesheet" href="https://pyscript.net/releases/{PYSCRIPT_VERSION}/core.css" />'
 PYSCRIPT_CSS_OVERRIDES = f'<link rel="stylesheet" href="{CDN_DIST}css/pyscript.css" />'
 PYSCRIPT_JS = f'<script type="module" src="https://pyscript.net/releases/{PYSCRIPT_VERSION}/core.js" defer></script>'
@@ -178,7 +194,6 @@ def collect_python_requirements(
     code: str | os.PathLike | t.IO,
     requirements: list[str] | t.Literal['auto'] | os.PathLike = 'auto',
     panel_version: t.Literal['auto', 'local'] | str = 'auto',
-    http_patch: bool = True,
 ) -> list[str]:
     """
     Make sense of python requirements for our Panel script.
@@ -191,14 +206,13 @@ def collect_python_requirements(
         The list of requirements to include (in addition to Panel).
     panel_version: Literal['auto', 'local'] | str
         The panel release version to use in the exported HTML.
-    http_patch: bool
-        Whether to patch the HTTP request stack with the pyodide-http library
-        to allow urllib3 and requests to work.
     """
     # Environment
     if panel_version == 'local':
-        panel_req = './' + str(PANEL_LOCAL_WHL.as_posix()).split('/')[-1]
-        bokeh_req = './' + str(BOKEH_LOCAL_WHL.as_posix()).split('/')[-1]
+        if not PANEL_LOCAL_WHL.is_file():
+            raise FileNotFoundError(f'Panel Pyodide wheel not found: {PANEL_LOCAL_WHL}')
+        panel_req = f'file:{PANEL_LOCAL_WHL.resolve()}'
+        bokeh_req = f'file:{BOKEH_LOCAL_WHL.resolve()}' if BOKEH_LOCAL_WHL.is_file() else f'bokeh=={BOKEH_VERSION}'
     elif panel_version == 'auto':
         panel_req = PANEL_CDN_WHL
         bokeh_req = BOKEH_CDN_WHL
@@ -206,8 +220,6 @@ def collect_python_requirements(
         panel_req = f'panel=={panel_version}'
         bokeh_req = f'bokeh=={BOKEH_VERSION}'
     collected_requirements = [bokeh_req, panel_req]
-    if http_patch:
-        collected_requirements.append('pyodide-http')
 
     requirements_root = os.getcwd()
     resolved_reqs: list[str]
@@ -285,28 +297,18 @@ def pack_files(filemap: dict, destination: str | os.PathLike | t.IO):
 
 
 def loading_resources(template, inline) -> list[str]:
-    css_resources = []
-    if template in (BASE_TEMPLATE, FILE):
-        # Add loading.css if not served from Panel template
-        if inline:
-            svg_name = f'{config.loading_spinner}_spinner.svg'
-            svg_b64 = base64.b64encode((DIST_DIR / 'assets' / svg_name).read_bytes()).decode('utf-8')
-            loading_base = (
-                DIST_DIR / "css" / "loading.css"
-            ).read_text(encoding='utf-8').replace(
-                f'../assets/{svg_name}', f'data:image/svg+xml;base64,{svg_b64}'
-            )
-            loading_style = f'<style type="text/css">\n{loading_base}\n</style>'
-        else:
-            loading_style = f'<link rel="stylesheet" href="{CDN_DIST}css/loading.css" type="text/css" />'
-        css_resources.append(loading_style)
-    spinner_css = loading_css(
-        config.loading_spinner, config.loading_color, config.loading_max_height
+    # The base loading.css is only needed if it is not already served
+    # as part of a Panel template.
+    resources = _design_loading_resources(
+        inline=inline, include_base=template in (BASE_TEMPLATE, FILE)
     )
-    css_resources.append(
-        f'<style type="text/css">\n{spinner_css}\n</style>'
-    )
-    return css_resources
+    return [
+        f'<link rel="stylesheet" href="{css}" type="text/css" />'
+        for css in resources['css']
+    ] + [
+        f'<style type="text/css">\n{raw_css}\n</style>'
+        for raw_css in resources['raw_css']
+    ]
 
 def script_to_html(
     filename: str | os.PathLike | t.IO,
@@ -411,10 +413,10 @@ def script_to_html(
                 js_resources = []
             worker_handler = WORKER_HANDLER_TEMPLATE.render({
                 'name': app_name,
-                'loading_spinner': config.loading_spinner
+                'loading_classes': json.dumps(_loading_css_classes())
             })
             web_worker = WEB_WORKER_TEMPLATE.render({
-                'PYODIDE_URL': PYODIDE_PYC_URL if compiled else PYODIDE_URL,
+                'PYODIDE_URL': _pyodide_url(compiled=compiled, module=True),
                 'data_archives': data_archives,
                 'env_spec': env_spec,
                 'code': code
@@ -422,7 +424,7 @@ def script_to_html(
             plot_script = wrap_in_script_tag(worker_handler)
         else:
             if js_resources == 'auto':
-                js_resources = [PYODIDE_PYC_JS if compiled else PYODIDE_JS]
+                js_resources = [f'<script src="{_pyodide_url(compiled=compiled)}" defer></script>']
             script_template = _pn_env.from_string(PYODIDE_SCRIPT)
             plot_script = script_template.render({
                 'data_archives': data_archives,
@@ -462,8 +464,9 @@ def script_to_html(
     bokeh_css = '\n'.join([bokeh_css]+css_resources)
 
     # Configure template
-    template_variables = document._template_variables
-    context = template_variables.copy()
+    from ..theme.base import design_template_variables
+    with set_curdoc(document):
+        context = {**design_template_variables(), **document._template_variables}
     context.update(dict(
         title=document.title,
         bokeh_js=bokeh_js,
@@ -481,7 +484,7 @@ def script_to_html(
     # Render
     html = template.render(context)
     html = (html
-        .replace('<body>', f'<body class="{LOADING_INDICATOR_CSS_CLASS} pn-{config.loading_spinner}">')
+        .replace('<body>', f'<body class="{" ".join(_loading_css_classes())}">')
     )
     if runtime == 'pyscript-worker':
         # pyscript-worker apps must have strict cross-origin policies
@@ -503,7 +506,6 @@ def convert_app(
     manifest: str | None = None,
     panel_version: t.Literal['auto', 'local'] | str = 'auto',
     local_prefix: str = LOCAL_PREFIX,
-    http_patch: bool = True,
     inline: bool = False,
     compiled: bool = False,
     verbose: bool = True,
@@ -518,7 +520,7 @@ def convert_app(
 
     # Obtain source
     parsed_requirements = collect_python_requirements(
-        app, requirements, panel_version=panel_version, http_patch=http_patch
+        app, requirements, panel_version=panel_version
     )
     # prepare wheels to be available via emscripten MEMFS
     parsed_requirements_rewritten = []
@@ -645,7 +647,6 @@ def convert_apps(
     max_workers: int = 4,
     panel_version: t.Literal['auto', 'local'] | str = 'auto',
     local_prefix: str = LOCAL_PREFIX,
-    http_patch: bool = True,
     inline: bool = False,
     compiled: bool = False,
     verbose: bool = True,
@@ -686,9 +687,6 @@ def convert_apps(
 '       The panel version to include.
     local_prefix: str
         Prefix for the path to serve local wheel files from.
-    http_patch: bool
-        Whether to patch the HTTP request stack with the pyodide-http library
-        to allow urllib3 and requests to work.
     inline: bool
         Whether to inline resources.
     compiled: bool
@@ -722,7 +720,6 @@ def convert_apps(
         'prerender': prerender,
         'manifest': manifest,
         'panel_version': panel_version,
-        'http_patch': http_patch,
         'inline': inline,
         'verbose': verbose,
         'compiled': compiled,

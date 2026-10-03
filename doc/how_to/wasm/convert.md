@@ -23,7 +23,6 @@ The ``panel convert`` command has the following options:
                           Explicit requirements to add to the converted file, a single requirements.txt file or a JSON file containing requirements per app. By default requirements are inferred from the code.
     --resources RESOURCES [RESOURCES ...]
                           Files to pack for distribution with the app. Does only support files located in the directory of the main panel app (or in subdirectories below).
-    --disable-http-patch  Whether to disable patching http requests using the pyodide-http library.
     --watch               Watch the files
     --num-procs NUM_PROCS
                           The number of processes to start in parallel to convert the apps.
@@ -48,7 +47,7 @@ pn.state.template.param.update(site="Panel in the Browser", title="XGBoost Examp
 
 iris_df = load_iris(as_frame=True)
 
-trees = pn.widgets.IntSlider(start=2, end=30, label="Number of trees")
+trees = pn.ui.IntSlider(start=2, end=30, label="Number of trees")
 
 def pipeline(trees):
     model = XGBClassifier(max_depth=2, n_estimators=trees)
@@ -61,7 +60,7 @@ def pipeline(trees):
         colors=[(97.5, "red"), (99.0, "orange"), (100, "green")],
     )
 
-pn.Column(
+pn.ui.Column(
     "Simple example of training an XGBoost classification model on the small Iris dataset.",
     iris_df.data.head(),
     "Move the slider below to change the number of training rounds for the XGBoost classifier. The training accuracy score will adjust accordingly.",
@@ -126,6 +125,16 @@ panel convert script.py --to pyodide-worker --out pyodide --resources iris.csv
 The included resources need to be located in the directory of the main panel app or its subdirectories.
 :::
 
+## Air-gapped environments
+
+By default converted applications load Pyodide from `https://cdn.jsdelivr.net/pyodide/`. If that CDN is not reachable, e.g. in an air-gapped network, host a copy of the Pyodide distribution yourself and set the `PANEL_PYODIDE_CDN_ROOT` environment variable when converting:
+
+```bash
+PANEL_PYODIDE_CDN_ROOT="https://intranet.example.com/pyodide/" panel convert script.py --to pyodide-worker --out pyodide
+```
+
+The self-hosted copy has to mirror the layout of the jsDelivr CDN, i.e. Pyodide is loaded from `<root>/<version>/full/` (or `<root>/<version>/pyc/` for `--compiled` builds), where the version is the one in `panel.io.convert.PYODIDE_VERSION`. The Panel and Bokeh wheels are loaded from the Panel CDN, which can be configured in the same way with `PANEL_CDN_ROOT`.
+
 ## Index
 
 If you convert multiple applications at once you may want to add an index to be able to navigate between the applications easily. To enable the index simply pass `--index` to the convert command.
@@ -146,6 +155,6 @@ If you decide to enable the `--pwa` ensure that you also provide a unique `--tit
 
 ## Handling HTTP requests
 
-By default Panel will install the [pyodide-http](https://github.com/koenvo/pyodide-http) library which patches `urllib3` and `requests` making it possible to use them within the pyodide process. To disable this behavior use the `--disable-http-patch` CLI option.
+Recent Pyodide releases support `urllib3` and `requests` without an additional HTTP patch. Panel uses Pyodide's HTTP API to load URLs passed to `pandas.read_csv` and `pandas.read_json`. Browser security rules, including CORS, still apply.
 
 Note that making HTTP requests when converting to the `pyodide` or `pyscript` target will block the main browser thread and result in a poor user experience. Therefore we strongly recommend converting to `pyodide-worker` if your app is making synchronous HTTP requests.

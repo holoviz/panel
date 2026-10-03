@@ -97,7 +97,7 @@ fig = Figure(figsize=(8,4))
 ax = fig.subplots()
 ax.hist(data, bins=20, color=ACCENT)
 
-component = pn.pane.Matplotlib(fig, format='svg', sizing_mode='scale_both')
+component = pn.ui.Matplotlib(fig, format='svg', sizing_mode='scale_both')
 
 pn.template.FastListTemplate(
     title="My App", sidebar=[LOGO], main=[component], accent=ACCENT
@@ -120,7 +120,7 @@ pn.extension()
 
 Run the cell.
 
-Write `pn.widgets.IntSlider` in a cell and press `SHIFT+Tab`.
+Write `pn.ui.IntSlider` in a cell and press `SHIFT+Tab`.
 
 It should look like
 
@@ -157,8 +157,8 @@ print(pn.panel("Hello World"))
 ```
 
 ```python
-component = pn.Column(
-    "Hello World", pn.widgets.IntSlider(value=2, end=10, label="Value")
+component = pn.ui.Column(
+    "Hello World", pn.ui.IntSlider(value=2, end=10, label="Value")
 )
 print(component)
 ```
@@ -202,7 +202,7 @@ pn.extension()
 ```
 
 ```python
-pn.widgets.IntSlider.param
+pn.ui.IntSlider.param
 ```
 
 Run the cells if they have not already been run.
@@ -219,7 +219,7 @@ It should look like
 Add the new cell
 
 ```python
-pn.widgets.IntSlider(align="end").param
+pn.ui.IntSlider(align="end").param
 ```
 
 Run the code cell.
