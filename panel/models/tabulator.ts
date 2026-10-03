@@ -415,11 +415,6 @@ export class DataTabulatorView extends HTMLBoxView {
       this.invalidate_render()
     }, 20, false))
 
-    this.on_change(visible, () => {
-      if (this.model.visible) {
-        this.tabulator.element.style.visibility = "visible"
-      }
-    })
     this.on_change(columns, () => {
       this.tabulator.setColumns(this.getColumns())
       this.setHidden()
@@ -638,7 +633,7 @@ export class DataTabulatorView extends HTMLBoxView {
         this.container === null ||
         this.is_drawing ||
         this._has_active_editor() ||
-        ![...this._initialized_stylesheets.values()].every(v => v)
+        !this.stylesheets_settled
       ) {
         await defer()
         continue
@@ -725,12 +720,25 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   override style_redraw(): void {
-    if (this.model.visible) {
-      this.tabulator.element.style.visibility = "visible"
+    if (this.tabulator == null) {
+      return
     }
     if (!this._initializing && !this._building) {
       this.redraw()
     }
+    this.setVisibility()
+  }
+
+  /**
+   * The table stays hidden until it is built and its stylesheets have settled,
+   * otherwise its unstyled, unmeasured layout flashes before the final one.
+   */
+  setVisibility(): void {
+    if (this.tabulator == null) {
+      return
+    }
+    const ready = !this._building && this.stylesheets_settled
+    this.tabulator.element.style.visibility = this.model.visible && ready ? "visible" : "hidden"
   }
 
   tableInit(): void {
@@ -833,6 +841,7 @@ export class DataTabulatorView extends HTMLBoxView {
       this.tabulator.setPage(this.model.page)
     }
     this._initializing = this._building = false
+    this.setVisibility()
     if (this._pending_data) {
       void this.setData().then(() => this.postUpdate())
     }
@@ -1388,13 +1397,6 @@ export class DataTabulatorView extends HTMLBoxView {
     for (const row of this.model.frozen_rows) {
       this.tabulator.getRow(row).freeze()
     }
-  }
-
-  setVisibility(): void {
-    if (this.tabulator == null) {
-      return
-    }
-    this.tabulator.element.style.visibility = this.model.visible ? "visible" : "hidden"
   }
 
   updatePage(pageno: number): void {

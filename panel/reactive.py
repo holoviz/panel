@@ -1117,7 +1117,7 @@ class SyncableData(Reactive):
             viewable, root, doc, comm = state._views[ref]
             if comm or not doc.session_context or state._unblocked(doc):
                 with unlocked():
-                    m.source.stream(stream, rollover)
+                    self._apply_stream(ref, m, stream, rollover)
                 if comm and 'embedded' not in root.tags:
                     push(doc, comm)
             else:
@@ -1140,7 +1140,7 @@ class SyncableData(Reactive):
             viewable, root, doc, comm = state._views[ref]
             if comm or not doc.session_context or state._unblocked(doc):
                 with unlocked():
-                    m.source.patch(patch)
+                    self._apply_patch(ref, m, patch)
                 if comm and 'embedded' not in root.tags:
                     push(doc, comm)
             else:

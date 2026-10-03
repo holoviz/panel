@@ -1925,23 +1925,25 @@ class Tabulator(BaseTable):
     def _update_column(self, column: str, array: TDataColumn) -> None:
         import pandas as pd
 
-        if self.pagination != 'remote':
-            index = self._processed.index.values
-            with _stringdtype_error(self.value, column, array):
-                self.value.loc[index, column] = array
-
-            with pd.option_context('mode.chained_assignment', None):
-                self._processed[column] = array
-        else:
+        remote = self.pagination == 'remote'
+        if remote:
             nrows = self.page_size or self.initial_page_size
             start = (self.page - 1) * nrows
-            end = start+nrows
-            index = self._processed.iloc[start:end].index.values
-            with _stringdtype_error(self.value, column, array):
-                self.value.loc[index, column] = array
+            index = self._processed.iloc[start:start+nrows].index.values
+        else:
+            index = self._processed.index.values
+        if len(index) != len(array):
+            # Data sent for the table before its value was replaced cannot
+            # be mapped onto the current rows.
+            return
 
-            with pd.option_context('mode.chained_assignment', None):
+        with _stringdtype_error(self.value, column, array):
+            self.value.loc[index, column] = array
+        with pd.option_context('mode.chained_assignment', None):
+            if remote:
                 self._processed.loc[index, column] = array
+            else:
+                self._processed[column] = array
         self._fire_pending_edits(column, index)
 
     def _map_indexes(self, indexes: list[int], existing: list[int] = [], add: bool = True) -> list[int]:

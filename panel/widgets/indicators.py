@@ -705,17 +705,98 @@ class Dial(ValueIndicator):
     def _update_value_bounds(self):
         self.param.value.bounds = self.bounds
 
+    @property
+    def _unfilled_color(self) -> str:
+        # Without an outline, whitesmoke is indistinguishable from a white page.
+        if self.unfilled_color:
+            return self.unfilled_color
+        return '#424242' if config.theme == 'dark' else '#e8e8e8'
+
+    def _angles(self) -> tuple[float, float, float]:
+        start = (np.radians(360-self.start_angle) - pi % (2*pi)) + pi
+        end = (np.radians(360-self.end_angle) - pi % (2*pi)) + pi
+        distance = (abs(end-start) % (pi*2))
+        if end>start:
+            distance = (pi*2)-distance
+        return start, end, distance
+
+    def _size(self) -> tuple[int, int]:
+        height = self.height or self.width or 250
+        return self.width or height, height
+
+    def _font_sizes(self) -> tuple[str, str, str]:
+        scale = (self._size()[1]/400)
+        title_size = self.title_size if self.title_size else '%spt' % (scale*32)
+        value_size = self.value_size if self.value_size else '%spt' % (scale*48)
+        tick_size = self.tick_size if self.tick_size else '%spt' % (scale*18)
+        return title_size, value_size, tick_size
+
+    @staticmethod
+    def _font_px(size: str) -> float:
+        # Only reserves layout space, so a rough guess for unknown units is fine.
+        try:
+            if size.endswith('pt'):
+                return float(size[:-2])*4/3
+            elif size.endswith('px'):
+                return float(size[:-2])
+            elif size.endswith('em'):
+                return float(size[:-2])*16
+        except ValueError:
+            pass
+        return 16
+
+    def _tick_anchors(self, start: float, end: float) -> list[tuple[float, float, str]]:
+        # Horizontal labels hung below each arc end, aligned so they grow
+        # towards the center instead of out of the plot.
+        inner_radius = 1-self.annulus_width
+        anchors = []
+        for angle in (start, end):
+            cos, sin = np.cos(angle), np.sin(angle)
+            y = min(sin, sin*inner_radius) - 0.04
+            if cos < -0.1:
+                anchors.append((cos, y, 'left'))
+            elif cos > 0.1:
+                anchors.append((cos, y, 'right'))
+            else:
+                anchors.append((cos*(1-self.annulus_width/2.), y, 'center'))
+        return anchors
+
+    def _text_height(self, size: str) -> float:
+        # Font sizes are in screen units, so convert them with the
+        # resolution the dial would have if it filled the plot.
+        width, height = self._size()
+        return self._font_px(size)*1.2*2/min(width, height)
+
+    def _value_y(self, start: float, end: float) -> float:
+        # Keep the value below the min/max labels so the two never overlap.
+        tick_height = self._text_height(self._font_sizes()[2])
+        tick_bottom = min(y for _, y, _ in self._tick_anchors(start, end)) - tick_height
+        return min(-0.5, tick_bottom)
+
+    def _get_ranges(self) -> tuple[tuple[float, float], tuple[float, float]]:
+        start, end, distance = self._angles()
+        angles = np.linspace(start, start-distance, 361)
+        radii = np.array([[1], [1-self.annulus_width]])
+        xs, ys = np.cos(angles)*radii, np.sin(angles)*radii
+        xmin, xmax = xs.min(), xs.max()
+        ymax = ys.max()
+        value_bottom = self._value_y(start, end) - self._text_height(self._font_sizes()[1])
+        ymin = min(ys.min(), value_bottom)
+
+        width, height = self._size()
+        pad = 0.03
+        units = max((xmax-xmin+2*pad)/width, (ymax-ymin+2*pad)/height)
+        cx, cy = (xmin+xmax)/2, (ymin+ymax)/2
+        dx, dy = units*width/2, units*height/2
+        return (cx-dx, cx+dx), (cy-dy, cy+dy)
+
     def _get_data(self, properties):
         vmin, vmax = self.bounds
         value = self.value
         if value is None:
             value = float('nan')
         fraction = (value-vmin)/(vmax-vmin)
-        start = (np.radians(360-self.start_angle) - pi % (2*pi)) + pi
-        end = (np.radians(360-self.end_angle) - pi % (2*pi)) + pi
-        distance = (abs(end-start) % (pi*2))
-        if end>start:
-            distance = (pi*2)-distance
+        start, end, distance = self._angles()
         radial_fraction = distance*fraction
         angle = start if np.isnan(fraction) else (start-radial_fraction)
         inner_radius = 1-self.annulus_width
@@ -754,31 +835,31 @@ class Dial(ValueIndicator):
         x, y = np.cos(angle)*center_radius, np.sin(angle)*center_radius
         needle_start = pi+angle-(self.needle_width/2.)
         needle_end = pi+angle+(self.needle_width/2.)
+        # The wedge's blunt end sits at the origin, so the hub must be
+        # wider than the needle base to cover it.
+        needle_base = self.needle_width*center_radius
         needle_data = {
             'x':      np.array([x]),
             'y':      np.array([y]),
             'start':  np.array([needle_start]),
             'end':    np.array([needle_end]),
-            'radius': np.array([center_radius])
+            'radius': np.array([0 if np.isnan(fraction) else center_radius]),
+            'hub_radius': np.array([max(0.05, needle_base*0.7)])
         }
 
         value = self.format.format(value=value).replace('nan', self.nan_format)
         min_value = self.format.format(value=vmin)
         max_value = self.format.format(value=vmax)
-        tminx, tminy = np.cos(start)*center_radius, np.sin(start)*center_radius
-        tmaxx, tmaxy = np.cos(end)*center_radius, np.sin(end)*center_radius
-        tmin_angle, tmax_angle = start+pi, end+pi % pi
-        scale = (self.height/400)
-        title_size = self.title_size if self.title_size else '%spt' % (scale*32)
-        value_size = self.value_size if self.value_size else '%spt' % (scale*48)
-        tick_size = self.tick_size if self.tick_size else '%spt' % (scale*18)
+        (tminx, tminy, tmin_align), (tmaxx, tmaxy, tmax_align) = self._tick_anchors(start, end)
+        title_size, value_size, tick_size = self._font_sizes()
 
         label_color = self.label_color or _theme_text_color()
         text_data= {
             'x':    np.array([0, 0, tminx, tmaxx]),
-            'y':    np.array([-.2, -.5, tminy, tmaxy]),
+            'y':    np.array([-.2, self._value_y(start, end), tminy, tmaxy]),
             'text': [self.label, value, min_value, max_value],
-            'rot':  np.array([0, 0, tmin_angle, tmax_angle]),
+            'rot':  np.array([0, 0, 0, 0]),
+            'align': ['center', 'center', tmin_align, tmax_align],
             'size': [title_size, value_size, tick_size, tick_size],
             'color': [label_color, color, label_color, label_color]
         }
@@ -787,9 +868,11 @@ class Dial(ValueIndicator):
     def _get_model(self, doc, root=None, parent=None, comm=None):
         from bokeh.plotting import figure
         properties = self._get_properties(doc)
+        x_range, y_range = self._get_ranges()
         model = figure(
-            x_range=(-1,1), y_range=(-1,1), tools=[],
+            x_range=x_range, y_range=y_range, tools=[],
             outline_line_color=None, toolbar_location=None,
+            border_fill_alpha=0, min_border=0,
             width=self.width, height=self.height, **properties
         )
         model.xaxis.visible = False
@@ -807,7 +890,7 @@ class Dial(ValueIndicator):
         annulus_source = ColumnDataSource(data=annulus, name='annulus_source')
         model.annular_wedge(
             x=0, y=0, inner_radius='radius', outer_radius=1, start_angle='starts',
-            end_angle='ends', line_color='gray', color='color', direction='clock',
+            end_angle='ends', line_color=None, color='color', direction='clock',
             source=annulus_source
         )
 
@@ -817,6 +900,10 @@ class Dial(ValueIndicator):
             x='x', y='y', radius='radius', start_angle='start', end_angle='end',
             fill_color=self._needle_color, line_color=self._needle_color,
             source=needle_source, name='needle_renderer'
+        )
+        model.circle(
+            x=0, y=0, radius='hub_radius', fill_color=self._needle_color,
+            line_color=None, source=needle_source, name='needle_hub_renderer'
         )
 
         # Draw thresholds
@@ -829,7 +916,7 @@ class Dial(ValueIndicator):
         # Draw labels
         text_source = ColumnDataSource(data=text, name='label_source')
         model.text(
-            x='x', y='y', text='text', font_size='size', text_align='center',
+            x='x', y='y', text='text', font_size='size', text_align='align',
             text_color='color', source=text_source, text_baseline='top',
             angle='rot'
         )
@@ -849,13 +936,17 @@ class Dial(ValueIndicator):
                 model.update(**{event.name: event.new})
             if event.name in self._data_params:
                 update_data = True
-            elif event.name == 'needle_color':
-                needle_r = model.select(name='needle_renderer')
+            if event.name == 'needle_color':
+                needle_r = model.select_one({'name': 'needle_renderer'})
                 needle_r.glyph.line_color = self._needle_color
                 needle_r.glyph.fill_color = self._needle_color
+                model.select_one({'name': 'needle_hub_renderer'}).glyph.fill_color = self._needle_color
         if not update_data:
             return
         properties = self._get_properties(doc)
+        (x0, x1), (y0, y1) = self._get_ranges()
+        model.x_range.update(start=x0, end=x1)
+        model.y_range.update(start=y0, end=y1)
         annulus, needle, threshold, labels = self._get_data(properties)
         model.select(name='annulus_source').data.update(annulus)
         model.select(name='needle_source').data.update(needle)

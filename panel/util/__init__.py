@@ -109,7 +109,7 @@ def abbreviated_repr(value, max_length=25, natural_breaks=(',', ' ')):
     """
     if isinstance(value, list):
         vrepr = '[' + ', '.join([abbreviated_repr(v) for v in value]) + ']'
-    if isinstance(value, param.Parameterized):
+    elif isinstance(value, param.Parameterized):
         vrepr = type(value).__name__
     else:
         vrepr = repr(value)
