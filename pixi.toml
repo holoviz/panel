@@ -386,6 +386,10 @@ nodejs = ">=20"
 python = "3.12.*"
 pytest = "*"
 pytest-playwright = "*"
+# Unused by the homepage tests, but the shared pytest config sets their options and
+# filterwarnings=error turns the unknown-option warnings into a collection failure.
+pytest-asyncio = "*"
+pytest-timeout = "*"
 
 [feature.homepage.tasks]
 _homepage-install = { cmd = 'npm ci', cwd = 'doc/homepage', inputs = [
