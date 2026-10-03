@@ -1,3 +1,9 @@
+// A table without columns is 1px wide and would clip the loading spinner
+:host(.pn-loading) {
+  min-width: 40px;
+  min-height: 40px;
+}
+
 .pnx-tabulator.tabulator {
   overflow: visible;
 }

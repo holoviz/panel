@@ -3784,6 +3784,19 @@ def test_tabulator_loading_no_vertical_rescroll(page):
     wait_until(lambda: target.bounding_box() == bb, page)
 
 
+def test_tabulator_loading_spinner_not_clipped_without_value(page):
+    # https://github.com/holoviz/panel/issues/8555
+    widget = Tabulator(loading=True)
+
+    serve_component(page, widget)
+
+    table = page.locator('.pn-loading')
+    expect(table).to_have_count(1)
+    # Without columns the table would be 1px wide and clip the 40px spinner
+    wait_until(lambda: table.bounding_box()['width'] >= 40, page)
+    wait_until(lambda: table.bounding_box()['height'] >= 40, page)
+
+
 def test_tabulator_trigger_value_update(page):
     # Checking that this issue is resolved:
     # https://github.com/holoviz/panel/issues/3695
