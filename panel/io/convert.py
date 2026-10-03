@@ -24,7 +24,7 @@ from bokeh.embed.wrappers import wrap_in_script_tag
 from bokeh.util.serialization import make_id
 from packaging.requirements import Requirement
 
-from .. import __version__
+from .. import __version__, config
 from ..util import base_version
 from .application import Application, build_single_handler_application
 from .document import MockSessionContext
