@@ -1,6 +1,7 @@
 from collections import OrderedDict
 
 import param
+import pytest
 
 from bokeh.models import Div
 
@@ -10,7 +11,7 @@ from panel.pane import PaneBase
 from panel.tests.util import mpl_available
 from panel.util import (
     abbreviated_repr, extract_dependencies, get_method_owner, parse_query,
-    styler_update,
+    splice_diff, styler_update, suffix_length, utf16_offset,
 )
 
 
@@ -143,3 +144,51 @@ def test_styler_update(dataframe):
         (2, 0): [('background-color', '#67000d'), ('color', '#f1f1f1')],
         (2, 1): [('background-color', '#67000d'), ('color', '#f1f1f1')]
     }
+
+
+@pytest.mark.parametrize('a, b, expected', [
+    ('', '', 0),
+    ('abc', '', 0),
+    ('abc', 'xbc', 2),
+    ('abc', 'abc', 3),
+    ('x' * 200 + 'abc', 'y' * 300 + 'abc', 3),
+    ('x' * 200, 'y' + 'x' * 150, 150),
+])
+def test_suffix_length(a, b, expected):
+    assert suffix_length(a, b) == expected
+
+
+def test_suffix_length_limit():
+    assert suffix_length('aaaa', 'aaaa', 2) == 2
+
+
+@pytest.mark.parametrize('old, new', [
+    ('', 'abc'),
+    ('abc', ''),
+    ('<p>Hello</p>', '<p>Hello world</p>'),
+    ('<p>a</p>', '<p>a</p><p>b</p>'),
+    ('aaaa', 'aaaaaa'),
+    ('abcabc', 'abc'),
+    ('same', 'same'),
+    ('<ul><li>a</li></ul>', '<ul><li>a</li><li>b</li></ul>'),
+])
+def test_splice_diff(old, new):
+    start, end, patch = splice_diff(old, new)
+    assert old[:start] + patch + old[end:] == new
+    assert start <= end <= len(old)
+    assert len(patch) == len(new) - (len(old) - (end - start))
+
+
+def test_splice_diff_minimal_patch_before_closing_tags():
+    assert splice_diff('<p>Hello</p>\n', '<p>Hello world</p>\n') == (8, 8, ' world')
+
+
+@pytest.mark.parametrize('text, index, expected', [
+    ('abc', 2, 2),
+    ('é😀a', 1, 1),
+    ('é😀a', 2, 3),
+    ('😀😀a', 3, 5),
+])
+def test_utf16_offset(text, index, expected):
+    assert utf16_offset(text, index) == expected
+    assert len(text[:index].encode('utf-16-le')) // 2 == expected

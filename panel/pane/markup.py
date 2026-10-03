@@ -4,19 +4,26 @@ Markdown, and also regular strings.
 """
 from __future__ import annotations
 
+import asyncio
 import functools
 import json
+import re
 import textwrap
+import time
 import typing as t
 
-from html import escape
+from functools import partial
+from html import escape, unescape
 
 import param  # type: ignore
 
 from ..config import config
+from ..io.document import unlocked
+from ..io.notebook import push
 from ..io.resources import CDN_DIST
+from ..io.state import state
 from ..models.markup import HTML as _BkHTML, JSON as _BkJSON, HTMLStreamEvent
-from ..util import HTML_SANITIZER, prefix_length
+from ..util import HTML_SANITIZER, splice_diff, utf16_offset
 from .base import ModelPane
 
 if t.TYPE_CHECKING:
@@ -24,7 +31,14 @@ if t.TYPE_CHECKING:
 
     from bokeh.document import Document
     from bokeh.model import Model
+    from markdown_it import MarkdownIt
     from pyviz_comms import Comm  # type: ignore
+
+# Syntax whose rendering depends on other blocks (footnotes, reference
+# links, definition lists) or which breaks line offsets (\r).
+_NON_LOCAL_SYNTAX = re.compile(r'\[\^|\]:|^ {0,3}[:~][ \t]|\r', re.MULTILINE)
+
+_HEADING_ID = re.compile(r'<h[1-6][^>]*?\sid="([^"]*)"')
 
 
 class HTMLBasePane(ModelPane):
@@ -44,18 +58,135 @@ class HTMLBasePane(ModelPane):
 
     _updates: t.ClassVar[bool] = True
 
+    # Minimum interval (in seconds) between streamed updates sent to a
+    # view; updates arriving in between are coalesced into one patch.
+    _stream_interval: t.ClassVar[float] = 0.03
+
     __abstract = True
 
+    def __init__(self, object=None, **params):
+        self._raw_html: str | None = None
+        # Per view: (escaped text, unescaped text) last sent to the frontend
+        self._stream_state: dict[str, tuple[str, str]] = {}
+        # Per view: token identifying the scheduled flush, or its due time
+        self._stream_pending: dict[str, float] = {}
+        self._stream_last: dict[str, float] = {}
+        super().__init__(object=object, **params)
+
+    def _escape_html(self, html: str) -> dict[str, t.Any]:
+        # Keeping the unescaped HTML saves unescaping it when streaming
+        self._raw_html = html
+        return dict(object=escape(html))
+
+    def _cleanup(self, root: Model | None = None) -> None:
+        if root is not None:
+            ref = root.ref['id']
+            self._stream_state.pop(ref, None)
+            self._stream_pending.pop(ref, None)
+            self._stream_last.pop(ref, None)
+        super()._cleanup(root)
+
+    def _update_pane(self, *events) -> None:
+        if (not self.enable_streaming or not self._stream_interval or
+            any(event.name != 'object' for event in events)):
+            super()._update_pane(*events)
+            return
+        for ref in list(self._models):
+            if ref not in state._views or ref in state._fake_roots:
+                continue
+            doc, comm = state._views[ref][2:]
+            if comm or not doc.session_context or state._unblocked(doc):
+                self._stream_update(ref)
+            elif ref not in self._stream_pending:
+                # Off the event loop thread the throttle has to be
+                # applied on the loop, which picks up the latest object.
+                self._stream_pending[ref] = token = time.monotonic()
+                doc.add_next_tick_callback(state._handle_exception_wrapper(
+                    partial(self._stream_scheduled, ref, token, True), doc
+                ))
+
+    def _stream_update(self, ref: str) -> None:
+        if ref not in self._models or ref not in state._views:
+            return
+        doc, comm = state._views[ref][2:]
+        now = time.monotonic()
+        due = self._stream_pending.get(ref)
+        if due is not None and now < due:
+            return
+        wait = self._stream_last.get(ref, -float('inf')) + self._stream_interval - now
+        if due is None and wait > 0 and self._stream_schedule(ref, doc, comm, now + wait):
+            return
+        self._stream_flush(ref)
+
+    def _stream_schedule(self, ref: str, doc: Document, comm: Comm | None, due: float) -> bool:
+        """
+        Schedules a trailing flush, returning False if no event loop
+        is available to run it.
+        """
+        callback = state._handle_exception_wrapper(
+            partial(self._stream_scheduled, ref, due), doc
+        )
+        delay = max(due - time.monotonic(), 0)
+        if doc.session_context:
+            doc.add_timeout_callback(callback, int(delay * 1000))
+        elif comm:
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                return False
+            loop.call_later(delay, callback)
+        else:
+            return False
+        self._stream_pending[ref] = due
+        return True
+
+    def _stream_scheduled(self, ref: str, token: float, throttle: bool = False) -> None:
+        # A blocked event loop may have forced an earlier flush, which
+        # superseded this callback.
+        if self._stream_pending.get(ref) != token:
+            return
+        del self._stream_pending[ref]
+        if throttle:
+            self._stream_update(ref)
+        else:
+            self._stream_flush(ref)
+
+    def _stream_flush(self, ref: str) -> None:
+        self._stream_pending.pop(ref, None)
+        if ref not in self._models or ref not in state._views:
+            return
+        _, root, doc, comm = state._views[ref]
+        self._stream_last[ref] = time.monotonic()
+        with unlocked():
+            self._update_object(ref, doc, root, self._models[ref][1], comm)
+        if comm and 'embedded' not in root.tags:
+            push(doc, comm)
+
     def _update(self, ref: str, model: Model) -> None:
+        self._raw_html = None
         props = self._get_properties(model.document)
-        if self.enable_streaming and 'text' in props:
-            text = props['text']
-            start = prefix_length(text, model.text)
-            model.run_scripts = False
-            patch = text[start:]
-            self._send_event(HTMLStreamEvent, patch=patch, start=start)
-            model._property_values['text'] = model.text[:start]+patch
-            del props['text']
+        text = props.get('text')
+        if (not self.enable_streaming or text is None or ref not in state._views
+            or not isinstance(model, _BkHTML)):
+            model.update(**props)
+            return
+        del props['text']
+        html = unescape(text) if self._raw_html is None else self._raw_html
+        old_text, old_html = self._stream_state.get(ref, (None, None))
+        if old_text is not model.text or old_html is None:
+            old_html = unescape(model.text)
+        if html != old_html:
+            start, end, patch = splice_diff(old_html, html)
+            start, end = utf16_offset(old_html, start), utf16_offset(old_html, end)
+            version = model._property_values.get('stream_version', 0) + 1
+            props['run_scripts'] = False
+            # Bypass the property setters so no full text update is sent
+            model._property_values['text'] = text
+            model._property_values['stream_version'] = version
+            state._views[ref][2].callbacks.send_event(HTMLStreamEvent(
+                model=model, patch=escape(patch), start=start, end=end, version=version
+            ))
+        self._stream_state[ref] = (model.text, html)
         model.update(**props)
 
 
@@ -114,7 +245,7 @@ class HTML(HTMLBasePane):
             text = text._repr_html_()
         if self.sanitize_html:
             text = self.sanitize_hook(text)
-        return dict(object=escape(text))
+        return self._escape_html(text)
 
 
 class DataFrame(HTML):
@@ -395,7 +526,7 @@ class DataFrame(HTML):
                 html = obj.to_html(**kwargs)
         else:
             html = ''
-        return dict(object=escape(html))
+        return self._escape_html(html)
 
     def _init_params(self) -> dict[str, t.Any]:
         params = HTMLBasePane._init_params(self)
@@ -443,7 +574,7 @@ class Str(HTMLBasePane):
             text = '<pre> </pre>'
         else:
             text = '<pre>'+str(obj)+'</pre>'
-        return dict(object=escape(text))
+        return self._escape_html(text)
 
 
 class Markdown(HTMLBasePane):
@@ -575,8 +706,15 @@ class Markdown(HTMLBasePane):
         parser.options['highlight'] = hilite
         return parser
 
+    def __init__(self, object=None, **params):
+        # (parser, source, html, heading slugs) of the leading blocks
+        self._block_cache: tuple[MarkdownIt, str, str, frozenset[str]] | None = None
+        super().__init__(object=object, **params)
+
     def _transform_object(self, obj: t.Any) -> dict[str, t.Any]:
-        import markdown
+        return self._escape_html(self._render_markdown(obj))
+
+    def _render_markdown(self, obj: t.Any) -> str:
         if obj is None:
             obj = ''
         elif not isinstance(obj, str):
@@ -585,25 +723,73 @@ class Markdown(HTMLBasePane):
             obj = textwrap.dedent(obj)
 
         if self.renderer == 'markdown':
+            import markdown
+            self._block_cache = None
             extensions = self.extensions + ['nl2br'] if self.hard_line_break else self.extensions
-            html = markdown.markdown(
+            return markdown.markdown(
                 obj,
                 extensions=extensions,
                 output_format='xhtml',
                 **self.renderer_options
             )
-        else:
-            parser = self._get_parser(
-                self.renderer, tuple(self.plugins), self.hard_line_break, self.disable_anchors, **self.renderer_options
-            )
+        parser = self._get_parser(
+            self.renderer, tuple(self.plugins), self.hard_line_break, self.disable_anchors, **self.renderer_options
+        )
+        if self.renderer == 'markdown-it' and not self.plugins and not _NON_LOCAL_SYNTAX.search(obj):
             try:
-                html = parser.render(obj)
+                return self._render_incremental(parser, obj)
             except IndexError:
-                # Likely markdown-it mdurl parser error
-                with parser.reset_rules():
-                    parser.disable('link')
-                    html = parser.render(obj)
-        return dict(object=escape(html))
+                pass
+        self._block_cache = None
+        try:
+            return parser.render(obj)
+        except IndexError:
+            # Likely markdown-it mdurl parser error
+            with parser.reset_rules():
+                parser.disable('link')
+                return parser.render(obj)
+
+    def _render_incremental(self, parser: MarkdownIt, src: str) -> str:
+        """
+        Renders markdown reusing the HTML of the leading top-level
+        blocks from the previous render if the source was appended to.
+        Every block but the last is final once a later block starts, so
+        streaming only has to re-parse and re-highlight the last block.
+        """
+        cache = self._block_cache
+        if cache and cache[0] is parser and src.startswith(cache[1]):
+            _, prefix_src, prefix_html, slugs = cache
+        else:
+            prefix_src, prefix_html, slugs = '', '', frozenset()
+        tail_src = src[len(prefix_src):]
+        env: dict[str, t.Any] = {}
+        tokens = parser.parse(tail_src, env)
+        # Index and first source line of the last top-level block
+        split, line = next((
+            (i, token.map[0]) for i in range(len(tokens)-1, 0, -1)
+            if (token := tokens[i]).level == 0 and token.map is not None
+        ), (0, 0))
+        render = parser.renderer.render
+        stable_html = render(tokens[:split], parser.options, env) if split else ''
+        tail_html = render(tokens[split:], parser.options, env)
+        if slugs and not self.disable_anchors:
+            # Heading anchors are deduplicated per render
+            new_slugs = _HEADING_ID.findall(stable_html + tail_html)
+            if not slugs.isdisjoint(new_slugs):
+                self._block_cache = None
+                return self._render_incremental(parser, src)
+        if split:
+            offset = 0
+            for _ in range(line):
+                offset = tail_src.index('\n', offset) + 1
+            if not self.disable_anchors:
+                slugs = slugs.union(_HEADING_ID.findall(stable_html))
+            self._block_cache = (
+                parser, prefix_src + tail_src[:offset], prefix_html + stable_html, slugs
+            )
+        else:
+            self._block_cache = (parser, prefix_src, prefix_html, slugs)
+        return prefix_html + stable_html + tail_html
 
     def _process_param_change(self, params):
         if 'css_classes' in params:
