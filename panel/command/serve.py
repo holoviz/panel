@@ -39,12 +39,15 @@ from tornado.web import StaticFileHandler
 
 from ..auth import BasicAuthProvider, OAuthProvider
 from ..config import config
+from ..io.admin_auth import mark_admin_application
 from ..io.document import _cleanup_doc
 from ..io.liveness import LivenessHandler
 from ..io.reload import record_modules, watch
 from ..io.resources import DIST_DIR
 from ..io.rest import REST_PROVIDERS
-from ..io.server import INDEX_HTML, get_static_routes, set_curdoc
+from ..io.server import (
+    INDEX_HTML, admin_auth_patterns, get_static_routes, set_curdoc,
+)
 from ..io.state import state
 from ..util import edit_readonly, fullpath
 
@@ -303,6 +306,18 @@ class Serve(_BkServe):
             action = 'store',
             type    = str,
             help    = "Name to use for the admin endpoint.",
+            default = None
+        )),
+        ('--admin-password', Argument(
+            action  = 'store',
+            type    = str,
+            help    = "Password required to access the admin panel, independent of the server authentication.",
+            default = None
+        )),
+        ('--admin-users', Argument(
+            action  = 'store',
+            nargs   = '+',
+            help    = "Users, as authenticated by --basic-auth or --oauth-provider, allowed to access the admin panel.",
             default = None
         )),
         ('--admin-log-level', Argument(
@@ -580,7 +595,21 @@ class Serve(_BkServe):
             self._admin_path = admin_path
 
             config._admin = True
-            app = Application(FunctionHandler(admin_panel))
+            if args.admin_password:
+                if os.environ.get('PANEL_ADMIN_PASSWORD'):
+                    raise ValueError(
+                        "Supply the admin password either using the environment "
+                        "variable PANEL_ADMIN_PASSWORD or as an explicit argument, not both."
+                    )
+                config.admin_password = args.admin_password
+            if args.admin_users:
+                if os.environ.get('PANEL_ADMIN_USERS'):
+                    raise ValueError(
+                        "Supply the admin users either using the environment "
+                        "variable PANEL_ADMIN_USERS or as an explicit argument, not both."
+                    )
+                config.admin_users = args.admin_users
+            app = mark_admin_application(Application(FunctionHandler(admin_panel)))
             unused_timeout = args.check_unused_sessions or 15000
             state._admin_context = AdminApplicationContext(
                 app, unused_timeout=unused_timeout, url=admin_path
@@ -803,6 +832,13 @@ class Serve(_BkServe):
             elif args.oauth_jwt_user:
                 config.oauth_jwt_user = args.oauth_jwt_user
 
+        if args.admin and config.admin_users and 'auth_provider' not in kwargs:
+            raise ValueError(
+                "Restricting the admin panel to --admin-users requires server "
+                "authentication, enable it with --basic-auth or --oauth-provider "
+                "or protect the admin panel with --admin-password instead."
+            )
+
         if config.cookie_path:
             kwargs['cookie_path'] = config.cookie_path
 
@@ -835,6 +871,7 @@ class Serve(_BkServe):
 
         if args.admin:
             patterns.extend(self._admin_patterns())
+            patterns.extend(admin_auth_patterns(self._admin_path))
 
         if args.rest_session_info:
             patterns.extend(REST_PROVIDERS['param'](self._files, 'rest'))

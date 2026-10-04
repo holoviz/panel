@@ -23,6 +23,7 @@ from bokeh.application.handlers.document_lifecycle import (
 from bokeh.models import CustomJS
 
 from ..config import config
+from .admin_auth import mark_admin_application
 from .document import _destroy_document
 from .handlers import (
     FunctionHandler, MarkdownHandler, NotebookHandler, ScriptHandler,
@@ -359,6 +360,6 @@ def build_applications(
             )
         from .admin import admin_panel
         admin_handler = FunctionHandler(admin_panel)
-        apps['/admin'] = Application(admin_handler)
+        apps['/admin'] = mark_admin_application(Application(admin_handler))
 
     return apps

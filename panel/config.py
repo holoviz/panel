@@ -264,6 +264,14 @@ class _config(_base_config):
 
     _admin_endpoint = param.String(default=None, doc="Name to use for the admin endpoint.")
 
+    _admin_password = param.String(default=None, allow_None=True, doc="""
+        Password required to access the admin panel, entered on its own
+        login page and independent of the server authentication.""")
+
+    _admin_users = param.List(default=[], item_type=str, doc="""
+        Users, as identified by the server authentication, allowed to
+        access the admin panel. If empty, every user may access it.""")
+
     _admin_log_level: t.Literal[
         'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'
     ] = param.Selector(
@@ -403,8 +411,8 @@ class _config(_base_config):
         'oauth_secret', 'oauth_jwt_user', 'oauth_redirect_uri',
         'oauth_encryption_key', 'oauth_extra_params', 'npm_cdn',
         'layout_compatibility', 'oauth_refresh_tokens', 'oauth_guest_endpoints',
-        'oauth_optional', 'admin', 'index_titles', 'disable_validation',
-        'pyodide_cdn_root', 'page_config'
+        'oauth_optional', 'admin', 'admin_password', 'admin_users',
+        'index_titles', 'disable_validation', 'pyodide_cdn_root', 'page_config'
     }
 
     _truthy = ['True', 'true', '1', True, 1]
@@ -611,6 +619,17 @@ class _config(_base_config):
     @property
     def admin_endpoint(self):
         return os.environ.get('PANEL_ADMIN_ENDPOINT', self._admin_endpoint)
+
+    @property
+    def admin_password(self):
+        return os.environ.get('PANEL_ADMIN_PASSWORD', self._admin_password) or None
+
+    @property
+    def admin_users(self):
+        if 'PANEL_ADMIN_USERS' in os.environ:
+            users = os.environ['PANEL_ADMIN_USERS'].split(',')
+            return [user.strip() for user in users if user.strip()]
+        return self._admin_users
 
     @property
     def admin_log_level(self):
