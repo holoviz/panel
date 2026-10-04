@@ -33,6 +33,8 @@ concurrency:
 
 env:
   DISPLAY: ":99.0"
+  # Prerelease tags and dev dispatches publish to the panel-dev.holoviz.org staging site.
+  DEV_DEPLOY: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'dev') || (github.event_name == 'push' && (contains(github.ref_name, 'a') || contains(github.ref_name, 'b') || contains(github.ref_name, 'rc'))) }}
 
 jobs:
   pixi_lock:
@@ -51,6 +53,11 @@ jobs:
         with:
           environments: docs
           opengl: true
+      - name: Target the panel-dev staging site
+        if: env.DEV_DEPLOY == 'true'
+        run: |
+          echo "VERSION=dev" >> "$GITHUB_ENV"
+          echo "PANEL_DOCS_ORIGIN=https://panel-dev.holoviz.org" >> "$GITHUB_ENV"
       - name: Build documentation
         run: pixi run -e docs docs-build
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -71,16 +78,28 @@ jobs:
         with:
           name: docs
           path: builtdocs/
+      - name: Keep the homepage's 404 page
+        if: env.DEV_DEPLOY == 'true'
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: us-east-1
+          BUCKET: panel-dev.holoviz.org
+        # docs-publish always uploads a root 404.html; hand it back the homepage's so the
+        # docs deploy does not replace it with nbsite's generic page.
+        run: |
+          if aws s3api head-object --bucket "$BUCKET" --key 404.html > /dev/null 2>&1; then
+            aws s3 cp "s3://$BUCKET/404.html" builtdocs/_nbsite_versioned/404.html
+          fi
       - name: Deploy dev
-        uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4.1.0
-        if: |
-          (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'dev') ||
-          (github.event_name == 'push' && (contains(github.ref_name, 'a') || contains(github.ref_name, 'b') || contains(github.ref_name, 'rc')))
+        uses: holoviz-dev/holoviz_tasks/docs-publish@17107a157b32cc1bd2a09c71fbdbc74603efdb40 # v1.0.15
+        if: env.DEV_DEPLOY == 'true'
         with:
-          personal_token: ${{ secrets.ACCESS_TOKEN }}
-          external_repository: holoviz-dev/panel
-          publish_dir: ./builtdocs
-          force_orphan: true
+          s3-url: s3://panel-dev.holoviz.org
+          s3-cloudfront-id: E148PSI2XBBCSY
+          s3-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          s3-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          version: dev
       - name: Deploy main
         uses: peaceiris/actions-gh-pages@84c30a85c19949d7eee79c4ff27748b70285e453 # v4.1.0
         if: |

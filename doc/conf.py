@@ -36,6 +36,15 @@ js_version = json.loads((PANEL_ROOT / 'package.json').read_text())['version']
 
 is_dev = any(ext in version for ext in ('a', 'b', 'rc'))
 
+# Staging builds for panel-dev.holoviz.org override this, so the switcher, canonical
+# links and pyodide apps resolve on the site the build is deployed to.
+DOCS_ORIGIN = os.getenv('PANEL_DOCS_ORIGIN', 'https://panel.holoviz.org').rstrip('/')
+CANONICAL_ORIGIN = 'https://panel.holoviz.org'
+
+html_baseurl = f'{DOCS_ORIGIN}/en/docs/latest/'
+
+switcher_version = os.getenv('VERSION') or ('dev' if is_dev else version)
+
 # For the interactivity warning box created by nbsite to point to the right
 # git tag instead of the default i.e. main.
 os.environ['BRANCH'] = f"v{release}"
@@ -51,14 +60,22 @@ html_favicon = "_static/icons/favicon.ico"
 
 current_release = panel.__version__  # Current release version variable
 
-announcement_text = f"Panel {current_release} has just been released! Check out the <a href='https://panel.holoviz.org/about/releases.html'>release notes</a> and support Panel by giving it a 🌟 on <a href='https://github.com/holoviz/panel'>Github</a>."
+announcement_text = f"Panel {current_release} has just been released! Check out the <a href='{DOCS_ORIGIN}/en/docs/latest/about/releases.html'>release notes</a> and support Panel by giving it a 🌟 on <a href='https://github.com/holoviz/panel'>Github</a>."
 
 
 html_theme_options = {
     "logo": {
         "image_light": "_static/logo_horizontal_light_theme.png",
         "image_dark": "_static/logo_horizontal_dark_theme.png",
+        # The unversioned homepage, not this version's docs root.
+        "link": f"{DOCS_ORIGIN}/",
     },
+    "navbar_start": ["navbar-logo", "version-switcher"],
+    "switcher": {
+        "json_url": f"{DOCS_ORIGIN}/switcher.json",
+        "version_match": switcher_version,
+    },
+    "show_version_warning_banner": True,
     "github_url": "https://github.com/holoviz/panel",
     "use_edit_page_button": True,
     "icon_links": [
@@ -80,13 +97,14 @@ html_theme_options = {
     ],
     "pygments_light_style": "material",
     "pygments_dark_style": "material",
-    "header_links_before_dropdown": 5,
+    "header_links_before_dropdown": 6,
     'secondary_sidebar_items': [
         "github-stars-button",
         "panelitelink",
         "page-toc",
     ],
-    "announcement": announcement_text,
+    # A dev build would announce its own dev version as a release.
+    "announcement": "" if is_dev else announcement_text,
 }
 
 
@@ -109,7 +127,18 @@ extensions = [
     'ui_reference',
     'nbsite.pyodide',
     'nbsite.analytics',
+    'material_reference',
+    # Assigning `extensions` drops the nbsite.shared_conf list, which is where this
+    # one would otherwise come from; docs-publish needs its sitemap, robots and 404.
+    'nbsite.validate_versioned',
 ]
+
+# Resolves the cross-links material_reference adds from a classic reference page
+# to its Material counterpart. The 'external+' form is required because Sphinx
+# disables implicit intersphinx resolution of :doc: references by default.
+intersphinx_mapping = {
+    'panel_material_ui': ('https://panel-material-ui.holoviz.org', None),
+}
 
 numpydoc_show_inherited_class_members = False
 numpydoc_class_members_toctree = False
@@ -122,7 +151,6 @@ myst_enable_extensions = ["colon_fence", "deflist"]
 gallery_endpoint = 'panel-gallery-dev' if is_dev else 'panel-gallery'
 gallery_url = f'https://{gallery_endpoint}.holoviz-demo.anaconda.com'
 jlite_url = 'https://holoviz-dev.github.io/panelite-dev/lab' if is_dev else 'https://panelite.holoviz.org/lab'
-pyodide_url = 'https://holoviz-dev.github.io/panel/pyodide' if is_dev else 'https://panel.holoviz.org/pyodide'
 
 rediraffe_redirects = {
     # Removal of the developer testing page
@@ -250,6 +278,12 @@ nbsite_pyodide_conf = {
     'lockfile': True,
     'requirements': [bokeh_req, panel_req],
     'requires': get_requirements(),
+    # Every version is published side by side on one origin (holoviz-dev/nbsite#373).
+    'pwa_scope_caches': True,
+    'pwa_fetch_cache': 'no-cache',
+    'pwa_manifest_scope': './',
+    # Re-publishing a version must still replace the worker returning visitors have.
+    'pwa_cache_version': f"{version}+{os.environ['GITHUB_RUN_ID']}" if 'GITHUB_RUN_ID' in os.environ else None,
 }
 
 templates_path += [
@@ -265,7 +299,6 @@ html_context.update({
     "default_mode": "light",
     "panelite_endpoint": jlite_url,
     "gallery_url": gallery_url,
-    "pyodide_url": pyodide_url
 })
 
 nbbuild_patterns_to_take_along = ["simple.html", "*.json", "json_*"]
@@ -381,6 +414,17 @@ def setup_mystnb(app):
 
 
 
+def retarget_switcher(app, exc):
+    """Point the published switcher.json at the staging origin.
+
+    The source file keeps canonical URLs because nbsite builds the sitemap from it.
+    """
+    switcher = pathlib.Path(app.outdir, '_static', 'switcher.json')
+    if exc or DOCS_ORIGIN == CANONICAL_ORIGIN or not switcher.is_file():
+        return
+    switcher.write_text(switcher.read_text().replace(CANONICAL_ORIGIN, DOCS_ORIGIN))
+
+
 def setup(app) -> None:
     try:
         from nbsite.paramdoc import param_formatter, param_skip
@@ -392,6 +436,7 @@ def setup(app) -> None:
     app.connect('builder-inited', setup_mystnb)
 
     app.connect('source-read', update_versions)
+    app.connect('build-finished', retarget_switcher)
     nbbuild.setup(app)
     app.add_config_value('grid_item_link_domain', '', 'html')
 

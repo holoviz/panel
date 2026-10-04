@@ -11,7 +11,8 @@
   </a>
 {% endif %}
 {% if title and (pagename.startswith("gallery") or (pagename.startswith("how_to") and "/examples/" in pagename)) %}
-  <a href="{{ pyodide_url + '/' + ('index.html' if pagename.endswith('index') else pagename.split('/')[-1]) }}" target=”_blank”>
+  {# Relative, so each published version opens its own converted apps. #}
+  <a href="{{ pathto('pyodide/' + ('index' if pagename.endswith('index') else pagename.split('/')[-1]), 0) }}" target=”_blank”>
     <img src="{{ pathto('_static/launch_pyodide.svg', 1) }}" alt="launch pyodide"></img>
   </a>
 {% endif %}

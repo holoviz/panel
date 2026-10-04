@@ -112,6 +112,7 @@ doc/**/*.rst
 doc/**/*.ipynb
 doc/**/*.json
 !doc/_static/json/*.json
+!doc/_static/switcher.json
 jupyter_execute
 # this dir contains the whole website and should not be checked in on main
 builtdocs/
@@ -128,10 +129,17 @@ lite/files/*/
 discover/
 
 node_modules
+# The homepage's SSR bundle exists only to feed scripts/prerender.mjs; dist/ is already ignored.
+doc/homepage/dist-ssr/
+# Re-include homepage sources caught by the Python lib/ and nbsite doc/**/*.json rules above.
+!doc/homepage/*.json
+!doc/homepage/src/lib/
 .bokeh
 /tmp
 .devcontainer/*
 pyodide/
+# The homepage's retirement worker for the old /pyodide/ scope.
+!doc/homepage/public/pyodide/
 script.*
 doc/_build/*
 doc/gallery/*
