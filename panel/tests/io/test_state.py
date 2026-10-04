@@ -5,6 +5,7 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 
 import param
+import pytest
 
 from panel.io.state import state
 from panel.widgets import TextInput
@@ -90,3 +91,11 @@ def test_destroy_session_cleans_up_stylesheets(document, comm):
     state._destroy_session(session_context)
 
     assert document not in state._stylesheets
+
+
+@pytest.mark.parametrize('period', ['90', '1h30', 'abc', '0s'])
+def test_schedule_task_rejects_invalid_period(period):
+    with pytest.raises(ValueError):
+        state.schedule_task('invalid_period', lambda: None, period=period)
+    assert not any(key.endswith('_invalid_period') for key in state._scheduled)
+
