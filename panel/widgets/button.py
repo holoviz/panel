@@ -522,7 +522,10 @@ class MenuButton(_ButtonBase, _ClickButton, IconMixin):
             item = event.item
         elif isinstance(event, ButtonClick):
             item = self.label
-        self.clicked = item
+        if self.clicked == item:
+            self.param.trigger('clicked')
+        else:
+            self.clicked = item
 
     def on_click(
         self, callback: Callable[[param.parameterized.Event], None]
