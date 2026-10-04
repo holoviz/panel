@@ -15,6 +15,8 @@ import pytest
 
 import panel as pn
 
+from panel.tests.util import global_design, set_global_design
+
 pytestmark = pytest.mark.docs
 
 REF_PATH = Path(__file__).parents[2] / "examples" / "reference"
@@ -141,11 +143,16 @@ async def test_markdown_codeblocks(file, tmp_path, panel_ui):
     with open(mod, 'w', encoding='utf-8') as f:
         f.writelines(lines)
 
+    # Outside a session pn.state.template applies the template's design
+    # globally, which for template='page' is the Material design.
+    prior_design = global_design()
     try:
         runpy.run_path(str(mod), run_name="__main__")
     except ModuleNotFoundError as e:
         if e.name not in ALLOWED_NO_DOCS_MODULES:
             raise e
+    finally:
+        set_global_design(prior_design)
 
 
 @doc_available

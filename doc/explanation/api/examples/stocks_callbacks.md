@@ -11,7 +11,7 @@ import plotly.graph_objects as go
 from bokeh.sampledata import stocks
 from matplotlib.figure import Figure
 
-pn.extension('plotly', 'vega', template='bootstrap')
+pn.extension('plotly', 'vega', template='page')
 import hvplot.pandas
 
 tickers = ['AAPL', 'FB', 'GOOG', 'IBM', 'MSFT']

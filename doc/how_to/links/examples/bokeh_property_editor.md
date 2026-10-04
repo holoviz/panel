@@ -4,7 +4,7 @@
 import numpy as np
 import panel as pn
 
-pn.extension(template='bootstrap')
+pn.extension(template='page')
 ```
 
 Bokeh's property system defines the valid properties for all the different Bokeh models. Using ``jslink`` we can easily tie a widget value to Bokeh properties on another widget or plot. This example defines functions that generate a property editor for the most common Bokeh properties. First, we define two functions that generate a set of widgets linked to a plot:

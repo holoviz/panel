@@ -13,7 +13,7 @@ The example below showcases some of the ways Panel can show activity.
 ```python
 import panel as pn
 
-pn.extension(sizing_mode="stretch_width", template="bootstrap")
+pn.extension(sizing_mode="stretch_width", template="page")
 
 SPIN_CSS = """
 @keyframes icon-rotation {

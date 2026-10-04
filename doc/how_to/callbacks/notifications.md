@@ -12,7 +12,7 @@ import panel as pn
 pn.extension(
     disconnect_notification='Connection lost, try reloading the page!',
     ready_notification='Application fully loaded.',
-    template='bootstrap'
+    template='page'
 )
 
 slider = pn.ui.IntSlider(label='Number', start=1, end=10, value=7)

@@ -129,6 +129,12 @@ options:
                         The length of the session history to record.
   --warm                Whether to execute scripts on startup to warm up the server.
   --admin               Whether to add an admin panel.
+  --admin-endpoint ADMIN_ENDPOINT
+                        Name to use for the admin endpoint.
+  --admin-password ADMIN_PASSWORD
+                        Password required to access the admin panel, independent of the server authentication.
+  --admin-users ADMIN_USERS [ADMIN_USERS ...]
+                        Users, as authenticated by --basic-auth or --oauth-provider, allowed to access the admin panel.
   --admin-log-level {debug,info,warning,error,critical}
                         One of: debug (default), info, warning, error or critical
   --profiler PROFILER   The profiler to use by default, e.g. pyinstrument, snakeviz or memray.

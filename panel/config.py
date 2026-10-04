@@ -253,7 +253,9 @@ class _config(_base_config):
         incorrect specification can be corrected.""")
 
     template: str = param.Selector(default=None, doc="""
-        The default template to render served applications into.""")  # type: ignore[assignment, ty:invalid-assignment]
+        The default template to render served applications into. Use
+        'page' for the panel.ui Page, or one of the classic template
+        names.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     throttled = param.Boolean(default=False, doc="""
         If sliders and inputs should be throttled until release of mouse.""")
@@ -261,6 +263,14 @@ class _config(_base_config):
     _admin = param.Boolean(default=False, doc="Whether the admin panel is enabled.")
 
     _admin_endpoint = param.String(default=None, doc="Name to use for the admin endpoint.")
+
+    _admin_password = param.String(default=None, allow_None=True, doc="""
+        Password required to access the admin panel, entered on its own
+        login page and independent of the server authentication.""")
+
+    _admin_users = param.List(default=[], item_type=str, doc="""
+        Users, as identified by the server authentication, allowed to
+        access the admin panel. If empty, every user may access it.""")
 
     _admin_log_level: t.Literal[
         'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'
@@ -401,8 +411,8 @@ class _config(_base_config):
         'oauth_secret', 'oauth_jwt_user', 'oauth_redirect_uri',
         'oauth_encryption_key', 'oauth_extra_params', 'npm_cdn',
         'layout_compatibility', 'oauth_refresh_tokens', 'oauth_guest_endpoints',
-        'oauth_optional', 'admin', 'index_titles', 'disable_validation',
-        'pyodide_cdn_root', 'page_config'
+        'oauth_optional', 'admin', 'admin_password', 'admin_users',
+        'index_titles', 'disable_validation', 'pyodide_cdn_root', 'page_config'
     }
 
     _truthy = ['True', 'true', '1', True, 1]
@@ -580,6 +590,10 @@ class _config(_base_config):
         return value if value else 'disable'
 
     def _template_hook(self, value):
+        if value == 'page':
+            # Resolved lazily so `import panel` does not import panel.ui.
+            from .ui import Page
+            return Page
         if isinstance(value, str):
             return self.param.template.names[value]
         return value
@@ -605,6 +619,17 @@ class _config(_base_config):
     @property
     def admin_endpoint(self):
         return os.environ.get('PANEL_ADMIN_ENDPOINT', self._admin_endpoint)
+
+    @property
+    def admin_password(self):
+        return os.environ.get('PANEL_ADMIN_PASSWORD', self._admin_password) or None
+
+    @property
+    def admin_users(self):
+        if 'PANEL_ADMIN_USERS' in os.environ:
+            users = os.environ['PANEL_ADMIN_USERS'].split(',')
+            return [user.strip() for user in users if user.strip()]
+        return self._admin_users
 
     @property
     def admin_log_level(self):
@@ -803,15 +828,15 @@ class panel_extension(_pyviz_extension):
     :Example:
 
     >>> import panel as pn
-    >>> pn.extension("plotly", sizing_mode="stretch_width", template="fast")
+    >>> pn.extension("plotly", sizing_mode="stretch_width", template="page")
 
     This will
 
     - Initialize the notebook extension.
     - Enable you to use the `Plotly` pane by loading `plotly.js`.
     - Set the default `sizing_mode` to `stretch_width` instead of `fixed`.
-    - Set the global configuration `pn.config.template` to `fast`, i.e. you
-      will be using the `FastListTemplate`.
+    - Set the global configuration `pn.config.template` to `page`, i.e.
+      components marked `.servable()` are added to a `pn.ui.Page`.
     """
 
     _loaded: bool = False
