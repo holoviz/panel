@@ -98,4 +98,3 @@ def test_schedule_task_rejects_invalid_period(period):
     with pytest.raises(ValueError):
         state.schedule_task('invalid_period', lambda: None, period=period)
     assert not any(key.endswith('_invalid_period') for key in state._scheduled)
-
