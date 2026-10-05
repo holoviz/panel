@@ -1156,7 +1156,17 @@ class _state(param.Parameterized):
             )
         if cron is None:
             if isinstance(period, str):
-                period = parse_timedelta(period)
+                period_str, period = period, parse_timedelta(period)
+                if period is None:
+                    raise ValueError(
+                        f"Could not parse period {period_str!r}. Express it "
+                        "as a number followed by a unit, e.g. '1w', '1d', "
+                        "'1.5h', '30m', '1s', or pass a datetime.timedelta."
+                    )
+            if period is not None and period <= dt.timedelta(0):
+                raise ValueError(
+                    f"The period of a scheduled task must be positive, got {period!r}."
+                )
             def dgen():
                 if isinstance(at, Iterator):
                     while True:

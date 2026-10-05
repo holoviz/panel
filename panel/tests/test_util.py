@@ -1,3 +1,5 @@
+import datetime as dt
+
 from collections import OrderedDict
 
 import param
@@ -11,7 +13,7 @@ from panel.pane import PaneBase
 from panel.tests.util import mpl_available
 from panel.util import (
     abbreviated_repr, extract_dependencies, get_method_owner, parse_query,
-    splice_diff, styler_update, suffix_length, utf16_offset,
+    parse_timedelta, splice_diff, styler_update, suffix_length, utf16_offset,
 )
 
 
@@ -192,3 +194,20 @@ def test_splice_diff_minimal_patch_before_closing_tags():
 def test_utf16_offset(text, index, expected):
     assert utf16_offset(text, index) == expected
     assert len(text[:index].encode('utf-16-le')) // 2 == expected
+
+
+@pytest.mark.parametrize(('time_str', 'expected'), [
+    ('1w', dt.timedelta(weeks=1)),
+    ('2d3h', dt.timedelta(days=2, hours=3)),
+    ('30m', dt.timedelta(minutes=30)),
+    ('0.5s', dt.timedelta(seconds=0.5)),
+    ('1.5h', dt.timedelta(hours=1.5)),
+    ('1h30m', dt.timedelta(hours=1, minutes=30)),
+])
+def test_parse_timedelta(time_str, expected):
+    assert parse_timedelta(time_str) == expected
+
+
+@pytest.mark.parametrize('time_str', ['', '90', 'abc', '1h30', '5 m'])
+def test_parse_timedelta_invalid(time_str):
+    assert parse_timedelta(time_str) is None
