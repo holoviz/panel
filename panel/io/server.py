@@ -1708,13 +1708,14 @@ def get_server(
 
     if start:
         server.start()
-        try:
-            server.io_loop.start()
-        except RuntimeError:
-            pass
-        except TypeError:
-            warn(
-                "IOLoop couldn't be started. Ensure it is started by "
-                "process invoking the panel.io.server.serve."
-            )
+        # starting an already running loop raises AssertionError on
+        # ProactorEventLoop and RuntimeError on SelectorEventLoop
+        if not server.io_loop.asyncio_loop.is_running():
+            try:
+                server.io_loop.start()
+            except TypeError:
+                warn(
+                    "IOLoop couldn't be started. Ensure it is started by "
+                    "process invoking the panel.io.server.serve."
+                )
     return server
