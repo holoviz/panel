@@ -6,10 +6,13 @@ environment deliberately does not have:
 
     python doc/homepage/scripts/thumbnails.py components
     python doc/homepage/scripts/thumbnails.py gallery --source examples/gallery
+    python doc/homepage/scripts/thumbnails.py copilot --app ../lumen/examples/ai/penguin_copilot.py
 
 Components and panes are rendered through pn.ui at one size, so every tile has the same
 framing and the same theme as the snippets on the page. Gallery screenshots are taken from
-the served notebooks rather than the square docs thumbnails, so they show the whole app.
+the served notebooks rather than the square docs thumbnails, so they show the whole app. The
+copilot screenshot drives Lumen's demo through one real LLM turn, so it needs OPENAI_API_KEY
+and its wording varies between runs; check the widgets actually moved before committing it.
 """
 
 from __future__ import annotations
@@ -350,17 +353,55 @@ def render_gallery(source: Path) -> None:
         server.wait()
 
 
+COPILOT_PROMPT = 'Only show Gentoo and Chinstrap penguins, colour by sex and plot flipper length against body mass'
+
+
+def render_copilot(app: Path) -> None:
+    """Screenshot Lumen's penguin copilot after a real LLM turn, so the picture shows moved widgets."""
+    port = free_port()
+    server = subprocess.Popen(
+        ['panel', 'serve', str(app), '--port', str(port), '--allow-websocket-origin', f'localhost:{port}'],
+        cwd=app.parent, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT,
+    )
+    try:
+        wait_for(port, timeout=120)
+        with sync_playwright() as p:
+            browser = p.chromium.launch()
+            tab = browser.new_page(viewport=APP, device_scale_factor=1, color_scheme='light')
+            tab.goto(f'http://localhost:{port}/{app.stem}', wait_until='networkidle', timeout=180_000)
+            tab.wait_for_timeout(3000)
+            # The drawer's dock handle, centred on the right edge.
+            tab.mouse.click(APP['width'] - 13, APP['height'] // 2)
+            prompt = tab.get_by_placeholder('Ask anything...')
+            prompt.click()
+            prompt.press_sequentially(COPILOT_PROMPT, delay=5)
+            prompt.press('Enter')
+            # The axis label only reads flipper_length_mm once the agent has written the widget.
+            tab.get_by_text('flipper_length_mm', exact=True).first.wait_for(timeout=180_000)
+            # Let the closing summary finish streaming.
+            tab.wait_for_timeout(15000)
+            save(tab.screenshot(), ASSETS / 'ai' / 'penguin_copilot.webp', quality=78)
+            browser.close()
+    finally:
+        server.terminate()
+        server.wait()
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest='what', required=True)
     sub.add_parser('components', help='component and pane tiles')
     gallery = sub.add_parser('gallery', help='gallery app screenshots')
     gallery.add_argument('--source', type=Path, required=True, help='examples/gallery directory to serve')
+    copilot = sub.add_parser('copilot', help='Lumen copilot screenshot (needs an OpenAI key)')
+    copilot.add_argument('--app', type=Path, required=True, help="lumen's examples/ai/penguin_copilot.py")
     args = parser.parse_args()
     if args.what == 'components':
         render_tiles()
-    else:
+    elif args.what == 'gallery':
         render_gallery(args.source.resolve())
+    else:
+        render_copilot(args.app.resolve())
 
 
 if __name__ == '__main__':

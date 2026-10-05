@@ -10,7 +10,8 @@ export function Footer() {
   return (
     <Box
       component="footer"
-      sx={{borderTop: '1px solid', borderColor: 'divider', pt: {xs: 6, md: 8}, pb: 5}}
+      // The last section is a washed band, whose own bottom edge separates it from the footer.
+      sx={{pt: {xs: 6, md: 8}, pb: 5}}
     >
       <Container maxWidth="lg">
         <Box

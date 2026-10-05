@@ -184,6 +184,52 @@ export const growth = {
   },
 }
 
+/**
+ * AI on both sides of an app: the agent writing it and the person using it. The copilot
+ * picture is a real LLM turn against Lumen's demo, taken by scripts/thumbnails.py copilot.
+ */
+export const ai = {
+  title: 'Made for working with AI',
+  lede:
+    'Coding agents get maintained skills for writing current Panel, and a running app can hand its own widgets to an LLM, so the people using it can ask for what they want to see.',
+  items: [
+    {
+      id: 'skills',
+      step: 'While you build',
+      title: 'Your coding agent writes current Panel',
+      body:
+        'holoviz-skills installs agent skills for Panel, pn.ui, hvPlot, HoloViews, Param and Lumen into Claude Code, Codex, Copilot, Cursor, Gemini CLI and other agents that read skill folders. The code you get back uses the API as it is today rather than as the model last saw it, and the same skills cover reviewing, debugging and testing an app.',
+      code: ['pip install holoviz-skills', 'holoviz-skills install'].join('\n'),
+      link: {label: 'Browse the skills', href: 'https://skills.holoviz.org/'},
+    },
+    {
+      id: 'copilot',
+      step: 'While people use it',
+      title: 'Your users drive the app from a chat',
+      body:
+        'Lumen reads the widgets already on a page, with their labels, options, bounds and docstrings, and turns them into tools for an LLM. Dock an assistant beside the dashboard and a request in plain language moves the same widgets a user would, validated by Param on the way in.',
+      code: [
+        'from lumen.ai import Planner',
+        'from lumen.ai.agents import ChatAgent, ComponentControlAgent',
+        'from lumen.ai.llm import OpenAI',
+        '',
+        'agent = ComponentControlAgent(components=page)',
+        'assistant = Planner(agents=[ChatAgent, agent], llm=OpenAI())',
+        'drawer = pn.ui.Drawer(assistant, anchor="right", variant="docked")',
+        'page.main.append(drawer)',
+      ].join('\n'),
+      link: {
+        label: 'Run the penguin copilot',
+        href: 'https://github.com/holoviz/lumen/blob/main/examples/ai/penguin_copilot.py',
+      },
+    },
+  ],
+  screenshot: {
+    image: asset('ai/penguin_copilot.webp'),
+    caption: "Lumen's penguin copilot after one message, which moved three widgets: species, x axis and colour.",
+  },
+}
+
 const reference = (section: string, name: string) => `${DOCS}/reference/${section}/${name}.html`
 
 /**

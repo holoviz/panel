@@ -3,6 +3,7 @@ import InitColorSchemeScript from '@mui/material/InitColorSchemeScript'
 import {ThemeProvider} from '@mui/material/styles'
 
 import {Adoption} from './sections/Adoption'
+import {AI} from './sections/AI'
 import {Capabilities} from './sections/Capabilities'
 import {Components} from './sections/Components'
 import {Execution} from './sections/Execution'
@@ -22,20 +23,21 @@ export function App() {
       <CssBaseline />
       <Header />
       {/*
-        How updates work, then real apps as proof before the longer argument about how the code
-        grows and ships. Sections alternate between the white page and a washed band, so the
-        reader always knows where one ended.
+        How updates work, then real apps as proof, then AI on both sides of the app, before the
+        longer argument about how the code grows and ships. Sections alternate between the white
+        page and a washed band, so the reader always knows where one ended.
       */}
       <main>
         <Hero />
         <Execution wash />
         <Gallery />
-        <Growth wash />
-        <Paths />
-        <Panes wash />
-        <Components />
-        <Capabilities wash />
-        <Adoption />
+        <AI wash />
+        <Growth />
+        <Paths wash />
+        <Panes />
+        <Components wash />
+        <Capabilities />
+        <Adoption wash />
       </main>
       <Footer />
     </ThemeProvider>

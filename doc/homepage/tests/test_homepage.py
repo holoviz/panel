@@ -149,10 +149,20 @@ def test_every_picture_loads_from_the_hashed_prefix(home: Page) -> None:
         await Promise.all(imgs.map((i) => i.decode().catch(() => null)))
         return imgs.map((i) => [i.getAttribute('src'), i.naturalWidth])
     }""")
-    assert len(images) == 26
+    assert len(images) == 27
     assert not [src for src, width in images if not width], 'broken pictures'
     # Vite inlines anything under 4 kB as a data: URI, which needs no route at all.
     assert all(src.startswith(('/_home/', 'data:image/')) for src, _ in images), images
+
+
+def test_ai_section_shows_both_sides(home: Page) -> None:
+    """Skills for the agent writing the app, and the copilot screenshot for the person using it."""
+    skills = home.locator('[data-ai="skills"]')
+    copilot = home.locator('[data-ai="copilot"]')
+    expect(skills).to_contain_text('holoviz-skills install')
+    expect(skills.get_by_role('link')).to_have_attribute('href', 'https://skills.holoviz.org/')
+    expect(copilot).to_contain_text('ComponentControlAgent(components=page)')
+    expect(home.locator('[data-ai="screenshot"] img')).to_have_count(1)
 
 
 def test_featured_app_ends_level_with_its_neighbours(home: Page) -> None:
@@ -170,7 +180,7 @@ def test_no_code_scrolls_sideways(page: Page, site: str, width: int) -> None:
     page.set_viewport_size({'width': width, 'height': 900})
     page.goto(site, wait_until='networkidle')
     clipped = page.eval_on_selector_all(
-        '#growth pre, [data-hero-row] pre',
+        '#growth pre, #ai pre, [data-hero-row] pre',
         'els => els.filter(e => e.scrollWidth > e.clientWidth + 1).map(e => e.textContent.slice(0, 40))',
     )
     assert not clipped, clipped
