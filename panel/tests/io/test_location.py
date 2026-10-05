@@ -92,6 +92,15 @@ def test_location_sync_query_init_negative_integer(location):
     assert p.integer == -3
     assert location.search == "?integer=-3"
 
+@pytest.mark.parametrize('value', ['007', '-3', '1.5', 'true', '[1, 2]', '{"a": 1}'])
+def test_location_sync_param_init_string_not_parsed(location, value):
+    location.update_query(string=value)
+    search = location.search
+    p = SyncParameterized()
+    location.sync(p, ['string'])
+    assert p.string == value
+    assert location.search == search
+
 def test_location_sync_query(location):
     p = SyncParameterized()
     location.sync(p)
