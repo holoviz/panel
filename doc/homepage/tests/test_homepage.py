@@ -57,7 +57,7 @@ def test_prerendered_without_javascript(page: Page, site: str) -> None:
     """The headline must be in the HTML the server sends, not painted in by the bundle."""
     page.route('**/*.js', lambda route: route.abort())
     page.goto(site, wait_until='domcontentloaded')
-    expect(page.get_by_role('heading', level=1)).to_contain_text('keep their shape')
+    expect(page.get_by_role('heading', level=1)).to_contain_text('Python tools you know')
 
 
 def test_hydrates_without_console_errors(page: Page, site: str) -> None:
@@ -137,7 +137,7 @@ def test_the_rerun_contrast_still_contrasts(home: Page) -> None:
 def test_every_pane_and_component_has_a_picture(home: Page) -> None:
     expect(home.locator('#panes [data-tile]')).to_have_count(8)
     expect(home.locator('#components [data-tile]')).to_have_count(12)
-    expect(home.locator('#panes')).to_contain_text('pn.ui.DeckGL')
+    expect(home.locator('#panes')).to_contain_text('Large maps and geographic visualizations')
 
 
 def test_every_picture_loads_from_the_hashed_prefix(home: Page) -> None:

@@ -3,6 +3,7 @@ import Link from '@mui/material/Link'
 import Typography from '@mui/material/Typography'
 
 import {CodeBlock} from '../components/CodeBlock'
+import {Prose} from '../components/Prose'
 import {Section, type Band} from '../components/Section'
 import {growth} from '../content/site'
 import {surfaces} from '../theme'
@@ -37,7 +38,7 @@ export function Growth({wash}: Band) {
                 {stage.title}
               </Typography>
               <Typography variant="body2" sx={{color: 'text.secondary'}}>
-                {stage.body}
+                <Prose text={stage.body} />
               </Typography>
             </Box>
             <CodeBlock

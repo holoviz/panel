@@ -24,9 +24,6 @@ export function AI({wash}: Band) {
       >
         {ai.items.map((item) => (
           <Box key={item.id} data-ai={item.id} sx={{display: 'flex', flexDirection: 'column', gap: 1.5, minWidth: 0}}>
-            <Typography variant="body2" sx={{color: 'text.secondary'}}>
-              {item.step}
-            </Typography>
             <Typography variant="h3" component="h3">
               {item.title}
             </Typography>
@@ -54,7 +51,7 @@ export function AI({wash}: Band) {
         <Box
           component="img"
           src={ai.screenshot.image}
-          alt="Lumen's penguin copilot: a chat drawer beside a dashboard whose filters and axes it has just changed"
+          alt={ai.screenshot.alt}
           width={1440}
           height={900}
           loading="lazy"

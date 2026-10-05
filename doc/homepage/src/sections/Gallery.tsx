@@ -15,8 +15,8 @@ export function Gallery({wash}: Band) {
   return (
     <Section
       id="examples"
-      title="Apps people actually built"
-      lede="Every one of these ships with the source that produced it. Read the code, take the parts you need, or run the whole thing yourself."
+      title="Built with Panel"
+      lede="Explore example apps for science, finance and machine learning. Each includes source code you can run and adapt."
       wash={wash}
     >
       <Box

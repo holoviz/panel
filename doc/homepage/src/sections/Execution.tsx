@@ -90,7 +90,7 @@ export function Execution({wash}: Band) {
                       {block}
                     </Box>
                     <Box component="span" sx={{fontSize: '0.75rem', opacity: runs ? 0.8 : 1}}>
-                      {runs ? 'runs again' : 'untouched'}
+                      {runs ? 'runs again' : 'unchanged'}
                     </Box>
                   </Box>
                 )

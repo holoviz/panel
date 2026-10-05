@@ -5,7 +5,6 @@ import Typography from '@mui/material/Typography'
 import {Section, type Band} from '../components/Section'
 import {Tile} from '../components/Tile'
 import {panes} from '../content/site'
-import {monoFamily} from '../theme'
 
 /**
  * The claim is visual: what arrives on the page is the library's own output, not a house
@@ -28,26 +27,19 @@ export function Panes({wash}: Band) {
             image={pane.image}
             alt={`A ${pane.name} figure rendered by Panel`}
             title={pane.name}
-            caption={
-              <>
-                <Box component="span" sx={{fontFamily: monoFamily, display: 'block'}}>
-                  {pane.api}
-                </Box>
-                {pane.note}
-              </>
-            }
+            caption={pane.note}
           />
         ))}
       </Box>
       <Typography variant="body2" sx={{mt: 4, color: 'text.secondary'}}>
-        Also{' '}
+        Panel also supports{' '}
         {panes.more.map((item, i) => (
           <span key={item.name}>
-            {i > 0 && (i === panes.more.length - 1 ? ' and ' : ', ')}
+            {i > 0 && ', '}
             <Link href={item.href}>{item.name}</Link>
           </span>
-        ))}
-        , plus anything with a <Box component="code" sx={{fontFamily: monoFamily}}>_repr_html_</Box>.
+        ))}{' '}
+        and HTML content.
       </Typography>
     </Section>
   )

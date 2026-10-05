@@ -113,7 +113,7 @@ export function Hero() {
                   transition: 'color 160ms ease',
                 }}
               >
-                {row.key ? heroRegions[row.key] : 'Two imports and one line of setup.'}
+                {row.key ? heroRegions[row.key] : 'Import your libraries.'}
               </Typography>
               <CodeBlock source={row.source} fontSize={{xs: '0.8125rem', md: '0.875rem'}} wrap />
             </Box>

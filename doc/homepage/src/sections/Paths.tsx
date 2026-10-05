@@ -2,6 +2,7 @@ import Box from '@mui/material/Box'
 import Typography from '@mui/material/Typography'
 
 import {CodeBlock} from '../components/CodeBlock'
+import {Prose} from '../components/Prose'
 import {Section, type Band} from '../components/Section'
 import {paths} from '../content/site'
 import {monoFamily} from '../theme'
@@ -14,8 +15,8 @@ export function Paths({wash}: Band) {
   return (
     <Section
       id="paths"
-      title="The same file, from first cell to deploy"
-      lede="Panel does not have a notebook mode and a production mode. What changes between them is how you run it."
+      title="From development to deployment"
+      lede="Work in a notebook or your preferred editor, then deploy the same app for others to use."
       wash={wash}
     >
       <Box
@@ -28,7 +29,7 @@ export function Paths({wash}: Band) {
       >
         {paths.map((path, i) => (
           <Box
-            key={path.step}
+            key={path.title}
             sx={{
               display: 'flex',
               flexDirection: 'column',
@@ -57,25 +58,22 @@ export function Paths({wash}: Band) {
               >
                 {i + 1}
               </Box>
-              <Typography variant="body2" sx={{color: 'text.secondary'}}>
-                {path.step}
+              <Typography variant="h3" component="h3">
+                {path.title}
               </Typography>
             </Box>
-            <Typography variant="h3" component="h3">
-              {path.title}
-            </Typography>
             <Typography variant="body2" sx={{color: 'text.secondary'}}>
-              {path.body}
+              <Prose text={path.body} />
             </Typography>
-            <CodeBlock
-              source={path.code}
-              sx={{
-                mt: 'auto',
-                pt: 2,
-                borderTop: '1px solid',
-                borderColor: 'divider',
-              }}
-            />
+            {/* The label sits above the rule so the three rules stay level across columns. */}
+            <Box sx={{mt: 'auto'}}>
+              {'codeLabel' in path && (
+                <Typography variant="body2" sx={{color: 'text.secondary', mb: 1}}>
+                  {path.codeLabel}
+                </Typography>
+              )}
+              <CodeBlock source={path.code} sx={{pt: 2, borderTop: '1px solid', borderColor: 'divider'}} />
+            </Box>
           </Box>
         ))}
       </Box>

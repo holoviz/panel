@@ -13,8 +13,8 @@ export function Capabilities({wash}: Band) {
     <Section
       wash={wash}
       id="capabilities"
-      title="The parts that usually make you leave"
-      lede="Streaming, custom front-end code, offline builds and auth are the points where a prototyping tool normally hands you back to a web framework. Each of these has a how-to guide behind it."
+      title="Extend your app"
+      lede="Handle live data, add custom interfaces and manage access to your app. The guides below cover these features in detail."
     >
       <Box sx={{borderTop: '1px solid', borderColor: 'divider'}}>
         {capabilities.map((item) => (
