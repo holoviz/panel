@@ -1,10 +1,13 @@
 import datetime as dt
+import decimal
 import io
 import pathlib
 import sys
 import time
+import uuid
 
 from collections import Counter, namedtuple
+from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
@@ -696,3 +699,33 @@ def test_hash_memo_not_keyed_on_indeterminate_values():
     compute_hash(f, {}, (DF1,), {})
     compute_hash(f, {}, (object(),), {})
     assert not _HASH_MAP
+
+@dataclass
+class _Point:
+    x: int
+
+def test_hash_value_types_by_value():
+    assert hashes_equal(uuid.UUID(int=1), uuid.UUID(int=1))
+    assert not hashes_equal(uuid.UUID(int=1), uuid.UUID(int=2))
+    assert not hashes_equal(decimal.Decimal('1.5'), decimal.Decimal('7'))
+    assert hashes_equal(_Point(1), _Point(1))
+    assert not hashes_equal(_Point(1), _Point(2))
+
+def test_hash_identity_types_by_identity():
+    a, b = object(), object()
+    assert not hashes_equal(a, b)
+
+def test_cache_temporary_value_arguments():
+    @cache
+    def double(value):
+        return value * 2
+
+    @cache
+    def as_str(value):
+        return str(value)
+
+    # The arguments are freed after each call, so their addresses can be
+    # reused by the next one
+    assert double(decimal.Decimal('1.5')) == decimal.Decimal('3.0')
+    assert double(decimal.Decimal('7')) == decimal.Decimal('14')
+    assert [as_str(uuid.UUID(int=i))[-1] for i in range(1, 6)] == ['1', '2', '3', '4', '5']

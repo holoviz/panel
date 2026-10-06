@@ -315,6 +315,16 @@ def _generate_hash_inner(obj):
         for item in reduce_data:
             h.update(_generate_hash(item))
         return h.digest()
+    # Objects without a registered hash function that compare by value,
+    # e.g. a UUID, Decimal or dataclass, are hashed by their pickled
+    # state. Their id() is not enough: a temporary argument is freed
+    # after the call and its address can be handed to the next one,
+    # which would then pick up the cached result of a different value.
+    if type(obj).__eq__ is not object.__eq__:
+        try:
+            return b'pickle:' + hashlib.md5(pickle.dumps(obj, protocol=4)).digest()
+        except Exception:
+            pass
     return _int_to_bytes(id(obj))
 
 def _generate_hash(obj):
