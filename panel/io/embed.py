@@ -13,6 +13,8 @@ from itertools import product
 import param
 
 from bokeh.core.property.bases import Property
+from bokeh.document.events import ColumnDataChangedEvent, ModelChangedEvent
+from bokeh.model.util import collect_models
 from bokeh.models import CustomJS
 from param.parameterized import Watcher
 
@@ -333,6 +335,26 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
             'in the function to remove this warning.'
         )
 
+    # Events are recorded relative to the previously visited state, so a
+    # property that does not change between two consecutive states would
+    # be missing from the second one. Find all properties that change in
+    # any state first, so that each state can record their values.
+    widget_models = [m for v in values for m in v[1]]
+    changed_props = {}
+    for key in (tqdm(cross_product, leave=False, file=sys.stdout) if progress else cross_product):
+        for i, k in enumerate(key):
+            try:
+                with always_changed(config.safe_embed):
+                    for w in values[i][0]:
+                        w.value = k
+            except Exception:
+                break
+        for event in doc.callbacks._held_events:
+            if (isinstance(event, (ModelChangedEvent, ColumnDataChangedEvent)) and
+                event.model not in widget_models):
+                changed_props[(event.model.id, event.attr)] = event.model
+        doc.callbacks._held_events = []
+
     nested_dict = lambda: defaultdict(nested_dict)
     state_dict = nested_dict()
     changes = False
@@ -354,8 +376,21 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
             continue
 
         # Drop events originating from widgets being varied
-        models = [m for v in values for m in v[1]]
-        doc.callbacks._held_events = [e for e in doc.callbacks._held_events if e.model not in models]
+        held = [e for e in doc.callbacks._held_events if e.model not in widget_models]
+        recorded = {
+            (e.model.id, e.attr) for e in held
+            if isinstance(e, ModelChangedEvent)
+        }
+        for (model_id, attr), changed_model in changed_props.items():
+            if (model_id, attr) in recorded or changed_model.document is not doc:
+                continue
+            value = getattr(changed_model, attr)
+            # References to other models are only serialized in the
+            # state that created them, so they cannot be replayed here
+            if collect_models(value):
+                continue
+            held.append(ModelChangedEvent(doc, changed_model, attr, value))
+        doc.callbacks._held_events = held
         events = record_events(doc)
         changes |= events['content'] != '{}'
         if events:
