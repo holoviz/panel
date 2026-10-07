@@ -1299,6 +1299,10 @@ class CrossSelector(CompositeWidget, MultiSelect):
     by moving them between two lists. Supports filtering values by
     name to select them in bulk.
 
+    ``value`` is maintained in Python and is not a property of the
+    rendered layout, so ``jscallback`` / ``jslink`` on ``value`` is
+    skipped with a warning and the widget still renders.
+
     Reference: https://panel.holoviz.org/reference/widgets/CrossSelector.html
 
     :Example:
