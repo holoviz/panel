@@ -57,8 +57,6 @@ def main() -> None:
     for token, value in from_prerender().items():
         source = source.replace(token, value)
 
-    # The filled card is written beside the template so its relative link to
-    # doc/_static/logo_horizontal.svg keeps resolving.
     with tempfile.NamedTemporaryFile('w', dir=HERE, suffix='.html', delete=False) as f:
         f.write(source)
         filled = Path(f.name)
@@ -76,7 +74,7 @@ def main() -> None:
     finally:
         filled.unlink()
 
-    print(f'wrote {OUT.relative_to(HOMEPAGE.parent.parent)} ({OUT.stat().st_size // 1024} kB)')
+    print(f'wrote {OUT.relative_to(HOMEPAGE.parent.parent)} ({OUT.stat().st_size // 1024} kB)')  # noqa: T201
 
 
 if __name__ == '__main__':

@@ -174,14 +174,29 @@ def component_builders():
                                  sizing_mode='stretch_both')
 
     def cross_selector():
-        fruits = ['Apple', 'Apricot', 'Banana', 'Cherry', 'Grape', 'Mango', 'Pear', 'Plum']
-        return pn.ui.CrossSelector(options=fruits, value=['Banana', 'Mango'], sizing_mode='stretch_both')
+        fruits = ['Apple', 'Banana', 'Cherry', 'Grape', 'Mango', 'Pear']
+        # List height comes only from `size`, so it has to cover every option or the tile shows a
+        # truncated list; four rows is the most that fits the tile.
+        return pn.ui.CrossSelector(options=fruits, value=['Banana', 'Mango'], size=4, sizing_mode='stretch_width')
 
-    def nested_select():
-        return pn.ui.NestedSelect(
-            options={'GFS': {'0.25 deg': ['00Z', '06Z', '12Z', '18Z'], '0.5 deg': ['00Z', '12Z']},
-                     'NAM': {'12 km': ['00Z', '12Z'], '3 km': ['00Z', '06Z']}},
-            levels=['Model', 'Resolution', 'Initialization'], sizing_mode='stretch_width',
+    def code_editor():
+        return pn.ui.CodeEditor(
+            value=(
+                'import pandas as pd\n'
+                'import panel as pn\n\n'
+                'df = pd.read_parquet("sales.parquet")\n\n'
+                'def forecast(df, alpha=0.5):\n'
+                '    """Exponentially smoothed revenue."""\n'
+                '    trend = df.revenue.ewm(alpha=alpha)\n'
+                '    return trend.mean().iloc[-1]\n\n'
+                'alpha = pn.ui.FloatSlider(\n'
+                '    name="alpha", value=0.5, start=0, end=1\n'
+                ')\n'
+                'pn.bind(forecast, df, alpha=alpha)\n'
+            ),
+            language='python', theme='github_light_default', sizing_mode='stretch_both',
+            # Ace's 12 px default leaves a tile this size mostly empty.
+            stylesheets=['.ace_editor { font-size: 14px !important; }'],
         )
 
     def player():
@@ -191,7 +206,7 @@ def component_builders():
         'Tabulator': tabulator, 'ChatInterface': chat, 'Terminal': terminal,
         'JSONEditor': json_editor, 'Trend': trend, 'Gauge': gauge, 'Swipe': swipe,
         'TextEditor': text_editor, 'Perspective': perspective, 'CrossSelector': cross_selector,
-        'NestedSelect': nested_select, 'Player': player,
+        'CodeEditor': code_editor, 'Player': player,
     }
 
 
@@ -290,12 +305,14 @@ def pane_builders():
     }
 
 
-def render_tiles() -> None:
-    pn.extension('tabulator', 'terminal', 'jsoneditor', 'texteditor', 'perspective', 'plotly',
-                 'vega', 'echarts', 'deckgl', 'vizzu')
+def render_tiles(only: list[str] | None = None) -> None:
+    pn.extension('tabulator', 'terminal', 'jsoneditor', 'texteditor', 'codeeditor', 'perspective',
+                 'plotly', 'vega', 'echarts', 'deckgl', 'vizzu')
 
     targets = {f'components/{k}': v for k, v in component_builders().items()}
     targets |= {f'panes/{k}': v for k, v in pane_builders().items()}
+    if only:
+        targets = {k: v for k, v in targets.items() if k.split('/')[1] in only}
 
     style = {'padding': '14px', 'box-sizing': 'border-box'}
 
@@ -390,14 +407,15 @@ def render_copilot(app: Path) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest='what', required=True)
-    sub.add_parser('components', help='component and pane tiles')
+    components = sub.add_parser('components', help='component and pane tiles')
+    components.add_argument('--only', nargs='+', metavar='NAME', help='render just these tiles, e.g. Tabulator Plotly')
     gallery = sub.add_parser('gallery', help='gallery app screenshots')
     gallery.add_argument('--source', type=Path, required=True, help='examples/gallery directory to serve')
     copilot = sub.add_parser('copilot', help='Lumen copilot screenshot (needs an OpenAI key)')
     copilot.add_argument('--app', type=Path, required=True, help="lumen's examples/ai/penguin_copilot.py")
     args = parser.parse_args()
     if args.what == 'components':
-        render_tiles()
+        render_tiles(args.only)
     elif args.what == 'gallery':
         render_gallery(args.source.resolve())
     else:

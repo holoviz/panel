@@ -35,8 +35,12 @@
         overflow: hidden;
       }
       .logo {
-        width: 286px;
-        display: block;
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        font-size: 44px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
       }
       h1 {
         margin-top: 44px;
@@ -97,7 +101,30 @@
   </head>
   <body>
     <div>
-      <img class="logo" src="../../_static/logo_horizontal.svg" alt="Panel" />
+      <!-- Inline copy of src/components/Logo.tsx, so the card has no file or font to fail on. -->
+      <div class="logo" role="img" aria-label="Panel">
+        <svg viewBox="0 0 512 240" height="52" width="111" aria-hidden="true">
+          <rect x="0" y="0" width="240" height="240" rx="30" fill="#0072b5" />
+          <g fill="#eeeeee">
+            <rect x="36" y="52" width="168" height="16" rx="8" />
+            <circle cx="82" cy="60" r="21" />
+            <rect x="36" y="112" width="168" height="16" rx="8" />
+            <circle cx="158" cy="120" r="21" />
+            <rect x="36" y="172" width="168" height="16" rx="8" />
+            <circle cx="82" cy="180" r="21" />
+          </g>
+          <rect x="272" y="0" width="240" height="240" rx="30" fill="#0072b5" />
+          <path
+            d="M300 186 L312 152 L322 178 L332 132 L344 148 L356 96 L366 54 L376 88 L386 62 L396 118 L406 100 L416 140 L426 116 L436 150 L448 128 L460 172 L472 150 L484 168"
+            fill="none"
+            stroke="#eeeeee"
+            stroke-width="20"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </svg>
+        <span>Panel</span>
+      </div>
       <h1>__TITLE__</h1>
     </div>
     <div class="app">

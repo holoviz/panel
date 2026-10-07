@@ -285,7 +285,7 @@ export const components = {
     {name: 'TextEditor', section: 'widgets', note: 'Write and format rich text'},
     {name: 'Perspective', section: 'panes', note: 'Explore data with pivot tables, filters and charts'},
     {name: 'CrossSelector', section: 'widgets', note: 'Choose items by moving them between lists', material: true},
-    {name: 'NestedSelect', section: 'widgets', note: 'Link dropdowns so one choice updates the next', material: true},
+    {name: 'CodeEditor', section: 'widgets', note: 'Edit code with syntax highlighting'},
     {name: 'Player', section: 'widgets', note: 'Step through a sequence or play it as an animation', material: true},
   ].map((c) => ({
     ...c,
