@@ -423,7 +423,7 @@ class Pane(PaneBase, Reactive):
             self._plots[fake_ref] = self._plots[ref]
 
         # The model may be shared by multiple parents in the same root
-        parents = []
+        parents: list[Model] = []
         for p in self._model_parents.get(ref) or [parent]:
             if p is not None and not any(p is q for q in parents):
                 parents.append(p)
