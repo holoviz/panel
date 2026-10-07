@@ -33,7 +33,11 @@ export function Footer() {
               <Logo size={24} title="Panel" />
             </Box>
             <Typography variant="body2" sx={{mt: 1.75, color: 'text.secondary', maxWidth: '22rem'}}>
-              Panel is part of HoloViz, a set of Python tools for working with data.
+              Panel is part of{' '}
+              <Link href="https://holoviz.org/" sx={{color: 'inherit', textDecoration: 'underline'}}>
+                HoloViz
+              </Link>
+              , a set of Python tools for working with data.
             </Typography>
             <Box sx={{display: 'flex', gap: 2, mt: 2}}>
               {social.map((item) => (

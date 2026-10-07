@@ -165,6 +165,16 @@ def test_ai_section_shows_both_sides(home: Page) -> None:
     expect(home.locator('[data-ai="screenshot"] img')).to_have_count(1)
 
 
+def test_growth_sets_expectations_for_how_far_an_app_can_go(home: Page) -> None:
+    expect(home.locator('#growth [data-growth-ceiling]')).to_contain_text('general-purpose web framework')
+
+
+def test_footer_links_to_holoviz(home: Page) -> None:
+    expect(home.locator('footer').get_by_role('link', name='HoloViz', exact=True)).to_have_attribute(
+        'href', 'https://holoviz.org/'
+    )
+
+
 def test_featured_app_ends_level_with_its_neighbours(home: Page) -> None:
     """The featured screenshot stretches to the two tiles beside it rather than overhanging."""
     def bottom(name: str) -> float:

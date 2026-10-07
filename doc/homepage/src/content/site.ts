@@ -30,7 +30,7 @@ export const social = [
 export const hero = {
   title: 'Build data apps with the Python tools you know.',
   lede:
-    'Panel is an open-source library for interactive dashboards and web apps. Connect your data, plots and models to interactive controls, with the flexibility to design the interface your application needs.',
+    'Panel is an open-source library for interactive dashboards and web apps. Widgets, plots and layouts are ordinary Python objects that you connect to your data and models, pass between functions and classes, and test like the rest of your code. There are no string IDs to match up and no script that reruns on every click.',
   install: 'pip install panel',
   installConda: 'conda install -c conda-forge panel',
   primary: {label: 'Get started', href: `${DOCS}/getting_started/index.html`},
@@ -103,7 +103,7 @@ export const paths = [
 export const execution = {
   title: 'Update only what needs to change',
   lede:
-    'When a user changes a control, Panel runs the code connected to it. A model can update without reloading the dataset or rebuilding the rest of the page.',
+    'When a user changes a control, Panel runs only the code connected to it. In a small app, rerunning everything is cheap and the difference is hard to notice. In a real application that loads large datasets, fits models and keeps user state, it determines how quickly the app responds and how much caching and state management you have to write to keep it that way.',
   // The changed widget is a model hyperparameter, so exactly the model and what reads its
   // output are downstream of it.
   trigger: 'alpha = 0.1 → 0.5',
@@ -173,6 +173,8 @@ export const growth = {
       ].join('\n'),
     },
   ],
+  ceiling:
+    'Built this way, Panel apps run in production as multi-page internal platforms with authentication, editable tables, review workflows and chat assistants used by whole teams. Lumen, a complete AI data exploration application, is built entirely with Panel. Because Panel keeps a live Python session for every visitor, it suits apps built around data, models and computation. A consumer product such as a public message board or a full word processor is better served by a general-purpose web framework, which can still embed Panel apps through FastAPI or Django.',
   link: {
     label: 'Choosing between functions and classes',
     href: `${DOCS}/explanation/api/functions_vs_classes.html`,
@@ -338,7 +340,7 @@ export const gallery = [
 ].map((g) => ({...g, image: asset(`gallery/${g.name}.webp`), href: galleryPage(g.name)}))
 
 export const adoption = {
-  title: 'Developed in the open since 2018',
+  title: 'Developed in the open, since 2018',
   body:
     'Panel is maintained by a team at Anaconda together with contributors from research labs, banks, and instrument makers. Ask questions on Discourse or Discord, and report bugs on GitHub.',
   // Checked against the GitHub API on 2026-10-03. Worth refreshing whenever this page is

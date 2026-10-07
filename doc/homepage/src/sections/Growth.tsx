@@ -57,7 +57,10 @@ export function Growth({wash}: Band) {
           </Box>
         ))}
       </Box>
-      <Link href={growth.link.href} sx={{display: 'inline-block', mt: 4.5}}>
+      <Typography variant="body1" data-growth-ceiling="" sx={{mt: {xs: 5, md: 6}, color: 'text.secondary', maxWidth: '46rem'}}>
+        {growth.ceiling}
+      </Typography>
+      <Link href={growth.link.href} sx={{display: 'block', width: 'fit-content', mt: 3}}>
         {growth.link.label}
       </Link>
     </Section>

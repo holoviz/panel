@@ -7,7 +7,7 @@
 
 # Build data apps with the Python tools you know
 
-Panel is an [open-source](https://github.com/holoviz/panel/blob/main/LICENSE.txt) library for interactive dashboards and web apps. Connect your data, plots and models to interactive controls, with the flexibility to design the interface your application needs.
+Panel is an [open-source](https://github.com/holoviz/panel/blob/main/LICENSE.txt) library for interactive dashboards and web apps. Widgets, plots and layouts are ordinary Python objects that you connect to your data and models, pass between functions and classes, and test like the rest of your code. There are no string IDs to match up and no script that reruns on every click.
 
 [![PyPI](https://img.shields.io/pypi/v/panel.svg?colorB=cc77dd)](https://pypi.python.org/pypi/panel) [![conda-forge](https://img.shields.io/conda/v/conda-forge/panel.svg?label=conda-forge&colorB=4488ff)](https://anaconda.org/conda-forge/panel) [![Downloads](https://img.shields.io/pypi/dm/panel?label=downloads)](https://pypistats.org/packages/panel) [![Tests](https://github.com/holoviz/panel/workflows/tests/badge.svg?query=branch%3Amain)](https://github.com/holoviz/panel/actions/workflows/test.yaml?query=branch%3Amain) [![Coverage](https://codecov.io/gh/holoviz/panel/branch/main/graph/badge.svg)](https://codecov.io/gh/holoviz/panel) [![Discourse](https://img.shields.io/discourse/status?server=https%3A%2F%2Fdiscourse.holoviz.org)](https://discourse.holoviz.org/c/panel/5) [![Discord](https://img.shields.io/discord/1075331058024861767)](https://discord.gg/UXdtYyGVQX)
 
@@ -50,7 +50,7 @@ pn.ui.Row(pn.ui.Column(window, sigma, ticker), plot).servable()
 
 ## Update only what needs to change
 
-When a user changes a control, Panel runs the code connected to it. A model can update without reloading the dataset or rebuilding the rest of the page.
+When a user changes a control, Panel runs only the code connected to it. In a small app, rerunning everything is cheap and the difference is hard to notice. In a real application that loads large datasets, fits models and keeps user state, it determines how quickly the app responds and how much caching and state management you have to write to keep it that way.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/holoviz/panel/main/doc/_static/readme/execution-dark.webp">
@@ -130,6 +130,8 @@ class Dashboard(pn.viewable.Viewer):
         )
 ```
 
+Built this way, Panel apps run in production as multi-page internal platforms with authentication, editable tables, review workflows and chat assistants used by whole teams. [Lumen](https://lumen.holoviz.org/), a complete AI data exploration application, is built entirely with Panel. Because Panel keeps a live Python session for every visitor, it suits apps built around data, models and computation. A consumer product such as a public message board or a full word processor is better served by a general-purpose web framework, which can still embed Panel apps through FastAPI or Django.
+
 [Choosing between functions and classes](https://panel.holoviz.org/explanation/api/functions_vs_classes.html)
 
 ## From development to deployment
@@ -159,7 +161,7 @@ Handle live data, add custom interfaces and manage access to your app.
 
 ## Community and support
 
-Panel has been developed in the open since 2018. It is maintained by a team at Anaconda together with contributors from research labs, banks, and instrument makers, and is part of [HoloViz](https://holoviz.org/), a set of Python tools for working with data.
+Panel has been developed in the open, since its first release in 2018. It is maintained by a team at Anaconda together with contributors from research labs, banks, and instrument makers, and is part of [HoloViz](https://holoviz.org/), a set of Python tools for working with data.
 
 - Ask usage questions on [Discourse](https://discourse.holoviz.org/c/panel/5) or [Discord](https://discord.gg/UXdtYyGVQX).
 - Report bugs and request features in [GitHub issues](https://github.com/holoviz/panel/issues).
