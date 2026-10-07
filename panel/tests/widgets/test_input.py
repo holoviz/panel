@@ -8,6 +8,7 @@ import pytest
 from bokeh.models.widgets import FileInput as BkFileInput
 
 from panel import config
+from panel.models.widgets import EnterEvent
 from panel.widgets import (
     ArrayInput, Checkbox, DatePicker, DateRangePicker, DatetimeInput,
     DatetimePicker, DatetimeRangeInput, DatetimeRangePicker, FileInput,
@@ -315,6 +316,26 @@ def test_text_input(document, comm):
 
     text.value = 'A'
     assert widget.value == 'A'
+
+def test_text_input_value_input_synced_with_value(document, comm):
+    text = TextInput(value='ABC')
+
+    widget = text.get_root(document, comm=comm)
+
+    assert text.value_input == 'ABC'
+    assert widget.value_input == 'ABC'
+
+    text.value = 'CBA'
+    assert text.value_input == 'CBA'
+    assert widget.value_input == 'CBA'
+
+    # Pressing Enter sends the model's value_input and must not revert value
+    text._process_event(EnterEvent(model=widget, value_input=widget.value_input))
+    assert text.value == 'CBA'
+
+    # Frontend changes to value leave value_input to the frontend
+    text._process_events({'value': 'XYZ'})
+    assert text.value_input == 'CBA'
 
 def test_datetime_input(document, comm):
     dt_input = DatetimeInput(value=datetime(2018, 1, 1),

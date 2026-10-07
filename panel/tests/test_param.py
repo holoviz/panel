@@ -685,12 +685,12 @@ def test_param_onkeyup(document, comm):
 
     ma.value = '1'
     assert ma.value == '1'
-    assert ma.value_input == ''
+    assert ma.value_input == '1.2'
     assert test.a == '1'
 
     test.a = '2'
     assert ma.value == '2'
-    assert ma.value_input == ''
+    assert ma.value_input == '2'
     assert test.a == '2'
 
     # `test.b` is linked to `mb.value_input` instead of `mb.value` when onkeyup
