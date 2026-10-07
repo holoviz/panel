@@ -593,6 +593,7 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         self._internal_callbacks = []
         self._documents = {}
         self._models = {}
+        self._model_parents = {}
         self._comms = {}
         self._kernels = {}
         super().__init__(**params)
@@ -627,6 +628,73 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         """
         raise NotImplementedError
 
+    def _acquire_model(
+        self, doc: Document, root: Model, parent: Model | None = None,
+        comm: Comm | None = None
+    ) -> Model:
+        """
+        Returns the model for this object in the given root, creating
+        it only if it does not exist yet, and registers the parent as
+        a user of the model.
+
+        This allows the same object to be rendered in multiple places
+        within a single root, with all of them sharing a single model.
+        Acquiring a model is idempotent for a given parent and should
+        be balanced by a call to `_release_model` once the parent no
+        longer renders the object.
+
+        Parameters
+        ----------
+        doc: bokeh.Document
+          Bokeh document the bokeh model will be attached to.
+        root: bokeh.Model
+          The root layout the viewable will become part of.
+        parent: bokeh.Model
+          The parent layout the viewable will become part of.
+        comm: pyviz_comms.Comm
+          Optional pyviz_comms when working in notebook
+
+        Returns
+        -------
+        model: bokeh.Model
+        """
+        ref = root.ref['id']
+        if ref in self._models:
+            model, owner = self._models[ref]
+            # A model created by calling _get_model directly is owned
+            # by the parent it was created for.
+            parents = self._model_parents.setdefault(ref, [owner])
+        else:
+            model = self._get_model(doc, root, parent, comm)
+            parents = self._model_parents.setdefault(ref, [])
+        if not any(p is parent for p in parents):
+            parents.append(parent)
+        return model
+
+    def _release_model(self, root: Model | None, parent: Model | None = None) -> None:
+        """
+        Releases the model acquired by the parent via `_acquire_model`
+        and cleans up the object once no other parent in the same root
+        is using the model. Releasing from a parent that does not hold
+        the model while other parents still do is a no-op.
+
+        Parameters
+        ----------
+        root: bokeh.model.Model
+          Bokeh model for the view being cleaned up
+        parent: bokeh.model.Model
+          The parent model releasing the model.
+        """
+        parents = self._model_parents.get(root.ref['id']) if root else None
+        if parents:
+            index = next((i for i, p in enumerate(parents) if p is parent), None)
+            if index is None:
+                return
+            parents.pop(index)
+            if parents:
+                return
+        self._cleanup(root)
+
     def _cleanup(self, root: Model | None = None) -> None:
         """
         Clean up method which is called when a Viewable is destroyed.
@@ -639,6 +707,7 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         if root is None:
             return
         ref = root.ref['id']
+        self._model_parents.pop(ref, None)
         if ref in state._handles:
             del state._handles[ref]
 
