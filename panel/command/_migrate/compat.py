@@ -44,7 +44,6 @@ _patched_globals = (
     (pn.param.Param, 'mapping'),
     (pn.param.Param, 'input_widgets'),
     (pn.pane.HoloViews, 'default_widgets'),
-    (pn_convert, 'loading_resources'),
     (pn_convert, 'BASE_TEMPLATE'),
     (pn_resources, 'BASE_TEMPLATE'),
     (pn_server, 'BASE_TEMPLATE'),
