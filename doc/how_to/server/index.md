@@ -85,6 +85,13 @@ Discover how to apply your theme, logo and title to the index, login and error p
 Discover how to add custom endpoints to your Panel server.
 :::
 
+:::{grid-item-card} {octicon}`broadcast;2.5em;sd-mr-1` Serve a REST API
+:link: rest_api
+:link-type: doc
+
+Discover how to publish a live REST API alongside your Panel app.
+:::
+
 :::{grid-item-card} {octicon}`package;2.5em;sd-mr-1` Configure the Websocket
 :link: endpoints
 :link-type: websockets
@@ -109,5 +116,6 @@ proxy
 static_files
 page_config
 endpoints
+rest_api
 websockets
 ```
