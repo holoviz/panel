@@ -90,6 +90,98 @@ panel serve --server fastapi --plugins plugin
 
 Everything an `APIRouter` supports is available here, including websocket routes, dependencies, background tasks and Pydantic request and response models. Panel keeps ownership of the paths it serves, i.e. the application routes, `/static/*` and the authentication endpoints, so a plugin cannot shadow those. The index page and `/favicon.ico` on the other hand are served by Panel only as a convenience, so declaring them yourself takes precedence.
 
+## Sharing state with the applications
+
+The plugin is imported once into the same process that runs the applications, so an endpoint can read and modify state the applications display. Put the state in a module that both import; Python imports a module only once, so they share the same object:
+
+```python
+# shared.py
+import param
+
+class Settings(param.Parameterized):
+    threshold = param.Number(default=0.5, bounds=(0, 1))
+
+settings = Settings()
+```
+
+The application binds a widget to it, so every session shows and edits the same value:
+
+```python
+# app.py
+import panel as pn
+
+from shared import settings
+
+pn.Column(
+    pn.widgets.FloatSlider.from_param(settings.param.threshold),
+    pn.bind(lambda t: f'Threshold: {t}', settings.param.threshold),
+).servable()
+```
+
+The plugin exposes the same value over HTTP. Here it is declared for both server implementations:
+
+```python
+# plugin.py
+import json
+
+from fastapi import APIRouter, HTTPException
+from tornado.web import HTTPError, RequestHandler
+
+from shared import settings
+
+def update(threshold):
+    try:
+        settings.threshold = threshold
+    except ValueError as e:
+        raise HTTPError(400, str(e)) from e
+
+class SettingsHandler(RequestHandler):
+
+    def get(self):
+        self.write({'threshold': settings.threshold})
+
+    def put(self):
+        update(json.loads(self.request.body)['threshold'])
+        self.write({'threshold': settings.threshold})
+
+ROUTES = [('/api/settings', SettingsHandler, {})]
+
+ROUTER = APIRouter(prefix='/api')
+
+@ROUTER.get('/settings')
+def get_settings():
+    return {'threshold': settings.threshold}
+
+@ROUTER.put('/settings')
+def put_settings(threshold: float):
+    try:
+        settings.threshold = threshold
+    except ValueError as e:
+        raise HTTPException(400, str(e)) from e
+    return {'threshold': settings.threshold}
+```
+
+```bash
+panel serve app.py --plugins plugin
+curl -X PUT -d '{"threshold": 0.8}' http://localhost:5006/api/settings
+```
+
+Every open session updates to the new threshold. With `--server fastapi` the FastAPI route takes `threshold` as a query parameter, i.e. `curl -X PUT "http://localhost:5006/api/settings?threshold=0.8"`.
+
+This replaces `pn.state.publish` and `--rest-provider`, which are deprecated and will be removed in Panel 2.0. Unlike those, the endpoint decides which parameters are exposed, which HTTP methods modify them and how the response looks.
+
+Custom endpoints are not covered by Panel's authentication. On Tornado, subclass `bokeh.server.views.auth_request_handler.AuthRequestHandler` instead of `RequestHandler` and decorate the methods with `tornado.web.authenticated`, which rejects requests that Panel's configured authentication does not resolve to a user. On FastAPI, protect the routes with a [dependency](https://fastapi.tiangolo.com/tutorial/security/).
+
+## Serving session information
+
+Panel can also serve information about the sessions it has created, i.e. the contents of `pn.state.session_info`, as JSON on `/session_info`. Enable it with `--rest-session-info` and set `--session-history` to the number of sessions to keep:
+
+```bash
+panel serve app.py --rest-session-info --session-history 100
+```
+
+The Tornado server also serves this on `/rest/session_info`, nested under a `session_info` key. That route is deprecated and will be removed in Panel 2.0.
+
 ## Using `pn.serve`
 
 When serving programmatically you can provide handlers explicitly using the `extra_patterns` argument, e.g. you can provide the `SumHandler` by running:

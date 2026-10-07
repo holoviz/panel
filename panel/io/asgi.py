@@ -140,8 +140,10 @@ class PanelASGI(BokehASGI):
     mem_log_frequency_milliseconds: int
         How often to log memory usage, 0 to disable. Requires psutil.
     session_history: int | None
-        If set, enables session history tracking and serves it on
-        ``/session_info``.
+        If set, enables session history tracking.
+    session_info: bool | None
+        Whether to serve ``state.session_info`` on ``/session_info``.
+        Defaults to serving it whenever session history is enabled.
     extra_routes: Sequence[tuple[str, RouteHandler]] | None
         Additional routes as ``(pattern, handler)`` pairs. Patterns are
         regular expressions matched against the prefix-relative path.
@@ -168,6 +170,7 @@ class PanelASGI(BokehASGI):
         liveness: bool | str = False,
         mem_log_frequency_milliseconds: int = 0,
         session_history: int | None = None,
+        session_info: bool | None = None,
         extra_routes: Sequence[tuple[str, RouteHandler]] | None = None,
         auth_provider: AuthProvider | None = None,
         auth_policy: AuthPolicy | None = None,
@@ -193,7 +196,9 @@ class PanelASGI(BokehASGI):
         self._mem_log_task: asyncio.Task | None = None
         if session_history is not None:
             config.session_history = session_history
-        if config.session_history != 0:
+        if session_info is None:
+            session_info = config.session_history != 0
+        if session_info:
             self._add_route(r'/session_info/?$', self._session_info)
         if liveness:
             endpoint = liveness if isinstance(liveness, str) else '/liveness'

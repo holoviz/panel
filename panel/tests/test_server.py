@@ -478,6 +478,33 @@ def test_server_session_info():
     assert state.session_info['live'] == 0
 
 
+def test_server_session_info_endpoint(server_implementation):
+    try:
+        port = serve_and_wait(Markdown('# Title'), session_history=5)
+        r = requests.get(f"http://127.0.0.1:{port}/session_info", timeout=10)
+    finally:
+        config.session_history = 0
+    assert r.status_code == 200
+    assert r.headers['Content-Type'].startswith('application/json')
+    assert r.json() == state.session_info
+
+
+def test_server_session_info_legacy_endpoint():
+    try:
+        port = serve_and_wait(Markdown('# Title'), session_history=5)
+        r = requests.get(f"http://127.0.0.1:{port}/rest/session_info", timeout=10)
+    finally:
+        config.session_history = 0
+    assert r.status_code == 200
+    assert r.json() == {'session_info': state.session_info}
+
+
+def test_server_no_session_info_endpoint_by_default(server_implementation):
+    port = serve_and_wait(Markdown('# Title'))
+    r = requests.get(f"http://127.0.0.1:{port}/session_info", timeout=10)
+    assert r.status_code == 404
+
+
 def test_server_periodic_async_callback(server_implementation, threads):
     counts = []
 

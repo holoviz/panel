@@ -15,6 +15,7 @@ pytest.importorskip('uvicorn')
 import uvicorn
 
 from bokeh.server.tornado import DEFAULT_WEBSOCKET_MAX_MESSAGE_SIZE_BYTES
+from starlette.testclient import TestClient
 
 from panel.command import serve as serve_module
 from panel.command.serve import Serve
@@ -103,17 +104,34 @@ def plugin(monkeypatch, tmp_path):
     return write
 
 
-@pytest.mark.parametrize('args', [
-    ['--rest-provider', 'param'],
-    ['--rest-session-info'],
-    ['--enable-xsrf-cookies'],
-])
-def test_serve_asgi_rejects_tornado_only_args(invoke_asgi, args, capsys):
+def test_serve_asgi_rejects_tornado_only_args(invoke_asgi, capsys):
     with pytest.raises(SystemExit):
-        invoke_asgi(*args)
+        invoke_asgi('--enable-xsrf-cookies')
     err = capsys.readouterr().err
-    assert args[0] in err
+    assert '--enable-xsrf-cookies' in err
     assert '--server tornado' in err
+
+
+def test_serve_asgi_rejects_rest_provider(invoke_asgi, capsys):
+    with pytest.raises(SystemExit):
+        invoke_asgi('--rest-provider', 'param')
+    err = capsys.readouterr().err
+    assert '--rest-provider is deprecated' in err
+    assert '--plugins' in err
+
+
+def test_serve_asgi_session_info(invoke_asgi):
+    asgi = _panel_asgi(invoke_asgi('--rest-session-info', '--session-history', '5'))
+    with TestClient(asgi) as client:
+        r = client.get('/session_info')
+    assert r.status_code == 200
+    assert r.json() == state.session_info
+
+
+def test_serve_asgi_session_history_does_not_serve_session_info(invoke_asgi):
+    asgi = _panel_asgi(invoke_asgi('--session-history', '5'))
+    with TestClient(asgi) as client:
+        assert client.get('/session_info').status_code == 404
 
 
 def test_serve_asgi_rejects_num_procs(invoke_asgi, capsys):
