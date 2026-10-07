@@ -3,6 +3,7 @@ Utilities for manipulating bokeh models.
 """
 from __future__ import annotations
 
+import sys
 import textwrap
 import typing as t
 
@@ -71,6 +72,37 @@ try:
 except AssertionError:
     pass
 
+_GEOMETRY_ENCODERS_REGISTERED = False
+
+def _add_geometry_serializers():
+    """Register Bokeh serializers for shapely geometry types.
+
+    A GeoDataFrame geometry column holds shapely objects that Bokeh cannot
+    serialize, so syncing such data (e.g. in a Tabulator) errors out. Encode
+    them as WKT text so the data reaches the frontend. A no-op until shapely
+    is imported, i.e. until geometry data actually exists.
+    """
+    global _GEOMETRY_ENCODERS_REGISTERED
+    if _GEOMETRY_ENCODERS_REGISTERED or 'shapely' not in sys.modules:
+        return
+    from shapely.geometry import (
+        GeometryCollection, LinearRing, LineString, MultiLineString,
+        MultiPoint, MultiPolygon, Point, Polygon,
+    )
+
+    def geometry_encoder(obj, serializer):
+        return serializer.encode(obj.wkt)
+
+    for geom_type in (
+        Point, LineString, LinearRing, Polygon, MultiPoint,
+        MultiLineString, MultiPolygon, GeometryCollection,
+    ):
+        try:
+            Serializer.register(geom_type, geometry_encoder)
+        except AssertionError:
+            pass
+    _GEOMETRY_ENCODERS_REGISTERED = True
+
 def diff(
     doc: Document, binary: bool = True, events: list[DocumentChangedEvent] | None = None
 ) -> Message[t.Any] | None:
@@ -83,6 +115,7 @@ def diff(
     if not events or state._hold:
         return None
 
+    _add_geometry_serializers()
     patch_events = [event for event in events if isinstance(event, DocumentPatchedEvent)]
     if not patch_events:
         return None
@@ -119,6 +152,7 @@ def add_to_doc(obj: Model, doc: Document, hold: bool = False, skip: set[Model] |
     """
     Adds a model to the supplied Document removing it from any existing Documents.
     """
+    _add_geometry_serializers()
     # Add new root
     models = remove_root(obj, skip=skip)
     doc.add_root(obj)
