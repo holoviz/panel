@@ -291,6 +291,56 @@ def test_embed_select_str_link_with_secondary_watch(document, comm):
         assert event['new'] == f'&lt;pre&gt;{k}&lt;/pre&gt;'
 
 
+def _set_object(target, event):
+    target.object = event.new
+
+
+def _state_texts(state):
+    return {
+        event['model']['id']: event['new']
+        for event in json.loads(state['content'])['events']
+        if event['attr'] == 'text'
+    }
+
+
+def test_embed_unrelated_widget_records_all_changes(document, comm):
+    select = Select(options=['A', 'B', 'C'])
+    string = Str()
+    select.link(string, callbacks={'value': _set_object})
+    other = Select(options=['D', 'E'])
+    other.param.watch(lambda event: None, 'value')
+    panel = Row(select, string, other)
+    with config.set(embed=True):
+        model = panel.get_root(document, comm)
+    embed_state(panel, model, document)
+    _, state = document.roots
+    ref = model.children[1].ref['id']
+    for k in ['A', 'B', 'C']:
+        for o in ['D', 'E']:
+            assert _state_texts(state.state[k][o])[ref] == f'&lt;pre&gt;{k}&lt;/pre&gt;'
+
+
+def test_embed_independent_widgets_record_all_changes(document, comm):
+    select1 = Select(options=['A', 'B'])
+    string1 = Str()
+    select1.link(string1, callbacks={'value': _set_object})
+    select2 = Select(options=['C', 'D'])
+    string2 = Str()
+    select2.link(string2, callbacks={'value': _set_object})
+    panel = Row(select1, select2, string1, string2)
+    with config.set(embed=True):
+        model = panel.get_root(document, comm)
+    embed_state(panel, model, document)
+    _, state = document.roots
+    ref1, ref2 = model.children[2].ref['id'], model.children[3].ref['id']
+    for k1 in ['A', 'B']:
+        for k2 in ['C', 'D']:
+            assert _state_texts(state.state[k1][k2]) == {
+                ref1: f'&lt;pre&gt;{k1}&lt;/pre&gt;',
+                ref2: f'&lt;pre&gt;{k2}&lt;/pre&gt;',
+            }
+
+
 def test_embed_select_str_jslink(document, comm):
     select = Select(options=['A', 'B', 'C'])
     string = Str()
