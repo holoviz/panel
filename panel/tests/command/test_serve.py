@@ -315,6 +315,32 @@ def test_serve_liveness_endpoint(server, tmp_path):
 
 
 @linux_only
+def test_serve_session_info_endpoint(server, tmp_path):
+    app = "import panel as pn; pn.Row('# Example').servable(title='A')"
+    py = tmp_path / "app.py"
+    py.write_text(app)
+
+    args = ["--port", "0", "--server", server, py, "--rest-session-info", "--session-history", "5"]
+    with run_panel_serve(args, cwd=tmp_path) as p:
+        port = wait_for_port(p.stdout)
+        assert requests.get(f"http://localhost:{port}/app").status_code == 200
+        r = requests.get(f"http://localhost:{port}/session_info")
+        assert r.status_code == 200
+        assert r.json()['total'] == 1
+
+
+@linux_only
+def test_serve_rest_provider_deprecated(tmp_path):
+    app = "import panel as pn; pn.Row('# Example').servable(title='A')"
+    py = tmp_path / "app.py"
+    py.write_text(app)
+
+    regex = re.compile(r"('--rest-provider' is deprecated)")
+    with run_panel_serve(["--port", "0", py, "--rest-provider", "param"], cwd=tmp_path) as p:
+        wait_for_regex(p.stdout, regex=regex)
+
+
+@linux_only
 def test_serve_prefix(server, tmp_path):
     app = "import panel as pn; pn.Row('# Example').servable(title='A')"
     py = tmp_path / "app.py"
@@ -400,7 +426,6 @@ def test_serve_page_config(server, tmp_path):
 @pytest.mark.parametrize('args', [
     ['--plugins', 'some.module'],
     ['--rest-provider', 'param'],
-    ['--rest-session-info'],
     ['--enable-xsrf-cookies'],
     ['--num-procs', '2'],
 ])
