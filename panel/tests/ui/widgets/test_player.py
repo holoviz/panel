@@ -5,7 +5,7 @@ pytest.importorskip("playwright")
 from playwright.sync_api import expect
 
 from panel.tests.util import serve_component, wait_until
-from panel.widgets import Player
+from panel.widgets import DiscretePlayer, Player
 
 pytestmark = pytest.mark.ui
 
@@ -123,3 +123,19 @@ def test_player_scale_buttons(page):
         "style",
         "text-align: center; flex-grow: 2; margin: 2px; transform: scale(2); max-width: 50px; border-style: outset;",
     )
+
+
+@pytest.mark.parametrize('player', [
+    lambda: Player(),
+    lambda: DiscretePlayer(options=[1, 2, 3]),
+])
+def test_player_focus(page, player):
+    widget = player()
+    serve_component(page, widget)
+
+    slider = page.locator('input[type="range"]')
+    expect(slider).not_to_be_focused()
+
+    widget.focus()
+
+    expect(slider).to_be_focused()

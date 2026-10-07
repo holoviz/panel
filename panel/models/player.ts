@@ -1,8 +1,27 @@
+import {ModelEvent, server_event} from "@bokehjs/core/bokeh_events"
 import {Enum} from "@bokehjs/core/kinds"
 import type * as p from "@bokehjs/core/properties"
 import {div, empty, span} from "@bokehjs/core/dom"
 import {Widget, WidgetView} from "@bokehjs/models/widgets/widget"
 import {to_string} from "@bokehjs/core/util/pretty"
+import type {Attrs} from "@bokehjs/core/types"
+
+@server_event("player_focus")
+export class PlayerFocusEvent extends ModelEvent {
+  constructor(readonly model: Player) {
+    super()
+    this.origin = model
+  }
+
+  protected override get event_values(): Attrs {
+    return {model: this.origin}
+  }
+
+  static override from_values(values: object) {
+    const {model} = values as {model: Player}
+    return new PlayerFocusEvent(model)
+  }
+}
 
 const SVG_STRINGS = {
   slower: '<svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-minus" width="12" height="12" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M5 12l14 0" /></svg>',
@@ -58,6 +77,7 @@ export class PlayerView extends WidgetView {
     this.on_change(value, () => this.update_value())
     this.on_change(loop_policy, () => this.set_loop_state(this.model.loop_policy))
     this.on_change(disabled, () => this.toggle_disable())
+    this.model.on_event(PlayerFocusEvent, () => this.sliderEl?.focus())
     this.on_change(show_loop_controls, () => {
       if (this.model.show_loop_controls && this.loop_state.parentNode != this.groupEl) {
         this.groupEl.appendChild(this.loop_state)

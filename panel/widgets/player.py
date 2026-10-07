@@ -10,7 +10,7 @@ import param
 from ..config import config
 from ..io.resources import CDN_DIST
 from ..models.widgets import (
-    DiscretePlayer as _BkDiscretePlayer, Player as _BkPlayer,
+    DiscretePlayer as _BkDiscretePlayer, Player as _BkPlayer, PlayerFocusEvent,
 )
 from ..util import indexOf, isIn
 from .base import Widget
@@ -93,6 +93,12 @@ class PlayerBase(Widget):
 
     def reverse(self):
         self.direction = -1
+
+    def focus(self):
+        """
+        Focuses the player, enabling keyboard control of the slider.
+        """
+        self._send_event(PlayerFocusEvent)
 
 
 

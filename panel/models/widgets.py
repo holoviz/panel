@@ -27,6 +27,11 @@ class DoubleClickEvent(ModelEvent):
         super().__init__(model=model)
 
 
+class PlayerFocusEvent(ModelEvent):
+
+    event_name = 'player_focus'
+
+
 class Player(Widget):
     """
     The Player widget provides controls to play through a number of frames.
