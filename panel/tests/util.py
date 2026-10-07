@@ -103,7 +103,6 @@ def _pmui_patched_globals():
         (Param, 'mapping'),
         (Param, 'input_widgets'),
         (HoloViews, 'default_widgets'),
-        (panel.io.convert, 'loading_resources'),
         (panel.io.convert, 'BASE_TEMPLATE'),
         (panel.io.resources, 'BASE_TEMPLATE'),
         (panel.io.server, 'BASE_TEMPLATE'),

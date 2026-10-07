@@ -4,6 +4,7 @@ from io import StringIO
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 from bokeh.resources import Resources
 
@@ -92,6 +93,28 @@ def test_pyodide_uses_cdn_root_from_env(monkeypatch):
     url = f'https://example.com/pyodide/{PYODIDE_VERSION}/full/pyodide.js'
     assert f'<script src="{url}" defer></script>' in html
     assert 'cdn.jsdelivr.net/pyodide' not in html
+
+
+@pytest.mark.parametrize('runtime', ['pyodide', 'pyodide-worker', 'pyscript'])
+def test_pyodide_uses_page_loader(runtime):
+    html, _ = script_to_html(
+        StringIO("import panel as pn\npn.pane.Str('Ready').servable()"),
+        runtime=runtime, prerender=True
+    )
+
+    assert '<div id="loader" style="display: flex;">' in html
+    assert '<body>' in html
+    assert '<body class=' not in html
+
+
+def test_pyodide_template_uses_page_loader():
+    html, _ = script_to_html(
+        StringIO("import panel as pn\npn.template.BootstrapTemplate(main=['Ready']).servable()"),
+        runtime='pyodide-worker', prerender=True
+    )
+
+    assert html.count('id="loader"') == 1
+    assert '<body class=' not in html
 
 
 def test_save_inline_resources():

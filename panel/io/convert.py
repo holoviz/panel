@@ -28,9 +28,6 @@ from .. import __version__, config
 from ..util import base_version
 from .application import Application, build_single_handler_application
 from .document import MockSessionContext
-from .loading import (
-    _loading_css_classes, loading_resources as _design_loading_resources,
-)
 from .mime_render import find_requirements
 from .resources import (
     BASE_TEMPLATE, CDN_DIST, CDN_ROOT, DIST_DIR, INDEX_TEMPLATE, Resources,
@@ -112,23 +109,31 @@ asyncio.ensure_future(write_doc());"""
 PYODIDE_SCRIPT = """
 <script type="text/javascript">
 async function main() {
+  window.panelLoader?.status('Loading pyodide');
   let pyodide = await loadPyodide();
   for (const archive of [{{ data_archives }}]) {
+    window.panelLoader?.status(`Unpacking ${archive}`);
     let zipResponse = await fetch(archive);
     let zipBinary = await zipResponse.arrayBuffer();
     await pyodide.unpackArchive(zipBinary, "zip");
   }
+  window.panelLoader?.status('Installing environment');
   await pyodide.loadPackage("micropip");
   await pyodide.runPythonAsync(`
     import micropip
     await micropip.install([{{ env_spec }}]);
   `);
+  window.panelLoader?.status('Executing code');
   code = `{{ code }}`
   await pyodide.runPythonAsync(code);
 }
 const run_main_on_load = () => {
   if (typeof loadPyodide !== 'undefined') {
-    main();
+    main().catch((e) => {
+      const tblines = `${e}`.split('\\n');
+      window.panelLoader?.error(tblines[tblines.length-2] || tblines[0]);
+      throw e;
+    });
   } else {
     setTimeout(run_main_on_load, 100);
   }
@@ -296,20 +301,6 @@ def pack_files(filemap: dict, destination: str | os.PathLike | t.IO):
             packfile.write(fname, arcname=arcname)
 
 
-def loading_resources(template, inline) -> list[str]:
-    # The base loading.css is only needed if it is not already served
-    # as part of a Panel template.
-    resources = _design_loading_resources(
-        inline=inline, include_base=template in (BASE_TEMPLATE, FILE)
-    )
-    return [
-        f'<link rel="stylesheet" href="{css}" type="text/css" />'
-        for css in resources['css']
-    ] + [
-        f'<style type="text/css">\n{raw_css}\n</style>'
-        for raw_css in resources['raw_css']
-    ]
-
 def script_to_html(
     filename: str | os.PathLike | t.IO,
     requirements: list[str] = [],
@@ -411,10 +402,7 @@ def script_to_html(
         if runtime == 'pyodide-worker':
             if js_resources == 'auto':
                 js_resources = []
-            worker_handler = WORKER_HANDLER_TEMPLATE.render({
-                'name': app_name,
-                'loading_classes': json.dumps(_loading_css_classes())
-            })
+            worker_handler = WORKER_HANDLER_TEMPLATE.render({'name': app_name})
             web_worker = WEB_WORKER_TEMPLATE.render({
                 'PYODIDE_URL': _pyodide_url(compiled=compiled, module=True),
                 'data_archives': data_archives,
@@ -449,14 +437,13 @@ def script_to_html(
 
     # Prepare template
     template = document.template
-    if template is None:
+    if template is None or template is FILE:
         template = BASE_TEMPLATE
     elif isinstance(template, str):
         template = get_env().from_string("{% extends base %}\n" + template)
 
     # Collect resources
     resources = Resources(mode='inline' if inline else 'cdn')
-    css_resources += loading_resources(template, inline)
     with set_curdoc(document):
         bokeh_js, bokeh_css = bundle_resources(document.roots, resources)
     extra_js = [INIT_SERVICE_WORKER, bokeh_js] if manifest else [bokeh_js]
@@ -478,14 +465,12 @@ def script_to_html(
         doc=render_item,
         roots=render_item.roots,
         manifest=manifest,
-        dist_url=CDN_DIST
+        dist_url=CDN_DIST,
+        pyodide=True,
     ))
 
     # Render
     html = template.render(context)
-    html = (html
-        .replace('<body>', f'<body class="{" ".join(_loading_css_classes())}">')
-    )
     if runtime == 'pyscript-worker':
         # pyscript-worker apps must have strict cross-origin policies
         html = (html
