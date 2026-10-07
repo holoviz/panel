@@ -229,12 +229,37 @@ This task has the same environments as the unit tests except for `test-core`.
 ### UI tests
 
 Panel provides web components that users can interact with through the browser. UI tests allow checking that these components get displayed as expected and that the backend <-> front-end bi-communication works correctly. UI tests are possible thanks to [Playwright](https://playwright.dev/python/).
-The test can be found in the `panel/tests/ui/` folder.
-UI tests can be run with the following task. This task is only available in the `test-ui` environment. The first time you run it, it will download the necessary browser files to run the tests in the Chrome browser.
+The tests can be found in the `panel/tests/ui/` folder.
+UI tests can be run with the following task. This task is only available in the `test-ui` environment. The first time you run it, it will download the necessary browser files to run the tests in Chromium.
 
 ```bash
 pixi run test-ui
 ```
+
+#### Testing with other browsers
+
+The `test-ui` task explicitly selects Chromium.
+To run the UI tests with WebKit instead, install its browser files and invoke pytest directly in the same environment:
+
+```bash
+pixi run -e test-ui playwright install webkit
+pixi run -e test-ui pytest panel/tests/ui --ui --browser webkit
+```
+
+For Firefox, replace `webkit` with `firefox` in both commands.
+You can also repeat `--browser` to run the tests with multiple browsers:
+
+```bash
+pixi run -e test-ui playwright install chromium firefox webkit
+pixi run -e test-ui pytest panel/tests/ui --ui --browser chromium --browser firefox --browser webkit
+```
+
+To investigate a particular failure, replace `panel/tests/ui` with the path to the affected test file, or add `-k` followed by a test-name expression.
+Add `--headed` to observe the browser while the test runs.
+
+WebKit can help reproduce browser-specific failures seen on macOS when you are developing on another operating system.
+However, running WebKit on Linux or Windows is not a substitute for testing on macOS, since platform-specific behavior can still differ.
+See the [Playwright pytest plugin reference](https://playwright.dev/python/docs/test-runners) for more browser and debugging options.
 
 ## Documentation
 
