@@ -21,7 +21,7 @@ from .config import config
 from .io.datamodel import construct_data_model
 from .io.document import freeze_doc, hold
 from .io.model import apply_changes_without_dispatch
-from .io.resource_spec import resource_spec
+from .io.resource_spec import compiler_url, resource_spec
 from .io.resources import component_resource_path
 from .io.state import state
 from .io.watcher import get_path_watcher
@@ -482,6 +482,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         props.update({
             '_defs': defs,
             'bundle': bundle_hash,
+            'compiler': None if bundle_hash else compiler_url(),
             'css_bundle': css_bundle,
             'class_name': cls.__name__,
             'data': self._data_model(**{p: v for p, v in data_props.items() if p not in ignored}),

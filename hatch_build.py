@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
+import subprocess
 import sys
 import typing as t
 
@@ -35,6 +37,32 @@ def build_models():
     else:
         print(f"{RED}[PANEL]{RESET} Failed building custom models", flush=True)
         sys.exit(1)
+
+def build_esm_compiler():
+    """
+    Builds sucrase into a standalone ES module, which ESM components without
+    a precompiled bundle import on demand instead of it being part of panel.js.
+    """
+    panel_dir = BASE_DIR / "panel"
+    esbuild = panel_dir / "node_modules" / ".bin" / "esbuild"
+    if not esbuild.exists():
+        esbuild = shutil.which("esbuild")
+    if esbuild is None:
+        print(f"{RED}[PANEL]{RESET} esbuild is required to build the ESM compiler", flush=True)
+        sys.exit(1)
+
+    print(f"{GREEN}[PANEL]{RESET} Starting building ESM compiler", flush=True)
+    ret = subprocess.run([
+        str(esbuild), "node_modules/sucrase/dist/esm/index.js", "--bundle",
+        "--format=esm", "--minify", "--platform=browser", "--target=es2020",
+        "--legal-comments=none", "--log-level=warning",
+        "--outfile=dist/sucrase.min.js",
+    ], cwd=panel_dir)
+    reset_stdout()
+    if ret.returncode:
+        print(f"{RED}[PANEL]{RESET} Failed building ESM compiler", flush=True)
+        sys.exit(1)
+    print(f"{GREEN}[PANEL]{RESET} Finished building ESM compiler", flush=True)
 
 def bundle_resources():
     sys.path.insert(0, str(BASE_DIR))
@@ -123,6 +151,7 @@ class BuildHook(BuildHookInterface):
 
         if "PANEL_LITE" not in os.environ:
             build_models()
+            build_esm_compiler()
             bundle_resources()
             if "PANEL_SKIP_UI_BUNDLE" not in os.environ:
                 build_ui_bundle()

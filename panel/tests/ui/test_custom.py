@@ -1329,6 +1329,8 @@ def test_esm_compile_simple(page, component):
 
     example = Row(component())
 
+    requests = []
+    page.on('request', lambda request: requests.append(request.url))
     serve_component(page, example)
 
     expect(page.locator('h1')).to_have_text('1')
@@ -1336,6 +1338,38 @@ def test_esm_compile_simple(page, component):
     example[0] = component()
 
     expect(page.locator('h1')).to_have_text('1')
+    assert not any('sucrase' in url for url in requests)
+
+
+class JSOnDemand(JSComponent):
+
+    _esm = """
+    export function render() {
+      const h1 = document.createElement('h1')
+      h1.textContent = 'Rendered'
+      return h1
+    }
+    """
+
+
+class ReactOnDemand(ReactComponent):
+
+    _esm = """
+    export function render() {
+      return <h1>Rendered</h1>
+    }
+    """
+
+
+@pytest.mark.parametrize('component', [JSOnDemand, ReactOnDemand])
+def test_esm_compiler_loaded_on_demand(page, component):
+    requests = []
+    page.on('request', lambda request: requests.append(request.url))
+
+    serve_component(page, Row(component(), component()))
+
+    expect(page.locator('h1')).to_have_count(2)
+    assert len([url for url in requests if 'sucrase.min.js' in url]) == 1
 
 
 class JSBase(JSComponent):
