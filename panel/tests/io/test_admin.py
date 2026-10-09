@@ -246,6 +246,7 @@ def admin_client():
     from panel.pane import Markdown
 
     apps = []
+    watchers = list(state.param.watchers.get('session_info', {}).get('value', []))
 
     def create(**kwargs):
         asgi = build_asgi_app({'/app': lambda: Markdown('# App')}, admin=True, **kwargs)
@@ -255,6 +256,9 @@ def admin_client():
     yield create
     for asgi in apps:
         state._server_config.pop(asgi, None)
+    for watcher in list(state.param.watchers.get('session_info', {}).get('value', [])):
+        if watcher not in watchers:
+            state.param.unwatch(watcher)
 
 
 def _token(client, path):
