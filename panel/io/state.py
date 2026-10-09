@@ -1456,6 +1456,12 @@ class _state(param.Parameterized):
         Whether we are currently inside a script or notebook that is
         being served using `panel serve`.
         """
+        if self._is_pyodide:
+            # Converted apps run as __main__ but init_doc mocks a session
+            from .document import MockSessionContext
+            curdoc = self.curdoc
+            if curdoc is not None and isinstance(curdoc.session_context, MockSessionContext):
+                return True
         try:
             return inspect.stack()[1].frame.f_globals['__name__'].startswith('bokeh_app_')
         except Exception:

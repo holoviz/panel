@@ -594,6 +594,11 @@ async def write_doc(doc: Document | None = None) -> tuple[str, str, str]:
     if pydoc in state._templates and pydoc not in state._templates[pydoc]._documents:
         template = state._templates[pydoc]
         template.server_doc(title=template.title, location=True, doc=pydoc)
+    if not pydoc.roots:
+        raise RuntimeError(
+            'The app did not add anything to the page, ensure that at '
+            'least one component is marked as .servable().'
+        )
 
     # Test whether we have access to DOM
     try:
