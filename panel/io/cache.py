@@ -4,11 +4,16 @@ Implements memoization for functions with arbitrary arguments
 from __future__ import annotations
 
 import contextvars
+import dataclasses
 import datetime as dt
+import decimal
+import enum
+import fractions
 import functools
 import hashlib
 import inspect
 import io
+import ipaddress
 import os
 import pathlib
 import pickle
@@ -116,6 +121,14 @@ def _container_hash(obj: t.Any) -> bytes:
 
 def _slice_hash(x: slice) -> bytes:
     return _container_hash([x.start, x.step, x.stop])
+
+def _dataclass_hash(obj: t.Any) -> bytes:
+    h = hashlib.new("md5")
+    h.update(_get_fqn(obj).encode())
+    for field in dataclasses.fields(obj):
+        h.update(_generate_hash(field.name))
+        h.update(_generate_hash(getattr(obj, field.name)))
+    return h.digest()
 
 def _partial_hash(obj: t.Any) -> bytes:
     h = hashlib.new("md5")
@@ -246,6 +259,13 @@ _hash_funcs: dict[str | type[t.Any] | tuple[type, ...] | Callable[[t.Any], bool]
     unittest.mock.Mock : lambda obj: _int_to_bytes(id(obj)),
     (io.StringIO, io.BytesIO): _io_hash,
     dt.date      : lambda obj: f'{type(obj).__name__}{obj}'.encode(),
+    # Value types that would otherwise fall through to id(), which a
+    # temporary argument hands on to the next call once it is freed
+    uuid.UUID          : lambda obj: b'uuid:' + obj.bytes,
+    decimal.Decimal    : lambda obj: b'decimal:' + str(obj).encode(),
+    fractions.Fraction : lambda obj: f'fraction:{obj.numerator}/{obj.denominator}'.encode(),
+    (ipaddress.IPv4Address, ipaddress.IPv6Address): lambda obj: b'ip:' + obj.packed,
+    enum.Enum          : lambda obj: f'enum:{_get_fqn(obj)}.{obj.name}'.encode(),
     # Fully qualified type strings
     'numpy.ndarray'              : _numpy_hash,
     # Pandas >=3 imports
@@ -269,6 +289,7 @@ _hash_funcs: dict[str | type[t.Any] | tuple[type, ...] | Callable[[t.Any], bool]
     # Functions
     inspect.isbuiltin          : lambda obj: obj.__name__.encode(),
     inspect.ismodule           : lambda obj: obj.__name__,
+    lambda x: dataclasses.is_dataclass(x) and not isinstance(x, type): _dataclass_hash,
     lambda x: hasattr(x, "tobytes") and x.shape == (): lambda x: x.tobytes(),  # Single numpy dtype like: np.int32
 }
 
@@ -315,16 +336,6 @@ def _generate_hash_inner(obj):
         for item in reduce_data:
             h.update(_generate_hash(item))
         return h.digest()
-    # Objects without a registered hash function that compare by value,
-    # e.g. a UUID, Decimal or dataclass, are hashed by their pickled
-    # state. Their id() is not enough: a temporary argument is freed
-    # after the call and its address can be handed to the next one,
-    # which would then pick up the cached result of a different value.
-    if type(obj).__eq__ is not object.__eq__:
-        try:
-            return b'pickle:' + hashlib.md5(pickle.dumps(obj, protocol=4)).digest()
-        except Exception:
-            pass
     return _int_to_bytes(id(obj))
 
 def _generate_hash(obj):

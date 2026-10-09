@@ -1,6 +1,9 @@
 import datetime as dt
 import decimal
+import enum
+import fractions
 import io
+import ipaddress
 import pathlib
 import sys
 import time
@@ -704,10 +707,17 @@ def test_hash_memo_not_keyed_on_indeterminate_values():
 class _Point:
     x: int
 
+class _Color(enum.Enum):
+    RED = 1
+    BLUE = 2
+
 def test_hash_value_types_by_value():
     assert hashes_equal(uuid.UUID(int=1), uuid.UUID(int=1))
     assert not hashes_equal(uuid.UUID(int=1), uuid.UUID(int=2))
     assert not hashes_equal(decimal.Decimal('1.5'), decimal.Decimal('7'))
+    assert not hashes_equal(fractions.Fraction(1, 2), fractions.Fraction(1, 3))
+    assert not hashes_equal(ipaddress.ip_address('10.0.0.1'), ipaddress.ip_address('10.0.0.2'))
+    assert not hashes_equal(_Color.RED, _Color.BLUE)
     assert hashes_equal(_Point(1), _Point(1))
     assert not hashes_equal(_Point(1), _Point(2))
 
