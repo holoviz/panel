@@ -7,7 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 import param
 import pytest
 
-from panel.io.state import state
+from panel.io.state import set_curdoc, state
 from panel.widgets import TextInput
 
 
@@ -98,3 +98,14 @@ def test_schedule_task_rejects_invalid_period(period):
     with pytest.raises(ValueError):
         state.schedule_task('invalid_period', lambda: None, period=period)
     assert not any(key.endswith('_invalid_period') for key in state._scheduled)
+
+
+def test_served_in_converted_pyodide_app(document, monkeypatch):
+    from panel.io.document import MockSessionContext
+
+    assert not state.served
+    monkeypatch.setitem(sys.modules, '_pyodide', object())
+    assert not state.served
+    document._session_context = lambda: MockSessionContext(document=document)
+    with set_curdoc(document):
+        assert state.served
