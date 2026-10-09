@@ -144,6 +144,24 @@ def test_esm_no_compiler_with_bundle(document, comm, tmp_path):
     assert model.compiler is None
 
 
+def test_esm_compiler_when_subclass_drops_bundle(document, comm, tmp_path):
+    bundle = tmp_path / 'bundle.js'
+    bundle.write_text("export function render() {}")
+
+    class ESMUnbundledSubclass(ReactiveESM):
+        _bundle = bundle
+        _esm = "export function render() {}"
+
+        def _get_properties(self, doc):
+            props = super()._get_properties(doc)
+            props['bundle'] = None
+            return props
+
+    model = ESMUnbundledSubclass().get_root(document, comm)
+    assert model.bundle is None
+    assert model.compiler.endswith('sucrase.min.js')
+
+
 class ESMWithChildren(ReactiveESM):
 
     child = Child(doc="""A child Viewable to be displayed in the ESM.""")

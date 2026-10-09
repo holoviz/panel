@@ -482,7 +482,6 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         props.update({
             '_defs': defs,
             'bundle': bundle_hash,
-            'compiler': None if bundle_hash else compiler_url(),
             'css_bundle': css_bundle,
             'class_name': cls.__name__,
             'data': self._data_model(**{p: v for p, v in data_props.items() if p not in ignored}),
@@ -549,6 +548,9 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         # The Bokeh model is shared across all ESM components, so the resource
         # spec has to be derived from the Panel class that declares them.
         props['external_resources'] = resource_spec(type(self))
+        # Decided once the properties are final, since subclasses may
+        # override the bundle in _get_properties.
+        props['compiler'] = None if props.get('bundle') else compiler_url()
         model = self._bokeh_model(**props) # type: ignore[abstract]
         root = root or model
         children, _ = self._get_children(model.data, doc, root, model, comm)
