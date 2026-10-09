@@ -44,9 +44,11 @@ def build_esm_compiler():
     a precompiled bundle import on demand instead of it being part of panel.js.
     """
     panel_dir = BASE_DIR / "panel"
-    esbuild = panel_dir / "node_modules" / ".bin" / "esbuild"
-    if not esbuild.exists():
-        esbuild = shutil.which("esbuild")
+    # Resolved with PATHEXT so Windows picks the esbuild.cmd shim
+    esbuild = (
+        shutil.which("esbuild", path=str(panel_dir / "node_modules" / ".bin"))
+        or shutil.which("esbuild")
+    )
     if esbuild is None:
         print(f"{RED}[PANEL]{RESET} esbuild is required to build the ESM compiler", flush=True)
         sys.exit(1)
