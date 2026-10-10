@@ -4,6 +4,7 @@ import pytest
 
 from bokeh.events import ButtonClick, MenuItemClick
 
+from panel.depends import bind
 from panel.widgets import Button, MenuButton, Toggle
 from panel.widgets.button import (
     _normalize_button_appearance_constructor_params,
@@ -74,6 +75,33 @@ def test_menu_button_on_click_kwarg(document, comm):
     widget = menu_button.get_root(document, comm=comm)
     menu_button._process_event(MenuItemClick(widget, 'a'))
     assert len(events) == 1
+
+
+@pytest.mark.parametrize('split', [False, True])
+def test_menu_button_repeated_clicks(document, comm, split):
+    menu_button = MenuButton(
+        label='Menu', items=[('Option A', 'a'), ('Option B', 'b')], split=split
+    )
+    widget = menu_button.get_root(document, comm=comm)
+    bound_clicks = []
+    callback_clicks = []
+    bind(bound_clicks.append, menu_button.param.clicked, watch=True)
+    menu_button.on_click(lambda event: callback_clicks.append(event.new))
+
+    menu_button._process_event(MenuItemClick(widget, 'a'))
+    menu_button._process_event(MenuItemClick(widget, 'a'))
+    menu_button._process_event(MenuItemClick(widget, 'b'))
+    menu_button._process_event(MenuItemClick(widget, 'a'))
+
+    expected = ['a', 'a', 'b', 'a']
+    if split:
+        menu_button._process_event(ButtonClick(widget))
+        menu_button._process_event(ButtonClick(widget))
+        expected += ['Menu', 'Menu']
+
+    assert bound_clicks == expected
+    assert callback_clicks == expected
+    assert menu_button.clicked == expected[-1]
 
 
 def test_button_icon_on_click_kwarg(document, comm):
