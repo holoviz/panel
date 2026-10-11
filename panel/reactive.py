@@ -51,6 +51,10 @@ from .util import (
     HTML_SANITIZER, classproperty, edit_readonly, updating,
 )
 from .util.checks import import_available
+from .util.dataframe import (
+    ROW_INDEX, coerce_frame, column_names, column_to_numpy, concat_rows,
+    copy_data, is_indexless, set_values, to_column_data,
+)
 from .viewable import (
     Child, Children, Layoutable, Renderable, Viewable,
 )
@@ -1066,6 +1070,13 @@ class SyncableData(Reactive):
           The array data to update the column with.
         """
         data = getattr(self, self._data_params[0])
+        if is_indexless(data):
+            positions = range(len(data))
+            with param.discard_events(self):
+                self.param.update(**{self._data_params[0]: set_values(data, column, positions, array)})
+            if is_indexless(self._processed):
+                self._processed = set_values(self._processed, column, positions, array)
+            return
         data[column] = array
         if self._processed is not None:
             self._processed[column] = array
@@ -1083,8 +1094,15 @@ class SyncableData(Reactive):
             elif hasattr(self, '_update_' + event.name):
                 getattr(self, '_update_' + event.name)(model)
 
-    @updating
     def _update_cds(self, *events: param.parameterized.Event) -> None:
+        # stream and patch trigger the data parameter after they have
+        # sent the changes to the frontend themselves
+        if self._updating and events and all(e.type == 'triggered' for e in events):
+            return
+        self._sync_cds(*events)
+
+    @updating
+    def _sync_cds(self, *events: param.parameterized.Event) -> None:
         self._processed, self._data = self._get_data()
         msg = {'data': self._data}
         named_events = {event.name: event for event in events}
@@ -1218,6 +1236,9 @@ class SyncableData(Reactive):
         >>> obj.value.to_dict("list")
         {'x': [1, 2, 3, 4], 'y': ['a', 'b', 'c', 'd']}
         """
+        if is_indexless(self._processed):
+            self._stream_indexless(stream_value, rollover)
+            return
         if 'pandas' in sys.modules:
             import pandas as pd
         else:
@@ -1269,6 +1290,22 @@ class SyncableData(Reactive):
         else:
             raise ValueError("The stream value provided is not a DataFrame, Series or Dict!")
 
+    def _stream_indexless(self, stream_value: t.Any, rollover: int | None = None) -> None:
+        """
+        Streams to a DataFrame without an index, e.g. a Polars DataFrame,
+        by building a new frame since these may be immutable.
+        """
+        stream_value = coerce_frame(stream_value, self._processed)
+        combined = concat_rows(self._processed, stream_value, rollover)
+        with param.discard_events(self):
+            self._update_data(combined)
+        try:
+            self._updating = True
+            self.param.trigger(self._data_params[0])
+        finally:
+            self._updating = False
+        self._stream(to_column_data(stream_value), rollover)
+
     def patch(self, patch_value: pd.DataFrame | pd.Series | dict) -> None:
         """
         Efficiently patches (updates) the existing value with the `patch_value`.
@@ -1317,7 +1354,8 @@ class SyncableData(Reactive):
         >>> obj.value.to_dict("list")
         {'x': [3, 4], 'y': ['c', 'd']}
         """
-        if self._processed is None or isinstance(patch_value, dict):
+        data = getattr(self, self._data_params[0])
+        if self._processed is None:
             self._patch(patch_value)
             return
 
@@ -1325,36 +1363,59 @@ class SyncableData(Reactive):
             import pandas as pd
         else:
             pd = None # type: ignore
-        data = getattr(self, self._data_params[0])
+
+        def position(label):
+            # DataFrame and Series patches are addressed by index label
+            if pd and isinstance(data, pd.DataFrame):
+                loc = data.index.get_loc(label)
+                if not isinstance(loc, (int, np.integer)):
+                    raise ValueError(
+                        'Patching data with duplicate index values is not '
+                        f'supported. Found this duplicate index: {label!r}'
+                    )
+                return int(loc)
+            return int(label)
+
         patch_value_dict: dict[str, list[t.Any]] = {}
         if pd and isinstance(patch_value, pd.DataFrame):
             for column in patch_value.columns:
                 patch_value_dict[column] = []
                 for index in patch_value.index:
-                    patch_value_dict[column].append((index, patch_value.loc[index, column]))
+                    patch_value_dict[column].append((position(index), patch_value.loc[index, column]))
             self.patch(patch_value_dict)
         elif pd and isinstance(patch_value, pd.Series):
             if "index" in patch_value:  # Series orient is row
                 patch_value_dict = {
-                    str(k): [(int(patch_value["index"]), v)]  # type: ignore
+                    str(k): [(position(patch_value["index"]), v)]
                     for k, v in patch_value.items()
                 }
                 patch_value_dict.pop("index")
             else:  # Series orient is column
                 patch_value_dict = {
                     str(patch_value.name): [
-                        (int(index), value)  # type: ignore
-                        for index, value in patch_value.items()
+                        (position(index), value) for index, value in patch_value.items()
                     ]
                 }
             self.patch(patch_value_dict)
         elif isinstance(patch_value, dict):
+            # Dictionary patches are addressed by row position, matching
+            # the patches applied to the ColumnDataSource
+            nrows = len(data[next(iter(data))]) if isinstance(data, dict) and data else len(data)
             for k, v in patch_value.items():
-                for index, patch  in v:
-                    if pd and isinstance(self._processed, pd.DataFrame):
-                        data.loc[index, k] = patch
+                for index, patch in v:
+                    if isinstance(index, slice):
+                        rows, values = list(range(*index.indices(nrows))), list(patch)
+                    else:
+                        rows, values = [index], [patch]
+                    if is_indexless(data):
+                        data = set_values(data, k, rows, values)
+                    elif pd and isinstance(data, pd.DataFrame):
+                        data.iloc[rows, data.columns.get_loc(k)] = values
                     else:
                         data[k][index] = patch
+            with param.discard_events(self):
+                self._update_data(data)
+            self._processed, self._data = self._get_data()
             self._updating = True
             try:
                 self._patch(patch_value)
@@ -1434,12 +1495,10 @@ class ReactiveData(SyncableData):
         # is only needed when old_raw was filtered, sorted or paginated.
         value = getattr(self, self._data_params[0])
         raw_is_value = old_raw is value
-        old_raw = old_raw.copy()
-        self._old_value = old_value = old_raw if raw_is_value else value.copy()
-        if hasattr(old_raw, 'columns'):
-            columns = list(old_raw.columns) # type: ignore
-        else:
-            columns = list(old_raw)
+        old_raw = copy_data(old_raw)
+        self._old_value = old_value = old_raw if raw_is_value else copy_data(value)
+        indexless = is_indexless(old_raw)
+        columns = [col for col in column_names(old_raw) if col != ROW_INDEX]
 
         updated = False
         for col, values in data.items():
@@ -1449,17 +1508,18 @@ class ReactiveData(SyncableData):
             if isinstance(values, dict):
                 sorted_values = sorted(values.items(), key=lambda it: int(it[0]))
                 values = [v for _, v in sorted_values]
-            converted = self._convert_column(np.asarray(values), old_raw[col])
+            old_col = column_to_numpy(old_raw, col) if indexless else old_raw[col]
+            converted = self._convert_column(np.asarray(values), old_col)
 
             isequal = None
-            if hasattr(old_raw, 'columns') and isinstance(converted, np.ndarray):
+            if not isinstance(old_raw, dict) and isinstance(converted, np.ndarray):
                 try:
-                    isequal = np.array_equal(old_raw[col], converted, equal_nan=True)
+                    isequal = np.array_equal(old_col, converted, equal_nan=True)
                 except Exception:
                     pass
             if isequal is None:
                 try:
-                    isequal = (old_raw[col] == converted).all() # type: ignore
+                    isequal = (old_col == converted).all() # type: ignore
                 except Exception:
                     isequal = False
             if not isequal:
