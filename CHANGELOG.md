@@ -2,13 +2,123 @@
 
 ## Version 1.10.0
 
+Panel 1.10.0 is a major step towards Panel 2.0. The headline is `panel.ui`, a single namespace that combines the Material UI components from `panel-material-ui` with the classic Panel components that have no Material equivalent, together with a `panel migrate` codemod that rewrites existing apps to use it. Panel now also ships its own native ASGI server, replacing `bokeh-fastapi` and `bokeh-django`, so `panel serve --server fastapi|asgi` works out of the box and OAuth behaves identically across transports.
+
+Components no longer have to be declared up front: a component that wraps a JavaScript library now loads its resources on demand the first time it renders, so forgetting `pn.extension('tabulator')` no longer results in a blank component. The server pages (index, login, logout and error pages) and the `/admin` dashboard have been restyled to match `panel-material-ui` and can be branded with the new `pn.config.page_config`, and the admin dashboard can now be protected independently of the apps it monitors.
+
+The release also contains significant performance work: rendering of `JSComponent` and `ReactComponent` (and therefore all of `panel-material-ui`) no longer scales quadratically with the number of components, streaming into `Markdown` and `HTML` panes costs roughly constant time per token, and `Tabulator` no longer pulls in the 500 KB bokeh-tables bundle. Alongside these come a long list of robustness fixes for `Tabulator` edits, busy state tracking, notebook resource loading under RequireJS, caching and periodic callbacks.
+
+This release requires Bokeh 3.10 and drops support for Python 3.10 and 3.11, while adding support for Python 3.15. It also deprecates the REST providers, `pn.state.publish` and `pn.widgets.DataFrame`, and removes the long-deprecated LangChain callback handler.
+
+Many thanks to the contributors to this release: @philippjfr, @hoxbro, @chiruu12, @MohammadHijjawi97, @ebarkhordar, @Kayvan-Zahiri, @ghostiee-11, @Azaya89, @rimsha152007-dotcom, @EltonChang1, @Bortlesboat, @ATL2001, @ZainnQureshii, @vignesh-chaturvedi, @IDavinciCode, @mvanhorn and @SatvikMishra08.
+
+### 🚀 Features
+
+* Add the `panel.ui` namespace, which exports every Material component from `panel-material-ui` and the classic components without a Material equivalent (e.g. `Tabulator`, `CodeEditor`, `Terminal`), both flat (`pn.ui.Button`) and through `widgets`, `layout`, `pane`, `chat`, `indicators`, `template` and `wrappers` submodules. The namespace is loaded lazily so `import panel` stays as light as before, and importing it selects the `MaterialUIDesign` unless a design was chosen explicitly ([#8752](https://github.com/holoviz/panel/pull/8752))
+* Add Material implementations of `Modal`, `WidgetBox` and `Debugger` that retain the classic API ([#8752](https://github.com/holoviz/panel/pull/8752))
+* Add the `panel migrate` command (installed with the `panel[migrate]` extra), which rewrites classic imports to `pn.ui`, `name=` to `label=`, `button_type`/`button_style` to `color`/`variant`, `MenuButton(split=True)` to `SplitButton` and compatible templates to `pn.ui.Page`, and reports anything it cannot rewrite safely. `--check` and `--diff` preview the changes without writing them ([#8752](https://github.com/holoviz/panel/pull/8752))
+* Add native ASGI server implementations for FastAPI and Django built on Bokeh 3.10's transport-neutral server layer, dropping the `bokeh-fastapi` and `bokeh-django` dependencies. `panel serve` gains a `--server` option accepting `tornado` (the default), `fastapi` and `asgi`, and wildcard routes, `pn.state.route_params`, static directories and OAuth work the same on every server ([#8722](https://github.com/holoviz/panel/pull/8722))
+* Load component resources on demand, so components such as `Tabulator`, `ECharts` or `Perspective` render without first being declared via `pn.extension(...)`, including when they are created in a callback after the page has loaded. Declaring an extension is now only a preloading and bundling hint ([#8745](https://github.com/holoviz/panel/pull/8745))
+* Support `template="page"` in `pn.extension` and `pn.config.template`, resolving to `pn.ui.Page`, with `.servable(target=...)` routing into its `main`, `sidebar`, `header` and `contextbar` areas ([#8808](https://github.com/holoviz/panel/pull/8808))
+* Add `pn.config.page_config` (also settable with `panel serve --page-config` and the `PANEL_PAGE_CONFIG` environment variable) to brand the server index, login, logout and error pages with the same theme, logo, favicon and title options as `pn.ui.Page`. Pages also fall back to the class defaults of `Page`, so a brand module passed to `--setup` themes apps and server pages at once ([#8802](https://github.com/holoviz/panel/pull/8802))
+* Add access control for the admin dashboard with `--admin-password` (`PANEL_ADMIN_PASSWORD`), which protects only the admin endpoint behind a login page, and `--admin-users` (`PANEL_ADMIN_USERS`), which restricts it to specific users of `--basic-auth` or `--oauth-provider` ([#8805](https://github.com/holoviz/panel/pull/8805))
+* Render any DataFrame-like object supported by Narwhals (polars, pyarrow, modin, cuDF, ...) in the `DataFrame` pane ([#8744](https://github.com/holoviz/panel/pull/8744))
+* Add a Jupyter server extension resource endpoint so notebooks running a plain kernel can load Panel and component resources without access to a public CDN, falling back to the CDN with a visible warning if the endpoint is unreachable ([#8762](https://github.com/holoviz/panel/pull/8762))
+* Allow configuring the CDN that converted apps load Pyodide from with `pn.config.pyodide_cdn_root` and the `PANEL_PYODIDE_CDN_ROOT` environment variable, enabling `panel convert` apps in air-gapped environments ([#8784](https://github.com/holoviz/panel/pull/8784))
+* Add an `approximate` argument to `pn.cache`; setting `approximate=False` hashes all of a large DataFrame or array instead of a sample of 100,000 rows ([#8759](https://github.com/holoviz/panel/pull/8759))
+
 ### ✨ Enhancements
 
-* Render `Tabulator` without Bokeh's `bokeh-tables` bundle, which is now only loaded when a page uses a `DataTable` ([#8837](https://github.com/holoviz/panel/pull/8837))
+* Rebuild the `/admin` dashboard with `panel.ui` as a `Page` with sidebar navigation, lazily built pages, per-session log filters, literal case-insensitive text filtering, Clear filters and Download log buttons, and `page_config` theming ([#8805](https://github.com/holoviz/panel/pull/8805))
+* Add `Design.component_mapping` and `Design.widget_mapping` so designs can substitute the widgets Panel generates in `Param`, `interact` and `HoloViews` widgets ([#8752](https://github.com/holoviz/panel/pull/8752))
+* Route the loading indicator through the `Design`, allowing designs to declare their own spinner, and add a `material` spinner whose overlay follows the theme so dark themes no longer flash white ([#8752](https://github.com/holoviz/panel/pull/8752))
+* Add `config.set_if_unset()`, `panel.theme.resolve_design()` and string values for `config.design` (e.g. `config.design = 'material-ui'`) ([#8752](https://github.com/holoviz/panel/pull/8752))
+* Theme classic components such as `Tabulator`, `CodeEditor`, `JSONEditor`, `Markdown`, `Terminal`, `Dial`, `Gauge` and `LinearGauge` from the MUI palette under the `MaterialUIDesign` ([#8752](https://github.com/holoviz/panel/pull/8752))
+* Share and reference count a single model per root when the same component is rendered in several places, so every view keeps receiving updates and removing it from one parent no longer breaks the others ([#8830](https://github.com/holoviz/panel/pull/8830))
+* Serve session info from a built-in `/session_info` endpoint on every server implementation instead of via the `param` REST provider ([#8828](https://github.com/holoviz/panel/pull/8828))
+* Update `value_throttled` when a slider value is set from Python ([#8712](https://github.com/holoviz/panel/pull/8712))
+* Yield to the event loop when a periodic callback overruns its period ([#8755](https://github.com/holoviz/panel/pull/8755))
+* Keep the `count` and `timeout` budgets of a periodic callback across a period change ([#8757](https://github.com/holoviz/panel/pull/8757))
+* Converted Pyodide apps no longer install and patch `pyodide-http`, since current Pyodide supports `requests` and `urllib3` natively; the `--disable-http-patch` option was removed ([#8777](https://github.com/holoviz/panel/pull/8777))
+
+### ⚡ Performance
+
+* Speed up `ReactiveESM` and `ReactComponent` rendering, eliminating layout work that scaled with the square of the number of components and React subtree remounts on re-render; this benefits every `panel-material-ui` app ([#8795](https://github.com/holoviz/panel/pull/8795))
+* Make streaming into `Markdown` and `HTML` panes roughly constant cost per token by coalescing updates, re-rendering only the trailing Markdown block and sending HTML splices rather than re-sending the tail ([#8800](https://github.com/holoviz/panel/pull/8800))
+* Render `Tabulator` without the bokeh-tables bundle (507 KB minified), which is now only loaded when a `DataTable` or `DataCube` is rendered, in notebooks or when requested with `pn.extension('bokeh-tables')` ([#8837](https://github.com/holoviz/panel/pull/8837))
+* Lay out ESM children once per mount instead of once per child ([#8786](https://github.com/holoviz/panel/pull/8786))
+* Replace the `gl-matrix` dependency in the VTK axes with two small helpers ([#8835](https://github.com/holoviz/panel/pull/8835))
+
+### 🎨 UI Improvements
+
+* Restyle the server index, `panel convert` index, error, kernel error, login and logout pages to match `panel-material-ui`, sharing one stylesheet that follows the operating system's dark mode. Search on the index page now also matches paths and `?search=` is applied on load ([#8802](https://github.com/holoviz/panel/pull/8802))
+* Restyle the `DataFrame` pane following Material Design table conventions with theme-aware hover and divider colors ([#8744](https://github.com/holoviz/panel/pull/8744))
+* Improve `Dial` rendering and theming ([#8796](https://github.com/holoviz/panel/pull/8796))
+* Keep `Tabulator` hidden until it is built and styled to avoid a flash of unstyled content ([#8799](https://github.com/holoviz/panel/pull/8799))
+* Use a single loading indicator in converted apps ([#8827](https://github.com/holoviz/panel/pull/8827))
+
+### 🐛 Bug Fixes
+
+* Make `Tabulator` edits robust by sending the edited value and old value with the edit event, fixing `on_edit` callbacks that reported stale values and edits under remote pagination that could corrupt a sibling row ([#8731](https://github.com/holoviz/panel/pull/8731))
+* Ignore stale `Tabulator` data and server-side stream echoes ([#8797](https://github.com/holoviz/panel/pull/8797))
+* Prevent `Tabulator` page reset when clicking Last on a shrunk container ([#8738](https://github.com/holoviz/panel/pull/8738))
+* Fix component libraries (Tabulator, ECharts, Vega, KaTeX, DeckGL, JSONEditor) failing to load in notebooks with RequireJS, i.e. classic Jupyter notebook and VS Code ([#8762](https://github.com/holoviz/panel/pull/8762))
+* Stop busy state from echoing between server and client and from leaking across threads, which left busy indicators such as the `Page` progress bar visible while the server was idle ([#8780](https://github.com/holoviz/panel/pull/8780))
+* Make busy state cleanup robust to state resets, missing event loops and failed submits ([#8838](https://github.com/holoviz/panel/pull/8838))
+* Fix several cache hashing collisions: reordered DataFrame rows, frames differing only in dtypes, same-named closures and scalars of different types (e.g. `0` and `False`) no longer share cache entries ([#8759](https://github.com/holoviz/panel/pull/8759))
+* Cache functions that have no module file ([#8770](https://github.com/holoviz/panel/pull/8770))
+* Ensure stylesheet models are not reused across sessions ([#8740](https://github.com/holoviz/panel/pull/8740))
+* Scope reactive stylesheets to their document ([#8769](https://github.com/holoviz/panel/pull/8769))
+* Keep notebook stylesheets inline after updates ([#8787](https://github.com/holoviz/panel/pull/8787))
+* Stop shared ESM watchers when they are no longer used ([#8775](https://github.com/holoviz/panel/pull/8775))
+* Skip JS callbacks on properties the rendered model does not have ([#8825](https://github.com/holoviz/panel/pull/8825))
+* Ignore click events on disabled buttons ([#8823](https://github.com/holoviz/panel/pull/8823))
+* Fix nested Plotly arrays being lost when syncing across clients ([#8758](https://github.com/holoviz/panel/pull/8758))
+* Clean up `GridSpec` children when deleting cells ([#8736](https://github.com/holoviz/panel/pull/8736))
+* Parse negative integers in URL query parameters as integers ([#8790](https://github.com/holoviz/panel/pull/8790))
+* Keep URL query values as strings when syncing `String` parameters ([#8814](https://github.com/holoviz/panel/pull/8814))
+* Abbreviate `Parameterized` objects inside lists in reprs ([#8792](https://github.com/holoviz/panel/pull/8792))
+* Reject unparsable `schedule_task` periods instead of looping ([#8812](https://github.com/holoviz/panel/pull/8812))
+* Strip IPython line magics when serving notebooks ([#8781](https://github.com/holoviz/panel/pull/8781))
+* Use CDN resources in exported notebooks ([#8776](https://github.com/holoviz/panel/pull/8776))
+* Treat converted Pyodide apps as served ([#8833](https://github.com/holoviz/panel/pull/8833))
+* Handle the Windows `ProactorEventLoop` ([#8815](https://github.com/holoviz/panel/pull/8815))
+* Ensure the server thread shuts down fully before exiting ([#8741](https://github.com/holoviz/panel/pull/8741))
+* Fix the inverted `apple_icon` condition in the base template that emitted an empty `apple-touch-icon` link ([#8752](https://github.com/holoviz/panel/pull/8752))
 
 ### ⚙️ Compatibility
 
-* A `DataFrame` widget or HoloViews `Table` that is added to a served app after the page has loaded requires `pn.extension('bokeh-tables')` ([#8837](https://github.com/holoviz/panel/pull/8837))
+* Add compatibility with Bokeh 3.10, which is now the minimum supported version, and drop support for Python 3.10 and 3.11 ([#8716](https://github.com/holoviz/panel/pull/8716))
+* Add support for Python 3.15 ([#8767](https://github.com/holoviz/panel/pull/8767))
+* Upgrade to the latest JupyterLite and Pyodide (v314.0.7) ([#8763](https://github.com/holoviz/panel/pull/8763))
+* Ignore the NumPy 2.5 `ndarray.shape` deprecation warning raised by VTK ([#8729](https://github.com/holoviz/panel/pull/8729))
+* Annotate subclasses in `_descendents` for mypy with Param 2.4 ([#8801](https://github.com/holoviz/panel/pull/8801))
+
+### ⚠️ Deprecations and Removals
+
+* `--rest-provider`, `--rest-endpoint`, `pn.state.publish` and the `panel.io.rest` module are deprecated and will be removed in Panel 2.0; use `--plugins` to add custom endpoints instead. `/rest/session_info` is kept as a deprecated alias of `/session_info`, and `--rest-provider` is not supported on the ASGI servers ([#8828](https://github.com/holoviz/panel/pull/8828))
+* `pn.widgets.DataFrame` is deprecated in favor of `Tabulator` and will be removed in Panel 2.0; `Param` now always maps `param.DataFrame` parameters to `Tabulator` ([#8752](https://github.com/holoviz/panel/pull/8752))
+* The LangChain callback handler, deprecated since 1.8.0, has been removed ([#8689](https://github.com/holoviz/panel/pull/8689))
+* The `bokeh-fastapi` and `bokeh-django` dependencies have been dropped; see the upgrade guide for migrating Django integrations ([#8722](https://github.com/holoviz/panel/pull/8722))
+* The `--disable-http-patch` option of `panel convert` has been removed ([#8777](https://github.com/holoviz/panel/pull/8777))
+* `PercentEditor` and `TimeEditor` on `Tabulator` now use Tabulator's native input editor, and in served apps a `DataFrame` widget or `hv.Table` that first appears after the page has loaded requires `pn.extension('bokeh-tables')` ([#8837](https://github.com/holoviz/panel/pull/8837))
+* Calling `.servable()` with an unknown `target` on the `page` template now raises a `ValueError` instead of being silently dropped ([#8808](https://github.com/holoviz/panel/pull/8808))
+
+### 📚 Documentation
+
+* Add a new homepage and versioned documentation ([#8753](https://github.com/holoviz/panel/pull/8753))
+* Use `pn.ui` throughout the docs and gallery, generate the Component Gallery from the `panel-material-ui` reference notebooks and move the classic reference to `reference/classic/` ([#8752](https://github.com/holoviz/panel/pull/8752))
+* Move the narrative docs to `pn.ui.Page` and rewrite the getting started, core concepts and templates guides around it ([#8808](https://github.com/holoviz/panel/pull/8808))
+* Modernize the gallery examples and add new apps, including a Gaia million star atlas, a model serving monitor and a storm surge studio ([#8798](https://github.com/holoviz/panel/pull/8798))
+* Add a how-to guide for theming server pages with `page_config` ([#8802](https://github.com/holoviz/panel/pull/8802))
+* Document the admin dashboard pages, plugins and access control ([#8805](https://github.com/holoviz/panel/pull/8805))
+* Document the `--server` option and per-server differences for endpoints, wildcard routes and static files ([#8722](https://github.com/holoviz/panel/pull/8722))
+* Document approximate hashing of large inputs in the caching guide ([#8759](https://github.com/holoviz/panel/pull/8759))
+* Document the Markdown docs and `llms.txt` ([#8715](https://github.com/holoviz/panel/pull/8715), [#8730](https://github.com/holoviz/panel/pull/8730))
+* Add a note on configuring the Param mypy plugin ([#8734](https://github.com/holoviz/panel/pull/8734))
+* Fix links to the Tabler icons site ([#8765](https://github.com/holoviz/panel/pull/8765))
+* Fix broken relative links in how-to guides ([#8773](https://github.com/holoviz/panel/pull/8773))
+* Fix unresolved cross-page anchor links ([#8836](https://github.com/holoviz/panel/pull/8836))
 
 ## Version 1.9.4
 
