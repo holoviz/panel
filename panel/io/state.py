@@ -443,7 +443,7 @@ class _state(param.Parameterized):
             self._cleanup_busy_counter()
             with edit_readonly(self):
                 self._busy_counter = [*self._busy_counter, (event_id, time.monotonic())]
-        self._schedule_busy_cleanup()
+            self._schedule_busy_cleanup()
 
     def _remove_busy_event(self, event_id: str) -> None:
         self._cleanup_busy_counter(event_id)
@@ -461,6 +461,13 @@ class _state(param.Parameterized):
     def _schedule_busy_cleanup(self) -> None:
         if _state._busy_cleanup_scheduled:
             return
+        if self._on_loop_thread:
+            try:
+                asyncio.get_running_loop()
+            except RuntimeError:
+                # PeriodicCallback.start() would silently never run without a
+                # running loop, so leave it unscheduled and retry on the next event.
+                return
         from .callbacks import PeriodicCallback
         _state._busy_cleanup_scheduled = PeriodicCallback(
             background=True,
@@ -1072,7 +1079,9 @@ class _state(param.Parameterized):
         self._connected.clear()
         self._loaded.clear()
         self.cache.clear()
-        self._busy_cleanup_scheduled = None
+        if _state._busy_cleanup_scheduled is not None:
+            _state._busy_cleanup_scheduled.stop()
+            _state._busy_cleanup_scheduled = None
         with edit_readonly(self):
             self._busy_counter = []
         self._scheduled.clear()
