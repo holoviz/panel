@@ -183,23 +183,21 @@ class Feed(Column):
 
         for obj in old_objects:
             if obj not in self.objects:
-                obj._cleanup(root)
+                obj._release_model(root, model)
 
         current_objects = list(self.objects)
         ref = root.ref['id']
         for i in range(*self._last_synced):
             pane = current_objects[i]
             if ref in pane._models:
-                child, _ = pane._models[root.ref['id']]
-                old_models.append(child)
-            else:
-                try:
-                    child = pane._get_model(doc, root, model, comm)
-                except RerenderError as e:
-                    if e.layout is not None and e.layout is not self:
-                        raise e
-                    e.layout = None
-                    return self._get_objects(model, current_objects[:i], doc, root, comm)
+                old_models.append(pane._models[ref][0])
+            try:
+                child = pane._acquire_model(doc, root, model, comm)
+            except RerenderError as e:
+                if e.layout is not None and e.layout is not self:
+                    raise e
+                e.layout = None
+                return self._get_objects(model, current_objects[:i], doc, root, comm)
             new_models.append(child)
         return new_models, old_models
 

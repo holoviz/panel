@@ -25,6 +25,7 @@ if find_spec("streamz") is None:
 
 if find_spec("datashader") is None:
     collect_ignore_glob += [
+        "gallery/gaia_million_star_atlas.ipynb",
         "gallery/glaciers.ipynb",
         "gallery/windturbines.ipynb",
         "gallery/vtk_slicer.ipynb",
@@ -50,6 +51,7 @@ if find_spec("scikit-image") is None:
 
 if find_spec("fastparquet") is None and find_spec("pyarrow") is None:
     collect_ignore_glob += [
+        "gallery/gaia_million_star_atlas.ipynb",
         "gallery/nyc_deckgl.ipynb",
     ]
 

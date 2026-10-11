@@ -32,6 +32,7 @@ from bokeh.io import curdoc as _curdoc
 from pyviz_comms import CommManager as _CommManager
 
 from ..util import decode_token, edit_readonly, parse_timedelta
+from ..util.warnings import deprecated
 from .logging import LOG_SESSION_RENDERED, LOG_USER_MSG
 
 _state_logger = logging.getLogger('panel.state')
@@ -1020,6 +1021,10 @@ class _state(param.Parameterized):
         """
         Publish parameters on a Parameterized object as a REST API.
 
+        .. deprecated:: 1.10
+            Will be removed in Panel 2.0 along with ``--rest-provider``.
+            Declare custom endpoints in a ``--plugins`` module instead.
+
         Parameters
         ----------
         endpoint: str
@@ -1029,6 +1034,13 @@ class _state(param.Parameterized):
         parameters: list(str) or None
           A subset of parameters on the Parameterized to publish.
         """
+        deprecated(
+            '2.0', 'pn.state.publish',
+            extra=(
+                "Declare custom endpoints in a --plugins module instead, see "
+                "https://panel.holoviz.org/how_to/server/endpoints.html"
+            )
+        )
         if parameters is None:
             parameters = list(parameterized.param)
         if endpoint.startswith('/'):
@@ -1444,6 +1456,12 @@ class _state(param.Parameterized):
         Whether we are currently inside a script or notebook that is
         being served using `panel serve`.
         """
+        if self._is_pyodide:
+            # Converted apps run as __main__ but init_doc mocks a session
+            from .document import MockSessionContext
+            curdoc = self.curdoc
+            if curdoc is not None and isinstance(curdoc.session_context, MockSessionContext):
+                return True
         try:
             return inspect.stack()[1].frame.f_globals['__name__'].startswith('bokeh_app_')
         except Exception:

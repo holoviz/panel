@@ -101,9 +101,43 @@ The `routing.py` module, the `bokeh_apps` urlpatterns and `STATICFILES_DIRS = [b
 panel serve app.py --server fastapi
 ```
 
-The choices are `tornado` (the default, unchanged), `fastapi` and `asgi`, the latter running Panel's ASGI application under uvicorn without importing FastAPI. The ASGI implementations support everything the Tornado server does apart from `--rest-provider`, `--rest-session-info`, `--enable-xsrf-cookies` and `--num-procs`, each of which fails with an error naming the option. Authentication, including all the OAuth providers, works on either implementation and the cookies are interoperable, so you can move between them without invalidating existing sessions.
+The choices are `tornado` (the default, unchanged), `fastapi` and `asgi`, the latter running Panel's ASGI application under uvicorn without importing FastAPI. The ASGI implementations support everything the Tornado server does apart from the deprecated `--rest-provider`, `--enable-xsrf-cookies` and `--num-procs`, each of which fails with an error naming the option. Authentication, including all the OAuth providers, works on either implementation and the cookies are interoperable, so you can move between them without invalidating existing sessions.
 
 `--plugins` is supported on `--server fastapi`, but since the endpoints are no longer Tornado request handlers the plugin module has to declare a FastAPI `APIRouter` in a `ROUTER` variable rather than a list of `ROUTES`. A module may declare both and then be served on either implementation. See [Add custom endpoints](how_to/server/endpoints) for the details.
+
+### Deprecations
+
+#### REST providers and `pn.state.publish`
+
+`--rest-provider`, `--rest-endpoint`, `pn.state.publish` and the `panel.io.rest` module, including the `panel.io.rest` entry point for third-party providers, are deprecated and will be removed in Panel 2.0. Both built-in providers had problems: Tranquilizer is no longer maintained and requires a Werkzeug version older than 2.1, so it cannot be installed alongside current Flask releases, and the `param` provider failed with a server error whenever a request tried to set a parameter. Neither worked on the ASGI servers.
+
+Declare the endpoints in a plugin module instead, as described in [Add custom endpoints](how_to/server/endpoints). A function decorated with `@tranquilize` usually maps directly onto a FastAPI route, which validates the arguments from the type annotations in the same way:
+
+```python
+# Before, served with: panel serve app.py --rest-provider tranquilizer
+from tranquilizer import tranquilize
+
+@tranquilize()
+def order(cost: float, count: int):
+    return {'total': cost * count}
+
+# Now, in plugin.py, served with: panel serve app.py --server fastapi --plugins plugin
+from fastapi import APIRouter
+
+ROUTER = APIRouter(prefix='/rest')
+
+@ROUTER.get('/order')
+def order(cost: float, count: int):
+    return {'total': cost * count}
+```
+
+To replace `pn.state.publish`, move the published `Parameterized` into a module that both the application and the plugin import, and expose the parameters from the plugin. [Sharing state with the applications](how_to/server/endpoints.md#sharing-state-with-the-applications) has a complete example.
+
+#### `/rest/session_info`
+
+`--rest-session-info` and `pn.serve(session_history=...)` now serve the session information on `/session_info` on every server implementation, returning the contents of `pn.state.session_info` directly. The Tornado server also keeps serving it on `/rest/session_info`, nested under a `session_info` key as before, but that route is deprecated and will be removed in Panel 2.0.
+
+Neither route requires authentication, even when `--basic-auth` or `--oauth-provider` is configured, and the same applies to `/liveness`. The session information includes timestamps and user agents for each session, so if the server is publicly reachable, restrict access to these routes at the reverse proxy or leave `--rest-session-info` disabled.
 
 ## Version 1.0
 

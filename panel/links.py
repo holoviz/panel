@@ -17,7 +17,7 @@ from .io.datamodel import create_linked_datamodel
 from .io.loading import _item_loading_css_classes
 from .models import ReactiveESM, ReactiveHTML
 from .reactive import Reactive
-from .util.warnings import warn
+from .util.warnings import PanelUserWarning, warn
 from .viewable import Viewable
 
 if t.TYPE_CHECKING:
@@ -512,7 +512,16 @@ class CallbackGenerator:
 
         src_cb = CustomJS(args=references, code=code, tags=[link_id])
         changes, events = self._get_triggers(link, src_spec)
+        properties = src_model.properties()
         for ch in changes:
+            if ch not in properties:
+                msg = (
+                    f"JS callback for property {ch!r} on {type(source).__name__} "
+                    f"was skipped because the rendered {type(src_model).__name__} "
+                    f"model has no such property, so the component can still render."
+                )
+                warn(msg, PanelUserWarning)
+                continue
             src_model.js_on_change(ch, src_cb)
         for ev in events:
             src_model.js_on_event(ev, src_cb)

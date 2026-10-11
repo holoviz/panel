@@ -84,6 +84,36 @@ def test_button_icon_on_click_kwarg(document, comm):
     assert len(events) == 1
 
 
+def test_disabled_button_ignores_click(document, comm):
+    events = []
+    button = Button(label='Button', disabled=True, on_click=lambda e: events.append(e))
+    widget = button.get_root(document, comm=comm)
+    button._process_event(ButtonClick(widget))
+    assert events == []
+    assert button.clicks == 0
+
+
+def test_disabled_menu_button_ignores_click(document, comm):
+    events = []
+    menu_button = MenuButton(
+        items=[('Option A', 'a')], disabled=True,
+        on_click=lambda e: events.append(e)
+    )
+    widget = menu_button.get_root(document, comm=comm)
+    menu_button._process_event(MenuItemClick(widget, 'a'))
+    assert events == []
+    assert menu_button.clicked is None
+
+
+def test_disabled_button_icon_ignores_click(document, comm):
+    events = []
+    button_icon = ButtonIcon(icon='heart', disabled=True, on_click=lambda e: events.append(e))
+    widget = button_icon.get_root(document, comm=comm)
+    button_icon._process_event(ButtonClick(widget))
+    assert events == []
+    assert button_icon.clicks == 0
+
+
 def test_button_jscallback_clicks(document, comm):
     button = Button(label='Button')
     code = 'console.log("Clicked!")'

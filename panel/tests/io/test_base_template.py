@@ -123,6 +123,13 @@ def test_base_template_loader():
     assert html.index('TrackedWebSocket') < html.index("getElementById('loader')")
 
 
+def test_base_template_pyodide_loader():
+    html = render(pyodide=True)
+    assert '<div id="loader" style="display: flex;">' in html
+    assert '<div id="loader-msg"></div>' in html
+    assert 'window.panelLoader' in html
+
+
 def test_base_template_dark_theme():
     html = render(theme_name='dark')
     assert 'body { background-color: #121212; color: #fff }' in html
