@@ -135,7 +135,7 @@ def test_bundle_resources_nested_datatable_loads_bokeh_tables(document, comm, mo
     assert _uses_bokeh_tables(bundle_resources([model], Resources(mode='cdn')))
 
 def test_bundle_resources_tables_extension_loads_bokeh_tables(document, comm, monkeypatch):
-    monkeypatch.setattr(extension, '_loaded_extensions', ['tables'])
+    monkeypatch.setattr(extension, '_loaded_extensions', ['bokeh-tables'])
     model = Button().get_root(document, comm)
     assert _uses_bokeh_tables(bundle_resources([model], Resources(mode='cdn')))
 

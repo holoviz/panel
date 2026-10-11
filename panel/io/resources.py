@@ -591,7 +591,7 @@ def bundle_resources(
     # Notebooks load resources before anything is rendered, so we cannot
     # know whether a table will be displayed later and always load it
     use_tables = (
-        notebook or roots is None or 'tables' in ext._loaded_extensions or
+        notebook or roots is None or 'bokeh-tables' in ext._loaded_extensions or
         _panel_use_tables(roots)
     )
 

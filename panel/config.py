@@ -843,6 +843,7 @@ class panel_extension(_pyviz_extension):
 
     _imports: t.ClassVar[dict[str, str]] = {
         'ace': 'panel.models.ace',
+        'bokeh-tables': 'bokeh.models.widgets.tables',
         'codeeditor': 'panel.models.ace',
         'deckgl': 'panel.models.deckgl',
         'echarts': 'panel.models.echarts',
@@ -854,7 +855,6 @@ class panel_extension(_pyviz_extension):
         'modal': 'panel.models.modal',
         'perspective': 'panel.models.perspective',
         'plotly': 'panel.models.plotly',
-        'tables': 'bokeh.models.widgets.tables',
         'tabulator': 'panel.models.tabulator',
         'terminal': 'panel.models.terminal',
         'texteditor': 'panel.models.quill',
