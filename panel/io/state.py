@@ -32,6 +32,7 @@ from bokeh.io import curdoc as _curdoc
 from pyviz_comms import CommManager as _CommManager
 
 from ..util import decode_token, edit_readonly, parse_timedelta
+from ..util.warnings import deprecated
 from .logging import LOG_SESSION_RENDERED, LOG_USER_MSG
 
 _state_logger = logging.getLogger('panel.state')
@@ -442,7 +443,7 @@ class _state(param.Parameterized):
             self._cleanup_busy_counter()
             with edit_readonly(self):
                 self._busy_counter = [*self._busy_counter, (event_id, time.monotonic())]
-        self._schedule_busy_cleanup()
+            self._schedule_busy_cleanup()
 
     def _remove_busy_event(self, event_id: str) -> None:
         self._cleanup_busy_counter(event_id)
@@ -460,6 +461,13 @@ class _state(param.Parameterized):
     def _schedule_busy_cleanup(self) -> None:
         if _state._busy_cleanup_scheduled:
             return
+        if self._on_loop_thread:
+            try:
+                asyncio.get_running_loop()
+            except RuntimeError:
+                # PeriodicCallback.start() would silently never run without a
+                # running loop, so leave it unscheduled and retry on the next event.
+                return
         from .callbacks import PeriodicCallback
         _state._busy_cleanup_scheduled = PeriodicCallback(
             background=True,
@@ -1020,6 +1028,10 @@ class _state(param.Parameterized):
         """
         Publish parameters on a Parameterized object as a REST API.
 
+        .. deprecated:: 1.10
+            Will be removed in Panel 2.0 along with ``--rest-provider``.
+            Declare custom endpoints in a ``--plugins`` module instead.
+
         Parameters
         ----------
         endpoint: str
@@ -1029,6 +1041,13 @@ class _state(param.Parameterized):
         parameters: list(str) or None
           A subset of parameters on the Parameterized to publish.
         """
+        deprecated(
+            '2.0', 'pn.state.publish',
+            extra=(
+                "Declare custom endpoints in a --plugins module instead, see "
+                "https://panel.holoviz.org/how_to/server/endpoints.html"
+            )
+        )
         if parameters is None:
             parameters = list(parameterized.param)
         if endpoint.startswith('/'):
@@ -1060,7 +1079,9 @@ class _state(param.Parameterized):
         self._connected.clear()
         self._loaded.clear()
         self.cache.clear()
-        self._busy_cleanup_scheduled = None
+        if _state._busy_cleanup_scheduled is not None:
+            _state._busy_cleanup_scheduled.stop()
+            _state._busy_cleanup_scheduled = None
         with edit_readonly(self):
             self._busy_counter = []
         self._scheduled.clear()
@@ -1156,7 +1177,17 @@ class _state(param.Parameterized):
             )
         if cron is None:
             if isinstance(period, str):
-                period = parse_timedelta(period)
+                period_str, period = period, parse_timedelta(period)
+                if period is None:
+                    raise ValueError(
+                        f"Could not parse period {period_str!r}. Express it "
+                        "as a number followed by a unit, e.g. '1w', '1d', "
+                        "'1.5h', '30m', '1s', or pass a datetime.timedelta."
+                    )
+            if period is not None and period <= dt.timedelta(0):
+                raise ValueError(
+                    f"The period of a scheduled task must be positive, got {period!r}."
+                )
             def dgen():
                 if isinstance(at, Iterator):
                     while True:
@@ -1434,6 +1465,12 @@ class _state(param.Parameterized):
         Whether we are currently inside a script or notebook that is
         being served using `panel serve`.
         """
+        if self._is_pyodide:
+            # Converted apps run as __main__ but init_doc mocks a session
+            from .document import MockSessionContext
+            curdoc = self.curdoc
+            if curdoc is not None and isinstance(curdoc.session_context, MockSessionContext):
+                return True
         try:
             return inspect.stack()[1].frame.f_globals['__name__'].startswith('bokeh_app_')
         except Exception:

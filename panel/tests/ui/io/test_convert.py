@@ -12,7 +12,6 @@ pytest.importorskip("playwright")
 from playwright.sync_api import expect
 
 from panel.io.convert import BOKEH_LOCAL_WHL, PANEL_LOCAL_WHL, convert_apps
-from panel.io.loading import _loading_css_classes
 from panel.tests.util import http_serve_directory
 
 if not (PANEL_LOCAL_WHL.is_file() and BOKEH_LOCAL_WHL.is_file()):
@@ -193,19 +192,20 @@ def wait_for_app(http_serve, app, page, runtime, wait=True, resources=None, **kw
 
     page.goto(f"{HTTP_URL}{app_path.name[:-3]}.html")
 
-    cls = ' '.join(_loading_css_classes())
-    expect(page.locator('body')).to_have_class(cls)
+    expect(page.locator('#loader')).to_be_visible()
     if wait:
-        expect(page.locator('body')).not_to_have_class(cls, timeout=TIMEOUT)
+        expect(page.locator('#loader')).to_be_hidden(timeout=TIMEOUT)
 
     return msgs
 
 
 
-def test_pyodide_test_error_handling_worker(http_serve, page):
-    wait_for_app(http_serve, error_app, page, 'pyodide-worker', wait=False)
+@pytest.mark.parametrize('runtime', ['pyodide', 'pyodide-worker'])
+def test_pyodide_test_error_handling(http_serve, page, runtime):
+    wait_for_app(http_serve, error_app, page, runtime, wait=False)
 
-    expect(page.locator('.pn-loading-msg')).to_have_text('RuntimeError: This app is broken', timeout=TIMEOUT)
+    expect(page.locator('#loader-error')).to_have_text('RuntimeError: This app is broken', timeout=TIMEOUT)
+    expect(page.locator('#loader .spinner')).to_be_hidden()
 
 
 @pytest.mark.parametrize('runtime', RUNTIMES)

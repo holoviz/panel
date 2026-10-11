@@ -386,11 +386,14 @@ def function_name(func) -> str:
     return str(func)
 
 
-_period_regex = re.compile(r'((?P<weeks>\d+?)w)?((?P<days>\d+?)d)?((?P<hours>\d+?)h)?((?P<minutes>\d+?)m)?((?P<seconds>\d+?\.?\d*?)s)?')
+_period_regex = re.compile(
+    r'((?P<weeks>\d+(\.\d+)?)w)?((?P<days>\d+(\.\d+)?)d)?((?P<hours>\d+(\.\d+)?)h)?'
+    r'((?P<minutes>\d+(\.\d+)?)m)?((?P<seconds>\d+(\.\d+)?)s)?'
+)
 
 def parse_timedelta(time_str: str) -> dt.timedelta | None:
-    parts = _period_regex.match(time_str)
-    if not parts:
+    parts = _period_regex.fullmatch(time_str)
+    if not parts or not time_str:
         return None
     parts_dict = parts.groupdict()
     time_params = {}
