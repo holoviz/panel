@@ -2284,7 +2284,7 @@ class Tabulator(BaseTable):
                     if new:
                         children = last['columns']
                 children.append(col_dict)
-                column.title = self.titles.get(index, index[-1])
+                column.update(title=self.titles.get(index, index[-1]))
             elif matching_groups:
                 group = matching_groups[0]
                 if group in groups:
