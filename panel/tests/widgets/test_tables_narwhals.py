@@ -290,6 +290,34 @@ def test_tabulator_function_frame_filter(frame, document, comm):
     assert table._index_mapping == {0: 0, 1: 2}
 
 
+def test_tabulator_combined_filters(frame, document, comm):
+    import narwhals.stable.v2 as nw
+
+    table = Tabulator(frame)
+    model = table.get_root(document, comm)
+
+    table.add_filter((2, None), 'int')
+    table.add_filter(lambda df: to_narwhals(df).filter(nw.col('str') != 'C').to_native())
+    table.add_filter(lambda df: to_narwhals(df)['float'].to_numpy() > 0)
+
+    np.testing.assert_array_equal(model.source.data['int'], [2])
+    assert table._index_mapping == {0: 1}
+
+
+def test_tabulator_edited_row_kept_despite_header_filter(frame, document, comm):
+    table = Tabulator(
+        frame, pagination='remote', filters=[{'field': 'str', 'type': 'like', 'value': 'b'}]
+    )
+    table.get_root(document, comm)
+
+    table._process_event(TableEditEvent(model=None, column='str', row=0, value='Z', old='B'))
+    table._process_events({'data': {'int': [2], 'float': [6.28], 'str': ['Z']}})
+
+    assert table._edited_indexes == [1]
+    assert to_dict(table.value)['str'] == ['A', 'Z', 'C']
+    assert to_dict(table.current_view)['str'] == ['Z']
+
+
 def test_tabulator_function_filter_dropping_row_index_errors(frame):
     table = Tabulator(frame)
 
@@ -599,6 +627,24 @@ def test_tabulator_stream_missing_columns(frame):
     assert to_dict(table.value) == {
         'int': [1, 2, 3, 4], 'float': [3.14, 6.28, 9.42, None], 'str': ['A', 'B', 'C', None]
     }
+
+
+def test_tabulator_stream_lossy_cast_raises(backend, frame):
+    table = Tabulator(frame)
+
+    with pytest.raises(ValueError, match="Cannot cast column 'int' from Float64 to Int64"):
+        table.stream(backend({'int': [4.5], 'float': [0.0], 'str': ['D']}))
+
+    assert to_dict(table.value) == DATA
+
+
+def test_tabulator_stream_lossless_cast(backend, frame):
+    table = Tabulator(frame)
+
+    table.stream(backend({'int': [4.0], 'float': [1], 'str': ['D']}))
+
+    assert to_dict(table.value)['int'] == [1, 2, 3, 4]
+    assert to_dict(table.value)['float'] == [3.14, 6.28, 9.42, 1.0]
 
 
 def test_tabulator_stream_with_filter(frame, document, comm):
