@@ -2,23 +2,17 @@
 
 Streamlit always uses the same *template* with a *main* and *sidebar* area to layout and style your app.
 
-With Panel you have the flexibility to use the *default, blank template*, one of the *built in templates* or even create your own *custom template*.
+With Panel you get the same structure from `pn.ui.Page`, which has a *header*, a collapsible *sidebar*, a *main* area and a light/dark theme toggle. You can either construct the `Page` explicitly or set it as the global template and add components to its areas with `.servable(target=...)`.
 
 ---
 
 ## Migration Steps
 
-When migrating you will have to decide which template to use
+Set `pn.extension(template="page")` and mark each component `.servable(target="sidebar")` or `.servable()` (for the main area). Set the title, theme and colors on `pn.state.template`.
 
-- Blank (default)
-- A built-in template like *vanilla*, *bootstrap*, *material* or *fast*. See the [Templates Section](../../reference/index.md#templates) of the [Components Guide](../../reference/index).
-- A [custom template](../../how_to/templates/template_custom) declared using Jinja2 syntax.
+If you need full control over the HTML, you can instead declare a [custom template](../../how_to/templates/template_custom) using Jinja2 syntax.
 
 ## Example
-
-### FastListTemplate Example
-
-Here is an example with the [`FastListTemplate`](../../reference/classic/templates/FastListTemplate).
 
 ```python
 from asyncio import sleep
@@ -26,21 +20,20 @@ from datetime import datetime
 
 import panel as pn
 
-pn.extension(sizing_mode="stretch_width", template="fast", theme="dark")
+pn.extension(sizing_mode="stretch_width", template="page", theme="dark")
 
-pn.ui.Column(
-    "# 📖 Info",
-    """This app is an example of a built in template with a
-*sidebar*, *header* and *main* area.
+pn.ui.Markdown("""
+# 📖 Info
+
+This app is an example of a `Page` with a *sidebar*, *header* and *main* area.
 
 We have
 
-- set the *header* background, site and title parameters
+- set the *title* and the primary color
 - set the default *theme* to `dark`
 
 The app streams the current date and time using an *async generator function*.
-""",
-).servable(target="sidebar")
+""").servable(target="sidebar")
 
 async def stream():
     for i in range(0, 100):
@@ -48,15 +41,13 @@ async def stream():
         yield datetime.now()
 
 pn.ui.Column(
-    "The current date and time:", *(stream for i in range(5))
-).servable(target="main")
+    "The current date and time:", *(pn.ui.Str(stream) for i in range(5))
+).servable()
 
 pn.state.template.param.update(
-    site="Panel",
     title="Template Example",
-    header_background="#E91E63",
-    accent_base_color="#E91E63",
+    theme_config={"palette": {"primary": {"main": "#E91E63"}}},
 )
 ```
 
-![Panel Template Example](https://assets.holoviz.org/panel/gifs/panel_app_example.gif)
+![Panel Template Example](../../_static/images/panel_template_example.png)

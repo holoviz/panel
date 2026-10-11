@@ -2,7 +2,7 @@
 
 Panel supports many ways of indicating activity
 
-- Indicators. See the [Indicators Section](../../reference/indicators/index#indicators) of the [Component Gallery](../../reference/index).
+- Indicators. See the [Indicators Section](../../reference/index.md#indicators) of the [Component Gallery](../../reference/index).
 - `disabled`/ `loading` parameters on Panel components
 - `loading_indicator` parameter for `pn.panel` or `pn.config`. If `True` a loading indicator will be shown on your *bound functions* when they are re-run.
 
@@ -13,7 +13,7 @@ The example below showcases some of the ways Panel can show activity.
 ```python
 import panel as pn
 
-pn.extension(sizing_mode="stretch_width", template="bootstrap")
+pn.extension(sizing_mode="stretch_width", template="page")
 
 SPIN_CSS = """
 @keyframes icon-rotation {

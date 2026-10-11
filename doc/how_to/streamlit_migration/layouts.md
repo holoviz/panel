@@ -44,7 +44,7 @@ You can access Panel's *layouts* in the `pn.ui` namespace:
 ```python
 import panel as pn
 
-pn.extension(sizing_mode="stretch_width", template="bootstrap")
+pn.extension(sizing_mode="stretch_width", template="page")
 
 row1 = pn.ui.Row(
     pn.ui.Image(

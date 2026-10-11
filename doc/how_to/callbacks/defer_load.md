@@ -22,7 +22,7 @@ Here is an example of an app that takes +5 seconds to load.
 import time
 import panel as pn
 
-pn.extension(template="bootstrap")
+pn.extension(template="page")
 
 def some_long_running_task():
     time.sleep(5)
@@ -43,7 +43,7 @@ Its easy defer the execution of all bound and displayed functions with `pn.exten
 import time
 import panel as pn
 
-pn.extension(defer_load=True, loading_indicator=True, template="bootstrap")
+pn.extension(defer_load=True, loading_indicator=True, template="page")
 
 def long_running_task():
     time.sleep(3)
@@ -62,7 +62,7 @@ Its also easy to defer the execution of specific, bound and displayed functions 
 import time
 import panel as pn
 
-pn.extension(loading_indicator=True, template="bootstrap")
+pn.extension(loading_indicator=True, template="page")
 
 def short_running_task():
     return "# I'm shown on load"

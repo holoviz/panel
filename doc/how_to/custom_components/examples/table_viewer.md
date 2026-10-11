@@ -20,7 +20,7 @@ import panel as pn
 import pandas as pd
 from panel.viewable import Viewer
 
-pn.extension(template='fast')
+pn.extension(template='page')
 
 DATASETS = {
     'Penguins': 'https://raw.githubusercontent.com/mwaskom/seaborn-data/master/penguins.csv',

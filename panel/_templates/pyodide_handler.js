@@ -26,8 +26,6 @@ function send_change(jsdoc, event) {
 pyodideWorker.onmessage = async (event) => {
   const msg = event.data
 
-  const body = document.getElementsByTagName('body')[0]
-  const loading_msgs = document.getElementsByClassName('pn-loading-msg')
   if (msg.type === 'idle') {
     if (pyodideWorker.queue.length) {
       const patch = pyodideWorker.jsdoc.create_json_patch(pyodideWorker.queue)
@@ -38,17 +36,9 @@ pyodideWorker.onmessage = async (event) => {
       pyodideWorker.busy = false
     }
   } else if (msg.type === 'status') {
-    let loading_msg
-    if (loading_msgs.length) {
-      loading_msg = loading_msgs[0]
-    } else if (body.classList.contains('pn-loading')) {
-      loading_msg = document.createElement('div')
-      loading_msg.classList.add('pn-loading-msg')
-      body.appendChild(loading_msg)
-    }
-    if (loading_msg != null) {
-      loading_msg.innerHTML = msg.msg
-    }
+    window.panelLoader?.status(msg.msg)
+  } else if (msg.type === 'error') {
+    window.panelLoader?.error(msg.msg)
   } else if (msg.type === 'render') {
     const docs_json = JSON.parse(msg.docs_json)
     const render_items = JSON.parse(msg.render_items)
@@ -75,11 +65,7 @@ pyodideWorker.onmessage = async (event) => {
     // Embed content
     const [views] = await Bokeh.embed.embed_items(docs_json, render_items)
 
-    // Remove loading spinner and message
-    body.classList.remove(...{{ loading_classes }})
-    for (const loading_msg of loading_msgs) {
-      loading_msg.remove()
-    }
+    window.panelLoader?.hide()
 
     // Setup bi-directional syncing
     pyodideWorker.jsdoc = jsdoc = [...views.roots.values()][0].model.document

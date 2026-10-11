@@ -397,6 +397,8 @@ class Button(_ButtonBase, _ClickButton, IconMixin, TooltipMixin):
         return super().jslink(target, code, args, bidirectional, **links)
 
     def _process_event(self, event: ButtonClick) -> None:
+        if self.disabled:
+            return
         self.param.trigger('value')
         self.clicks += 1
 
@@ -518,6 +520,8 @@ class MenuButton(_ButtonBase, _ClickButton, IconMixin):
         return model
 
     def _process_event(self, event: ButtonClick | MenuItemClick):
+        if self.disabled:
+            return
         if isinstance(event, MenuItemClick):
             item = event.item
         elif isinstance(event, ButtonClick):

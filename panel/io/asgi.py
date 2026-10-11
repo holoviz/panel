@@ -18,7 +18,7 @@ import re
 import typing as t
 
 from functools import partial
-from urllib.parse import urljoin, urlparse
+from urllib.parse import parse_qs, urljoin, urlparse
 
 from bokeh.server.asgi import BokehASGI, _ASGIWebSocketTransport
 from bokeh.server.core import SessionError
@@ -28,8 +28,17 @@ from bokeh.util.token import (
 from tornado.web import HTTPError
 
 from ..config import config
+from .admin_auth import (
+    ADMIN_COOKIE, INVALID_PASSWORD, LOGIN_ENDPOINT, LOGOUT_ENDPOINT,
+    AdminAccess, admin_cookie, admin_document_url, admin_protected,
+    check_admin_access, create_admin_token, is_admin_application,
+    relative_endpoint, render_admin_login, validate_admin_password,
+)
 from .application import build_applications
-from .auth import PanelAuthPolicy, configure_auth, pop_auth_kwargs
+from .auth import (
+    PanelAuthPolicy, _is_websocket, _read_body, configure_auth,
+    pop_auth_kwargs,
+)
 from .document import _cleanup_doc, extra_socket_handlers
 from .logging import LOG_SESSION_CREATED
 from .reload import record_modules
@@ -131,8 +140,10 @@ class PanelASGI(BokehASGI):
     mem_log_frequency_milliseconds: int
         How often to log memory usage, 0 to disable. Requires psutil.
     session_history: int | None
-        If set, enables session history tracking and serves it on
-        ``/session_info``.
+        If set, enables session history tracking.
+    session_info: bool | None
+        Whether to serve ``state.session_info`` on ``/session_info``.
+        Defaults to serving it whenever session history is enabled.
     extra_routes: Sequence[tuple[str, RouteHandler]] | None
         Additional routes as ``(pattern, handler)`` pairs. Patterns are
         regular expressions matched against the prefix-relative path.
@@ -159,6 +170,7 @@ class PanelASGI(BokehASGI):
         liveness: bool | str = False,
         mem_log_frequency_milliseconds: int = 0,
         session_history: int | None = None,
+        session_info: bool | None = None,
         extra_routes: Sequence[tuple[str, RouteHandler]] | None = None,
         auth_provider: AuthProvider | None = None,
         auth_policy: AuthPolicy | None = None,
@@ -184,7 +196,9 @@ class PanelASGI(BokehASGI):
         self._mem_log_task: asyncio.Task | None = None
         if session_history is not None:
             config.session_history = session_history
-        if config.session_history != 0:
+        if session_info is None:
+            session_info = config.session_history != 0
+        if session_info:
             self._add_route(r'/session_info/?$', self._session_info)
         if liveness:
             endpoint = liveness if isinstance(liveness, str) else '/liveness'
@@ -201,6 +215,13 @@ class PanelASGI(BokehASGI):
         if isinstance(auth_policy, PanelAuthPolicy):
             for pattern, handler in auth_policy.routes:
                 self._add_route(pattern, handler)
+        if config.admin_password:
+            for app_path, context in self._core.applications.items():
+                if not is_admin_application(context.application):
+                    continue
+                base = re.escape(app_path.rstrip('/'))
+                self._add_route(rf'{base}/{LOGIN_ENDPOINT}$', self._admin_login)
+                self._add_route(rf'{base}/{LOGOUT_ENDPOINT}$', self._admin_logout)
         state._server_config[self] = server_config or {}
 
     #-----------------------------------------------------------------
@@ -552,9 +573,67 @@ class PanelASGI(BokehASGI):
             relative = f'{relative}/index.html'
         await self._serve_static(send, root, relative, head=head)
 
+    async def _admin_login(
+        self, request: ServerRequest, receive: Receive, send: Send, params: dict[str, str]
+    ) -> None:
+        if not await self._check_method(request, send, ('GET', 'HEAD', 'POST')):
+            return
+        method = request.method.upper()
+        if method != 'POST':
+            page = render_admin_login()
+            await self._respond(
+                request, send, 200, page.encode(), 'text/html; charset=UTF-8',
+                head=method == 'HEAD', extra_headers=[(b'cache-control', b'no-store')]
+            )
+            return
+        form = parse_qs((await _read_body(receive)).decode('utf-8', errors='replace'))
+        if validate_admin_password(form.get('password', [''])[0]):
+            secure = request.protocol == 'https'
+            cookie = admin_cookie(create_admin_token(), secure=secure)
+            await self._respond(
+                request, send, 302, b'', 'text/plain',
+                extra_headers=[(b'set-cookie', cookie.encode()), (b'location', admin_document_url(request.path).encode())]
+            )
+            return
+        page = render_admin_login(INVALID_PASSWORD)
+        await self._respond(request, send, 401, page.encode(), 'text/html; charset=UTF-8')
+
+    async def _admin_logout(
+        self, request: ServerRequest, receive: Receive, send: Send, params: dict[str, str]
+    ) -> None:
+        if not await self._check_method(request, send):
+            return
+        await self._respond(
+            request, send, 302, b'', 'text/plain',
+            extra_headers=[
+                (b'set-cookie', admin_cookie(None).encode()),
+                (b'location', LOGIN_ENDPOINT.encode()),
+            ]
+        )
+
     #-----------------------------------------------------------------
     # Application handlers
     #-----------------------------------------------------------------
+
+    def _admin_access(self, context: ApplicationContext, request: ServerRequest) -> AdminAccess:
+        if not admin_protected() or not is_admin_application(context.application):
+            return AdminAccess(True)
+        token = request.cookies.get(ADMIN_COOKIE)
+        return check_admin_access(request.user, token.value if token else None)
+
+    async def _authenticate(self, request: ServerRequest) -> bool:
+        if not await super()._authenticate(request):
+            return False
+        # HTTP routes check admin access themselves, so that they can
+        # redirect to the admin login page.
+        if not _is_websocket(request) or not (route := self._route_path_of(request)):
+            return True
+        if (resolved := self._resolve_route(route)) is None:
+            return True
+        return self._admin_access(resolved[0], request).allowed
+
+    def _route_path_of(self, request: ServerRequest) -> str | None:
+        return self._route_path({'path': request.path, 'root_path': request.root_path})
 
     def _authorize(
         self, request: ServerRequest, session: bool = False
@@ -569,6 +648,16 @@ class PanelASGI(BokehASGI):
             return
         head = request.method.upper() == 'HEAD'
         if not await self._authenticate_http(request, send, head=head):
+            return
+        access = self._admin_access(context, request)
+        if access.login:
+            await self._redirect(request, send, relative_endpoint(request.path, LOGIN_ENDPOINT))
+            return
+        elif not access.allowed:
+            page = render_auth_error(t.cast('str', access.error))
+            await self._respond(
+                request, send, 403, page.encode(), 'text/html; charset=UTF-8', head=head
+            )
             return
 
         # Prevent the browser from caching the document page. The page embeds
@@ -680,6 +769,12 @@ class PanelASGI(BokehASGI):
             return
         head = method == 'HEAD'
         if not await self._authenticate_http(request, send, head=head):
+            return
+        if not self._admin_access(context, request).allowed:
+            await self._respond(
+                request, send, 403, b'Not authorized to access the admin panel',
+                'text/plain', head=head
+            )
             return
 
         element_id = self._argument(request, 'bokeh-autoload-element')

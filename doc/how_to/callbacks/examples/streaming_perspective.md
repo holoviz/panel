@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import panel as pn
 
-pn.extension('perspective', template='fast', sizing_mode='stretch_width')
+pn.extension('perspective', template='page', sizing_mode='stretch_width')
 ```
 
 This example demonstrates how to use `add_periodic_callback` to stream data to a `Perspective` pane.

@@ -18,7 +18,7 @@ class MaterialBase(ReactiveHTML):
 
     _extension_name = 'material_ui'
 
-pn.extension('material_ui', template='material')
+pn.extension('material_ui', template='page')
 ```
 
 This example demonstrates how to wrap Material UI components using `ReactiveHTML`.

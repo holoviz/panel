@@ -10,12 +10,12 @@ The simplest way to make authentication optional is to set the `--oauth-optional
 panel serve app.py ... --oauth-optional
 ```
 
-Panel will now let the user access all endpoints without being redirected to the authentication provider or local login page. If specific functionality in your application requires authentication you may then redirect the user to the [login endpoint](./configuration#endpoints), e.g. by default you would redirect them to `/login`. As an example let's take this app:
+Panel will now let the user access all endpoints without being redirected to the authentication provider or local login page. If specific functionality in your application requires authentication you may then redirect the user to the [login endpoint](./configuration.md#endpoints), e.g. by default you would redirect them to `/login`. As an example let's take this app:
 
 ```python
 import panel as pn
 
-pn.extension(template='material')
+pn.extension(template='page')
 
 pn.state.template.title = 'Optional Auth'
 
@@ -42,7 +42,7 @@ def authorize(user_info, path):
         return '/login'
     return True
 
-pn.extension(authorize_callback=authorize, template='material')
+pn.extension(authorize_callback=authorize, template='page')
 
 pn.state.template.title = 'Admin'
 

@@ -20,7 +20,7 @@ Here is an example of an app that takes +5 seconds to load.
 import time
 import panel as pn
 
-pn.extension(template="bootstrap")
+pn.extension(template="page")
 
 layout = pn.ui.Markdown()
 
@@ -43,7 +43,7 @@ Now lets learn how to defer long running tasks to after the application has load
 import time
 import panel as pn
 
-pn.extension(template="bootstrap")
+pn.extension(template="page")
 
 layout = pn.ui.Markdown("# Loading...")
 
@@ -79,7 +79,7 @@ import pandas as pd
 import param
 import hvplot.pandas
 
-pn.extension(sizing_mode="stretch_width", template="bootstrap", theme="dark")
+pn.extension(sizing_mode="stretch_width", template="page", theme="dark")
 
 class AppState(param.Parameterized):
     data = param.DataFrame()

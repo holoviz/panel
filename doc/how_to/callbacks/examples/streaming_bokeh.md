@@ -7,7 +7,7 @@ import panel as pn
 from bokeh.plotting import figure
 from bokeh.models import ColumnDataSource
 
-pn.extension(template='fast')
+pn.extension(template='page')
 ```
 
 This example demonstrates how to use `add_periodic_callback` to stream data to a Bokeh plot.

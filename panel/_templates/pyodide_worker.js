@@ -49,7 +49,7 @@ async function startApplication() {
     const traceback = `${e}`
     const tblines = traceback.split('\n')
     self.postMessage({
-      type: 'status',
+      type: 'error',
       msg: tblines[tblines.length-2]
     });
     throw e

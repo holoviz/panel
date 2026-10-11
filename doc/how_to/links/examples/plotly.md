@@ -4,7 +4,7 @@
 import numpy as np
 import panel as pn
 
-pn.extension('plotly', template='bootstrap')
+pn.extension('plotly', template='page')
 ```
 
 Since Plotly plots are represented as simple JavaScript objects, we can easily define a JS callback to modify the data and trigger an update in a plot:

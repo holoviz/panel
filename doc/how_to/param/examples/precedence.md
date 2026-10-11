@@ -4,7 +4,7 @@
 import panel as pn
 import param
 
-pn.extension(template='bootstrap')
+pn.extension(template='page')
 ````
 
 This example demonstrates how to order and hide widgets by means of the ``precedence`` and  ``display_threshold`` attributes.

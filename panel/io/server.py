@@ -7,6 +7,7 @@ import asyncio
 import datetime as dt
 import importlib
 import inspect
+import json
 import logging
 import os
 import pathlib
@@ -64,6 +65,12 @@ from tornado.wsgi import WSGIContainer
 from ..config import config
 from ..util import HTML_SANITIZER, edit_readonly, fullpath
 from ..util.warnings import warn
+from .admin_auth import (
+    ADMIN_COOKIE, INVALID_PASSWORD, LOGIN_ENDPOINT, LOGOUT_ENDPOINT,
+    AdminAccess, admin_cookie, admin_document_url, admin_protected,
+    check_admin_access, create_admin_token, is_admin_application,
+    relative_endpoint, render_admin_login, validate_admin_password,
+)
 from .application import build_applications
 from .auth import configure_auth
 from .document import (  # noqa
@@ -831,6 +838,16 @@ def _set_request_route_context(handler: t.Any, *args, suffix: str = '', **kwargs
     request.route_params, request.app_path = _sanitize_route_context(raw_route_params, raw_app_path)
 
 
+def _admin_access(handler: t.Any) -> AdminAccess:
+    """
+    Checks a request to an application route against the admin access
+    configuration, which only restricts the admin application.
+    """
+    if not admin_protected() or not is_admin_application(handler.application_context.application):
+        return AdminAccess(True)
+    return check_admin_access(handler.current_user, handler.get_cookie(ADMIN_COOKIE))
+
+
 class DocHandler(LoginUrlMixin, BkDocHandler):
 
     @authenticated  # type: ignore
@@ -862,6 +879,15 @@ class DocHandler(LoginUrlMixin, BkDocHandler):
         # logout/login cycle would carry a stale token and the subsequent
         # WebSocket connection would fail (see e.g. holoviz/panel#8634).
         self.set_header("Cache-Control", "no-store")
+        access = _admin_access(self)
+        if access.login:
+            self.redirect(relative_endpoint(self.request.path, LOGIN_ENDPOINT))
+            return
+        elif not access.allowed:
+            self.set_status(403)
+            self.set_header("Content-Type", 'text/html')
+            self.write(self._render_auth_error(t.cast('str', access.error)))
+            return
         prefix = self.application.prefix
         if prefix and self.request.path == prefix and not prefix.endswith('/'):
             query_string = self.request.query if self.request.query else ''
@@ -944,6 +970,9 @@ class AutoloadJsHandler(BkAutoloadJsHandler):
 
     async def get(self, *args, **kwargs) -> None:
         _set_request_route_context(self, *args, suffix='/autoload.js', **kwargs)
+        if not _admin_access(self).allowed:
+            self.send_error(status_code=403, reason='Not authorized to access the admin panel')
+            return
         element_id = self.get_argument("bokeh-autoload-element", default=None)
         if not element_id:
             self.send_error(status_code=400, reason='No bokeh-autoload-element query parameter')
@@ -987,6 +1016,13 @@ class WSHandler(BkWSHandler):
             )
             self.set_status(403)
             self.finish()
+        elif not _admin_access(self).allowed:
+            logger.debug(
+                "Rejecting unauthorized WebSocket connection to admin panel %r with 403.",
+                self.request.path
+            )
+            self.set_status(403)
+            self.finish()
 
     def open(self, *args, **kwargs):
         _set_request_route_context(self, *args, suffix='/ws', **kwargs)
@@ -1023,6 +1059,49 @@ per_app_patterns[:] = [
     (r'/autoload.js', AutoloadJsHandler),
     (r'/?', DocHandler),
 ]
+
+class AdminLoginHandler(RequestHandler):
+    """
+    Serves the password login page of the admin panel.
+    """
+
+    def get(self):
+        self.set_header("Cache-Control", "no-store")
+        self.write(render_admin_login())
+
+    def post(self):
+        if validate_admin_password(self.get_argument('password', '')):
+            secure = self.request.protocol == 'https'
+            self.add_header('Set-Cookie', admin_cookie(create_admin_token(), secure=secure))
+            self.redirect(admin_document_url(self.request.path))
+            return
+        self.set_status(401)
+        self.write(render_admin_login(INVALID_PASSWORD))
+
+
+class AdminLogoutHandler(RequestHandler):
+    """
+    Clears the admin cookie and returns to the admin login page.
+    """
+
+    def get(self):
+        self.add_header('Set-Cookie', admin_cookie(None))
+        self.redirect(LOGIN_ENDPOINT)
+
+
+def admin_auth_patterns(admin_path: str) -> list[tuple[str, type[RequestHandler]]]:
+    """
+    The routes of the admin login and logout pages, if the admin panel is
+    password protected.
+    """
+    if not config.admin_password:
+        return []
+    admin_path = admin_path.rstrip('/')
+    return [
+        (f'{admin_path}/{LOGIN_ENDPOINT}', AdminLoginHandler),
+        (f'{admin_path}/{LOGOUT_ENDPOINT}', AdminLogoutHandler),
+    ]
+
 
 class RootHandler(LoginUrlMixin, BkRootHandler):
     """
@@ -1329,6 +1408,36 @@ class ProxyFallbackHandler(RequestHandler):
         self.on_finish()
 
 
+class SessionInfoHandler(RequestHandler):
+    """
+    Serves ``state.session_info`` as JSON, matching ``PanelASGI``'s
+    ``/session_info`` endpoint.
+    """
+
+    def initialize(self, legacy: bool = False):
+        # The deprecated /rest/session_info route was served by the param
+        # REST provider, which nested the value under its parameter name.
+        self.legacy = legacy
+
+    def get(self):
+        info = {'session_info': state.session_info} if self.legacy else state.session_info
+        self.set_header('Content-Type', 'application/json')
+        self.write(json.dumps(info))
+
+    def head(self):
+        self.set_header('Content-Type', 'application/json')
+
+
+def get_session_info_routes():
+    """
+    Returns the Tornado routes serving ``state.session_info``.
+    """
+    return [
+        (r"/session_info/?", SessionInfoHandler, {}),
+        (r"/rest/session_info/?", SessionInfoHandler, {'legacy': True}),
+    ]
+
+
 def get_static_routes(static_dirs):
     """
     Returns a list of tornado routes of StaticFileHandlers given a
@@ -1465,9 +1574,8 @@ def get_server(
       authentication is enabled.
     session_history: int (optional, default=None)
       The amount of session history to accumulate. If set to non-zero
-      and non-None value will launch a REST endpoint at
-      /rest/session_info, which returns information about the session
-      history.
+      and non-None value will launch an endpoint at /session_info,
+      which returns information about the session history.
     liveness: bool | str (optional, default=False)
       Whether to add a liveness endpoint. If a string is provided
       then this will be used as the endpoint, otherwise the endpoint
@@ -1484,7 +1592,6 @@ def get_server(
       Bokeh Server instance running this panel
     """
     from ..config import config
-    from .rest import REST_PROVIDERS
 
     silence(EMPTY_LAYOUT, True)
     server_id = kwargs.pop('server_id', uuid.uuid4().hex)
@@ -1540,13 +1647,14 @@ def get_server(
     if session_history is not None:
         config.session_history = session_history
     if config.session_history != 0:
-        pattern = REST_PROVIDERS['param']([], 'rest')
-        extra_patterns.extend(pattern)
-        state.publish('session_info', state, ['session_info'])
+        extra_patterns += get_session_info_routes()
 
     if liveness:
         liveness_endpoint = 'liveness' if isinstance(liveness, bool) else liveness
         extra_patterns += [(rf"/{liveness_endpoint}", LivenessHandler, dict(applications=apps))]
+
+    if admin:
+        extra_patterns += admin_auth_patterns('/admin')
 
     opts = dict(kwargs)
     if loop:
@@ -1627,13 +1735,14 @@ def get_server(
 
     if start:
         server.start()
-        try:
-            server.io_loop.start()
-        except RuntimeError:
-            pass
-        except TypeError:
-            warn(
-                "IOLoop couldn't be started. Ensure it is started by "
-                "process invoking the panel.io.server.serve."
-            )
+        # starting an already running loop raises AssertionError on
+        # ProactorEventLoop and RuntimeError on SelectorEventLoop
+        if not server.io_loop.asyncio_loop.is_running():
+            try:
+                server.io_loop.start()
+            except TypeError:
+                warn(
+                    "IOLoop couldn't be started. Ensure it is started by "
+                    "process invoking the panel.io.server.serve."
+                )
     return server

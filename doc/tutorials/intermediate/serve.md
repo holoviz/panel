@@ -240,10 +240,12 @@ options:
   --basic-login-template BASIC_LOGIN_TEMPLATE
                         Template to serve for Basic Authentication login page.
   --rest-provider REST_PROVIDER
-                        The interface to use to serve REST API
+                        Deprecated, will be removed in 2.0. The interface to use to serve REST API.
+                        Declare custom endpoints with --plugins instead.
   --rest-endpoint REST_ENDPOINT
-                        Endpoint to store REST API on.
-  --rest-session-info   Whether to serve session info on the REST API
+                        Deprecated, will be removed in 2.0. Endpoint to store REST API on, defaults
+                        to 'rest'.
+  --rest-session-info   Whether to serve session info on the /session_info endpoint.
   --session-history SESSION_HISTORY
                         The length of the session history to record.
   --warm                Whether to execute scripts on startup to warm up the server.

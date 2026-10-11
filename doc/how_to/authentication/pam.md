@@ -35,7 +35,7 @@ Create a basic `app.py` file.
 ```python
 import panel as pn
 
-pn.extension(template="fast")
+pn.extension(template="page")
 
 logout = pn.ui.Button(label="Log out")
 logout.js_on_click(code="""window.location.href = './logout'""")

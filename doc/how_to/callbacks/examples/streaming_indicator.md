@@ -4,7 +4,7 @@
 import numpy as np
 import panel as pn
 
-pn.extension(template='fast')
+pn.extension(template='page')
 ```
 
 This example demonstrates how to use `add_periodic_callback` to stream data to the `Trend` indicator.

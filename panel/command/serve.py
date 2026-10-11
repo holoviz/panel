@@ -39,14 +39,19 @@ from tornado.web import StaticFileHandler
 
 from ..auth import BasicAuthProvider, OAuthProvider
 from ..config import config
+from ..io.admin_auth import mark_admin_application
 from ..io.document import _cleanup_doc
 from ..io.liveness import LivenessHandler
 from ..io.reload import record_modules, watch
 from ..io.resources import DIST_DIR
 from ..io.rest import REST_PROVIDERS
-from ..io.server import INDEX_HTML, get_static_routes, set_curdoc
+from ..io.server import (
+    INDEX_HTML, admin_auth_patterns, get_session_info_routes,
+    get_static_routes, set_curdoc,
+)
 from ..io.state import state
 from ..util import edit_readonly, fullpath
+from ..util.warnings import deprecated
 
 if t.TYPE_CHECKING:
     import argparse
@@ -273,17 +278,18 @@ class Serve(_BkServe):
         ('--rest-provider', Argument(
             action = 'store',
             type   = str,
-            help   = "The interface to use to serve REST API"
+            help   = ("Deprecated, will be removed in 2.0. The interface to use "
+                      "to serve REST API. Declare custom endpoints with --plugins instead.")
         )),
         ('--rest-endpoint', Argument(
             action  = 'store',
             type    = str,
-            help    = "Endpoint to store REST API on.",
-            default = 'rest'
+            help    = ("Deprecated, will be removed in 2.0. Endpoint to store REST "
+                       "API on, defaults to 'rest'.")
         )),
         ('--rest-session-info', Argument(
             action  = 'store_true',
-            help    = "Whether to serve session info on the REST API"
+            help    = "Whether to serve session info on the /session_info endpoint."
         )),
         ('--session-history', Argument(
             action  = 'store',
@@ -303,6 +309,18 @@ class Serve(_BkServe):
             action = 'store',
             type    = str,
             help    = "Name to use for the admin endpoint.",
+            default = None
+        )),
+        ('--admin-password', Argument(
+            action  = 'store',
+            type    = str,
+            help    = "Password required to access the admin panel, independent of the server authentication.",
+            default = None
+        )),
+        ('--admin-users', Argument(
+            action  = 'store',
+            nargs   = '+',
+            help    = "Users, as authenticated by --basic-auth or --oauth-provider, allowed to access the admin panel.",
             default = None
         )),
         ('--admin-log-level', Argument(
@@ -384,8 +402,6 @@ class Serve(_BkServe):
     # Arguments which are implemented with Tornado request handlers and
     # therefore cannot be served by the ASGI implementations.
     _tornado_only_args: t.ClassVar[dict[str, str]] = {
-        'rest_provider': '--rest-provider',
-        'rest_session_info': '--rest-session-info',
         'enable_xsrf_cookies': '--enable-xsrf-cookies',
     }
 
@@ -399,6 +415,11 @@ class Serve(_BkServe):
         'session_token_expiration', 'sign_sessions',
         'stats_log_frequency_milliseconds',
         'unused_session_lifetime_milliseconds',
+    )
+
+    _rest_deprecation: t.ClassVar[str] = (
+        "Declare custom endpoints in a --plugins module instead, see "
+        "https://panel.holoviz.org/how_to/server/endpoints.html"
     )
 
     # Supported file extensions
@@ -580,7 +601,21 @@ class Serve(_BkServe):
             self._admin_path = admin_path
 
             config._admin = True
-            app = Application(FunctionHandler(admin_panel))
+            if args.admin_password:
+                if os.environ.get('PANEL_ADMIN_PASSWORD'):
+                    raise ValueError(
+                        "Supply the admin password either using the environment "
+                        "variable PANEL_ADMIN_PASSWORD or as an explicit argument, not both."
+                    )
+                config.admin_password = args.admin_password
+            if args.admin_users:
+                if os.environ.get('PANEL_ADMIN_USERS'):
+                    raise ValueError(
+                        "Supply the admin users either using the environment "
+                        "variable PANEL_ADMIN_USERS or as an explicit argument, not both."
+                    )
+                config.admin_users = args.admin_users
+            app = mark_admin_application(Application(FunctionHandler(admin_panel)))
             unused_timeout = args.check_unused_sessions or 15000
             state._admin_context = AdminApplicationContext(
                 app, unused_timeout=unused_timeout, url=admin_path
@@ -803,6 +838,13 @@ class Serve(_BkServe):
             elif args.oauth_jwt_user:
                 config.oauth_jwt_user = args.oauth_jwt_user
 
+        if args.admin and config.admin_users and 'auth_provider' not in kwargs:
+            raise ValueError(
+                "Restricting the admin panel to --admin-users requires server "
+                "authentication, enable it with --basic-auth or --oauth-provider "
+                "or protect the admin panel with --admin-password instead."
+            )
+
         if config.cookie_path:
             kwargs['cookie_path'] = config.cookie_path
 
@@ -822,11 +864,15 @@ class Serve(_BkServe):
         kwargs['extra_patterns'] = patterns = kwargs.get('extra_patterns', [])
         patterns += get_static_routes(self._static_dirs)
 
-        # Handle tranquilized functions in the supplied functions
-        if args.rest_provider in REST_PROVIDERS:
-            patterns.extend(REST_PROVIDERS[args.rest_provider](self._files, args.rest_endpoint))
-        elif args.rest_provider is not None:
-            raise ValueError(f"rest-provider {args.rest_provider!r} not recognized.")
+        if args.rest_endpoint is not None:
+            deprecated('2.0', '--rest-endpoint', extra=self._rest_deprecation)
+        if args.rest_provider is not None:
+            deprecated('2.0', '--rest-provider', extra=self._rest_deprecation)
+            if args.rest_provider not in REST_PROVIDERS:
+                raise ValueError(f"rest-provider {args.rest_provider!r} not recognized.")
+            patterns.extend(REST_PROVIDERS[args.rest_provider](
+                self._files, args.rest_endpoint or 'rest'
+            ))
 
         if args.liveness:
             argvs = {f: args.args for f in self._files}
@@ -835,10 +881,10 @@ class Serve(_BkServe):
 
         if args.admin:
             patterns.extend(self._admin_patterns())
+            patterns.extend(admin_auth_patterns(self._admin_path))
 
         if args.rest_session_info:
-            patterns.extend(REST_PROVIDERS['param'](self._files, 'rest'))
-            state.publish('session_info', state, ['session_info'])
+            patterns.extend(get_session_info_routes())
 
         for name, module in self._load_plugins(args):
             patterns.extend(self._plugin_routes(name, module))
@@ -1009,6 +1055,9 @@ class Serve(_BkServe):
             log.info(f"Using override config file: {args.use_config}")
             settings.load_config(args.use_config)
 
+        if args.rest_provider is not None:
+            die(f"--rest-provider is deprecated and not supported with --server "
+                f"{args.server}. {self._rest_deprecation}")
         for arg, flag in self._tornado_only_args.items():
             if getattr(args, arg, None):
                 die(f"{flag} is implemented with Tornado request handlers and "
@@ -1048,6 +1097,7 @@ class Serve(_BkServe):
             redirect_root=not args.disable_index_redirect,
             static_dirs=self._static_dirs,
             liveness=args.liveness_endpoint if args.liveness else False,
+            session_info=args.rest_session_info,
             **asgi_kwargs
         )
         if admin_context is not None:

@@ -18,7 +18,7 @@ Before adding any actual content add a code block with any imports your applicat
 ```python
 import panel as pn
 
-pn.extension(template='fast')
+pn.extension(template='page')
 ```
 ````
 
@@ -59,7 +59,7 @@ To put it all together, here is what our app looks like:
 ```python
 import panel as pn
 
-pn.extension(template='fast')
+pn.extension(template='page')
 ```
 
 This application provides a minimal example demonstrating how to write an app in a Markdown file.

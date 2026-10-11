@@ -1893,9 +1893,10 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
         self._event_callbacks = defaultdict(lambda: defaultdict(list))
 
     def _cleanup(self, root: Model | None = None) -> None:
+        parent = self._models.get(root.ref['id'], (None,))[0] if root else None
         for _child, panes in self._panes.items():
             for pane in panes:
-                pane._cleanup(root)
+                pane._release_model(root, parent)
         super()._cleanup(root)
 
     @property
@@ -2017,7 +2018,7 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
         for children_param, old_panes in self._panes.items():
             for old_pane in old_panes:
                 if old_pane not in (internal_panes.get(children_param) or []):
-                    old_pane._cleanup(root)
+                    old_pane._release_model(root, model)
 
         for parent, child_panes in new_panes.items():
             children_param = self._parser.children[parent]
@@ -2033,14 +2034,14 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
                     if pane in old_panes and root.ref['id'] in pane._models:
                         child, _ = pane._models[root.ref['id']]
                     else:
-                        child = pane._get_model(doc, root, model, comm)
+                        child = pane._acquire_model(doc, root, model, comm)
                     new_models[parent].append(child)
             elif parent in old_models:
                 # Children parameter unchanged
                 new_models[parent] = old_models[parent]
             else:
                 new_models[parent] = [
-                    pane._get_model(doc, root, model, comm)
+                    pane._acquire_model(doc, root, model, comm)
                     for pane in child_panes
                 ]
         self._panes = internal_panes

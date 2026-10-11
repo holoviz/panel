@@ -7,7 +7,7 @@ import panel as pn
 from bokeh.sampledata.iris import flowers
 from panel.viewable import Viewer
 
-pn.extension(template='fast')
+pn.extension(template='page')
 import hvplot.pandas
 ```
 

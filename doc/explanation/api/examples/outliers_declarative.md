@@ -25,7 +25,7 @@ CSV_FILE = (
     "https://raw.githubusercontent.com/holoviz/panel/main/examples/assets/occupancy.csv"
 )
 
-pn.extension(design="material")
+pn.extension(sizing_mode="stretch_width", throttled=True)
 ```
 
 ```{pyodide}
@@ -52,8 +52,10 @@ def get_plot(variable="Temperature", window=30, sigma=10):
     """Plots the rolling average and the outliers"""
     avg, highlight = transform_data(variable, window, sigma)
     return avg.hvplot(
-        height=300, width=800, legend=False, color=PRIMARY_COLOR
-    ) * highlight.hvplot.scatter(color=SECONDARY_COLOR, padding=0.1, legend=False)
+        height=300, responsive=True, legend=False, color=PRIMARY_COLOR
+    ) * highlight.hvplot.scatter(
+        responsive=True, color=SECONDARY_COLOR, padding=(0, 0.1), legend=False
+    )
 ```
 
 ```{pyodide}
@@ -68,6 +70,7 @@ class RoomOccupancy(param.Parameterized):
     window = param.Integer(default=30, bounds=(1, 60))
     sigma = param.Number(default=10, bounds=(0, 20))
 
+    @param.depends("variable", "window", "sigma")
     def view(self):
         return get_plot(self.variable, self.window, self.sigma)
 
@@ -75,25 +78,25 @@ obj = RoomOccupancy()
 obj
 ```
 
-The `RoomOccupancy` class and the `obj` instance have no direct dependency on Panel, Jupyter, or any other GUI toolkit. They solely declare facts about a specific domain, such as the parameters required for smoothing. This information is sufficient for Panel to create an interactive representation without needing domain-specific details encapsulated in `obj`:
+The `RoomOccupancy` class and the `obj` instance have no direct dependency on Panel, Jupyter, or any other GUI toolkit. They solely declare facts about a specific domain, such as the parameters required for smoothing. This information is sufficient for Panel to generate widgets for `obj.param`, and a `HoloViews` pane given the `view` method re-renders whenever one of the parameters it depends on changes:
 
 ```{pyodide}
-pn.ui.Column(obj.param, obj.view)
+plot = pn.ui.HoloViews(obj.view)
+pn.ui.Column(obj.param, plot)
 ```
 
 To support various domains, you can create hierarchies of classes encapsulating parameters and functionality across different object families. Parameters and code can inherit across classes as needed, without depending on any specific GUI library. This approach facilitates the maintenance of large codebases, all displayable and editable with Panel, adaptable over time. For a more complex illustration, refer to the [Attractors Panel app](https://examples.holoviz.org/gallery/attractors/attractors_panel.html) ([source](https://github.com/holoviz-topics/examples/tree/main/attractors)), and explore the Panel codebase itself for extensive usage of Param throughout the codebase.
 
 ## Serving the Notebook
 
-Lets finalize our app by organizing our components in a nicely styled template (`MaterialTemplate`) and mark it `.servable()` to add it to our served app:
+Let's finalize our app by arranging the components in a `Page` and marking it `.servable()` to add it to our served app:
 
 ```python
-pn.template.MaterialTemplate(
-    site="Panel",
+pn.ui.Page(
     title="Getting Started App",
     sidebar=[obj.param],
-    main=[obj.view],
-).servable(); # The ; is needed in the notebook to not display the template. Its not needed in a script
+    main=[plot],
+).servable()
 ```
 
 Save the notebook with the name `app.ipynb`.
@@ -108,7 +111,7 @@ Now, open the app in your browser at [http://localhost:5006/app](http://localhos
 
 It should look like this:
 
-![Getting Started App](../../../_static/images/getting_started_app.png)
+![Declarative Getting Started App](../../../_static/images/outliers_declarative_app.png)
 
 :::{tip}
 

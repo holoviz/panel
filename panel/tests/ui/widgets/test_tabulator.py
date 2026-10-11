@@ -12,12 +12,14 @@ import pytest
 
 pytest.importorskip("playwright")
 
+from bokeh.models import LinearColorMapper
 from bokeh.models.widgets.tables import (
     BooleanFormatter, CheckboxEditor, DateEditor, DateFormatter,
     HTMLTemplateFormatter, IntEditor, NumberEditor, NumberFormatter,
     ScientificFormatter, SelectEditor, StringEditor, StringFormatter,
     TextEditor,
 )
+from bokeh.transform import transform
 from playwright.sync_api import Error, expect
 
 from panel import extension
@@ -487,6 +489,30 @@ def test_tabulator_formatters_bokeh_string(page, df_mixed):
 
     style = "font-weight: bold; text-align: center; color: red;"
     expect(page.locator('text="A"')).to_have_attribute("style", style)
+
+
+def test_tabulator_formatters_bokeh_string_color_mapper(page, df_mixed):
+    mapper = LinearColorMapper(palette=['#ff0000', '#0000ff'], low=1, high=4)
+    widget = Tabulator(
+        df_mixed,
+        formatters={
+            'str': StringFormatter(background_color=transform('int', mapper)),
+        },
+    )
+
+    serve_component(page, widget)
+
+    expect(page.locator('text="A"')).to_have_css("background-color", "rgb(255, 0, 0)")
+    expect(page.locator('text="D"')).to_have_css("background-color", "rgb(0, 0, 255)")
+
+
+def test_tabulator_renders_without_bokeh_tables(page, df_mixed):
+    widget = Tabulator(df_mixed, formatters={'float': NumberFormatter(format='0.000')})
+
+    serve_component(page, widget)
+
+    expect(page.locator('text="3.140"')).to_have_count(1)
+    assert not page.evaluate("Bokeh.Models._known_models.has('DataTable')")
 
 
 def test_tabulator_formatters_bokeh_html_multiple_columns(page, df_mixed):
