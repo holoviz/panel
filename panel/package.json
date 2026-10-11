@@ -15,7 +15,8 @@
     "htm": "^3.1.1",
     "json-formatter-js": "^2.2.1",
     "preact": "^10.26.6",
-    "sucrase": "^3.35.0"
+    "sucrase": "^3.35.0",
+    "underscore.template": "^0.1.7"
   },
   "devDependencies": {
     "@stylistic/eslint-plugin": "^5.9.0",

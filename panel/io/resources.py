@@ -25,7 +25,8 @@ import bokeh.embed.wrappers
 from bokeh.core.property.descriptors import UnsetValueError
 from bokeh.embed.bundle import (
     CSS_RESOURCES as BkCSS_RESOURCES, URL, Bundle as BkBundle, _any,
-    _bundle_extensions, _use_mathjax, bundle_models, extension_dirs,
+    _bundle_extensions, _query_extensions, _use_mathjax, _use_tables,
+    bundle_models, extension_dirs,
 )
 from bokeh.model import Model
 from bokeh.models import ImportedStyleSheet
@@ -541,6 +542,22 @@ def _panel_use_mathjax(roots) -> bool:
     return _any(roots, lambda obj: isinstance(obj, PanelHTML))
 
 
+def _panel_use_tables(roots) -> bool:
+    """
+    Whether any model reachable from roots requires the bokeh-tables bundle.
+
+    Tabulator renders without it, but Bokeh's DataTable and DataCube need it
+    and so do extensions defining custom cell editors or formatters.
+    """
+    from bokeh.models.widgets.tables import CellEditor, CellFormatter
+    models = set()
+    for root in roots:
+        models |= root.references()
+    return _use_tables(models) or _query_extensions(
+        models, lambda cls: issubclass(cls, (CellEditor, CellFormatter))
+    )
+
+
 def bundle_resources(
     roots,
     resources: BkResources,
@@ -571,10 +588,19 @@ def bundle_resources(
     else:
         use_mathjax = 'mathjax' in ext._loaded_extensions
 
+    # Notebooks load resources before anything is rendered, so we cannot
+    # know whether a table will be displayed later and always load it
+    use_tables = (
+        notebook or roots is None or 'tables' in ext._loaded_extensions or
+        _panel_use_tables(roots)
+    )
+
     if js_resources:
         js_resources = js_resources.clone()
         if not use_mathjax and "bokeh-mathjax" in js_resources.components:
             js_resources.components.remove("bokeh-mathjax")
+        if not use_tables and "bokeh-tables" in js_resources.components:
+            js_resources.components.remove("bokeh-tables")
         if reloading:
             js_resources.components.clear()
 
