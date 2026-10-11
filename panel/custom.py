@@ -407,7 +407,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
                     if isinstance(children, list):
                         for child in children:
                             if isinstance(child, Viewable):
-                                child._cleanup(root)
+                                child._release_model(root, model)
         super()._cleanup(root)
         if not self._models and self._watching_esm:
             self._watching_esm.unsubscribe(self, '_update_esm')
@@ -509,18 +509,12 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             models = []
             for sv in child:
                 if ref in sv._models:
-                    model = sv._models[ref][0]
-                    old.append(model)
-                else:
-                    model = sv._get_model(doc, root, parent, comm)
-                models.append(model)
+                    old.append(sv._models[ref][0])
+                models.append(sv._acquire_model(doc, root, parent, comm))
             return models, old
-        elif ref in child._models:
-            model = child._models[ref][0]
-            old.append(model)
-        else:
-            model = child._get_model(doc, root, parent, comm)
-        return model, old
+        if ref in child._models:
+            old.append(child._models[ref][0])
+        return child._acquire_model(doc, root, parent, comm), old
 
     def _get_children(self, data_model, doc, root, parent, comm) -> tuple[dict[str, list[UIElement] | UIElement | None], list[UIElement]]:
         children = {}
@@ -613,7 +607,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             for old in old_objects:
                 if old is None or old is new or (isinstance(new, list) and old in new):
                     continue
-                old._cleanup(root)
+                old._release_model(root, model)
 
         update_children = any(e in model.children for e in events)
         if update_children:

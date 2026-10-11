@@ -156,5 +156,7 @@ class ButtonIcon(_ClickableIcon, _ClickButton, TooltipMixin):
         """
         Process a button click event.
         """
+        if self.disabled:
+            return
         self.param.trigger('value')
         self.clicks += 1

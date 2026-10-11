@@ -132,7 +132,12 @@ class PeriodicCallback(param.Parameterized):
             inspect.iscoroutinefunction(self.callback)
         )
         if state._thread_pool and not is_async:
-            future = state._thread_pool.submit(self._exec_callback, True, busy_event_id)
+            try:
+                future = state._thread_pool.submit(self._exec_callback, True, busy_event_id)
+            except Exception:
+                if busy_event_id is not None:
+                    state._remove_busy_event(busy_event_id)
+                raise
             future.add_done_callback(partial(state._handle_future_exception, doc=self._doc))
             return
         try:

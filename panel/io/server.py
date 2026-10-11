@@ -7,6 +7,7 @@ import asyncio
 import datetime as dt
 import importlib
 import inspect
+import json
 import logging
 import os
 import pathlib
@@ -1407,6 +1408,36 @@ class ProxyFallbackHandler(RequestHandler):
         self.on_finish()
 
 
+class SessionInfoHandler(RequestHandler):
+    """
+    Serves ``state.session_info`` as JSON, matching ``PanelASGI``'s
+    ``/session_info`` endpoint.
+    """
+
+    def initialize(self, legacy: bool = False):
+        # The deprecated /rest/session_info route was served by the param
+        # REST provider, which nested the value under its parameter name.
+        self.legacy = legacy
+
+    def get(self):
+        info = {'session_info': state.session_info} if self.legacy else state.session_info
+        self.set_header('Content-Type', 'application/json')
+        self.write(json.dumps(info))
+
+    def head(self):
+        self.set_header('Content-Type', 'application/json')
+
+
+def get_session_info_routes():
+    """
+    Returns the Tornado routes serving ``state.session_info``.
+    """
+    return [
+        (r"/session_info/?", SessionInfoHandler, {}),
+        (r"/rest/session_info/?", SessionInfoHandler, {'legacy': True}),
+    ]
+
+
 def get_static_routes(static_dirs):
     """
     Returns a list of tornado routes of StaticFileHandlers given a
@@ -1543,9 +1574,8 @@ def get_server(
       authentication is enabled.
     session_history: int (optional, default=None)
       The amount of session history to accumulate. If set to non-zero
-      and non-None value will launch a REST endpoint at
-      /rest/session_info, which returns information about the session
-      history.
+      and non-None value will launch an endpoint at /session_info,
+      which returns information about the session history.
     liveness: bool | str (optional, default=False)
       Whether to add a liveness endpoint. If a string is provided
       then this will be used as the endpoint, otherwise the endpoint
@@ -1562,7 +1592,6 @@ def get_server(
       Bokeh Server instance running this panel
     """
     from ..config import config
-    from .rest import REST_PROVIDERS
 
     silence(EMPTY_LAYOUT, True)
     server_id = kwargs.pop('server_id', uuid.uuid4().hex)
@@ -1618,9 +1647,7 @@ def get_server(
     if session_history is not None:
         config.session_history = session_history
     if config.session_history != 0:
-        pattern = REST_PROVIDERS['param']([], 'rest')
-        extra_patterns.extend(pattern)
-        state.publish('session_info', state, ['session_info'])
+        extra_patterns += get_session_info_routes()
 
     if liveness:
         liveness_endpoint = 'liveness' if isinstance(liveness, bool) else liveness

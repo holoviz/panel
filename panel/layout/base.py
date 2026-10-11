@@ -339,17 +339,17 @@ class Panel(Reactive, SizingModeMixin):
 
         for obj in old_objects:
             if obj not in self.objects:
-                obj._cleanup(root)
+                obj._release_model(root, model)
 
         current_objects = list(self.objects)
         ref = root.ref['id']
         for i, pane in enumerate(self.objects):
-            if ref in pane._models:
-                child, _ = pane._models[root.ref['id']]
+            if pane in old_objects and ref in pane._models:
+                child, _ = pane._models[ref]
                 old_models.append(child)
             else:
                 try:
-                    child = pane._get_model(doc, root, model, comm)
+                    child = pane._acquire_model(doc, root, model, comm)
                 except RerenderError as e:
                     if e.layout is not None and e.layout is not self:
                         raise e
@@ -868,9 +868,10 @@ class ListPanel(ListLike, Panel):
         return super()._process_param_change(params)
 
     def _cleanup(self, root: Model | None = None) -> None:
+        parent = self._models.get(root.ref['id'], (None,))[0] if root else None
         super()._cleanup(root)
         for p in self.objects:
-            p._cleanup(root)
+            p._release_model(root, parent)
 
     def clone(self, *objects: t.Any, **params: t.Any):
         return super().clone(*objects, **params)
@@ -915,9 +916,10 @@ class NamedListPanel(NamedListLike, Panel):
         return super()._process_param_change(params)
 
     def _cleanup(self, root: Model | None = None) -> None:
+        parent = self._models.get(root.ref['id'], (None,))[0] if root else None
         super()._cleanup(root)
         for p in self.objects:
-            p._cleanup(root)
+            p._release_model(root, parent)
 
     def clone(self, *objects: t.Any, **params: t.Any) -> Self:
         return super().clone(*objects, **params)

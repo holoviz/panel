@@ -13,8 +13,9 @@ from panel.config import config, panel_extension as extension
 from panel.custom import JSComponent
 from panel.io.resources import (
     CDN_DIST, DIST_DIR, JS_RESOURCES, JS_VERSION, PANEL_DIR, Resources,
-    component_resource_path, module_tags, resolve_custom_path,
-    resolve_resource_cdn, resolve_stylesheet, set_resource_mode,
+    bundle_resources, component_resource_path, module_tags,
+    resolve_custom_path, resolve_resource_cdn, resolve_stylesheet,
+    set_resource_mode,
 )
 from panel.io.state import set_curdoc, state
 from panel.models.tabulator import TABULATOR_VERSION
@@ -112,6 +113,35 @@ def test_resources_cdn():
         f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-tables-{bokeh_version}.min.js',
         f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-mathjax-{bokeh_version}.min.js',
     ]
+
+
+def _uses_bokeh_tables(bundle):
+    return any('bokeh-tables' in str(url) for url in bundle.js_files)
+
+def test_bundle_resources_tabulator_skips_bokeh_tables(document, comm, monkeypatch):
+    pd = pytest.importorskip('pandas')
+    from panel.widgets import Tabulator
+    monkeypatch.setattr(extension, '_loaded_extensions', [])
+    model = Tabulator(pd.DataFrame({'a': [1, 2]})).get_root(document, comm)
+    assert not _uses_bokeh_tables(bundle_resources([model], Resources(mode='cdn')))
+
+def test_bundle_resources_nested_datatable_loads_bokeh_tables(document, comm, monkeypatch):
+    from bokeh.models import DataTable
+
+    from panel.layout import Column
+    from panel.pane import Bokeh
+    monkeypatch.setattr(extension, '_loaded_extensions', [])
+    model = Column(Bokeh(DataTable())).get_root(document, comm)
+    assert _uses_bokeh_tables(bundle_resources([model], Resources(mode='cdn')))
+
+def test_bundle_resources_tables_extension_loads_bokeh_tables(document, comm, monkeypatch):
+    monkeypatch.setattr(extension, '_loaded_extensions', ['bokeh-tables'])
+    model = Button().get_root(document, comm)
+    assert _uses_bokeh_tables(bundle_resources([model], Resources(mode='cdn')))
+
+def test_bundle_resources_notebook_loads_bokeh_tables(monkeypatch):
+    monkeypatch.setattr(extension, '_loaded_extensions', [])
+    assert _uses_bokeh_tables(bundle_resources(None, Resources(mode='cdn')))
 
 
 def test_notebook_resources_respect_jupyterhub_base_url():

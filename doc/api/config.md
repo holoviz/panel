@@ -3,7 +3,7 @@
 The `pn.config` object holds global configuration options for Panel.
 
 The options can be set directly on the global config instance, via
-keyword arguments to [`pn.extension`](cheatsheet#pn-extension) or via environment variables.
+keyword arguments to [`pn.extension`](cheatsheet.md#pn-extension) or via environment variables.
 
 For example to set the `embed` option the following approaches can be used:
 

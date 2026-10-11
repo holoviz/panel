@@ -33,7 +33,6 @@ from js import JSON, XMLHttpRequest
 from ..util import edit_readonly, isurl
 from . import resources
 from .document import MockSessionContext
-from .loading import _loading_css_classes
 from .mime_render import WriteCallbackStream, exec_with_return, format_mime
 from .state import state
 
@@ -549,8 +548,9 @@ def hide_loader() -> None:
     """
     from js import document
 
-    body = document.getElementsByTagName('body')[0]
-    body.classList.remove(*_loading_css_classes())
+    loader = document.getElementById('loader')
+    if loader:
+        loader.style.display = 'none'
 
 def sync_location():
     """
@@ -594,6 +594,11 @@ async def write_doc(doc: Document | None = None) -> tuple[str, str, str]:
     if pydoc in state._templates and pydoc not in state._templates[pydoc]._documents:
         template = state._templates[pydoc]
         template.server_doc(title=template.title, location=True, doc=pydoc)
+    if not pydoc.roots:
+        raise RuntimeError(
+            'The app did not add anything to the page, ensure that at '
+            'least one component is marked as .servable().'
+        )
 
     # Test whether we have access to DOM
     try:

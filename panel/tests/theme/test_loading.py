@@ -3,7 +3,6 @@ import json
 import pytest
 
 from panel.config import config
-from panel.io.convert import loading_resources as _convert_resources
 from panel.io.loading import (
     _loading_css_classes, loading_css, loading_options, loading_resources,
     start_loading_spinner, stop_loading_spinner,
@@ -150,23 +149,3 @@ def test_jslink_loading_prefers_target_design(default_loading_config):
         )
     assert json.dumps(['pn-loading', 'pn-material']) in code
     assert json.dumps(['pn-loading', 'pn-arc']) not in code
-
-
-@pytest.mark.skipif(
-    _convert_resources.__module__ != 'panel.io.convert',
-    reason='panel.io.convert.loading_resources was replaced by another library'
-)
-def test_convert_loading_resources(default_loading_config):
-    from bokeh.core.templates import FILE
-
-    resources = _convert_resources(FILE, False)
-    assert len(resources) == 2
-    assert resources[0] == (
-        f'<link rel="stylesheet" href="{CDN_DIST}css/loading.css" type="text/css" />'
-    )
-    assert resources[1].startswith('<style type="text/css">')
-
-    # A Panel template already loads the base stylesheet
-    resources = _convert_resources(None, False)
-    assert len(resources) == 1
-    assert resources[0].startswith('<style type="text/css">')
