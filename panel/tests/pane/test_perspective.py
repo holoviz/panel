@@ -1,3 +1,4 @@
+import numpy as np
 import pytest
 
 from panel.pane import Perspective
@@ -88,3 +89,150 @@ def test_perspective_can_sort_desc():
     actual = Perspective()._process_property_change(msg)
     # Then
     assert actual == msg
+
+
+def _polars_frame(data):
+    pl = pytest.importorskip('polars')
+    return pl.DataFrame(data)
+
+
+def _pyarrow_frame(data):
+    pa = pytest.importorskip('pyarrow')
+    return pa.table(data)
+
+
+def _pandas_frame(data):
+    pd = pytest.importorskip('pandas')
+    return pd.DataFrame(data)
+
+
+def _column(df, col):
+    from panel.util.dataframe import to_narwhals
+    return to_narwhals(df)[col].to_list()
+
+
+@pytest.fixture(params=[_polars_frame, _pyarrow_frame], ids=['polars', 'pyarrow'])
+def indexless_backend(request):
+    return request.param
+
+
+@pytest.mark.parametrize('backend', [_pandas_frame, _polars_frame, _pyarrow_frame])
+def test_perspective_applies_dataframe(backend):
+    assert Perspective.applies(backend({'a': [1, 2]})) == 0
+
+
+def test_perspective_indexless_frame(indexless_backend, document, comm):
+    import datetime as dt
+
+    df = indexless_backend({
+        'int': [1, 2], 'float': [1.5, 2.5], 'str': ['a', 'b'], 'bool': [True, False],
+        'datetime': [dt.datetime(2020, 1, 1), dt.datetime(2020, 1, 2)],
+    })
+    psp = Perspective(df, columns=['int', 'str'])
+
+    model = psp.get_root(document, comm)
+
+    assert list(model.source.data) == ['int', 'float', 'str', 'bool', 'datetime']
+    assert list(model.source.data['int']) == [1, 2]
+    assert list(model.source.data['str']) == ['a', 'b']
+    assert model.schema == {
+        'int': 'integer', 'float': 'float', 'str': 'string', 'bool': 'boolean',
+        'datetime': 'datetime',
+    }
+    assert model.columns == ['int', 'str']
+
+
+def test_perspective_polars_categorical(document, comm):
+    pl = pytest.importorskip('polars')
+    df = pl.DataFrame({'cat': ['a', 'b']}, schema={'cat': pl.Categorical})
+
+    model = Perspective(df).get_root(document, comm)
+
+    assert model.schema == {'cat': 'string'}
+    assert list(model.source.data['cat']) == ['a', 'b']
+
+
+@pytest.mark.parametrize('rollover', [None, 2])
+def test_perspective_indexless_stream(indexless_backend, rollover, document, comm):
+    df = indexless_backend({'a': [1, 2], 'b': ['x', 'y']})
+    psp = Perspective(df)
+    model = psp.get_root(document, comm)
+    events = []
+    psp.param.watch(events.append, 'object')
+
+    psp.stream({'a': [3], 'b': ['z']}, rollover=rollover)
+
+    expected = [1, 2, 3][-(rollover or 3):]
+    assert type(psp.object) is type(df)
+    assert _column(psp.object, 'a') == expected
+    assert list(model.source.data['a']) == expected
+    assert len(events) == 1
+
+
+def test_perspective_pandas_stream_does_not_duplicate(document, comm):
+    psp = Perspective(_pandas_frame({'a': [1, 2]}))
+    model = psp.get_root(document, comm)
+
+    psp.stream({'a': [3]})
+
+    assert list(model.source.data['a']) == [1, 2, 3]
+
+
+def test_perspective_indexless_patch(indexless_backend, document, comm):
+    df = indexless_backend({'a': [1, 2, 3], 'b': ['x', 'y', 'z']})
+    psp = Perspective(df)
+    model = psp.get_root(document, comm)
+
+    psp.patch({'a': [(0, 10), (slice(1, 3), [20, 30])], 'b': [(1, 'Y')]})
+
+    assert type(psp.object) is type(df)
+    assert _column(psp.object, 'a') == [10, 20, 30]
+    assert _column(psp.object, 'b') == ['x', 'Y', 'z']
+    assert list(model.source.data['a']) == [10, 20, 30]
+    assert list(model.source.data['b']) == ['x', 'Y', 'z']
+
+
+def test_perspective_pandas_patch_dict(document, comm):
+    pd = pytest.importorskip('pandas')
+    df = pd.DataFrame({'a': [1, 2, 3], 'b': ['x', 'y', 'z']})
+    psp = Perspective(df)
+    model = psp.get_root(document, comm)
+
+    psp.patch({'a': [(0, 10), (slice(1, 3), [20, 30])], 'b': [(1, 'Y')]})
+
+    assert psp.object is df
+    assert df.to_dict('list') == {'a': [10, 20, 30], 'b': ['x', 'Y', 'z']}
+    assert list(model.source.data['a']) == [10, 20, 30]
+    assert list(model.source.data['b']) == ['x', 'Y', 'z']
+
+
+def test_perspective_pandas_patch_dataframe_custom_index(document, comm):
+    pd = pytest.importorskip('pandas')
+    psp = Perspective(pd.DataFrame({'a': [1, 2, 3]}, index=[10, 20, 30]))
+    model = psp.get_root(document, comm)
+
+    psp.patch(pd.DataFrame({'a': [5]}, index=[20]))
+
+    assert psp.object['a'].tolist() == [1, 5, 3]
+    assert list(model.source.data['a']) == [1, 5, 3]
+
+
+def test_perspective_pandas_patch_series(document, comm):
+    pd = pytest.importorskip('pandas')
+    psp = Perspective(pd.DataFrame({'a': [1, 2], 'b': ['x', 'y']}))
+    model = psp.get_root(document, comm)
+
+    psp.patch(pd.Series({'index': 1, 'a': 9, 'b': 'z'}))
+
+    assert psp.object.to_dict('list') == {'a': [1, 9], 'b': ['x', 'z']}
+    assert list(model.source.data['b']) == ['x', 'z']
+
+
+def test_perspective_dict_patch(document, comm):
+    psp = Perspective({'a': np.array([1, 2])})
+    model = psp.get_root(document, comm)
+
+    psp.patch({'a': [(0, 5)]})
+
+    assert list(psp.object['a']) == [5, 2]
+    assert list(model.source.data['a']) == [5, 2]

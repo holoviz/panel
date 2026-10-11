@@ -16,6 +16,9 @@ from pyviz_comms import JupyterComm
 from ..io.state import state
 from ..reactive import ReactiveData
 from ..util import datetime_types, lazy_load
+from ..util.dataframe import (
+    column_names, is_dataframe, is_indexless, to_column_data, to_narwhals,
+)
 from ..viewable import Viewable
 from .base import ModelPane
 
@@ -351,6 +354,8 @@ class Perspective(ModelPane, ReactiveData):
             import pandas as pd
             if isinstance(object, pd.DataFrame):
                 return 0
+        if is_dataframe(object):
+            return 0
         return False
 
     def __init__(self, object=None, **params):
@@ -371,6 +376,10 @@ class Perspective(ModelPane, ReactiveData):
         if isinstance(self.object, dict):
             ncols = len(self.object)
             df = data = self.object
+        elif is_indexless(self.object):
+            df = self.object
+            data = self._indexless_data(df)
+            ncols = len(data)
         else:
             df, kwargs = deconstruct_pandas(self.object)
             ncols = len(df.columns)
@@ -380,11 +389,22 @@ class Perspective(ModelPane, ReactiveData):
                     k: v for k, v in kwargs.items()
                     if getattr(self, k) is None
                 })
-        cols = {self._as_digit(c) for c in df}
+        cols = {self._as_digit(c) for c in column_names(df)}
         if len(cols) != ncols:
             raise ValueError("Integer columns must be unique when "
                              "converted to strings.")
         return df, {str(k): self._cow(v) for k, v in data.items()}
+
+    @staticmethod
+    def _indexless_data(df) -> dict[str, np.ndarray]:
+        import narwhals.stable.v2 as nw
+        nw_df = to_narwhals(df)
+        # Perspective does not support categoricals, cast them to strings
+        nw_df = nw_df.with_columns([
+            nw.col(col).cast(nw.String) for col, dtype in nw_df.schema.items()
+            if dtype in (nw.Categorical, nw.Enum)
+        ])
+        return to_column_data(nw_df.to_native())
 
     @staticmethod
     def _cow(v):
@@ -478,9 +498,12 @@ class Perspective(ModelPane, ReactiveData):
         return props
 
     def _as_digit(self, col):
-        if self._processed is None or col in self._processed or col is None:
+        if self._processed is None or col is None:
             return col
-        elif col.isdigit() and int(col) in self._processed:
+        columns = column_names(self._processed)
+        if col in columns:
+            return col
+        elif col.isdigit() and int(col) in columns:
             return int(col)
         return col
 
