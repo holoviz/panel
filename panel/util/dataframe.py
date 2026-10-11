@@ -157,10 +157,6 @@ def take_rows(obj: t.Any, rows: Sequence[int] | slice) -> t.Any:
     return df[list(rows)].to_native()
 
 
-def filter_rows(obj: t.Any, mask: np.ndarray) -> t.Any:
-    return to_narwhals(obj).filter(np.asarray(mask, dtype=bool).tolist()).to_native()
-
-
 def row_dict(obj: t.Any, row: int) -> dict[str, t.Any]:
     """
     Returns a row as a dictionary of column name to value, omitting
@@ -262,6 +258,23 @@ def coerce_frame(value: t.Any, template: t.Any) -> t.Any:
             "DataFrame, provide a DataFrame or dictionary."
         )
     schema = tmpl.schema
+    for col, dtype in schema.items():
+        if col not in df.columns:
+            continue
+        series = df[col]
+        if series.dtype == dtype or not (series.dtype.is_numeric() and dtype.is_numeric()):
+            continue
+        try:
+            # PyArrow refuses lossy casts while Polars silently truncates
+            lossless = (series.cast(dtype) == series).fill_null(True).all()
+        except Exception:
+            lossless = False
+        if not lossless:
+            raise ValueError(
+                f"Cannot cast column {col!r} from {series.dtype} to {dtype} "
+                "without losing information, ensure the new data matches "
+                "the dtypes of the existing data."
+            )
     return df.select([
         nw.col(col).cast(dtype) if col in df.columns else nw.lit(None).cast(dtype).alias(col)
         for col, dtype in schema.items()
@@ -283,62 +296,52 @@ def _filter_value(value: t.Any, kind: str) -> t.Any:
     return value
 
 
-def filter_masks(
-    obj: t.Any, filters: Iterable[tuple[str, t.Any]]
-) -> list[np.ndarray]:
+def filter_expr(column: str, value: t.Any) -> nw.Expr | None:
     """
-    Computes boolean masks for (column, value) filters, where the value
+    Returns an expression filtering a column by a value, where the value
     is a scalar (equality), a list or set (membership) or a tuple
-    (inclusive range).
+    (inclusive range). Returns None if the value does not filter.
     """
     import narwhals.stable.v2 as nw
-    df = to_narwhals(obj)
-    exprs = []
-    for col_name, val in filters:
-        col = nw.col(col_name)
-        if val is None:
-            continue
-        elif np.isscalar(val):
-            expr = col == val
-        elif isinstance(val, (list, set)):
-            if not val:
-                continue
-            expr = col.is_in(list(val))
-        elif isinstance(val, tuple):
-            start, end = val
-            if start is None and end is None:
-                continue
-            elif start is None:
-                expr = col <= end
-            elif end is None:
-                expr = col >= start
-            else:
-                expr = (col >= start) & (col <= end)
-        else:
-            raise ValueError(f"'{col_name} filter value not "
-                             "understood. Must be either a scalar, "
-                             "tuple or list.")
-        exprs.append(expr)
-    return _evaluate(df, exprs)
+    col = nw.col(column)
+    if value is None:
+        return None
+    elif np.isscalar(value):
+        return col == value
+    elif isinstance(value, (list, set)):
+        return col.is_in(list(value)) if value else None
+    elif isinstance(value, tuple):
+        start, end = value
+        if start is None and end is None:
+            return None
+        elif start is None:
+            return col <= end
+        elif end is None:
+            return col >= start
+        return (col >= start) & (col <= end)
+    raise ValueError(f"'{column} filter value not "
+                     "understood. Must be either a scalar, "
+                     "tuple or list.")
 
 
-def header_filter_masks(
+def header_filter_exprs(
     obj: t.Any, filters: Iterable[Mapping[str, t.Any]],
     filter_defs: Mapping[str, t.Any] | None = None
-) -> list[np.ndarray]:
+) -> list[nw.Expr]:
     """
-    Computes boolean masks for Tabulator header filter specifications,
-    each declaring a 'field', 'type' and 'value'.
+    Returns expressions implementing Tabulator header filter
+    specifications, each declaring a 'field', 'type' and 'value'.
+    The frame is only used to look up the column dtypes.
     """
     import narwhals.stable.v2 as nw
-    df = to_narwhals(obj)
+    schema = nw.from_native(obj).collect_schema()
     filter_defs = filter_defs or {}
     exprs = []
     for filt in filters:
         col_name = filt['field']
         op = filt['type']
         val = filt['value']
-        if col_name not in df.columns:
+        if col_name not in schema:
             continue
 
         # Sometimes Tabulator will provide a zero/single element list
@@ -349,7 +352,7 @@ def header_filter_masks(
                 continue
 
         col = nw.col(col_name)
-        val = _filter_value(val, dtype_kind(df.schema[col_name]))
+        val = _filter_value(val, dtype_kind(schema[col_name]))
         text = col.cast(nw.String).str.to_lowercase()
         if op == '=':
             expr = col == val
@@ -391,16 +394,25 @@ def header_filter_masks(
         else:
             raise ValueError(f"Filter type {op!r} not recognized.")
         exprs.append(expr)
-    return _evaluate(df, exprs)
+    return exprs
 
 
-def _evaluate(df: nw.DataFrame[t.Any], exprs: list[nw.Expr]) -> list[np.ndarray]:
-    if not exprs:
-        return []
-    masks = df.select([
-        expr.fill_null(False).alias(f'_mask_{i}') for i, expr in enumerate(exprs)
-    ])
-    return [masks[col].to_numpy().astype(bool) for col in masks.columns]
+def all_of(exprs: Sequence[nw.Expr]) -> nw.Expr:
+    """
+    Combines filter expressions, treating missing values as not
+    matching the filter.
+    """
+    expr = exprs[0].fill_null(False)
+    for other in exprs[1:]:
+        expr = expr & other.fill_null(False)
+    return expr
+
+
+def evaluate_mask(obj: t.Any, expr: nw.Expr) -> np.ndarray:
+    """
+    Evaluates a filter expression on a frame into a boolean mask.
+    """
+    return to_narwhals(obj).select(expr.alias('_mask'))['_mask'].to_numpy().astype(bool)
 
 
 def sort_frame(obj: t.Any, fields: Sequence[str], ascending: Sequence[bool]) -> t.Any:
@@ -447,11 +459,12 @@ __all__ = (
     "copy_data",
     "drop_row_index",
     "dtype_kind",
-    "filter_masks",
-    "filter_rows",
+    "all_of",
+    "evaluate_mask",
+    "filter_expr",
     "frame_from_columns",
     "has_index",
-    "header_filter_masks",
+    "header_filter_exprs",
     "is_dataframe",
     "is_date",
     "is_indexless",

@@ -37,11 +37,11 @@ from ..util import (
     styler_update, updating,
 )
 from ..util.dataframe import (
-    ROW_INDEX, add_row_index, coerce_frame, column_names, column_to_numpy,
-    concat_rows, drop_row_index, dtype_kind, filter_masks, filter_rows,
-    frame_from_columns, has_index, header_filter_masks, is_date, is_indexless,
-    row_dict, row_positions, set_values, sort_frame, take_rows, to_column_data,
-    to_narwhals,
+    ROW_INDEX, add_row_index, all_of, coerce_frame, column_names,
+    column_to_numpy, concat_rows, drop_row_index, dtype_kind, evaluate_mask,
+    filter_expr, frame_from_columns, has_index, header_filter_exprs, is_date,
+    is_indexless, row_dict, row_positions, set_values, sort_frame, take_rows,
+    to_column_data, to_narwhals,
 )
 from ..util.warnings import deprecated, warn
 from .base import Widget
@@ -635,14 +635,12 @@ class BaseTable(ReactiveData, Widget):
         """
         Filters a DataFrame without an index, e.g. a Polars DataFrame,
         which must contain the ROW_INDEX column so that the filtered
-        rows can be mapped onto the rows of the original value.
+        rows can be mapped onto the rows of the original value. All
+        filters are combined into a single Narwhals expression.
         """
-        # Keep track of which rows (by position in the original value)
-        # are retained, since filter functions may return a filtered
-        # frame, invalidating previously computed masks.
-        positions = np.asarray(row_positions(df), dtype=int)
-        keep = np.ones(positions.max() + 1 if len(positions) else 0, dtype=bool)
-        filtered = False
+        import narwhals.stable.v2 as nw
+
+        exprs = []
         for col_name, filt in (self._filters if internal_filters else []):
             if col_name is not None and col_name not in column_names(df):
                 continue
@@ -656,10 +654,11 @@ class BaseTable(ReactiveData, Widget):
                             'column, which identifies the filtered rows.'
                         )
                     df = res
-                    positions = np.asarray(row_positions(df), dtype=int)
                 else:
-                    keep[positions[~np.asarray(res, dtype=bool)]] = False
-                filtered = True
+                    # Masks are aligned to the current frame, so express
+                    # them via the row positions they retain
+                    positions = np.asarray(row_positions(df))[np.asarray(res, dtype=bool)]
+                    exprs.append(nw.col(ROW_INDEX).is_in(positions.tolist()))
                 continue
             if isinstance(filt, param.Parameter):
                 if filt.name is None:
@@ -667,28 +666,25 @@ class BaseTable(ReactiveData, Widget):
                 val = getattr(filt.owner, filt.name)
             else:
                 val = filt
-            for mask in filter_masks(df, [(col_name, val)]):
-                keep[positions[~mask]] = False
-                filtered = True
+            if (expr := filter_expr(col_name, val)) is not None:
+                exprs.append(expr)
 
         if header_filters:
-            for mask in self._get_header_filters(df):
-                keep[positions[~mask]] = False
-                filtered = True
+            exprs.extend(self._header_filter_exprs(df))
 
-        if not filtered:
+        if not exprs:
             return df
-        mask = keep[positions]
+        predicate = all_of(exprs)
         if self._edited_indexes:
-            mask |= np.isin(positions, self._edited_indexes)
-        return filter_rows(df, mask)
+            predicate = predicate | nw.col(ROW_INDEX).is_in(self._edited_indexes)
+        return to_narwhals(df).filter(predicate).to_native()
+
+    def _header_filter_exprs(self, df: t.Any) -> list[t.Any]:
+        return header_filter_exprs(
+            df, getattr(self, 'filters', []), getattr(self, 'header_filters', {}) or {}
+        )
 
     def _get_header_filters(self, df: pd.DataFrame) -> list[pd.Series | np.ndarray]:
-        if is_indexless(df):
-            return header_filter_masks(
-                df, getattr(self, 'filters', []),
-                getattr(self, 'header_filters', {}) or {}
-            )
         filters = []
         for filt in getattr(self, 'filters', []):
             col_name = filt['field']
@@ -835,7 +831,9 @@ class BaseTable(ReactiveData, Widget):
         # applied but since header filters are applied on the frontend
         # we send the unfiltered data
 
-        if is_indexless(df):
+        if df is None:
+            return [], {}
+        elif is_indexless(df):
             df = self._filter_dataframe(add_row_index(df), header_filters=False)
             columns = to_column_data(df)
             return df, {str(k): self._process_column(v, k, df) for k, v in columns.items()}
@@ -1760,9 +1758,8 @@ class Tabulator(BaseTable):
                 filters = self._get_header_filters(pd.DataFrame({event.column: [event.value]}))
             else:
                 filter_df = frame_from_columns({event.column: [event.value]}, self.value)
-                filters = header_filter_masks(
-                    filter_df, self.filters, self.header_filters or {}
-                )
+                exprs = self._header_filter_exprs(filter_df)
+                filters = [evaluate_mask(filter_df, all_of(exprs))] if exprs else []
             # If the new value no longer passes the column's header filter,
             # the row would otherwise be dropped from the masked data
             # _process_data hands to _update_column, desyncing it from the
@@ -1865,12 +1862,11 @@ class Tabulator(BaseTable):
             if isinstance(values, dict) else values
             for col, values in data.items()
         }
-        filters = header_filter_masks(
-            frame_from_columns(data, self.value), self.filters, self.header_filters or {}
-        )
-        if not filters:
+        frame = frame_from_columns(data, self.value)
+        exprs = self._header_filter_exprs(frame)
+        if not exprs:
             return data
-        mask = np.logical_and.reduce(filters)
+        mask = evaluate_mask(frame, all_of(exprs))
         if self._edited_indexes:
             nrows = self.page_size or self.initial_page_size
             start = (self.page-1)*nrows
