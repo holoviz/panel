@@ -105,6 +105,20 @@ The choices are `tornado` (the default, unchanged), `fastapi` and `asgi`, the la
 
 `--plugins` is supported on `--server fastapi`, but since the endpoints are no longer Tornado request handlers the plugin module has to declare a FastAPI `APIRouter` in a `ROUTER` variable rather than a list of `ROUTES`. A module may declare both and then be served on either implementation. See [Add custom endpoints](how_to/server/endpoints) for the details.
 
+### `Tabulator` and the `bokeh-tables` bundle
+
+`Tabulator` no longer uses Bokeh's `DataTable` models, so Panel only loads Bokeh's `bokeh-tables` bundle (about 500 KB) when a page needs it, i.e. when a `pn.widgets.DataFrame`, a HoloViews `Table` or a Bokeh `DataTable` is part of the initial layout of a served app or saved file. Notebooks always load it. If such a component is only added after the page has loaded, e.g. in a callback, request the bundle up front:
+
+```python
+pn.extension('bokeh-tables')
+```
+
+Bokeh `CellFormatter` and `CellEditor` instances passed to the `formatters` and `editors` of a `Tabulator` keep working, but they are now converted to plain specs and rendered by Panel itself:
+
+- `PercentEditor` and `TimeEditor` use Tabulator's own text input.
+- The `columns` of the underlying `DataTabulator` model are `TabulatorColumn` models holding the formatter and editor specs, rather than Bokeh `TableColumn` models. Code that inspects the model, e.g. in tests, needs to be updated.
+- Cell formatters and editors defined in a custom Bokeh extension are still rendered by their own views, and the bundle is loaded automatically when such an extension is used.
+
 ### Deprecations
 
 #### REST providers and `pn.state.publish`

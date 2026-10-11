@@ -1,5 +1,15 @@
 # Releases
 
+## Version 1.10.0
+
+### ✨ Enhancements
+
+* Render `Tabulator` without Bokeh's `bokeh-tables` bundle, which is now only loaded when a page uses a `DataTable` ([#8837](https://github.com/holoviz/panel/pull/8837))
+
+### ⚙️ Compatibility
+
+* A `DataFrame` widget or HoloViews `Table` that is added to a served app after the page has loaded requires `pn.extension('bokeh-tables')` ([#8837](https://github.com/holoviz/panel/pull/8837))
+
 ## Version 1.9.4
 
 Panel 1.9.4 is a patch release focused on rendering robustness for ESM/React components, several `Tabulator` and `Pipeline` fixes, OAuth hardening, and stylesheet/loading reliability improvements. It also adds support for movable `Tabulator` columns. Many thanks to @TheoMathurin, @rimsha152007-dotcom, @ebarkhordar, @SimonHeybrock, @ahuang11, @Kkkakania, @EltonChang1, @hoxbro, @MarcSkovMadsen, @Coderambling, @SuMayaBee, @youdie006, @kyo5uke, @ghostiee-11 and @philippjfr for contributing to this release.
