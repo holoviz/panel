@@ -46,12 +46,11 @@ no-default-feature = true
 features = ["py314", "required", "test-core", "test-unit-task"]
 no-default-feature = true
 
-[feature.py315]
-channels = ["conda-forge/label/python_rc"]
-
 [feature.py315.dependencies]
 python = "3.15.*"
-_python_rc = "*"
+
+[feature.py315.activation.env]
+COVERAGE_CORE = "sysmon"
 
 [environments.test-type]
 features = ["py312", "required", "type", "optional"]
@@ -206,10 +205,10 @@ bokeh_sampledata = "*"
 caddy = "*"
 croniter = "*"
 cryptography = "*"
-# datashader = "*"
+datashader = "*"
 diskcache = "*"
 django = "*"
-# fastapi = "*"  # needs pydantic 2
+fastapi = "*"
 # fastparquet = "*"
 folium = "*"
 fsspec = "*"
@@ -224,21 +223,21 @@ ipywidgets_bokeh = ">=1.8.0"
 jupyter_bokeh = ">=3.0.7"
 libcst = ">=1.1"
 networkx = ">=2.5"
-# numba = "*"
+numba = "*"
 polars = "*"
 # pyarrow = "*"
 # pydeck = ">=0.8"  # Add back when it support ipywidgets 8.0
 pyecharts = "*"
 pygraphviz = "*"
-# pyinstrument = ">=4.0"
+pyinstrument = ">=4.0"
 python-graphviz = "*"
 # pyvista = ">=0.47"
 reacton = "*"
 s3fs = "*"
 # scikit-image = "*"
-# scikit-learn = "*"
-# scipy = "*"
-# seaborn = "*"
+scikit-learn = "*"
+scipy = "*"
+seaborn = "*"
 starlette = "*"
 streamz = "*"
 textual = "*"
