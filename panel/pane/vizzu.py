@@ -12,6 +12,7 @@ from pyviz_comms import JupyterComm
 
 from ..reactive import SyncableData
 from ..util import isdatetime, lazy_load
+from ..util.dataframe import is_dataframe, is_indexless, to_column_data
 from .base import ModelPane
 
 if t.TYPE_CHECKING:
@@ -84,6 +85,8 @@ class Vizzu(ModelPane, SyncableData):
             import pandas as pd
             if isinstance(object, pd.DataFrame):
                 return 0
+        if is_dataframe(object):
+            return 0
         return False
 
     def _get_data(self):
@@ -91,6 +94,9 @@ class Vizzu(ModelPane, SyncableData):
             return {}, {}
         if isinstance(self.object, dict):
             cols = data = dict(self.object)
+        elif is_indexless(self.object):
+            data = self.object
+            cols = to_column_data(data)
         else:
             data = self.object
             cols = ColumnDataSource.from_df(self.object)
