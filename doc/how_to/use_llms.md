@@ -47,6 +47,8 @@ holoviz-skills install --claude-code
 holoviz-skills install --copilot
 ```
 
+To share the skills with everyone working on a project, run `holoviz-skills install --agent` in the project root and commit the `.agents/skills/` folder it creates. See the [holoviz-skills README](https://github.com/holoviz-dev/holoviz-skills#readme) for the full list of supported tools.
+
 You may need to restart your assistant so it picks up the newly installed skills.
 
 ## Point your assistant at the docs
