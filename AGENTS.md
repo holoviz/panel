@@ -4,4 +4,5 @@
 - The project uses `pixi` for development; list the available tasks with `pixi task list`.
 - Run unit tests with `pixi run test-unit` and UI tests in `panel/tests/ui` with `pixi run test-ui`. Run `pixi run lint` before committing.
 - After changing TypeScript models in `panel/models`, rebuild the bundle with `pixi run install`.
+- For Panel usage patterns, use the [Panel skill](https://github.com/holoviz-dev/holoviz-skills/tree/main/developing-with-holoviz/skills/panel). For reviewing and writing changes in this repo, use the [contributing-to-holoviz skill](https://github.com/holoviz-dev/holoviz-skills/tree/main/contributing-to-holoviz).
 - Follow the Pull Request Template.
