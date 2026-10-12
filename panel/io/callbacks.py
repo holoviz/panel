@@ -80,8 +80,14 @@ class PeriodicCallback(param.Parameterized):
     @param.depends('period', watch=True)
     def _update_period(self):
         if self._cb:
+            # stop() zeroes the counter and start() re-stamps the start time,
+            # so both are carried across the restart.
+            counter, start_time = self.counter, self._start_time
             self.stop()
             self.start()
+            with param.discard_events(self):
+                self.counter = counter
+            self._start_time = start_time
 
     def _exec_callback(self, post=False, busy_event_id=None):
         try:
@@ -126,7 +132,12 @@ class PeriodicCallback(param.Parameterized):
             inspect.iscoroutinefunction(self.callback)
         )
         if state._thread_pool and not is_async:
-            future = state._thread_pool.submit(self._exec_callback, True, busy_event_id)
+            try:
+                future = state._thread_pool.submit(self._exec_callback, True, busy_event_id)
+            except Exception:
+                if busy_event_id is not None:
+                    state._remove_busy_event(busy_event_id)
+                raise
             future.add_done_callback(partial(state._handle_future_exception, doc=self._doc))
             return
         try:
@@ -151,8 +162,9 @@ class PeriodicCallback(param.Parameterized):
             start = time.monotonic()
             await func()
             timeout = (self.period/1000.) - (time.monotonic()-start)
-            if timeout > 0:
-                await asyncio.sleep(timeout)
+            # sleep(0) still yields, so an overrunning callback runs again
+            # immediately without holding the loop for the next iteration.
+            await asyncio.sleep(max(timeout, 0))
 
     def _cleanup(self, session_context):
         self.stop()

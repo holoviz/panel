@@ -1,5 +1,6 @@
 import pathlib
 
+from panel.io.convert import BOKEH_VERSION, collect_python_requirements
 from panel.io.mime_render import (
     WriteCallbackStream, exec_with_return, find_requirements, format_mime,
 )
@@ -27,6 +28,10 @@ class PNG:
     def _repr_png_(self):
         with open(pathlib.Path(__file__).parent.parent / 'test_data' / 'logo.png', 'rb') as f:
             return f.read()
+
+def test_convert_requirements_use_native_http():
+    requirements = collect_python_requirements('', ['requests'], panel_version='1.10.0')
+    assert requirements == [f'bokeh=={BOKEH_VERSION}', 'panel==1.10.0', 'requests']
 
 def test_find_imports_stdlibs():
     code = """

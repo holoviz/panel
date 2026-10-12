@@ -53,8 +53,12 @@ class DeckGLPlot(HTMLBox):
     @classproperty
     def __js_skip__(cls):
         return {
-            'deck': cls.__javascript__[:-1],
-            'mapboxgl': cls.__javascript__[-1:],
+            'h3': cls.__javascript__[:1],
+            'deck': cls.__javascript__[1:3],
+            'loaders': cls.__javascript__[3:6],
+            'mapboxgl': cls.__javascript__[6:7],
+            'maplibregl': cls.__javascript__[7:8],
+            'CartoLibrary': cls.__javascript__[8:],
         }
 
     __js_require__ = {
@@ -66,11 +70,25 @@ class DeckGLPlot(HTMLBox):
             "loader-json": f"{config.npm_cdn}/@loaders.gl/json@4.2.2/dist/dist.min",
             "loader-tiles": f"{config.npm_cdn}/@loaders.gl/3d-tiles@4.2.2/dist/dist.min",
             "mapbox-gl": "https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl",
+            # Without a path of its own, RequireJS' presence would send its
+            # UMD down the AMD branch instead of assigning window.maplibregl.
+            "maplibre-gl": f"{config.npm_cdn}/maplibre-gl/dist/maplibre-gl",
             "carto": f"{config.npm_cdn}/@deck.gl/carto@^{DECKGL_VERSION}/dist.min",
     },
-        'exports': {"deck-gl": "deck", "mapbox-gl": "mapboxgl", "h3": "h3"},
+        'exports': {
+            "deck-gl": "deck", "mapbox-gl": "mapboxgl", "h3": "h3",
+            "maplibre-gl": "maplibregl",
+            # json and carto extend the deck namespace; the three loaders
+            # bundles together make up window.loaders.
+            "deck-json": "deck", "carto": "deck",
+            "loader-csv": "loaders", "loader-json": "loaders",
+            "loader-tiles": "loaders",
+        },
         'shim': {
+            # carto and the json catalogue extend deck.gl classes off
+            # window.deck while their own factories run.
             'deck-json': {'deps': ["deck-gl"]},
+            'carto': {'deps': ["deck-gl"]},
             'deck-gl': {'deps': ["h3"]}
         }
     }

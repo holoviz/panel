@@ -193,6 +193,7 @@ class Location(Syncable):
         if self._syncing:
             return
         query_params = self.query_params
+        raw_params = dict(urlparse.parse_qsl(self.search[1:]))
         for p, parameters, _, on_error in self._synced:
             mapping = {v: k for k, v in parameters.items()}
             mapped = {}
@@ -200,6 +201,10 @@ class Location(Syncable):
                 if k not in mapping:
                     continue
                 pname = mapping[k]
+                if isinstance(p.param[pname], param.String):
+                    # parse_query converts numeric, boolean and JSON-like
+                    # strings, but a String parameter takes the raw value
+                    v = raw_params[k]
                 try:
                     v = p.param[pname].deserialize(v)
                 except Exception:

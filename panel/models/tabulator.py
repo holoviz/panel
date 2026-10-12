@@ -8,8 +8,8 @@ from bokeh.core.properties import (
     Tuple,
 )
 from bokeh.events import ModelEvent
+from bokeh.model import Model
 from bokeh.models import ColumnDataSource, LayoutDOM
-from bokeh.models.widgets.tables import TableColumn
 
 from ..config import config
 from ..io.resources import bundled_files
@@ -107,6 +107,34 @@ for theme in TABULATOR_THEMES:
     CSS_URLS.append(f'{THEME_URL}{_theme_file}')
 
 
+class TabulatorColumn(Model):
+    """
+    Column definition for the DataTabulator model. Unlike Bokeh's
+    TableColumn the formatter and editor are plain specs, so the
+    bokeh-tables bundle is not required to render a Tabulator.
+    """
+
+    field = String(help="""
+    The name of the field mapping to a column in the data source.
+    """)
+
+    title = Nullable(String, help="""
+    The title of this column.
+    """)
+
+    width = Int(default=300, help="""
+    The width of the column, zero means it is determined automatically.
+    """)
+
+    formatter = Nullable(Any, help="""
+    Spec of a Bokeh CellFormatter or a custom CellFormatter model.
+    """)
+
+    editor = Nullable(Any, help="""
+    Spec of a Bokeh CellEditor or a custom CellEditor model.
+    """)
+
+
 class DataTabulator(HTMLBox):
     """A Bokeh Model that enables easy use of Tabulator tables
     See http://tabulator.info/
@@ -118,7 +146,7 @@ class DataTabulator(HTMLBox):
 
     configuration = Dict(String, Any)
 
-    columns = List(Instance(TableColumn), help="""
+    columns = List(Instance(TabulatorColumn), help="""
     The list of child column widgets.
     """)
 
@@ -193,7 +221,7 @@ class DataTabulator(HTMLBox):
 
     @classproperty
     def __js_skip__(cls):
-        return {'Tabulator': cls.__javascript__[:1], 'moment': cls.__javascript__[1:]}
+        return {'Tabulator': cls.__javascript__[:1], 'luxon': cls.__javascript__[1:]}
 
     __js_require__ = {
         'paths': {

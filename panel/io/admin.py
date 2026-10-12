@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import datetime as dt
+import functools
+import io
 import logging
 import os
 import sys
@@ -18,44 +20,71 @@ from bokeh.models import HoverTool
 from bokeh.plotting import ColumnDataSource, figure
 
 from ..config import config, panel_extension as extension
-from ..depends import bind
-from ..layout import (
-    Accordion, Column, FlexBox, Row, Tabs,
-)
-from ..pane import HTML, Bokeh
-from ..template import FastListTemplate
-from ..widgets import (
-    Button, MultiSelect, Tabulator, TextInput,
-)
-from ..widgets.indicators import Trend
+from ..widgets import Tabulator
 from .logging import (
     LOG_SESSION_CREATED, LOG_SESSION_DESTROYED, LOG_SESSION_LAUNCHING,
     panel_logger,
 )
 from .notebook import push_notebook
+from .pages import page_theme
 from .profile import profiling_tabs
 from .server import set_curdoc
 from .state import state
 
 if t.TYPE_CHECKING:
+    from types import ModuleType
+
+    from bokeh.document import Document
     from psutil import Process
+
+    from ..viewable import Viewable
 
 
 PROCESSES: dict[int, Process] = {}
 
+LOG_COLUMNS = ["datetime", "level", "app", "session", "message"]
+
+LOG_LEVELS = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+
 log_sessions: list = []
+
+
+@functools.cache
+def _ui() -> ModuleType:
+    """
+    Imports ``panel.ui`` without the global design switch its import
+    performs, which would restyle every application served next to the
+    admin panel. The package is dropped from ``sys.modules`` again so that
+    an application importing it still gets the switch, its cached
+    submodules keep the component classes identical.
+    """
+    if 'panel.ui' in sys.modules:
+        return sys.modules['panel.ui']
+    import panel
+
+    design = param.Parameterized.__getattribute__(config, 'design')
+    import panel.ui as ui
+    param.Parameterized.__setattr__(config, 'design', design)
+    del sys.modules['panel.ui']
+    del panel.ui
+    return ui
+
+
+def _destroyed(doc: Document | None) -> bool:
+    """
+    Whether an admin session's document has been destroyed. The watchers on
+    shared state are removed in on_session_destroyed callbacks, which run in
+    arbitrary order, so they can still fire for a destroyed document.
+    """
+    return doc is not None and doc.session_context is None
+
 
 class LogFilter(logging.Filter):
 
     def filter(self, record):
         if 'Session ' not in record.msg:
             return True
-        session_id = record.args[0]
-        if session_id in log_sessions:
-            return False
-        elif session_id not in session_filter.options:
-            session_filter.options = [session_id] + session_filter.options
-        return True
+        return record.args[0] not in log_sessions
 
 
 class Data(param.Parameterized):
@@ -77,15 +106,18 @@ class LogDataHandler(logging.StreamHandler):
 
 
 class _LogTabulator(Tabulator):
+    """
+    Collects the session log records shared by all admin sessions, each of
+    which renders its own filtered view of the records.
+    """
 
     _update_defaults = {
-        "theme": "midnight",
         "layout": "fit_data_stretch",
         "show_index": False,
-        "sorters": [{'field': 'datetime', 'dir': 'dsc'}],
+        "sorters": [{'field': 'datetime', 'dir': 'desc'}],
         "disabled": True,
         "pagination": "local",
-        "page_size": 18,
+        "page_size": 20,
     }
 
     def __init__(self, **params):
@@ -95,11 +127,9 @@ class _LogTabulator(Tabulator):
 
     @staticmethod
     def _create_frame(data=None):
-        columns=["datetime", "level", "app", "session", "message"]
         if data is None:
-            return pd.DataFrame(columns=columns)
-        else:
-            return pd.Series(data, index=columns)
+            return pd.DataFrame(columns=LOG_COLUMNS)
+        return pd.DataFrame([data], columns=LOG_COLUMNS)
 
     def write(self, log):
         # Example of a log message:
@@ -111,19 +141,14 @@ class _LogTabulator(Tabulator):
             app = s[3]
             session = int(s[6])
             message = " ".join(s[7:])
-            df = self._create_frame([datetime, level, app, session, message])
-
-            self.stream(df, follow=False)
         except Exception:
-            pass
+            return
+        # Streaming a DataFrame rather than a Series triggers the value
+        # event the admin sessions watch.
+        self.stream(self._create_frame([datetime, level, app, session, message]), follow=False)
 
 
 # Set up logging
-session_filter = MultiSelect(label='Filter by session', options=[])
-message_filter = TextInput(label='Filter by message')
-level_filter = MultiSelect(label="Filter by level", options=["DEBUG", "INFO", "WARNING", "ERROR"])
-app_filter = TextInput(label='Filter by app')
-
 data = Data()
 log_data_handler = LogDataHandler(data)
 log_handler = logging.StreamHandler()
@@ -139,32 +164,23 @@ log_handler.setFormatter(formatter)
 log_terminal = _LogTabulator(sizing_mode='stretch_both', min_height=400)
 log_handler.setStream(t.cast('t.TextIO', log_terminal))
 
-def _textinput_filter(df, pattern, column):
-    if not pattern or df.empty:
+
+def _filter_logs(
+    df: pd.DataFrame, levels: list[str], app: str, sessions: list[int], message: str
+) -> pd.DataFrame:
+    if df.empty:
         return df
-    return df[df[column].str.contains(pattern)].copy()
-
-log_terminal.add_filter(level_filter, 'level')
-log_terminal.add_filter(bind(_textinput_filter, pattern=app_filter, column='app'))
-log_terminal.add_filter(session_filter, 'session')
-log_terminal.add_filter(bind(_textinput_filter, pattern=message_filter, column='message'))
-
-
-def _clear_log_filters(*events):
-    level_filter.value = []
-    app_filter.value = ""
-    session_filter.value = []
-    message_filter.value = ""
-
-
-reset_filter = Button(label="Clear filters")
-reset_filter.on_click(_clear_log_filters)
-
-
-download_filename, download_button = log_terminal.download_menu(
-    text_kwargs={'label': 'Enter filename for logfile', 'value': 'log.csv'},
-    button_kwargs={'label': 'Download logfile'}
-)
+    mask = pd.Series(True, index=df.index)
+    if levels:
+        mask &= df['level'].isin(levels)
+    if sessions:
+        mask &= df['session'].isin(sessions)
+    # Matched literally, a regex would raise while the pattern is being typed.
+    if app:
+        mask &= df['app'].str.contains(app, case=False, regex=False)
+    if message:
+        mask &= df['message'].str.contains(message, case=False, regex=False)
+    return df[mask]
 
 
 EVENT_TYPES = {
@@ -173,7 +189,7 @@ EVENT_TYPES = {
     'rendering': 'Orange',
     'processing': 'DodgerBlue',
     'periodic': 'Violet',
-    'logging': 'white'
+    'logging': 'SlateGray'
 }
 
 def get_timeline(doc=None):
@@ -299,6 +315,9 @@ def get_timeline(doc=None):
             pass
 
     def schedule_cds_update(event):
+        if _destroyed(doc):
+            log_data_handler._data.param.unwatch(watcher)
+            return
         new = event.new[-1]
         if doc:
             doc.add_next_tick_callback(partial(update_cds, new))
@@ -311,21 +330,31 @@ def get_timeline(doc=None):
             log_data_handler._data.param.unwatch(watcher)
         doc.on_session_destroyed(_unwatch_data)
 
-    bk_pane = Bokeh(p)
+    bk_pane = _ui().Bokeh(p, sizing_mode='stretch_both', min_height=500, margin=0)
     return bk_pane
 
 def get_version_info():
+    import panel_material_ui
+
     from panel import __version__
-    return HTML(f"""
-    <h4>
-    Panel Server running on following versions:
-    </h4>
-    <code>
-    Python {sys.version.split('|')[0]}</br>
-    Panel: {__version__}</br>
-    Bokeh: {bokeh.__version__}</br>
-    Param: {param.__version__}</br>
-    </code>""", width=300, height=300, margin=(0, 5))
+
+    ui = _ui()
+    versions = {
+        'Python': sys.version.split()[0],
+        'Panel': __version__,
+        'Bokeh': bokeh.__version__,
+        'Param': param.__version__,
+        'panel-material-ui': panel_material_ui.__version__,
+    }
+    chips = [
+        ui.Chip(label=f'{name} {version}', variant='outlined')
+        for name, version in versions.items()
+    ]
+    return ui.Card(
+        ui.FlexBox(*chips, gap='8px', margin=0, sizing_mode='stretch_width'),
+        title='Server versions', collapsible=False, sizing_mode='stretch_width',
+        margin=(0, 0, 0, 0)
+    )
 
 def get_process():
     import psutil
@@ -341,15 +370,16 @@ def get_mem():
 def get_cpu():
     return pd.DataFrame([(time.time(), get_process().cpu_percent())], columns=['time', 'cpu'])
 
+def _trend(data, plot_y, label):
+    ui = _ui()
+    return ui.Trend(
+        data=data, plot_x='time', plot_y=plot_y, plot_type='step', label=label,
+        height=180, sizing_mode='stretch_width', margin=(10, 15)
+    )
+
 def get_process_info():
-    memory = Trend(
-        data=get_mem(), plot_x='time', plot_y='memory', plot_type='step',
-        name='Memory Usage (MB)', width=300, height=300
-    )
-    cpu = Trend(
-        data=get_cpu(), plot_x='time', plot_y='cpu', plot_type='step',
-        name='CPU Usage (%)', width=300, height=300
-    )
+    memory = _trend(get_mem(), 'memory', 'Memory Usage (MB)')
+    cpu = _trend(get_cpu(), 'cpu', 'CPU Usage (%)')
     def update_stats():
         memory.stream(get_mem())
         cpu.stream(get_cpu())
@@ -390,24 +420,20 @@ def get_session_data():
 
 def get_session_info(doc=None):
     df = get_session_data()
-    total = Trend(
-        data=df[['time', 'total']], plot_x='time', plot_y='total', plot_type='step',
-        name='Total Sessions', width=300, height=300
-    )
-    active = Trend(
-        data=df[['time', 'live']], plot_x='time', plot_y='live', plot_type='step',
-        name='Active Sessions', width=300, height=300
-    )
-    render = Trend(
-        data=df[['time', 'render']], plot_x='time', plot_y='render', plot_type='step',
-        name='Avg. Time to Render (s)', width=300, height=300
-    )
-    duration = Trend(
-        data=df[['time', 'duration']], plot_x='time', plot_y='duration', plot_type='step',
-        name='Avg. Session Duration (s)', width=300, height=300
-    )
+    total = _trend(df[['time', 'total']], 'total', 'Total Sessions')
+    active = _trend(df[['time', 'live']], 'live', 'Active Sessions')
+    render = _trend(df[['time', 'render']], 'render', 'Avg. Time to Render (s)')
+    duration = _trend(df[['time', 'duration']], 'duration', 'Avg. Session Duration (s)')
     # Set up callbacks
     def update_session_info(event):
+        if _destroyed(doc):
+            state.param.unwatch(watcher)
+            return
+        # Destroying this session updates the session info after its models
+        # have been cleaned up.
+        session = event.new['sessions'].get(doc.session_context.id) if doc else None
+        if session and session['ended']:
+            return
         df = get_session_data()
         for trend in (total, active, render, duration):
             trend.data = df[[trend.plot_x, trend.plot_y]]
@@ -419,74 +445,215 @@ def get_session_info(doc=None):
     return total, active, render, duration
 
 def get_overview(doc=None):
-    layout = FlexBox(*get_session_info(doc), margin=0, sizing_mode='stretch_width')
-    info = get_version_info()
+    ui = _ui()
+    trends = list(get_session_info(doc))
     try:
         import psutil  # noqa
     except Exception:
-        layout.append(info)
-        return layout
+        process_info = [ui.Alert(
+            'Install psutil to monitor the memory and CPU usage of the server.',
+            severity='info', sizing_mode='stretch_width', margin=(0, 0, 0, 0)
+        )]
     else:
-        layout.extend([*get_process_info(), info])
-        return layout
-
-
-def log_component():
-    # Without this tabulator is empty after reload of website
-    log_terminal.param.trigger("value")
-
-    return Column(
-        Accordion(
-            ('Filters & Download', Row(
-                level_filter,
-                app_filter,
-                session_filter,
-                message_filter,
-                Column(
-                    download_filename,
-                    download_button,
-                    reset_filter,
-                ),
-                sizing_mode='stretch_width'
-            )),
-            active=[],
-            active_header_background='#444444',
-            header_background='#333333',
-            sizing_mode='stretch_width'
-        ),
-        log_terminal,
-        sizing_mode='stretch_both'
+        trends.extend(get_process_info())
+        process_info = []
+    cards = [
+        ui.Paper(trend, variant='outlined', margin=(0, 0, 0, 0), sizing_mode='stretch_width')
+        for trend in trends
+    ]
+    # Full width items share the grid spacing, keeping all gaps equal.
+    return ui.Grid(
+        *(ui.Grid(card, size={'xs': 12, 'sm': 6, 'xl': 4}) for card in cards),
+        *(ui.Grid(item, size=12) for item in [*process_info, get_version_info()]),
+        container=True, spacing=2, margin=(0, 0, 0, 0), sizing_mode='stretch_width'
     )
 
+
+def log_component(doc: Document | None = None) -> Viewable:
+    """
+    A filterable view of the session logs with its own filter widgets, so
+    that admin sessions do not share filter state.
+    """
+    ui = _ui()
+    level_filter = ui.MultiChoice(
+        label='Level', options=LOG_LEVELS, sizing_mode='stretch_width'
+    )
+    app_filter = ui.TextInput(label='App', sizing_mode='stretch_width')
+    session_filter = ui.MultiChoice(
+        label='Session', options=sorted(log_terminal.value['session'].unique().tolist()),
+        sizing_mode='stretch_width'
+    )
+    message_filter = ui.TextInput(label='Message', sizing_mode='stretch_width')
+
+    def filtered(df):
+        return _filter_logs(
+            df, level_filter.value, app_filter.value_input,
+            session_filter.value, message_filter.value_input
+        )
+
+    table = ui.Tabulator(
+        value=filtered(log_terminal.value), sizing_mode='stretch_both',
+        min_height=400, margin=0, **_LogTabulator._update_defaults
+    )
+
+    def refilter(*events):
+        table.value = filtered(log_terminal.value)
+
+    level_filter.param.watch(refilter, 'value')
+    session_filter.param.watch(refilter, 'value')
+    app_filter.param.watch(refilter, 'value_input')
+    message_filter.param.watch(refilter, 'value_input')
+
+    def clear_filters(event):
+        level_filter.value = []
+        session_filter.value = []
+        app_filter.value = app_filter.value_input = ''
+        message_filter.value = message_filter.value_input = ''
+
+    clear = ui.Button(
+        label='Clear filters', icon='filter_alt_off', variant='outlined',
+        on_click=clear_filters, margin=(5, 10)
+    )
+    download = ui.FileDownload(
+        callback=lambda: io.StringIO(table.value.to_csv(index=False)),
+        filename='panel_log.csv', label='Download log', icon='download',
+        variant='outlined', margin=(5, 10)
+    )
+
+    def add_record(record):
+        session = record['session'].iloc[0]
+        if session not in session_filter.options:
+            session_filter.options = sorted([*session_filter.options, session])
+        rows = filtered(record)
+        if rows.empty:
+            return
+        elif table.value.empty:
+            table.value = rows
+        else:
+            table.stream(rows, follow=False)
+
+    def schedule_record(event):
+        if _destroyed(doc):
+            log_terminal.param.unwatch(watcher)
+            return
+        # Capture the new row now, by the next tick more may have been logged.
+        record = event.new.iloc[-1:]
+        if doc:
+            doc.add_next_tick_callback(partial(add_record, record))
+        else:
+            add_record(record)
+
+    watcher = log_terminal.param.watch(schedule_record, 'value')
+    if doc:
+        doc.on_session_destroyed(lambda session_context: log_terminal.param.unwatch(watcher))
+
+    filters = ui.Paper(
+        ui.Grid(
+            *(
+                ui.Grid(widget, size={'xs': 12, 'sm': 6, 'lg': 3})
+                for widget in (level_filter, app_filter, session_filter, message_filter)
+            ),
+            container=True, spacing=1, sizing_mode='stretch_width'
+        ),
+        ui.Row(clear, download, margin=0),
+        variant='outlined', margin=(0, 0, 15, 0), sizing_mode='stretch_width'
+    )
+    return ui.Column(filters, table, sizing_mode='stretch_both', margin=0)
+
+
+def _page_branding() -> dict[str, t.Any]:
+    """
+    Applies ``config.page_config`` so the admin panel shares the branding of
+    the server pages. ``Page`` class defaults already apply on their own.
+    """
+    branding: dict[str, t.Any] = {}
+    page_config = config.page_config
+    if page_config.get('theme_config'):
+        branding['theme_config'] = page_config['theme_config']
+    if page_config.get('logo'):
+        branding['logo'] = page_theme.logo
+    if page_config.get('favicon'):
+        branding['favicon'] = page_theme.favicon
+    if page_config.get('site_url'):
+        branding['site_url'] = page_config['site_url']
+    if (dark_theme := page_theme.dark_theme) is not None:
+        branding['dark_theme'] = dark_theme
+    return branding
+
+
 def admin_template(doc):
+    ui = _ui()
     extension('tabulator', 'terminal')
+    # Classic components (Tabulator, Bokeh, Trend) follow the Material design
+    # in this session only, see _ui.
+    config.design = ui.MaterialUIDesign
     log_sessions.append(id(doc))
     def _remove_log_session(session_context):
         log_sessions.remove(id(doc))
     doc.on_session_destroyed(_remove_log_session)
 
-    # Add and remove admin panel app from log sessions list
-    # Set up admin panel
-    template = FastListTemplate(title='Admin Panel', theme='dark')
-    tabs = Tabs(
-        ('Overview', get_overview(doc)),
-        ('Timeline', get_timeline(doc)),
-        margin=0,
-        sizing_mode='stretch_both'
-    )
+    sections: list[tuple[str, str, t.Callable[[], Viewable]]] = [
+        ('Overview', 'dashboard', partial(get_overview, doc)),
+        ('Timeline', 'timeline', partial(get_timeline, doc)),
+    ]
     if config.profiler:
-        tabs.append(
-            ('Launch Profiling', profiling_tabs(state, r'^\/.*', None))
+        sections.append(
+            ('Launch Profiling', 'rocket_launch', partial(profiling_tabs, state, r'^\/.*', None))
         )
-    tabs.extend([
-        ('User Profiling', profiling_tabs(state, None, r'^\/.*')),
-        ('Logs', log_component())
+    sections.extend([
+        ('User Profiling', 'speed', partial(profiling_tabs, state, None, r'^\/.*')),
+        ('Logs', 'article', partial(log_component, doc)),
     ])
-    tabs.extend([
-        (name, plugin()) for name, plugin in config.admin_plugins
-    ])
-    template.main.append(tabs)
-    return template
+    sections.extend(
+        (name, 'extension', plugin) for name, plugin in config.admin_plugins
+    )
+
+    # Sections are built on first visit, so watchers and periodic callbacks
+    # only run for the sections an admin actually opens.
+    rendered: dict[int, Viewable] = {}
+    def section(index: int) -> Viewable:
+        if index not in rendered:
+            label, _, build = sections[index]
+            rendered[index] = ui.Column(
+                ui.Typography(label, variant='h5', margin=(0, 0, 10, 0)),
+                build(),
+                sizing_mode='stretch_both',
+                margin=0
+            )
+        return rendered[index]
+
+    menu = ui.MenuList(
+        items=[{'label': label, 'icon': icon} for label, icon, _ in sections],
+        active=0, dense=False, sizing_mode='stretch_width'
+    )
+    main = ui.Column(section(0), sizing_mode='stretch_both', margin=(10, 15))
+
+    def navigate(event):
+        # MenuList reports the index path of the item, the menu is flat.
+        index = event.new[0] if isinstance(event.new, tuple) and event.new else event.new
+        if isinstance(index, int):
+            main[:] = [section(index)]
+    menu.param.watch(navigate, 'active')
+
+    header = []
+    if config.admin_password:
+        logout = ui.IconButton(
+            icon='logout', description='Log out of the admin panel', color='light'
+        )
+        # Resolved in the browser so the link survives proxies rewriting the path.
+        logout.js_on_click(code=(
+            "window.location.assign(window.location.pathname.replace(/\\/?$/, '/logout'))"
+        ))
+        header.extend([ui.HSpacer(), logout])
+
+    return ui.Page(
+        title=f"{page_theme.title or 'Panel'} Admin",
+        header=header,
+        sidebar=[menu],
+        sidebar_width=240,
+        main=[main],
+        **_page_branding()
+    )
 
 def admin_panel(doc):
     with set_curdoc(doc):

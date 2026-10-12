@@ -8,7 +8,6 @@ from __future__ import annotations
 import ast
 import builtins
 import copy
-import importlib
 import inspect
 import os
 import sys
@@ -156,6 +155,13 @@ class _config(_base_config):
     global_loading_spinner = param.Boolean(default=False, doc="""
         Whether to add a global loading spinner for the whole application.""")
 
+    lazy_resources = param.Boolean(default=True, doc="""
+        Whether components load the external libraries they need on demand
+        if they were not already declared with pn.extension. Disabling this
+        restores strict behavior, i.e. a component whose extension was not
+        declared fails loudly instead of fetching its resources at render
+        time, which is what an air-gapped deployment usually wants.""")
+
     layout_compatibility: t.Literal['warn', 'error'] = param.Selector(
         default='warn', objects=['warn', 'error'], doc="""
         Provide compatibility for older layout specifications. Incompatible
@@ -169,9 +175,9 @@ class _config(_base_config):
         Whether a loading indicator is shown by default while panes are updating.""")
 
     loading_spinner: t.Literal[
-        'arc', 'arcs', 'bar', 'dots', 'petal'
+        'arc', 'arcs', 'bar', 'dots', 'material', 'petal'
     ] = param.Selector(default='arc', objects=[
-        'arc', 'arcs', 'bar', 'dots', 'petal'], doc="""
+        'arc', 'arcs', 'bar', 'dots', 'material', 'petal'], doc="""
         Loading indicator to use when component loading parameter is set.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     loading_color = param.Color(default='#c3c3c3', doc="""
@@ -197,6 +203,11 @@ class _config(_base_config):
         Whether to enable automatic re-connect should the server connection
         be disrupted. Setting "prompt" will not enable automatic re-connect but
         will pop up a notification asking the user to confirm.""")  # type: ignore[assignment, ty:invalid-assignment]
+
+    resource_timeout = param.Integer(default=15000, bounds=(0, None), doc="""
+        Time in milliseconds a component waits for the external libraries
+        it lazily loads before it renders an error state instead. Set to 0
+        to wait indefinitely.""")
 
     reuse_sessions: t.Literal[True, False, 'warm'] = param.Selector(
         default=False, objects=[True, False, 'warm'], doc="""
@@ -242,7 +253,9 @@ class _config(_base_config):
         incorrect specification can be corrected.""")
 
     template: str = param.Selector(default=None, doc="""
-        The default template to render served applications into.""")  # type: ignore[assignment, ty:invalid-assignment]
+        The default template to render served applications into. Use
+        'page' for the panel.ui Page, or one of the classic template
+        names.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     throttled = param.Boolean(default=False, doc="""
         If sliders and inputs should be throttled until release of mouse.""")
@@ -250,6 +263,14 @@ class _config(_base_config):
     _admin = param.Boolean(default=False, doc="Whether the admin panel is enabled.")
 
     _admin_endpoint = param.String(default=None, doc="Name to use for the admin endpoint.")
+
+    _admin_password = param.String(default=None, allow_None=True, doc="""
+        Password required to access the admin panel, entered on its own
+        login page and independent of the server authentication.""")
+
+    _admin_users = param.List(default=[], item_type=str, doc="""
+        Users, as identified by the server authentication, allowed to
+        access the admin panel. If empty, every user may access it.""")
 
     _admin_log_level: t.Literal[
         'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'
@@ -261,6 +282,11 @@ class _config(_base_config):
         default="https://cdn.holoviz.org/panel/", doc="""
         The root path of the CDN. Configurable to support air-gapped and
         sandboxed environments.""")
+
+    _pyodide_cdn_root = param.String(
+        default="https://cdn.jsdelivr.net/pyodide/", doc="""
+        The root path of the CDN that converted apps load Pyodide from.
+        Configurable to support air-gapped and sandboxed environments.""")
 
     _comms: t.Literal['default', 'ipywidgets', 'vscode', 'colab'] = param.Selector(
         default='default', objects=['default', 'ipywidgets', 'vscode', 'colab'], doc="""
@@ -320,6 +346,13 @@ class _config(_base_config):
     _index_titles = param.Dict(default={}, doc="""
         Custom titles to use for Multi Page Apps index page.""")
 
+    _page_config = param.Dict(default={}, doc="""
+        Theming of the pages Panel serves outside of applications, i.e.
+        the index, login, logout and error pages. Mirrors the panel.ui
+        Page parameters and accepts the keys 'theme_config', 'dark_theme',
+        'logo', 'title', 'favicon', 'site_url', 'css_files' and 'raw_css'.
+        May also be set to a JSON string or the path to a JSON file.""")
+
     _basic_auth = param.ClassSelector(default=None, class_=(dict, str), allow_None=True, doc="""
         Password, dictionary with a mapping from username to password
         or filepath containing JSON to use with the basic auth
@@ -378,7 +411,8 @@ class _config(_base_config):
         'oauth_secret', 'oauth_jwt_user', 'oauth_redirect_uri',
         'oauth_encryption_key', 'oauth_extra_params', 'npm_cdn',
         'layout_compatibility', 'oauth_refresh_tokens', 'oauth_guest_endpoints',
-        'oauth_optional', 'admin', 'index_titles', 'disable_validation'
+        'oauth_optional', 'admin', 'admin_password', 'admin_users',
+        'index_titles', 'disable_validation', 'pyodide_cdn_root', 'page_config'
     }
 
     _truthy = ['True', 'true', '1', True, 1]
@@ -422,6 +456,40 @@ class _config(_base_config):
     def _enable_notifications(self):
         if self.disconnect_notification or self.ready_notification:
             self.notifications = True
+
+    def set_if_unset(self, **params) -> list[str]:
+        """
+        Sets config values only if they have not been modified from
+        their default, i.e. an explicit user setting always wins.
+
+        This allows extensions and design systems to declare the
+        defaults they prefer without clobbering the user's choices.
+
+        Parameters
+        ----------
+        params: dict[str, Any]
+            Mapping of config parameter names to the values to apply
+            if the parameter is still at its default.
+
+        Returns
+        -------
+        The names of the parameters that were applied.
+        """
+        applied = []
+        for k, v in params.items():
+            pname = k if k in self.param else f'_{k}'
+            if pname not in self.param:
+                raise AttributeError(f'{k!r} is not a valid config parameter.')
+            current, default = getattr(self, k), self.param[pname].default
+            try:
+                unset = bool(current == default)
+            except Exception:
+                unset = current is default
+            if not unset:
+                continue
+            setattr(self, k, v)
+            applied.append(k)
+        return applied
 
     @contextmanager
     def set(self, **kwargs):
@@ -522,8 +590,22 @@ class _config(_base_config):
         return value if value else 'disable'
 
     def _template_hook(self, value):
+        if value == 'page':
+            # Resolved lazily so `import panel` does not import panel.ui.
+            from .ui import Page
+            return Page
         if isinstance(value, str):
             return self.param.template.names[value]
+        return value
+
+    def _page_config_hook(self, value):
+        from .io.pages import load_page_config
+        return load_page_config(value)
+
+    def _design_hook(self, value):
+        if isinstance(value, str):
+            from .theme import resolve_design
+            return resolve_design(value)
         return value
 
     @property
@@ -539,6 +621,17 @@ class _config(_base_config):
         return os.environ.get('PANEL_ADMIN_ENDPOINT', self._admin_endpoint)
 
     @property
+    def admin_password(self):
+        return os.environ.get('PANEL_ADMIN_PASSWORD', self._admin_password) or None
+
+    @property
+    def admin_users(self):
+        if 'PANEL_ADMIN_USERS' in os.environ:
+            users = os.environ['PANEL_ADMIN_USERS'].split(',')
+            return [user.strip() for user in users if user.strip()]
+        return self._admin_users
+
+    @property
     def admin_log_level(self):
         admin_log_level = os.environ.get('PANEL_ADMIN_LOG_LEVEL', self._admin_log_level)
         return admin_log_level.upper() if admin_log_level else None
@@ -546,6 +639,10 @@ class _config(_base_config):
     @property
     def cdn_root(self):
         return os.environ.get('PANEL_CDN_ROOT', self._cdn_root)
+
+    @property
+    def pyodide_cdn_root(self):
+        return os.environ.get('PANEL_PYODIDE_CDN_ROOT', self._pyodide_cdn_root)
 
     @property
     def console_output(self):
@@ -585,6 +682,13 @@ class _config(_base_config):
     @property
     def index_titles(self):
         return self._index_titles
+
+    @property
+    def page_config(self):
+        if 'PANEL_PAGE_CONFIG' in os.environ:
+            from .io.pages import load_page_config
+            return load_page_config(os.environ['PANEL_PAGE_CONFIG'])
+        return self._page_config
 
     @property
     def inline(self):
@@ -724,21 +828,22 @@ class panel_extension(_pyviz_extension):
     :Example:
 
     >>> import panel as pn
-    >>> pn.extension("plotly", sizing_mode="stretch_width", template="fast")
+    >>> pn.extension("plotly", sizing_mode="stretch_width", template="page")
 
     This will
 
     - Initialize the notebook extension.
     - Enable you to use the `Plotly` pane by loading `plotly.js`.
     - Set the default `sizing_mode` to `stretch_width` instead of `fixed`.
-    - Set the global configuration `pn.config.template` to `fast`, i.e. you
-      will be using the `FastListTemplate`.
+    - Set the global configuration `pn.config.template` to `page`, i.e.
+      components marked `.servable()` are added to a `pn.ui.Page`.
     """
 
     _loaded: bool = False
 
     _imports: t.ClassVar[dict[str, str]] = {
         'ace': 'panel.models.ace',
+        'bokeh-tables': 'bokeh.models.widgets.tables',
         'codeeditor': 'panel.models.ace',
         'deckgl': 'panel.models.deckgl',
         'echarts': 'panel.models.echarts',
@@ -843,22 +948,7 @@ class panel_extension(_pyviz_extension):
                                    'will be skipped.')
 
         for k, v in params.items():
-            if k == 'design' and isinstance(v, str):
-                from .theme import Design
-                try:
-                    importlib.import_module(f'panel.theme.{self._design}')
-                except Exception:
-                    pass
-                designs = {
-                    t.__name__.lower(): t for t in _descendents(Design, concrete=True)
-                }
-                if v not in designs:
-                    raise ValueError(
-                        f'Design {v!r} was not recognized, available design '
-                        f'systems include: {list(designs)}.'
-                    )
-                setattr(config, k, designs[v])
-            elif k in ('css_files', 'raw_css', 'global_css'):
+            if k in ('css_files', 'raw_css', 'global_css'):
                 if not isinstance(v, list):
                     raise ValueError(f'{k} should be supplied as a list, '
                                      f'not as a {type(v).__name__} type.')

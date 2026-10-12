@@ -15,6 +15,7 @@ from ..config import config
 from .bundle import Bundle
 from .compile import Compile
 from .convert import Convert
+from .migrate import Migrate
 from .oauth_secret import OAuthSecret
 from .serve import Serve
 
@@ -75,7 +76,7 @@ def main(args: list[str] | None = None):
     for command in commands:
         if command is not BkServe:
             subs.add_parser(command.name, help=command.help)
-    for extra in (Bundle, Compile, Convert, OAuthSecret, Serve):
+    for extra in (Bundle, Compile, Convert, Migrate, OAuthSecret, Serve):
         commands.append(extra)
         subparser = subs.add_parser(extra.name, help=extra.help)
         subcommand = extra(parser=subparser)
@@ -86,7 +87,7 @@ def main(args: list[str] | None = None):
         die(f"ERROR: Must specify subcommand, one of: {nice_join(all_commands)}")
     elif len(sys.argv) > 1 and any(sys.argv[1] == c.name for c in commands):
         sys.argv = transform_cmds(sys.argv)
-        if sys.argv[1] in ('bundle', 'compile', 'convert', 'serve', 'oauth-secret', 'help'):
+        if sys.argv[1] in ('bundle', 'compile', 'convert', 'migrate', 'serve', 'oauth-secret', 'help'):
             parsed_args = parser.parse_args(sys.argv[1:])
             try:
                 ret = parsed_args.invoke(parsed_args)

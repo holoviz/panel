@@ -57,13 +57,13 @@ def plot(chart_type="line"):
     }
 
 
-chart_type = pn.widgets.RadioBoxGroup(
+chart_type = pn.ui.RadioBoxGroup(
     label="Chart Type", options=["bar", "line"], inline=True
 )
 chart = ChartJSComponent(
     object=pn.bind(plot, chart_type), height=400, sizing_mode="stretch_width"
 )
-pn.Column(chart_type, chart).servable()
+pn.ui.Column(chart_type, chart).servable()
 ```
 
 Note how we had to add the `canvasEl` to the `el` before we could render the chart. Some libraries will require the element to be attached to the DOM before we could render it. Dealing with layout issues like this sometimes requires a bit of iteration. If you get stuck, share your question and minimum, reproducible code example on [Discourse](https://discourse.holoviz.org/).
@@ -115,13 +115,13 @@ def data(chart_type="line"):
     }
 
 
-chart_type = pn.widgets.RadioBoxGroup(
+chart_type = pn.ui.RadioBoxGroup(
     label="Chart Type", options=["bar", "line"], inline=True
 )
 chart = ChartReactComponent(
     object=pn.bind(data, chart_type), height=600, sizing_mode="stretch_width"
 )
-pn.Column(chart_type, chart).servable()
+pn.ui.Column(chart_type, chart).servable()
 ```
 :::
 
@@ -175,13 +175,13 @@ def data(chart_type="line"):
     }
 
 
-chart_type = pn.widgets.RadioBoxGroup(
+chart_type = pn.ui.RadioBoxGroup(
     label="Chart Type", options=["bar", "line"], inline=True
 )
 chart = AnyWidgetComponent(
     object=pn.bind(data, chart_type), height=400, sizing_mode="stretch_width"
 )
-pn.Column(chart_type, chart).servable()
+pn.ui.Column(chart_type, chart).servable()
 ```
 
 Note, again, that we have to append the `canvasEl` to the `el` before we create the chart.
@@ -291,7 +291,7 @@ graph = CytoscapeJS(
     height=600,
     styles={"border": "1px solid black"},
 )
-pn.Row(
+pn.ui.Row(
     pn.Param(
         graph,
         parameters=[
@@ -390,7 +390,7 @@ graph = CytoscapeReact(
     height=600,
     styles={"border": "1px solid black"},
 )
-pn.Row(
+pn.ui.Row(
     pn.Param(
         graph,
         parameters=[
@@ -504,7 +504,7 @@ graph = CytoscapeAnyWidget(
     height=600,
     styles={"border": "1px solid black"},
 )
-pn.Row(
+pn.ui.Row(
     pn.Param(
         graph,
         parameters=[

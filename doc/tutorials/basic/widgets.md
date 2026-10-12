@@ -4,9 +4,9 @@ Welcome to the tutorial on accepting user inputs with widgets in Panel! Let's di
 
 ## Introduction to Widgets
 
-Widgets, found within the `pn.widgets` namespace, are powerful tools for capturing user input and interaction. They offer a wide range of functionality and customization options, making them essential for creating dynamic and engaging apps.
+Widgets, found within the `pn.ui` namespace, are powerful tools for capturing user input and interaction. They offer a wide range of functionality and customization options, making them essential for creating dynamic and engaging apps.
 
-You can explore the full array of available widgets and their detailed reference guides in the [Widgets Section](../../reference/index.rst#widgets) of the [Component Gallery](../../reference/index.rst).
+You can explore the full array of available widgets and their detailed reference guides in the [Widgets Section](../../reference/index.md#widgets) of the [Component Gallery](../../reference/index.md).
 
 :::{note}
 Widgets typically utilize the `value` parameter to capture user input.
@@ -31,7 +31,7 @@ import panel as pn
 
 pn.extension()
 
-pn.widgets.Button(
+pn.ui.Button(
     label="Refresh",
     icon="refresh",
     color="primary",
@@ -56,7 +56,7 @@ import panel as pn
 
 pn.extension()
 
-pn.widgets.TextInput(
+pn.ui.TextInput(
     description="The text given to the AI",
     disabled=True,
     max_length=15,
@@ -78,7 +78,7 @@ import panel as pn
 
 pn.extension()
 
-pn.widgets.Select(
+pn.ui.Select(
     description="Select a Technology",
     label="Study",
     options=["Wind Turbine", "Solar Panel", "Battery Storage"],
@@ -92,7 +92,7 @@ import panel as pn
 
 pn.extension()
 
-pn.widgets.RadioButtonGroup(
+pn.ui.RadioButtonGroup(
     description="Select a Technology",
     label="Study",
     options=["Wind Turbine", "Solar Panel", "Battery Storage"],
@@ -103,7 +103,7 @@ pn.widgets.RadioButtonGroup(
 
 In this tutorial, we've covered various ways to accept user input using widgets in Panel. From simple clicks to text input and selection from lists, widgets provide powerful tools for building interactive applications.
 
-Don't forget to explore the [Component Gallery](../../reference/index.rst#widgets) for more widgets and their detailed reference guides.
+Don't forget to explore the [Component Gallery](../../reference/index.md#widgets) for more widgets and their detailed reference guides.
 
 ## Resources
 
@@ -121,4 +121,4 @@ Don't forget to explore the [Component Gallery](../../reference/index.rst#widget
 
 ### Component Gallery
 
-- [Widgets](../../reference/index.rst#widgets)
+- [Widgets](../../reference/index.md#widgets)

@@ -45,6 +45,11 @@ class Convert(Subcommand):
             action  = 'store_true',
             help    = "Whether to use the compiled and faster version of Pyodide."
         )),
+        ('--panel-version', Argument(
+            type=str,
+            default='auto',
+            help="Panel wheel to use: 'auto' for a release or 'local' for a built wheel",
+        )),
         ('--out', Argument(
             action  = 'store',
             type    = str,
@@ -73,11 +78,6 @@ class Convert(Subcommand):
                 "Explicit requirements to add to the converted file, a single requirements.txt file or a "
                 "JSON file containing requirements per app. By default requirements are inferred from the code."
             )
-        )),
-        ('--disable-http-patch', Argument(
-            default = False,
-            action  = 'store_true',
-            help    = "Whether to disable patching http requests using the pyodide-http library."
         )),
         ('--resources', Argument(
             nargs   = '+',
@@ -147,7 +147,7 @@ class Convert(Subcommand):
                     build_pwa=args.pwa,
                     title=args.title,
                     max_workers=args.num_procs,
-                    http_patch=not args.disable_http_patch,
+                    panel_version=args.panel_version,
                     compiled=args.compiled,
                     verbose=True
                 )

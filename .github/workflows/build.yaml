@@ -98,6 +98,7 @@ jobs:
         run: |
           python scripts/verify_build_size.py sdist
           python scripts/verify_build_size.py whl
+          python scripts/verify_build_size.py ui
 
   pip_install:
     name: Install PyPI

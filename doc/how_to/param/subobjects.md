@@ -80,7 +80,7 @@ class ShapeViewer(param.Parameterized):
         return '## %s (radius=%.1f)' % (type(self.shape).__name__, self.shape.radius)
 
     def panel(self):
-        return pn.Column(self.title, self.view)
+        return pn.ui.Column(self.title, self.view)
 ```
 
 Now that we have a class with subobjects we can display it as usual.  Three main options control how the subobject is rendered:
@@ -95,7 +95,7 @@ Let us start with the default view, which provides a toggle button to expand the
 ```{pyodide}
 viewer = ShapeViewer()
 
-pn.Row(viewer.param, viewer.panel())
+pn.ui.Row(viewer.param, viewer.panel())
 ```
 
 Alternatively we can provide a completely separate ``expand_layout`` instance to the Param pane and request that it always remains expanded using the ``expand`` and ``expand_button`` option. This allows us to lay out the main widgets and the subobject's widgets separately:
@@ -104,10 +104,10 @@ Alternatively we can provide a completely separate ``expand_layout`` instance to
 ```{pyodide}
 viewer = ShapeViewer()
 
-expand_layout = pn.Column()
+expand_layout = pn.ui.Column()
 
-pn.Row(
-    pn.Column(
+pn.ui.Row(
+    pn.ui.Column(
         pn.panel(viewer.param, expand_button=False, expand=True, expand_layout=expand_layout),
         "#### Subobject parameters:",
         expand_layout),

@@ -4,6 +4,7 @@ Defines Links which allow declaring links between bokeh properties.
 from __future__ import annotations
 
 import difflib
+import json
 import sys
 import typing as t
 import weakref
@@ -13,10 +14,10 @@ import param
 from bokeh.models import CustomJS, LayoutDOM, Model as BkModel
 
 from .io.datamodel import create_linked_datamodel
-from .io.loading import LOADING_INDICATOR_CSS_CLASS
+from .io.loading import _item_loading_css_classes
 from .models import ReactiveESM, ReactiveHTML
 from .reactive import Reactive
-from .util.warnings import warn
+from .util.warnings import PanelUserWarning, warn
 from .viewable import Viewable
 
 if t.TYPE_CHECKING:
@@ -511,7 +512,16 @@ class CallbackGenerator:
 
         src_cb = CustomJS(args=references, code=code, tags=[link_id])
         changes, events = self._get_triggers(link, src_spec)
+        properties = src_model.properties()
         for ch in changes:
+            if ch not in properties:
+                msg = (
+                    f"JS callback for property {ch!r} on {type(source).__name__} "
+                    f"was skipped because the rendered {type(src_model).__name__} "
+                    f"model has no such property, so the component can still render."
+                )
+                warn(msg, PanelUserWarning)
+                continue
             src_model.js_on_change(ch, src_cb)
         for ev in events:
             src_model.js_on_event(ev, src_cb)
@@ -658,10 +668,10 @@ class JSLinkCallbackGenerator(JSCallbackGenerator):
       value = true
     }}
     var css_classes = target.css_classes.slice()
-    var loading_css = ['{loading_css_class}', 'pn-{loading_spinner}']
+    var loading_css = {loading_classes}
     if (value) {{
       for (var css of loading_css) {{
-        if (!(css in css_classes)) {{
+        if (css_classes.indexOf(css) === -1) {{
           css_classes.push(css)
         }}
       }}
@@ -761,11 +771,9 @@ class JSLinkCallbackGenerator(JSCallbackGenerator):
         else:
             tgt_transform = 'value'
         if tgt_spec == 'loading':
-            from .config import config
             return self._loading_link_template.format(
                 src_attr=src_spec, src_transform=src_transform,
-                loading_spinner=config.loading_spinner,
-                loading_css_class=LOADING_INDICATOR_CSS_CLASS
+                loading_classes=json.dumps(_item_loading_css_classes(target))
             )
         else:
             if src_spec and src_spec.startswith('event:'):

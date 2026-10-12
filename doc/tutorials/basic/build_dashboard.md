@@ -77,13 +77,13 @@ def filter_data(t_manu, year):
 
 # Filters
 
-t_manu = pn.widgets.Select(
+t_manu = pn.ui.Select(
     label="Manufacturer",
     value="Vestas",
     options=sorted(top_manufacturers),
     description="The name of the manufacturer",
 )
-p_year = pn.widgets.IntSlider(label="Year", value=max_year, start=min_year, end=max_year)
+p_year = pn.ui.IntSlider(label="Year", value=max_year, start=min_year, end=max_year)
 
 # Transform Data 2
 
@@ -108,9 +108,9 @@ fig = (
 
 # Display Data
 
-image = pn.pane.JPG("https://assets.holoviz.org/panel/tutorials/wind_turbines_sunset.png")
+image = pn.ui.JPG("https://assets.holoviz.org/panel/tutorials/wind_turbines_sunset.png")
 
-indicators = pn.FlexBox(
+indicators = pn.ui.FlexBox(
     pn.indicators.Number(
         value=count, label="Count", format="{value:,.0f}", styles=styles
     ),
@@ -134,19 +134,19 @@ indicators = pn.FlexBox(
     ),
 )
 
-plot = pn.pane.HoloViews(fig, sizing_mode="stretch_both", name="Plot")
-table = pn.widgets.Tabulator(df, sizing_mode="stretch_both", label="Table")
+plot = pn.ui.HoloViews(fig, sizing_mode="stretch_both", name="Plot")
+table = pn.ui.Tabulator(df, sizing_mode="stretch_both", label="Table")
 
 # Layout Data
 
-tabs = pn.Tabs(
+tabs = pn.ui.Tabs(
     plot, table, styles=styles, sizing_mode="stretch_width", height=500, margin=10
 )
 
 pn.template.FastListTemplate(
     title="Wind Turbine Dashboard",
     sidebar=[image, t_manu, p_year],
-    main=[pn.Column(indicators, tabs, sizing_mode="stretch_both")],
+    main=[pn.ui.Column(indicators, tabs, sizing_mode="stretch_both")],
     main_layout=None,
     accent=ACCENT,
 ).servable()
@@ -225,13 +225,13 @@ def filter_data(t_manu, year):
 ### Widgets
 
 ```{pyodide}
-t_manu = pn.widgets.Select(
+t_manu = pn.ui.Select(
     label="Manufacturer",
     value="Vestas",
     options=sorted(top_manufacturers),
     description="The name of the manufacturer",
 )
-p_year = pn.widgets.IntSlider(label="Year", value=max_year, start=min_year, end=max_year)
+p_year = pn.ui.IntSlider(label="Year", value=max_year, start=min_year, end=max_year)
 ```
 
 - `t_manu`: This widget is a select dropdown for choosing the manufacturer.
@@ -270,9 +270,9 @@ fig = (
 ### Displaying Data
 
 ```{pyodide}
-image = pn.pane.JPG("https://assets.holoviz.org/panel/tutorials/wind_turbines_sunset.png")
+image = pn.ui.JPG("https://assets.holoviz.org/panel/tutorials/wind_turbines_sunset.png")
 
-indicators = pn.FlexBox(
+indicators = pn.ui.FlexBox(
     pn.indicators.Number(
         value=count, label="Count", format="{value:,.0f}", styles=styles
     ),
@@ -303,8 +303,8 @@ indicators = pn.FlexBox(
 ### Creating Components
 
 ```{pyodide}
-plot = pn.pane.HoloViews(fig, sizing_mode="stretch_both", name="Plot")
-table = pn.widgets.Tabulator(df, sizing_mode="stretch_both", label="Table")
+plot = pn.ui.HoloViews(fig, sizing_mode="stretch_both", name="Plot")
+table = pn.ui.Tabulator(df, sizing_mode="stretch_both", label="Table")
 ```
 
 - `plot`: This variable stores a HoloViews plot pane displaying the bar plot.
@@ -313,7 +313,7 @@ table = pn.widgets.Tabulator(df, sizing_mode="stretch_both", label="Table")
 ### Layout
 
 ```{pyodide}
-tabs = pn.Tabs(
+tabs = pn.ui.Tabs(
     plot, table, styles=styles, sizing_mode="stretch_width", height=500, margin=10
 )
 ```
@@ -326,7 +326,7 @@ tabs = pn.Tabs(
 pn.template.FastListTemplate(
     title="Wind Turbine Dashboard",
     sidebar=[image, t_manu, p_year],
-    main=[pn.Column(indicators, tabs, sizing_mode="stretch_both")],
+    main=[pn.ui.Column(indicators, tabs, sizing_mode="stretch_both")],
     main_layout=None,
     accent=ACCENT,
 ).servable()

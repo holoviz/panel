@@ -32,9 +32,9 @@ def classify(image):
     return random.choice(OPTIONS)
 
 # Components
-run = pn.widgets.Button(label="Submit", color="primary")
+run = pn.ui.Button(label="Submit", color="primary")
 
-progress_message = pn.Row(
+progress_message = pn.ui.Row(
     pn.indicators.LoadingSpinner(
         value=True, width=25, height=25, align="center", margin=(5, 0, 5, 10)
     ),
@@ -52,7 +52,7 @@ def get_prediction(running):
     yield f"It's a {prediction}"
 
 # Display
-pn.Column(run, pn.bind(get_prediction, run)).servable()
+pn.ui.Column(run, pn.bind(get_prediction, run)).servable()
 ```
 
 Click the *Submit* `Button` to see it in action!
@@ -78,9 +78,9 @@ def classify(image):
     return random.choice(OPTIONS)
 
 # Components
-run = pn.widgets.Button(label="Submit", color="primary")
+run = pn.ui.Button(label="Submit", color="primary")
 
-progress_message = pn.Row(
+progress_message = pn.ui.Row(
     pn.indicators.LoadingSpinner(
         value=True, width=25, height=25, align="center", margin=(5, 0, 5, 10)
     ),
@@ -100,7 +100,7 @@ def get_prediction(running):
     run.disabled = False
 
 # Display
-pn.Column(run, pn.bind(get_prediction, run)).servable()
+pn.ui.Column(run, pn.bind(get_prediction, run)).servable()
 ```
 
 :::::
@@ -141,11 +141,11 @@ def run_classification(_):
     is_running.rx.value = False
 
 # Components
-click_submit = pn.pane.Markdown("Click Submit", visible=show_submit_message)
-run = pn.widgets.Button(
+click_submit = pn.ui.Markdown("Click Submit", visible=show_submit_message)
+run = pn.ui.Button(
     label="Submit", color="primary", on_click=run_classification
 )
-progress_message = pn.Row(
+progress_message = pn.ui.Row(
     pn.indicators.LoadingSpinner(
         value=True, width=25, height=25, align="center", margin=(5, 0, 5, 10)
     ),
@@ -154,7 +154,7 @@ progress_message = pn.Row(
 )
 
 # Layout
-pn.Column(run, click_submit, result, progress_message).servable()
+pn.ui.Column(run, click_submit, result, progress_message).servable()
 ```
 
 Click the *Submit* `Button` to observe the magic!
@@ -180,16 +180,16 @@ def classify(image):
     return random.choice(OPTIONS)
 
 # Components
-run = pn.widgets.Button(label="Submit", color="primary")
+run = pn.ui.Button(label="Submit", color="primary")
 
-progress_message = pn.Row(
+progress_message = pn.ui.Row(
     pn.indicators.LoadingSpinner(
         value=True, width=25, height=25, align="center", margin=(5, 0, 5, 10)
     ),
     pn.panel("Running classifier ...", margin=0),
 )
 
-layout = pn.Column("Click Submit")
+layout = pn.ui.Column("Click Submit")
 
 # Generator function
 def get_prediction(running):
@@ -207,7 +207,7 @@ def get_prediction(running):
         yield layout
 
 # Display
-pn.Column(run, pn.bind(get_prediction, run)).servable()
+pn.ui.Column(run, pn.bind(get_prediction, run)).servable()
 ```
 
 ### Exercise: Replace the Generator with Reactive Expressions
@@ -253,8 +253,8 @@ def classify_all(_):
     is_running.rx.value = False
 
 # Components
-click_submit = pn.pane.Markdown("Click Submit", visible=show_submit_message)
-run = pn.widgets.Button(
+click_submit = pn.ui.Markdown("Click Submit", visible=show_submit_message)
+run = pn.ui.Button(
     label="Submit",
     color="primary",
     on_click=classify_all,
@@ -263,8 +263,8 @@ run = pn.widgets.Button(
 )
 
 # Outputs: Views
-results_view = results.rx.pipe(lambda value: pn.Column(*value))
-progress_message = pn.Row(
+results_view = results.rx.pipe(lambda value: pn.ui.Column(*value))
+progress_message = pn.ui.Row(
     pn.indicators.LoadingSpinner(
         value=True, width=25, height=25, align="center", margin=(5, 0, 5, 10)
     ),
@@ -273,7 +273,7 @@ progress_message = pn.Row(
 )
 
 # Layout
-pn.Column(run, click_submit, results_view, progress_message).servable()
+pn.ui.Column(run, click_submit, results_view, progress_message).servable()
 ```
 
 :::::

@@ -34,12 +34,12 @@ class Input(param.Parameterized):
     ready = param.Boolean(default=False)
 
     def panel(self):
-        button = pn.widgets.Button(label='Go', color='success')
+        button = pn.ui.Button(label='Go', color='success')
         button.on_click(lambda event: setattr(self, 'ready', True)) # allows auto-advance to proceed
-        widgets = pn.Row(self.param.value1, self.param.operator, self.param.value2)
+        widgets = pn.ui.Row(self.param.value1, self.param.operator, self.param.value2)
         for w in widgets:
             w.width = 85
-        return pn.Column(widgets, button)
+        return pn.ui.Column(widgets, button)
 
 class Multiply(param.Parameterized):
 
@@ -48,7 +48,7 @@ class Multiply(param.Parameterized):
     ready = param.Boolean(default=True)
 
     def panel(self):
-        return pn.pane.Markdown(f'# {self.value1} * {self.value2}')
+        return pn.ui.Markdown(f'# {self.value1} * {self.value2}')
 
     @param.output('equation')
     def output(self):
@@ -61,7 +61,7 @@ class Add(param.Parameterized):
     ready = param.Boolean(default=True)
 
     def panel(self):
-        return pn.pane.Markdown(f'# {self.value1} + {self.value2} =')
+        return pn.ui.Markdown(f'# {self.value1} + {self.value2} =')
 
     @param.output('equation')
     def output(self):
@@ -72,7 +72,7 @@ class Result(param.Parameterized):
     equation = param.String()
 
     def panel(self):
-        return pn.pane.Markdown(self.equation)
+        return pn.ui.Markdown(self.equation)
 ```
 
 Now let's add the stages to a pipeline and define the graph:
@@ -92,7 +92,7 @@ dag.define_graph({'Input': ('Multiply', 'Add'), 'Multiply': 'Result', 'Add': 'Re
 Finally we display the pipeline without the `Next` button, which is appropriate because all the flow control is now handled from within the stages:
 
 ```{pyodide}
-pn.Column(
+pn.ui.Column(
     dag.title,
     dag.network,
     dag.stage,
@@ -119,12 +119,12 @@ class Input(param.Parameterized):
     ready = param.Boolean(default=False)
 
     def panel(self):
-        button = pn.widgets.Button(label='Go', color='success')
+        button = pn.ui.Button(label='Go', color='success')
         button.on_click(lambda event: setattr(self, 'ready', True)) # allows auto-advance to proceed
-        widgets = pn.Row(self.param.value1, self.param.operator, self.param.value2)
+        widgets = pn.ui.Row(self.param.value1, self.param.operator, self.param.value2)
         for w in widgets:
             w.width = 85
-        return pn.Column(widgets, button)
+        return pn.ui.Column(widgets, button)
 
 class Multiply(param.Parameterized):
 
@@ -133,7 +133,7 @@ class Multiply(param.Parameterized):
     ready = param.Boolean(default=True)
 
     def panel(self):
-        return pn.pane.Markdown(f'# {self.value1} * {self.value2}')
+        return pn.ui.Markdown(f'# {self.value1} * {self.value2}')
 
     @param.output('equation')
     def output(self):
@@ -146,7 +146,7 @@ class Add(param.Parameterized):
     ready = param.Boolean(default=True)
 
     def panel(self):
-        return pn.pane.Markdown(f'# {self.value1} + {self.value2} =')
+        return pn.ui.Markdown(f'# {self.value1} + {self.value2} =')
 
     @param.output('equation')
     def output(self):
@@ -157,7 +157,7 @@ class Result(param.Parameterized):
     equation = param.String()
 
     def panel(self):
-        return pn.pane.Markdown(self.equation)
+        return pn.ui.Markdown(self.equation)
 
 dag = pn.pipeline.Pipeline()
 
@@ -168,7 +168,7 @@ dag.add_stage('Result', Result)
 
 dag.define_graph({'Input': ('Multiply', 'Add'), 'Multiply': 'Result', 'Add': 'Result'})
 
-pn.Column(
+pn.ui.Column(
     dag.title,
     dag.network,
     dag.stage,

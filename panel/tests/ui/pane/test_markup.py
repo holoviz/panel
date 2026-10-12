@@ -8,7 +8,8 @@ from playwright.sync_api import expect
 
 from panel.layout import Column, Row
 from panel.models import HTML
-from panel.pane import Markdown
+from panel.models.markup import HTMLStreamEvent
+from panel.pane import HTML as HTMLPane, Markdown
 from panel.tests.util import serve_component, wait_until
 from panel.widgets import Button
 
@@ -106,6 +107,81 @@ def test_markdown_pane_stream(page):
     assert md.object == ''.join(map(str, range(100)))
 
     expect(page.locator('.markdown')).to_have_text(md.object)
+
+
+def test_markdown_pane_stream_keeps_completed_blocks(page):
+    md = Markdown('# Title', enable_streaming=True)
+
+    serve_component(page, md)
+
+    # The first streamed update re-renders the initial (non-streamed) DOM
+    md.object += '\n\nFirst paragraph'
+    expect(page.locator('.markdown p')).to_have_text('First paragraph')
+    page.locator('.markdown h1').evaluate("el => { el.dataset.marker = 'kept' }")
+
+    for i in range(20):
+        md.object += f' word{i}'
+    md.object += '\n\nSecond paragraph'
+
+    expect(page.locator('.markdown p').nth(1)).to_have_text('Second paragraph')
+    expect(page.locator('.markdown h1')).to_have_attribute('data-marker', 'kept')
+    expect(page.locator('.markdown p').first).to_have_text(
+        'First paragraph ' + ' '.join(f'word{i}' for i in range(20))
+    )
+
+
+def test_markdown_pane_stream_matches_full_render(page):
+    src = (
+        "## Heading\n\nSome *text* & <b>html</b> with `code`.\n\n"
+        "- item\n  - nested\n\n```python\nx = {'a': [1, 2]}\n```\n\n"
+        "| a | b |\n|---|---|\n| 1 | 2 |\n"
+    )
+    streamed = Markdown('', enable_streaming=True, css_classes=['streamed'])
+    reference = Markdown(src, css_classes=['reference'])
+
+    serve_component(page, Column(streamed, reference))
+
+    for i in range(0, len(src), 3):
+        streamed.object = src[:i+3]
+
+    inner_html = "el => [...el.shadowRoot.children].filter(c => c.tagName === 'DIV').pop().innerHTML"
+    expect(page.locator('.streamed table')).to_be_visible()
+    wait_until(lambda: (
+        page.locator('.streamed').evaluate(inner_html) ==
+        page.locator('.reference').evaluate(inner_html)
+    ), page)
+    expect(page.locator('.streamed .copybtn')).to_have_count(1)
+
+
+def test_markdown_pane_stream_emoji(page):
+    md = Markdown('', enable_streaming=True, disable_anchors=True)
+
+    serve_component(page, md)
+
+    expected = ''
+    for token in ['Hi 😀', ' there', ' 🎉🎉', ' **bold** 👍', ' end']:
+        md.object += token
+        expected += token
+        page.wait_for_timeout(50)
+
+    expect(page.locator('.markdown p')).to_have_text('Hi 😀 there 🎉🎉 bold 👍 end')
+    expect(page.locator('.markdown strong')).to_have_text('bold')
+
+
+def test_html_pane_stream_events_applied_in_order(page):
+    pane = HTMLPane('<p>a</p>', enable_streaming=True)
+
+    serve_component(page, pane)
+
+    expect(page.locator('p')).to_have_text('a')
+
+    # Event 2 arrives before event 1 and is only applied after it
+    pane._send_event(HTMLStreamEvent, patch=escape('c'), start=5, end=5, version=2)
+    pane._send_event(HTMLStreamEvent, patch=escape('b'), start=4, end=4, version=1)
+    # Replayed events are ignored
+    pane._send_event(HTMLStreamEvent, patch=escape('b'), start=4, end=4, version=1)
+
+    expect(page.locator('p')).to_have_text('abc')
 
 
 def test_html_model_no_stylesheet(page):

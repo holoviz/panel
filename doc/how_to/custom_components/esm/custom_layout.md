@@ -68,14 +68,14 @@ class SplitJS(JSComponent):
 pn.extension("codeeditor")
 
 split_js = SplitJS(
-    left=pn.widgets.CodeEditor(
+    left=pn.ui.CodeEditor(
         value="Left!",
         sizing_mode="stretch_both",
         margin=0,
         theme="monokai",
         language="python",
     ),
-    right=pn.widgets.CodeEditor(
+    right=pn.ui.CodeEditor(
         value="Right",
         sizing_mode="stretch_both",
         margin=0,
@@ -140,14 +140,14 @@ class SplitReact(ReactComponent):
 pn.extension("codeeditor")
 
 split_react = SplitReact(
-    left=pn.widgets.CodeEditor(
+    left=pn.ui.CodeEditor(
         value="Left!",
         sizing_mode="stretch_both",
         margin=0,
         theme="monokai",
         language="python",
     ),
-    right=pn.widgets.CodeEditor(
+    right=pn.ui.CodeEditor(
         value="Right",
         sizing_mode="stretch_both",
         margin=0,
@@ -225,14 +225,14 @@ class SplitAnyWidget(AnyWidgetComponent):
 pn.extension("codeeditor")
 
 split_anywidget = SplitAnyWidget(
-    left=pn.widgets.CodeEditor(
+    left=pn.ui.CodeEditor(
         value="Left!",
         sizing_mode="stretch_both",
         margin=0,
         theme="monokai",
         language="python",
     ),
-    right=pn.widgets.CodeEditor(
+    right=pn.ui.CodeEditor(
         value="Right",
         sizing_mode="stretch_both",
         margin=0,
@@ -255,19 +255,19 @@ Let's verify that the layout will automatically update when the `object` is chan
 :::{tab-item} `JSComponent`
 
 ```{pyodide}
-split_js.right = pn.pane.Markdown("Hi. I'm a `Markdown` pane replacing the `CodeEditor` widget!", sizing_mode="stretch_both")
+split_js.right = pn.ui.Markdown("Hi. I'm a `Markdown` pane replacing the `CodeEditor` widget!", sizing_mode="stretch_both")
 ```
 :::
 
 :::{tab-item} `ReactComponent`
 ```{pyodide}
-split_react.right = pn.pane.Markdown("Hi. I'm a `Markdown` pane replacing the `CodeEditor` widget!", sizing_mode="stretch_both")
+split_react.right = pn.ui.Markdown("Hi. I'm a `Markdown` pane replacing the `CodeEditor` widget!", sizing_mode="stretch_both")
 ```
 :::
 
 :::{tab-item} `AnyWidgetComponent`
 ```{pyodide}
-split_anywidget.right = pn.pane.Markdown("Hi. I'm a `Markdown` pane replacing the `CodeEditor` widget!", sizing_mode="stretch_both")
+split_anywidget.right = pn.ui.Markdown("Hi. I'm a `Markdown` pane replacing the `CodeEditor` widget!", sizing_mode="stretch_both")
 ```
 :::
 
@@ -279,7 +279,7 @@ Now, let's change it back:
 
 :::{tab-item} `JSComponent`
 ```{pyodide}
-split_js.right = pn.widgets.CodeEditor(
+split_js.right = pn.ui.CodeEditor(
     value="Right",
     sizing_mode="stretch_both",
     margin=0,
@@ -291,7 +291,7 @@ split_js.right = pn.widgets.CodeEditor(
 
 :::{tab-item} `ReactComponent`
 ```{pyodide}
-split_react.right = pn.widgets.CodeEditor(
+split_react.right = pn.ui.CodeEditor(
     value="Right",
     sizing_mode="stretch_both",
     margin=0,
@@ -303,7 +303,7 @@ split_react.right = pn.widgets.CodeEditor(
 
 :::{tab-item} `AnyWidgetComponent`
 ```{pyodide}
-split_anywidget.right = pn.widgets.CodeEditor(
+split_anywidget.right = pn.ui.CodeEditor(
     value="Right",
     sizing_mode="stretch_both",
     margin=0,
@@ -321,7 +321,7 @@ Now, let's change it back:
 
 :::{tab-item} `JSComponent`
 ```{pyodide}
-split_js.right = pn.widgets.CodeEditor(
+split_js.right = pn.ui.CodeEditor(
     value="Right",
     sizing_mode="stretch_both",
     margin=0,
@@ -333,7 +333,7 @@ split_js.right = pn.widgets.CodeEditor(
 
 :::{tab-item} `ReactComponent`
 ```{pyodide}
-split_react.right = pn.widgets.CodeEditor(
+split_react.right = pn.ui.CodeEditor(
     value="Right",
     sizing_mode="stretch_both",
     margin=0,
@@ -406,7 +406,7 @@ class GridJS(ListLike, JSComponent):
 pn.extension("codeeditor")
 
 grid_js = GridJS(
-    pn.widgets.CodeEditor(
+    pn.ui.CodeEditor(
         value="I love beatboxing\n" * 10, theme="monokai", sizing_mode="stretch_both"
     ),
     pn.panel(
@@ -414,7 +414,7 @@ grid_js = GridJS(
         sizing_mode="stretch_width",
         height=100,
     ),
-    pn.widgets.CodeEditor(
+    pn.ui.CodeEditor(
         value="Yes, I do!\n" * 10, theme="monokai", sizing_mode="stretch_both"
     ),
     styles={"border": "2px solid lightgray"},
@@ -474,7 +474,7 @@ class GridReact(ListLike, ReactComponent):
 pn.extension("codeeditor")
 
 grid_react = GridReact(
-    pn.widgets.CodeEditor(
+    pn.ui.CodeEditor(
         value="I love beatboxing\n" * 10, theme="monokai", sizing_mode="stretch_both"
     ),
     pn.panel(
@@ -482,7 +482,7 @@ grid_react = GridReact(
         sizing_mode="stretch_width",
         height=100,
     ),
-    pn.widgets.CodeEditor(
+    pn.ui.CodeEditor(
         value="Yes, I do!\n" * 10, theme="monokai", sizing_mode="stretch_both"
     ),
     styles={"border": "2px solid lightgray"},
@@ -553,7 +553,7 @@ class GridAnyWidget(ListLike, AnyWidgetComponent):
 pn.extension("codeeditor")
 
 grid_anywidget = GridAnyWidget(
-    pn.widgets.CodeEditor(
+    pn.ui.CodeEditor(
         value="I love beatboxing\n" * 10, theme="monokai", sizing_mode="stretch_both"
     ),
     pn.panel(
@@ -561,7 +561,7 @@ grid_anywidget = GridAnyWidget(
         sizing_mode="stretch_width",
         height=100,
     ),
-    pn.widgets.CodeEditor(
+    pn.ui.CodeEditor(
         value="Yes, I do!\n" * 10, theme="monokai", sizing_mode="stretch_both"
     ),
     styles={"border": "2px solid lightgray"},
@@ -583,7 +583,7 @@ You can now use `[...]` indexing and methods like `.append`, `.insert`, `pop`, e
 :::{tab-item} `JSComponent`
 ```{pyodide}
 grid_js.append(
-    pn.widgets.CodeEditor(
+    pn.ui.CodeEditor(
         value="Another one bites the dust\n" * 10,
         theme="monokai",
         sizing_mode="stretch_both",
@@ -595,7 +595,7 @@ grid_js.append(
 :::{tab-item} `ReactComponent`
 ```{pyodide}
 grid_react.append(
-    pn.widgets.CodeEditor(
+    pn.ui.CodeEditor(
         value="Another one bites the dust\n" * 10,
         theme="monokai",
         sizing_mode="stretch_both",
@@ -607,7 +607,7 @@ grid_react.append(
 :::{tab-item} `AnyWidgetComponent`
 ```{pyodide}
 grid_anywidget.append(
-    pn.widgets.CodeEditor(
+    pn.ui.CodeEditor(
         value="Another one bites the dust\n" * 10,
         theme="monokai",
         sizing_mode="stretch_both",

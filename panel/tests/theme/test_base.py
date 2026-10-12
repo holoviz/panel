@@ -1,5 +1,6 @@
 import pathlib
 
+from bokeh.document import Document
 from bokeh.models import ImportedStyleSheet
 
 from panel.io.resources import CDN_DIST, stylesheet_url
@@ -269,6 +270,52 @@ def test_design_apply_shared_stylesheet_models(document, comm):
     DesignTest().apply(widget2, model2)
 
     assert widget1.stylesheets == widget2.stylesheets
+
+
+def test_design_apply_shared_component_across_documents(document, comm):
+    """Design reapplication keeps a reused model's stylesheets in its document."""
+    other_doc = Document()
+    widget = TextInput(stylesheets=['https://example.com/custom.css'])
+    model1 = widget.get_root(document, comm)
+    document.add_root(model1)
+    model2 = widget.get_root(other_doc, comm)
+    other_doc.add_root(model2)
+
+    shared = ImportedStyleSheet(url='https://example.com/shared.css')
+    process = widget._process_param_change
+
+    def add_shared(params):
+        props = process(params)
+        if 'stylesheets' in props:
+            props['stylesheets'].append(shared)
+        return props
+
+    widget._process_param_change = add_shared
+    design = DesignTest()
+    design.apply(widget, model1)
+    design.apply(widget, model2)
+
+    for model, doc in ((model1, document), (model2, other_doc)):
+        assert all(sts.document is doc for sts in model.stylesheets if isinstance(sts, ImportedStyleSheet))
+        doc.to_json()
+
+def test_design_apply_unattached_roots_across_documents(document, comm):
+    """Design application before attaching roots cannot share stylesheet models."""
+    other_doc = Document()
+    widget = TextInput()
+    model1 = widget.get_root(document, comm)
+    model2 = widget.get_root(other_doc, comm)
+
+    design = DesignTest()
+    design.apply(widget, model1)
+    design.apply(widget, model2)
+
+    document.add_root(model1)
+    other_doc.add_root(model2)
+
+    for model, doc in ((model1, document), (model2, other_doc)):
+        assert all(sts.document is doc for sts in model.stylesheets if isinstance(sts, ImportedStyleSheet))
+        doc.to_json()
 
 def test_design_apply_recreates_destroyed_stylesheets(document, comm):
     widget1 = TextInput()

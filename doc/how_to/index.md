@@ -235,7 +235,7 @@ How to distribute your Panel applications
 :link: integrations/index
 :link-type: doc
 
-How to integrate Panel in other application based on Flask, FastAPI or Django.
+How to integrate Panel in other applications based on Flask, FastAPI or Django.
 :::
 
 :::{grid-item-card} {octicon}`share;2.5em;sd-mr-1 sd-animate-grow50` Deploy applications

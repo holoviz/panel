@@ -8,6 +8,12 @@ import {LayoutDOM, LayoutDOMView} from "@bokehjs/models/layouts/layout_dom"
 import type {UIElement} from "@bokehjs/models/ui/ui_element"
 import type * as p from "@bokehjs/core/properties"
 
+import type {ExternalResourcesModel, ResourceSpec} from "./resources"
+import {
+  await_resources, define_external_resources, load_resources,
+  render_resource_error,
+} from "./resources"
+
 /**
  * Re-renders a view, including its layout.
  *
@@ -22,13 +28,19 @@ import type * as p from "@bokehjs/core/properties"
  * tile-based plots, a division by zero width puts NaN into the ranges with no
  * recovery path). Updating the layout first means `after_render` measures
  * elements where they will actually live.
+ *
+ * `layout=false` skips `compute_layout`, for callers that render several
+ * children in a row and lay out once afterwards: a child's `compute_layout`
+ * lays out its whole root, so rendering N children would cost N full passes.
  */
-export function rerender_view(view: DOMView): void {
+export function rerender_view(view: DOMView, layout: boolean = true): void {
   if (view instanceof LayoutDOMView) {
     view.render()
     view.update_layout()
     view.r_after_render()
-    view.compute_layout()
+    if (layout) {
+      view.compute_layout()
+    }
   } else if (view.rerender) {
     // Can be removed when Bokeh>3.7 (see https://github.com/holoviz/panel/pull/7815)
     view.rerender()
@@ -36,6 +48,39 @@ export function rerender_view(view: DOMView): void {
     view.render()
     view.r_after_render()
   }
+}
+
+/**
+ * Tracks the `<link>` stylesheets of a view and calls `settled` once all of
+ * them have loaded *or* failed, or immediately if none are pending. Views
+ * reveal their content from that callback, so a stylesheet that never arrives
+ * must not hide them forever, while revealing earlier lays them out unstyled.
+ */
+function watch_link_stylesheets(
+  stylesheets: Iterable<unknown>, signal: AbortSignal, settled: () => void,
+): Map<string, boolean> {
+  const state = new Map<string, boolean>()
+  const all_settled = () => [...state.values()].every((v) => v)
+  for (const stylesheet of stylesheets) {
+    const style_el = (stylesheet as any).el
+    if (style_el instanceof HTMLLinkElement) {
+      // A link served from cache may already have loaded, and `load` does
+      // not fire again for it.
+      state.set(style_el.href, style_el.sheet != null)
+      const on_settled = () => {
+        state.set(style_el.href, true)
+        if (all_settled()) {
+          settled()
+        }
+      }
+      style_el.addEventListener("load", on_settled, {signal})
+      style_el.addEventListener("error", on_settled, {signal})
+    }
+  }
+  if (all_settled()) {
+    settled()
+  }
+  return state
 }
 
 export class PanelMarkupView extends WidgetView {
@@ -57,6 +102,11 @@ export class PanelMarkupView extends WidgetView {
   override async lazy_initialize() {
     await super.lazy_initialize()
 
+    const error = await await_resources(this.model as unknown as ExternalResourcesModel)
+    if (error != null) {
+      render_resource_error(this, error, PanelMarkupView.prototype.render)
+    }
+
     if (this.provider.status == "not_started" || this.provider.status == "loading") {
       this.provider.ready.connect(() => {
         if (this.contains_tex_string(this.model.text)) {
@@ -68,37 +118,21 @@ export class PanelMarkupView extends WidgetView {
 
   /**
    * Schedules `style_redraw` for when all applied stylesheets have settled.
-   *
-   * A stylesheet counts as settled once it has loaded *or* failed: views
-   * reveal their container from `style_redraw`, so a stylesheet that never
-   * arrives must not hide them forever. Listeners registered by a previous
-   * call are cancelled, since the elements they watch have been discarded.
+   * Listeners registered by a previous call are cancelled, since the
+   * elements they watch have been discarded.
    */
   watch_stylesheets(): void {
     this._stylesheets_watcher?.abort()
     const {signal} = this._stylesheets_watcher = new AbortController()
-    this._initialized_stylesheets = new Map()
-    for (const stylesheet of this._applied_stylesheets) {
-      // @ts-expect-error: 'el' is protected
-      const style_el = stylesheet.el
-      if (style_el instanceof HTMLLinkElement) {
-        // A link served from cache may already have loaded, and `load` does
-        // not fire again for it, so seed from `sheet` instead of assuming
-        // every stylesheet is still pending.
-        this._initialized_stylesheets.set(style_el.href, style_el.sheet != null)
-        const settled = () => {
-          this._initialized_stylesheets.set(style_el.href, true)
-          if ([...this._initialized_stylesheets.values()].every((v) => v)) {
-            requestAnimationFrame(() => this.style_redraw())
-          }
-        }
-        style_el.addEventListener("load", settled, {signal})
-        style_el.addEventListener("error", settled, {signal})
+    let watching = false
+    this._initialized_stylesheets = watch_link_stylesheets(this._applied_stylesheets, signal, () => {
+      if (watching) {
+        requestAnimationFrame(() => this.style_redraw())
+      } else {
+        this.style_redraw()
       }
-    }
-    if ([...this._initialized_stylesheets.values()].every((v) => v)) {
-      this.style_redraw()
-    }
+    })
+    watching = true
   }
 
   /**
@@ -137,7 +171,7 @@ export class PanelMarkupView extends WidgetView {
   }
 }
 
-export function set_size(el: HTMLElement, model: HTMLBox, adjust_margin: boolean = true): void {
+export function set_size(el: HTMLElement, model: LayoutDOM, adjust_margin: boolean = true): void {
   let width_policy = model.width != null ? "fixed" : "fit"
   let height_policy = model.height != null ? "fixed" : "fit"
   const {sizing_mode, margin} = model
@@ -221,7 +255,8 @@ export function set_size(el: HTMLElement, model: HTMLBox, adjust_margin: boolean
 export abstract class HTMLBoxView extends LayoutDOMView {
   declare model: HTMLBox
 
-  protected _initialized_stylesheets: Map<string, boolean>
+  protected _initialized_stylesheets: Map<string, boolean> = new Map()
+  protected _stylesheets_watcher: AbortController | null = null
 
   override connect_signals(): void {
     super.connect_signals()
@@ -229,6 +264,14 @@ export abstract class HTMLBoxView extends LayoutDOMView {
     this.on_change([width, height, min_height, max_height, margin, sizing_mode], () => {
       set_size(this.el, this.model)
     })
+  }
+
+  override async lazy_initialize(): Promise<void> {
+    await super.lazy_initialize()
+    const error = await await_resources(this.model)
+    if (error != null) {
+      render_resource_error(this, error, HTMLBoxView.prototype.render)
+    }
   }
 
   override render(): void {
@@ -240,24 +283,35 @@ export abstract class HTMLBoxView extends LayoutDOMView {
     rerender_view(view == null ? this : view)
   }
 
+  /**
+   * Schedules `style_redraw` for when all applied stylesheets have settled.
+   * Always deferred by a frame because subclasses arm the watcher before
+   * creating the content `style_redraw` operates on.
+   */
   watch_stylesheets(): void {
-    this._initialized_stylesheets = new Map()
-    for (const stylesheet of this._applied_stylesheets) {
-      // @ts-expect-error: 'el' is protected
-      const style_el = stylesheet.el
-      if (style_el instanceof HTMLLinkElement) {
-        this._initialized_stylesheets.set(style_el.href, false)
-        style_el.addEventListener("load", () => {
-          this._initialized_stylesheets.set(style_el.href, true)
-          if ([...this._initialized_stylesheets.values()].every((v) => v)) {
-            this.style_redraw()
-          }
-        })
-      }
+    this._stylesheets_watcher?.abort()
+    const {signal} = this._stylesheets_watcher = new AbortController()
+    this._initialized_stylesheets = watch_link_stylesheets(this._applied_stylesheets, signal, () => {
+      requestAnimationFrame(() => this.style_redraw())
+    })
+  }
+
+  get stylesheets_settled(): boolean {
+    return [...this._initialized_stylesheets.values()].every((v) => v)
+  }
+
+  /** Bokeh recreates the stylesheet elements on update, so re-arm the watcher. */
+  protected override _update_stylesheets(): void {
+    super._update_stylesheets()
+    if (this._stylesheets_watcher != null) {
+      this.watch_stylesheets()
     }
-    // Unconditional: subclasses redraw (and reveal themselves) here even when
-    // the stylesheets never load, so this is their only guaranteed redraw.
-    requestAnimationFrame(() => this.style_redraw())
+  }
+
+  override remove(): void {
+    this._stylesheets_watcher?.abort()
+    this._stylesheets_watcher = null
+    super.remove()
   }
 
   style_redraw(): void {}
@@ -269,7 +323,9 @@ export abstract class HTMLBoxView extends LayoutDOMView {
 
 export namespace HTMLBox {
   export type Attrs = p.AttrsOf<Props>
-  export type Props = LayoutDOM.Props
+  export type Props = LayoutDOM.Props & {
+    external_resources: p.Property<ResourceSpec | null>
+  }
 }
 
 export interface HTMLBox extends HTMLBox.Attrs {}
@@ -279,5 +335,22 @@ export abstract class HTMLBox extends LayoutDOM {
 
   constructor(attrs?: Partial<HTMLBox.Attrs>) {
     super(attrs)
+  }
+
+  static {
+    define_external_resources(this)
+  }
+
+  /**
+   * Starts loading the component's external libraries.
+   *
+   * Every model in a document is initialized before the first view is built
+   * and `build_views` then builds them one at a time, so kicking the fetch
+   * off here is what keeps a page of ten components waiting for the slowest
+   * library rather than for all of them in sequence.
+   */
+  override initialize(): void {
+    super.initialize()
+    load_resources(this)
   }
 }

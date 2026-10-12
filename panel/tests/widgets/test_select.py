@@ -153,7 +153,7 @@ def test_select_parameterized_option_labels(widget):
     c3 = panel("Value3", name="V3")
 
     select = widget(options=[c1, c2, c3], value=c1)
-    assert select.labels == ['V1', 'Markdown(str)', 'V3']
+    assert select.labels == ['V1', str(c2), 'V3']
 
 
 def test_select_groups_list_options(document, comm):

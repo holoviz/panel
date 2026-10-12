@@ -36,9 +36,11 @@ from param.parameterized import (
 )
 
 from .io.document import hold, unlocked
-from .io.notebook import push
+from .io.loading import loading_css
+from .io.notebook import push, replace_inline_css
+from .io.resource_spec import lazy_load_available, resource_spec
 from .io.resources import (
-    CDN_DIST, get_dist_path, loading_css, patch_stylesheet, process_raw_css,
+    CDN_DIST, get_dist_path, patch_stylesheet, process_raw_css,
     resolve_stylesheet, stylesheet_url,
 )
 from .io.state import set_curdoc, state
@@ -214,9 +216,9 @@ class Syncable(Renderable):
             properties['min_height'] = properties['height']
         if 'stylesheets' in properties:
             from .config import config
-            stylesheets = [loading_css(
-                config.loading_spinner, config.loading_color, config.loading_max_height
-            ), f'{get_dist_path()}css/loading.css']
+            design = getattr(self, '_design', None)
+            spinner_css = design.loading_css() if design else loading_css()
+            stylesheets = [spinner_css, f'{get_dist_path()}css/loading.css']
             stylesheets += process_raw_css(config.raw_css)
             stylesheets += config.css_files
             stylesheets += [
@@ -225,21 +227,11 @@ class Syncable(Renderable):
             ]
             stylesheets += properties['stylesheets']
             wrapped = []
-            if state.curdoc:
-                css_cache = state._stylesheets.get(state.curdoc, {})
-            else:
-                css_cache = {}
             for stylesheet in stylesheets:
                 if not stylesheet:
                     continue
                 if isinstance(stylesheet, str) and (stylesheet.split('?')[0].endswith('.css') or stylesheet.startswith('http')):
-                    conv_stylesheet = css_cache.get(stylesheet)
-                    # A cached stylesheet that lost its url was destroyed
-                    # along with the Document it was rendered into and
-                    # has to be recreated.
-                    if conv_stylesheet is None or stylesheet_url(conv_stylesheet) is None:
-                        css_cache[stylesheet] = conv_stylesheet = ImportedStyleSheet(url=stylesheet)
-                    stylesheet = conv_stylesheet
+                    stylesheet = ImportedStyleSheet(url=stylesheet)
                 wrapped.append(stylesheet)
             properties['stylesheets'] = wrapped
         return properties
@@ -351,6 +343,8 @@ class Syncable(Renderable):
         if ref not in state._views or ref in state._fake_roots:
             return True
         viewable, root, doc, comm = state._views[ref]
+        if isinstance(self, Reactive):
+            self._resolve_stylesheets(msg, doc)
         if comm or not doc.session_context or state._unblocked(doc):
             with unlocked():
                 self._update_model(events, msg, root, model, doc, comm)
@@ -707,8 +701,12 @@ class Reactive(Syncable, Viewable):
             elif k not in params or self.param[k].default is not v:
                 params[k] = v
         properties = self._process_param_change(params)
+        self._resolve_stylesheets(properties, doc)
+        return properties
+
+    def _resolve_stylesheets(self, properties: dict[str, t.Any], doc: Document | None) -> None:
         if 'stylesheets' not in properties:
-            return properties
+            return
         if doc:
             state._stylesheets[doc] = css_cache = state._stylesheets.get(doc, {})
         else:
@@ -717,6 +715,9 @@ class Reactive(Syncable, Viewable):
             dist_url = doc._template_variables['dist_url']
         else:
             dist_url = CDN_DIST
+        # Documents rendered with inline resources, e.g. in a notebook, must
+        # keep inlining updates since the CDN may not serve these files.
+        inline_cache = state._inline_stylesheets.get(doc) if doc else None
         stylesheets = []
         for stylesheet in properties['stylesheets']:
             if isinstance(stylesheet, ImportedStyleSheet):
@@ -727,14 +728,18 @@ class Reactive(Syncable, Viewable):
                     # Adding it to the model would make the Document
                     # unserializable so we have to drop it.
                     continue
-                if url in css_cache and stylesheet_url(css_cache[url]) is not None:
-                    stylesheet = css_cache[url]
+                cached = css_cache.get(url)
+                if cached is not None and stylesheet_url(cached) is not None and cached.document in (None, doc):
+                    stylesheet = cached
                 else:
+                    if stylesheet.document is not None and stylesheet.document is not doc:
+                        stylesheet = ImportedStyleSheet(url=url)
                     css_cache[url] = stylesheet
                 patch_stylesheet(stylesheet, dist_url)
+                if inline_cache is not None:
+                    stylesheet = replace_inline_css(stylesheet, inline_cache)
             stylesheets.append(stylesheet)
         properties['stylesheets'] = stylesheets
-        return properties
 
     def _update_properties(self, *events: param.parameterized.Event, doc: Document) -> dict[str, t.Any]:
         params, _ = self._design.params(self, doc) if self._design else ({}, None)
@@ -742,20 +747,6 @@ class Reactive(Syncable, Viewable):
         if 'stylesheets' in changes and 'stylesheets' in params:
             changes['stylesheets'] = params['stylesheets'] + changes['stylesheets']
         return self._process_param_change(changes)
-
-    def _update_model(
-        self, events: dict[str, param.parameterized.Event], msg: dict[str, t.Any],
-        root: Model, model: Model, doc: Document, comm: Comm | None
-    ) -> None:
-        if 'stylesheets' in msg:
-            if doc and 'dist_url' in doc._template_variables:
-                dist_url = doc._template_variables['dist_url']
-            else:
-                dist_url = CDN_DIST
-            for stylesheet in msg['stylesheets']:
-                if isinstance(stylesheet, ImportedStyleSheet):
-                    patch_stylesheet(stylesheet, dist_url)
-        super()._update_model(events, msg, root, model, doc, comm)
 
     #----------------------------------------------------------------
     # Public API
@@ -1126,7 +1117,7 @@ class SyncableData(Reactive):
             viewable, root, doc, comm = state._views[ref]
             if comm or not doc.session_context or state._unblocked(doc):
                 with unlocked():
-                    m.source.stream(stream, rollover)
+                    self._apply_stream(ref, m, stream, rollover)
                 if comm and 'embedded' not in root.tags:
                     push(doc, comm)
             else:
@@ -1149,7 +1140,7 @@ class SyncableData(Reactive):
             viewable, root, doc, comm = state._views[ref]
             if comm or not doc.session_context or state._unblocked(doc):
                 with unlocked():
-                    m.source.patch(patch)
+                    self._apply_patch(ref, m, patch)
                 if comm and 'embedded' not in root.tags:
                     push(doc, comm)
             else:
@@ -1902,9 +1893,10 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
         self._event_callbacks = defaultdict(lambda: defaultdict(list))
 
     def _cleanup(self, root: Model | None = None) -> None:
+        parent = self._models.get(root.ref['id'], (None,))[0] if root else None
         for _child, panes in self._panes.items():
             for pane in panes:
-                pane._cleanup(root)
+                pane._release_model(root, parent)
         super()._cleanup(root)
 
     @property
@@ -2026,7 +2018,7 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
         for children_param, old_panes in self._panes.items():
             for old_pane in old_panes:
                 if old_pane not in (internal_panes.get(children_param) or []):
-                    old_pane._cleanup(root)
+                    old_pane._release_model(root, model)
 
         for parent, child_panes in new_panes.items():
             children_param = self._parser.children[parent]
@@ -2042,14 +2034,14 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
                     if pane in old_panes and root.ref['id'] in pane._models:
                         child, _ = pane._models[root.ref['id']]
                     else:
-                        child = pane._get_model(doc, root, model, comm)
+                        child = pane._acquire_model(doc, root, model, comm)
                     new_models[parent].append(child)
             elif parent in old_models:
                 # Children parameter unchanged
                 new_models[parent] = old_models[parent]
             else:
                 new_models[parent] = [
-                    pane._get_model(doc, root, model, comm)
+                    pane._acquire_model(doc, root, model, comm)
                     for pane in child_panes
                 ]
         self._panes = internal_panes
@@ -2149,21 +2141,29 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
         self, doc: Document, root: Model | None = None,
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
-        model = _BkReactiveHTML(**self._get_properties(doc))
-        if comm and not self._loaded():
-            self.param.warning(
-                f'{type(self).__name__} was not imported on instantiation and may not '
-                'render in a notebook. Restart the notebook kernel and '
-                'ensure you load it as part of the extension using:'
-                f'\n\npn.extension(\'{self._extension_name}\')\n'
-            )
-        elif root is not None and not self._loaded() and root.ref['id'] in state._views:
-            self.param.warning(
-                f'{type(self).__name__} was not imported on instantiation may not '
-                'render in the served application. Ensure you add the '
-                'following to the top of your application:'
-                f'\n\npn.extension(\'{self._extension_name}\')\n'
-            )
+        model = _BkReactiveHTML(
+            external_resources=resource_spec(type(self)),
+            **self._get_properties(doc)
+        )
+        # See lazy_load: with lazy resource loading an undeclared component
+        # still renders, so this only warns where that cannot work.
+        if not self._loaded() and (comm or (root is not None and root.ref['id'] in state._views)):
+            if lazy_load_available(notebook=bool(comm)):
+                self.param.log(
+                    param.DEBUG,
+                    f'{type(self).__name__} was not imported on instantiation and will '
+                    'load the resources it needs on demand. To load them up front '
+                    'ensure you load it as part of the extension using:'
+                    f'\n\npn.extension(\'{self._extension_name}\')\n'
+                )
+            else:
+                where = 'a notebook' if comm else 'the served application'
+                self.param.warning(
+                    f'{type(self).__name__} was not imported on instantiation and may '
+                    f'not render in {where}. Ensure you load it as part of the '
+                    'extension using:'
+                    f'\n\npn.extension(\'{self._extension_name}\')\n'
+                )
         if self._extension_name:
             ReactiveMetaBase._loaded_extensions.add(self._extension_name)
 

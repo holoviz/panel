@@ -16,14 +16,14 @@ import typing as t
 
 from collections import Counter, defaultdict
 from collections.abc import (
-    Callable, Coroutine, Hashable, Iterator, Iterator as TIterator,
+    Awaitable, Callable, Coroutine, Hashable, Iterator, Iterator as TIterator,
 )
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager, suppress
 from contextvars import ContextVar
 from functools import partial, wraps
 from urllib.parse import urljoin
-from weakref import WeakKeyDictionary
+from weakref import WeakKeyDictionary, WeakSet
 
 import param
 
@@ -32,18 +32,20 @@ from bokeh.io import curdoc as _curdoc
 from pyviz_comms import CommManager as _CommManager
 
 from ..util import decode_token, edit_readonly, parse_timedelta
+from ..util.warnings import deprecated
 from .logging import LOG_SESSION_RENDERED, LOG_USER_MSG
 
 _state_logger = logging.getLogger('panel.state')
 
 if t.TYPE_CHECKING:
     from concurrent.futures import Future
+    from types import ModuleType
 
     from bokeh.application.application import SessionContext
     from bokeh.document import Document
     from bokeh.model import Model
-    from bokeh.models import ImportedStyleSheet
-    from bokeh.server.contexts import BokehSessionContext
+    from bokeh.models import ImportedStyleSheet, InlineStyleSheet
+    from bokeh.server.contexts import ApplicationContext, BokehSessionContext
     from bokeh.server.session import ServerSession
     from IPython.display import DisplayHandle
     from param.parameterized import Event, Parameterized
@@ -161,8 +163,11 @@ class _state(param.Parameterized):
     _thread_id_: t.ClassVar[WeakKeyDictionary[Document, int]] = WeakKeyDictionary()
     _thread_pool = None
 
+    # The event loops the thread pool was installed on as default executor
+    _executor_loops: t.ClassVar[WeakSet[asyncio.AbstractEventLoop]] = WeakSet()
+
     # Admin application (remove in Panel 1.0 / Bokeh 3.0)
-    _admin_context = None
+    _admin_context: ApplicationContext | None = None
 
     # Jupyter communication
     _comm_manager: type[_CommManager] = _CommManager
@@ -211,8 +216,10 @@ class _state(param.Parameterized):
     _loaded: t.ClassVar[WeakKeyDictionary[Document, bool]] = WeakKeyDictionary()
     _connected: t.ClassVar[WeakKeyDictionary[Document, bool]] = WeakKeyDictionary()
 
-    # Module that was run during setup
-    _setup_module = None
+    # Module that was run during setup and the callback that runs its
+    # server lifecycle hooks once the server is started
+    _setup_module: ModuleType | None = None
+    _setup_file_callback: Callable[[], None] | None = None
 
     # Scheduled callbacks
     _scheduled: t.ClassVar[dict[str, tuple[TIterator[int] | None, Callable[[], None]]]] = {}
@@ -231,6 +238,10 @@ class _state(param.Parameterized):
 
     # Style cache
     _stylesheets: t.ClassVar[WeakKeyDictionary[Document, dict[str, ImportedStyleSheet]]] = WeakKeyDictionary()
+
+    # Inlined copies of the CDN stylesheets on Documents rendered with
+    # inline resources, keyed by the url they replace.
+    _inline_stylesheets: t.ClassVar[WeakKeyDictionary[Document, dict[str, InlineStyleSheet]]] = WeakKeyDictionary()
 
     # Loaded extensions
     _extensions_: t.ClassVar[WeakKeyDictionary[Document, list[str]]] = WeakKeyDictionary()
@@ -258,6 +269,8 @@ class _state(param.Parameterized):
     # Watchers
     _watch_events: t.ClassVar[list[asyncio.Event]] = []
     _busy_cleanup_scheduled: t.ClassVar[PeriodicCallback | None] = None
+    # Reentrant since the _busy_counter watcher prunes the counter again
+    _busy_lock: t.ClassVar[threading.RLock] = threading.RLock()
 
     # Types
     _notification_type: t.ClassVar[type[NotificationAreaBase] | None] = None
@@ -369,6 +382,20 @@ class _state(param.Parameterized):
         return not bool(curdoc.session_context.server_context.sessions)
 
     @property
+    def _is_server_session(self) -> bool:
+        """
+        Whether the current document belongs to a genuine served session,
+        as opposed to a notebook comm-rendered document or the Jupyter
+        extension's own render endpoint (both leave ``server_context``
+        unset). Used to keep notebook-only resource defaults from leaking
+        into a server started from within that same notebook process.
+        """
+        curdoc = self.curdoc
+        return bool(
+            curdoc and curdoc.session_context and curdoc.session_context.server_context
+        )
+
+    @property
     def _is_pyodide(self) -> bool:
         return '_pyodide' in sys.modules
 
@@ -409,26 +436,38 @@ class _state(param.Parameterized):
             self.busy = bool(self._busy_counter)
 
     def _add_busy_event(self, event_id: str) -> None:
-        self._cleanup_busy_counter()
-        with edit_readonly(self):
-            self._busy_counter = [*self._busy_counter, (event_id, time.monotonic())]
-        self._schedule_busy_cleanup()
+        # Busy events are added and removed from any thread, so without the
+        # lock a concurrent update could resurrect an event that was removed
+        # and leave state.busy stuck until the event expires.
+        with self._busy_lock:
+            self._cleanup_busy_counter()
+            with edit_readonly(self):
+                self._busy_counter = [*self._busy_counter, (event_id, time.monotonic())]
+            self._schedule_busy_cleanup()
 
     def _remove_busy_event(self, event_id: str) -> None:
         self._cleanup_busy_counter(event_id)
 
     def _cleanup_busy_counter(self, event_id: str | None = None, timeout: float = 30.0) -> None:
-        now = time.monotonic()
-        with edit_readonly(self):
-            self._busy_counter = [
-                (eid, started_at)
-                for eid, started_at in self._busy_counter
-                if now - started_at <= timeout and eid != event_id
-            ]
+        with self._busy_lock:
+            now = time.monotonic()
+            with edit_readonly(self):
+                self._busy_counter = [
+                    (eid, started_at)
+                    for eid, started_at in self._busy_counter
+                    if now - started_at <= timeout and eid != event_id
+                ]
 
     def _schedule_busy_cleanup(self) -> None:
         if _state._busy_cleanup_scheduled:
             return
+        if self._on_loop_thread:
+            try:
+                asyncio.get_running_loop()
+            except RuntimeError:
+                # PeriodicCallback.start() would silently never run without a
+                # running loop, so leave it unscheduled and retry on the next event.
+                return
         from .callbacks import PeriodicCallback
         _state._busy_cleanup_scheduled = PeriodicCallback(
             background=True,
@@ -492,6 +531,9 @@ class _state(param.Parameterized):
 
         if doc in self._stylesheets:
             del self._stylesheets[doc]
+
+        if doc in self._inline_stylesheets:
+            del self._inline_stylesheets[doc]
 
     @property
     def _current_stack(self):
@@ -575,6 +617,32 @@ class _state(param.Parameterized):
                 self._profiles[(path+':on_load', config.profiler)] += sessions
                 self.param.trigger('_profiles')
         self._loaded[doc] = True
+
+    def _call_later(self, delay: float, callback: Callable[[], Awaitable[None]]) -> None:
+        """
+        Schedules a coroutine function on the server event loop after a
+        delay. Tornado IOLoops accept coroutine callbacks directly while
+        plain asyncio loops (which back the ASGI servers) do not, and may
+        be scheduled on from a worker thread.
+        """
+        loop = self._ioloop
+        if not isinstance(loop, asyncio.AbstractEventLoop):
+            loop.call_later(delay=delay, callback=callback)
+            return
+
+        def _run() -> None:
+            task = asyncio.ensure_future(callback())
+            _tasks.add(task)
+            task.add_done_callback(_tasks.discard)
+
+        try:
+            on_loop = asyncio.get_running_loop() is loop
+        except RuntimeError:
+            on_loop = False
+        if on_loop:
+            loop.call_later(delay, _run)
+        else:
+            loop.call_soon_threadsafe(loop.call_later, delay, _run)
 
     async def _scheduled_cb(self, name: str, threaded: bool = False) -> None:
         if name not in self._scheduled:
@@ -815,7 +883,7 @@ class _state(param.Parameterized):
 
     def execute(
         self,
-        callback: Callable[[], None | Coroutine[t.Any, t.Any, None]],
+        callback: Callable[[], None | Coroutine[t.Any, t.Any, t.Any]],
         schedule: bool | t.Literal['auto', 'thread'] = 'auto'
     ) -> None:
         """
@@ -876,11 +944,17 @@ class _state(param.Parameterized):
         for server_id in self._servers:
             if server_id in self._threads:
                 self._threads[server_id].stop()
-            else:
-                try:
-                    self._servers[server_id][0].stop()
-                except AssertionError:  # can't stop a server twice
-                    pass
+                continue
+            server = self._servers[server_id][0]
+            if hasattr(server, 'should_exit'):
+                # uvicorn.Server has no stop method, setting the exit flag is
+                # the only way to shut it down from the outside.
+                server.should_exit = True
+                continue
+            try:
+                server.stop()
+            except AssertionError:  # can't stop a server twice
+                pass
         self._servers.clear()
         self._threads.clear()
 
@@ -954,6 +1028,10 @@ class _state(param.Parameterized):
         """
         Publish parameters on a Parameterized object as a REST API.
 
+        .. deprecated:: 1.10
+            Will be removed in Panel 2.0 along with ``--rest-provider``.
+            Declare custom endpoints in a ``--plugins`` module instead.
+
         Parameters
         ----------
         endpoint: str
@@ -963,6 +1041,13 @@ class _state(param.Parameterized):
         parameters: list(str) or None
           A subset of parameters on the Parameterized to publish.
         """
+        deprecated(
+            '2.0', 'pn.state.publish',
+            extra=(
+                "Declare custom endpoints in a --plugins module instead, see "
+                "https://panel.holoviz.org/how_to/server/endpoints.html"
+            )
+        )
         if parameters is None:
             parameters = list(parameterized.param)
         if endpoint.startswith('/'):
@@ -994,7 +1079,9 @@ class _state(param.Parameterized):
         self._connected.clear()
         self._loaded.clear()
         self.cache.clear()
-        self._busy_cleanup_scheduled = None
+        if _state._busy_cleanup_scheduled is not None:
+            _state._busy_cleanup_scheduled.stop()
+            _state._busy_cleanup_scheduled = None
         with edit_readonly(self):
             self._busy_counter = []
         self._scheduled.clear()
@@ -1006,6 +1093,7 @@ class _state(param.Parameterized):
         self._on_session_created.clear()
         self._on_session_destroyed.clear()
         self._stylesheets.clear()
+        self._inline_stylesheets.clear()
         self._scheduled.clear()
         self._periodic.clear()
 
@@ -1089,7 +1177,17 @@ class _state(param.Parameterized):
             )
         if cron is None:
             if isinstance(period, str):
-                period = parse_timedelta(period)
+                period_str, period = period, parse_timedelta(period)
+                if period is None:
+                    raise ValueError(
+                        f"Could not parse period {period_str!r}. Express it "
+                        "as a number followed by a unit, e.g. '1w', '1d', "
+                        "'1.5h', '30m', '1s', or pass a datetime.timedelta."
+                    )
+            if period is not None and period <= dt.timedelta(0):
+                raise ValueError(
+                    f"The period of a scheduled task must be positive, got {period!r}."
+                )
             def dgen():
                 if isinstance(at, Iterator):
                     while True:
@@ -1124,9 +1222,7 @@ class _state(param.Parameterized):
         except StopIteration:
             return
         self._scheduled[key] = (diter, callback)
-        self._ioloop.call_later(
-            delay=call_time_seconds, callback=partial(self._scheduled_cb, key, threaded)
-        )
+        self._call_later(call_time_seconds, partial(self._scheduled_cb, key, threaded))
 
     def sync_busy(self, indicator: BooleanIndicator) -> None:
         """
@@ -1369,6 +1465,12 @@ class _state(param.Parameterized):
         Whether we are currently inside a script or notebook that is
         being served using `panel serve`.
         """
+        if self._is_pyodide:
+            # Converted apps run as __main__ but init_doc mocks a session
+            from .document import MockSessionContext
+            curdoc = self.curdoc
+            if curdoc is not None and isinstance(curdoc.session_context, MockSessionContext):
+                return True
         try:
             return inspect.stack()[1].frame.f_globals['__name__'].startswith('bokeh_app_')
         except Exception:

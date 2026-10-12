@@ -12,12 +12,12 @@ import panel as pn
 pn.extension(
     disconnect_notification='Connection lost, try reloading the page!',
     ready_notification='Application fully loaded.',
-    template='bootstrap'
+    template='page'
 )
 
-slider = pn.widgets.IntSlider(label='Number', start=1, end=10, value=7)
+slider = pn.ui.IntSlider(label='Number', start=1, end=10, value=7)
 
-pn.Column(
+pn.ui.Column(
     slider,
     pn.bind(lambda n: '⭐' * n, slider)
 ).servable(title='Connection Notifications')

@@ -7,6 +7,7 @@ EXPECTED_SIZES_MB = {
     "npm": 25,
     "sdist": 31,
     "whl": 31,
+    "ui": 4,
 }
 
 GLOB_PATH = {
@@ -14,13 +15,22 @@ GLOB_PATH = {
     "npm": "panel/*.tgz",
     "sdist": "dist/*.tar.gz",
     "whl": "dist/*.whl",
+    "ui": "panel/dist/ui/*.bundle.js",
 }
+
+# Builds that are only produced once panel.ui ships and must not fail the
+# build while it does not exist yet.
+OPTIONAL = ("ui",)
 
 PATH = Path(__file__).parents[1]
 
 
 def main(build):
     files = list(PATH.rglob(GLOB_PATH[build]))
+    if not files and build in OPTIONAL:
+        print(f"No {build} file found, skipping size check")
+        return
+
     assert len(files) == 1, f"Expected one {build} file, got {len(files)}"
 
     size = files[0].stat().st_size / 1024**2

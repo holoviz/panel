@@ -15,12 +15,12 @@ import panel as pn
 
 pn.extension()
 
-markdown = pn.pane.Markdown('Markdown display')
-text_input = pn.widgets.TextInput(value=markdown.object)
+markdown = pn.ui.Markdown('Markdown display')
+text_input = pn.ui.TextInput(value=markdown.object)
 
 link = text_input.jslink(markdown, value='object')
 
-pn.Row(text_input, markdown)
+pn.ui.Row(text_input, markdown)
 ```
 
 As you can see, Panel translates the specification into a JS code snippet which syncs the properties on the underlying Bokeh properties. But now if you edit the widget and press Return, the Markdown display will automatically update even in a static HTML web page.
@@ -31,12 +31,12 @@ When you want the source and target to be linked bi-directionally, i.e. a change
 
 
 ```{pyodide}
-t1 = pn.widgets.TextInput()
-t2 = pn.widgets.TextInput()
+t1 = pn.ui.TextInput()
+t2 = pn.ui.TextInput()
 
 t1.jslink(t2, value='value', bidirectional=True)
 
-pn.Row(t1, t2)
+pn.ui.Row(t1, t2)
 ```
 
 ## Link using custom JS code
@@ -45,15 +45,15 @@ Since everything happens in JS for a `jslink`, we can't provide a Python callbac
 
 
 ```{pyodide}
-markdown = pn.pane.Markdown("<b>Markdown display</b>", width=400)
-text_input = pn.widgets.TextInput(value="Markdown display")
+markdown = pn.ui.Markdown("<b>Markdown display</b>", width=400)
+text_input = pn.ui.TextInput(value="Markdown display")
 
 code = '''
     target.text = '<b>' + source.value + '</b>'
 '''
 link = text_input.jslink(markdown, code={'value': code})
 
-pn.Row(text_input, markdown)
+pn.ui.Row(text_input, markdown)
 ```
 
 Here ``source`` and ``target`` are made available in the JavaScript namespace, allowing us to arbitrarily modify the models in response to property change events. Note however that the underlying Bokeh model property names may differ slightly from the naming of the parameters on Panel objects, e.g. the 'object' parameter on the Markdown pane translates to the 'text' property on the Bokeh model used to render the ``Markdown``.
@@ -70,10 +70,10 @@ text_input.value = "Markdown display"
 To respond to click events, we'll demonstrate an example of using `js_on_click`. This example will open a URL from the ``TextInput`` widget value in a new browser tab:
 
 ```{pyodide}
-button = pn.widgets.Button(label='Open URL', color = 'primary')
-url = pn.widgets.TextInput(label='URL', value = 'https://holoviz.org/')
+button = pn.ui.Button(label='Open URL', color = 'primary')
+url = pn.ui.TextInput(label='URL', value = 'https://holoviz.org/')
 button.js_on_click(args={'target': url}, code='window.open(target.value)')
-pn.Row(url, button)
+pn.ui.Row(url, button)
 ```
 
 ---

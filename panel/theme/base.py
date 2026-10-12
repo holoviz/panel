@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import base64
 import functools
+import importlib
 import os
 import pathlib
 import typing as t
@@ -13,11 +15,11 @@ from bokeh.themes import Theme as _BkTheme, _dark_minimal, built_in_themes
 from ..config import config
 from ..custom import PyComponent
 from ..io.resources import (
-    JS_VERSION, ResourceComponent, component_resource_path, get_dist_path,
-    resolve_custom_path,
+    CDN_DIST, DIST_DIR, JS_VERSION, ResourceComponent, component_resource_path,
+    get_dist_path, resolve_custom_path,
 )
 from ..io.state import set_curdoc, state
-from ..util import relative_to
+from ..util import _descendents, relative_to
 
 if t.TYPE_CHECKING:
     from bokeh.document import Document
@@ -25,6 +27,8 @@ if t.TYPE_CHECKING:
 
     from ..io.resources import ResourceTypes
     from ..viewable import Viewable
+
+T = t.TypeVar('T', bound=type)
 
 
 class Inherit:
@@ -65,6 +69,13 @@ BOKEH_DARK['attrs']['Plot'].update({
 })
 
 THEME_CSS = pathlib.Path(__file__).parent / 'css'
+
+# Config parameter -> Design._loading_options key.
+_LOADING_CONFIG = {
+    'loading_spinner': 'spinner',
+    'loading_color': 'color',
+    'loading_max_height': 'max_height'
+}
 
 
 class DefaultTheme(Theme):
@@ -110,8 +121,22 @@ class Design(param.Parameterized, ResourceComponent):
     # Defines parameter overrides to apply to each model
     modifiers: t.ClassVar[dict[type[Viewable], dict[str, t.Any]]] = {}
 
+    # Substitutes for classic components in generated widgets.
+    component_mapping: t.ClassVar[dict[type, type]] = {}
+
+    # Parameter type -> widget type (or callable returning one). Takes
+    # precedence over component_mapping since a design may split or merge
+    # the classic mapping.
+    widget_mapping: t.ClassVar[dict[type[param.Parameter], type | t.Callable[[param.Parameter], type | None]]] = {}
+
     # Defines the resources required to render this theme
     _resources = {}
+
+    # Default variables for page templates.
+    _template_variables: t.ClassVar[dict[str, t.Any]] = {}
+
+    # Loading indicator defaults; explicit config values take precedence.
+    _loading_options: t.ClassVar[dict[str, t.Any]] = {}
 
     # Declares valid themes for this Design
     _themes: t.ClassVar[dict[str, type[Theme]]] = {
@@ -263,7 +288,7 @@ class Design(param.Parameterized, ResourceComponent):
         model, _ = viewable._models[mref]
         doc = model.document or document
         if cache is None:
-            cache = cls._cache if doc is None else _stylesheet_cache(doc)
+            cache = {} if doc is None else _stylesheet_cache(doc)
         modifiers, child_modifiers = cls._get_modifiers(viewable, theme, isolated)
         cls._patch_modifiers(doc, modifiers, cache)
         if child_modifiers:
@@ -279,7 +304,7 @@ class Design(param.Parameterized, ResourceComponent):
         # e.g. stylesheets or sizing_mode, are not synced between the
         # Panel component and the model anyway however in certain edge cases
         # this may end up causing issues.
-        from ..io.resources import CDN_DIST, patch_stylesheet, stylesheet_url
+        from ..io.resources import stylesheet_url
 
         if mref not in viewable._models:
             return
@@ -296,13 +321,8 @@ class Design(param.Parameterized, ResourceComponent):
         else:
             props = viewable._process_param_change(params)
         doc = model.document or document
-        if doc and 'dist_url' in doc._template_variables:
-            dist_url = doc._template_variables['dist_url']
-        else:
-            dist_url = CDN_DIST
-        for stylesheet in props.get('stylesheets', []):
-            if isinstance(stylesheet, ImportedStyleSheet):
-                patch_stylesheet(stylesheet, dist_url)
+        reactive = viewable._view__ if isinstance(viewable, PyComponent) else viewable
+        reactive._resolve_stylesheets(props, doc)
 
         # Do not update stylesheets if they match
         if 'stylesheets' in props and len(model.stylesheets) == len(props['stylesheets']):
@@ -336,6 +356,147 @@ class Design(param.Parameterized, ResourceComponent):
     #----------------------------------------------------------------
     # Public API
     #----------------------------------------------------------------
+
+    @classmethod
+    def resolve_component(cls, component: T) -> T:
+        """
+        Resolves the component to render in place of the provided
+        component type.
+
+        Only exact matches in the `component_mapping` are substituted,
+        since a subclass may declare behavior the design system's
+        equivalent does not implement.
+
+        Parameters
+        ----------
+        component: type
+            The component type to find the equivalent for.
+
+        Returns
+        -------
+        The equivalent component in this design system, or the component
+        itself if the design system does not declare one.
+        """
+        return t.cast('T', cls.component_mapping.get(component, component))
+
+    @classmethod
+    def loading_options(cls) -> dict[str, t.Any]:
+        """
+        Resolves the options that control the appearance of the loading
+        indicator.
+
+        The design system's `_loading_options` provide the defaults, any
+        value the user set explicitly takes precedence.
+
+        Returns
+        -------
+        Dictionary containing the spinner, color and max_height.
+        """
+        options = dict(cls._loading_options)
+        for cname, name in _LOADING_CONFIG.items():
+            value = getattr(config, cname)
+            if name not in options or value != config.param[cname].default:
+                options[name] = value
+        return options
+
+    @classmethod
+    def loading_css_classes(cls) -> list[str]:
+        """
+        Returns the CSS classes that mark a component as loading.
+        """
+        from ..io.loading import LOADING_INDICATOR_CSS_CLASS
+        return [LOADING_INDICATOR_CSS_CLASS, f'pn-{cls.loading_options()["spinner"]}']
+
+    @classmethod
+    def loading_css(cls) -> str:
+        """
+        Returns the CSS that styles the loading indicator.
+        """
+        from ..io.resources import loading_css
+        options = cls.loading_options()
+        return loading_css(
+            options['spinner'], options['color'], options['max_height']
+        )
+
+    @classmethod
+    def loading_resources(
+        cls, inline: bool = False, include_base: bool = True,
+        dist_path: str | None = None
+    ) -> dict[str, list[str]]:
+        """
+        Returns the resources required to render the loading indicator,
+        e.g. when saving or converting an application.
+
+        Parameters
+        ----------
+        inline: bool
+            Whether to inline the stylesheets instead of linking them.
+        include_base: bool
+            Whether to include the base loading stylesheet. May be
+            disabled if the output already loads it, e.g. because it is
+            rendered into a Panel template.
+        dist_path: str | None
+            The path the Panel distribution is served from. If not
+            declared the CDN is used and, when inlining, assets are
+            embedded in the stylesheet.
+
+        Returns
+        -------
+        Dictionary containing stylesheet URLs and raw CSS.
+        """
+        options = cls.loading_options()
+        css: list[str] = []
+        raw_css: list[str] = []
+        if include_base:
+            if inline:
+                raw_css.append(cls._inline_loading_css(options, dist_path))
+            else:
+                css.append(f'{dist_path or CDN_DIST}css/loading.css')
+        raw_css.append(cls.loading_css())
+        return {'css': css, 'raw_css': raw_css}
+
+    @classmethod
+    def _inline_loading_css(cls, options: dict[str, t.Any], dist_path: str | None) -> str:
+        base = (DIST_DIR / 'css' / 'loading.css').read_text(encoding='utf-8')
+        if dist_path is not None:
+            return base.replace('../assets', f'{dist_path}assets')
+        svg_name = f'{options["spinner"]}_spinner.svg'
+        svg_path = DIST_DIR / 'assets' / svg_name
+        if not svg_path.is_file():
+            return base
+        b64 = base64.b64encode(svg_path.read_bytes()).decode('utf-8')
+        return base.replace(
+            f'../assets/{svg_name}', f'data:image/svg+xml;base64,{b64}'
+        )
+
+    @classmethod
+    def resolve_widget(cls, parameter: param.Parameter) -> type[t.Any] | None:
+        """
+        Resolves the widget type to generate for a Parameter.
+
+        Parameters
+        ----------
+        parameter: param.Parameter
+            The Parameter to resolve a widget for.
+
+        Returns
+        -------
+        The widget type to render the Parameter with, or None if the
+        design system does not override the default resolution.
+        """
+        if not cls.widget_mapping:
+            return None
+        for ptype in type(parameter).__mro__:
+            if ptype not in cls.widget_mapping:
+                continue
+            wtype = cls.widget_mapping[ptype]
+            if not isinstance(wtype, type) and callable(wtype):
+                resolved = wtype(parameter)
+                if resolved is None:
+                    continue
+                return resolved
+            return wtype
+        return None
 
     def apply(self, viewable: Viewable, root: Model, isolated: bool = True):
         """
@@ -467,3 +628,109 @@ THEMES = {
     'default': DefaultTheme,
     'dark': DarkTheme
 }
+
+# Designs resolvable by name that live outside panel.theme.
+DESIGN_ALIASES: dict[str, str] = {
+    'material-ui': 'panel.ui.theme.MaterialUIDesign',
+}
+
+
+def resolve_design(design: str | type[Design]) -> type[Design]:
+    """
+    Resolves the Design class given its name.
+
+    Parameters
+    ----------
+    design: str | type[Design]
+        The name of the Design or the Design itself.
+
+    Returns
+    -------
+    The resolved Design class.
+    """
+    if not isinstance(design, str):
+        return design
+    name = design.lower()
+    if name in DESIGN_ALIASES:
+        return _resolve_design_alias(name, DESIGN_ALIASES[name])
+    try:
+        importlib.import_module(f'panel.theme.{name}')
+    except ImportError:
+        pass
+    designs = {t.__name__.lower(): t for t in _descendents(Design, concrete=True)}
+    if name not in designs:
+        available = sorted(set(designs) | set(DESIGN_ALIASES))
+        raise ValueError(
+            f'Design {design!r} was not recognized, available design '
+            f'systems include: {available}.'
+        )
+    return designs[name]
+
+
+def _resolve_design_alias(name: str, ref: str) -> type[Design]:
+    modname, _, clsname = ref.rpartition(':') if ':' in ref else ref.rpartition('.')
+    try:
+        module = importlib.import_module(modname)
+    except ImportError as e:
+        raise ValueError(
+            f'Design {name!r} could not be resolved, importing {modname!r} '
+            f'failed with: {e}'
+        ) from e
+    resolved = getattr(module, clsname, None)
+    if not (isinstance(resolved, type) and issubclass(resolved, Design)):
+        raise ValueError(
+            f'Design {name!r} could not be resolved, {ref!r} does not '
+            'reference a Design class.'
+        )
+    return resolved
+
+
+def resolve_component(component: T) -> T:
+    """
+    Resolves the component to render in place of the provided component
+    type given the currently active design system.
+
+    Parameters
+    ----------
+    component: type
+        The component type to find the equivalent for.
+
+    Returns
+    -------
+    The equivalent component in the active design system, or the
+    component itself if there is none.
+    """
+    design = config.design
+    if design is None:
+        return component
+    return design.resolve_component(component)
+
+
+def design_template_variables() -> dict[str, t.Any]:
+    """
+    Returns the page template variables declared by the currently active
+    design system.
+    """
+    design = config.design
+    return dict(design._template_variables) if design else {}
+
+
+def resolve_widget(parameter: param.Parameter) -> type[Viewable] | None:
+    """
+    Resolves the widget type to generate for a Parameter given the
+    currently active design system.
+
+    Parameters
+    ----------
+    parameter: param.Parameter
+        The Parameter to resolve a widget for.
+
+    Returns
+    -------
+    The widget type declared by the active design system, or None if it
+    does not override the default resolution.
+    """
+    design = config.design
+    if design is None:
+        return None
+    return design.resolve_widget(parameter)

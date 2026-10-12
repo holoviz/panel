@@ -400,12 +400,18 @@ export class PlotlyPlotView extends HTMLBoxView {
 
     //  - plotly_unhover
     this.container.on("plotly_unhover", () => {
-      // Override hoverdata to ensure click event has context
-      this.container._hoverdata = this._hoverdata
       this.model.trigger_event(new PlotlyEvent({type: "hover", data: null}))
+      // Plotly already stored the new point when moving straight to it
+      if (this.container._hoverdata != null) {
+        return
+      }
+      // Override hoverdata to ensure click event has context
+      const hoverdata = this.container._hoverdata = this._hoverdata
       setTimeout(() => {
         // Remove hoverdata once events have been processed
-        delete this.container._hoverdata
+        if (this.container._hoverdata === hoverdata) {
+          delete this.container._hoverdata
+        }
       }, 0)
     })
   }

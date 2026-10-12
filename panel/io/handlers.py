@@ -34,7 +34,7 @@ from .reload import record_modules
 from .state import set_curdoc, state
 
 if t.TYPE_CHECKING:
-    from collections.abc import Callable, Iterator
+    from collections.abc import Callable, Iterator, Sequence
     from types import ModuleType
 
     from bokeh.core.types import PathLike
@@ -444,7 +444,7 @@ def parse_notebook(
         out all magics (i.e IPython specific syntax).
         """
 
-        _magic_pattern = re.compile(r'^\s*(?P<magic>%%\w\w+)($|(\s+))')
+        _magic_pattern = re.compile(r'^\s*(?P<magic>%%?\w+)($|(\s+))')
 
         def strip_magics(self, source: str) -> str:
             """
@@ -560,7 +560,7 @@ class PanelCodeHandler(CodeHandler):
         self,
         *,
         source: str | None = None,
-        filename: PathLike, argv: list[str] = [],
+        filename: PathLike, argv: Sequence[str] = [],
         package: ModuleType | None = None,
         runner: PanelCodeRunner | None = None
     ) -> None:
@@ -569,7 +569,7 @@ class PanelCodeHandler(CodeHandler):
         if runner:
             self._runner = runner
         elif source is not None:
-            self._runner = PanelCodeRunner(source, filename, argv, package=package)
+            self._runner = PanelCodeRunner(source, filename, list(argv), package=package)
         else:
             raise ValueError("Must provide source code to PanelCodeHandler")
 

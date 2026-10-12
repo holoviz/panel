@@ -9,9 +9,9 @@ pn.extension()
 def output(value):
     return value
 
-slider = pn.widgets.IntSlider(end=10)
+slider = pn.ui.IntSlider(end=10)
 bound_output = pn.bind(output, slider.param.value_throttled)
-pn.Row(slider, bound_output)
+pn.ui.Row(slider, bound_output)
 ```
 
 Alternatively, you can also ensure that all sliders only update on mouse release if you set `pn.config.throttled = True`.

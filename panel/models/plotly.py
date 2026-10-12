@@ -10,6 +10,7 @@ from bokeh.models import ColumnDataSource, LayoutDOM
 from ..config import config
 from ..io.resources import bundled_files
 from ..util import classproperty
+from .resource import ExternalResourcesMixin
 
 PLOTLY_VERSION = '3.1.0'
 
@@ -23,7 +24,7 @@ class PlotlyEvent(ModelEvent):
         super().__init__(model=model)
 
 
-class PlotlyPlot(LayoutDOM):
+class PlotlyPlot(LayoutDOM, ExternalResourcesMixin):
     """
     A bokeh model that wraps around a plotly plot and renders it inside
     a bokeh plot.
@@ -46,7 +47,7 @@ class PlotlyPlot(LayoutDOM):
 
     @classproperty
     def __js_skip__(cls):
-        return {'Plotly': cls.__javascript__[1:]}
+        return {'Plotly': cls.__javascript__[:1]}
 
     __js_require__ = {
         'paths': {

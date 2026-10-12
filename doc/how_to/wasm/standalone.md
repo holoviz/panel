@@ -32,11 +32,11 @@ Create a file called **script.html** with the following content:
         pyodide.runPython(`
           import panel as pn
           pn.extension(sizing_mode="stretch_width")
-          slider = pn.widgets.FloatSlider(start=0, end=10, label='Amplitude')
+          slider = pn.ui.FloatSlider(start=0, end=10, label='Amplitude')
           def callback(new):
               return f'Amplitude is: {new}'
 
-          pn.Row(slider, pn.bind(callback, slider)).servable(target='simple_app');
+          pn.ui.Row(slider, pn.bind(callback, slider)).servable(target='simple_app');
       `);
       }
       main();
@@ -92,10 +92,10 @@ Create a file called **script.html** with the following content:
     <script type="py" config='{"packages": ["https://cdn.holoviz.org/panel/{{PANEL_VERSION}}/dist/wheels/bokeh-{{BOKEH_VERSION}}-py3-none-any.whl", "https://cdn.holoviz.org/panel/{{PANEL_VERSION}}/dist/wheels/panel-{{PANEL_VERSION}}-py3-none-any.whl"]}'>
       import panel as pn
       pn.extension(sizing_mode="stretch_width")
-      slider = pn.widgets.FloatSlider(start=0, end=10, label='Amplitude')
+      slider = pn.ui.FloatSlider(start=0, end=10, label='Amplitude')
       def callback(new):
          return f'Amplitude is: {new}'
-      pn.Row(slider, pn.bind(callback, slider)).servable(target='simple_app')
+      pn.ui.Row(slider, pn.bind(callback, slider)).servable(target='simple_app')
     </script>
   </body>
 </html>
@@ -140,12 +140,12 @@ Create a file called **script.html** with the following content:
 
       pn.extension(sizing_mode="stretch_width")
 
-      slider = pn.widgets.FloatSlider(start=0, end=10, label='Amplitude')
+      slider = pn.ui.FloatSlider(start=0, end=10, label='Amplitude')
 
       def callback(new):
          return f'Amplitude is: {new}'
 
-      pn.Row(slider, pn.bind(callback, slider)).servable(target='simple_app');
+      pn.ui.Row(slider, pn.bind(callback, slider)).servable(target='simple_app');
     </script>
     <div id="simple_app"></div>
   </body>
@@ -175,12 +175,12 @@ Rendering Panel components into the DOM is straightforward. Use the `.servable()
 ```python
 import panel as pn
 
-slider = pn.widgets.FloatSlider(start=0, end=10, label='Amplitude')
+slider = pn.ui.FloatSlider(start=0, end=10, label='Amplitude')
 
 def callback(new):
     return f'Amplitude is: {new}'
 
-pn.Row(slider, pn.bind(callback, slider)).servable(target='simple_app')
+pn.ui.Row(slider, pn.bind(callback, slider)).servable(target='simple_app')
 ```
 
 This code will render the application into the `simple_app` DOM node:
