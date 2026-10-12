@@ -16,7 +16,7 @@ By the end of this guide you'll be able to:
 
 ## Install the HoloViz skills
 
-The [holoviz-skills](https://holoviz-dev.github.io/holoviz-skills/) repository provides a curated collection of [Agent Skills](https://www.anthropic.com/news/skills) for the HoloViz ecosystem, including Panel. Agent Skills are folders of instructions and references that teach an assistant how to work with a library correctly.
+The [holoviz-skills](https://skills.holoviz.org/) repository provides a curated collection of [Agent Skills](https://www.anthropic.com/news/skills) for the HoloViz ecosystem, including Panel. Agent Skills are folders of instructions and references that teach an assistant how to work with a library correctly.
 
 ::::{tab-set}
 
