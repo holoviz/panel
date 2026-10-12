@@ -7,13 +7,14 @@ import type {StyleSheetLike} from "@bokehjs/core/dom"
 import {div} from "@bokehjs/core/dom"
 import {Enum} from "@bokehjs/core/kinds"
 import type * as p from "@bokehjs/core/properties"
+import {Model} from "@bokehjs/model"
 import type {LayoutDOM} from "@bokehjs/models/layouts/layout_dom"
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
-import {TableColumn} from "@bokehjs/models/widgets/tables"
 import type {Attrs} from "@bokehjs/core/types"
 
 import {debounce} from "debounce"
 
+import {cell_formatter} from "./cell_formatters"
 import {comm_settings} from "./comm_manager"
 import {transform_cds_to_records} from "./data"
 import {HTMLBox, HTMLBoxView} from "./layout"
@@ -326,6 +327,45 @@ const datetimeEditor = function(cell: any, onRendered: any, success: any, cancel
   })
 
   return input
+}
+
+function is_spec(obj: any): boolean {
+  return !(obj instanceof Model)
+}
+
+// Maps Bokeh CellEditor specs onto native Tabulator editors
+function apply_editor_spec(tab_column: any, editor: any): void {
+  switch (editor.type) {
+    case "StringEditor":
+      if (editor.completions.length > 0) {
+        tab_column.editor = "list"
+        tab_column.editorParams = {values: editor.completions, autocomplete: true, listOnEmpty: true}
+      } else {
+        tab_column.editor = "input"
+      }
+      break
+    case "TextEditor":
+      tab_column.editor = "textarea"
+      break
+    case "IntEditor":
+    case "NumberEditor":
+      tab_column.editor = "number"
+      tab_column.editorParams = {step: editor.step}
+      tab_column.validator = editor.type === "IntEditor" ? "integer" : "numeric"
+      break
+    case "CheckboxEditor":
+      tab_column.editor = "tickCross"
+      break
+    case "DateEditor":
+      tab_column.editor = dateEditor
+      break
+    case "SelectEditor":
+      tab_column.editor = "list"
+      tab_column.editorParams = {values: editor.options}
+      break
+    default:
+      tab_column.editor = "input"
+  }
 }
 
 const nestedEditor = function(cell: any, editorParams: any) {
@@ -1185,26 +1225,7 @@ export class DataTabulatorView extends HTMLBoxView {
         tab_column.width = column.width
       }
       if (tab_column.formatter == null && column.formatter != null) {
-        const formatter: any = column.formatter
-        const ftype = formatter.type
-        if (ftype === "BooleanFormatter") {
-          tab_column.formatter = "tickCross"
-        } else {
-          tab_column.formatter = (cell: any) => {
-            const row = cell.getRow()
-            const formatted = column.formatter.doFormat(cell.getRow(), cell, cell.getValue(), null, row.getData())
-            if (column.formatter.type === "HTMLTemplateFormatter") {
-              return formatted
-            }
-            const node = div()
-            node.innerHTML = formatted
-            const child = node.children[0]
-            if (child.innerHTML === "function(){return c.convert(arguments)}") { // If the formatter fails
-              return ""
-            }
-            return child
-          }
-        }
+        tab_column.formatter = this._get_formatter(column.formatter)
       }
       if (tab_column.sorter == "timestamp") {
         tab_column.sorter = timestampSorter
@@ -1213,7 +1234,7 @@ export class DataTabulatorView extends HTMLBoxView {
         tab_column.sorter = "string"
       }
       const editor: any = column.editor
-      const ctype = editor.type
+      const has_editor = editor != null && (is_spec(editor) ? editor.type !== "CellEditor" : editor.default_view != null)
       if (tab_column.editor != null) {
         if (tab_column.editor === "date") {
           tab_column.editor = dateEditor
@@ -1225,43 +1246,21 @@ export class DataTabulatorView extends HTMLBoxView {
           }
           tab_column.editor = "list"
         }
-      } else if (ctype === "StringEditor") {
-        if (editor.completions.length > 0) {
-          tab_column.editor = "list"
-          tab_column.editorParams = {values: editor.completions, autocomplete: true, listOnEmpty: true}
-        } else {
-          tab_column.editor = "input"
-        }
-      } else if (ctype === "TextEditor") {
-        tab_column.editor = "textarea"
-      } else if (ctype === "IntEditor" || ctype === "NumberEditor") {
-        tab_column.editor = "number"
-        tab_column.editorParams = {step: editor.step}
-        if (ctype === "IntEditor") {
-          tab_column.validator = "integer"
-        } else {
-          tab_column.validator = "numeric"
-        }
-      } else if (ctype === "CheckboxEditor") {
-        tab_column.editor = "tickCross"
-      } else if (ctype === "DateEditor") {
-        tab_column.editor = dateEditor
-      } else if (ctype === "SelectEditor") {
-        tab_column.editor = "list"
-        tab_column.editorParams = {values: editor.options}
-      } else if (editor != null && editor.default_view != null) {
+      } else if (has_editor && !is_spec(editor)) {
         tab_column.editor = (cell: any, onRendered: any, success: any, cancel: any) => {
           this.renderEditor(column, cell, onRendered, success, cancel)
         }
+      } else if (has_editor) {
+        apply_editor_spec(tab_column, editor)
       }
       tab_column.visible = (tab_column.visible != false && !this.model.hidden_columns.includes(column.field))
       const originalEditable = tab_column.editable
       if (isFunction(originalEditable)) {
-        tab_column.editable = (cell: any) => (this.model.editable && (editor.default_view != null) && originalEditable(cell))
+        tab_column.editable = (cell: any) => (this.model.editable && has_editor && originalEditable(cell))
       } else if (isBoolean(originalEditable)) {
-        tab_column.editable = () => (this.model.editable && (editor.default_view != null) && originalEditable)
+        tab_column.editable = () => (this.model.editable && has_editor && originalEditable)
       } else {
-        tab_column.editable = () => (this.model.editable && (editor.default_view != null))
+        tab_column.editable = () => (this.model.editable && has_editor)
       }
       if (tab_column.headerFilter) {
         if (isBoolean(tab_column.headerFilter) && isString(tab_column.editor)) {
@@ -1304,6 +1303,25 @@ export class DataTabulatorView extends HTMLBoxView {
       columns.push({width: 1, maxWidth: 1, minWidth: 1, resizable: false, cssClass: "empty", sorter: null})
     }
     return columns
+  }
+
+  _get_formatter(formatter: any): any {
+    if (!is_spec(formatter)) {
+      // Custom Bokeh CellFormatter model compiled as an extension
+      return (cell: any) => {
+        const row = cell.getRow()
+        const node = div()
+        node.innerHTML = formatter.doFormat(row, cell, cell.getValue(), null, row.getData())
+        return node.children[0]
+      }
+    } else if (formatter.type === "BooleanFormatter") {
+      return "tickCross"
+    }
+    const format = cell_formatter(formatter)
+    if (format == null) {
+      return undefined
+    }
+    return (cell: any) => format(cell.getValue(), cell.getRow().getData())
   }
 
   renderEditor(column: any, cell: any, onRendered: any, success: any, cancel: any): any {
@@ -1714,13 +1732,46 @@ export class DataTabulatorView extends HTMLBoxView {
 
 export const TableLayout = Enum("fit_data", "fit_data_fill", "fit_data_stretch", "fit_data_table", "fit_columns")
 
+export namespace TabulatorColumn {
+  export type Attrs = p.AttrsOf<Props>
+  export type Props = Model.Props & {
+    field: p.Property<string>
+    title: p.Property<string | null>
+    width: p.Property<number>
+    formatter: p.Property<any>
+    editor: p.Property<any>
+  }
+}
+
+export interface TabulatorColumn extends TabulatorColumn.Attrs {}
+
+export class TabulatorColumn extends Model {
+  declare properties: TabulatorColumn.Props
+
+  constructor(attrs?: Partial<TabulatorColumn.Attrs>) {
+    super(attrs)
+  }
+
+  static override __module__ = "panel.models.tabulator"
+
+  static {
+    this.define<TabulatorColumn.Props>(({Any, Float, Nullable, Str}) => ({
+      field:     [ Str              ],
+      title:     [ Nullable(Str), null ],
+      width:     [ Float,          300 ],
+      formatter: [ Nullable(Any), null ],
+      editor:    [ Nullable(Any), null ],
+    }))
+  }
+}
+
 export namespace DataTabulator {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
     aggregators: p.Property<any>
     buttons: p.Property<any>
     children: p.Property<Map<number, LayoutDOM>>
-    columns: p.Property<TableColumn[]>
+    columns: p.Property<TabulatorColumn[]>
     configuration: p.Property<any>
     download: p.Property<boolean>
     editable: p.Property<boolean>
@@ -1769,7 +1820,7 @@ export class DataTabulator extends HTMLBox {
       buttons:        [ Any,                     {} ],
       children:       [ Any,              new Map() ],
       configuration:  [ Any,                     {} ],
-      columns:        [ List(Ref(TableColumn)), [] ],
+      columns:        [ List(Ref(TabulatorColumn)), [] ],
       download:       [ Bool,              false ],
       editable:       [ Bool,               true ],
       embed_content:  [ Bool,               false ],

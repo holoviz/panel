@@ -345,7 +345,7 @@ class GridSpec(Panel):
 
         for old in old_objects:
             if old not in current_objects:
-                old._cleanup(root)
+                old._release_model(root, model)
 
         children, old_children = [], []
         for i, ((y0, x0, y1, x1), obj) in enumerate(self.objects.items()):
@@ -371,12 +371,12 @@ class GridSpec(Panel):
             obj.param.update(**{k: v for k, v in properties.items()
                                    if not obj.param[k].readonly})
 
-            if obj in old_objects:
+            if obj in old_objects and root.ref['id'] in obj._models:
                 child, _ = obj._models[root.ref['id']]
                 old_children.append(child)
             else:
                 try:
-                    child = obj._get_model(doc, root, model, comm)
+                    child = obj._acquire_model(doc, root, model, comm)
                 except RerenderError as e:
                     if e.layout is not None and e.layout is not self:
                         raise e
@@ -418,9 +418,10 @@ class GridSpec(Panel):
         return grid
 
     def _cleanup(self, root: Model | None = None) -> None:
+        parent = self._models.get(root.ref['id'], (None,))[0] if root else None
         super()._cleanup(root)
         for p in self.objects.values():
-            p._cleanup(root)
+            p._release_model(root, parent)
 
     #----------------------------------------------------------------
     # Public API

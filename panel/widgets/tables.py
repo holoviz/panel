@@ -13,6 +13,7 @@ from types import FunctionType, MethodType
 import numpy as np
 import param
 
+from bokeh.core.property.vectorization import Field, Value
 from bokeh.core.serialization import Serializer
 from bokeh.model import Model
 from bokeh.models import ColumnDataSource, ImportedStyleSheet
@@ -47,7 +48,7 @@ if t.TYPE_CHECKING:
     from pyviz_comms import Comm
 
     from ..models.tabulator import (
-        CellClickEvent, SelectionEvent, TableEditEvent,
+        CellClickEvent, SelectionEvent, TableEditEvent, TabulatorColumn,
     )
     from ..reactive import TDataColumn
 
@@ -55,6 +56,7 @@ if t.TYPE_CHECKING:
         headerFilter: str | bool
         headerFilterParams: dict[str, t.Any]
         headerFilterFunc: str
+        headerFilterFuncParams: dict[str, t.Any]
         headerFilterPlaceholder: str
 
 class ColumnSpec(t.TypedDict, total=False):
@@ -93,6 +95,29 @@ def _get_value_from_keys(d:dict, key1, key2, default=None):
         warn(msg, DeprecationWarning)
         return d[key2]
     return default
+
+def _cell_model_spec(model: CellEditor | CellFormatter | None) -> dict[str, t.Any] | Model | None:
+    """
+    Converts a builtin Bokeh CellEditor or CellFormatter into a plain
+    spec so it can be rendered without loading the bokeh-tables bundle.
+    Subclasses defined in custom extensions are passed through as is.
+    """
+    if model is None or type(model).__module__ != CellEditor.__module__:
+        return model
+    spec: dict[str, t.Any] = {'type': type(model).__name__}
+    for name, value in model.properties_with_values(include_defaults=True).items():
+        if name in Model.properties():
+            continue
+        if isinstance(value, Value):
+            value = {'value': value.value}
+        elif isinstance(value, Field):
+            field_spec: dict[str, t.Any] = {'field': value.field}
+            if isinstance(value.transform, Model):
+                field_spec['transform'] = value.transform
+            value = field_spec
+        spec[name] = value
+    return spec
+
 
 @contextmanager
 def _stringdtype_error(df: pd.DataFrame, column: str, array):
@@ -1986,6 +2011,16 @@ class Tabulator(BaseTable):
             ilocs = ilocs[len(ilocs) - self.selectable:]
         self.selection = ilocs  # type: ignore
 
+    def _get_columns(self) -> list[TabulatorColumn]:  # type: ignore[override]
+        from ..models.tabulator import TabulatorColumn
+        return [
+            TabulatorColumn(
+                field=column.field, title=column.title, width=column.width,
+                formatter=_cell_model_spec(column.formatter),
+                editor=_cell_model_spec(column.editor),
+            ) for column in super()._get_columns()
+        ]
+
     def _get_properties(self, doc: Document | None = None) -> dict[str, t.Any]:
         properties = super()._get_properties(doc)
         properties['configuration'] = self._get_configuration(properties['columns'])
@@ -2040,7 +2075,7 @@ class Tabulator(BaseTable):
         self._register_events('cell-click', 'table-edit', 'selection-change', model=model, doc=doc, comm=comm)
         return model
 
-    def _get_filter_spec(self, column: TableColumn) -> FilterSpec:
+    def _get_filter_spec(self, column: TabulatorColumn) -> FilterSpec:
         fspec: FilterSpec = {}
         if not self.header_filters or (isinstance(self.header_filters, dict) and
                                        column.field not in self.header_filters):
@@ -2060,7 +2095,9 @@ class Tabulator(BaseTable):
                     fspec['headerFilter'] = False
                 else:
                     fspec['headerFilter'] = True
-            elif isinstance(column.editor, DateEditor):
+            elif isinstance(column.editor, DateEditor) or (
+                isinstance(column.editor, dict) and column.editor['type'] == 'DateEditor'
+            ):
                 # Datetime filtering currently broken with Tabulator 5.4.3
                 # Initial (empty) value of filter is passed to luxon.js
                 # and causes error
@@ -2099,16 +2136,27 @@ class Tabulator(BaseTable):
                 filter_params = {'valuesLookup': True}
             if filter_func is None:
                 filter_func = 'in' if filter_params.get('multiselect') else 'like'
+        # Tabulator's keywords filter reads matchAll and separator from
+        # headerFilterFuncParams. headerFilterParams only configures the
+        # header input, so leaving them there makes a local table match any
+        # keyword. Remote pagination still filters in Python.
+        func_params: dict[str, t.Any] = {}
+        if filter_func == 'keywords':
+            for key in ('matchAll', 'separator'):
+                if key in filter_params:
+                    func_params[key] = filter_params.pop(key)
         fspec['headerFilter'] = filter_type
         if filter_params:
             fspec['headerFilterParams'] = filter_params
         if filter_func:
             fspec['headerFilterFunc'] = filter_func
+        if func_params:
+            fspec['headerFilterFuncParams'] = func_params
         if filter_placeholder:
             fspec['headerFilterPlaceholder'] = filter_placeholder
         return fspec
 
-    def _config_columns(self, column_objs: list[TableColumn]) -> Sequence[ColumnSpec | GroupSpec]:
+    def _config_columns(self, column_objs: list[TabulatorColumn]) -> Sequence[ColumnSpec | GroupSpec]:
         column_objs = list(column_objs)
         groups: dict[str, GroupSpec] = {}
         columns: Sequence[ColumnSpec | GroupSpec] = []
@@ -2248,7 +2296,7 @@ class Tabulator(BaseTable):
                     if new:
                         children = last['columns']
                 children.append(col_dict)
-                column.title = self.titles.get(index, index[-1])
+                column.update(title=self.titles.get(index, index[-1]))
             elif matching_groups:
                 group = matching_groups[0]
                 if group in groups:
@@ -2264,7 +2312,7 @@ class Tabulator(BaseTable):
                 columns.append(col_dict)
         return columns
 
-    def _get_configuration(self, columns: list[TableColumn]) -> dict[str, t.Any]:
+    def _get_configuration(self, columns: list[TabulatorColumn]) -> dict[str, t.Any]:
         """
         Returns the Tabulator configuration.
         """

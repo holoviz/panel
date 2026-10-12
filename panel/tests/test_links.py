@@ -16,9 +16,10 @@ from panel.layout import Row
 from panel.links import Callback, Link
 from panel.pane import Bokeh, HoloViews
 from panel.tests.util import hv_available
+from panel.util.warnings import PanelUserWarning
 from panel.widgets import (
-    Button, ColorPicker, DatetimeInput, FloatInput, FloatSlider, RangeSlider,
-    TextInput,
+    Button, ColorPicker, CrossSelector, DatetimeInput, FloatInput, FloatSlider,
+    RangeSlider, Tabulator, TextInput,
 )
 
 
@@ -431,3 +432,65 @@ def test_callback_unwatch_multiple_callbacks():
     cb2.unwatch()
 
     assert len(Callback.registry.get(button, [])) == 0
+
+
+def test_crossselector_jscallback_skips_missing_value(document, comm):
+    widget = CrossSelector(options=['a', 'b', 'c'])
+    widget.jscallback(value="console.log('hello world')")
+
+    with pytest.warns(PanelUserWarning, match="value"):
+        model = widget.get_root(document, comm)
+
+    assert 'change:value' not in model.js_property_callbacks
+    assert 'value' not in model.js_property_callbacks
+
+
+def test_crossselector_jslink_code_skips_missing_value(document, comm):
+    cross = CrossSelector(options=['a', 'b', 'c'])
+    other = TextInput()
+    cross.jslink(other, code={'value': "console.log('x')"})
+    row = Row(cross, other)
+
+    with pytest.warns(PanelUserWarning, match="value"):
+        root = row.get_root(document, comm)
+
+    cross_model = cross._models[root.ref['id']][0]
+    assert 'change:value' not in cross_model.js_property_callbacks
+    assert 'value' not in cross_model.js_property_callbacks
+
+
+def test_crossselector_jslink_keyword_skips_missing_value(document, comm):
+    cross = CrossSelector(options=['a', 'b', 'c'])
+    other = TextInput()
+    cross.jslink(other, value='value')
+    row = Row(cross, other)
+
+    with pytest.warns(PanelUserWarning, match="value"):
+        root = row.get_root(document, comm)
+
+    cross_model = cross._models[root.ref['id']][0]
+    assert 'change:value' not in cross_model.js_property_callbacks
+    assert 'value' not in cross_model.js_property_callbacks
+
+
+def test_crossselector_jscallback_width_registers(document, comm):
+    widget = CrossSelector(options=['a', 'b', 'c'])
+    widget.jscallback(width="console.log('width')")
+
+    model = widget.get_root(document, comm)
+
+    assert 'change:width' in model.js_property_callbacks
+
+
+def test_tabulator_jslink_skips_missing_value(dataframe, document, comm):
+    table = Tabulator(value=dataframe)
+    other = TextInput()
+    table.jslink(other, code={'value': "console.log('tab test')"})
+    row = Row(table, other)
+
+    with pytest.warns(PanelUserWarning, match="value"):
+        root = row.get_root(document, comm)
+
+    table_model = table._models[root.ref['id']][0]
+    assert 'change:value' not in table_model.js_property_callbacks
+    assert 'value' not in table_model.js_property_callbacks

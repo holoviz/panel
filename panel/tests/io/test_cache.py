@@ -1,10 +1,16 @@
 import datetime as dt
+import decimal
+import enum
+import fractions
 import io
+import ipaddress
 import pathlib
 import sys
 import time
+import uuid
 
 from collections import Counter, namedtuple
+from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
@@ -20,7 +26,7 @@ diskcache_available = pytest.mark.skipif(diskcache is None, reason="requires dis
 
 from panel.config import config
 from panel.io.cache import (
-    _HASH_MAP, _generate_hash, cache, compute_hash, is_equal,
+    _HASH_MAP, _generate_hash, _get_fqn, cache, compute_hash, is_equal,
 )
 from panel.io.state import set_curdoc, state
 from panel.tests.util import serve_and_wait
@@ -696,3 +702,54 @@ def test_hash_memo_not_keyed_on_indeterminate_values():
     compute_hash(f, {}, (DF1,), {})
     compute_hash(f, {}, (object(),), {})
     assert not _HASH_MAP
+
+@dataclass
+class _Point:
+    x: int
+
+class _Color(enum.Enum):
+    RED = 1
+    BLUE = 2
+
+def test_hash_value_types_by_value():
+    assert hashes_equal(uuid.UUID(int=1), uuid.UUID(int=1))
+    assert not hashes_equal(uuid.UUID(int=1), uuid.UUID(int=2))
+    assert not hashes_equal(decimal.Decimal('1.5'), decimal.Decimal('7'))
+    assert not hashes_equal(fractions.Fraction(1, 2), fractions.Fraction(1, 3))
+    assert not hashes_equal(ipaddress.ip_address('10.0.0.1'), ipaddress.ip_address('10.0.0.2'))
+    assert not hashes_equal(_Color.RED, _Color.BLUE)
+    assert hashes_equal(_Point(1), _Point(1))
+    assert not hashes_equal(_Point(1), _Point(2))
+
+class _Number(enum.IntEnum):
+    ONE = 1
+
+class _Name(enum.StrEnum):
+    A = 'a'
+
+class _Perm(enum.IntFlag):
+    R = 4
+
+@pytest.mark.parametrize('member', [_Color.RED, _Number.ONE, _Name.A, _Perm.R])
+def test_hash_enum_members_as_enum(member):
+    assert _generate_hash(member) == f'enum:{_get_fqn(member)}.{member.name}'.encode()
+    assert not hashes_equal(member, member.value)
+
+def test_hash_identity_types_by_identity():
+    a, b = object(), object()
+    assert not hashes_equal(a, b)
+
+def test_cache_temporary_value_arguments():
+    @cache
+    def double(value):
+        return value * 2
+
+    @cache
+    def as_str(value):
+        return str(value)
+
+    # The arguments are freed after each call, so their addresses can be
+    # reused by the next one
+    assert double(decimal.Decimal('1.5')) == decimal.Decimal('3.0')
+    assert double(decimal.Decimal('7')) == decimal.Decimal('14')
+    assert [as_str(uuid.UUID(int=i))[-1] for i in range(1, 6)] == ['1', '2', '3', '4', '5']

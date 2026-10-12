@@ -10,12 +10,13 @@ import pandas as pd
 import param
 import pytest
 
+from bokeh.models import LinearColorMapper
 from bokeh.models.widgets.tables import (
-    AvgAggregator, CellEditor, CheckboxEditor, DataCube, DateEditor,
-    DateFormatter, HTMLTemplateFormatter, IntEditor, MinAggregator,
-    NumberEditor, NumberFormatter, SelectEditor, StringEditor, StringFormatter,
-    SumAggregator,
+    AvgAggregator, CellEditor, DataCube, DateFormatter, HTMLTemplateFormatter,
+    IntEditor, MinAggregator, NumberEditor, NumberFormatter, SelectEditor,
+    StringFormatter, SumAggregator,
 )
+from bokeh.transform import transform
 from packaging.version import Version
 
 from panel.depends import bind
@@ -476,8 +477,8 @@ def test_tabulator_multi_index_columns(document, comm):
 
     assert model.columns[2].field == 'A_one_Y'
     mformatter = model.columns[2].formatter
-    assert isinstance(mformatter, NumberFormatter)
-    assert mformatter.format == '0.0000'
+    assert mformatter['type'] == 'NumberFormatter'
+    assert mformatter['format'] == '0.0000'
 
     for field in ("index", "A_one_X", "A_one_Y", "A_two_X", "B_two_Y", "B_three_X", "B_three_Y"):
         assert field in model.source.data
@@ -1086,6 +1087,33 @@ def test_tabulator_header_filters_column_config_dict(document, comm):
     assert model.configuration['selectable'] == True
 
 
+def test_tabulator_keywords_match_all_filter_config(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df, header_filters={
+        'C': {
+            'type': 'input',
+            'func': 'keywords',
+            'matchAll': True,
+            'separator': ',',
+        },
+    })
+
+    model = table.get_root(document, comm)
+
+    assert model.configuration['columns'] == [
+        {'field': 'index', 'sorter': 'number'},
+        {'field': 'A', 'sorter': 'number'},
+        {'field': 'B', 'sorter': 'number'},
+        {
+            'field': 'C',
+            'headerFilter': 'input',
+            'headerFilterFunc': 'keywords',
+            'headerFilterFuncParams': {'matchAll': True, 'separator': ','},
+        },
+        {'field': 'D', 'sorter': 'timestamp'}
+    ]
+
+
 def test_tabulator_editors_default(document, comm):
     df = pd.DataFrame({
         'int': [1, 2],
@@ -1097,12 +1125,12 @@ def test_tabulator_editors_default(document, comm):
     })
     table = Tabulator(df)
     model = table.get_root(document, comm)
-    assert isinstance(model.columns[1].editor, IntEditor)
-    assert isinstance(model.columns[2].editor, NumberEditor)
-    assert isinstance(model.columns[3].editor, StringEditor)
-    assert isinstance(model.columns[4].editor, DateEditor)
-    assert isinstance(model.columns[5].editor, DateEditor)
-    assert isinstance(model.columns[6].editor, CheckboxEditor)
+    assert model.columns[1].editor == {'type': 'IntEditor', 'step': 1}
+    assert model.columns[2].editor == {'type': 'NumberEditor', 'step': 0.01}
+    assert model.columns[3].editor == {'type': 'StringEditor', 'completions': []}
+    assert model.columns[4].editor == {'type': 'DateEditor'}
+    assert model.columns[5].editor == {'type': 'DateEditor'}
+    assert model.columns[6].editor == {'type': 'CheckboxEditor'}
 
 
 def test_tabulator_formatters_default(document, comm):
@@ -1116,18 +1144,20 @@ def test_tabulator_formatters_default(document, comm):
     table = Tabulator(df)
     model = table.get_root(document, comm)
     mformatter = model.columns[1].formatter
-    assert isinstance(mformatter, NumberFormatter)
+    assert mformatter['type'] == 'NumberFormatter'
+    assert mformatter['text_align'] == {'value': 'right'}
     mformatter = model.columns[2].formatter
-    assert isinstance(mformatter, NumberFormatter)
-    assert mformatter.format == '0,0.0[00000]'
+    assert mformatter['type'] == 'NumberFormatter'
+    assert mformatter['format'] == '0,0.0[00000]'
     mformatter = model.columns[3].formatter
-    assert isinstance(mformatter, StringFormatter)
+    assert mformatter['type'] == 'StringFormatter'
+    assert mformatter['null_format'] == ''
     mformatter = model.columns[4].formatter
-    assert isinstance(mformatter, DateFormatter)
-    assert mformatter.format == '%Y-%m-%d'
+    assert mformatter['type'] == 'DateFormatter'
+    assert mformatter['format'] == '%Y-%m-%d'
     mformatter = model.columns[5].formatter
-    assert isinstance(mformatter, DateFormatter)
-    assert mformatter.format == '%Y-%m-%d %H:%M:%S'
+    assert mformatter['type'] == 'DateFormatter'
+    assert mformatter['format'] == '%Y-%m-%d %H:%M:%S'
 
 
 def test_tabulator_config_formatter_string(document, comm):
@@ -3099,26 +3129,37 @@ def test_tabulator_editor_property_change(dataframe, document, comm):
     model = table.get_root(document, comm)
 
     model_editor = model.columns[-1].editor
-    assert isinstance(model_editor, SelectEditor) is not editor
-    assert isinstance(model_editor, SelectEditor)
-    assert model_editor.options == editor.options
+    assert model_editor == {'type': 'SelectEditor', 'options': ['A', 'B', 'C']}
 
     editor.options = ['D', 'E']
     model_editor = model.columns[-1].editor
-    assert model_editor.options == editor.options
+    assert model_editor == {'type': 'SelectEditor', 'options': ['D', 'E']}
 
 def test_tabulator_formatter_update(dataframe, document, comm):
     formatter = NumberFormatter(format='0.0000')
     table = Tabulator(dataframe, formatters={'float': formatter})
     model = table.get_root(document, comm)
     model_formatter = model.columns[2].formatter
-    assert model_formatter is not formatter
-    assert isinstance(model_formatter, NumberFormatter)
-    assert model_formatter.format == formatter.format
+    assert model_formatter['type'] == 'NumberFormatter'
+    assert model_formatter['format'] == '0.0000'
 
     formatter.format = '0.0'
     model_formatter = model.columns[2].formatter
-    assert model_formatter.format == formatter.format
+    assert model_formatter['format'] == '0.0'
+
+def test_tabulator_formatter_field_spec(dataframe, document, comm):
+    mapper = LinearColorMapper(palette=['red', 'blue'], low=0, high=10)
+    formatter = StringFormatter(text_color=transform('int', mapper), font_style='bold')
+    table = Tabulator(dataframe, formatters={'str': formatter})
+    model = table.get_root(document, comm)
+    model_formatter = model.columns[-1].formatter
+    assert model_formatter['text_color'] == {'field': 'int', 'transform': mapper}
+    assert model_formatter['font_style'] == {'value': 'bold'}
+
+def test_tabulator_non_editable_index_spec(dataframe, document, comm):
+    table = Tabulator(dataframe)
+    model = table.get_root(document, comm)
+    assert model.columns[0].editor == {'type': 'CellEditor'}
 
 def test_tabulator_sortable_update(dataframe, document, comm):
     table = Tabulator(dataframe, sortable={'int': False})

@@ -120,6 +120,15 @@ that accepts these same parameters.
         border-radius: 50%;
         animation: pn-loader-spin 1s linear infinite;
       }
+      #loader-msg {
+        color: #fff;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-size: 14px;
+        text-align: center;
+      }
+      #loader-msg:empty, #loader.error #loader-msg {
+        display: none;
+      }
       #loader-error {
         display: none;
         color: #d32f2f;
@@ -188,8 +197,9 @@ that accepts these same parameters.
   <body>
   {%  block inner_body %}
   {%    block loader %}
-    <div id="loader" style="display: none;">
+    <div id="loader" style="display: {{ 'flex' if pyodide else 'none' }};">
       <div class="spinner"></div>
+      <div id="loader-msg"></div>
       <div id="loader-error"></div>
     </div>
   {%    endblock loader %}
@@ -229,7 +239,6 @@ that accepts these same parameters.
     (function() {
       const loader = document.getElementById('loader');
       if (!loader) { return; }
-      let timeout = 0;
       function showError(message) {
         const errorEl = document.getElementById('loader-error');
         loader.style.display = 'flex';
@@ -238,6 +247,17 @@ that accepts these same parameters.
         errorEl.style.display = 'block';
         errorEl.textContent = message;
       }
+      window.panelLoader = {
+        hide() { loader.style.display = 'none'; },
+        status(message) { document.getElementById('loader-msg').textContent = message; },
+        error: showError,
+      };
+      {% if pyodide %}
+      // The Pyodide runtime reports progress and hides the loader once
+      // it has rendered; the prerendered roots go idle long before that.
+      return;
+      {% endif %}
+      let timeout = 0;
       function checkIdle() {
         if (typeof Bokeh === 'undefined') {
           if (timeout > 10000) {

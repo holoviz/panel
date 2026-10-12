@@ -7,7 +7,8 @@ from concurrent.futures import ThreadPoolExecutor
 import param
 import pytest
 
-from panel.io.state import state
+from panel.io.callbacks import PeriodicCallback
+from panel.io.state import _state, set_curdoc, state
 from panel.widgets import TextInput
 
 
@@ -80,6 +81,56 @@ def test_busy_events_from_concurrent_threads_are_not_lost():
     assert state.busy is False
 
 
+def test_busy_cleanup_not_scheduled_without_running_loop():
+    state._add_busy_event('no-loop')
+    state._remove_busy_event('no-loop')
+
+    assert _state._busy_cleanup_scheduled is None
+
+
+async def test_busy_cleanup_scheduled_with_running_loop():
+    state._add_busy_event('loop')
+    state._remove_busy_event('loop')
+
+    cleanup = _state._busy_cleanup_scheduled
+    assert cleanup is not None
+    assert cleanup._cb is not None
+
+
+async def test_reset_stops_busy_cleanup_and_allows_rescheduling():
+    state._add_busy_event('before-reset')
+    cleanup = _state._busy_cleanup_scheduled
+
+    state.reset()
+
+    assert not cleanup.running
+    assert cleanup._cb is None
+    assert _state._busy_cleanup_scheduled is None
+
+    state._add_busy_event('after-reset')
+    state._remove_busy_event('after-reset')
+
+    assert _state._busy_cleanup_scheduled not in (None, cleanup)
+
+
+async def test_periodic_callback_failed_thread_submit_does_not_leak_busy_event():
+    class _ShutdownPool:
+        def submit(self, *args, **kwargs):
+            raise RuntimeError('cannot schedule new futures after shutdown')
+
+    cb = PeriodicCallback(callback=lambda: None, period=1000)
+    thread_pool = state._thread_pool
+    state._thread_pool = _ShutdownPool()
+    try:
+        with pytest.raises(RuntimeError):
+            await cb._periodic_callback()
+    finally:
+        state._thread_pool = thread_pool
+
+    assert state._busy_counter == []
+    assert state.busy is False
+
+
 def test_destroy_session_cleans_up_stylesheets(document, comm):
     TextInput().get_root(document, comm)
 
@@ -98,3 +149,14 @@ def test_schedule_task_rejects_invalid_period(period):
     with pytest.raises(ValueError):
         state.schedule_task('invalid_period', lambda: None, period=period)
     assert not any(key.endswith('_invalid_period') for key in state._scheduled)
+
+
+def test_served_in_converted_pyodide_app(document, monkeypatch):
+    from panel.io.document import MockSessionContext
+
+    assert not state.served
+    monkeypatch.setitem(sys.modules, '_pyodide', object())
+    assert not state.served
+    document._session_context = lambda: MockSessionContext(document=document)
+    with set_curdoc(document):
+        assert state.served
