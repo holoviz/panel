@@ -77,6 +77,11 @@ def test_tabulator_without_pandas():
         assert len(table.current_view) == 4
         assert len(table.selected_dataframe) == 1
 
+    for widget in [pn.widgets.Tabulator, pn.widgets.DataFrame]:
+        empty = widget()
+        empty.get_root(Document())
+        empty.value = pl.DataFrame({'a': [1]})
+
     assert 'pandas' not in sys.modules
     print('OK')
     """)
@@ -95,6 +100,24 @@ def test_perspective_without_pandas():
     psp.stream({'a': [3]})
     psp.patch({'a': [(0, 10)]})
     assert psp.object['a'].to_pylist() == [10, 2, 3]
+
+    assert 'pandas' not in sys.modules
+    print('OK')
+    """)
+
+
+def test_vizzu_without_pandas():
+    pytest.importorskip('polars')
+    _run_without_pandas("""\
+    import polars as pl
+    import panel as pn
+
+    from bokeh.document import Document
+
+    vizzu = pn.pane.Vizzu(pl.DataFrame({'x': ['a', 'b'], 'y': [1.0, 2.0]}))
+    model = vizzu.get_root(Document())
+    vizzu.stream({'x': ['c'], 'y': [3.0]})
+    assert list(model.source.data['y']) == [1.0, 2.0, 3.0]
 
     assert 'pandas' not in sys.modules
     print('OK')
