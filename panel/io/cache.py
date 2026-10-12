@@ -243,6 +243,9 @@ def _io_hash(obj):
 
 _hash_funcs: dict[str | type[t.Any] | tuple[type, ...] | Callable[[t.Any], bool], bytes | Callable[[t.Any], bytes]] = {
     # Types
+    # NOTE: Enum comes first so that IntEnum and StrEnum members are not
+    # matched by plain int or str.
+    enum.Enum    : lambda obj: f'enum:{_get_fqn(obj)}.{obj.name}'.encode(),
     # NOTE: The scalar hashes are prefixed with their type since the
     # values themselves do not distinguish them, e.g. 0, 0.0, False and
     # b'\x00' would otherwise all hash alike and share a cached result.
@@ -265,7 +268,6 @@ _hash_funcs: dict[str | type[t.Any] | tuple[type, ...] | Callable[[t.Any], bool]
     decimal.Decimal    : lambda obj: b'decimal:' + str(obj).encode(),
     fractions.Fraction : lambda obj: f'fraction:{obj.numerator}/{obj.denominator}'.encode(),
     (ipaddress.IPv4Address, ipaddress.IPv6Address): lambda obj: b'ip:' + obj.packed,
-    enum.Enum          : lambda obj: f'enum:{_get_fqn(obj)}.{obj.name}'.encode(),
     # Fully qualified type strings
     'numpy.ndarray'              : _numpy_hash,
     # Pandas >=3 imports
