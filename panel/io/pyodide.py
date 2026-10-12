@@ -19,6 +19,7 @@ import pyodide # isort: split
 
 from bokeh import __version__
 from bokeh.core.serialization import Buffer, Serialized, Serializer
+from bokeh.core.types import ID
 from bokeh.document import Document
 from bokeh.document.json import PatchJson
 from bokeh.embed.elements import script_for_render_items
@@ -41,8 +42,6 @@ os.environ['BOKEH_RESOURCES'] = 'cdn'
 
 if t.TYPE_CHECKING:
     from collections.abc import Callable
-
-    from bokeh.core.types import ID
 
     from ..template.base import TemplateBase
     from ..viewable import Viewable
@@ -262,7 +261,7 @@ _current_buffers: list = []
 _patching = False
 
 def _register_buffer(data: bytes) -> dict[str, str]:
-    uid = uuid.uuid4().hex
+    uid = ID(uuid.uuid4().hex)
     _current_buffers.append(Buffer(id=uid, data=data))
     return {'id': uid}
 
