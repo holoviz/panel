@@ -26,7 +26,7 @@ diskcache_available = pytest.mark.skipif(diskcache is None, reason="requires dis
 
 from panel.config import config
 from panel.io.cache import (
-    _HASH_MAP, _generate_hash, cache, compute_hash, is_equal,
+    _HASH_MAP, _generate_hash, _get_fqn, cache, compute_hash, is_equal,
 )
 from panel.io.state import set_curdoc, state
 from panel.tests.util import serve_and_wait
@@ -720,6 +720,20 @@ def test_hash_value_types_by_value():
     assert not hashes_equal(_Color.RED, _Color.BLUE)
     assert hashes_equal(_Point(1), _Point(1))
     assert not hashes_equal(_Point(1), _Point(2))
+
+class _Number(enum.IntEnum):
+    ONE = 1
+
+class _Name(enum.StrEnum):
+    A = 'a'
+
+class _Perm(enum.IntFlag):
+    R = 4
+
+@pytest.mark.parametrize('member', [_Color.RED, _Number.ONE, _Name.A, _Perm.R])
+def test_hash_enum_members_as_enum(member):
+    assert _generate_hash(member) == f'enum:{_get_fqn(member)}.{member.name}'.encode()
+    assert not hashes_equal(member, member.value)
 
 def test_hash_identity_types_by_identity():
     a, b = object(), object()
