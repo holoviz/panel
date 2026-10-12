@@ -1087,6 +1087,33 @@ def test_tabulator_header_filters_column_config_dict(document, comm):
     assert model.configuration['selectable'] == True
 
 
+def test_tabulator_keywords_match_all_filter_config(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df, header_filters={
+        'C': {
+            'type': 'input',
+            'func': 'keywords',
+            'matchAll': True,
+            'separator': ',',
+        },
+    })
+
+    model = table.get_root(document, comm)
+
+    assert model.configuration['columns'] == [
+        {'field': 'index', 'sorter': 'number'},
+        {'field': 'A', 'sorter': 'number'},
+        {'field': 'B', 'sorter': 'number'},
+        {
+            'field': 'C',
+            'headerFilter': 'input',
+            'headerFilterFunc': 'keywords',
+            'headerFilterFuncParams': {'matchAll': True, 'separator': ','},
+        },
+        {'field': 'D', 'sorter': 'timestamp'}
+    ]
+
+
 def test_tabulator_editors_default(document, comm):
     df = pd.DataFrame({
         'int': [1, 2],
