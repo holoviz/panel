@@ -1404,13 +1404,14 @@ class SyncableData(Reactive):
             for k, v in patch_value.items():
                 for index, patch in v:
                     if isinstance(index, slice):
-                        rows, values = list(range(*index.indices(nrows))), list(patch)
+                        rows = list(range(*index.indices(nrows)))
+                        values = list(patch) if isinstance(patch, (list, tuple, np.ndarray)) else [patch] * len(rows)
                     else:
                         rows, values = [index], [patch]
                     if is_indexless(data):
                         data = set_values(data, k, rows, values)
                     elif pd and isinstance(data, pd.DataFrame):
-                        data.iloc[rows, data.columns.get_loc(k)] = values
+                        data.iloc[rows, t.cast('int', data.columns.get_loc(k))] = values
                     else:
                         data[k][index] = patch
             with param.discard_events(self):

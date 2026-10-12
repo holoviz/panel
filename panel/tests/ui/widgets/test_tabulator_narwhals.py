@@ -32,6 +32,10 @@ def column(df, col):
     return to_narwhals(df)[col].to_list()
 
 
+def rendered(page, col):
+    return page.locator(f'[tabulator-field={col}][role=gridcell]').all_inner_texts()
+
+
 def test_tabulator_indexless_edit_sorted(page, frame):
     widget = Tabulator(frame, sorters=[{'field': 'int', 'dir': 'desc'}])
     values = []
@@ -39,6 +43,7 @@ def test_tabulator_indexless_edit_sorted(page, frame):
 
     serve_component(page, widget)
 
+    wait_until(lambda: rendered(page, 'str') == ['D', 'C', 'B', 'A'], page)
     page.locator('text="D"').click()
     editable_cell = page.locator('input[type="text"]')
     editable_cell.fill('DD')
@@ -55,6 +60,7 @@ def test_tabulator_indexless_selection(page, frame):
 
     serve_component(page, widget)
 
+    wait_until(lambda: rendered(page, 'str') == ['D', 'C', 'B', 'A'], page)
     page.locator('text="C"').click()
 
     wait_until(lambda: widget.selection == [2], page)

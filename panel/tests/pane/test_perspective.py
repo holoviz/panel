@@ -206,6 +206,17 @@ def test_perspective_pandas_patch_dict(document, comm):
     assert list(model.source.data['b']) == ['x', 'Y', 'z']
 
 
+def test_perspective_patch_slice_scalar(document, comm):
+    pd = pytest.importorskip('pandas')
+    psp = Perspective(pd.DataFrame({'a': [1, 2, 3], 'b': ['x', 'y', 'z']}))
+    model = psp.get_root(document, comm)
+
+    psp.patch({'b': [(slice(0, 2), 'w')]})
+
+    assert psp.object['b'].tolist() == ['w', 'w', 'z']
+    assert list(model.source.data['b']) == ['w', 'w', 'z']
+
+
 def test_perspective_pandas_patch_dataframe_custom_index(document, comm):
     pd = pytest.importorskip('pandas')
     psp = Perspective(pd.DataFrame({'a': [1, 2, 3]}, index=[10, 20, 30]))
