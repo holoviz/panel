@@ -5,13 +5,15 @@ See https://getbootstrap.com/docs/4.0/components/alerts/
 """
 from __future__ import annotations
 
-from collections.abc import Mapping
-from typing import Any, ClassVar
+import typing as t
 
 import param
 
 from ..io.resources import CDN_DIST
 from .markup import Markdown
+
+if t.TYPE_CHECKING:
+    from collections.abc import Mapping
 
 ALERT_TYPES = [
     "primary", "secondary", "success", "danger",
@@ -31,21 +33,24 @@ class Alert(Markdown):
     >>> Alert('Some important message', alert_type='warning')
     """
 
-    alert_type = param.Selector(default="primary", objects=ALERT_TYPES, doc="""
+    alert_type: t.Literal[
+        "primary", "secondary", "success", "danger",
+        "warning", "info", "light", "dark"
+    ] = param.Selector(default="primary", objects=ALERT_TYPES, doc="""
         The type of Alert and one of 'primary', 'secondary', 'success', 'danger',
-        'warning', 'info', 'light', 'dark'.""")
+        'warning', 'info', 'light', 'dark'.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    priority: ClassVar[float | bool | None] = 0
+    priority: t.ClassVar[float | bool | None] = 0
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'alert_type': None}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {'alert_type': None}
 
-    _stylesheets: ClassVar[list[str]] = [
+    _stylesheets: t.ClassVar[list[str]] = [
         f'{CDN_DIST}css/alerts.css'
     ]
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
-        priority = Markdown.applies(obj)
+    def applies(cls, object: t.Any) -> float | bool | None:
+        priority = Markdown.applies(object)
         return 0 if priority else False
 
     def __init__(self, object=None, **params):

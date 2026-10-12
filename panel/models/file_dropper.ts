@@ -9,6 +9,12 @@ import {InputWidget, InputWidgetView} from "@bokehjs/models/widgets/input_widget
 import * as inputs from "@bokehjs/styles/widgets/inputs.css"
 import filedropper_css from "styles/models/filedropper.css"
 
+import type {ResourceSpec} from "./resources"
+import {
+  await_resources, define_external_resources, load_resources,
+  render_resource_error,
+} from "./resources"
+
 export class UploadEvent extends ModelEvent {
   constructor(readonly data: any) {
     super()
@@ -198,8 +204,15 @@ export class FileDropperView extends InputWidgetView {
     })
   }
 
-  override initialize(): void {
-    super.initialize()
+  // Registering the plugins has to wait for filepond itself, so this cannot
+  // happen in initialize the way it used to.
+  override async lazy_initialize(): Promise<void> {
+    await super.lazy_initialize()
+    const error = await await_resources(this.model)
+    if (error != null) {
+      render_resource_error(this, error, InputWidgetView.prototype.render)
+      return
+    }
     const {previews} = this.model
     if (previews.includes("image")) {
       (window as any).FilePond.registerPlugin((window as any).FilePondPluginImagePreview)
@@ -325,6 +338,7 @@ export namespace FileDropper {
     mime_type: p.Property<any>
     multiple: p.Property<boolean>
     previews: p.Property<string[]>
+    external_resources: p.Property<ResourceSpec | null>
   }
 }
 
@@ -352,5 +366,11 @@ export class FileDropper extends InputWidget {
       layout:              [ Nullable(DropperLayout), null ],
       previews:            [ List(Str), [ "image", "pdf" ]],
     }))
+    define_external_resources(this)
+  }
+
+  override initialize(): void {
+    super.initialize()
+    load_resources(this)
   }
 }

@@ -4,10 +4,8 @@ Defines the Location  widget which allows changing the href of the window.
 from __future__ import annotations
 
 import json
+import typing as t
 import urllib.parse as urlparse
-
-from collections.abc import Callable, Mapping
-from typing import TYPE_CHECKING, Any, ClassVar
 
 import param
 
@@ -18,7 +16,9 @@ from .cache import is_equal
 from .document import create_doc_if_none_exists
 from .state import state
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from collections.abc import Callable, Mapping
+
     from bokeh.document import Document
     from bokeh.model import Model
     from bokeh.server.contexts import BokehSessionContext
@@ -103,7 +103,7 @@ class Location(Syncable):
         should be set to False""")
 
     # Mapping from parameter name to bokeh model property name
-    _rename: ClassVar[Mapping[str, str | None]] = {"name": None}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {"name": None}
 
     @classmethod
     def from_request(cls, request):
@@ -189,10 +189,11 @@ class Location(Syncable):
         if ref in state._views:
             del state._views[ref]
 
-    def _update_synced(self, event: param.parameterized.Event = None) -> None:
+    def _update_synced(self, event: param.parameterized.Event | None = None) -> None:
         if self._syncing:
             return
         query_params = self.query_params
+        raw_params = dict(urlparse.parse_qsl(self.search[1:]))
         for p, parameters, _, on_error in self._synced:
             mapping = {v: k for k, v in parameters.items()}
             mapped = {}
@@ -200,6 +201,10 @@ class Location(Syncable):
                 if k not in mapping:
                     continue
                 pname = mapping[k]
+                if isinstance(p.param[pname], param.String):
+                    # parse_query converts numeric, boolean and JSON-like
+                    # strings, but a String parameter takes the raw value
+                    v = raw_params[k]
                 try:
                     v = p.param[pname].deserialize(v)
                 except Exception:
@@ -218,13 +223,16 @@ class Location(Syncable):
                     on_error(mapped)
 
     def _update_query(
-        self, *events: param.parameterized.Event, query: dict[str, Any] | None = None
+        self, *events: param.parameterized.Event, query: dict[str, t.Any] | None = None
     ) -> None:
         if self._syncing:
             return
         serialized = query or {}
         for e in events:
-            matches = [ps for o, ps, _, _ in self._synced if o in (e.cls, e.obj)]
+            matches = [
+                ps for o, ps, _, _ in self._synced
+                if o in (e.cls, e.obj) and e.name in ps
+            ]
             if not matches:
                 continue
             owner = e.cls if e.obj is None else e.obj
@@ -242,17 +250,17 @@ class Location(Syncable):
             self._syncing = False
 
     @property
-    def query_params(self) -> dict[str, Any]:
+    def query_params(self) -> dict[str, t.Any]:
         return parse_query(self.search)
 
-    def update_query(self, **kwargs: Mapping[str, Any]) -> None:
+    def update_query(self, **kwargs: Mapping[str, t.Any]) -> None:
         query = self.query_params
         query.update(kwargs)
         self.search = '?' + urlparse.urlencode(query)
 
     def sync(
         self, parameterized: param.Parameterized, parameters: list[str] | dict[str, str] | None = None,
-        on_error: Callable[[dict[str, Any]], None] | None = None
+        on_error: Callable[[dict[str, t.Any]], None] | None = None
     ) -> None:
         """
         Syncs the parameters of a Parameterized object with the query

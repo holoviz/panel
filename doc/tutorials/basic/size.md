@@ -66,9 +66,9 @@ import panel as pn
 
 pn.extension()
 
-layout = pn.Spacer(styles={'background': 'green'}, sizing_mode='stretch_width', height=200)
+layout = pn.ui.Spacer(styles={'background': 'green'}, sizing_mode='stretch_width', height=200)
 
-pn.Column(layout, width=400, height=400, styles={'border': '1px solid black'}).servable()
+pn.ui.Column(layout, width=400, height=400, styles={'border': '1px solid black'}).servable()
 ```
 
 :::
@@ -80,9 +80,9 @@ import panel as pn
 
 pn.extension()
 
-layout = pn.Spacer(styles={'background': 'green'}, sizing_mode='stretch_height', width=200)
+layout = pn.ui.Spacer(styles={'background': 'green'}, sizing_mode='stretch_height', width=200)
 
-pn.Column(layout, width=400, height=400, styles={'border': '1px solid black'}).servable()
+pn.ui.Column(layout, width=400, height=400, styles={'border': '1px solid black'}).servable()
 ```
 
 :::
@@ -94,9 +94,9 @@ import panel as pn
 
 pn.extension()
 
-layout = pn.Spacer(styles={'background': 'green'}, sizing_mode='stretch_both')
+layout = pn.ui.Spacer(styles={'background': 'green'}, sizing_mode='stretch_both')
 
-pn.Column(layout, width=400, height=400, styles={'border': '1px solid black'}).servable()
+pn.ui.Column(layout, width=400, height=400, styles={'border': '1px solid black'}).servable()
 ```
 
 :::
@@ -140,10 +140,10 @@ fig = figure(
 )
 fig.vbar(x=data["Day"], top=data["Wind Speed (m/s)"], width=0.5, color="navy", )
 
-md = pn.pane.Markdown(
+md = pn.ui.Markdown(
     text,  # <- insert arguments here
 )
-pn.Row(fig, md, height=500, sizing_mode="stretch_width").servable()
+pn.ui.Row(fig, md, height=500, sizing_mode="stretch_width").servable()
 ```
 
 :::{hint}
@@ -190,10 +190,10 @@ fig = figure(
 )
 fig.vbar(x=data["Day"], top=data["Wind Speed (m/s)"], width=0.5, color="navy", )
 
-md = pn.pane.Markdown(
+md = pn.ui.Markdown(
     text,  sizing_mode="stretch_width", min_width=200, max_width=500,
 )
-pn.Row(fig, md, height=500, sizing_mode="stretch_width").servable()
+pn.ui.Row(fig, md, height=500, sizing_mode="stretch_width").servable()
 ```
 
 :::
@@ -243,11 +243,11 @@ fig = figure(
 )
 fig.vbar(x=data["Day"], top=data["Wind Speed (m/s)"], width=0.5, color="navy", )
 
-md = pn.pane.Markdown(
+md = pn.ui.Markdown(
     text,  min_width=200, max_width=500,
 )
 settings = pn.Param(md, parameters=["sizing_mode", "min_width", "max_width"])
-pn.Row(fig, md, settings, height=500,).servable()
+pn.ui.Row(fig, md, settings, height=500,).servable()
 ```
 
 :::
@@ -291,10 +291,10 @@ fig = figure(
 )
 fig.vbar(x=data["Day"], top=data["Wind Speed (m/s)"], width=0.5, color="navy", )
 
-md = pn.pane.Markdown(
+md = pn.ui.Markdown(
     text,  min_width=200, max_width=500,
 )
-pn.Row(fig, md, height=500,).servable()
+pn.ui.Row(fig, md, height=500,).servable()
 ```
 
 :::
@@ -312,7 +312,7 @@ import random
 pn.extension()
 
 def create_random_spacer():
-    return pn.Spacer(
+    return pn.ui.Spacer(
         height=100,
         width=random.randint(1, 4) * 100,
         styles={"background": "teal"},
@@ -320,7 +320,7 @@ def create_random_spacer():
     )
 spacers = [create_random_spacer() for _ in range(10)]
 
-pn.FlexBox(*spacers).servable()
+pn.ui.FlexBox(*spacers).servable()
 ```
 
 Adjust the width of your browser window to observe the layout's responsiveness.

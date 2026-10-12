@@ -10,12 +10,13 @@ import pandas as pd
 import param
 import pytest
 
+from bokeh.models import LinearColorMapper
 from bokeh.models.widgets.tables import (
-    AvgAggregator, CellEditor, CheckboxEditor, DataCube, DateEditor,
-    DateFormatter, HTMLTemplateFormatter, IntEditor, MinAggregator,
-    NumberEditor, NumberFormatter, SelectEditor, StringEditor, StringFormatter,
-    SumAggregator,
+    AvgAggregator, CellEditor, DataCube, DateFormatter, HTMLTemplateFormatter,
+    IntEditor, MinAggregator, NumberEditor, NumberFormatter, SelectEditor,
+    StringFormatter, SumAggregator,
 )
+from bokeh.transform import transform
 from packaging.version import Version
 
 from panel.depends import bind
@@ -30,6 +31,10 @@ from panel.widgets.tables import DataFrame, Tabulator
 pd_old = pytest.mark.skipif(Version(pd.__version__) < Version('1.3'),
                             reason="Requires latest pandas")
 
+pytestmark = pytest.mark.filterwarnings(
+    "ignore:'DataFrame' is deprecated:panel.util.warnings.PanelDeprecationWarning"
+)
+
 
 def makeMixedDataFrame():
     data = {
@@ -39,6 +44,13 @@ def makeMixedDataFrame():
         "D": pd.bdate_range("1/1/2009", periods=5).astype("datetime64[ns]"),
     }
     return pd.DataFrame(data)
+
+
+def test_dataframe_widget_is_deprecated(dataframe):
+    from panel.util.warnings import PanelDeprecationWarning
+
+    with pytest.warns(PanelDeprecationWarning, match="use 'Tabulator' instead"):
+        DataFrame(dataframe)
 
 
 def test_dataframe_widget(dataframe, document, comm):
@@ -169,6 +181,37 @@ def test_dataframe_process_data_event(dataframe):
     pd.testing.assert_frame_equal(table.value, df)
 
 
+@pytest.mark.parametrize('pagination', [None, 'local', 'remote'])
+def test_tabulator_process_data_ignores_stale_length(dataframe, pagination):
+    table = Tabulator(dataframe.copy(), pagination=pagination)
+    table._process_events({'data': {'int': [5, 7, 9, 11]}})
+    pd.testing.assert_frame_equal(table.value, dataframe)
+
+
+@pytest.mark.parametrize('method, arg', [
+    ('stream', {'int': [4], 'float': [4.0], 'str': ['D']}),
+    ('patch', {'int': [(1, 5)]}),
+])
+def test_tabulator_stream_patch_does_not_echo_as_edit(document, comm, dataframe, method, arg):
+    table = Tabulator(dataframe.copy())
+    table.get_root(document, comm)
+    edits = []
+    table.on_edit(edits.append)
+    calls = []
+    process_data = table._process_data
+
+    def traced(data):
+        calls.append(data)
+        process_data(data)
+
+    table._process_data = traced  # type: ignore[method-assign]
+
+    getattr(table, method)(arg)
+
+    assert calls == []
+    assert edits == []
+
+
 @pytest.mark.parametrize('widget', [DataFrame, Tabulator])
 def test_dataframe_process_data_no_unsync(dataframe, widget):
     df = dataframe.copy()
@@ -217,6 +260,7 @@ def df_agg():
     return df
 
 
+@pytest.mark.filterwarnings("ignore:DataCube is deprecated")
 def test_hierarchical_index(document, comm, df_agg):
     table = DataFrame(value=df_agg, hierarchical=True,
                       aggregators={'Year': {'Int': 'sum', 'Float': 'mean'}})
@@ -273,6 +317,22 @@ def test_tabulator_none_value(document, comm):
 
     assert model.source.data == {}
     assert model.columns == []
+
+
+def test_tabulator_mixed_nat_datetime_serializes():
+    from bokeh.core.json_encoder import serialize_json
+    from bokeh.core.serialization import Serializer
+
+    df = pd.DataFrame({"date": [pd.NaT, 12]})
+    df["date"] = pd.to_datetime(df["date"]).dt.date
+
+    table = Tabulator(df)
+    _, data = table._get_data()
+
+    ser = Serializer()
+    payload = ser.encode(data)
+
+    serialize_json(payload)
 
 
 def test_tabulator_update_none_value(document, comm, df_mixed):
@@ -417,8 +477,8 @@ def test_tabulator_multi_index_columns(document, comm):
 
     assert model.columns[2].field == 'A_one_Y'
     mformatter = model.columns[2].formatter
-    assert isinstance(mformatter, NumberFormatter)
-    assert mformatter.format == '0.0000'
+    assert mformatter['type'] == 'NumberFormatter'
+    assert mformatter['format'] == '0.0000'
 
     for field in ("index", "A_one_X", "A_one_Y", "A_two_X", "B_two_Y", "B_three_X", "B_three_Y"):
         assert field in model.source.data
@@ -897,7 +957,7 @@ def test_selection_indices_on_remote_paginated_and_filtered_data(document, comm,
         width=400
     )
 
-    descr_filter = TextInput(name='descr')
+    descr_filter = TextInput(label='descr')
 
     def contains_filter(df, pattern=None):
         if not pattern:
@@ -1027,6 +1087,33 @@ def test_tabulator_header_filters_column_config_dict(document, comm):
     assert model.configuration['selectable'] == True
 
 
+def test_tabulator_keywords_match_all_filter_config(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df, header_filters={
+        'C': {
+            'type': 'input',
+            'func': 'keywords',
+            'matchAll': True,
+            'separator': ',',
+        },
+    })
+
+    model = table.get_root(document, comm)
+
+    assert model.configuration['columns'] == [
+        {'field': 'index', 'sorter': 'number'},
+        {'field': 'A', 'sorter': 'number'},
+        {'field': 'B', 'sorter': 'number'},
+        {
+            'field': 'C',
+            'headerFilter': 'input',
+            'headerFilterFunc': 'keywords',
+            'headerFilterFuncParams': {'matchAll': True, 'separator': ','},
+        },
+        {'field': 'D', 'sorter': 'timestamp'}
+    ]
+
+
 def test_tabulator_editors_default(document, comm):
     df = pd.DataFrame({
         'int': [1, 2],
@@ -1038,12 +1125,12 @@ def test_tabulator_editors_default(document, comm):
     })
     table = Tabulator(df)
     model = table.get_root(document, comm)
-    assert isinstance(model.columns[1].editor, IntEditor)
-    assert isinstance(model.columns[2].editor, NumberEditor)
-    assert isinstance(model.columns[3].editor, StringEditor)
-    assert isinstance(model.columns[4].editor, DateEditor)
-    assert isinstance(model.columns[5].editor, DateEditor)
-    assert isinstance(model.columns[6].editor, CheckboxEditor)
+    assert model.columns[1].editor == {'type': 'IntEditor', 'step': 1}
+    assert model.columns[2].editor == {'type': 'NumberEditor', 'step': 0.01}
+    assert model.columns[3].editor == {'type': 'StringEditor', 'completions': []}
+    assert model.columns[4].editor == {'type': 'DateEditor'}
+    assert model.columns[5].editor == {'type': 'DateEditor'}
+    assert model.columns[6].editor == {'type': 'CheckboxEditor'}
 
 
 def test_tabulator_formatters_default(document, comm):
@@ -1057,18 +1144,20 @@ def test_tabulator_formatters_default(document, comm):
     table = Tabulator(df)
     model = table.get_root(document, comm)
     mformatter = model.columns[1].formatter
-    assert isinstance(mformatter, NumberFormatter)
+    assert mformatter['type'] == 'NumberFormatter'
+    assert mformatter['text_align'] == {'value': 'right'}
     mformatter = model.columns[2].formatter
-    assert isinstance(mformatter, NumberFormatter)
-    assert mformatter.format == '0,0.0[00000]'
+    assert mformatter['type'] == 'NumberFormatter'
+    assert mformatter['format'] == '0,0.0[00000]'
     mformatter = model.columns[3].formatter
-    assert isinstance(mformatter, StringFormatter)
+    assert mformatter['type'] == 'StringFormatter'
+    assert mformatter['null_format'] == ''
     mformatter = model.columns[4].formatter
-    assert isinstance(mformatter, DateFormatter)
-    assert mformatter.format == '%Y-%m-%d'
+    assert mformatter['type'] == 'DateFormatter'
+    assert mformatter['format'] == '%Y-%m-%d'
     mformatter = model.columns[5].formatter
-    assert isinstance(mformatter, DateFormatter)
-    assert mformatter.format == '%Y-%m-%d %H:%M:%S'
+    assert mformatter['type'] == 'DateFormatter'
+    assert mformatter['format'] == '%Y-%m-%d %H:%M:%S'
 
 
 def test_tabulator_config_formatter_string(document, comm):
@@ -1180,6 +1269,19 @@ def test_tabulator_frozen_cols(document, comm):
         {'field': 'C'},
         {'field': 'D', 'sorter': 'timestamp'}
     ]
+
+
+def test_tabulator_movable_columns(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df, movable_columns=True)
+
+    model = table.get_root(document, comm)
+
+    assert model.movable_columns is True
+
+    table.movable_columns = False
+
+    assert model.movable_columns is False
 
 
 def test_tabulator_frozen_rows(document, comm):
@@ -2440,7 +2542,7 @@ def test_tabulator_function_filter_selection(document, comm):
     df = df_strings()
     tbl = Tabulator(df)
 
-    descr_filter = TextInput(name='descr', value='')
+    descr_filter = TextInput(label='descr', value='')
 
     def contains_filter(df, pattern=None):
         if not pattern:
@@ -2615,24 +2717,79 @@ def test_tabulator_download_menu_default():
     assert isinstance(button, Button)
 
     assert filename.value == 'table.csv'
-    assert filename.name == 'Filename'
-    assert button.name == 'Download'
+    assert filename.label == 'Filename'
+    assert button.label == 'Download'
 
 def test_tabulator_download_menu_custom_kwargs():
     df = makeMixedDataFrame()
     table = Tabulator(df)
 
     filename, button = table.download_menu(
-        text_kwargs={'name': 'Enter filename', 'value': 'file.csv'},
-        button_kwargs={'name': 'Download table'},
+        text_kwargs={'label': 'Enter filename', 'value': 'file.csv'},
+        button_kwargs={'label': 'Download table'},
     )
 
     assert isinstance(filename, TextInput)
     assert isinstance(button, Button)
 
     assert filename.value == 'file.csv'
-    assert filename.name == 'Enter filename'
-    assert button.name == 'Download table'
+    assert filename.label == 'Enter filename'
+    assert button.label == 'Download table'
+
+def test_tabulator_value_event_old_preserves_inplace(dataframe):
+    df = dataframe.copy()
+    table = Tabulator(df)
+
+    events = []
+    table.param.watch(events.append, 'value')
+
+    table._process_events({'data': {'int': [5, 7, 9]}})
+
+    # The value is edited in place, i.e. the DataFrame the user passed in
+    # is mutated and remains the object held by the widget.
+    assert table.value is df
+    assert list(df['int']) == [5, 7, 9]
+
+    assert len(events) == 1
+    assert events[0].new is df
+    assert events[0].old is not df
+    assert list(events[0].old['int']) == [1, 2, 3]
+
+
+def test_tabulator_from_param_value_event_old(dataframe):
+    class Test(param.Parameterized):
+
+        df = param.DataFrame()
+
+    obj = Test(df=dataframe.copy())
+    table = Tabulator.from_param(obj.param.df)
+
+    events = []
+    obj.param.watch(events.append, 'df')
+
+    table._process_events({'data': {'int': [5, 7, 9]}})
+
+    assert len(events) == 1
+    assert events[0].old is not events[0].new
+    assert list(events[0].old['int']) == [1, 2, 3]
+    assert list(events[0].new['int']) == [5, 7, 9]
+
+
+def test_tabulator_value_event_old_with_filter(dataframe):
+    table = Tabulator(dataframe.copy())
+    table.add_filter('A', 'str')
+    assert len(table._processed) == 1
+
+    events = []
+    table.param.watch(events.append, 'value')
+
+    table._process_events({'data': {'int': [5]}})
+
+    assert len(events) == 1
+    # The old value must be the full pre-edit table, not the filtered view
+    pd.testing.assert_frame_equal(events[0].old, dataframe)
+    assert list(events[0].new['int']) == [5, 2, 3]
+
 
 def test_tabulator_patch_event():
     df = makeMixedDataFrame()
@@ -2643,9 +2800,14 @@ def test_tabulator_patch_event():
 
     for col in df.columns:
         for row in range(len(df)):
-            event = TableEditEvent(model=None, column=col, row=row)
+            value = df[col].iloc[row]
+            event = TableEditEvent(model=None, column=col, row=row, value=value, old=value)
             table._process_event(event)
-            assert values[-1] == (col, row, df[col].iloc[row])
+            # on_edit only fires once the edit's value actually lands in
+            # self.value, so simulate that by re-applying the (unchanged)
+            # column - as the real ColumnDataSource patch would eventually do.
+            table._update_column(col, table.value[col].values)
+            assert values[-1] == (col, row, value)
 
 def test_server_edit_event():
     df = makeMixedDataFrame()
@@ -2663,12 +2825,46 @@ def test_server_edit_event():
     new_data = dict(model.source.data)
     new_data['B'][1] = 3.14
 
+    # The edit event is sent (and its pending edit registered) before the
+    # ColumnDataSource patch that carries the actual value change, matching
+    # what the frontend does - on_edit only fires once that patch lands.
+    # Both are dispatched asynchronously, so wait for the registration to
+    # actually land before triggering the patch that is meant to consume it.
+    table._server_event(doc, TableEditEvent(model, 'B', 1, value=3.14, old=1))
+    wait_until(lambda: bool(table._pending_edits))
     table._server_change(doc, ref, None, 'data', model.source.data, new_data)
-    table._server_event(doc, TableEditEvent(model, 'B', 1))
 
     wait_until(lambda: len(events) == 1)
     assert events[0].value == 3.14
     assert events[0].old == 1
+
+
+def test_server_edit_event_from_param():
+    class Test(param.Parameterized):
+
+        df = param.DataFrame()
+
+    obj = Test(df=makeMixedDataFrame())
+    table = Tabulator.from_param(obj.param.df)
+
+    serve_and_request(table)
+
+    wait_until(lambda: bool(table._models))
+    ref, (model, _) = list(table._models.items())[0]
+    doc = list(table._documents.keys())[0]
+
+    events = []
+    obj.param.watch(events.append, 'df')
+
+    new_data = dict(model.source.data)
+    new_data['B'][1] = 3.14
+
+    table._server_change(doc, ref, None, 'data', model.source.data, new_data)
+
+    wait_until(lambda: len(events) == 1)
+    assert events[0].old is not events[0].new
+    assert events[0].old['B'].iloc[1] == 1
+    assert events[0].new['B'].iloc[1] == 3.14
 
 
 def test_edit_with_datetime_aware_column():
@@ -2697,8 +2893,9 @@ def test_edit_with_datetime_aware_column():
     new_data = dict(model.source.data)
     new_data['A'][1] = 'new'
 
+    table._server_event(doc, TableEditEvent(model, 'A', 1, value='new', old='b'))
+    wait_until(lambda: bool(table._pending_edits))
     table._server_change(doc, ref, None, 'data', model.source.data, new_data)
-    table._server_event(doc, TableEditEvent(model, 'A', 1))
 
     wait_until(lambda: len(events) == 1)
     assert events[0].value == 'new'
@@ -2723,11 +2920,13 @@ def test_server_cell_click_async_event():
     table = Tabulator(df)
 
     counts = []
+    done = [0]
     async def cb(event, count=[0]):
         count[0] += 1
         counts.append(count[0])
         await asyncio.sleep(1)
         count[0] -= 1
+        done[0] += 1
 
     table.on_click(cb)
 
@@ -2737,6 +2936,7 @@ def test_server_cell_click_async_event():
     doc = list(table._models.values())[0][0].document
 
     data = df.reset_index()
+    n_events = len(data.columns) * len(data)
     with set_curdoc(doc):
         for col in data.columns:
             for row in range(len(data)):
@@ -2745,6 +2945,7 @@ def test_server_cell_click_async_event():
 
     # Ensure multiple callbacks started concurrently
     wait_until(lambda: len(counts) >= 1 and max(counts) > 1)
+    wait_until(lambda: done[0] == n_events)
 
 def test_tabulator_pagination_remote_cell_click_event():
     df = makeMixedDataFrame()
@@ -2928,26 +3129,37 @@ def test_tabulator_editor_property_change(dataframe, document, comm):
     model = table.get_root(document, comm)
 
     model_editor = model.columns[-1].editor
-    assert isinstance(model_editor, SelectEditor) is not editor
-    assert isinstance(model_editor, SelectEditor)
-    assert model_editor.options == editor.options
+    assert model_editor == {'type': 'SelectEditor', 'options': ['A', 'B', 'C']}
 
     editor.options = ['D', 'E']
     model_editor = model.columns[-1].editor
-    assert model_editor.options == editor.options
+    assert model_editor == {'type': 'SelectEditor', 'options': ['D', 'E']}
 
 def test_tabulator_formatter_update(dataframe, document, comm):
     formatter = NumberFormatter(format='0.0000')
     table = Tabulator(dataframe, formatters={'float': formatter})
     model = table.get_root(document, comm)
     model_formatter = model.columns[2].formatter
-    assert model_formatter is not formatter
-    assert isinstance(model_formatter, NumberFormatter)
-    assert model_formatter.format == formatter.format
+    assert model_formatter['type'] == 'NumberFormatter'
+    assert model_formatter['format'] == '0.0000'
 
     formatter.format = '0.0'
     model_formatter = model.columns[2].formatter
-    assert model_formatter.format == formatter.format
+    assert model_formatter['format'] == '0.0'
+
+def test_tabulator_formatter_field_spec(dataframe, document, comm):
+    mapper = LinearColorMapper(palette=['red', 'blue'], low=0, high=10)
+    formatter = StringFormatter(text_color=transform('int', mapper), font_style='bold')
+    table = Tabulator(dataframe, formatters={'str': formatter})
+    model = table.get_root(document, comm)
+    model_formatter = model.columns[-1].formatter
+    assert model_formatter['text_color'] == {'field': 'int', 'transform': mapper}
+    assert model_formatter['font_style'] == {'value': 'bold'}
+
+def test_tabulator_non_editable_index_spec(dataframe, document, comm):
+    table = Tabulator(dataframe)
+    model = table.get_root(document, comm)
+    assert model.columns[0].editor == {'type': 'CellEditor'}
 
 def test_tabulator_sortable_update(dataframe, document, comm):
     table = Tabulator(dataframe, sortable={'int': False})
@@ -3042,6 +3254,63 @@ def test_header_filters_categorial_dtype():
     widget = Tabulator(df, header_filters=True)
     widget.filters = [{'field': 'model', 'type': 'like', 'value': 'A'}]
     assert widget.current_view.size == 1
+
+
+@pytest.mark.parametrize('pagination', ['local', 'remote', None])
+def test_header_filter_starts(pagination):
+    df = pd.DataFrame({'word': ['alpha', 'alphabet', 'beta', 'Alphanumeric']})
+    widget = Tabulator(df, header_filters=True, pagination=pagination)
+
+    widget.filters = [{'field': 'word', 'type': 'starts', 'value': 'bet'}]
+
+    assert list(widget.current_view['word']) == ['beta']
+
+
+@pytest.mark.parametrize('pagination', ['local', 'remote', None])
+def test_header_filter_starts_is_case_insensitive(pagination):
+    df = pd.DataFrame({'word': ['alpha', 'alphabet', 'beta', 'Alphanumeric']})
+    widget = Tabulator(df, header_filters=True, pagination=pagination)
+
+    widget.filters = [{'field': 'word', 'type': 'starts', 'value': 'ALPHA'}]
+
+    assert list(widget.current_view['word']) == ['alpha', 'alphabet', 'Alphanumeric']
+
+
+@pytest.mark.parametrize('pagination', ['local', 'remote', None])
+def test_header_filter_ends(pagination):
+    df = pd.DataFrame({'word': ['alpha', 'alphabet', 'beta', 'Alphanumeric']})
+    widget = Tabulator(df, header_filters=True, pagination=pagination)
+
+    widget.filters = [{'field': 'word', 'type': 'ends', 'value': 'a'}]
+
+    assert list(widget.current_view['word']) == ['alpha', 'beta']
+
+
+@pytest.mark.parametrize('pagination', ['local', 'remote', None])
+def test_header_filter_ends_is_case_insensitive(pagination):
+    df = pd.DataFrame({'word': ['alpha', 'alphabet', 'beta', 'Alphanumeric']})
+    widget = Tabulator(df, header_filters=True, pagination=pagination)
+
+    widget.filters = [{'field': 'word', 'type': 'ends', 'value': 'IC'}]
+
+    assert list(widget.current_view['word']) == ['Alphanumeric']
+
+
+@pytest.mark.parametrize(('op', 'value', 'expected'), [
+    ('=', 2, [2]),
+    ('!=', 2, [1, 3, 4]),
+    ('<', 3, [1, 2]),
+    ('<=', 2, [1, 2]),
+    ('>', 2, [3, 4]),
+    ('>=', 3, [3, 4]),
+    ('in', [1, 3], [1, 3]),
+])
+def test_header_filter_comparison_operators(op, value, expected):
+    widget = Tabulator(pd.DataFrame({'n': [1, 2, 3, 4]}), header_filters=True)
+
+    widget.filters = [{'field': 'n', 'type': op, 'value': value}]
+
+    assert list(widget.current_view['n']) == expected
 
 @pytest.mark.parametrize('aggs', [{}, {'Country': 'sum'}, {'Country': {'Int': 'sum', 'Float': 'mean'}}])
 def test_tabulator_aggregators(document, comm, df_agg, aggs):

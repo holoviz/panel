@@ -23,9 +23,9 @@ import panel as pn
 
 pn.extension()
 
-selections = pn.pane.Markdown(object='')
-selected = pn.pane.Markdown(object='')
-toggle = pn.widgets.ToggleGroup(options=['A', 'B'])
+selections = pn.ui.Markdown(object='')
+selected = pn.ui.Markdown(object='')
+toggle = pn.ui.ToggleGroup(options=['A', 'B'])
 ```
 
 ## Defining a callback
@@ -65,7 +65,7 @@ watcher = toggle.param.watch(callback, ['options', 'value'], onlychanged=False)
 Now let us display the widget alongside the ``Markdown`` panes that reflect the current state of the widget:
 
 ```{pyodide}
-pn.Row(pn.Column(toggle, width=200, height=50), selections, pn.Spacer(width=50, height=50), selected)
+pn.ui.Row(pn.ui.Column(toggle, width=200, height=50), selections, pn.ui.Spacer(width=50, height=50), selected)
 ```
 
 To initialize the `selections` and `selected` we can explicitly ``trigger`` options and value events:

@@ -24,11 +24,11 @@ import panel as pn
 
 pn.extension(design="material")
 
-pn.Column(
-    pn.widgets.FloatSlider(name="Slider"),
-    pn.widgets.TextInput(name="TextInput"),
-    pn.widgets.Select(name="Select", options=["Wind Turbine", "Solar Panel", "Battery Storage"]),
-    pn.widgets.Button(name="Click me!", icon="hand-click", button_type="primary"),
+pn.ui.Column(
+    pn.ui.FloatSlider(label="Slider"),
+    pn.ui.TextInput(label="TextInput"),
+    pn.ui.Select(label="Select", options=["Wind Turbine", "Solar Panel", "Battery Storage"]),
+    pn.ui.Button(label="Click me!", icon="hand-click", color="primary"),
 ).servable()
 ```
 
@@ -50,11 +50,11 @@ import panel as pn
 
 pn.extension(design="fast", theme="dark")
 
-pn.Column(
-    pn.widgets.FloatSlider(name="Slider"),
-    pn.widgets.TextInput(name="TextInput"),
-    pn.widgets.Select(name="Select", options=["Wind Turbine", "Solar Panel", "Battery Storage"]),
-    pn.widgets.Button(name="Click me!", icon="hand-click", button_type="primary"),
+pn.ui.Column(
+    pn.ui.FloatSlider(label="Slider"),
+    pn.ui.TextInput(label="TextInput"),
+    pn.ui.Select(label="Select", options=["Wind Turbine", "Solar Panel", "Battery Storage"]),
+    pn.ui.Button(label="Click me!", icon="hand-click", color="primary"),
     styles={"background": "#181818"} # styles only necessary in the Panel docs
 ).servable()
 ```
@@ -73,11 +73,11 @@ import panel as pn
 
 pn.extension(design="material")
 
-pn.Column(
-    pn.widgets.FloatSlider(name="Slider"),
-    pn.widgets.TextInput(name="TextInput"),
-    pn.widgets.Select(name="Select", options=["Wind Turbine", "Solar Panel", "Battery Storage"]),
-    pn.widgets.Button(name="Click me!", icon="hand-click", button_type="primary"),
+pn.ui.Column(
+    pn.ui.FloatSlider(label="Slider"),
+    pn.ui.TextInput(label="TextInput"),
+    pn.ui.Select(label="Select", options=["Wind Turbine", "Solar Panel", "Battery Storage"]),
+    pn.ui.Button(label="Click me!", icon="hand-click", color="primary"),
 ).servable()
 ```
 

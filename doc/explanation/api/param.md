@@ -30,7 +30,7 @@ Let's start by working with a `TextInput` widget:
 ```{pyodide}
 import panel as pn
 
-text_input = pn.widgets.TextInput(value='A string!')
+text_input = pn.ui.TextInput(value='A string!')
 
 text_input
 ```
@@ -65,7 +65,7 @@ class TextFormatter(param.Parameterized):
     def __repr__(self):
         return f'**{self.text}**'
 
-text_input = pn.widgets.TextInput(value='A string!')
+text_input = pn.ui.TextInput(value='A string!')
 
 TextFormatter(text=text_input.param.value)
 ```

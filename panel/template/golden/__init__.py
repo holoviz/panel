@@ -4,8 +4,7 @@ GoldenTemplate based on the golden-layout library.
 from __future__ import annotations
 
 import pathlib
-
-from typing import TYPE_CHECKING, Literal
+import typing as t
 
 import param
 
@@ -13,7 +12,7 @@ from ...config import config
 from ...io.resources import JS_URLS
 from ..base import BasicTemplate
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from ...io.resources import ResourcesType
 
 
@@ -47,7 +46,7 @@ class GoldenTemplate(BasicTemplate):
 
     def resolve_resources(
         self,
-        cdn: bool | Literal['auto'] = 'auto',
+        cdn: bool | t.Literal['auto'] = 'auto',
         extras: dict[str, dict[str, str]] | None = None
     ) -> ResourcesType:
         resources = super().resolve_resources(cdn=cdn, extras=extras)

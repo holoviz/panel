@@ -3,7 +3,7 @@ requires = [
     "hatchling",
     "hatch-vcs",
     "param >=2.1.0",
-    "bokeh >=3.7.0,<3.9.0",
+    "bokeh >=3.10.0,<3.11.0",
     "pyviz_comms >=0.7.4",
     "requests",
     "packaging",
@@ -16,7 +16,7 @@ dynamic = ["version"]
 description = 'The powerful data exploration & web app framework for Python.'
 readme = "README.md"
 license = { text = "BSD" }
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 authors = [{ name = "HoloViz developers", email = "developers@holoviz.org" }]
 maintainers = [
     { name = "HoloViz developers", email = "developers@holoviz.org" },
@@ -25,11 +25,10 @@ classifiers = [
     "License :: OSI Approved :: BSD License",
     "Development Status :: 5 - Production/Stable",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "Operating System :: OS Independent",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
@@ -48,16 +47,17 @@ classifiers = [
 ]
 
 dependencies = [
-    'bokeh >=3.7.0,<3.9.0',
+    'bokeh >=3.10.0,<3.11.0',
     'param >=2.1.0,<3.0',
     'pyviz_comms >=2.0.0',
+    'panel-material-ui >=0.16.0rc0,<0.17',
     'markdown',
     'markdown-it-py',
     'linkify-it-py',
     'mdit-py-plugins',
     'narwhals >=2',
     'requests',
-    'bleach',
+    'nh3',
     'typing_extensions',
     'pandas >=1.2',
     'packaging',
@@ -78,11 +78,18 @@ recommended = [
     'plotly',
 ]
 fastapi = [
-    'bokeh-fastapi >= 0.1.5,<0.2.0',
     'fastapi[standard]',
+]
+django = [
+    'django',
+    'uvicorn',
+]
+migrate = [
+    'libcst >=1.1',
 ]
 dev = [
     'watchfiles',
+    'libcst >=1.1',
 ]
 tests = [
     'psutil' ,
@@ -94,7 +101,6 @@ tests = [
 mypy = [
     "mypy",
     "pandas-stubs",
-    "types-bleach",
     "types-croniter",
     "types-Markdown",
     "types-psutil",
@@ -171,6 +177,7 @@ select = [
     "W",
     "PIE",
     "T20",
+    "TC",
     "RUF006",
     "UP004",
     "UP006",
@@ -195,6 +202,9 @@ unfixable = [
 "scripts/*.py" = ["T201"]
 "hatch_build.py" = ["T201"]
 
+[tool.ty.rules]
+unused-type-ignore-comment = "ignore"
+
 [tool.isort]
 force_grid_wrap = 4
 multi_line_output = 5
@@ -204,7 +214,7 @@ include_trailing_comma = true
 
 [tool.codespell]
 ignore-words-list = "nd,doubleclick,ser"
-skip = "doc/generate_modules.py,examples/reference/templates/FastGridTemplate.ipynb,panel/.eslintrc.js,panel/package-lock.json,panel/package.json"
+skip = "doc/generate_modules.py,examples/reference/templates/FastGridTemplate.ipynb,panel/.eslintrc.js,panel/package-lock.json,panel/package.json,doc/homepage/package-lock.json"
 write-changes = true
 
 [tool.pytest.ini_options]
@@ -216,6 +226,7 @@ asyncio_default_fixture_loop_scope = "function"
 xfail_strict = true
 minversion = "7"
 log_cli_level = "INFO"
+timeout = 300
 filterwarnings = [
     "error",
     # 2023-11: `pkg_resources` is deprecated
@@ -238,7 +249,11 @@ filterwarnings = [
     # 2025-10
     "ignore:'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16::starlette",
     "ignore:'asyncio.iscoroutinefunction' is deprecated and slated for removal in Python 3.16::fastapi",
+    "ignore:The anyio.abc.BlockingPortal alias is deprecated, use anyio.from_thread.BlockingPortal instead:DeprecationWarning:starlette",
     "ignore:Implicitly cleaning up <_TemporaryFileWrapper:ResourceWarning",
+    # 2026-08
+    "ignore:Setting the shape on a NumPy array has been deprecated:DeprecationWarning:vtk.util.numpy_support", # https://gitlab.kitware.com/vtk/vtk/-/work_items/19900
+    "ignore:Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead",
 ]
 
 [tool.coverage.run]
@@ -254,16 +269,16 @@ explicit_package_bases = true
 disable_error_code = "attr-defined"
 mypy_path = ""
 exclude = []
+plugins = ["param.mypy_plugin"]
 
 [[tool.mypy.overrides]]
 module = [
     "anywidget.*",
-    "bokeh_django.*",
-    "bokeh_fastapi.*",
     "bokeh.*",
     "cachecontrol.*",
     "cryptography.*",
     "diskcache.*",
+    "django.*",
     "flask.*",
     "fsspec.*",
     "holoviews.*",
@@ -285,8 +300,8 @@ module = [
     "playwright.*",
     "plotly.*",
     "pydeck.*",
+    "pyarrow.*",
     "pyecharts.*",
-    "pyodide_http.*",
     "pyodide.*",
     "pyscript.*",
     "pyvista.*",
@@ -297,8 +312,12 @@ module = [
     "setuptools_scm.*",
     "snakeviz.*",
     "streamz.*",
+    "textual",
     "traitlets.*",
     "tranquilizer.*",
+    "textual.*",
+    "reacton",
+    "reacton.*",
     "uvicorn.*",
     "vtk.*",
     "watchfiles.*"

@@ -11,8 +11,9 @@ from bokeh.models import (
 from panel import config
 from panel.widgets import (
     DateRangeSlider, DateSlider, DatetimeRangeSlider, DatetimeSlider,
-    DiscreteSlider, EditableFloatSlider, EditableIntSlider,
-    EditableRangeSlider, FloatSlider, IntSlider, RangeSlider, StaticText,
+    DiscretePlayer, DiscreteSlider, EditableFloatSlider, EditableIntSlider,
+    EditableRangeSlider, FloatInput, FloatSlider, IntInput, IntSlider, Player,
+    RangeSlider, StaticText,
 )
 
 
@@ -36,11 +37,11 @@ def test_float_slider_from_series():
     assert slider.start == 1.1
     assert slider.end == 2.2
     assert slider.value == 1.1
-    assert slider.name == 'Series'
+    assert slider.label == 'Series'
 
 def test_float_slider(document, comm):
 
-    slider = FloatSlider(start=0.1, end=0.5, value=0.4, name='Slider')
+    slider = FloatSlider(start=0.1, end=0.5, value=0.4, label='Slider')
 
     widget = slider.get_root(document, comm=comm)
 
@@ -72,7 +73,7 @@ def test_float_slider(document, comm):
 
 def test_int_slider(document, comm):
 
-    slider = IntSlider(start=0, end=3, value=1, name='Slider')
+    slider = IntSlider(start=0, end=3, value=1, label='Slider')
 
     widget = slider.get_root(document, comm=comm)
 
@@ -92,7 +93,7 @@ def test_int_slider(document, comm):
     assert widget.value == 0
 
     # Testing that value matches start value if value not set.
-    slider_2 = IntSlider(start=1, end=3, name='Slider_2')
+    slider_2 = IntSlider(start=1, end=3, label='Slider_2')
     widget_2 = slider_2.get_root(document, comm=comm)
     assert widget_2.value == widget_2.start
 
@@ -128,11 +129,11 @@ def test_range_slider_from_series():
     assert slider.start == 1.1
     assert slider.end == 2.2
     assert slider.value == (1.1, 2.2)
-    assert slider.name == 'Series'
+    assert slider.label == 'Series'
 
 def test_range_slider(document, comm):
 
-    slider = RangeSlider(start=0., end=3, value=(0, 3), name='Slider')
+    slider = RangeSlider(start=0., end=3, value=(0, 3), label='Slider')
 
     widget = slider.get_root(document, comm=comm)
 
@@ -163,7 +164,7 @@ def test_range_slider(document, comm):
 
 
 def test_date_slider(document, comm):
-    date_slider = DateSlider(name='DateSlider',
+    date_slider = DateSlider(label='DateSlider',
                              value=date(2018, 9, 4),
                              start=date(2018, 9, 1), end=date(2018, 9, 10))
 
@@ -208,7 +209,7 @@ def test_date_slider(document, comm):
 @pytest.mark.parametrize("value", [date(2018, 9, 4), datetime(2018, 9, 4)])
 def test_datetime_slider(document, comm, value, start, end):
     datetime_slider = DatetimeSlider(
-        name='DatetimeSlider',
+        label='DatetimeSlider',
         value=value,
         start=start,
         end=end,
@@ -253,13 +254,25 @@ def test_datetime_slider(document, comm, value, start, end):
         assert widget.value == 1620777600000
 
 
+def test_datetime_slider_preserves_time_in_bounds(document, comm):
+    start = datetime(2026, 8, 21, 8, 45)
+    end = datetime(2026, 8, 21, 13, 30)
+    datetime_slider = DatetimeSlider(value=start, start=start, end=end)
+
+    widget = datetime_slider.get_root(document, comm=comm)
+
+    epoch = datetime(1970, 1, 1)
+    assert widget.start == (start - epoch).total_seconds() * 1000
+    assert widget.end == (end - epoch).total_seconds() * 1000
+
+
 def test_datetime_slider_np_datetime64(document, comm):
     start = np.datetime64('2018-09-01')
     end = np.datetime64('2018-09-10')
     value = np.datetime64('2018-09-04')
 
     datetime_slider = DatetimeSlider(
-        name='DatetimeSlider',
+        label='DatetimeSlider',
         value=value,
         start=start,
         end=end,
@@ -306,7 +319,7 @@ def test_datetime_slider_param_as_datetime_is_readonly():
     assert DatetimeSlider.param.as_datetime.readonly
     assert DatetimeSlider().param.as_datetime.readonly
     datetime_slider = DatetimeSlider(
-        name='DatetimeSlider',
+        label='DatetimeSlider',
         value=datetime(2018, 9, 4),
         start=datetime(2018, 9, 1),
         end=datetime(2018, 9, 10),
@@ -315,7 +328,7 @@ def test_datetime_slider_param_as_datetime_is_readonly():
 
 
 def test_date_range_slider(document, comm):
-    date_slider = DateRangeSlider(name='DateRangeSlider',
+    date_slider = DateRangeSlider(label='DateRangeSlider',
                                   value=(datetime(2018, 9, 2), datetime(2018, 9, 4)),
                                   start=datetime(2018, 9, 1), end=datetime(2018, 9, 10))
 
@@ -358,7 +371,7 @@ def test_date_range_slider(document, comm):
 
 
 def test_datetime_range_slider(document, comm):
-    datetime_slider = DatetimeRangeSlider(name='DatetimeRangeSlider',
+    datetime_slider = DatetimeRangeSlider(label='DatetimeRangeSlider',
                                   value=(datetime(2018, 9, 2), datetime(2018, 9, 4)),
                                   start=datetime(2018, 9, 1), end=datetime(2018, 9, 10))
     widget = datetime_slider.get_root(document, comm=comm)
@@ -397,7 +410,7 @@ def test_datetime_range_slider(document, comm):
 
 
 def test_discrete_slider(document, comm):
-    discrete_slider = DiscreteSlider(name='DiscreteSlider', value=1,
+    discrete_slider = DiscreteSlider(label='DiscreteSlider', value=1,
                                      options=[0.1, 1, 10, 100])
 
     box = discrete_slider.get_root(document, comm=comm)
@@ -433,7 +446,7 @@ def test_discrete_slider(document, comm):
 
 
 def test_discrete_slider_label_update(document, comm):
-    discrete_slider = DiscreteSlider(name='DiscreteSlider', value=1,
+    discrete_slider = DiscreteSlider(label='DiscreteSlider', value=1,
                                      options=[0.1, 1, 10, 100])
 
     box = discrete_slider.get_root(document, comm=comm)
@@ -444,19 +457,19 @@ def test_discrete_slider_label_update(document, comm):
 
 
 def test_discrete_slider_name_update(document, comm):
-    discrete_slider = DiscreteSlider(name='DiscreteSlider', value=1,
+    discrete_slider = DiscreteSlider(label='DiscreteSlider', value=1,
                                      options=[0.1, 1, 10, 100])
 
 
     box = discrete_slider.get_root(document, comm=comm)
 
-    discrete_slider.name = 'Blah'
+    discrete_slider.label = 'Blah'
 
     assert box.children[0].text == 'Blah: <b>1</b>'
 
 
 def test_discrete_slider_no_options(document, comm):
-    discrete_slider = DiscreteSlider(name='DiscreteSlider')
+    discrete_slider = DiscreteSlider(label='DiscreteSlider')
 
 
     box = discrete_slider.get_root(document, comm=comm)
@@ -476,7 +489,7 @@ def test_discrete_slider_no_options(document, comm):
 
 
 def test_discrete_slider_single_option(document, comm):
-    discrete_slider = DiscreteSlider(name='DiscreteSlider', options=[0])
+    discrete_slider = DiscreteSlider(label='DiscreteSlider', options=[0])
 
 
     box = discrete_slider.get_root(document, comm=comm)
@@ -497,7 +510,7 @@ def test_discrete_slider_single_option(document, comm):
 
 def test_discrete_slider_disabled(document, comm):
     # Check that the widget can be disabled on instantiation
-    discrete_slider = DiscreteSlider(name='DiscreteSlider', options=[0, 1], disabled=True)
+    discrete_slider = DiscreteSlider(label='DiscreteSlider', options=[0, 1], disabled=True)
 
     box = discrete_slider.get_root(document, comm=comm)
 
@@ -527,7 +540,7 @@ def test_discrete_slider_disabled(document, comm):
 
 def test_discrete_date_slider(document, comm):
     dates = {f'2016-01-0{i}': datetime(2016, 1, i) for i in range(1, 4)}
-    discrete_slider = DiscreteSlider(name='DiscreteSlider', value=dates['2016-01-02'],
+    discrete_slider = DiscreteSlider(label='DiscreteSlider', value=dates['2016-01-02'],
                                      options=dates)
 
     box = discrete_slider.get_root(document, comm=comm)
@@ -566,7 +579,7 @@ def test_discrete_date_slider(document, comm):
 
 def test_discrete_slider_options_dict(document, comm):
     options = {'0.1': 0.1, '1': 1, '10': 10, '100': 100}
-    discrete_slider = DiscreteSlider(name='DiscreteSlider', value=1,
+    discrete_slider = DiscreteSlider(label='DiscreteSlider', value=1,
                                      options=options)
 
     box = discrete_slider.get_root(document, comm=comm)
@@ -611,7 +624,7 @@ def test_discrete_slider_options_dict(document, comm):
 def test_editable_slider(document, comm,
     editableslider, start, end, step, val1, val2, val3, diff1):
 
-    slider = editableslider(start=start, end=end, value=val1, name='Slider')
+    slider = editableslider(start=start, end=end, value=val1, label='Slider')
 
     widget = slider.get_root(document, comm=comm)
 
@@ -657,7 +670,7 @@ def test_editable_slider(document, comm,
         slider.value = val3
         assert input_widget.value == slider_widget.value == val3
 
-    slider.name = 'New Slider'
+    slider.label = 'New Slider'
 
     assert static_widget.text == 'New Slider:'
 
@@ -683,6 +696,20 @@ def test_editable_slider_disabled():
     assert not slider._value_edit.disabled
 
 @pytest.mark.parametrize(
+    'editableslider',
+    [EditableFloatSlider, EditableIntSlider],
+    ids=["EditableFloatSlider", "EditableIntSlider"]
+)
+def test_editable_slider_none_value_no_error(editableslider):
+    slider = editableslider(value=5, start=0, end=10)
+    previous_slider_value = slider._slider.value
+
+    slider._value_edit.value = None  # simulate clearing the input field
+
+    assert slider._slider.value == previous_slider_value
+    assert slider._value_edit.value is None
+
+@pytest.mark.parametrize(
     'editableslider,start,end,step,val1,val2,val3,diff1',
     [
         (EditableRangeSlider, 0.1, 0.5, 0.1, (0.2, 0.4), (0.2, 0.3), (0.1, 0.5), 0.1),
@@ -692,7 +719,7 @@ def test_editable_slider_disabled():
 def test_editable_rangeslider(document, comm,
     editableslider, start, end, step, val1, val2, val3, diff1):
 
-    slider = editableslider(start=start, end=end, value=val1, name='Slider')
+    slider = editableslider(start=start, end=end, value=val1, label='Slider')
 
     widget = slider.get_root(document, comm=comm)
 
@@ -736,7 +763,7 @@ def test_editable_rangeslider(document, comm,
         slider.value = val3
         assert (input_widget_start.value, input_widget_end.value) == slider_widget.value == val3
 
-    slider.name = 'New Slider'
+    slider.label = 'New Slider'
 
     assert static_widget.text == 'New Slider:'
 
@@ -783,7 +810,7 @@ def test_editable_slider_bounds(
         slider = editableslider(
             start=start, end=end,
             fixed_start=fixed_start, fixed_end=fixed_end,
-            value=val_init, name='Slider'
+            value=val_init, label='Slider'
         )
     except Exception:
         assert fail_init
@@ -810,7 +837,7 @@ def test_editable_rangeslider_bounds(
         slider = editableslider(
             start=start, end=end,
             fixed_start=fixed_start, fixed_end=fixed_end,
-            value=val_init, name='Slider'
+            value=val_init, label='Slider'
         )
     except Exception:
         assert fail_init
@@ -932,3 +959,153 @@ def test_editable_fixed_nosoftbounds_fixed_end(editableslider):
     slider = editableslider(fixed_end=fixed_end, end=end, step=step)
     assert slider.start == end - step
     assert slider.end == end
+
+
+def test_date_range_slider_start_end_explicit_conversion(document, comm):
+    min_val = pd.Timestamp('2024-04-03 12:43:00+0200')
+    max_val = pd.Timestamp('2024-04-29 15:30:00+0200')
+
+    date_slider = DateRangeSlider(
+        label='Dates',
+        start=min_val,
+        end=max_val,
+        value=(min_val, max_val),
+    )
+    widget = date_slider.get_root(document, comm=comm)
+
+    import datetime as dt
+
+    expected_start_ms = min_val.replace(tzinfo=dt.timezone.utc).timestamp() * 1000
+    expected_end_ms = max_val.replace(tzinfo=dt.timezone.utc).timestamp() * 1000
+
+    assert widget.start == expected_start_ms
+    assert widget.end == expected_end_ms
+    assert widget.start == widget.value[0]
+    assert widget.end == widget.value[1]
+
+
+@pytest.mark.parametrize('widget, initial, new', [
+    (FloatSlider, 0.1, 0.4),
+    (IntSlider, 1, 4),
+    (RangeSlider, (0, 1), (2, 3)),
+])
+def test_slider_value_throttled_follows_programmatic_value(widget, initial, new):
+    # Assigning value from Python is not a drag, so there is nothing to
+    # throttle and value_throttled must follow, the way __init__ already
+    # seeds it. See https://github.com/holoviz/panel/issues/2675.
+    slider = widget(start=0, end=10, value=initial)
+    assert slider.value_throttled == initial
+
+    slider.value = new
+    assert slider.value_throttled == new
+
+
+def test_slider_value_throttled_notifies_watchers():
+    # A callback bound to value_throttled never fired on a programmatic set.
+    seen = []
+    slider = IntSlider(start=0, end=10, value=0)
+    slider.param.watch(lambda event: seen.append(event.new), 'value_throttled')
+
+    slider.value = 7
+
+    assert seen == [7]
+
+
+def test_slider_value_throttled_not_updated_while_dragging(document, comm):
+    # The frontend sends `value` during a drag and `value_throttled` on
+    # release. Only the release may move value_throttled, otherwise the
+    # parameter would lose its purpose.
+    slider = FloatSlider(start=0, end=10, value=0)
+    slider.get_root(document, comm=comm)
+
+    slider._process_events({'value': 4.0})
+    assert slider.value == 4.0
+    assert slider.value_throttled == 0
+
+    slider._process_events({'value_throttled': 4.0})
+    assert slider.value_throttled == 4.0
+
+
+@pytest.mark.parametrize('widget, kwargs, new', [
+    (Player, dict(start=0, end=10, value=1), 4),
+    (DiscretePlayer, dict(options=[1, 2, 3], value=1), 3),
+    (IntInput, dict(value=1), 7),
+    (FloatInput, dict(value=1.0), 7.0),
+])
+def test_non_slider_value_throttled_follows_programmatic_value(widget, kwargs, new):
+    # PlayerBase and _SpinnerBase seed value_throttled from value in __init__ the
+    # same way _SliderBase does, so they had the same stale-forever bug. The sync
+    # lives on Widget so every family that declares value_throttled gets it.
+    w = widget(**kwargs)
+    w.value = new
+    assert w.value_throttled == new
+
+
+@pytest.mark.parametrize('widget, kwargs, new', [
+    (DiscreteSlider, dict(options=[1, 2, 3, 4, 5], value=1), 4),
+    (EditableFloatSlider, dict(start=0, end=10, value=1.0), 7.0),
+    (EditableIntSlider, dict(start=0, end=10, value=1), 7),
+    (EditableRangeSlider, dict(start=0, end=10, value=(1.0, 2.0)), (3.0, 4.0)),
+])
+def test_composite_slider_value_throttled_follows_programmatic_value(widget, kwargs, new):
+    # CompositeWidget subclasses relay value_throttled from their sub-widgets
+    # rather than deriving it generically, but a programmatic set of `value`
+    # must still be reflected in `value_throttled` immediately.
+    w = widget(**kwargs)
+    w.value = new
+    assert w.value_throttled == new
+
+
+@pytest.mark.parametrize('widget, kwargs, drag_value, released_value', [
+    (DiscreteSlider, dict(options=[1, 2, 3, 4, 5], value=1), 3, 4),
+    (EditableFloatSlider, dict(start=0, end=10, value=1.0), 5.0, 5.0),
+    (EditableIntSlider, dict(start=0, end=10, value=1), 5, 5),
+])
+def test_composite_slider_value_throttled_not_updated_while_dragging(
+    widget, kwargs, drag_value, released_value
+):
+    # Dragging the inner slider must not leak into the composite's own
+    # `value_throttled` until the drag is released, otherwise composite
+    # widgets like DiscreteSlider lose the point of the parameter for
+    # exactly the callbacks (e.g. DynamicMap redraws) it exists to protect.
+    w = widget(**kwargs)
+    initial_throttled = w.value_throttled
+
+    w._slider._process_events({'value': drag_value})
+    assert w.value_throttled == initial_throttled
+
+    w._slider._process_events({'value_throttled': drag_value})
+    assert w.value_throttled == released_value
+
+
+def test_editable_range_slider_value_throttled_not_updated_while_dragging():
+    w = EditableRangeSlider(start=0, end=10, value=(1.0, 2.0))
+
+    w._slider._process_events({'value': (1.0, 5.0)})
+    assert w.value == (1.0, 5.0)
+    assert w.value_throttled == (1.0, 2.0)
+
+    w._slider._process_events({'value_throttled': (1.0, 5.0)})
+    assert w.value_throttled == (1.0, 5.0)
+
+
+@pytest.mark.parametrize('widget, kwargs, sub_widget, drag_value, released_value, updated_value', [
+    (EditableFloatSlider, dict(start=0, end=10, value=1.0), '_value_edit', 3.0, 3.0, 3.0),
+    (EditableRangeSlider, dict(start=0, end=10, value=(1.0, 5.0)), '_start_edit', 2.0, 2.0, (2.0, 5.0)),
+])
+def test_editable_slider_value_throttled_not_updated_while_dragging_edit(
+    widget, kwargs, sub_widget, drag_value, released_value, updated_value
+):
+    # Dragging the numeric slider reflects `value` down into the text-input
+    # sub-widget for display, and vice versa; that reflection must not be
+    # mistaken by the *other* sub-widget for a fresh user-driven set of its
+    # own value, which would corrupt the composite's `value_throttled`.
+    w = widget(**kwargs)
+    initial_throttled = w.value_throttled
+    edit = getattr(w, sub_widget)
+
+    edit._process_events({'value': drag_value})
+    assert w.value_throttled == initial_throttled
+
+    edit._process_events({'value_throttled': released_value})
+    assert w.value_throttled == updated_value

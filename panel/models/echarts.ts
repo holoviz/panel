@@ -39,7 +39,7 @@ export class EChartsEvent extends ModelEvent {
 export class EChartsView extends HTMLBoxView {
   declare model: ECharts
 
-  container: Element
+  container: HTMLDivElement
   _chart: any
   _callbacks: Array<any>[] = []
 
@@ -50,7 +50,9 @@ export class EChartsView extends HTMLBoxView {
     this.on_change([width, height], () => this._resize())
     this.on_change([theme, renderer], () => {
       this.render()
-      this._chart.resize()
+      if (this._chart != null) {
+        this._chart.resize()
+      }
     })
     this.on_change([event_config, js_events], () => this._subscribe())
   }
@@ -59,10 +61,17 @@ export class EChartsView extends HTMLBoxView {
     if (this._chart != null) {
       try {
         (window as any).echarts.dispose(this._chart)
-      } catch (e) {}
+      } catch (e) {
+        // dispose may fail if echarts was never fully initialized
+      }
     }
     super.render()
     this.container = div({style: {height: "100%", width: "100%"}})
+    this.shadow_el.append(this.container)
+    this._init_chart()
+  }
+
+  _init_chart(): void {
     const config = {width: this.model.width, height: this.model.height, renderer: this.model.renderer}
     this._chart = (window as any).echarts.init(
       this.container,
@@ -71,13 +80,16 @@ export class EChartsView extends HTMLBoxView {
     )
     this._plot()
     this._subscribe()
-    this.shadow_el.append(this.container)
   }
 
   override remove(): void {
     super.remove()
     if (this._chart != null) {
-      (window as any).echarts.dispose(this._chart)
+      try {
+        (window as any).echarts.dispose(this._chart)
+      } catch (e) {
+        // dispose may fail if echarts was never fully initialized
+      }
     }
   }
 
@@ -89,7 +101,7 @@ export class EChartsView extends HTMLBoxView {
   }
 
   _plot(): void {
-    if ((window as any).echarts == null) {
+    if (this._chart == null) {
       return
     }
     const data = transformJsPlaceholders(this.model.data)
@@ -97,11 +109,13 @@ export class EChartsView extends HTMLBoxView {
   }
 
   _resize(): void {
-    this._chart.resize({width: this.model.width, height: this.model.height})
+    if (this._chart != null) {
+      this._chart.resize({width: this.model.width, height: this.model.height})
+    }
   }
 
   _subscribe(): void {
-    if ((window as any).echarts == null) {
+    if (this._chart == null) {
       return
     }
     for (const [event_type, callback] of this._callbacks) {
@@ -121,7 +135,7 @@ export class EChartsView extends HTMLBoxView {
           const serialized = JSON.parse(JSON.stringify(processed))
           this.model.trigger_event(new EChartsEvent(event_type, serialized, query))
         }
-        if (query == null) {
+        if (query != null) {
           this._chart.on(event_type, query, callback)
         } else {
           this._chart.on(event_type, callback)

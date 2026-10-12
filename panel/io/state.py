@@ -12,47 +12,48 @@ import shutil
 import sys
 import threading
 import time
+import typing as t
 
 from collections import Counter, defaultdict
 from collections.abc import (
-    Callable, Coroutine, Hashable, Iterator, Iterator as TIterator,
+    Awaitable, Callable, Coroutine, Hashable, Iterator, Iterator as TIterator,
 )
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager, suppress
 from contextvars import ContextVar
 from functools import partial, wraps
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Literal, TypeAlias, TypeVar,
-)
 from urllib.parse import urljoin
-from weakref import WeakKeyDictionary
+from weakref import WeakKeyDictionary, WeakSet
 
 import param
 
-from bokeh.document import Document
 from bokeh.document.locking import UnlockedDocumentProxy
 from bokeh.io import curdoc as _curdoc
-from param.parameterized import Event, Parameterized
 from pyviz_comms import CommManager as _CommManager
 
 from ..util import decode_token, edit_readonly, parse_timedelta
+from ..util.warnings import deprecated
 from .logging import LOG_SESSION_RENDERED, LOG_USER_MSG
 
 _state_logger = logging.getLogger('panel.state')
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from concurrent.futures import Future
+    from types import ModuleType
 
     from bokeh.application.application import SessionContext
+    from bokeh.document import Document
     from bokeh.model import Model
-    from bokeh.models import ImportedStyleSheet
-    from bokeh.server.contexts import BokehSessionContext
+    from bokeh.models import ImportedStyleSheet, InlineStyleSheet
+    from bokeh.server.contexts import ApplicationContext, BokehSessionContext
     from bokeh.server.session import ServerSession
     from IPython.display import DisplayHandle
+    from param.parameterized import Event, Parameterized
     from pyviz_comms import Comm
     from tornado.ioloop import IOLoop
 
     from ..template.base import BaseTemplate
-    from ..viewable import Viewable
+    from ..viewable import Renderable
     from ..widgets.indicators import BooleanIndicator
     from .application import TViewableFuncOrPath
     from .browser import BrowserInfo
@@ -62,8 +63,8 @@ if TYPE_CHECKING:
     from .notifications import NotificationAreaBase
     from .server import StoppableThread
 
-    T = TypeVar("T")
-    K = TypeVar('K', bound=Hashable)
+    T = t.TypeVar("T")
+    K = t.TypeVar('K', bound=Hashable)
 
 
 @contextmanager
@@ -89,7 +90,29 @@ def curdoc_locked() -> Document | None:
 
 class _Undefined: pass
 
-Tat: TypeAlias = dt.datetime | Callable[[dt.datetime], dt.datetime] | TIterator[dt.datetime]
+
+_tasks: set[asyncio.Task] = set()
+
+
+class _SharedThreadPoolExecutor(ThreadPoolExecutor):
+    """
+    Thread pool used both by Panel's ``state.execute(schedule='thread')`` and,
+    when installed as an event loop's default executor, by Bokeh's
+    ``asyncio.to_thread`` offloading. It is process-global and outlives
+    individual event loops, so implicit shutdown driven by loop finalization
+    (``run_until_complete`` / ``asyncio.run`` teardown calls
+    ``shutdown_default_executor``) must not tear it down. Shutdown only happens
+    explicitly via ``config._set_thread_pool`` / ``state.reset`` by passing
+    ``_shared=False``.
+    """
+
+    def shutdown(self, wait=True, *, cancel_futures=False, _shared=True):
+        if _shared:
+            # Ignore implicit shutdown from a loop that borrowed this pool.
+            return None
+        return super().shutdown(wait=wait, cancel_futures=cancel_futures)
+
+Tat: t.TypeAlias = dt.datetime | Callable[[dt.datetime], dt.datetime] | TIterator[dt.datetime]
 
 class _state(param.Parameterized):
     """
@@ -105,7 +128,7 @@ class _state(param.Parameterized):
        Global location you can use to cache large datasets or expensive computation results
        across multiple client sessions for a given server.""")
 
-    encryption = param.Parameter(default=None, doc="""
+    encryption: t.Any = param.Parameter(default=None, doc="""
        Object with encrypt and decrypt methods to support encryption
        of secret variables including OAuth information.""")
 
@@ -113,14 +136,14 @@ class _state(param.Parameterized):
                                        'sessions': {}}, doc="""
        Tracks information and statistics about user sessions.""")
 
-    webdriver = param.Parameter(default=None, doc="""
+    webdriver: t.Any = param.Parameter(default=None, doc="""
       Selenium webdriver used to export bokeh models to pngs.""")
 
     _base_url = param.String(default='/', readonly=True, doc="""
        Base URL for all server paths.""")
 
-    _busy_counter = param.Integer(default=0, doc="""
-       Count of active callbacks current being processed.""")
+    _busy_counter = param.List(default=[], item_type=tuple, doc="""
+       Active callbacks currently being processed as (event_id, started_at).""")
 
     _memoize_cache = param.Dict(default={}, doc="""
        A dictionary used by the cache decorator.""")
@@ -137,108 +160,120 @@ class _state(param.Parameterized):
     _hold: bool = False
 
     # Used to ensure that events are not scheduled from the wrong thread
-    _thread_id_: ClassVar[WeakKeyDictionary[Document, int]] = WeakKeyDictionary()
+    _thread_id_: t.ClassVar[WeakKeyDictionary[Document, int]] = WeakKeyDictionary()
     _thread_pool = None
 
+    # The event loops the thread pool was installed on as default executor
+    _executor_loops: t.ClassVar[WeakSet[asyncio.AbstractEventLoop]] = WeakSet()
+
     # Admin application (remove in Panel 1.0 / Bokeh 3.0)
-    _admin_context = None
+    _admin_context: ApplicationContext | None = None
 
     # Jupyter communication
     _comm_manager: type[_CommManager] = _CommManager
     _jupyter_kernel_context: BokehSessionContext | None = None
-    _kernels: ClassVar[dict[str, tuple[Any, str, str, bool]]] = {}
-    _ipykernels: ClassVar[WeakKeyDictionary[Document, Any]] = WeakKeyDictionary()
+    _kernels: t.ClassVar[dict[str, tuple[t.Any, str, str, bool]]] = {}
+    _ipykernels: t.ClassVar[WeakKeyDictionary[Document, t.Any]] = WeakKeyDictionary()
 
     # Locations
-    _browser: ClassVar[BrowserInfo | None] = None # Global BrowserInfo, e.g. for notebook context
-    _browsers: ClassVar[WeakKeyDictionary[Document, BrowserInfo]] = WeakKeyDictionary() # Server browser indexed by document
+    _browser: t.ClassVar[BrowserInfo | None] = None # Global BrowserInfo, e.g. for notebook context
+    _browsers: t.ClassVar[WeakKeyDictionary[Document, BrowserInfo]] = WeakKeyDictionary() # Server browser indexed by document
 
     # Locations
-    _location: ClassVar[Location | None] = None # Global location, e.g. for notebook context
-    _locations: ClassVar[WeakKeyDictionary[Document, Location]] = WeakKeyDictionary() # Server locations indexed by document
+    _location: t.ClassVar[Location | None] = None # Global location, e.g. for notebook context
+    _locations: t.ClassVar[WeakKeyDictionary[Document, Location]] = WeakKeyDictionary() # Server locations indexed by document
 
     # Notifications
-    _notification: ClassVar[NotificationAreaBase | None] = None # Global location, e.g. for notebook context
-    _notifications: ClassVar[WeakKeyDictionary[Document, NotificationAreaBase]] = WeakKeyDictionary() # Server notifications indexed by document
+    _notification: t.ClassVar[NotificationAreaBase | None] = None # Global location, e.g. for notebook context
+    _notifications: t.ClassVar[WeakKeyDictionary[Document, NotificationAreaBase]] = WeakKeyDictionary() # Server notifications indexed by document
 
     # Templates
-    _template: ClassVar[BaseTemplate | None] = None
-    _templates: ClassVar[WeakKeyDictionary[Document, BaseTemplate]] = WeakKeyDictionary() # Server templates indexed by document
+    _template: t.ClassVar[BaseTemplate | None] = None
+    _templates: t.ClassVar[WeakKeyDictionary[Document, BaseTemplate]] = WeakKeyDictionary() # Server templates indexed by document
 
     # An index of all currently active views
-    _views: ClassVar[dict[str, tuple[Viewable, Model, Document, Comm | None]]] = {}
+    _views: t.ClassVar[dict[str, tuple[Renderable, Model, Document, Comm | None]]] = {}
 
     # For templates to keep reference to their main root
-    _fake_roots: ClassVar[list[str]] = []
+    _fake_roots: t.ClassVar[list[str]] = []
 
     # An index of all currently active servers
-    _servers: ClassVar[dict[str, tuple[Any, TViewableFuncOrPath | dict[str, TViewableFuncOrPath], list[Document]]]] = {}
-    _threads: ClassVar[dict[str, StoppableThread]] = {}
-    _server_config: ClassVar[WeakKeyDictionary[Any, dict[str, Any]]] = WeakKeyDictionary()
+    _servers: t.ClassVar[dict[str, tuple[t.Any, TViewableFuncOrPath | dict[str, TViewableFuncOrPath], list[Document]]]] = {}
+    _threads: t.ClassVar[dict[str, StoppableThread]] = {}
+    _server_config: t.ClassVar[WeakKeyDictionary[t.Any, dict[str, t.Any]]] = WeakKeyDictionary()
 
     # Jupyter display handles
-    _handles: ClassVar[dict[str, tuple[DisplayHandle, list[str]]]] = {}
+    _handles: t.ClassVar[dict[str, tuple[DisplayHandle, list[str]]]] = {}
 
     # Stacks for hashing
     _stacks: WeakKeyDictionary[threading.Thread, _Stack] = WeakKeyDictionary()
 
     # Dictionary of callbacks to be triggered on app load
-    _onload: ClassVar[WeakKeyDictionary[Document, list[tuple[Callable[[], None | Coroutine[Any, Any, None]], bool]]]] = WeakKeyDictionary()
-    _on_session_created: ClassVar[list[Callable[[SessionContext], None]]] = []
-    _on_session_created_internal: ClassVar[list[Callable[[SessionContext], None]]] = []
-    _on_session_destroyed: ClassVar[list[Callable[[SessionContext], None]]] = []
-    _loaded: ClassVar[WeakKeyDictionary[Document, bool]] = WeakKeyDictionary()
-    _connected: ClassVar[WeakKeyDictionary[Document, bool]] = WeakKeyDictionary()
+    _onload: t.ClassVar[WeakKeyDictionary[Document, list[tuple[Callable[[], None | Coroutine[t.Any, t.Any, None]], bool]]]] = WeakKeyDictionary()
+    _on_session_created: t.ClassVar[list[Callable[[SessionContext], None]]] = []
+    _on_session_created_internal: t.ClassVar[list[Callable[[SessionContext], None]]] = []
+    _on_session_destroyed: t.ClassVar[list[Callable[[SessionContext], None]]] = []
+    _loaded: t.ClassVar[WeakKeyDictionary[Document, bool]] = WeakKeyDictionary()
+    _connected: t.ClassVar[WeakKeyDictionary[Document, bool]] = WeakKeyDictionary()
 
-    # Module that was run during setup
-    _setup_module = None
+    # Module that was run during setup and the callback that runs its
+    # server lifecycle hooks once the server is started
+    _setup_module: ModuleType | None = None
+    _setup_file_callback: Callable[[], None] | None = None
 
     # Scheduled callbacks
-    _scheduled: ClassVar[dict[str, tuple[TIterator[int] | None, Callable[[], None]]]] = {}
-    _periodic: ClassVar[WeakKeyDictionary[Document, list[PeriodicCallback]]] = WeakKeyDictionary()
-    _change_callbacks: ClassVar[WeakKeyDictionary[Document, dict[str, Callable[[], Coroutine[Any, Any, None]]]]] = WeakKeyDictionary()
+    _scheduled: t.ClassVar[dict[str, tuple[TIterator[int] | None, Callable[[], None]]]] = {}
+    _periodic: t.ClassVar[WeakKeyDictionary[Document, list[PeriodicCallback]]] = WeakKeyDictionary()
+    _change_callbacks: t.ClassVar[WeakKeyDictionary[Document, dict[str, Callable[[], Coroutine[t.Any, t.Any, None]]]]] = WeakKeyDictionary()
 
     # Indicators listening to the busy state
-    _indicators: ClassVar[list[BooleanIndicator]] = []
+    _indicators: t.ClassVar[list[BooleanIndicator]] = []
 
     # Profilers
-    _launching: ClassVar[set[Document]] = set()
+    _launching: t.ClassVar[set[Document]] = set()
     _profiles = param.Dict(default=defaultdict(list))
 
     # Endpoints
-    _rest_endpoints: ClassVar[dict[str, tuple[list[Parameterized], list[str], Callable[[Event], Any]]]] = {}
+    _rest_endpoints: t.ClassVar[dict[str, tuple[list[Parameterized], list[str], Callable[[Event], t.Any]]]] = {}
 
     # Style cache
-    _stylesheets: ClassVar[WeakKeyDictionary[Document, dict[str, ImportedStyleSheet]]] = WeakKeyDictionary()
+    _stylesheets: t.ClassVar[WeakKeyDictionary[Document, dict[str, ImportedStyleSheet]]] = WeakKeyDictionary()
+
+    # Inlined copies of the CDN stylesheets on Documents rendered with
+    # inline resources, keyed by the url they replace.
+    _inline_stylesheets: t.ClassVar[WeakKeyDictionary[Document, dict[str, InlineStyleSheet]]] = WeakKeyDictionary()
 
     # Loaded extensions
-    _extensions_: ClassVar[WeakKeyDictionary[Document, list[str]]] = WeakKeyDictionary()
+    _extensions_: t.ClassVar[WeakKeyDictionary[Document, list[str]]] = WeakKeyDictionary()
 
     # Locks
-    _cache_locks: ClassVar[dict[str | tuple[Any, ...], threading.Lock]] = {'main': threading.Lock()}
+    _cache_locks: t.ClassVar[dict[str | tuple[t.Any, ...], threading.Lock]] = {'main': threading.Lock()}
 
     # Sessions
-    _sessions: ClassVar[dict[Hashable, ServerSession]] = {}
-    _session_key_funcs: ClassVar[dict[str, Callable[[Any], Any]]] = {}
+    _sessions: t.ClassVar[dict[Hashable, ServerSession]] = {}
+    _session_key_funcs: t.ClassVar[dict[str, Callable[[t.Any], t.Any]]] = {}
 
     # Layout editor
-    _cell_outputs: ClassVar[defaultdict[Hashable, list[Any]]] = defaultdict(list)
-    _cell_layouts: ClassVar[defaultdict[Hashable, dict[str, dict]]] = defaultdict(dict)
-    _session_outputs: ClassVar[WeakKeyDictionary[Document, dict[str, Any]]] = WeakKeyDictionary()
+    _cell_outputs: t.ClassVar[defaultdict[Hashable, list[t.Any]]] = defaultdict(list)
+    _cell_layouts: t.ClassVar[defaultdict[Hashable, dict[str, dict]]] = defaultdict(dict)
+    _session_outputs: t.ClassVar[WeakKeyDictionary[Document, dict[str, t.Any]]] = WeakKeyDictionary()
 
     # Override user info
-    _oauth_user_overrides: ClassVar[dict[str, dict[str, Any]]] = {}
-    _active_users: ClassVar[Counter[str]] = Counter()
+    _oauth_user_overrides: t.ClassVar[dict[str, dict[str, t.Any]]] = {}
+    _active_users: t.ClassVar[Counter[str]] = Counter()
 
     # Paths
-    _rel_paths: ClassVar[WeakKeyDictionary[Document, str]] = WeakKeyDictionary()
-    _base_urls: ClassVar[WeakKeyDictionary[Document, str]] = WeakKeyDictionary()
+    _rel_paths: t.ClassVar[WeakKeyDictionary[Document, str]] = WeakKeyDictionary()
+    _base_urls: t.ClassVar[WeakKeyDictionary[Document, str]] = WeakKeyDictionary()
 
     # Watchers
-    _watch_events: ClassVar[list[asyncio.Event]] = []
+    _watch_events: t.ClassVar[list[asyncio.Event]] = []
+    _busy_cleanup_scheduled: t.ClassVar[PeriodicCallback | None] = None
+    # Reentrant since the _busy_counter watcher prunes the counter again
+    _busy_lock: t.ClassVar[threading.RLock] = threading.RLock()
 
     # Types
-    _notification_type: ClassVar[type[NotificationAreaBase] | None] = None
+    _notification_type: t.ClassVar[type[NotificationAreaBase] | None] = None
 
     def __repr__(self) -> str:
         server_info = []
@@ -250,13 +285,83 @@ class _state(param.Parameterized):
             return "state(servers=[])"
         return "state(servers=[\n  {}\n])".format(",\n  ".join(server_info))
 
+    def _document_loop(self, doc: Document | None) -> IOLoop | None:
+        """
+        Resolves the server event loop associated with a Document via its
+        session context. Unlike ``IOLoop.current()`` this returns the loop
+        the server is actually running on even when called from a worker
+        thread (e.g. when Bokeh initializes a Document off the event
+        loop).
+        """
+        if doc is None:
+            return None
+        session_context = getattr(doc, 'session_context', None)
+        server_context = getattr(session_context, 'server_context', None)
+        application_context = getattr(server_context, 'application_context', None)
+        return getattr(application_context, 'io_loop', None)
+
     @property
     def _ioloop(self) -> IOLoop | asyncio.AbstractEventLoop:
         if state._is_pyodide:
             return asyncio.get_running_loop()
-        else:
-            from tornado.ioloop import IOLoop
-            return IOLoop.current()
+        loop = self._document_loop(self.curdoc)
+        if loop is not None:
+            return loop
+        from tornado.ioloop import IOLoop
+        return IOLoop.current()
+
+    @property
+    def _on_loop_thread(self) -> bool:
+        """
+        Whether the calling thread is the server event loop thread. Writes
+        to Bokeh models and sockets are only safe on this thread.
+        """
+        if self._is_pyodide:
+            return True
+        loop = self._document_loop(self.curdoc)
+        asyncio_loop = getattr(loop, 'asyncio_loop', loop)
+        if asyncio_loop is None:
+            # No server loop resolvable (e.g. notebook/pyodide/test contexts);
+            # preserve legacy behaviour and treat as on-loop.
+            return True
+        try:
+            return asyncio.get_running_loop() is asyncio_loop
+        except RuntimeError:
+            return False
+
+    @property
+    def _document_lock_held(self) -> bool:
+        """
+        Whether the calling thread is executing inside a locked Bokeh
+        session callback even though it is not the server event loop
+        thread itself. Bokeh dispatches such callbacks (e.g.
+        next-tick callbacks) via `loop.run_in_executor`, so the callback
+        body runs on a worker thread while the session's document lock
+        is held for the duration. Mutating Bokeh models is safe in that
+        case since no other code can be touching them concurrently, but
+        raw socket writes are NOT (see `_on_loop_thread`).
+        """
+        session = getattr(getattr(self.curdoc, 'session_context', None), 'session', None)
+        session_lock = getattr(session, '_lock', None)
+        return bool(session_lock is not None and session_lock.locked())
+
+    def _install_thread_pool(self, loop: asyncio.AbstractEventLoop | None = None) -> None:
+        """
+        Installs the shared bounded thread pool (configured via
+        ``config.nthreads`` / ``--num-threads``) as the default executor of
+        the server event loop. This ensures work Bokeh offloads with
+        ``asyncio.to_thread`` (locked callbacks and, for eligible apps,
+        Document initialization) is bounded by the same pool as Panel's own
+        ``state.execute(schedule='thread')`` rather than an unbounded one.
+        """
+        if self._thread_pool is None:
+            return
+        if loop is None:
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                return
+        loop.set_default_executor(self._thread_pool)
 
     @property
     def _extensions(self):
@@ -275,6 +380,20 @@ class _state(param.Parameterized):
         if not curdoc or not curdoc.session_context or not curdoc.session_context.server_context:
             return False
         return not bool(curdoc.session_context.server_context.sessions)
+
+    @property
+    def _is_server_session(self) -> bool:
+        """
+        Whether the current document belongs to a genuine served session,
+        as opposed to a notebook comm-rendered document or the Jupyter
+        extension's own render endpoint (both leave ``server_context``
+        unset). Used to keep notebook-only resource defaults from leaking
+        into a server started from within that same notebook process.
+        """
+        curdoc = self.curdoc
+        return bool(
+            curdoc and curdoc.session_context and curdoc.session_context.server_context
+        )
 
     @property
     def _is_pyodide(self) -> bool:
@@ -299,20 +418,64 @@ class _state(param.Parameterized):
 
         1. The Document to be modified is the same one that the server
            is currently processing.
-        2. We are on the same thread that the Document was created on.
+        2. We are running on the server event loop thread (writing to
+           Bokeh models and sockets is only safe there).
         3. The application has fully loaded and the Websocket is open.
         """
         return bool(
             doc is self.curdoc and
-            self._thread_id in (self._current_thread, None) and
+            (self._on_loop_thread or self._document_lock_held) and
             (not (doc and doc.session_context and getattr(doc.session_context, 'session', None))
              or self._connected.get(doc))
         )
 
     @param.depends('_busy_counter', watch=True)
     def _update_busy_counter(self):
+        self._cleanup_busy_counter()
         with edit_readonly(self):
-            self.busy = self._busy_counter >= 1
+            self.busy = bool(self._busy_counter)
+
+    def _add_busy_event(self, event_id: str) -> None:
+        # Busy events are added and removed from any thread, so without the
+        # lock a concurrent update could resurrect an event that was removed
+        # and leave state.busy stuck until the event expires.
+        with self._busy_lock:
+            self._cleanup_busy_counter()
+            with edit_readonly(self):
+                self._busy_counter = [*self._busy_counter, (event_id, time.monotonic())]
+            self._schedule_busy_cleanup()
+
+    def _remove_busy_event(self, event_id: str) -> None:
+        self._cleanup_busy_counter(event_id)
+
+    def _cleanup_busy_counter(self, event_id: str | None = None, timeout: float = 30.0) -> None:
+        with self._busy_lock:
+            now = time.monotonic()
+            with edit_readonly(self):
+                self._busy_counter = [
+                    (eid, started_at)
+                    for eid, started_at in self._busy_counter
+                    if now - started_at <= timeout and eid != event_id
+                ]
+
+    def _schedule_busy_cleanup(self) -> None:
+        if _state._busy_cleanup_scheduled:
+            return
+        if self._on_loop_thread:
+            try:
+                asyncio.get_running_loop()
+            except RuntimeError:
+                # PeriodicCallback.start() would silently never run without a
+                # running loop, so leave it unscheduled and retry on the next event.
+                return
+        from .callbacks import PeriodicCallback
+        _state._busy_cleanup_scheduled = PeriodicCallback(
+            background=True,
+            callback=self._cleanup_busy_counter,
+            session_scoped=False,
+            period=10000
+        )
+        _state._busy_cleanup_scheduled.start()
 
     @param.depends('busy', watch=True)
     def _update_busy(self) -> None:
@@ -345,7 +508,6 @@ class _state(param.Parameterized):
             self.param.trigger('session_info')
         doc = session_context._document
 
-        # Cleanup periodic callbacks
         if doc in self._periodic:
             for cb in self._periodic[doc]:
                 try:
@@ -354,21 +516,24 @@ class _state(param.Parameterized):
                     pass
             del self._periodic[doc]
 
-        # Cleanup Locations
         if doc in self._locations:
             loc = state._locations[doc]
             loc._server_destroy(session_context)
             del state._locations[doc]
 
-        # Cleanup Notifications
         if doc in self._notifications:
             notification = self._notifications[doc]
             notification._server_destroy(session_context)
             del state._notifications[doc]
 
-        # Clean up templates
         if doc in self._templates:
             del self._templates[doc]
+
+        if doc in self._stylesheets:
+            del self._stylesheets[doc]
+
+        if doc in self._inline_stylesheets:
+            del self._inline_stylesheets[doc]
 
     @property
     def _current_stack(self):
@@ -422,6 +587,13 @@ class _state(param.Parameterized):
         if not doc:
             return
         self._connected[doc] = True
+
+        # Events held before the session connected which the full
+        # Document serialization cannot reproduce are dispatched now
+        # that there is a connection to write them to.
+        from .document import _dispatch_unconnected_events
+        _dispatch_unconnected_events(doc)
+
         if doc not in self._onload:
             self._loaded[doc] = True
             return
@@ -446,6 +618,32 @@ class _state(param.Parameterized):
                 self.param.trigger('_profiles')
         self._loaded[doc] = True
 
+    def _call_later(self, delay: float, callback: Callable[[], Awaitable[None]]) -> None:
+        """
+        Schedules a coroutine function on the server event loop after a
+        delay. Tornado IOLoops accept coroutine callbacks directly while
+        plain asyncio loops (which back the ASGI servers) do not, and may
+        be scheduled on from a worker thread.
+        """
+        loop = self._ioloop
+        if not isinstance(loop, asyncio.AbstractEventLoop):
+            loop.call_later(delay=delay, callback=callback)
+            return
+
+        def _run() -> None:
+            task = asyncio.ensure_future(callback())
+            _tasks.add(task)
+            task.add_done_callback(_tasks.discard)
+
+        try:
+            on_loop = asyncio.get_running_loop() is loop
+        except RuntimeError:
+            on_loop = False
+        if on_loop:
+            loop.call_later(delay, _run)
+        else:
+            loop.call_soon_threadsafe(loop.call_later, delay, _run)
+
     async def _scheduled_cb(self, name: str, threaded: bool = False) -> None:
         if name not in self._scheduled:
             return
@@ -462,7 +660,17 @@ class _state(param.Parameterized):
         if at is not None:
             now = dt.datetime.now().timestamp()
             call_time_seconds = (at - now)
-            self._ioloop.call_later(delay=call_time_seconds, callback=partial(self._scheduled_cb, name))
+            # _scheduled_cb always runs on the server event loop, so reschedule
+            # on the running loop rather than IOLoop.current(), which may point
+            # at a different/stale loop in multi-server (e.g. ASGI) contexts.
+            loop = asyncio.get_running_loop()
+
+            def _reschedule():
+                task = asyncio.ensure_future(self._scheduled_cb(name, threaded))
+                _tasks.add(task)
+                task.add_done_callback(_tasks.discard)
+
+            loop.call_later(call_time_seconds, _reschedule)
         try:
             self.execute(cb, schedule='thread' if threaded else 'auto')
         except Exception as e:
@@ -552,7 +760,7 @@ class _state(param.Parameterized):
         try:
             with lock:
                 if cache_key in self.cache:
-                    ret, expiry = self.cache.get(cache_key)
+                    ret, expiry = self.cache[cache_key]
                 else:
                     ret, expiry = _Undefined, None
                 if ret is _Undefined or (expiry is not None and expiry < time.monotonic()):
@@ -563,7 +771,7 @@ class _state(param.Parameterized):
         return ret
 
     def add_periodic_callback(
-        self, callback: Callable[[], None] | Coroutine[Any, Any, None],
+        self, callback: Callable[[], None] | Coroutine[t.Any, t.Any, None],
         period: int = 500, count: int | None = None, timeout: int | None = None,
         start: bool = True
     ) -> PeriodicCallback:
@@ -675,8 +883,8 @@ class _state(param.Parameterized):
 
     def execute(
         self,
-        callback: Callable[[], None | Coroutine[Any, Any, None]],
-        schedule: bool | Literal['auto', 'thread'] = 'auto'
+        callback: Callable[[], None | Coroutine[t.Any, t.Any, t.Any]],
+        schedule: bool | t.Literal['auto', 'thread'] = 'auto'
     ) -> None:
         """
         Executes both synchronous and asynchronous callbacks
@@ -736,11 +944,17 @@ class _state(param.Parameterized):
         for server_id in self._servers:
             if server_id in self._threads:
                 self._threads[server_id].stop()
-            else:
-                try:
-                    self._servers[server_id][0].stop()
-                except AssertionError:  # can't stop a server twice
-                    pass
+                continue
+            server = self._servers[server_id][0]
+            if hasattr(server, 'should_exit'):
+                # uvicorn.Server has no stop method, setting the exit flag is
+                # the only way to shut it down from the outside.
+                server.should_exit = True
+                continue
+            try:
+                server.stop()
+            except AssertionError:  # can't stop a server twice
+                pass
         self._servers.clear()
         self._threads.clear()
 
@@ -761,7 +975,7 @@ class _state(param.Parameterized):
             msg = LOG_USER_MSG.format(msg=msg)
         getattr(_state_logger, level.lower())(msg, *args)
 
-    def onload(self, callback: Callable[[], None | Coroutine[Any, Any, None]], threaded: bool = False):
+    def onload(self, callback: Callable[[], None | Coroutine[t.Any, t.Any, None]], threaded: bool = False):
         """
         Callback that is triggered when a session has been served.
 
@@ -814,6 +1028,10 @@ class _state(param.Parameterized):
         """
         Publish parameters on a Parameterized object as a REST API.
 
+        .. deprecated:: 1.10
+            Will be removed in Panel 2.0 along with ``--rest-provider``.
+            Declare custom endpoints in a ``--plugins`` module instead.
+
         Parameters
         ----------
         endpoint: str
@@ -823,6 +1041,13 @@ class _state(param.Parameterized):
         parameters: list(str) or None
           A subset of parameters on the Parameterized to publish.
         """
+        deprecated(
+            '2.0', 'pn.state.publish',
+            extra=(
+                "Declare custom endpoints in a --plugins module instead, see "
+                "https://panel.holoviz.org/how_to/server/endpoints.html"
+            )
+        )
         if parameters is None:
             parameters = list(parameterized.param)
         if endpoint.startswith('/'):
@@ -854,15 +1079,21 @@ class _state(param.Parameterized):
         self._connected.clear()
         self._loaded.clear()
         self.cache.clear()
+        if _state._busy_cleanup_scheduled is not None:
+            _state._busy_cleanup_scheduled.stop()
+            _state._busy_cleanup_scheduled = None
+        with edit_readonly(self):
+            self._busy_counter = []
         self._scheduled.clear()
         if self._thread_pool is not None:
-            self._thread_pool.shutdown(wait=False)
+            self._thread_pool.shutdown(wait=True, _shared=False)
             self._thread_pool = None
         self._sessions.clear()
         self._session_key_funcs.clear()
         self._on_session_created.clear()
         self._on_session_destroyed.clear()
         self._stylesheets.clear()
+        self._inline_stylesheets.clear()
         self._scheduled.clear()
         self._periodic.clear()
 
@@ -946,7 +1177,17 @@ class _state(param.Parameterized):
             )
         if cron is None:
             if isinstance(period, str):
-                period = parse_timedelta(period)
+                period_str, period = period, parse_timedelta(period)
+                if period is None:
+                    raise ValueError(
+                        f"Could not parse period {period_str!r}. Express it "
+                        "as a number followed by a unit, e.g. '1w', '1d', "
+                        "'1.5h', '30m', '1s', or pass a datetime.timedelta."
+                    )
+            if period is not None and period <= dt.timedelta(0):
+                raise ValueError(
+                    f"The period of a scheduled task must be positive, got {period!r}."
+                )
             def dgen():
                 if isinstance(at, Iterator):
                     while True:
@@ -981,9 +1222,7 @@ class _state(param.Parameterized):
         except StopIteration:
             return
         self._scheduled[key] = (diter, callback)
-        self._ioloop.call_later(
-            delay=call_time_seconds, callback=partial(self._scheduled_cb, key, threaded)
-        )
+        self._call_later(call_time_seconds, partial(self._scheduled_cb, key, threaded))
 
     def sync_busy(self, indicator: BooleanIndicator) -> None:
         """
@@ -1044,7 +1283,16 @@ class _state(param.Parameterized):
         """
         if not (self.curdoc and self.curdoc.session_context):
             return None
-        app_url = self.curdoc.session_context.server_context.application_context.url
+        session_context = self.curdoc.session_context
+        request = session_context.request
+        app_url = (
+            getattr(request, 'app_path', None)
+            if request is not None else None
+        ) or session_context.server_context.application_context.url
+        try:
+            app_url = session_context.token_payload.get('app_path', app_url)
+        except AssertionError:
+            pass
         app_url = app_url[1:] if app_url.startswith('/') else app_url
         return urljoin(self.base_url, app_url)
 
@@ -1217,6 +1465,12 @@ class _state(param.Parameterized):
         Whether we are currently inside a script or notebook that is
         being served using `panel serve`.
         """
+        if self._is_pyodide:
+            # Converted apps run as __main__ but init_doc mocks a session
+            from .document import MockSessionContext
+            curdoc = self.curdoc
+            if curdoc is not None and isinstance(curdoc.session_context, MockSessionContext):
+                return True
         try:
             return inspect.stack()[1].frame.f_globals['__name__'].startswith('bokeh_app_')
         except Exception:
@@ -1230,13 +1484,31 @@ class _state(param.Parameterized):
         return self.curdoc.session_context.request.arguments if self.curdoc and self.curdoc.session_context else {}
 
     @property
+    def route_params(self) -> dict[str, str]:
+        """
+        Returns route parameters captured from wildcard routes.
+        """
+        if not (self.curdoc and self.curdoc.session_context):
+            return {}
+        request = self.curdoc.session_context.request
+        if request is not None:
+            route_params = getattr(request, 'route_params', None)
+            if isinstance(route_params, dict):
+                return {str(k): str(v) for k, v in route_params.items()}
+        try:
+            route_params = self.curdoc.session_context.token_payload.get('route_params', {})
+        except AssertionError:
+            return {}
+        return dict(route_params) if isinstance(route_params, dict) else {}
+
+    @property
     def template(self) -> BaseTemplate | None:
         from ..config import config
         if self.curdoc and self.curdoc in self._templates:
             return self._templates[self.curdoc]
         elif self.curdoc is None and self._template:
             return self._template
-        template = config.template(theme=config.theme)
+        template = config.template(theme=config.theme)  # type: ignore[operator]
         if not config.design:
             config.design = template.design
         if self.curdoc is None:
@@ -1264,7 +1536,7 @@ class _state(param.Parameterized):
         return None if decoded is None else decoded.decode('utf-8')
 
     @property
-    def user_info(self) -> dict[str, Any] | None:
+    def user_info(self) -> dict[str, t.Any] | None:
         """
         Returns the OAuth user information if enabled.
         """

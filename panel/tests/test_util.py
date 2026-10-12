@@ -1,8 +1,9 @@
-import sys
+import datetime as dt
 
 from collections import OrderedDict
 
 import param
+import pytest
 
 from bokeh.models import Div
 
@@ -12,7 +13,7 @@ from panel.pane import PaneBase
 from panel.tests.util import mpl_available
 from panel.util import (
     abbreviated_repr, extract_dependencies, get_method_owner, parse_query,
-    styler_update,
+    parse_timedelta, splice_diff, styler_update, suffix_length, utf16_offset,
 )
 
 
@@ -86,14 +87,17 @@ def test_abbreviated_repr_dict():
 def test_abbreviated_repr_list():
     assert abbreviated_repr(['some really, really long string']) == "['some really, ...]"
 
-def test_abbreviated_repr_ordereddict():
-    if sys.version_info >= (3, 12):
-        expected = "OrderedDict({'key': 'some ...])"
-    else:
-        expected = "OrderedDict([('key', ...])"
+def test_abbreviated_repr_list_of_parameterized():
+    class Foo(param.Parameterized):
+        pass
 
+    foo = Foo()
+    assert abbreviated_repr(foo) == 'Foo'
+    assert abbreviated_repr([foo, foo]) == '[Foo, Foo]'
+
+def test_abbreviated_repr_ordereddict():
     result = abbreviated_repr(OrderedDict([('key', 'some really, really long string')]))
-    assert result == expected
+    assert result == "OrderedDict({'key': 'some ...])"
 
 
 def test_parse_query():
@@ -118,6 +122,15 @@ def test_parse_query_singe_quoted():
     assert expected_results == results
 
 
+def test_parse_query_negative_int():
+    assert parse_query('?neg=-5&pos=5') == {'neg': -5, 'pos': 5}
+    assert type(parse_query('?neg=-5')['neg']) is int
+
+
+def test_parse_query_non_ascii_digits_stay_strings():
+    assert parse_query('?sup=%C2%B2') == {'sup': '\u00b2'}
+
+
 @mpl_available
 def test_styler_update(dataframe):
     styler = dataframe.style.background_gradient('Reds')
@@ -133,3 +146,68 @@ def test_styler_update(dataframe):
         (2, 0): [('background-color', '#67000d'), ('color', '#f1f1f1')],
         (2, 1): [('background-color', '#67000d'), ('color', '#f1f1f1')]
     }
+
+
+@pytest.mark.parametrize('a, b, expected', [
+    ('', '', 0),
+    ('abc', '', 0),
+    ('abc', 'xbc', 2),
+    ('abc', 'abc', 3),
+    ('x' * 200 + 'abc', 'y' * 300 + 'abc', 3),
+    ('x' * 200, 'y' + 'x' * 150, 150),
+])
+def test_suffix_length(a, b, expected):
+    assert suffix_length(a, b) == expected
+
+
+def test_suffix_length_limit():
+    assert suffix_length('aaaa', 'aaaa', 2) == 2
+
+
+@pytest.mark.parametrize('old, new', [
+    ('', 'abc'),
+    ('abc', ''),
+    ('<p>Hello</p>', '<p>Hello world</p>'),
+    ('<p>a</p>', '<p>a</p><p>b</p>'),
+    ('aaaa', 'aaaaaa'),
+    ('abcabc', 'abc'),
+    ('same', 'same'),
+    ('<ul><li>a</li></ul>', '<ul><li>a</li><li>b</li></ul>'),
+])
+def test_splice_diff(old, new):
+    start, end, patch = splice_diff(old, new)
+    assert old[:start] + patch + old[end:] == new
+    assert start <= end <= len(old)
+    assert len(patch) == len(new) - (len(old) - (end - start))
+
+
+def test_splice_diff_minimal_patch_before_closing_tags():
+    assert splice_diff('<p>Hello</p>\n', '<p>Hello world</p>\n') == (8, 8, ' world')
+
+
+@pytest.mark.parametrize('text, index, expected', [
+    ('abc', 2, 2),
+    ('é😀a', 1, 1),
+    ('é😀a', 2, 3),
+    ('😀😀a', 3, 5),
+])
+def test_utf16_offset(text, index, expected):
+    assert utf16_offset(text, index) == expected
+    assert len(text[:index].encode('utf-16-le')) // 2 == expected
+
+
+@pytest.mark.parametrize(('time_str', 'expected'), [
+    ('1w', dt.timedelta(weeks=1)),
+    ('2d3h', dt.timedelta(days=2, hours=3)),
+    ('30m', dt.timedelta(minutes=30)),
+    ('0.5s', dt.timedelta(seconds=0.5)),
+    ('1.5h', dt.timedelta(hours=1.5)),
+    ('1h30m', dt.timedelta(hours=1, minutes=30)),
+])
+def test_parse_timedelta(time_str, expected):
+    assert parse_timedelta(time_str) == expected
+
+
+@pytest.mark.parametrize('time_str', ['', '90', 'abc', '1h30', '5 m'])
+def test_parse_timedelta_invalid(time_str):
+    assert parse_timedelta(time_str) is None

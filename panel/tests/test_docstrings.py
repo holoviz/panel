@@ -45,10 +45,13 @@ def test_component_parameters_have_doc_attributes_set(child_class):
         if name.startswith('_'):
             continue
         parameter = child_class.param[name]
-        if not parameter.doc:
-            topmost_class = find_topmost_defining_class(child_class, name)
-            message = (
-                f"Parameter '{name}' in class '{topmost_class.__module__}.{topmost_class.__name__}' "
-                "has no `doc` string."
-            )
-            raise AssertionError(message)
+        if parameter.doc:
+            continue
+        topmost_class = find_topmost_defining_class(child_class, name)
+        if topmost_class.__module__.startswith("panel.tests"):
+            continue
+        message = (
+            f"Parameter '{name}' in class '{topmost_class.__module__}.{topmost_class.__name__}' "
+            "has no `doc` string."
+        )
+        raise AssertionError(message)

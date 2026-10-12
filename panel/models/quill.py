@@ -1,5 +1,5 @@
 from bokeh.core.properties import (
-    Any, Bool, Either, Enum, List, String,
+    Any, Bool, Dict, Either, Enum, List, String,
 )
 
 from ..io.resources import bundled_files
@@ -44,8 +44,14 @@ class QuillInput(HTMLBox):
 
     mode = Enum("bubble", "toolbar", default='toolbar')
 
+    on_keyup = Bool(default=True)
+
     placeholder = String()
 
+    selection = Dict(String, Any)
+
     text = String()
+
+    text_input = String()
 
     toolbar = Either(List(Any), Bool)

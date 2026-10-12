@@ -1,7 +1,10 @@
+
 try:
     import holoviews as hv
 except ImportError:
     hv = None
+
+import typing as t
 
 import param
 import pytest
@@ -10,18 +13,19 @@ from bokeh.plotting import figure
 
 from panel.custom import JSComponent
 from panel.layout import Row
-from panel.links import Link
+from panel.links import Callback, Link
 from panel.pane import Bokeh, HoloViews
 from panel.tests.util import hv_available
+from panel.util.warnings import PanelUserWarning
 from panel.widgets import (
-    ColorPicker, DatetimeInput, FloatInput, FloatSlider, RangeSlider,
-    TextInput,
+    Button, ColorPicker, CrossSelector, DatetimeInput, FloatInput, FloatSlider,
+    RangeSlider, Tabulator, TextInput,
 )
 
 
 class MockJSComponent(JSComponent):
 
-    value = param.Parameter()
+    value: t.Any = param.Parameter()  # type: ignore[assignment, ty:invalid-assignment]
 
 
 def test_widget_link_bidirectional():
@@ -398,3 +402,95 @@ def test_link_with_customcode(document, comm):
     assert link_customjs.args['source'] is range_slider
     assert link_customjs.args['x_range'] is x_range
     assert link_customjs.code == f"try {{ {code} }} catch(err) {{ console.log(err) }}"
+
+
+def test_callback_unwatch():
+    button = Button(label="Test")
+    cb = button.js_on_click(args=dict(url="google.com"), code="window.open(url, '_blank');")
+
+    assert len(Callback.registry.get(button, [])) == 1
+    assert cb in Callback.registry[button]
+
+    cb.unwatch()
+
+    assert len(Callback.registry.get(button, [])) == 0
+
+
+def test_callback_unwatch_multiple_callbacks():
+    button = Button(label="Test")
+    cb1 = button.js_on_click(args=dict(url1="url1"), code="console.log('1');")
+    cb2 = button.js_on_click(args=dict(url2="url2"), code="console.log('2');")
+
+    assert len(Callback.registry.get(button, [])) == 2
+
+    cb1.unwatch()
+
+    assert len(Callback.registry.get(button, [])) == 1
+    assert cb1 not in Callback.registry[button]
+    assert cb2 in Callback.registry[button]
+
+    cb2.unwatch()
+
+    assert len(Callback.registry.get(button, [])) == 0
+
+
+def test_crossselector_jscallback_skips_missing_value(document, comm):
+    widget = CrossSelector(options=['a', 'b', 'c'])
+    widget.jscallback(value="console.log('hello world')")
+
+    with pytest.warns(PanelUserWarning, match="value"):
+        model = widget.get_root(document, comm)
+
+    assert 'change:value' not in model.js_property_callbacks
+    assert 'value' not in model.js_property_callbacks
+
+
+def test_crossselector_jslink_code_skips_missing_value(document, comm):
+    cross = CrossSelector(options=['a', 'b', 'c'])
+    other = TextInput()
+    cross.jslink(other, code={'value': "console.log('x')"})
+    row = Row(cross, other)
+
+    with pytest.warns(PanelUserWarning, match="value"):
+        root = row.get_root(document, comm)
+
+    cross_model = cross._models[root.ref['id']][0]
+    assert 'change:value' not in cross_model.js_property_callbacks
+    assert 'value' not in cross_model.js_property_callbacks
+
+
+def test_crossselector_jslink_keyword_skips_missing_value(document, comm):
+    cross = CrossSelector(options=['a', 'b', 'c'])
+    other = TextInput()
+    cross.jslink(other, value='value')
+    row = Row(cross, other)
+
+    with pytest.warns(PanelUserWarning, match="value"):
+        root = row.get_root(document, comm)
+
+    cross_model = cross._models[root.ref['id']][0]
+    assert 'change:value' not in cross_model.js_property_callbacks
+    assert 'value' not in cross_model.js_property_callbacks
+
+
+def test_crossselector_jscallback_width_registers(document, comm):
+    widget = CrossSelector(options=['a', 'b', 'c'])
+    widget.jscallback(width="console.log('width')")
+
+    model = widget.get_root(document, comm)
+
+    assert 'change:width' in model.js_property_callbacks
+
+
+def test_tabulator_jslink_skips_missing_value(dataframe, document, comm):
+    table = Tabulator(value=dataframe)
+    other = TextInput()
+    table.jslink(other, code={'value': "console.log('tab test')"})
+    row = Row(table, other)
+
+    with pytest.warns(PanelUserWarning, match="value"):
+        root = row.get_root(document, comm)
+
+    table_model = table._models[root.ref['id']][0]
+    assert 'change:value' not in table_model.js_property_callbacks
+    assert 'value' not in table_model.js_property_callbacks

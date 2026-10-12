@@ -30,8 +30,8 @@ pn.extension(sizing_mode="stretch_width", design="material")
 
 BUTTON_WIDTH = 125
 
-state_changed_count = pn.widgets.IntInput()
-tasks = pn.Column()
+state_changed_count = pn.ui.IntInput()
+tasks = pn.ui.Column()
 
 def update_state_changed_count(*args):
     state_changed_count.value += 1
@@ -44,10 +44,10 @@ def remove_all_tasks(*args):
     tasks.clear()
 
 def create_task(text):
-    state = pn.widgets.Checkbox(align="center", sizing_mode="fixed")
-    content = pn.pane.Markdown(text)
-    remove = pn.widgets.Button(width=BUTTON_WIDTH, icon="trash", sizing_mode="fixed")
-    task = pn.Row(state, content, remove, sizing_mode="stretch_width")
+    state = pn.ui.Checkbox(align="center", sizing_mode="fixed")
+    content = pn.ui.Markdown(text)
+    remove = pn.ui.Button(width=BUTTON_WIDTH, icon="trash", sizing_mode="fixed")
+    task = pn.ui.Row(state, content, remove, sizing_mode="stretch_width")
 
     pn.bind(remove_task, task, remove, watch=True)
     # We have to bind the below after the above!
@@ -80,20 +80,20 @@ add_task("Inspect the blades")
 add_task("Inspect the nacelle")
 add_task("Tighten the bolts")
 
-text_input = pn.widgets.TextInput(name="Task", placeholder="Enter a task")
+text_input = pn.ui.TextInput(label="Task", placeholder="Enter a task")
 
-submit_task = pn.widgets.Button(
-    name="Add",
+submit_task = pn.ui.Button(
+    label="Add",
     align="center",
-    button_type="primary",
+    color="primary",
     width=BUTTON_WIDTH,
     sizing_mode="fixed",
     disabled=pn.bind(can_add, text_input.param.value_input)
 )
-clear = pn.widgets.Button(
-    name="Remove All",
-    button_type="primary",
-    button_style="outline",
+clear = pn.ui.Button(
+    label="Remove All",
+    color="primary",
+    variant="outline",
     width=BUTTON_WIDTH,
     sizing_mode="fixed",
     visible=pn.bind(has_tasks, state_changed_count)
@@ -110,12 +110,12 @@ pn.bind(update_state_changed_count, text_input, submit_task, clear, watch=True)
 
 status_report = pn.bind(get_state, state_changed_count, tasks.param.objects)
 
-pn.Column(
+pn.ui.Column(
     "## WTG Task List",
     status_report,
-    pn.Row(text_input, submit_task),
+    pn.ui.Row(text_input, submit_task),
     tasks,
-    pn.Row(pn.Spacer(), clear),
+    pn.ui.Row(pn.ui.Spacer(), clear),
     max_width=500,
 ).servable()
 ```

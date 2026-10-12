@@ -57,7 +57,7 @@ button = ImageButton(
     styles={"border": "2px solid lightgray"},
     width=400, height=200
 )
-pn.Column(button, button.param.clicks).servable()
+pn.ui.Column(button, button.param.clicks).servable()
 ```
 
 If you don't want the *button* styling, you can change the `<button>` tag to a `<div>` tag.
@@ -127,7 +127,7 @@ button = SVGInput(
     height=400, sizing_mode="stretch_width", max_width=1000
 )
 
-pn.Column(button, button.param.clicks, button.param.click, button.param.hover).servable()
+pn.ui.Column(button, button.param.clicks, button.param.click, button.param.hover).servable()
 ```
 
 If you want to use your own SVG `value`, you must make sure that
@@ -175,7 +175,7 @@ select = Select(
     value="B",
     options=['A', 'B', 'C'], height=50, width=300,
 )
-pn.Column(select, select.param.value).servable()
+pn.ui.Column(select, select.param.value).servable()
 ```
 
 Note how we used a {% for ... %}` loop to loop over the options.
@@ -251,7 +251,7 @@ def png_element(value):
        return "<p style='padding:10px;'>Click <em>Save</em> to show the image here.<p>"
     return f"<img src='{value}'></img>"
 
-png_view = pn.pane.HTML(
+png_view = pn.ui.HTML(
     pn.bind(png_element, canvas),
 	width=canvas.width,
 	height=canvas.height+2,
@@ -259,9 +259,9 @@ png_view = pn.pane.HTML(
     styles={"border": "1px solid black"},
 )
 
-pn.Column(
+pn.ui.Column(
     "# Drag on the left canvas to draw\n To export the drawing to a `png` image click *Save*.",
-    pn.Row(
+    pn.ui.Row(
         pn.Param(
 		    canvas.param,
 			parameters=['color', 'line_width', 'save', 'clear'],

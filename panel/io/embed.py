@@ -287,15 +287,15 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
                 w_model = w_model.select_one({'type': w_type})
 
         # If there is a widget with the same name, merge with it
-        if widget.name and widget.name in merged:
-            merged[widget.name][0].append(w)
-            merged[widget.name][1].append(w_model)
+        if widget.label and widget.label in merged:
+            merged[widget.label][0].append(w)
+            merged[widget.label][1].append(w_model)
             continue
 
         js_callback = CustomJS(code=STATE_JS.format(
             id=state_model.ref['id'], js_getter=js_getter))
         widget_data.append(([w], [w_model], vals, getter, js_callback, on_change))
-        merged[widget.name] = widget_data[-1]
+        merged[widget.label] = widget_data[-1]
 
     # Ensure we recording state for widgets which could be JS linked
     values = []

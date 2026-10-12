@@ -7,19 +7,19 @@ import json
 import os
 import sys
 import time
+import typing as t
 import uuid
-
-from collections.abc import Callable
-from typing import TYPE_CHECKING, Any
 
 import bokeh
 import js
+import pandas
 import param
 
 import pyodide # isort: split
 
 from bokeh import __version__
 from bokeh.core.serialization import Buffer, Serialized, Serializer
+from bokeh.core.types import ID
 from bokeh.document import Document
 from bokeh.document.json import PatchJson
 from bokeh.embed.elements import script_for_render_items
@@ -31,19 +31,17 @@ from bokeh.model import Model
 from bokeh.settings import settings as bk_settings
 from js import JSON, XMLHttpRequest
 
-from ..config import config
 from ..util import edit_readonly, isurl
 from . import resources
 from .document import MockSessionContext
-from .loading import LOADING_INDICATOR_CSS_CLASS
 from .mime_render import WriteCallbackStream, exec_with_return, format_mime
 from .state import state
 
 resources.RESOURCE_MODE = 'cdn'
 os.environ['BOKEH_RESOURCES'] = 'cdn'
 
-if TYPE_CHECKING:
-    from bokeh.core.types import ID
+if t.TYPE_CHECKING:
+    from collections.abc import Callable
 
     from ..template.base import TemplateBase
     from ..viewable import Viewable
@@ -77,12 +75,6 @@ if _IN_WORKER:
     os.environ['MPLBACKEND'] = 'agg'
 
 try:
-    import pyodide_http
-    pyodide_http.patch_all()
-except Exception:
-    pyodide_http = None
-
-try:
     # Patch fsspec with synchronous http support
     import fsspec.implementations.http_sync  # noqa
 except Exception:
@@ -101,35 +93,32 @@ if 'pyolite' in sys.modules and os.path.exists('/drive/assets/sampledata'):
         return '/drive/assets/sampledata'
     bokeh.util.sampledata.external_data_dir = _sampledata_dir
 
-if pyodide_http is None:
-    import pandas
+def _read_file(*args, **kwargs):
+    if args and isurl(args[0]):
+        args = (pyodide.http.open_url(args[0]),)+args[1:]
+    elif isurl(kwargs.get('filepath_or_buffer')):
+        kwargs['filepath_or_buffer'] = pyodide.http.open_url(kwargs['filepath_or_buffer'])
+    return args, kwargs
 
-    def _read_file(*args, **kwargs):
-        if args and isurl(args[0]):
-            args = (pyodide.http.open_url(args[0]),)+args[1:]
-        elif isurl(kwargs.get('filepath_or_buffer')):
-            kwargs['filepath_or_buffer'] = pyodide.http.open_url(kwargs['filepath_or_buffer'])
-        return args, kwargs
+# Patch pandas.read_csv
+_read_csv_original = pandas.read_csv
+@functools.wraps(pandas.read_csv)
+def _read_csv(*args, **kwargs):
+    args, kwargs = _read_file(*args, **kwargs)
+    return _read_csv_original(*args, **kwargs)
+pandas.read_csv = _read_csv  # type: ignore
 
-    # Patch pandas.read_csv
-    _read_csv_original = pandas.read_csv
-    @functools.wraps(pandas.read_csv)
-    def _read_csv(*args, **kwargs):
-        args, kwargs = _read_file(*args, **kwargs)
-        return _read_csv_original(*args, **kwargs)
-    pandas.read_csv = _read_csv  # type: ignore
+# Patch pandas.read_json
+_read_json_original = pandas.read_json
+@functools.wraps(pandas.read_json)
+def _read_json(*args, **kwargs):
+    args, kwargs = _read_file(*args, **kwargs)
+    return _read_json_original(*args, **kwargs)
+pandas.read_json = _read_json  # type: ignore
 
-    # Patch pandas.read_json
-    _read_json_original = pandas.read_json
-    @functools.wraps(pandas.read_json)
-    def _read_json(*args, **kwargs):
-        args, kwargs = _read_file(*args, **kwargs)
-        return _read_json_original(*args, **kwargs)
-    pandas.read_json = _read_json  # type: ignore
+_tasks: set = set()
 
-_tasks = set()
-
-def async_execute(func: Any):
+def async_execute(func: t.Any):
     event_loop = asyncio.get_running_loop()
     if event_loop.is_running():
         task = asyncio.create_task(func())
@@ -245,7 +234,7 @@ def _serialize_buffers(obj, buffers={}):
             return obj.to_base64()
     return obj
 
-def _process_document_events(doc: Document, events: list[Any]):
+def _process_document_events(doc: Document, events: list[t.Any]):
     serializer = Serializer(references=doc.models.synced_references)
     patch_json = PatchJson(events=serializer.encode(events))
     doc.models.flush_synced(lambda model: not serializer.has_ref(model))
@@ -268,18 +257,19 @@ _dict_converter = pyodide.code.run_js("""
 })
 """)
 
-_current_buffers = []
+_current_buffers: list = []
 _patching = False
+
+def _register_buffer(data: bytes) -> dict[str, str]:
+    uid = ID(uuid.uuid4().hex)
+    _current_buffers.append(Buffer(id=uid, data=data))
+    return {'id': uid}
 
 def _bytes_converter(value, converter, other):
     if not hasattr(value, 'buffer'):
         return value
     value = dict(value.object_entries())
-    uid = uuid.uuid4().hex
-    _current_buffers.append(
-        Buffer(id=uid, data=value['buffer'].to_bytes())
-    )
-    return {'id': uid}
+    return _register_buffer(value['buffer'].to_bytes())
 
 def to_py(obj):
     """Convert JS value to Python, replacing any jsnull (even nested) with None."""
@@ -298,6 +288,17 @@ def to_py(obj):
             return seen[oid]
 
         if isinstance(x, dict):
+            data = x.get('data')
+            if (
+                x.get('type') == 'bytes' and isinstance(data, dict)
+                and isinstance(data.get('buffer'), memoryview)
+            ):
+                # postMessage strips the Buffer class from patches sent to a
+                # worker, so _bytes_converter never sees it; only a plain
+                # {buffer: ArrayBuffer} object arrives.
+                out = {**x, 'data': _register_buffer(data['buffer'].tobytes())}
+                seen[oid] = out
+                return out
             out = {}
             seen[oid] = out
             for k, v in x.items():
@@ -323,9 +324,9 @@ def _convert_json_patch(json_patch):
     return serialized
 
 # Holds proxied functions so they are not GCed
-_proxies = []
+_proxies: list = []
 
-def _link_docs(pydoc: Document, jsdoc: Any) -> None:
+def _link_docs(pydoc: Document, jsdoc: t.Any) -> None:
     """
     Links Python and JS documents in Pyodide ensuring that messages
     are passed between them.
@@ -338,7 +339,7 @@ def _link_docs(pydoc: Document, jsdoc: Any) -> None:
         The Javascript Bokeh Document instance to sync.
     """
 
-    event_buffer: list[Any] = []
+    event_buffer: list[t.Any] = []
     blocked: list[float] = []
     def jssync(event, debounce=DEBOUNCE, timeout=TIMEOUT, append=True):
         setter_id = getattr(event, 'setter_id', None)
@@ -397,7 +398,7 @@ def _link_docs(pydoc: Document, jsdoc: Any) -> None:
     except Exception as e:
         print(f'Error raised while processing Document events: {e}')  # noqa: T201
 
-def _link_docs_worker(doc: Document, dispatch_fn: Any, msg_id: str | None = None, setter: str | None = None):
+def _link_docs_worker(doc: Document, dispatch_fn: t.Any, msg_id: str | None = None, setter: str | None = None):
     """
     Links the Python document to a dispatch_fn which can be used to
     sync messages between a WebWorker and the main thread in the
@@ -471,7 +472,7 @@ def fetch_binary(url):
     xhr.send()
     return io.BytesIO(xhr.response.to_py().tobytes())
 
-def render_script(obj: Any, target: ID) -> str:
+def render_script(obj: t.Any, target: ID) -> str:
     """
     Generates a script to render the supplied object to the target.
 
@@ -517,7 +518,7 @@ def init_doc() -> None:
     doc._session_context = lambda: MockSessionContext(document=doc)  # type: ignore
     state.curdoc = doc
 
-async def show(obj: Any, target: str) -> None:
+async def show(obj: t.Any, target: str) -> None:
     """
     Renders the object into a DOM node specified by the target.
 
@@ -532,7 +533,7 @@ async def show(obj: Any, target: str) -> None:
     console.log('panel.io.pyodide.show is deprecated in favor of panel.io.pyodide.write')
     await write(target, obj)
 
-async def write(target: str, obj: Any) -> None:
+async def write(target: str, obj: t.Any) -> None:
     """
     Renders the object into a DOM node specified by the target.
 
@@ -558,8 +559,9 @@ def hide_loader() -> None:
     """
     from js import document
 
-    body = document.getElementsByTagName('body')[0]
-    body.classList.remove(LOADING_INDICATOR_CSS_CLASS, f'pn-{config.loading_spinner}')
+    loader = document.getElementById('loader')
+    if loader:
+        loader.style.display = 'none'
 
 def sync_location():
     """
@@ -603,6 +605,11 @@ async def write_doc(doc: Document | None = None) -> tuple[str, str, str]:
     if pydoc in state._templates and pydoc not in state._templates[pydoc]._documents:
         template = state._templates[pydoc]
         template.server_doc(title=template.title, location=True, doc=pydoc)
+    if not pydoc.roots:
+        raise RuntimeError(
+            'The app did not add anything to the page, ensure that at '
+            'least one component is marked as .servable().'
+        )
 
     # Test whether we have access to DOM
     try:
@@ -627,7 +634,8 @@ def pyrender(
     code: str,
     stdout_callback: Callable[[str], None] | None,
     stderr_callback: Callable[[str], None] | None,
-    target: str
+    target: str,
+    global_context: dict[str, t.Any] | None = None
 ):
     """
     Executes Python code and returns a MIME representation of the
@@ -643,6 +651,8 @@ def pyrender(
         Callback executed with output written to stderr.
     target: str
         The ID of the DOM node to write the output into.
+    global_context: dict[str, Any] | None
+        The globals to inject into the execution context.
 
     Returns
     -------
@@ -654,7 +664,7 @@ def pyrender(
     PANES = (HoloViews, Interactive, ReactiveExpr)
     stdout = WriteCallbackStream(stdout_callback) if stdout_callback else None
     stderr = WriteCallbackStream(stderr_callback) if stderr_callback else None
-    out = exec_with_return(code, stdout=stdout, stderr=stderr)
+    out = exec_with_return(code, global_context=global_context, stdout=stdout, stderr=stderr)
     ret = {}
     if isinstance(out, (Model, Viewable, Viewer)) or any(pane.applies(out) for pane in PANES):
         doc, model_json = _model_json(as_panel(out), target)

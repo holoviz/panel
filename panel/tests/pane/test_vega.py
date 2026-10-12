@@ -28,7 +28,7 @@ from panel.pane.markup import HTML
 try:
     import vl_convert as vlc  # type: ignore[import-untyped]
 except ImportError:
-    vlc = None
+    vlc = None  # type: ignore[assignment, ty:invalid-assignment]
 
 blank_schema = {'$schema': ''}
 

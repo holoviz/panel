@@ -8,16 +8,13 @@ from __future__ import annotations
 import ast
 import builtins
 import copy
-import importlib
 import inspect
 import os
 import sys
-import typing
+import typing as t
 import warnings
 
-from concurrent.futures import ThreadPoolExecutor
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any, ClassVar
 from weakref import WeakKeyDictionary
 
 import param
@@ -31,7 +28,7 @@ from .io.logging import panel_log_handler
 from .io.state import state
 from .util import _descendents, set_bokeh_validation
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from bokeh.document import Document
 
 _LOCAL_DEV_VERSION = (
@@ -66,7 +63,7 @@ def validate_config(config, parameter, value):
 
 class _base_config(param.Parameterized):
 
-    css_files = param.List(default=[], doc="""
+    css_files = param.List(default=[], item_type=(str, os.PathLike), doc="""
         External CSS files to load.""")
 
     js_files = param.Dict(default={}, doc="""
@@ -77,7 +74,7 @@ class _base_config(param.Parameterized):
         External JS files to load as modules. Dictionary should map from
         exported name to the URL of the JS file.""")
 
-    raw_css = param.List(default=[], doc="""
+    raw_css = param.List(default=[], item_type=str, doc="""
         List of raw CSS strings to add to load.""")
 
 
@@ -143,7 +140,7 @@ class _config(_base_config):
         Whether to defer load of rendered functions.""")
 
     design = param.ClassSelector(class_=None, is_instance=False, doc="""
-        The design system to use to style components.""")
+        The design system to use to style components.""")  # type: ignore[call-overload]
 
     disconnect_notification = param.String(default="Server connection lost.", doc="""
         The notification to display to the user when the connection
@@ -152,16 +149,24 @@ class _config(_base_config):
     exception_handler = param.Callable(default=None, doc="""
         General exception handler for events.""")
 
-    global_css = param.List(default=[], doc="""
+    global_css = param.List(default=[], item_type=str, doc="""
         List of raw CSS to be added to the header.""")
 
     global_loading_spinner = param.Boolean(default=False, doc="""
         Whether to add a global loading spinner for the whole application.""")
 
-    layout_compatibility = param.Selector(default='warn', objects=['warn', 'error'], doc="""
+    lazy_resources = param.Boolean(default=True, doc="""
+        Whether components load the external libraries they need on demand
+        if they were not already declared with pn.extension. Disabling this
+        restores strict behavior, i.e. a component whose extension was not
+        declared fails loudly instead of fetching its resources at render
+        time, which is what an air-gapped deployment usually wants.""")
+
+    layout_compatibility: t.Literal['warn', 'error'] = param.Selector(
+        default='warn', objects=['warn', 'error'], doc="""
         Provide compatibility for older layout specifications. Incompatible
         specifications will trigger warnings by default but can be set to error.
-        Compatibility to be set to error by default in Panel 1.1.""")
+        Compatibility to be set to error by default in Panel 1.1.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     load_entry_points = param.Boolean(default=True, doc="""
         Load entry points from external packages.""")
@@ -169,9 +174,11 @@ class _config(_base_config):
     loading_indicator = param.Boolean(default=False, doc="""
         Whether a loading indicator is shown by default while panes are updating.""")
 
-    loading_spinner = param.Selector(default='arc', objects=[
-        'arc', 'arcs', 'bar', 'dots', 'petal'], doc="""
-        Loading indicator to use when component loading parameter is set.""")
+    loading_spinner: t.Literal[
+        'arc', 'arcs', 'bar', 'dots', 'material', 'petal'
+    ] = param.Selector(default='arc', objects=[
+        'arc', 'arcs', 'bar', 'dots', 'material', 'petal'], doc="""
+        Loading indicator to use when component loading parameter is set.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     loading_color = param.Color(default='#c3c3c3', doc="""
         Color of the loading indicator.""")
@@ -182,20 +189,28 @@ class _config(_base_config):
     notifications = param.Boolean(default=False, doc="""
         Whether to enable notifications functionality.""")
 
-    profiler = param.Selector(default=None, allow_None=True, objects=[
+    profiler: t.Literal['pyinstrument', 'snakeviz', 'memray'] | None = param.Selector(
+        default=None, allow_None=True, objects=[
         'pyinstrument', 'snakeviz', 'memray'], doc="""
-        The profiler engine to enable.""")
+        The profiler engine to enable.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     ready_notification = param.String(doc="""
         The notification to display when the application is ready and
         fully loaded.""")
 
-    reconnect = param.Selector(default=False, objects=[True, False, 'prompt'], doc="""
+    reconnect: t.Literal[True, False, 'prompt'] = param.Selector(
+        default=False, objects=[True, False, 'prompt'], doc="""
         Whether to enable automatic re-connect should the server connection
         be disrupted. Setting "prompt" will not enable automatic re-connect but
-        will pop up a notification asking the user to confirm.""")
+        will pop up a notification asking the user to confirm.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    reuse_sessions = param.Selector(default=False, objects=[True, False, 'warm'], doc="""
+    resource_timeout = param.Integer(default=15000, bounds=(0, None), doc="""
+        Time in milliseconds a component waits for the external libraries
+        it lazily loads before it renders an error state instead. Set to 0
+        to wait indefinitely.""")
+
+    reuse_sessions: t.Literal[True, False, 'warm'] = param.Selector(
+        default=False, objects=[True, False, 'warm'], doc="""
         Whether to reuse a session for the initial request to speed up
         the initial page render. Note that if the initial page differs
         between sessions, e.g. because it uses query parameters to modify
@@ -203,7 +218,7 @@ class _config(_base_config):
         content being rendered. Define a session_key_func to ensure that
         reused sessions are only reused when appropriate. If set to 'warm'
         session reuse is enabled and the session is warmed up as soon as
-        the initial request arrives.""")
+        the initial request arrives.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     session_key_func = param.Callable(default=None, doc="""
         Used in conjunction with the reuse_sessions option, the
@@ -221,13 +236,26 @@ class _config(_base_config):
         information about user sessions. A value of -1 indicates an
         unlimited history.""")
 
-    sizing_mode = param.Selector(default=None, objects=[
+    sizing_mode: t.Literal[
+        'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
+        'scale_width', 'scale_height', 'scale_both'
+    ] | None = param.Selector(default=None, objects=[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None], doc="""
-        Specify the default sizing mode behavior of panels.""")
+        Specify the default sizing mode behavior of panels.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    template = param.Selector(default=None, doc="""
-        The default template to render served applications into.""")
+    respect_explicit_sizing = param.Boolean(default=False, doc="""
+        When enabled, explicitly set sizing_mode/width_policy/height_policy on a
+        layout are respected and never overridden by values inferred from the
+        layout's children. When disabled (the default) the legacy behaviour is
+        preserved: child-inferred values silently override explicit settings, but
+        a warning is emitted whenever such an override would occur so that the
+        incorrect specification can be corrected.""")
+
+    template: str = param.Selector(default=None, doc="""
+        The default template to render served applications into. Use
+        'page' for the panel.ui Page, or one of the classic template
+        names.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     throttled = param.Boolean(default=False, doc="""
         If sliders and inputs should be throttled until release of mouse.""")
@@ -236,20 +264,40 @@ class _config(_base_config):
 
     _admin_endpoint = param.String(default=None, doc="Name to use for the admin endpoint.")
 
-    _admin_log_level = param.Selector(
-        default='DEBUG', objects=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
-        doc="Log level of the Admin Panel logger")
+    _admin_password = param.String(default=None, allow_None=True, doc="""
+        Password required to access the admin panel, entered on its own
+        login page and independent of the server authentication.""")
 
-    _comms = param.Selector(
+    _admin_users = param.List(default=[], item_type=str, doc="""
+        Users, as identified by the server authentication, allowed to
+        access the admin panel. If empty, every user may access it.""")
+
+    _admin_log_level: t.Literal[
+        'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'
+    ] = param.Selector(
+        default='DEBUG', objects=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
+        doc="Log level of the Admin Panel logger")  # type: ignore[assignment, ty:invalid-assignment]
+
+    _cdn_root = param.String(
+        default="https://cdn.holoviz.org/panel/", doc="""
+        The root path of the CDN. Configurable to support air-gapped and
+        sandboxed environments.""")
+
+    _pyodide_cdn_root = param.String(
+        default="https://cdn.jsdelivr.net/pyodide/", doc="""
+        The root path of the CDN that converted apps load Pyodide from.
+        Configurable to support air-gapped and sandboxed environments.""")
+
+    _comms: t.Literal['default', 'ipywidgets', 'vscode', 'colab'] = param.Selector(
         default='default', objects=['default', 'ipywidgets', 'vscode', 'colab'], doc="""
         Whether to render output in Jupyter with the default Jupyter
-        extension or use the jupyter_bokeh ipywidget model.""")
+        extension or use the jupyter_bokeh ipywidget model.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    _console_output = param.Selector(default='accumulate', allow_None=True,
-                                 objects=['accumulate', 'replace', 'disable',
-                                          False], doc="""
+    _console_output: t.Literal['accumulate', 'replace', 'disable', False] | None = param.Selector(
+        default='accumulate', allow_None=True,
+        objects=['accumulate', 'replace', 'disable', False], doc="""
         How to log errors and stdout output triggered by callbacks
-        from Javascript in the notebook.""")
+        from Javascript in the notebook.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     _cookie_secret = param.String(default=None, doc="""
         Configure to enable getting/setting secure cookies.""")
@@ -276,15 +324,19 @@ class _config(_base_config):
     _embed_save_path = param.String(default='./', doc="""
         Where to save json files for embedded state.""")
 
-    _log_level = param.Selector(
+    _log_level: t.Literal[
+        'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'
+    ] = param.Selector(
         default='WARNING', objects=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
-        doc="Log level of Panel loggers")
+        doc="Log level of Panel loggers")  # type: ignore[assignment, ty:invalid-assignment]
 
-    _npm_cdn = param.Selector(default='https://cdn.jsdelivr.net/npm',
+    _npm_cdn: t.Literal[
+        'https://unpkg.com', 'https://cdn.jsdelivr.net/npm'
+    ] = param.Selector(default='https://cdn.jsdelivr.net/npm',
         objects=['https://unpkg.com', 'https://cdn.jsdelivr.net/npm'],  doc="""
         The CDN to load NPM packages from if resources are served from
         CDN. Allows switching between [https://unpkg.com](https://unpkg.com) and
-        [https://cdn.jsdelivr.net/npm](https://cdn.jsdelivr.net/npm) for most resources.""")
+        [https://cdn.jsdelivr.net/npm](https://cdn.jsdelivr.net/npm) for most resources.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     _nthreads = param.Integer(default=None, doc="""
         When set to a non-None value a thread pool will be started.
@@ -294,14 +346,21 @@ class _config(_base_config):
     _index_titles = param.Dict(default={}, doc="""
         Custom titles to use for Multi Page Apps index page.""")
 
+    _page_config = param.Dict(default={}, doc="""
+        Theming of the pages Panel serves outside of applications, i.e.
+        the index, login, logout and error pages. Mirrors the panel.ui
+        Page parameters and accepts the keys 'theme_config', 'dark_theme',
+        'logo', 'title', 'favicon', 'site_url', 'css_files' and 'raw_css'.
+        May also be set to a JSON string or the path to a JSON file.""")
+
     _basic_auth = param.ClassSelector(default=None, class_=(dict, str), allow_None=True, doc="""
         Password, dictionary with a mapping from username to password
         or filepath containing JSON to use with the basic auth
         provider.""")
 
-    _oauth_provider = param.Selector(
+    _oauth_provider: t.Any = param.Selector(
         default=None, allow_None=True, objects=[], doc="""
-        Select between a list of authentication providers.""")
+        Select between a list of authentication providers.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     _oauth_expiry = param.Number(default=1, bounds=(0, None), doc="""
         Expiry of the OAuth cookie in number of days.""")
@@ -324,7 +383,7 @@ class _config(_base_config):
     _oauth_extra_params = param.Dict(default={}, doc="""
         Additional parameters required for OAuth provider.""")
 
-    _oauth_guest_endpoints = param.List(default=None, doc="""
+    _oauth_guest_endpoints = param.List(default=None, item_type=str, doc="""
         List of endpoints that can be accessed as a guest without authenticating.""")
 
     _oauth_optional = param.Boolean(default=False, doc="""
@@ -338,25 +397,27 @@ class _config(_base_config):
         Whether to inline JS and CSS resources. If disabled, resources
         are loaded from CDN if one is available.""")
 
-    _theme = param.Selector(default=None, objects=['default', 'dark'], allow_None=True, doc="""
-        The theme to apply to components.""")
+    _theme: t.Literal['default', 'dark'] | None = param.Selector(
+        default=None, objects=['default', 'dark'], allow_None=True, doc="""
+        The theme to apply to components.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     _disable_validation = param.Boolean(default=False, doc="""
         Whether to disable bokeh validation, speeding up applications.""")
 
     # Global parameters that are shared across all sessions
-    _globals: ClassVar[set[str]] = {
-        'admin_plugins', 'autoreload', 'comms', 'cookie_path', 'cookie_secret',
+    _globals: t.ClassVar[set[str]] = {
+        'admin_plugins', 'autoreload', 'cdn_root', 'comms', 'cookie_path', 'cookie_secret',
         'nthreads', 'oauth_provider', 'oauth_expiry', 'oauth_key',
         'oauth_secret', 'oauth_jwt_user', 'oauth_redirect_uri',
         'oauth_encryption_key', 'oauth_extra_params', 'npm_cdn',
         'layout_compatibility', 'oauth_refresh_tokens', 'oauth_guest_endpoints',
-        'oauth_optional', 'admin', 'index_titles', 'disable_validation'
+        'oauth_optional', 'admin', 'admin_password', 'admin_users',
+        'index_titles', 'disable_validation', 'pyodide_cdn_root', 'page_config'
     }
 
     _truthy = ['True', 'true', '1', True, 1]
 
-    _session_config: ClassVar[WeakKeyDictionary[Document, dict[str, Any]]] = WeakKeyDictionary()
+    _session_config: t.ClassVar[WeakKeyDictionary[Document, dict[str, t.Any]]] = WeakKeyDictionary()
 
     def __init__(self, **params):
         super().__init__(**params)
@@ -369,15 +430,16 @@ class _config(_base_config):
 
     @param.depends('_nthreads', watch=True, on_init=True)
     def _set_thread_pool(self):
+        from .io.state import _SharedThreadPoolExecutor
         if self.nthreads is None:
             if state._thread_pool is not None:
-                state._thread_pool.shutdown(wait=False)
+                state._thread_pool.shutdown(wait=False, _shared=False)
             state._thread_pool = None
             return
         if state._thread_pool:
             raise RuntimeError("Thread pool already running")
         threads = self.nthreads if self.nthreads else None
-        state._thread_pool = ThreadPoolExecutor(max_workers=threads)
+        state._thread_pool = _SharedThreadPoolExecutor(max_workers=threads)
 
     @param.depends('notifications', watch=True)
     def _setup_notifications(self):
@@ -395,9 +457,43 @@ class _config(_base_config):
         if self.disconnect_notification or self.ready_notification:
             self.notifications = True
 
+    def set_if_unset(self, **params) -> list[str]:
+        """
+        Sets config values only if they have not been modified from
+        their default, i.e. an explicit user setting always wins.
+
+        This allows extensions and design systems to declare the
+        defaults they prefer without clobbering the user's choices.
+
+        Parameters
+        ----------
+        params: dict[str, Any]
+            Mapping of config parameter names to the values to apply
+            if the parameter is still at its default.
+
+        Returns
+        -------
+        The names of the parameters that were applied.
+        """
+        applied = []
+        for k, v in params.items():
+            pname = k if k in self.param else f'_{k}'
+            if pname not in self.param:
+                raise AttributeError(f'{k!r} is not a valid config parameter.')
+            current, default = getattr(self, k), self.param[pname].default
+            try:
+                unset = bool(current == default)
+            except Exception:
+                unset = current is default
+            if not unset:
+                continue
+            setattr(self, k, v)
+            applied.append(k)
+        return applied
+
     @contextmanager
     def set(self, **kwargs):
-        values = [(k, v) for k, v in self.param.values().items() if k != 'name']
+        values = [(p, getattr(self, p)) for p in self.param if p != 'name']
         overrides = [
             (k, getattr(self, k+'_')) for k in _config._parameter_set
             if k.startswith('_') and k[1:] not in _config._globals
@@ -407,7 +503,7 @@ class _config(_base_config):
         try:
             yield
         finally:
-            new = self.param.values()
+            new = {p: getattr(self, p) for p in self.param}
             restore = {k: v for k, v in values if v is not new.get(k)}
             self.param.update(**restore)
             for k, v in overrides:
@@ -494,8 +590,22 @@ class _config(_base_config):
         return value if value else 'disable'
 
     def _template_hook(self, value):
+        if value == 'page':
+            # Resolved lazily so `import panel` does not import panel.ui.
+            from .ui import Page
+            return Page
         if isinstance(value, str):
             return self.param.template.names[value]
+        return value
+
+    def _page_config_hook(self, value):
+        from .io.pages import load_page_config
+        return load_page_config(value)
+
+    def _design_hook(self, value):
+        if isinstance(value, str):
+            from .theme import resolve_design
+            return resolve_design(value)
         return value
 
     @property
@@ -511,9 +621,28 @@ class _config(_base_config):
         return os.environ.get('PANEL_ADMIN_ENDPOINT', self._admin_endpoint)
 
     @property
+    def admin_password(self):
+        return os.environ.get('PANEL_ADMIN_PASSWORD', self._admin_password) or None
+
+    @property
+    def admin_users(self):
+        if 'PANEL_ADMIN_USERS' in os.environ:
+            users = os.environ['PANEL_ADMIN_USERS'].split(',')
+            return [user.strip() for user in users if user.strip()]
+        return self._admin_users
+
+    @property
     def admin_log_level(self):
         admin_log_level = os.environ.get('PANEL_ADMIN_LOG_LEVEL', self._admin_log_level)
         return admin_log_level.upper() if admin_log_level else None
+
+    @property
+    def cdn_root(self):
+        return os.environ.get('PANEL_CDN_ROOT', self._cdn_root)
+
+    @property
+    def pyodide_cdn_root(self):
+        return os.environ.get('PANEL_PYODIDE_CDN_ROOT', self._pyodide_cdn_root)
 
     @property
     def console_output(self):
@@ -553,6 +682,13 @@ class _config(_base_config):
     @property
     def index_titles(self):
         return self._index_titles
+
+    @property
+    def page_config(self):
+        if 'PANEL_PAGE_CONFIG' in os.environ:
+            from .io.pages import load_page_config
+            return load_page_config(os.environ['PANEL_PAGE_CONFIG'])
+        return self._page_config
 
     @property
     def inline(self):
@@ -692,21 +828,22 @@ class panel_extension(_pyviz_extension):
     :Example:
 
     >>> import panel as pn
-    >>> pn.extension("plotly", sizing_mode="stretch_width", template="fast")
+    >>> pn.extension("plotly", sizing_mode="stretch_width", template="page")
 
     This will
 
     - Initialize the notebook extension.
     - Enable you to use the `Plotly` pane by loading `plotly.js`.
     - Set the default `sizing_mode` to `stretch_width` instead of `fixed`.
-    - Set the global configuration `pn.config.template` to `fast`, i.e. you
-      will be using the `FastListTemplate`.
+    - Set the global configuration `pn.config.template` to `page`, i.e.
+      components marked `.servable()` are added to a `pn.ui.Page`.
     """
 
     _loaded: bool = False
 
-    _imports: ClassVar[dict[str, str]] = {
+    _imports: t.ClassVar[dict[str, str]] = {
         'ace': 'panel.models.ace',
+        'bokeh-tables': 'bokeh.models.widgets.tables',
         'codeeditor': 'panel.models.ace',
         'deckgl': 'panel.models.deckgl',
         'echarts': 'panel.models.echarts',
@@ -729,7 +866,7 @@ class panel_extension(_pyviz_extension):
     # Check whether these are loaded before rendering (if any item
     # in the list is available the extension will be confidered as
     # loaded)
-    _globals: ClassVar[dict[str, list[str]]] = {
+    _globals: t.ClassVar[dict[str, list[str]]] = {
         'deckgl': ['deck'],
         'echarts': ['echarts'],
         'filedropper': ['FilePond'],
@@ -751,15 +888,15 @@ class panel_extension(_pyviz_extension):
 
     _comms_detected_before: bool = False
 
-    @typing.overload  # type: ignore
+    @t.overload  # type: ignore
     def __init__(
-        self, *extensions: str, **params: Any
+        self, *extensions: str, **params: t.Any
     ):
         # Typing overload to ensure that type checkers
         # handle the ParameterizedFunction call signature
         ...
 
-    def __call__(self, *args: str, **params: Any):
+    def __call__(self, *args: str, **params: t.Any):
         from bokeh.core.has_props import _default_resolver
         from bokeh.model import Model
         from bokeh.settings import settings as bk_settings
@@ -811,22 +948,7 @@ class panel_extension(_pyviz_extension):
                                    'will be skipped.')
 
         for k, v in params.items():
-            if k == 'design' and isinstance(v, str):
-                from .theme import Design
-                try:
-                    importlib.import_module(f'panel.theme.{self._design}')
-                except Exception:
-                    pass
-                designs = {
-                    t.__name__.lower(): t for t in _descendents(Design, concrete=True)
-                }
-                if v not in designs:
-                    raise ValueError(
-                        f'Design {v!r} was not recognized, available design '
-                        f'systems include: {list(designs)}.'
-                    )
-                setattr(config, k, designs[v])
-            elif k in ('css_files', 'raw_css', 'global_css'):
+            if k in ('css_files', 'raw_css', 'global_css'):
                 if not isinstance(v, list):
                     raise ValueError(f'{k} should be supplied as a list, '
                                      f'not as a {type(v).__name__} type.')

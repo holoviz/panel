@@ -11,7 +11,7 @@ How to use indicators
 ---------------------
 
 >>> pn.indicators.Number(
-...    name='Rate', value=72, format='{value}%',
+...    label='Rate', value=72, format='{value}%',
 ...    colors=[(80, 'green'), (100, 'red')]
 ... )
 """
@@ -22,18 +22,18 @@ import math
 import os
 import sys
 import time
+import typing as t
 
-from collections.abc import Mapping
 from html import escape
 from math import pi
-from typing import TYPE_CHECKING, Any, ClassVar
 
 import numpy as np
 import param
 
 from bokeh.models import ColumnDataSource, FixedTicker, Tooltip
 
-from .._param import Align
+from .._param import Align, Margin
+from ..config import config
 from ..io.resources import CDN_DIST
 from ..layout import Column, Panel, Row
 from ..models import (
@@ -46,8 +46,9 @@ from ..util import PARAM_NAME_PATTERN, updating
 from ..viewable import Viewable
 from .base import Widget
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from _thread import LockType
+    from collections.abc import Mapping
 
     from bokeh.document import Document
     from bokeh.model import Model
@@ -66,13 +67,16 @@ class Indicator(Widget):
     Indicator is a baseclass for widgets which indicate some state.
     """
 
-    sizing_mode = param.Selector(default='fixed', objects=[
+    sizing_mode: t.Literal[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
-        'scale_width', 'scale_height', 'scale_both', None])
+        'scale_width', 'scale_height', 'scale_both'
+    ] | None = param.Selector(default='fixed', objects=[
+        'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
+        'scale_width', 'scale_height', 'scale_both', None])  # type: ignore[assignment, ty:invalid-assignment]
 
     _linked_properties: tuple[str,...] = ()
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': None}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {'label': None}
 
     __abstract = True
 
@@ -90,7 +94,7 @@ class BooleanIndicator(Indicator):
     value = param.Boolean(default=False, doc="""
         Whether the indicator is active or not.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'throttle': None}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {'throttle': None}
 
     __abstract = True
 
@@ -134,7 +138,7 @@ class BooleanIndicator(Indicator):
         return throttled_events
 
     def _update_model(
-        self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
+        self, events: dict[str, param.parameterized.Event], msg: dict[str, t.Any],
         root: Model, model: Model, doc: Document, comm: Comm | None
     ) -> None:
         events = self._throttle_events(events)
@@ -158,28 +162,30 @@ class BooleanStatus(BooleanIndicator):
     >>> BooleanStatus(value=True, color='primary', width=100, height=100)
     """
 
-    color = param.Selector(default='dark', objects=[
+    color: t.Literal[
+        'primary', 'secondary', 'success', 'info', 'danger', 'warning', 'light', 'dark'
+    ] = param.Selector(default='dark', objects=[
         'primary', 'secondary', 'success', 'info', 'danger', 'warning', 'light', 'dark'], doc="""
         The color of the circle, one of 'primary', 'secondary', 'success', 'info', 'danger',
-        'warning', 'light', 'dark'""")
+        'warning', 'light', 'dark'""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    height = param.Integer(default=20, doc="""
+    height = param.Integer(default=20, allow_None=True, doc="""
         height of the circle.""")
 
-    width = param.Integer(default=20, doc="""
+    width = param.Integer(default=20, allow_None=True, doc="""
         Width of the circle.""")
 
     value = param.Boolean(default=False, doc="""
         Whether the indicator is active or not.""")
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {'value': None, 'color': None}
+    _source_transforms: t.ClassVar[Mapping[str, str | None]] = {'value': None, 'color': None}
 
-    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/booleanstatus.css']
+    _stylesheets: t.ClassVar[list[str]] = [f'{CDN_DIST}css/booleanstatus.css']
 
-    _widget_type: ClassVar[type[Model]] = HTML
+    _widget_type: t.ClassVar[type[Model]] = HTML
 
-    def _process_param_change(self, msg):
-        msg = super()._process_param_change(msg)
+    def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
+        msg = super()._process_param_change(params)
         value = msg.pop('value', None)
         color = msg.pop('color', None)
         if value is None and not color:
@@ -203,14 +209,18 @@ class LoadingSpinner(BooleanIndicator):
     >>> LoadingSpinner(value=True, color='primary', bgcolor='light', width=100, height=100)
     """
 
-    bgcolor = param.Selector(default='light', objects=['dark', 'light'], doc="""
-        The color of spinner background segment, either 'light' or 'dark'.""")
+    bgcolor: t.Literal['dark', 'light'] = param.Selector(
+        default='light', objects=['dark', 'light'], doc="""
+        The color of spinner background segment, either 'light' or 'dark'.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    color = param.Selector(default='dark', objects=[
+    color: t.Literal[
+        'primary', 'secondary', 'success', 'info', 'danger', 'warning',
+        'light', 'dark'
+    ] = param.Selector(default='dark', objects=[
         'primary', 'secondary', 'success', 'info', 'danger', 'warning',
         'light', 'dark'], doc="""
         The color of the spinning segment, one of 'primary', 'secondary',
-        'success', 'info', 'warn', 'danger', 'light', 'dark'.""")
+        'success', 'info', 'warn', 'danger', 'light', 'dark'.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     size = param.Integer(default=125, doc="""
         Size of the spinner in pixels.""")
@@ -218,18 +228,18 @@ class LoadingSpinner(BooleanIndicator):
     value = param.Boolean(default=False, doc="""
         Whether the indicator is active or not.""")
 
-    _rename = {'name': 'text'}
+    _rename = {'label': 'text'}
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+    _source_transforms: t.ClassVar[Mapping[str, str | None]] = {
         'value': None, 'color': None, 'bgcolor': None, 'size': None
     }
 
-    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/loadingspinner.css']
+    _stylesheets: t.ClassVar[list[str]] = [f'{CDN_DIST}css/loadingspinner.css']
 
-    _widget_type: ClassVar[type[Model]] = HTML
+    _widget_type: t.ClassVar[type[Model]] = HTML
 
-    def _process_param_change(self, msg):
-        msg = super()._process_param_change(msg)
+    def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
+        msg = super()._process_param_change(params)
         if 'text' in msg:
             text = msg.pop('text')
             if not PARAM_NAME_PATTERN.match(text):
@@ -255,6 +265,11 @@ class LoadingSpinner(BooleanIndicator):
         return msg
 
 
+def _theme_text_color() -> str:
+    # Bokeh glyph colors cannot reference the CSS variables of the theme.
+    return 'white' if config.theme == 'dark' else 'black'
+
+
 class ValueIndicator(Indicator):
     """
     A ValueIndicator provides a visual representation for a numeric
@@ -264,6 +279,16 @@ class ValueIndicator(Indicator):
     value = param.Number(default=None, allow_None=True)
 
     __abstract = True
+
+    @property
+    def _needle_color(self) -> str:
+        return getattr(self, 'needle_color', None) or _theme_text_color()
+
+    @property
+    def _unfilled_color(self) -> str:
+        if getattr(self, 'unfilled_color', None):
+            return self.unfilled_color
+        return '#424242' if config.theme == 'dark' else 'whitesmoke'
 
 
 class Progress(ValueIndicator):
@@ -287,28 +312,34 @@ class Progress(ValueIndicator):
         If no value is set the active property toggles animation of the
         progress bar on and off.""")
 
-    bar_color = param.Selector(default='success', objects=[
+    bar_color: t.Literal[
+        'primary', 'secondary', 'success', 'info', 'danger', 'warning',
+        'light', 'dark'
+    ] = param.Selector(default='success', objects=[
         'primary', 'secondary', 'success', 'info', 'danger', 'warning',
         'light', 'dark'], doc="""
         The color of the bar, one of 'primary', 'secondary', 'success',
-        'info', 'warning', 'danger', 'light', 'dark'.""")
+        'info', 'warning', 'danger', 'light', 'dark'.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     max = param.Integer(default=100, doc="The maximum value of the progress bar.")
 
-    sizing_mode = param.Selector(default=None, objects=[
+    sizing_mode: t.Literal[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
-        'scale_width', 'scale_height', 'scale_both', None])
+        'scale_width', 'scale_height', 'scale_both'
+    ] | None = param.Selector(default=None, objects=[
+        'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
+        'scale_width', 'scale_height', 'scale_both', None])  # type: ignore[assignment, ty:invalid-assignment]
 
-    value = param.Integer(default=-1, bounds=(-1, None), doc="""
+    value = param.Integer(default=-1, bounds=(-1, None), allow_None=True, doc="""
         The current value of the progress bar. If set to -1 the progress
         bar will be indeterminate and animate depending on the active
-        parameter.""")
+        parameter.""")  # type: ignore[assignment]
 
-    width = param.Integer(default=300)
+    width = param.Integer(default=300, allow_None=True)
 
-    _stylesheets: ClassVar[list[str]] = [f'{CDN_DIST}css/progress.css']
+    _stylesheets: t.ClassVar[list[str]] = [f'{CDN_DIST}css/progress.css']
 
-    _widget_type: ClassVar[type[Model]] = _BkProgress
+    _widget_type: t.ClassVar[type[Model]] = _BkProgress
 
     @param.depends('max', watch=True)
     def _update_value_bounds(self):
@@ -328,15 +359,15 @@ class Number(ValueIndicator):
 
     :Example:
 
-    >>> Number(name='Rate', value=72, format='{value}%', colors=[(80, 'green'), (100, 'red')]
+    >>> Number(label='Rate', value=72, format='{value}%', colors=[(80, 'green'), (100, 'red')]
     """
 
     default_color = param.String(default='currentcolor', doc="""
         The color of the Number indicator if no colors are provided""")
 
-    colors = param.List(default=None, doc="""
+    colors: list[tuple[float | int, str]] | None = param.List(default=None, item_type=tuple, doc="""
         Color thresholds for the Number indicator, specified as a tuple of the absolute thresholds
-        and the color to switch to.""")
+        and the color to switch to.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     format = param.String(default='{value}', doc="""
         A formatter string which accepts a {value}.""")
@@ -348,35 +379,35 @@ class Number(ValueIndicator):
         How to format nan values.""")
 
     title_size = param.String(default='18pt', doc="""
-        The size of the title given by the name.""")
+        The size of the title given by the label.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': 'name'}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {'label': None}
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+    _source_transforms: t.ClassVar[Mapping[str, str | None]] = {
         'value': None, 'colors': None, 'default_color': None,
         'font_size': None, 'format': None, 'nan_format': None,
         'title_size': None
     }
 
-    _widget_type: ClassVar[type[Model]] = HTML
+    _widget_type: t.ClassVar[type[Model]] = HTML
 
     def __init__(self, **params):
         if "sizing_mode" not in params:
             params["sizing_mode"] = None
         super().__init__(**params)
 
-    def _process_param_change(self, msg):
-        msg = super()._process_param_change(msg)
-        if not any(p in self._source_transforms or p == 'name' for p in msg):
-            return msg
-        font_size = msg.pop('font_size', self.font_size)
-        title_font_size = msg.pop('title_size', self.title_size)
-        name = msg.pop('name', self.name)
-        format = msg.pop('format', self.format)
-        value = msg.pop('value', self.value)
-        nan_format = msg.pop('nan_format', self.nan_format)
-        color = msg.pop('default_color', self.default_color)
-        colors = msg.pop('colors', self.colors)
+    def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
+        props = super()._process_param_change(params)
+        if not any(p in self._source_transforms or p == 'name' for p in props):
+            return props
+        font_size = props.pop('font_size', self.font_size)
+        title_font_size = props.pop('title_size', self.title_size)
+        label = props.pop('label', self.label)
+        format = props.pop('format', self.format)
+        value = props.pop('value', self.value)
+        nan_format = props.pop('nan_format', self.nan_format)
+        color = props.pop('default_color', self.default_color)
+        colors = props.pop('colors', self.colors)
         for val, clr in (colors or [])[::-1]:
             if value is not None and value <= val:
                 color = clr
@@ -384,11 +415,11 @@ class Number(ValueIndicator):
             value = float('nan')
         value = format.format(value=value).replace('nan', nan_format)
         text = f'<div style="font-size: {font_size}; color: {color}">{value}</div>'
-        if self.name:
-            title_font_size = msg.pop('title_size', self.title_size)
-            text = f'<div style="font-size: {title_font_size}; color: {color}">{name}</div>\n{text}'
-        msg['text'] = escape(text)
-        return msg
+        if self.label:
+            title_font_size = props.pop('title_size', self.title_size)
+            text = f'<div style="font-size: {title_font_size}; color: {color}">{label}</div>\n{text}'
+        props['text'] = escape(text)
+        return props
 
 
 class String(ValueIndicator):
@@ -403,52 +434,53 @@ class String(ValueIndicator):
         The size of number itself.""")
 
     title_size = param.String(default='18pt', doc="""
-        The size of the title given by the name.""")
+        The size of the title given by the label.""")
 
-    value = param.String(default=None, allow_None=True, doc="""
-        The string to display""")
+    value: str | None = param.String(default=None, allow_None=True, doc="""
+        The string to display""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    _rename: ClassVar[Mapping[str, str | None]] = {}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {}
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+    _source_transforms: t.ClassVar[Mapping[str, str | None]] = {
         'value': None, 'default_color': None, 'font_size': None, 'title_size': None
     }
 
-    _widget_type: ClassVar[type[Model]] = HTML
+    _widget_type: t.ClassVar[type[Model]] = HTML
 
     def __init__(self, **params):
         if "sizing_mode" not in params:
             params["sizing_mode"] = None
         super().__init__(**params)
 
-    def _process_param_change(self, msg):
-        msg = super()._process_param_change(msg)
-        if not any(p in self._source_transforms or p == 'name' for p in msg):
-            return msg
-        font_size = msg.pop('font_size', self.font_size)
-        title_font_size = msg.pop('title_size', self.title_size)
-        name = msg.pop('name', self.name)
-        value = msg.pop('value', self.value)
-        color = msg.pop('default_color', self.default_color)
+    def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
+        props = super()._process_param_change(params)
+        if not any(p in self._source_transforms or p == 'name' for p in props):
+            return props
+        font_size = props.pop('font_size', self.font_size)
+        title_font_size = props.pop('title_size', self.title_size)
+        label = props.pop('label', self.label)
+        value = props.pop('value', self.value)
+        color = props.pop('default_color', self.default_color)
         text = f'<div style="font-size: {font_size}; color: {color}">{value}</div>'
-        if self.name:
-            title_font_size = msg.pop('title_size', self.title_size)
-            text = f'<div style="font-size: {title_font_size}; color: {color}">{name}</div>\n{text}'
-        msg['text'] = escape(text)
-        return msg
+        if self.label:
+            title_font_size = props.pop('title_size', self.title_size)
+            text = f'<div style="font-size: {title_font_size}; color: {color}">{label}</div>\n{text}'
+        props['text'] = escape(text)
+        return props
 
 
 class Gauge(ValueIndicator):
     """
     A `Gauge` represents a value in some range as a position on
     speedometer or gauge. It is similar to a `Dial` but visually a lot
-    busier.
+    busier. Requires the ECharts extension to be loaded.
 
     Reference: https://panel.holoviz.org/reference/indicators/Gauge.html
 
     :Example:
 
-    >>> Gauge(name='Speed', value=79, bounds=(0, 200), colors=[(0.4, 'green'), (1, 'red')])
+    >>> pn.extension('echarts')
+    >>> Gauge(label='Speed', value=79, bounds=(0, 200), colors=[(0.4, 'green'), (1, 'red')])
     """
 
     annulus_width = param.Integer(default=10, doc="""
@@ -457,14 +489,14 @@ class Gauge(ValueIndicator):
     bounds = param.Range(default=(0, 100), doc="""
       The upper and lower bound of the dial.""")
 
-    colors = param.List(default=None, doc="""
+    colors: list[tuple[float | int, str]] | None = param.List(default=None, item_type=tuple, doc="""
       Color thresholds for the Gauge, specified as a list of tuples
-      of the fractional threshold and the color to switch to.""")
+      of the fractional threshold and the color to switch to.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     custom_opts = param.Dict(doc="""
       Additional options to pass to the ECharts Gauge definition.""")
 
-    height = param.Integer(default=300, bounds=(0, None))
+    height = param.Integer(default=300, bounds=(0, None), allow_None=True)
 
     end_angle = param.Number(default=-45, doc="""
       Angle at which the gauge ends.""")
@@ -487,17 +519,17 @@ class Gauge(ValueIndicator):
     tooltip_format = param.String(default='{b} : {c}%', doc="""
       Formatting string for the hover tooltip.""")
 
-    title_size = param.Integer(default=18, doc="""
+    title_size = param.Integer(default=18, allow_None=True, doc="""
       Size of title font.""")
 
-    value = param.Number(default=25, doc="""
+    value = param.Number(default=25, allow_None=True, doc="""
       Value to indicate on the gauge a value within the declared bounds.""")
 
-    width = param.Integer(default=300, bounds=(0, None))
+    width = param.Integer(default=300, bounds=(0, None), allow_None=True)
 
-    _rename: ClassVar[Mapping[str, str | None]] = {}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {}
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {
+    _source_transforms: t.ClassVar[Mapping[str, str | None]] = {
         'annulus_width': None, 'bounds': None, 'colors': None,
         'custom_opts': None, 'end_angle': None, 'format': None,
         'num_splits': None, 'show_ticks': None, 'show_labels': None,
@@ -514,6 +546,12 @@ class Gauge(ValueIndicator):
         return ECharts
 
     def __init__(self, **params):
+        from ..config import panel_extension
+        if 'echarts' not in panel_extension._loaded_extensions:
+            self.param.warning(
+                "Gauge requires the ECharts library. Ensure you call "
+                "pn.extension('echarts') before using Gauge components."
+            )
         super().__init__(**params)
         self._update_value_bounds()
 
@@ -521,54 +559,56 @@ class Gauge(ValueIndicator):
     def _update_value_bounds(self):
         self.param.value.bounds = self.bounds
 
-    def _process_param_change(self, msg):
-        msg = super()._process_param_change(msg)
-        vmin, vmax = msg.pop('bounds', self.bounds)
-        msg['data'] = data = {
+    def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
+        props = super()._process_param_change(params)
+        vmin, vmax = props.pop('bounds', self.bounds)
+        props['data'] = data = {
+            # Keeps the surrounding surface visible under dark ECharts themes.
+            'backgroundColor': 'transparent',
             'tooltip': {
-                'formatter': msg.pop('tooltip_format', self.tooltip_format)
+                'formatter': props.pop('tooltip_format', self.tooltip_format)
             },
             'series': [{
                 'name': 'Gauge',
                 'type': 'gauge',
-                'axisTick': {'show': msg.pop('show_ticks', self.show_ticks)},
-                'axisLabel': {'show': msg.pop('show_labels', self.show_labels)},
-                'title': {'fontWeight': 'bold', 'fontSize': msg.pop('title_size', self.title_size)},
+                'axisTick': {'show': props.pop('show_ticks', self.show_ticks)},
+                'axisLabel': {'show': props.pop('show_labels', self.show_labels)},
+                'title': {'fontWeight': 'bold', 'fontSize': props.pop('title_size', self.title_size)},
                 'splitLine': {'show': True},
                 'radius': '100%',
-                'detail': {'formatter': msg.pop('format', self.format)},
+                'detail': {'formatter': props.pop('format', self.format)},
                 'min': vmin,
                 'max': vmax,
-                'startAngle': msg.pop('start_angle', self.start_angle),
-                'endAngle': msg.pop('end_angle', self.end_angle),
-                'splitNumber': msg.pop('num_splits', self.num_splits),
-                'data': [{'value': msg.pop('value', self.value), 'name': self.name}],
+                'startAngle': props.pop('start_angle', self.start_angle),
+                'endAngle': props.pop('end_angle', self.end_angle),
+                'splitNumber': props.pop('num_splits', self.num_splits),
+                'data': [{'value': props.pop('value', self.value), 'name': self.label}],
                 'axisLine': {
                     'lineStyle': {
-                        'width': msg.pop('annulus_width', self.annulus_width),
+                        'width': props.pop('annulus_width', self.annulus_width),
                     }
                 }
             }]
         }
         sm = self.sizing_mode
-        if 'stretch' in sm:
-            data['responsive'] = True
-            if 'width' in msg and ('both' in sm or 'width' in sm):
-                del msg['width']
-            if 'height' in msg  and ('both' in sm or 'height' in sm):
-                del msg['height']
-        colors = msg.pop('colors', self.colors)
+        if sm is not None and 'stretch' in sm:
+            data['responsive'] = True  # type: ignore[assignment]
+            if 'width' in props and ('both' in sm or 'width' in sm):
+                del props['width']
+            if 'height' in props  and ('both' in sm or 'height' in sm):
+                del props['height']
+        colors = props.pop('colors', self.colors)
         if colors:
-            msg['data']['series'][0]['axisLine']['lineStyle']['color'] = colors
-        custom_opts = msg.pop('custom_opts', self.custom_opts)
+            props['data']['series'][0]['axisLine']['lineStyle']['color'] = colors
+        custom_opts = props.pop('custom_opts', self.custom_opts)
         if custom_opts:
-            gauge = msg['data']['series'][0]
+            gauge = props['data']['series'][0]
             for k, v in custom_opts.items():
                 if k not in gauge or not isinstance(gauge[k], dict):
                     gauge[k] = v
                 else:
                     gauge[k].update(v)
-        return msg
+        return props
 
 
 class Dial(ValueIndicator):
@@ -581,21 +621,21 @@ class Dial(ValueIndicator):
 
     :Example:
 
-    >>> Dial(name='Speed', value=79, format="{value} km/h", bounds=(0, 200), colors=[(0.4, 'green'), (1, 'red')])
+    >>> Dial(label='Speed', value=79, format="{value} km/h", bounds=(0, 200), colors=[(0.4, 'green'), (1, 'red')])
     """
 
     annulus_width = param.Number(default=0.2, doc="""
       Width of the radial annulus as a fraction of the total.""")
 
-    background = param.Parameter(default=None, doc="""
-        Background color of the component.""")
+    background: str | None = param.Parameter(default=None, doc="""
+        Background color of the component.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     bounds = param.Range(default=(0, 100), doc="""
       The upper and lower bound of the dial.""")
 
-    colors = param.List(default=None, doc="""
+    colors: list[tuple[float | int, str]] | None = param.List(default=None, item_type=tuple, doc="""
       Color thresholds for the Dial, specified as a list of tuples
-      of the fractional threshold and the color to switch to.""")
+      of the fractional threshold and the color to switch to.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     default_color = param.String(default='lightblue', doc="""
       Color of the radial annulus if not color thresholds are supplied.""")
@@ -606,16 +646,18 @@ class Dial(ValueIndicator):
     format = param.String(default='{value}%', doc="""
       Formatting string for the value indicator and lower/upper bounds.""")
 
-    height = param.Integer(default=250, bounds=(1, None))
+    height = param.Integer(default=250, allow_None=True, bounds=(1, None))
 
-    label_color = param.String(default='black', doc="""
-      Color for all extraneous labels.""")
+    label_color = param.String(default=None, allow_None=True, doc="""
+      Color for all extraneous labels. Defaults to black, or white in
+      the dark theme.""")
 
     nan_format = param.String(default='-', doc="""
       How to format nan values.""")
 
-    needle_color = param.String(default='black', doc="""
-      Color of the Dial needle.""")
+    needle_color = param.String(default=None, allow_None=True, doc="""
+      Color of the Dial needle. Defaults to black, or white in the dark
+      theme.""")
 
     needle_width = param.Number(default=0.1, doc="""
       Radial width of the needle.""")
@@ -629,8 +671,9 @@ class Dial(ValueIndicator):
     title_size = param.String(default=None, doc="""
       Font size of the Dial title.""")
 
-    unfilled_color = param.String(default='whitesmoke', doc="""
-      Color of the unfilled region of the Dial.""")
+    unfilled_color = param.String(default=None, allow_None=True, doc="""
+      Color of the unfilled region of the Dial. Defaults to a light or
+      dark grey depending on the theme.""")
 
     value_size = param.String(default=None, doc="""
       Font size of the Dial value label.""")
@@ -638,9 +681,9 @@ class Dial(ValueIndicator):
     value = param.Number(default=25, allow_None=True, doc="""
       Value to indicate on the dial a value within the declared bounds.""")
 
-    width = param.Integer(default=250, bounds=(1, None))
+    width = param.Integer(default=250, bounds=(1, None), allow_None=True)
 
-    _manual_params: ClassVar[list[str]] = [
+    _manual_params: t.ClassVar[list[str]] = [
         'value', 'start_angle', 'end_angle', 'bounds',
         'annulus_width', 'format', 'background', 'needle_width',
         'tick_size', 'title_size', 'value_size', 'colors',
@@ -648,9 +691,9 @@ class Dial(ValueIndicator):
         'width', 'nan_format', 'needle_color', 'label_color'
     ]
 
-    _data_params: ClassVar[list[str]] = _manual_params
+    _data_params: t.ClassVar[list[str]] = _manual_params
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'background': 'background_fill_color'
     }
 
@@ -662,17 +705,98 @@ class Dial(ValueIndicator):
     def _update_value_bounds(self):
         self.param.value.bounds = self.bounds
 
+    @property
+    def _unfilled_color(self) -> str:
+        # Without an outline, whitesmoke is indistinguishable from a white page.
+        if self.unfilled_color:
+            return self.unfilled_color
+        return '#424242' if config.theme == 'dark' else '#e8e8e8'
+
+    def _angles(self) -> tuple[float, float, float]:
+        start = (np.radians(360-self.start_angle) - pi % (2*pi)) + pi
+        end = (np.radians(360-self.end_angle) - pi % (2*pi)) + pi
+        distance = (abs(end-start) % (pi*2))
+        if end>start:
+            distance = (pi*2)-distance
+        return start, end, distance
+
+    def _size(self) -> tuple[int, int]:
+        height = self.height or self.width or 250
+        return self.width or height, height
+
+    def _font_sizes(self) -> tuple[str, str, str]:
+        scale = (self._size()[1]/400)
+        title_size = self.title_size if self.title_size else '%spt' % (scale*32)
+        value_size = self.value_size if self.value_size else '%spt' % (scale*48)
+        tick_size = self.tick_size if self.tick_size else '%spt' % (scale*18)
+        return title_size, value_size, tick_size
+
+    @staticmethod
+    def _font_px(size: str) -> float:
+        # Only reserves layout space, so a rough guess for unknown units is fine.
+        try:
+            if size.endswith('pt'):
+                return float(size[:-2])*4/3
+            elif size.endswith('px'):
+                return float(size[:-2])
+            elif size.endswith('em'):
+                return float(size[:-2])*16
+        except ValueError:
+            pass
+        return 16
+
+    def _tick_anchors(self, start: float, end: float) -> list[tuple[float, float, str]]:
+        # Horizontal labels hung below each arc end, aligned so they grow
+        # towards the center instead of out of the plot.
+        inner_radius = 1-self.annulus_width
+        anchors = []
+        for angle in (start, end):
+            cos, sin = np.cos(angle), np.sin(angle)
+            y = min(sin, sin*inner_radius) - 0.04
+            if cos < -0.1:
+                anchors.append((cos, y, 'left'))
+            elif cos > 0.1:
+                anchors.append((cos, y, 'right'))
+            else:
+                anchors.append((cos*(1-self.annulus_width/2.), y, 'center'))
+        return anchors
+
+    def _text_height(self, size: str) -> float:
+        # Font sizes are in screen units, so convert them with the
+        # resolution the dial would have if it filled the plot.
+        width, height = self._size()
+        return self._font_px(size)*1.2*2/min(width, height)
+
+    def _value_y(self, start: float, end: float) -> float:
+        # Keep the value below the min/max labels so the two never overlap.
+        tick_height = self._text_height(self._font_sizes()[2])
+        tick_bottom = min(y for _, y, _ in self._tick_anchors(start, end)) - tick_height
+        return min(-0.5, tick_bottom)
+
+    def _get_ranges(self) -> tuple[tuple[float, float], tuple[float, float]]:
+        start, end, distance = self._angles()
+        angles = np.linspace(start, start-distance, 361)
+        radii = np.array([[1], [1-self.annulus_width]])
+        xs, ys = np.cos(angles)*radii, np.sin(angles)*radii
+        xmin, xmax = xs.min(), xs.max()
+        ymax = ys.max()
+        value_bottom = self._value_y(start, end) - self._text_height(self._font_sizes()[1])
+        ymin = min(ys.min(), value_bottom)
+
+        width, height = self._size()
+        pad = 0.03
+        units = max((xmax-xmin+2*pad)/width, (ymax-ymin+2*pad)/height)
+        cx, cy = (xmin+xmax)/2, (ymin+ymax)/2
+        dx, dy = units*width/2, units*height/2
+        return (cx-dx, cx+dx), (cy-dy, cy+dy)
+
     def _get_data(self, properties):
         vmin, vmax = self.bounds
         value = self.value
         if value is None:
             value = float('nan')
         fraction = (value-vmin)/(vmax-vmin)
-        start = (np.radians(360-self.start_angle) - pi % (2*pi)) + pi
-        end = (np.radians(360-self.end_angle) - pi % (2*pi)) + pi
-        distance = (abs(end-start) % (pi*2))
-        if end>start:
-            distance = (pi*2)-distance
+        start, end, distance = self._angles()
         radial_fraction = distance*fraction
         angle = start if np.isnan(fraction) else (start-radial_fraction)
         inner_radius = 1-self.annulus_width
@@ -685,7 +809,7 @@ class Dial(ValueIndicator):
         annulus_data = {
             'starts': np.array([start, angle]),
             'ends' :  np.array([angle, end]),
-            'color':  [color, self.unfilled_color],
+            'color':  [color, self._unfilled_color],
             'radius': np.array([inner_radius, inner_radius])
         }
 
@@ -711,41 +835,44 @@ class Dial(ValueIndicator):
         x, y = np.cos(angle)*center_radius, np.sin(angle)*center_radius
         needle_start = pi+angle-(self.needle_width/2.)
         needle_end = pi+angle+(self.needle_width/2.)
+        # The wedge's blunt end sits at the origin, so the hub must be
+        # wider than the needle base to cover it.
+        needle_base = self.needle_width*center_radius
         needle_data = {
             'x':      np.array([x]),
             'y':      np.array([y]),
             'start':  np.array([needle_start]),
             'end':    np.array([needle_end]),
-            'radius': np.array([center_radius])
+            'radius': np.array([0 if np.isnan(fraction) else center_radius]),
+            'hub_radius': np.array([max(0.05, needle_base*0.7)])
         }
 
         value = self.format.format(value=value).replace('nan', self.nan_format)
         min_value = self.format.format(value=vmin)
         max_value = self.format.format(value=vmax)
-        tminx, tminy = np.cos(start)*center_radius, np.sin(start)*center_radius
-        tmaxx, tmaxy = np.cos(end)*center_radius, np.sin(end)*center_radius
-        tmin_angle, tmax_angle = start+pi, end+pi % pi
-        scale = (self.height/400)
-        title_size = self.title_size if self.title_size else '%spt' % (scale*32)
-        value_size = self.value_size if self.value_size else '%spt' % (scale*48)
-        tick_size = self.tick_size if self.tick_size else '%spt' % (scale*18)
+        (tminx, tminy, tmin_align), (tmaxx, tmaxy, tmax_align) = self._tick_anchors(start, end)
+        title_size, value_size, tick_size = self._font_sizes()
 
+        label_color = self.label_color or _theme_text_color()
         text_data= {
             'x':    np.array([0, 0, tminx, tmaxx]),
-            'y':    np.array([-.2, -.5, tminy, tmaxy]),
-            'text': [self.name, value, min_value, max_value],
-            'rot':  np.array([0, 0, tmin_angle, tmax_angle]),
+            'y':    np.array([-.2, self._value_y(start, end), tminy, tmaxy]),
+            'text': [self.label, value, min_value, max_value],
+            'rot':  np.array([0, 0, 0, 0]),
+            'align': ['center', 'center', tmin_align, tmax_align],
             'size': [title_size, value_size, tick_size, tick_size],
-            'color': [self.label_color, color, self.label_color, self.label_color]
+            'color': [label_color, color, label_color, label_color]
         }
         return annulus_data, needle_data, threshold_data, text_data
 
     def _get_model(self, doc, root=None, parent=None, comm=None):
         from bokeh.plotting import figure
         properties = self._get_properties(doc)
+        x_range, y_range = self._get_ranges()
         model = figure(
-            x_range=(-1,1), y_range=(-1,1), tools=[],
+            x_range=x_range, y_range=y_range, tools=[],
             outline_line_color=None, toolbar_location=None,
+            border_fill_alpha=0, min_border=0,
             width=self.width, height=self.height, **properties
         )
         model.xaxis.visible = False
@@ -763,7 +890,7 @@ class Dial(ValueIndicator):
         annulus_source = ColumnDataSource(data=annulus, name='annulus_source')
         model.annular_wedge(
             x=0, y=0, inner_radius='radius', outer_radius=1, start_angle='starts',
-            end_angle='ends', line_color='gray', color='color', direction='clock',
+            end_angle='ends', line_color=None, color='color', direction='clock',
             source=annulus_source
         )
 
@@ -771,8 +898,12 @@ class Dial(ValueIndicator):
         needle_source = ColumnDataSource(data=needle, name='needle_source')
         model.wedge(
             x='x', y='y', radius='radius', start_angle='start', end_angle='end',
-            fill_color=self.needle_color, line_color=self.needle_color,
+            fill_color=self._needle_color, line_color=self._needle_color,
             source=needle_source, name='needle_renderer'
+        )
+        model.circle(
+            x=0, y=0, radius='hub_radius', fill_color=self._needle_color,
+            line_color=None, source=needle_source, name='needle_hub_renderer'
         )
 
         # Draw thresholds
@@ -785,7 +916,7 @@ class Dial(ValueIndicator):
         # Draw labels
         text_source = ColumnDataSource(data=text, name='label_source')
         model.text(
-            x='x', y='y', text='text', font_size='size', text_align='center',
+            x='x', y='y', text='text', font_size='size', text_align='align',
             text_color='color', source=text_source, text_baseline='top',
             angle='rot'
         )
@@ -805,13 +936,17 @@ class Dial(ValueIndicator):
                 model.update(**{event.name: event.new})
             if event.name in self._data_params:
                 update_data = True
-            elif event.name == 'needle_color':
-                needle_r = model.select(name='needle_renderer')
-                needle_r.glyph.line_color = event.new
-                needle_r.glyph.fill_color = event.new
+            if event.name == 'needle_color':
+                needle_r = model.select_one({'name': 'needle_renderer'})
+                needle_r.glyph.line_color = self._needle_color
+                needle_r.glyph.fill_color = self._needle_color
+                model.select_one({'name': 'needle_hub_renderer'}).glyph.fill_color = self._needle_color
         if not update_data:
             return
         properties = self._get_properties(doc)
+        (x0, x1), (y0, y1) = self._get_ranges()
+        model.x_range.update(start=x0, end=x1)
+        model.y_range.update(start=y0, end=y1)
         annulus, needle, threshold, labels = self._get_data(properties)
         model.select(name='annulus_source').data.update(annulus)
         model.select(name='needle_source').data.update(needle)
@@ -838,14 +973,14 @@ class LinearGauge(ValueIndicator):
     default_color = param.String(default='lightblue', doc="""
       Color of the radial annulus if not color thresholds are supplied.""")
 
-    colors = param.Parameter(default=None, doc="""
+    colors: list[tuple[float | int, str]] | None = param.Parameter(default=None, doc="""
       Color thresholds for the gauge, specified as a list of tuples
-      of the fractional threshold and the color to switch to.""")
+      of the fractional threshold and the color to switch to.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     format = param.String(default='{value:.2f}%', doc="""
       Formatting string for the value indicator and lower/upper bounds.""")
 
-    height = param.Integer(default=300, bounds=(1, None))
+    height = param.Integer(default=300, bounds=(1, None), allow_None=True)
 
     horizontal = param.Boolean(default=False, doc="""
       Whether to display the linear gauge horizontally.""")
@@ -853,14 +988,16 @@ class LinearGauge(ValueIndicator):
     nan_format = param.String(default='-', doc="""
       How to format nan values.""")
 
-    needle_color = param.String(default='black', doc="""
-      Color of the gauge needle.""")
+    needle_color = param.String(default=None, allow_None=True, doc="""
+      Color of the gauge needle. Defaults to black, or white in the dark
+      theme.""")
 
     show_boundaries = param.Boolean(default=False, doc="""
       Whether to show the boundaries between colored regions.""")
 
-    unfilled_color = param.String(default='whitesmoke', doc="""
-      Color of the unfilled region of the LinearGauge.""")
+    unfilled_color = param.String(default=None, allow_None=True, doc="""
+      Color of the unfilled region of the LinearGauge. Defaults to a
+      light or dark grey depending on the theme.""")
 
     title_size = param.String(default=None, doc="""
       Font size of the gauge title.""")
@@ -874,7 +1011,7 @@ class LinearGauge(ValueIndicator):
     value = param.Number(default=25, allow_None=True, doc="""
       Value to indicate on the dial a value within the declared bounds.""")
 
-    width = param.Integer(default=125, bounds=(1, None))
+    width = param.Integer(default=125, bounds=(1, None), allow_None=True)
 
     _manual_params = [
         'value', 'bounds', 'format', 'title_size', 'value_size',
@@ -889,9 +1026,9 @@ class LinearGauge(ValueIndicator):
 
     _rerender_params = ['horizontal']
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'background': 'background_fill_color',
-        'name': 'name',
+        'label': 'name',
         'show_boundaries': None,
         'default_color': None
     }
@@ -922,7 +1059,7 @@ class LinearGauge(ValueIndicator):
             intervals = [
                 (fraction, self.default_color)
             ]
-            intervals.append((1, self.unfilled_color))
+            intervals.append((1, self._unfilled_color))
         elif self.show_boundaries:
             intervals = [
                 c if isinstance(c, tuple) else ((i+1)/(ncolors), c)
@@ -933,7 +1070,7 @@ class LinearGauge(ValueIndicator):
                 self.colors[idx] if isinstance(self.colors[0], tuple)
                 else (fraction, self.colors[idx])
             ]
-            intervals.append((1, self.unfilled_color))
+            intervals.append((1, self._unfilled_color))
         return intervals
 
     def _get_data(self, properties):
@@ -952,7 +1089,7 @@ class LinearGauge(ValueIndicator):
                     colors.append(color)
                     values.append(value)
                     above = True
-                color = self.unfilled_color
+                color = self._unfilled_color
             colors.append(color)
             values.append(val)
             prev = val
@@ -968,7 +1105,8 @@ class LinearGauge(ValueIndicator):
         params = self._get_properties(doc)
         model = figure(
             outline_line_color=None, toolbar_location=None, tools=[],
-            x_axis_location='above', y_axis_location='right', **params
+            x_axis_location='above', y_axis_location='right',
+            background_fill_alpha=0, border_fill_alpha=0, **params
         )
         model.grid.visible = False
         model.xaxis.major_label_standoff = 2
@@ -1028,14 +1166,14 @@ class LinearGauge(ValueIndicator):
                 'text_baseline': 'bottom', 'angle': np.deg2rad(90)
             }
         model.scatter(
-            fill_color=self.needle_color, line_color=self.needle_color,
+            fill_color=self._needle_color, line_color=self._needle_color,
             source=needle_source, name='needle_renderer', marker='triangle',
             size=int(self.width/8), level='overlay', **wedge_params
         )
         value_size = self.value_size or f'{self.width/8}px'
         model.text(
             text='text', source=needle_source, text_font_size=value_size,
-            **text_params
+            text_color=_theme_text_color(), **text_params
         )
 
     def _update_bounds(self, model):
@@ -1083,8 +1221,8 @@ class LinearGauge(ValueIndicator):
                 update_data = True
             elif event.name == 'needle_color':
                 needle_r = model.select(name='needle_renderer')
-                needle_r.glyph.line_color = event.new
-                needle_r.glyph.fill_color = event.new
+                needle_r.glyph.line_color = self._needle_color
+                needle_r.glyph.fill_color = self._needle_color
             elif event.name == 'horizontal':
                 self._update_bounds(model)
                 self._update_figure(model)
@@ -1119,15 +1257,16 @@ class Trend(SyncableData, Indicator):
     :Example:
 
     >>> data = {'x': np.arange(50), 'y': np.random.randn(50).cumsum()}
-    >>> Trend(name='Price', data=data, plot_type='area', width=200, height=200)
+    >>> Trend(label='Price', data=data, plot_type='area', width=200, height=200)
     """
 
-    data = param.Parameter(doc="""
-      The plot data declared as a dictionary of arrays or a DataFrame.""")
+    data: t.Any = param.Parameter(doc="""
+      The plot data declared as a dictionary of arrays or a DataFrame.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    layout = param.Selector(default="column", objects=["column", "row"], doc="""
+    layout: t.Literal["column", "row"] = param.Selector(
+        default="column", objects=["column", "row"], doc="""
         The layout of the indicator, either a column (text and plot on top of each other)
-        or a row (text and plot after each other).""")
+        or a row (text and plot after each other).""")  # type: ignore[assignment, ty:invalid-assignment]
 
     plot_x = param.String(default="x", doc="""
       The name of the key in the plot_data to use on the x-axis.""")
@@ -1138,8 +1277,9 @@ class Trend(SyncableData, Indicator):
     plot_color = param.String(default=BLUE, doc="""
       The color to use in the plot.""")
 
-    plot_type = param.Selector(default="bar", objects=["line", "step", "area", "bar"], doc="""
-      The plot type to render the plot data as.""")
+    plot_type: t.Literal["line", "step", "area", "bar"] = param.Selector(
+        default="bar", objects=["line", "step", "area", "bar"], doc="""
+      The plot type to render the plot data as.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     pos_color = param.String(GREEN, doc="""
       The color used to indicate a positive change.""")
@@ -1147,34 +1287,47 @@ class Trend(SyncableData, Indicator):
     neg_color = param.String(RED, doc="""
       The color used to indicate a negative change.""")
 
-    sizing_mode = param.Selector(default=None, objects=[
+    sizing_mode: t.Literal[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
-        'scale_width', 'scale_height', 'scale_both', None])
+        'scale_width', 'scale_height', 'scale_both'
+    ] | None = param.Selector(default=None, objects=[
+        'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
+        'scale_width', 'scale_height', 'scale_both', None])  # type: ignore[assignment, ty:invalid-assignment]
 
-    name = param.String(constant=False, doc="""The name or a short description of the card""")
+    label = param.String(constant=False, doc="""The label or a short description of the card.""")  # type: ignore[assignment]
 
     value = param.Parameter(default='auto', doc="""
       The primary value to be displayed.""")
 
-    value_change = param.Parameter(default='auto', doc="""
-      A secondary value. For example the change in percent.""")
+    value_change: t.Any = param.Parameter(default='auto', doc="""
+      A secondary value. For example the change in percent.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    _data_params: ClassVar[list[str]] = ['data']
+    _data_params: t.ClassVar[list[str]] = ['data']
 
-    _manual_params: ClassVar[list[str]] = ['data']
+    _manual_params: t.ClassVar[list[str]] = ['data']
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
-        'data': None, 'name': 'title', 'selection': None
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
+        'data': None, 'label': 'title', 'selection': None
     }
 
-    _widget_type: ClassVar[type[Model]] = _BkTrendIndicator
+    _widget_type: t.ClassVar[type[Model]] = _BkTrendIndicator
 
     def _get_data(self):
         if self.data is None:
             return None, {self.plot_x: [], self.plot_y: []}
         elif isinstance(self.data, dict):
             return self.data, self.data
-        return self.data, ColumnDataSource.from_df(self.data)
+        processed = ColumnDataSource.from_df(self.data)
+        if (
+            self.plot_x in getattr(self.data, 'columns', []) and
+            np.issubdtype(self.data[self.plot_x].dtype, np.datetime64)
+        ):
+            x_ns = self.data[self.plot_x].astype(np.int64)
+            diffs = np.diff(x_ns)
+            min_diff = diffs[diffs > 0].min() if len(diffs) else 1
+            processed = dict(processed)
+            processed[self.plot_x] = (x_ns - x_ns[0]) / min_diff
+        return self.data, processed
 
     def _init_params(self):
         props = super()._init_params()
@@ -1205,21 +1358,21 @@ class Trend(SyncableData, Indicator):
             return
         super()._update_data(data)
 
-    def _process_param_change(self, msg):
-        msg = super()._process_param_change(msg)
+    def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
+        props = super()._process_param_change(params)
         ys = self._data.get(self.plot_y, [])
-        if 'value' in msg and msg['value'] == 'auto':
+        if 'value' in props and props['value'] == 'auto':
             if len(ys):
-                msg['value'] = ys[-1]
+                props['value'] = ys[-1]
             else:
-                msg['value'] = 0
-        if 'value_change' in msg and msg['value_change'] == 'auto':
+                props['value'] = 0
+        if 'value_change' in props and props['value_change'] == 'auto':
             if len(ys) > 1:
                 y1, y2 = self._data.get(self.plot_y)[-2:]
-                msg['value_change'] = 0 if y1 == 0 else (y2/y1 - 1)
+                props['value_change'] = 0 if y1 == 0 else (y2/y1 - 1)
             else:
-                msg['value_change'] = 0
-        return msg
+                props['value_change'] = 0
+        return props
 
 
 MARGIN = {
@@ -1287,7 +1440,7 @@ class Tqdm(Indicator):
 
     max = param.Integer(default=100, doc="The maximum value of the progress bar.")
 
-    progress = param.ClassSelector(class_=Progress, allow_refs=False, precedence=-1, doc="""
+    progress = param.ClassSelector(class_=Viewable, allow_refs=False, precedence=-1, doc="""
         The Progress indicator used to display the progress.""",)
 
     text = param.String(default='', doc="""
@@ -1296,21 +1449,23 @@ class Tqdm(Indicator):
     text_pane = param.ClassSelector(class_=Str, precedence=-1, doc="""
         The pane to display the text to.""")
 
-    margin = param.Parameter(default=0, doc="""
+    margin = Margin(default=0, doc="""
         Allows to create additional space around the component. May
         be specified as a two-tuple of the form (vertical, horizontal)
         or a four-tuple (top, right, bottom, left).""")
 
-    width = param.Integer(default=400, bounds=(0, None), doc="""
+    width = param.Integer(default=400, bounds=(0, None), allow_None=True, doc="""
         The width of the component (in pixels). This can be either
         fixed or preferred width, depending on width sizing policy.""")
 
     write_to_console = param.Boolean(default=False, doc="""
         Whether or not to also write to the console.""")
 
-    _layouts: ClassVar[dict[type[Panel], str]] = {Row: 'row', Column: 'column'}
+    _layouts: t.ClassVar[dict[type[Panel], str]] = {Row: 'row', Column: 'column'}
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _progress_type: t.ClassVar[type[Viewable]] = Progress
+
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'value': None, 'min': None, 'max': None, 'text': None, 'name': 'name'
     }
 
@@ -1324,7 +1479,7 @@ class Tqdm(Indicator):
                 margin=MARGIN["text_pane"][layout],
             )
         if "progress" not in params:
-            params["progress"] = Progress(
+            params["progress"] = self._progress_type(
                 active=False,
                 sizing_mode="stretch_width",
                 min_width=100,
@@ -1443,7 +1598,11 @@ class TooltipIcon(Widget):
     value = param.ClassSelector(default="Description", class_=(str, Tooltip), doc="""
         The description in the tooltip.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {'name': None, 'value': 'description'}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
+        'label': None,
+        'name': None,
+        'value': 'description',
+    }
 
     _widget_type = _BkTooltipIcon
 

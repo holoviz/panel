@@ -7,12 +7,11 @@ import json
 import logging
 import os
 import re
+import typing as t
 import urllib.parse as urlparse
 import uuid
 
 from base64 import urlsafe_b64encode
-from functools import partial
-from typing import ClassVar
 
 import tornado
 
@@ -29,12 +28,24 @@ from .io.resources import (
     BASIC_LOGIN_TEMPLATE, CDN_DIST, ERROR_TEMPLATE, LOGOUT_TEMPLATE, _env,
 )
 from .io.state import state
-from .util import base64url_encode, decode_token
+from .util import HTML_SANITIZER, base64url_encode, decode_token
 
 log = logging.getLogger(__name__)
 
 STATE_COOKIE_NAME = 'panel-oauth-state'
 CODE_COOKIE_NAME = 'panel-oauth-code'
+
+# Keys in ``config.oauth_extra_params`` that the provider implementations
+# consume internally (to build provider URLs, scopes, etc.) and which must
+# therefore NOT be forwarded as query parameters to the OAuth2/OIDC
+# authorization endpoint.
+RESERVED_OAUTH_PARAMS = {
+    'scope',  # forwarded as a top-level param via _SCOPE, not in extra_params
+    'tenant',  # Azure AD
+    'subdomain',  # Auth0
+    'url', 'server',  # Okta / GitLab
+    'TOKEN_URL', 'AUTHORIZE_URL', 'USER_URL', 'LOGOUT_URL', 'USER_KEY',  # Generic
+}
 
 
 def decode_response_body(response):
@@ -68,6 +79,20 @@ def extract_urlparam(args, key):
     return args.get(key, args.get(f'/?{key}', [None]))[0]
 
 
+def is_websocket(handler) -> bool:
+    """
+    Whether a request handler is serving a websocket connection.
+
+    On ASGI transports the handlers are run headlessly, so the type of the
+    request is declared with an ``_is_websocket`` attribute rather than
+    being implied by the handler class.
+    """
+    is_ws = getattr(handler, '_is_websocket', None)
+    if is_ws is not None:
+        return is_ws
+    return isinstance(handler, WebSocketHandler)
+
+
 def _serialize_state(state):
     """Serialize OAuth state to a base64 string after passing through JSON"""
     json_state = json.dumps(state)
@@ -90,6 +115,28 @@ def _deserialize_state(b64_state):
         return {}
 
 
+@t.overload
+def _validate_next_url(next_url: str) -> str: ...
+@t.overload
+def _validate_next_url(next_url: None) -> None: ...
+def _validate_next_url(next_url: str | None) -> str | None:
+    """
+    Validate that next_url is a same-origin path. Raises HTTPError(400)
+    if it carries a scheme, netloc, or backslash (which some browsers
+    treat as '/'). Returns the (possibly base_url-prefixed) value, or
+    None when the input is empty.
+    """
+    if not next_url:
+        return None
+    urlinfo = urlparse.urlparse(next_url)
+    if urlinfo.scheme or urlinfo.netloc or '\\' in next_url:
+        log.warning("Rejecting tampered next_url: %r", next_url)
+        raise HTTPError(400, "Invalid next url")
+    if state.base_url and not next_url.startswith(state.base_url):
+        next_url = next_url.replace('/', state.base_url, 1)
+    return next_url
+
+
 class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
 
     _API_BASE_HEADERS = {
@@ -103,13 +150,13 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
         'grant_type':    'authorization_code'
     }
 
-    _access_token_header: ClassVar[str | None] = None
+    _access_token_header: t.ClassVar[str | None] = None
 
-    _state_cookie: ClassVar[str | None] = None
+    _state_cookie: t.ClassVar[str | None] = None
 
     _error_template = ERROR_TEMPLATE
 
-    _login_endpoint: ClassVar[str] = '/login'
+    _login_endpoint: t.ClassVar[str] = '/login'
 
     @property
     def _SCOPE(self):
@@ -162,12 +209,15 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
                 'state': state,
             }
         }
-        if 'audience' in config.oauth_extra_params:
-            params['extra_params']['audience'] = config.oauth_extra_params['audience']
+        # Forward any additional user-provided OAuth parameters (e.g. prompt,
+        # login_hint, domain_hint, audience) to the authorization endpoint.
+        # Keys the providers consume internally are skipped (see
+        # RESERVED_OAUTH_PARAMS); scope is applied separately below via _SCOPE.
+        for key, value in config.oauth_extra_params.items():
+            if key not in RESERVED_OAUTH_PARAMS:
+                params['extra_params'][key] = value
         if self._SCOPE is not None:
             params['scope'] = self._SCOPE
-        if 'scope' in config.oauth_extra_params:
-            params['scope'] = config.oauth_extra_params['scope']
         log.debug("%s making authorize request", type(self).__name__)
         self.authorize_redirect(**params)
 
@@ -322,22 +372,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
         root_url = self.request.uri.replace(self._login_endpoint, '').split('?')[0]
         if not root_url.endswith('/'):
             root_url += '/'
-        next_url = original_next_url = self.get_argument('next', root_url)
-        if state.base_url and not next_url.startswith(state.base_url):
-            next_url = original_next_url = next_url.replace('/', state.base_url, 1)
-        if next_url:
-            # avoid browsers treating \ as /
-            next_url = next_url.replace('\\', urlparse.quote('\\'))
-            # disallow hostname-having urls,
-            # force absolute path redirect
-            urlinfo = urlparse.urlparse(next_url)
-            next_url = urlinfo._replace(
-                scheme='', netloc='', path='/' + urlinfo.path.lstrip('/')
-            ).geturl()
-            if next_url != original_next_url:
-                log.warning(
-                    "Ignoring next_url %r, using %r", original_next_url, next_url
-                )
+        next_url = _validate_next_url(self.get_argument('next', root_url))
         return _serialize_state(
             {'state_id': uuid.uuid4().hex, 'next_url': next_url or state.base_url}
         )
@@ -498,7 +533,7 @@ class OAuthLoginHandler(tornado.web.RequestHandler, OAuth2Mixin):
             title='Panel: Authentication Error',
             error_type='Authentication Error',
             error=error,
-            error_msg=error_msg,
+            error_msg=HTML_SANITIZER.clean(error_msg),
             oauth_logout_link=self._OAUTH_LOGOUT_URL,
         ))
 
@@ -544,10 +579,8 @@ class PasswordLoginHandler(GenericLoginHandler):
         except Exception:
             errormessage = ""
 
-        next_url = self.get_argument('next', None)
+        next_url = _validate_next_url(self.get_argument('next', None))
         if next_url:
-            if state.base_url and not next_url.startswith(state.base_url):
-                next_url = next_url.replace('/', state.base_url, 1)
             self.set_cookie("next_url", next_url)
         html = self._login_template.render(
             errormessage=errormessage,
@@ -564,7 +597,7 @@ class PasswordLoginHandler(GenericLoginHandler):
             username=username,
             password=password
         )
-        next_url = self.get_cookie("next_url", state.base_url)
+        next_url = _validate_next_url(self.get_cookie("next_url", state.base_url))
         self.redirect(next_url)
 
 
@@ -863,10 +896,8 @@ class BasicLoginHandler(RequestHandler):
             errormessage = self.get_argument("error")
         except Exception:
             errormessage = ""
-        next_url = self.get_argument('next', state.base_url)
+        next_url = _validate_next_url(self.get_argument('next', state.base_url))
         if next_url:
-            if state.base_url and not next_url.startswith(state.base_url):
-                next_url = next_url.replace('/', state.base_url, 1)
             self.set_cookie("next_url", next_url)
         html = self._login_template.render(
             login_endpoint=self._login_endpoint,
@@ -897,7 +928,7 @@ class BasicLoginHandler(RequestHandler):
         auth = self._validate(username, password)
         if auth:
             self.set_current_user(username)
-            next_url = self.get_cookie("next_url", state.base_url)
+            next_url = _validate_next_url(self.get_cookie("next_url", state.base_url))
             self.redirect(next_url)
         else:
             error_msg = "?error=" + tornado.escape.url_escape("Invalid username or password!")
@@ -1004,10 +1035,10 @@ class BasicAuthProvider(AuthProvider):
             elif self._allow_guest(request_handler.request.uri):
                 user = "guest"
                 request_handler.request.cookies["is_guest"] = "1"
-                if not isinstance(request_handler, WebSocketHandler):
+                if not is_websocket(request_handler):
                     request_handler.set_cookie("is_guest", "1", expires_days=config.oauth_expiry, path=config.cookie_path)
 
-            if user and isinstance(request_handler, WebSocketHandler):
+            if user and is_websocket(request_handler):
                 state._active_users[user] += 1
             return user
         return get_user
@@ -1053,7 +1084,7 @@ class OAuthProvider(BasicAuthProvider):
 
             # Try to obtain user oauth overrides from WS headers
             # in case the HTTP handler refreshed tokens
-            is_ws = isinstance(handler, WebSocketHandler)
+            is_ws = is_websocket(handler)
             if is_ws and 'Sec-Websocket-Protocol' in handler.request.headers:
                 protocol_header = handler.request.headers['Sec-Websocket-Protocol']
                 _, token = protocol_header.split(', ')
@@ -1096,10 +1127,15 @@ class OAuthProvider(BasicAuthProvider):
                 expiry = None
 
             if expiry is None:
-                expiry = handler.get_secure_cookie('oauth_expiry', max_age_days=config.oauth_expiry)
-                if expiry is None:
+                expiry_cookie = handler.get_secure_cookie('oauth_expiry', max_age_days=config.oauth_expiry)
+                if expiry_cookie is None:
                     # Token does not have content and therefore does not expire
                     log.debug("access_token is not a valid JWT token. Expiry cannot be determined.")
+                    return user
+                try:
+                    expiry = float(expiry_cookie.decode('utf-8'))
+                except (ValueError, UnicodeDecodeError):
+                    log.debug("oauth_expiry cookie could not be parsed as a number.")
                     return user
 
             if user in state._oauth_user_overrides:
@@ -1140,11 +1176,14 @@ class OAuthProvider(BasicAuthProvider):
                 user, refresh_token, handler.application, handler.request,
                 reschedule=is_ws
             )
-            # If user not in overrides refresh failed and we need to
-            # fully reauthenticate
-            if user not in state._oauth_user_overrides:
+            if access_token is None:
+                # Refresh failed, user needs to fully reauthenticate
                 return
-            expires_in = expiry - now_ts
+
+            if expiry is not None:
+                expires_in = expiry - now_ts
+            else:
+                expires_in = None
             OAuthLoginHandler.set_auth_cookies(
                 handler, None, access_token, refresh_token, expires_in
             )
@@ -1189,7 +1228,15 @@ class OAuthProvider(BasicAuthProvider):
         now_ts = dt.datetime.now(dt.timezone.utc).timestamp()
         expiry_seconds = expiry_ts - now_ts - 60
         expiry_date = dt.datetime.now() + dt.timedelta(seconds=expiry_seconds) # schedule_task is in local TZ
-        refresh_cb = partial(self._scheduled_refresh, user, refresh_token, application, request)
+
+        async def refresh_cb():
+            # The task may have been scheduled while the user had an active
+            # session but only fire after they have since disconnected, so
+            # re-check liveness at execution time rather than schedule time.
+            if not state._active_users.get(user):
+                return
+            await self._scheduled_refresh(user, refresh_token, application, request)
+
         if expiry_seconds <= 0:
             log.debug("%s token expired unexpectedly, refreshing immediately.", type(self).__name__)
             state.execute(refresh_cb)
@@ -1204,8 +1251,6 @@ class OAuthProvider(BasicAuthProvider):
             state.schedule_task(task, refresh_cb, at=expiry_date)
 
     async def _scheduled_refresh(self, user, refresh_token, application, request, reschedule=True):
-        if not state._active_users.get(user):
-            return None, None, None
         await self._refresh_access_token(user, refresh_token, application, request)
         if user not in state._oauth_user_overrides:
             return None, None, None

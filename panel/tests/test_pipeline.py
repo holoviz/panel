@@ -50,7 +50,7 @@ class Stage2b(param.Parameterized):
 
     c = param.Number(default=5, precedence=-1, bounds=(0, None))
 
-    root = param.Parameter(default=0.1)
+    root: float = param.Parameter(default=0.1)  # type: ignore[assignment, ty:invalid-assignment]
 
     @param.depends('c', 'root')
     def view(self):
@@ -63,6 +63,23 @@ class Stage2b(param.Parameterized):
 class DummyStage(param.Parameterized):
 
     def panel(self):
+        return 'foo'
+
+
+class DummyReadyParameterStage(param.Parameterized):
+
+    ready = param.Boolean(default=False)
+
+    def panel(self):
+        return 'foo'
+
+
+class DummyResetReadyParameterStage(param.Parameterized):
+
+    ready = param.Boolean(default=False)
+
+    def panel(self):
+        self.ready = False
         return 'foo'
 
 
@@ -413,35 +430,57 @@ def test_pipeline_repr():
     assert repr(pipeline) == 'Pipeline:\n    [0] Stage 1: Stage1()\n    [1] Stage 2: Stage2()'
 
 
-def test_pipeline_ready_parameter_preserved_on_back_navigation():
+@pytest.mark.parametrize("stage1", [DummyReadyParameterStage(), DummyResetReadyParameterStage()])
+@pytest.mark.parametrize("auto_advance", [True, False])
+def test_pipeline_ready_parameter_preserved_on_back_navigation(stage1, auto_advance):
     """
-    Regression test for https://github.com/holoviz/panel/issues/8378.
+    Regression test for https://github.com/holoviz/panel/issues/8378 and https://github.com/holoviz/panel/issues/8631
 
-    When navigating back to a stage whose ready_parameter is already True,
-    the 'next' button should remain enabled (not disabled).
-    Previously, _update_button read from the stage class (always default=False)
-    instead of the live instance (self._state), causing the button to be
-    incorrectly disabled until the parameter was set to True a second time.
+    On back navigation, ensure the ready parameter is preserved and the next button is
+    enabled when ready parameter is True.
     """
     pipeline = Pipeline(ready_parameter='ready')
-    pipeline.add_stage('Stage 1', Stage1)
-    pipeline.add_stage('Stage 2', Stage2)
+    pipeline.add_stage('Stage 1', stage1, auto_advance=auto_advance)
+    pipeline.add_stage('Stage 2', DummyStage)
 
-    # Initially disabled because ready=False
-    assert pipeline.next_button.disabled
-
-    # Set ready=True → button enables
     pipeline._state.ready = True
-    assert not pipeline.next_button.disabled
-
-    # Advance to Stage 2
-    pipeline._next()
-    assert isinstance(pipeline._state, Stage2)
-
-    # Go back to Stage 1 — ready is still True on the instance
+    if not auto_advance:
+        pipeline._next()
+    assert pipeline._stage == 'Stage 2'
     pipeline._previous()
-    assert isinstance(pipeline._state, Stage1)
-    assert pipeline._state.ready is True
+    assert pipeline._stage == 'Stage 1'
+    assert pipeline._state.ready == isinstance(stage1, DummyReadyParameterStage)
+    assert not pipeline.next_button.disabled == pipeline._state.ready
+    pipeline._state.ready = True
+    if not auto_advance:
+        assert not pipeline.next_button.disabled
+        pipeline._next()
+    assert pipeline._stage == 'Stage 2'
 
-    # The next button must be enabled immediately (not disabled)
-    assert not pipeline.next_button.disabled
+
+def test_previous_sets_lower_stage():
+    """
+    Non regression test for https://github.com/holoviz/panel/issues/5687
+
+    When navigating back from stage N to stage N-1, and then hitting previous once
+    again, make sure current state is stage N-2 and not stage N.
+    """
+    pipeline = Pipeline()
+
+    pipeline.add_stage("Stage 1", DummyStage())
+    pipeline.add_stage("Stage 2", DummyStage())
+    pipeline.add_stage("Stage 3", DummyStage())
+
+    pipeline._next()
+    pipeline._next()
+
+    assert pipeline._stage == "Stage 3"
+    assert pipeline._route == ["Stage 1", "Stage 2", "Stage 3"]
+
+    pipeline._previous()
+    assert pipeline._stage == "Stage 2"
+    assert pipeline._route == ["Stage 1", "Stage 2"]
+    pipeline._previous()
+
+    assert pipeline._stage == "Stage 1"
+    assert pipeline._route == ["Stage 1"]

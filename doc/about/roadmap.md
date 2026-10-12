@@ -277,7 +277,7 @@ To ensure stability for existing applications while allowing Panel to modernize 
 
 **Status:** Stable, fully supported
 
-* Add support for some of the changed APIs for legacy components, e.g. `Widget.name` -> `Widget.label`, `Button.button_type` -> `Button.color` and `Button.button_style` -> `Button.variant`
+* Prefer `Widget.label` over `Widget.name`, and on button-like widgets prefer `color` / `variant` over `button_type` / `button_style` (the older names remain supported).
 * `panel.layout`, `panel.pane`, and `panel.widgets` remain the default and fully supported APIs.
 * `panel-material-ui` continues to be available as an external package.
 * Experimental and early-adopter work continues on:

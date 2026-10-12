@@ -40,11 +40,11 @@ class Task(pn.viewable.Viewer):
     )
 
     def __panel__(self):
-        completed = pn.widgets.Checkbox.from_param(
-            self.param.completed, name="", align="center", sizing_mode="fixed"
+        completed = pn.ui.Checkbox.from_param(
+            self.param.completed, label="", align="center", sizing_mode="fixed"
         )
-        content = pn.pane.Markdown(object=self.param.value)
-        return pn.Row(completed, content, sizing_mode="stretch_width")
+        content = pn.ui.Markdown(object=self.param.value)
+        return pn.ui.Row(completed, content, sizing_mode="stretch_width")
 
 
 class TaskList(param.Parameterized):
@@ -108,14 +108,14 @@ class TaskInput(pn.viewable.Viewer):
         return not bool(value)
 
     def __panel__(self):
-        text_input = pn.widgets.TextInput(
-            name="Task", placeholder="Enter a task", sizing_mode="stretch_width"
+        text_input = pn.ui.TextInput(
+            label="Task", placeholder="Enter a task", sizing_mode="stretch_width"
         )
         text_input_has_value = pn.rx(self._no_value)(text_input.param.value_input)
-        submit_task = pn.widgets.Button(
-            name="Add",
+        submit_task = pn.ui.Button(
+            label="Add",
             align="center",
-            button_type="primary",
+            color="primary",
             width=BUTTON_WIDTH,
             sizing_mode="fixed",
             disabled=text_input_has_value,
@@ -127,7 +127,7 @@ class TaskInput(pn.viewable.Viewer):
                 self.value = Task(value=text_input.value)
                 text_input.value = text_input.value_input = ""
 
-        return pn.Row(text_input, submit_task, sizing_mode="stretch_width")
+        return pn.ui.Row(text_input, submit_task, sizing_mode="stretch_width")
 
 
 class TaskRow(pn.viewable.Viewer):
@@ -142,10 +142,10 @@ class TaskRow(pn.viewable.Viewer):
     )
 
     def __panel__(self):
-        remove_button = pn.widgets.Button.from_param(
+        remove_button = pn.ui.Button.from_param(
             self.param.remove, width=BUTTON_WIDTH, icon="trash", sizing_mode="fixed"
         )
-        return pn.Row(self.value, remove_button)
+        return pn.ui.Row(self.value, remove_button)
 
 
 class TaskListEditor(pn.viewable.Viewer):
@@ -164,27 +164,27 @@ class TaskListEditor(pn.viewable.Viewer):
 
             pn.bind(remove, row.param.remove, watch=True)
 
-        return pn.Column(*rows)
+        return pn.ui.Column(*rows)
 
     def __panel__(self):
         task_input = TaskInput()
         pn.bind(self.value.add_task, task_input.param.value, watch=True)
-        clear = pn.widgets.Button(
-            name="Remove All",
-            button_type="primary",
-            button_style="outline",
+        clear = pn.ui.Button(
+            label="Remove All",
+            color="primary",
+            variant="outline",
             width=BUTTON_WIDTH,
             sizing_mode="fixed",
             visible=self.value.param.has_tasks,
             on_click=lambda e: self.value.remove_all_tasks(),
         )
 
-        return pn.Column(
+        return pn.ui.Column(
             "## WTG Task List",
-            pn.pane.Markdown(self.value.param.status),
+            pn.ui.Markdown(self.value.param.status),
             task_input,
             self._layout,
-            pn.Row(pn.Spacer(), clear),
+            pn.ui.Row(pn.ui.Spacer(), clear),
             max_width=500,
         )
 
@@ -238,11 +238,11 @@ class Task(pn.viewable.Viewer):
     )
 
     def __panel__(self):
-        completed = pn.widgets.Checkbox.from_param(
-            self.param.completed, name="", align="center", sizing_mode="fixed"
+        completed = pn.ui.Checkbox.from_param(
+            self.param.completed, label="", align="center", sizing_mode="fixed"
         )
-        content = pn.pane.Markdown(object=self.param.value)
-        return pn.Row(completed, content, sizing_mode="stretch_width")
+        content = pn.ui.Markdown(object=self.param.value)
+        return pn.ui.Row(completed, content, sizing_mode="stretch_width")
 
 Task(value="Inspect the blades")
 ```
@@ -308,14 +308,14 @@ class TaskInput(pn.viewable.Viewer):
         return not bool(value)
 
     def __panel__(self):
-        text_input = pn.widgets.TextInput(
-            name="Task", placeholder="Enter a task", sizing_mode="stretch_width"
+        text_input = pn.ui.TextInput(
+            label="Task", placeholder="Enter a task", sizing_mode="stretch_width"
         )
         text_input_has_value = pn.rx(self._no_value)(text_input.param.value_input)
-        submit_task = pn.widgets.Button(
-            name="Add",
+        submit_task = pn.ui.Button(
+            label="Add",
             align="center",
-            button_type="primary",
+            color="primary",
             width=BUTTON_WIDTH,
             sizing_mode="fixed",
             disabled=text_input_has_value,
@@ -326,7 +326,7 @@ class TaskInput(pn.viewable.Viewer):
             if text_input.value:
                 self.value = Task(value=text_input.value)
                 text_input.value = text_input.value_input = ""
-        return pn.Row(text_input, submit_task, sizing_mode="stretch_width")
+        return pn.ui.Row(text_input, submit_task, sizing_mode="stretch_width")
 
 TaskInput()
 ```
@@ -350,10 +350,10 @@ class TaskRow(pn.viewable.Viewer):
     )
 
     def __panel__(self):
-        remove_button = pn.widgets.Button.from_param(
+        remove_button = pn.ui.Button.from_param(
             self.param.remove, width=BUTTON_WIDTH, icon="trash", sizing_mode="fixed"
         )
-        return pn.Row(self.value, remove_button)
+        return pn.ui.Row(self.value, remove_button)
 
 TaskRow(value=Task(value="Inspect the blades"))
 ```
@@ -379,27 +379,27 @@ class TaskListEditor(pn.viewable.Viewer):
 
             pn.bind(remove, row.param.remove, watch=True)
 
-        return pn.Column(*rows)
+        return pn.ui.Column(*rows)
 
     def __panel__(self):
         task_input = TaskInput()
         pn.bind(self.value.add_task, task_input.param.value, watch=True)
-        clear = pn.widgets.Button(
-            name="Remove All",
-            button_type="primary",
-            button_style="outline",
+        clear = pn.ui.Button(
+            label="Remove All",
+            color="primary",
+            variant="outline",
             width=BUTTON_WIDTH,
             sizing_mode="fixed",
             visible=self.value.param.has_tasks,
             on_click=lambda e: self.value.remove_all_tasks(),
         )
 
-        return pn.Column(
+        return pn.ui.Column(
             "## WTG Task List",
-            pn.pane.Markdown(self.value.param.status),
+            pn.ui.Markdown(self.value.param.status),
             task_input,
             self._layout,
-            pn.Row(pn.Spacer(), clear),
+            pn.ui.Row(pn.ui.Spacer(), clear),
             max_width=500,
         )
 

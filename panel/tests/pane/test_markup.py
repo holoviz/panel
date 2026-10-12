@@ -2,7 +2,6 @@ import asyncio
 import base64
 import html
 import json
-import sys
 
 from unittest.mock import patch
 
@@ -14,7 +13,9 @@ from panel import config
 from panel.pane import (
     HTML, JSON, DataFrame, Markdown, PaneBase, Str,
 )
-from panel.tests.util import not_windows, streamz_available
+from panel.tests.util import (
+    not_windows, polars_available, pyarrow_available, streamz_available,
+)
 
 
 def test_get_markdown_pane_type():
@@ -27,6 +28,24 @@ def test_get_dataframe_pane_type():
 def test_get_series_pane_type():
     ser = pd.Series([1, 2, 3])
     assert PaneBase.get_pane_type(ser) is DataFrame
+
+@polars_available
+def test_get_polars_dataframe_pane_type():
+    import polars as pl
+    df = pl.DataFrame({"A": [1, 2, 3]})
+    assert PaneBase.get_pane_type(df) is DataFrame
+
+@polars_available
+def test_get_polars_series_pane_type():
+    import polars as pl
+    ser = pl.Series("A", [1, 2, 3])
+    assert PaneBase.get_pane_type(ser) is DataFrame
+
+@pyarrow_available
+def test_get_pyarrow_table_pane_type():
+    import pyarrow as pa
+    table = pa.table({"A": [1, 2, 3]})
+    assert PaneBase.get_pane_type(table) is DataFrame
 
 @pytest.fixture
 async def streamz_df():
@@ -234,16 +253,16 @@ def test_html_pane(document, comm):
     assert pane._models == {}
 
 def test_html_pane_sanitize_html(document, comm):
-    pane = HTML("<h1><strong>HTML</h1></strong>", sanitize_html=True)
+    pane = HTML("<h1><strong>HTML</h1></strong><script></script>", sanitize_html=True)
 
     # Create pane
     model = pane.get_root(document, comm=comm)
     assert pane._models[model.ref['id']][0] is model
-    assert model.text.endswith("&lt;strong&gt;HTML&lt;/strong&gt;")
+    assert model.text.endswith("&lt;h1&gt;&lt;strong&gt;HTML&lt;/strong&gt;&lt;/h1&gt;")
 
     pane.sanitize_html = False
 
-    assert model.text.endswith('&lt;h1&gt;&lt;strong&gt;HTML&lt;/h1&gt;&lt;/strong&gt;')
+    assert model.text.endswith('&lt;h1&gt;&lt;strong&gt;HTML&lt;/h1&gt;&lt;/strong&gt;&lt;script&gt;&lt;/script&gt;')
 
 def test_dataframe_pane_pandas(document, comm):
     pane = DataFrame(pd.DataFrame({"A": [1, 2, 3]}))
@@ -263,6 +282,94 @@ def test_dataframe_pane_pandas(document, comm):
     # Cleanup
     pane._cleanup(model)
     assert pane._models == {}
+
+@polars_available
+def test_dataframe_pane_polars(document, comm):
+    import polars as pl
+    pane = DataFrame(pl.DataFrame({"A": [1, 2, 3]}))
+
+    model = pane.get_root(document, comm=comm)
+    assert pane._models[model.ref['id']][0] is model
+    assert model.text.startswith('&lt;table')
+    orig_text = model.text
+
+    pane.object = pl.DataFrame({"B": [1, 2, 3]})
+    assert pane._models[model.ref['id']][0] is model
+    assert model.text.startswith('&lt;table')
+    assert model.text != orig_text
+
+    pane._cleanup(model)
+    assert pane._models == {}
+
+@polars_available
+def test_dataframe_pane_polars_series(document, comm):
+    import polars as pl
+    pane = DataFrame(pl.Series("A", [1, 2, 3]))
+
+    model = pane.get_root(document, comm=comm)
+    assert model.text.startswith('&lt;table')
+
+    pane._cleanup(model)
+
+@polars_available
+def test_dataframe_pane_polars_pandas_conversion_failure_renders_styled_table(document, comm):
+    import polars as pl
+    df = pl.DataFrame({"A": [1, 2, 3], "B": ["a", "b", None]})
+    pane = DataFrame(df, text_align='center')
+
+    with patch.object(DataFrame, '_narwhals_to_pandas', side_effect=ModuleNotFoundError):
+        model = pane.get_root(document, comm=comm)
+
+    text = html.unescape(model.text)
+    assert text.startswith('<table border="0" class="panel-df center-align">')
+    assert '<thead>\n<tr><th>A</th><th>B</th></tr>\n</thead>' in text
+    assert '<tr><td>1</td><td>a</td></tr>' in text
+    assert '<tr><td>3</td><td>NaN</td></tr>' in text
+
+    pane._cleanup(model)
+
+@polars_available
+def test_dataframe_pane_polars_pandas_conversion_failure_truncates(document, comm):
+    import polars as pl
+    df = pl.DataFrame({"A": [1, 2, 3, 4, 5], "B": [1, 2, 3, 4, 5], "C": [1, 2, 3, 4, 5]})
+    pane = DataFrame(df, max_rows=3, max_cols=2, show_dimensions=True)
+
+    with patch.object(DataFrame, '_narwhals_to_pandas', side_effect=ModuleNotFoundError):
+        model = pane.get_root(document, comm=comm)
+
+    text = html.unescape(model.text)
+    assert '<tr><th>A</th><th>...</th><th>C</th></tr>' in text
+    assert '<tr><td>...</td><td>...</td><td>...</td></tr>' in text
+    assert text.count('<tr>') == 5  # header, 2 head rows, ellipsis row, 1 tail row
+    assert text.endswith('<p>5 rows × 3 columns</p>')
+
+    pane._cleanup(model)
+
+@polars_available
+def test_dataframe_pane_polars_pandas_conversion_failure_escapes(document, comm):
+    import polars as pl
+    df = pl.DataFrame({"url": ["<a href='https://panel.holoviz.org/'>Panel</a>"]})
+
+    with patch.object(DataFrame, '_narwhals_to_pandas', side_effect=ModuleNotFoundError):
+        pane = DataFrame(df)
+        model = pane.get_root(document, comm=comm)
+        assert '&lt;a href=' in html.unescape(model.text)
+        pane._cleanup(model)
+
+        pane = DataFrame(df, escape=False)
+        model = pane.get_root(document, comm=comm)
+        assert "<td><a href='https://panel.holoviz.org/'>Panel</a></td>" in html.unescape(model.text)
+        pane._cleanup(model)
+
+@pyarrow_available
+def test_dataframe_pane_pyarrow_table(document, comm):
+    import pyarrow as pa
+    pane = DataFrame(pa.table({"A": [1, 2, 3]}))
+
+    model = pane.get_root(document, comm=comm)
+    assert model.text.startswith('&lt;table')
+
+    pane._cleanup(model)
 
 def test_dataframe_pane_supports_escape(document, comm):
     url = "<a href='https://panel.holoviz.org/'>Panel</a>"
@@ -380,7 +487,6 @@ def test_json_pane_rerenders_on_depth_change(document, comm):
 
     assert model.depth is None
 
-@pytest.mark.skipif(sys.version_info < (3, 11), reason="Patch dot import resolution does not work for Python <=3.10")
 def test_json_theme():
     assert JSON({"x": 1}).theme == JSON.param.theme.default
     assert JSON({"x": 1}, theme="dark").theme == "dark"
@@ -393,3 +499,138 @@ def test_json_theme():
 
     with patch('panel.config._config.theme', new_callable=lambda: "dark"):
         assert JSON({"x": 1}, theme="light").theme == "light"
+
+
+STREAM_DOCS = [
+    "# Title\n\nSome *text* with `code`.\n\n- a\n- b\n\n  - nested\n\n```python\nx = 1\n```\n\n| a | b |\n|---|---|\n| 1 | 2 |\n",
+    "para\n- list interrupts\n\n> quote\nlazy\n\n    indented\n\n    code\n\nsetext\n===\n\n<div>\n\n*html*\n\n</div>\n\n```\nunclosed",
+    "# A\n\nx\n\n## A\n\ny\n\n# A\n",
+]
+
+@pytest.mark.parametrize('src', STREAM_DOCS)
+@pytest.mark.parametrize('disable_anchors', [False, True])
+def test_markdown_incremental_render_matches_full_render(src, disable_anchors):
+    pane = Markdown(disable_anchors=disable_anchors, dedent=False)
+    parser = pane._get_parser(pane.renderer, (), False, disable_anchors)
+    for i in range(1, len(src)+1, 3):
+        assert pane._render_markdown(src[:i]) == parser.render(src[:i])
+    assert pane._render_markdown(src) == parser.render(src)
+
+def test_markdown_incremental_render_caches_leading_blocks():
+    pane = Markdown(dedent=False)
+    pane._render_markdown("a\n\nb\n\nc")
+    assert pane._block_cache[1:3] == ("a\n\nb\n\n", "<p>a</p>\n<p>b</p>\n")
+    assert pane._render_markdown("a\n\nb\n\nc *d*") == "<p>a</p>\n<p>b</p>\n<p>c <em>d</em></p>\n"
+
+def test_markdown_incremental_render_resets_on_replace():
+    pane = Markdown(dedent=False)
+    pane._render_markdown("a\n\nb\n\nc")
+    assert pane._render_markdown("x\n\ny") == "<p>x</p>\n<p>y</p>\n"
+
+@pytest.mark.parametrize('src', [
+    "See [^1].\n\nPara\n\n[^1]: Note\n",
+    "See [link].\n\nPara\n\n[link]: https://example.com\n",
+    "Term\n\n: Definition\n",
+])
+def test_markdown_non_local_syntax_renders_fully(src):
+    pane = Markdown(dedent=False)
+    parser = pane._get_parser(pane.renderer, (), False, False)
+    for i in range(1, len(src)+1):
+        assert pane._render_markdown(src[:i]) == parser.render(src[:i])
+    assert pane._block_cache is None
+
+def _stream_events(doc):
+    return patch.object(doc.callbacks, 'send_event')
+
+def test_html_stream_sends_splice(document, comm):
+    pane = Markdown('Hello', enable_streaming=True)
+    model = pane.get_root(document, comm=comm)
+    with _stream_events(document) as send_event:
+        pane.object = 'Hello *world*'
+    send_event.assert_called_once()
+    event = send_event.call_args.args[0]
+    assert event.model is model
+    assert (event.start, event.end) == (8, 8)
+    assert event.patch == html.escape(' <em>world</em>')
+    assert html.unescape(model.text) == '<p>Hello <em>world</em></p>\n'
+    assert model.run_scripts is False
+
+def test_html_stream_offsets_count_utf16_units(document, comm):
+    pane = HTML('<p>😀 a</p>', enable_streaming=True)
+    pane.get_root(document, comm=comm)
+    with _stream_events(document) as send_event:
+        pane.object = '<p>😀 ab</p>'
+    event = send_event.call_args.args[0]
+    # The emoji is a single code point but two UTF-16 code units
+    assert (event.start, event.end, event.patch) == (7, 7, 'b')
+
+def test_html_stream_skips_unchanged(document, comm):
+    pane = Markdown('Hello', enable_streaming=True)
+    pane.get_root(document, comm=comm)
+    with _stream_events(document) as send_event:
+        pane.object = 'Hello'
+        pane.dedent = False
+    send_event.assert_not_called()
+
+def test_html_stream_sends_event_only_to_own_view(comm):
+    from bokeh.document import Document
+    pane = HTML('<b>a</b>', enable_streaming=True)
+    docs = [Document(), Document()]
+    models = [pane.get_root(doc, comm=comm) for doc in docs]
+    with _stream_events(docs[0]) as send0, _stream_events(docs[1]) as send1:
+        pane.object = '<b>ab</b>'
+    for send, model in zip((send0, send1), models):
+        send.assert_called_once()
+        assert send.call_args.args[0].model is model
+        assert html.unescape(model.text) == '<b>ab</b>'
+
+def test_html_stream_disabled_sends_text(document, comm):
+    pane = Markdown('Hello')
+    model = pane.get_root(document, comm=comm)
+    with _stream_events(document) as send_event:
+        pane.object = 'Hello *world*'
+    send_event.assert_not_called()
+    assert html.unescape(model.text) == '<p>Hello <em>world</em></p>\n'
+
+async def test_html_stream_coalesces_updates(document, comm):
+    pane = Markdown('', enable_streaming=True)
+    model = pane.get_root(document, comm=comm)
+    with _stream_events(document) as send_event:
+        for i in range(10):
+            pane.object += str(i)
+        assert send_event.call_count == 1
+        await asyncio.sleep(pane._stream_interval * 3)
+    assert send_event.call_count == 2
+    assert html.unescape(model.text) == '<p>0123456789</p>\n'
+
+async def test_html_stream_flushes_when_loop_blocked(document, comm):
+    import time
+    pane = Markdown('', enable_streaming=True)
+    model = pane.get_root(document, comm=comm)
+    with _stream_events(document) as send_event:
+        for i in range(3):
+            pane.object += str(i)
+            time.sleep(pane._stream_interval * 1.5)
+        assert send_event.call_count == 3
+        await asyncio.sleep(pane._stream_interval * 3)
+    assert send_event.call_count == 3
+    assert html.unescape(model.text) == '<p>012</p>\n'
+
+@pytest.mark.parametrize('enable_streaming', [False, True])
+def test_html_base_pane_subclass_without_transform(document, comm, enable_streaming):
+    from panel.pane.markup import HTMLBasePane
+
+    class Text(str):
+        pass
+
+    # Pane types are registered globally, so only apply to a private type
+    class Custom(HTMLBasePane):
+        @classmethod
+        def applies(cls, obj):
+            return isinstance(obj, Text)
+
+    pane = Custom(Text('&lt;b&gt;a&lt;/b&gt;'), enable_streaming=enable_streaming)
+    model = pane.get_root(document, comm=comm)
+    assert model.text == '&lt;b&gt;a&lt;/b&gt;'
+    pane.object = Text('&lt;b&gt;ab&lt;/b&gt;')
+    assert model.text == '&lt;b&gt;ab&lt;/b&gt;'

@@ -14,29 +14,20 @@ import asyncio
 import functools
 import inspect
 import logging
-import os
 import sys
-import threading
 import traceback
-import typing
+import typing as t
 import uuid
 
-from collections.abc import Callable, Mapping
 from html import escape
-from typing import (
-    IO, TYPE_CHECKING, Any, ClassVar,
-)
 
 import param  # type: ignore
 
 from bokeh.core.serialization import DeserializationError
 from bokeh.document import Document
 from bokeh.models import UIElement
-from bokeh.resources import Resources
-from jinja2 import Template
 from param import Undefined
 from param.parameterized import instance_descriptor
-from pyviz_comms import Comm  # type: ignore
 
 from ._param import Align, Aspect, Margin
 from .config import config, panel_extension
@@ -55,10 +46,18 @@ from .io.state import set_curdoc, state
 from .util import param_reprs
 from .util.parameters import get_params_to_inherit
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    import os
+    import threading
+
+    from collections.abc import Callable, Mapping
+
     from bokeh.model import Model
+    from bokeh.resources import Resources
     from bokeh.server.contexts import BokehSessionContext
     from bokeh.server.server import Server
+    from jinja2 import Template
+    from pyviz_comms import Comm
     from typing_extensions import Self
 
     from .io.location import Location
@@ -90,11 +89,11 @@ class Layoutable(param.Parameterized):
         be used to determine the aspect (if not set, no aspect will be
         preserved).""")
 
-    css_classes = param.List(default=[], nested_refs=True, doc="""
+    css_classes = param.List(default=[], item_type=str, nested_refs=True, doc="""
         CSS classes to apply to the layout.""")
 
-    design = param.Selector(default=None, objects=[], doc="""
-        The design system to use to style components.""")
+    design: t.Any = param.Selector(default=None, objects=[], doc="""
+        The design system to use to style components.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     height = param.Integer(default=None, bounds=(0, None), doc="""
         The height of the component (in pixels).  This can be either
@@ -121,20 +120,22 @@ class Layoutable(param.Parameterized):
         Dictionary of CSS rules to apply to DOM node wrapping the
         component.""")
 
-    stylesheets = param.List(default=[], nested_refs=True, doc="""
+    stylesheets = param.List(default=[], item_type=str, nested_refs=True, doc="""
         List of stylesheets defined as URLs pointing to .css files
         or raw CSS defined as a string.""")
 
-    tags = param.List(default=[], nested_refs=True, doc="""
+    tags: list[t.Any] = param.List(default=[], nested_refs=True, doc="""
         List of arbitrary tags to add to the component.
         Can be useful for templating or for storing metadata on
-        the model.""")
+        the model.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     width = param.Integer(default=None, bounds=(0, None), doc="""
         The width of the component (in pixels). This can be either
         fixed or preferred width, depending on width sizing policy.""")
 
-    width_policy = param.Selector(
+    width_policy: t.Literal[
+        'auto', 'fixed', 'fit', 'min', 'max'
+    ] = param.Selector(
         default="auto", objects=['auto', 'fixed', 'fit', 'min', 'max'], doc="""
         Describes how the component should maintain its width.
 
@@ -164,9 +165,11 @@ class Layoutable(param.Parameterized):
             preferred width (if set). The width of the component may
             shrink or grow depending on the parent layout, aspect
             management and other factors.
-    """)
+    """)  # type: ignore[assignment, ty:invalid-assignment]
 
-    height_policy = param.Selector(
+    height_policy: t.Literal[
+        'auto', 'fixed', 'fit', 'min', 'max'
+    ] = param.Selector(
         default="auto", objects=['auto', 'fixed', 'fit', 'min', 'max'], doc="""
         Describes how the component should maintain its height.
 
@@ -196,9 +199,12 @@ class Layoutable(param.Parameterized):
             preferred height (if set). The height of the component may
             shrink or grow depending on the parent layout, aspect
             management and other factors.
-    """)
+    """)  # type: ignore[assignment, ty:invalid-assignment]
 
-    sizing_mode = param.Selector(default=None, objects=[
+    sizing_mode: t.Literal[
+        'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
+        'scale_width', 'scale_height', 'scale_both'
+    ] | None = param.Selector(default=None, objects=[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
         'scale_width', 'scale_height', 'scale_both', None], doc="""
         How the component should size itself.
@@ -247,7 +253,7 @@ class Layoutable(param.Parameterized):
             Component will responsively resize to both the available
             width and height, while maintaining the original or
             provided aspect ratio.
-    """)
+    """)  # type: ignore[assignment, ty:invalid-assignment]
 
     visible = param.Boolean(default=True, doc="""
         Whether the component is visible. Setting visible to false will
@@ -256,6 +262,14 @@ class Layoutable(param.Parameterized):
     __abstract = True
 
     def __init__(self, **params):
+        # Track which sizing parameters were explicitly supplied by the
+        # user (as opposed to their defaults or values inferred from
+        # children). This is computed before the config driven defaults
+        # below are applied so config defaults are not treated as explicit.
+        self._explicit_sizing_mode = params.get('sizing_mode') is not None
+        self._explicit_width_policy = params.get('width_policy') not in (None, 'auto')
+        self._explicit_height_policy = params.get('height_policy') not in (None, 'auto')
+        self._sizing_initializing = True
         sizing_mode = params.get('sizing_mode')
         if (sizing_mode in ('stretch_width', 'scale_width', 'stretch_both', 'scale_both') and
             params.get('width') is not None):
@@ -307,6 +321,26 @@ class Layoutable(param.Parameterized):
         if 'design' not in params and self.param.design.default is None:
             params['design'] = config.design
         super().__init__(**params)
+        self._sizing_initializing = False
+        # Track dynamic (post-init) updates to the sizing parameters so
+        # that explicitly set values are honored rather than being
+        # overridden by values inferred from a layout's children. Child
+        # inference writes to the underlying model rather than the
+        # parameter, so it does not trigger this watcher.
+        watcher = self.param.watch(
+            self._update_explicit_sizing,
+            ['sizing_mode', 'width_policy', 'height_policy']
+        )
+        if not hasattr(self, '_internal_callbacks'):
+            self._internal_callbacks = []
+        self._internal_callbacks.append(watcher)
+
+    def _update_explicit_sizing(self, *events):
+        if self._sizing_initializing:
+            return
+        for event in events:
+            explicit = event.new is not None if event.name == 'sizing_mode' else event.new != 'auto'
+            setattr(self, f'_explicit_{event.name}', explicit)
 
 
 class ServableMixin:
@@ -405,7 +439,27 @@ class ServableMixin:
                 for obj in self.select():
                     if not obj.design:
                         obj.design = template.design
-                if area == 'main':
+                from .template.base import BaseTemplate
+                if not isinstance(template, BaseTemplate):
+                    # Page-like templates hold areas as Children lists, which
+                    # must be reassigned so a render already in flight updates.
+                    if isinstance(self, type(template)):
+                        raise RuntimeError(
+                            f'Cannot mark a {type(self).__name__} as servable while '
+                            'it is also set as `pn.config.template`. Either serve '
+                            'the page explicitly OR set `pn.config.template`, not both.'
+                        )
+                    areas = [
+                        name for name, p in template.param.objects().items()
+                        if isinstance(p, Children) and not name.startswith('_')
+                    ]
+                    if area not in areas:
+                        raise ValueError(
+                            f'{type(template).__name__} has no {area!r} area to '
+                            f'serve to; valid targets are {areas}.'
+                        )
+                    setattr(template, area, [*getattr(template, area), self])
+                elif area == 'main':
                     template.main.append(self)
                 elif area == 'sidebar':
                     template.sidebar.append(self)
@@ -514,7 +568,7 @@ class MimeRenderMixin:
         if accumulator:
             handle.update({'text/html': '\n'.join(accumulator)}, raw=True)
 
-    def _on_stdout(self, ref: str, stdout: Any) -> None:
+    def _on_stdout(self, ref: str, stdout: t.Any) -> None:
         if ref not in state._handles or config.console_output in [None, 'disable']:
             return
         handle, accumulator = state._handles[ref]
@@ -559,6 +613,7 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         self._internal_callbacks = []
         self._documents = {}
         self._models = {}
+        self._model_parents = {}
         self._comms = {}
         self._kernels = {}
         super().__init__(**params)
@@ -593,6 +648,73 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         """
         raise NotImplementedError
 
+    def _acquire_model(
+        self, doc: Document, root: Model, parent: Model | None = None,
+        comm: Comm | None = None
+    ) -> Model:
+        """
+        Returns the model for this object in the given root, creating
+        it only if it does not exist yet, and registers the parent as
+        a user of the model.
+
+        This allows the same object to be rendered in multiple places
+        within a single root, with all of them sharing a single model.
+        Acquiring a model is idempotent for a given parent and should
+        be balanced by a call to `_release_model` once the parent no
+        longer renders the object.
+
+        Parameters
+        ----------
+        doc: bokeh.Document
+          Bokeh document the bokeh model will be attached to.
+        root: bokeh.Model
+          The root layout the viewable will become part of.
+        parent: bokeh.Model
+          The parent layout the viewable will become part of.
+        comm: pyviz_comms.Comm
+          Optional pyviz_comms when working in notebook
+
+        Returns
+        -------
+        model: bokeh.Model
+        """
+        ref = root.ref['id']
+        if ref in self._models:
+            model, owner = self._models[ref]
+            # A model created by calling _get_model directly is owned
+            # by the parent it was created for.
+            parents = self._model_parents.setdefault(ref, [owner])
+        else:
+            model = self._get_model(doc, root, parent, comm)
+            parents = self._model_parents.setdefault(ref, [])
+        if not any(p is parent for p in parents):
+            parents.append(parent)
+        return model
+
+    def _release_model(self, root: Model | None, parent: Model | None = None) -> None:
+        """
+        Releases the model acquired by the parent via `_acquire_model`
+        and cleans up the object once no other parent in the same root
+        is using the model. Releasing from a parent that does not hold
+        the model while other parents still do is a no-op.
+
+        Parameters
+        ----------
+        root: bokeh.model.Model
+          Bokeh model for the view being cleaned up
+        parent: bokeh.model.Model
+          The parent model releasing the model.
+        """
+        parents = self._model_parents.get(root.ref['id']) if root else None
+        if parents:
+            index = next((i for i, p in enumerate(parents) if p is parent), None)
+            if index is None:
+                return
+            parents.pop(index)
+            if parents:
+                return
+        self._cleanup(root)
+
     def _cleanup(self, root: Model | None = None) -> None:
         """
         Clean up method which is called when a Viewable is destroyed.
@@ -605,6 +727,7 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         if root is None:
             return
         ref = root.ref['id']
+        self._model_parents.pop(ref, None)
         if ref in state._handles:
             del state._handles[ref]
 
@@ -620,10 +743,10 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         """
         ref = root.ref['id']
         if changed is not None and ref in changed._models and ref in state._views:
-            _, _, _, comm = state._views[ref]
+            _, _, doc, comm = state._views[ref]
             if comm is not None and config.inline:
                 for model in changed._models[ref][0].select({'type': UIElement}):
-                    patch_inline_stylesheets(model)
+                    patch_inline_stylesheets(model, doc)
 
         changed = self if changed is None else changed
         hooks = self._preprocessing_hooks+self._hooks
@@ -651,7 +774,7 @@ class Renderable(param.Parameterized, MimeRenderMixin):
             add_to_doc(model, doc)
         return model
 
-    def _init_params(self) -> Mapping[str, Any]:
+    def _init_params(self) -> Mapping[str, t.Any]:
         return {k: v for k, v in self.param.values().items() if v is not None}
 
     def _server_destroy(self, session_context: BokehSessionContext) -> None:
@@ -726,7 +849,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         Whether or not the Viewable is loading. If True a loading spinner
         is shown on top of the Viewable.""")
 
-    _preprocessing_hooks: ClassVar[list[Callable[[Viewable, Model], None]]] = []
+    _preprocessing_hooks: t.ClassVar[list[Callable[[Viewable, Model], None]]] = []
 
     def __init__(self, **params):
         hooks = params.pop('hooks', [])
@@ -859,7 +982,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
             for submodel in model.select({'type': UIElement}):
                 if not isinstance(submodel, UIElement):
                     continue
-                patch_inline_stylesheets(submodel)
+                patch_inline_stylesheets(submodel, doc)
 
         bundle, meta = self._render_mimebundle(model, doc, comm, location)
 
@@ -879,7 +1002,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
     # Public API
     #----------------------------------------------------------------
 
-    def clone(self, **params) -> Viewable:
+    def clone(self, *objects: t.Any, **params: t.Any) -> Self:
         """
         Makes a copy of the object sharing the same parameters.
 
@@ -891,6 +1014,8 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         -------
         Cloned Viewable object
         """
+        if objects:
+            raise TypeError(f"{type(self).__name__}.clone does not accept positional arguments.")
         inherited = get_params_to_inherit(self)
         return type(self)(**dict(inherited, **params))
 
@@ -954,12 +1079,12 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         )
 
     def save(
-        self, filename: str | os.PathLike | IO, title: str | None = None,
-        resources: Resources | None = None, template: str | Template | None = None,
-        template_variables: dict[str, Any] = {}, embed: bool = False,
+        self, filename: str | os.PathLike | t.IO, title: str | None = None,
+        resources: Resources | str | None = None, template: str | Template | None = None,
+        template_variables: dict[str, t.Any] = {}, embed: bool = False,
         max_states: int = 1000, max_opts: int = 3, embed_json: bool = False,
         json_prefix: str='', save_path: str='./', load_path: str | None = None,
-        progress: bool = True, embed_states: dict[Any, Any] = {},
+        progress: bool = True, embed_states: dict[t.Any, t.Any] = {},
         as_png: bool | None = None, **kwargs
     ) -> None:
         """
@@ -1050,21 +1175,22 @@ class Viewable(Renderable, Layoutable, ServableMixin):
             model = self.get_root(doc)
 
         self._documents[doc] = model
-        add_to_doc(model, doc)
-        if location:
-            self._add_location(doc, location, model)
-        if config.notifications and doc is state.curdoc:
-            notification = state.notifications
-            if notification:
-                notification_model = notification.get_root(doc)
-                notification_model.name = 'notifications'
-                doc.add_root(notification_model)
-        if config.browser_info and doc is state.curdoc:
-            browser = state.browser_info
-            if browser:
-                browser_model = browser._get_model(doc, model)
-                browser_model.name = 'browser_info'
-                doc.add_root(browser_model)
+        with doc.models.freeze():
+            add_to_doc(model, doc)
+            if location:
+                self._add_location(doc, location, model)
+            if config.notifications and doc is state.curdoc:
+                notification = state.notifications
+                if notification:
+                    notification_model = notification.get_root(doc)
+                    notification_model.name = 'notifications'
+                    doc.add_root(notification_model)
+            if config.browser_info and doc is state.curdoc:
+                browser = state.browser_info
+                if browser:
+                    browser_model = browser._get_model(doc, model)
+                    browser_model.name = 'browser_info'
+                    doc.add_root(browser_model)
         return doc
 
 
@@ -1125,7 +1251,7 @@ class Child(param.ClassSelector):
     by calling the `pn.panel` utility.
     """
 
-    @typing.overload  # type: ignore
+    @t.overload  # type: ignore
     def __init__(
         self,
         default=None, *, is_instance=True, allow_None=False, doc=None,
@@ -1169,7 +1295,11 @@ class Children(param.List):
     """
 
     def __init__(
-        self, /, default=Undefined, instantiate=Undefined, bounds=Undefined,
+        self,
+        /,
+        default: list[t.Any] = t.cast("list[t.Any]", Undefined),  # noqa: B008
+        instantiate: bool = t.cast("bool", Undefined),  # noqa: B008
+        bounds: tuple[int, int | None] = t.cast("tuple[int, int | None]", Undefined),
         item_type=Viewable, **params
     ):
         if isinstance(item_type, type) and not issubclass(item_type, Viewable):

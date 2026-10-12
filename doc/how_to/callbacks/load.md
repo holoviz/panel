@@ -20,9 +20,9 @@ Here is an example of an app that takes +5 seconds to load.
 import time
 import panel as pn
 
-pn.extension(template="bootstrap")
+pn.extension(template="page")
 
-layout = pn.pane.Markdown()
+layout = pn.ui.Markdown()
 
 def some_long_running_task():
     time.sleep(5) # Some long running task
@@ -43,9 +43,9 @@ Now lets learn how to defer long running tasks to after the application has load
 import time
 import panel as pn
 
-pn.extension(template="bootstrap")
+pn.extension(template="page")
 
-layout = pn.pane.Markdown("# Loading...")
+layout = pn.ui.Markdown("# Loading...")
 
 def some_long_running_task():
     time.sleep(5) # Some long running task
@@ -79,7 +79,7 @@ import pandas as pd
 import param
 import hvplot.pandas
 
-pn.extension(sizing_mode="stretch_width", template="bootstrap", theme="dark")
+pn.extension(sizing_mode="stretch_width", template="page", theme="dark")
 
 class AppState(param.Parameterized):
     data = param.DataFrame()
@@ -90,7 +90,7 @@ class AppState(param.Parameterized):
 
 def loading_indicator(label):
     return pn.indicators.LoadingSpinner(
-        value=True, name=label, size=25, align="center"
+        value=True, label=label, size=25, align="center"
     )
 
 def short_running_task():
@@ -100,7 +100,7 @@ def table(data):
     if data is None:
         return loading_indicator("Loading data")
 
-    return pn.pane.DataFrame(data)
+    return pn.ui.DataFrame(data)
 
 def plot(data):
     if data is None:
@@ -114,7 +114,7 @@ def plot(data):
 state = AppState()
 pn.state.onload(state.update)
 
-pn.Column(
+pn.ui.Column(
     short_running_task,
     pn.bind(table, data=state.param.data),
     pn.bind(plot, data=state.param.data),

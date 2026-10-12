@@ -4,10 +4,7 @@ Defines utilities to save panel objects to files as HTML or PNG.
 from __future__ import annotations
 
 import io
-import os
-
-from collections.abc import Iterable
-from typing import IO, TYPE_CHECKING, Any
+import typing as t
 
 import bokeh
 
@@ -31,10 +28,15 @@ from .resources import (
 )
 from .state import state
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    import os
+
+    from collections.abc import Iterable
+
     from bokeh.embed.standalone import ThemeLike
     from jinja2 import Template
 
+    from ..template.base import BaseTemplate
     from ..viewable import Viewable
     from .resources import MODES
 
@@ -61,10 +63,10 @@ bokeh.io.export._WAIT_SCRIPT = _WAIT_SCRIPT
 
 def save_png(
     model: UIElement | Document,
-    filename: str | os.PathLike | IO,
+    filename: str | os.PathLike | t.IO,
     resources: BkResources = CDN,
     template=None,
-    template_variables: dict[str, Any] | None = None,
+    template_variables: dict[str, t.Any] | None = None,
     timeout: int = 5
 ) -> None:
     """
@@ -149,7 +151,7 @@ def file_html(
     resources: BkResources,
     title: str | None = None,
     template: Template | str = BASE_TEMPLATE,
-    template_variables: dict[str, Any] = {},
+    template_variables: dict[str, t.Any] = {},
     theme: ThemeLike = None,
     _always_new: bool = False
 ):
@@ -161,7 +163,10 @@ def file_html(
     else:
         models_seq = models
 
-    template_variables['dist_url'] = CDN_DIST
+    from ..theme.base import design_template_variables
+    template_variables = {
+        **design_template_variables(), **template_variables, 'dist_url': CDN_DIST
+    }
 
     with OutputDocumentFor(models_seq, apply_theme=theme, always_new=_always_new):
         (docs_json, render_items) = standalone_docs_json_and_render_items(
@@ -179,12 +184,12 @@ def file_html(
 #---------------------------------------------------------------------
 
 def save(
-    panel: Viewable | Document,
-    filename: str | os.PathLike | IO,
+    panel: Viewable | Document | BaseTemplate,
+    filename: str | os.PathLike | t.IO,
     title: str | None = None,
-    resources: BkResources | None = None,
+    resources: BkResources | str | None = None,
     template: Template | str | None = None,
-    template_variables: dict[str, Any] | None = None,
+    template_variables: dict[str, t.Any] | None = None,
     embed: bool = False,
     max_states: int = 1000,
     max_opts: int = 3,
@@ -202,7 +207,7 @@ def save(
 
     Parameters
     ----------
-    panel: Viewable
+    panel: Viewable | bokeh.document.Document | panel.template.base.BaseTemplate
       The Panel Viewable to save to file
     filename: str or file-like object
       Filename to save the plot to
@@ -278,14 +283,18 @@ def save(
                 template_variables.update(doc._template_variables)
             model = doc
         else:
-            model = panel.get_root(doc, comm)
-            if embed:
-                embed_state(
-                    panel, model, doc, max_states, max_opts, embed_json,
-                    json_prefix, save_path, load_path, progress, embed_states
-                )
-            else:
-                add_to_doc(model, doc, True)
+            # Models resolve the urls of the resources they need when they are
+            # created, so the mode has to be set before rendering, not just
+            # when the page is written out.
+            with set_resource_mode(mode):
+                model = panel.get_root(doc, comm)
+                if embed:
+                    embed_state(
+                        panel, model, doc, max_states, max_opts, embed_json,
+                        json_prefix, save_path, load_path, progress, embed_states
+                    )
+                else:
+                    add_to_doc(model, doc, True)
 
     if isinstance(model, Model) and not isinstance(model, UIElement):
         raise ValueError("Cannot render non-UI components.")
