@@ -591,11 +591,12 @@ class BaseTable(ReactiveData, Widget):
 
     def _get_header_filters(self, df: pd.DataFrame) -> list[pd.Series | np.ndarray]:
         filters = []
+        header_filters = getattr(self, 'header_filters', None)
+        filt_def = header_filters if isinstance(header_filters, dict) else {}
         for filt in getattr(self, 'filters', []):
             col_name = filt['field']
             op = filt['type']
             val = filt['value']
-            filt_def = getattr(self, 'header_filters', {}) or {}
             if col_name in df.columns:
                 col = df[col_name]
             elif col_name in self.indexes:
@@ -637,8 +638,11 @@ class BaseTable(ReactiveData, Widget):
             elif op == 'ends':
                 filters.append(col.str.lower().str.endswith(val.lower()))
             elif op == 'keywords':
-                match_all = filt_def.get(col_name, {}).get('matchAll', False)
-                sep = filt_def.get(col_name, {}).get('separator', ' ')
+                col_def = filt_def.get(col_name)
+                if not isinstance(col_def, dict):
+                    col_def = {}
+                match_all = col_def.get('matchAll', False)
+                sep = col_def.get('separator', ' ')
                 matches = val.split(sep)
                 if match_all:
                     for match in matches:
