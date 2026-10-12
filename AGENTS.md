@@ -2,4 +2,6 @@
 - Only add short comments explaining why, never what the code does or used to do. No comment is the default.
 - Attribution must follow this format: `Assisted-by: AGENT_NAME:MODEL_VERSION` instead of `Co-Authored-By`.
 - The project uses `pixi` for development; list the available tasks with `pixi task list`.
+- Run unit tests with `pixi run test-unit` and UI tests in `panel/tests/ui` with `pixi run test-ui`. Run `pixi run lint` before committing.
+- After changing TypeScript models in `panel/models`, rebuild the bundle with `pixi run install`.
 - Follow the Pull Request Template.
