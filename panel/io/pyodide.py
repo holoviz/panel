@@ -261,15 +261,16 @@ _dict_converter = pyodide.code.run_js("""
 _current_buffers: list = []
 _patching = False
 
+def _register_buffer(data: bytes) -> dict[str, str]:
+    uid = uuid.uuid4().hex
+    _current_buffers.append(Buffer(id=uid, data=data))
+    return {'id': uid}
+
 def _bytes_converter(value, converter, other):
     if not hasattr(value, 'buffer'):
         return value
     value = dict(value.object_entries())
-    uid = uuid.uuid4().hex
-    _current_buffers.append(
-        Buffer(id=uid, data=value['buffer'].to_bytes())
-    )
-    return {'id': uid}
+    return _register_buffer(value['buffer'].to_bytes())
 
 def to_py(obj):
     """Convert JS value to Python, replacing any jsnull (even nested) with None."""
@@ -288,6 +289,17 @@ def to_py(obj):
             return seen[oid]
 
         if isinstance(x, dict):
+            data = x.get('data')
+            if (
+                x.get('type') == 'bytes' and isinstance(data, dict)
+                and isinstance(data.get('buffer'), memoryview)
+            ):
+                # postMessage strips the Buffer class from patches sent to a
+                # worker, so _bytes_converter never sees it; only a plain
+                # {buffer: ArrayBuffer} object arrives.
+                out = {**x, 'data': _register_buffer(data['buffer'].tobytes())}
+                seen[oid] = out
+                return out
             out = {}
             seen[oid] = out
             for k, v in x.items():
