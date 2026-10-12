@@ -166,7 +166,11 @@ def row_dict(obj: t.Any, row: int) -> dict[str, t.Any]:
 
 
 def column_to_numpy(obj: t.Any, column: str) -> np.ndarray:
-    return to_narwhals(obj)[column].to_numpy()
+    array = to_narwhals(obj)[column].to_numpy()
+    if array.dtype.kind in 'SU':
+        # Fixed width strings would truncate longer values patched in
+        array = array.astype(object)
+    return array
 
 
 def to_column_data(obj: t.Any) -> dict[str, np.ndarray]:
@@ -179,11 +183,7 @@ def to_column_data(obj: t.Any) -> dict[str, np.ndarray]:
     for col in df.columns:
         if col == ROW_INDEX:
             continue
-        array = df[col].to_numpy()
-        if array.dtype.kind in 'SU':
-            # Fixed width strings would truncate longer values patched in
-            array = array.astype(object)
-        data[col] = array
+        data[col] = column_to_numpy(df, col)
     return data
 
 

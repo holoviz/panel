@@ -66,13 +66,13 @@ def test_tabulator_without_pandas():
         table.get_root(Document())
         table.add_filter((1, None), 'a')
         table._process_events({'indices': [0]})
-        table._process_event(TableEditEvent(model=None, column='b', row=0, value='Q', old='x'))
-        table._process_events({'data': {'b': ['Q', 'z', 'Y'] if pagination else ['Q', 'Y', 'z']}})
+        table._process_event(TableEditEvent(model=None, column='b', row=0, value='Qq', old='x'))
+        table._process_events({'data': {'b': ['Qq', 'z', 'Y'] if pagination else ['Qq', 'Y', 'z']}})
         table._process_event(CellClickEvent(model=None, column='b', row=0))
         table._process_events({'expanded': [0]})
         table.stream({'a': [4], 'b': ['w']})
         table.patch({'a': [(0, 10)]})
-        assert table.value.to_dicts()[0] == {'a': 10, 'b': 'Q'}, table.value
+        assert table.value.to_dicts()[0] == {'a': 10, 'b': 'Qq'}, table.value
         assert table.selection == [0]
         assert len(table.current_view) == 4
         assert len(table.selected_dataframe) == 1
