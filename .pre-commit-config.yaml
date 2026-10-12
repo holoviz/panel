@@ -14,12 +14,12 @@ repos:
         exclude: \.min\.js$
       - id: trailing-whitespace
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: c59bba8fb259db0fec2bbb77ad8ba51ea7341b56  # frozen: v0.15.20
+    rev: f12be1ebaa5351c1fc76472de98db2c3446c8253  # frozen: v0.16.10
     hooks:
       - id: ruff-check
         files: panel/
   - repo: https://github.com/pycqa/isort
-    rev: dac090ce4d9ee313d086e2e89ab1acb8c2664fa1  # frozen: 9.0.0a3
+    rev: 9f905615631c545f5aea2516508109350d1d2f7d  # frozen: 9.0.2
     hooks:
       - id: isort
         name: isort (python)
@@ -30,19 +30,19 @@ repos:
         args: [-i, tags]
         exclude: '^lite/files/.*/'
   - repo: https://github.com/codespell-project/codespell
-    rev: 2ccb47ff45ad361a21071a7eedda4c37e6ae8c5a  # frozen: v2.4.2
+    rev: 57b21406f092110c18776e39b0bda50d37c945c8  # frozen: v2.4.3
     hooks:
       - id: codespell
         additional_dependencies:
           - tomli
   - repo: https://github.com/hoxbro/prettier-pre-commit
-    rev: 723303adce45b84f96dc1d9f1c697dc9d993ff7e  # frozen: v3.9.4
+    rev: f2fe865d9b280380f8c25ca9e5f4b1c76013df23  # frozen: v3.9.9
     hooks:
       - id: prettier
         entry: prettier --write --ignore-unknown --no-error-on-unmatched-pattern
         types_or: [css]
   - repo: https://github.com/pre-commit/mirrors-eslint
-    rev: 8763fc929b6232999d541a3d8eb49965a6b71afb  # frozen: v10.6.0
+    rev: 10e29bbf6681d33cb90d555ea2f7ea71e162d259  # frozen: v10.12.0
     hooks:
       - id: eslint
         args: ['--config', 'panel/eslint.config.js', 'panel/*.ts', 'panel/models/**/*.ts', '--fix']
