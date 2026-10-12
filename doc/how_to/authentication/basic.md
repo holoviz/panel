@@ -11,11 +11,11 @@ Create a basic `app.py` file.
 ```python
 import panel as pn
 
-pn.extension(template="fast")
+pn.extension(template="page")
 
-logout = pn.widgets.Button(label="Log out")
+logout = pn.ui.Button(label="Log out")
 logout.js_on_click(code="""window.location.href = './logout'""")
-pn.Column(f"Congrats `{pn.state.user}`. You got access!", logout).servable()
+pn.ui.Column(f"Congrats `{pn.state.user}`. You got access!", logout).servable()
 ```
 
 Now serve the application
@@ -60,7 +60,7 @@ panel serve app.py --basic-auth credentials.json --cookie-secret my_super_safe_c
 The basic auth provider will now check the provided credentials against the credentials declared in this file.
 
 :::{admonition} Note
-When serving an application dynamically using `pn.serve` you can also provide a dictionary of usernames and passwords via the `basic_auth` keyword argument.
+When serving an application dynamically using `pn.serve` you can also provide a dictionary of usernames and passwords via the `basic_auth` keyword argument. The same argument is accepted by `panel.io.fastapi.add_applications` when [embedding Panel in FastAPI](../integrations/FastAPI) and by `panel.io.django.get_asgi_application` when [embedding Panel in Django](../integrations/Django).
 :::
 
 ## Custom templates

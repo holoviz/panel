@@ -22,8 +22,8 @@ import panel as pn
 
 pn.extension('tabulator')
 
-species_widget = pn.widgets.Select(label="species", options=["Adelie", "Gentoo", "Chinstrap"])
-year_widget = pn.widgets.IntSlider(label="year", start=2007, end=2009)
+species_widget = pn.ui.Select(label="species", options=["Adelie", "Gentoo", "Chinstrap"])
+year_widget = pn.ui.IntSlider(label="year", start=2007, end=2009)
 ```
 
 Let's then use these to filter the data. We first wrap the `df` in `pn.rx` as `df_rx` and pass the `species_widget` as the `species` parameter and the `year_widget` as the `year` parameter. In our case, we want the year always to be greater than or equal to the widget's value.
@@ -39,7 +39,7 @@ df_rx.head()
 Similarly we can use other pandas features in the same way.
 
 ```{pyodide}
-head_widget = pn.widgets.IntSlider(label="Head", start=1, end=10)
+head_widget = pn.ui.IntSlider(label="Head", start=1, end=10)
 
 df_rx.head(head_widget)
 ```
@@ -50,12 +50,12 @@ Because we've imported `hvplot.pandas`, we can utilize `.hvplot()` to render the
 df_rx.hvplot(kind="scatter", x="bill_length_mm", y="bill_depth_mm", by="sex")
 ```
 
-We can leverage [`panel.ReactiveExpr`](../../reference/panes/ReactiveExpr) to assist in rendering `df_rx`. This allows us to include all widgets related to `df_rx`, while also offering the flexibility to customize the appearance of the widgets. For instance, we can specify `pn.Column` as the `widget_layout` parameter and `top` as the `widget_location` parameter, as shown below:
+We can leverage [`panel.ReactiveExpr`](../../reference/panes/ReactiveExpr) to assist in rendering `df_rx`. This allows us to include all widgets related to `df_rx`, while also offering the flexibility to customize the appearance of the widgets. For instance, we can specify `pn.ui.Column` as the `widget_layout` parameter and `top` as the `widget_location` parameter, as shown below:
 
 ```{pyodide}
-pn.ReactiveExpr(
+pn.ui.ReactiveExpr(
     df_rx.head(),  # only show a few rows to save some space
-    widget_layout=pn.Column,
+    widget_layout=pn.ui.Column,
     widget_location="top",
 )
 ```
@@ -63,8 +63,8 @@ pn.ReactiveExpr(
 While `panel.ReactiveExpr` offers convenience, it's also common practice to bind the interactive pipeline we've constructed to a Panel component, such as a `Tabulator` widget:
 
 ```{pyodide}
-table = pn.widgets.Tabulator(df_rx, page_size=10, pagination="remote")
-pn.Column(species_widget, year_widget, table)
+table = pn.ui.Tabulator(df_rx, page_size=10, pagination="remote")
+pn.ui.Column(species_widget, year_widget, table)
 ```
 
 Notably, with this approach, we need to handle the layout of widgets ourselves.
@@ -72,11 +72,11 @@ Notably, with this approach, we need to handle the layout of widgets ourselves.
 For complex expressions involving many widgets, the `panel.ReactiveExpr` pane offers a `.widgets` attribute, returning a `ListPanel`, which helps us retrieve all the related widgets. Once we have access to the widgets, it becomes possible to reposition them or add custom widgets in the final layout.
 
 ```{pyodide}
-widgets = pn.ReactiveExpr(df_rx).widgets
+widgets = pn.ui.ReactiveExpr(df_rx).widgets
 
-pn.Column(
-    pn.WidgetBox(*reversed(widgets)),
-    pn.Spacer(height=30),
+pn.ui.Column(
+    pn.ui.WidgetBox(*reversed(widgets)),
+    pn.ui.Spacer(height=30),
     table,
 )
 ```

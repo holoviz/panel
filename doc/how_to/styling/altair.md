@@ -42,12 +42,12 @@ def plot(theme, color):
     )
 
 themes = sorted(alt.theme.names())
-theme = pn.widgets.Select(value="dark", options=themes, label="Theme")
-color = pn.widgets.ColorPicker(value="#F08080", label="Color")
+theme = pn.ui.Select(value="dark", options=themes, label="Theme")
+color = pn.ui.ColorPicker(value="#F08080", label="Color")
 
-pn.Column(
-    pn.Row(theme, color),
-    pn.pane.Vega(pn.bind(plot, theme=theme, color=color), height=350, sizing_mode="stretch_width"),
+pn.ui.Column(
+    pn.ui.Row(theme, color),
+    pn.ui.Vega(pn.bind(plot, theme=theme, color=color), height=350, sizing_mode="stretch_width"),
     "**Altair Themes**: " + ", ".join(themes),
     styles={"border": "1px solid lightgray"}
 ).servable()

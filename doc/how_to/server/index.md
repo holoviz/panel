@@ -71,6 +71,13 @@ Discover how to access a Panel deployment running remotely via SSH.
 Discover how to serve static files alongside your Panel application(s).
 :::
 
+:::{grid-item-card} {octicon}`paintbrush;2.5em;sd-mr-1` Brand the server pages
+:link: page_config
+:link-type: doc
+
+Discover how to apply your theme, logo and title to the index, login and error pages.
+:::
+
 :::{grid-item-card} {octicon}`plus-circle;2.5em;sd-mr-1` Add custom endpoints
 :link: endpoints
 :link-type: doc
@@ -100,6 +107,7 @@ ssh
 reconnect
 proxy
 static_files
+page_config
 endpoints
 websockets
 ```

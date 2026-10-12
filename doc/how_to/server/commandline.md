@@ -121,14 +121,22 @@ options:
   --basic-login-template BASIC_LOGIN_TEMPLATE
                         Template to serve for Basic Authentication login page.
   --rest-provider REST_PROVIDER
-                        The interface to use to serve REST API
+                        Deprecated, will be removed in 2.0. The interface to use to serve REST API.
+                        Declare custom endpoints with --plugins instead.
   --rest-endpoint REST_ENDPOINT
-                        Endpoint to store REST API on.
-  --rest-session-info   Whether to serve session info on the REST API
+                        Deprecated, will be removed in 2.0. Endpoint to store REST API on, defaults
+                        to 'rest'.
+  --rest-session-info   Whether to serve session info on the /session_info endpoint.
   --session-history SESSION_HISTORY
                         The length of the session history to record.
   --warm                Whether to execute scripts on startup to warm up the server.
   --admin               Whether to add an admin panel.
+  --admin-endpoint ADMIN_ENDPOINT
+                        Name to use for the admin endpoint.
+  --admin-password ADMIN_PASSWORD
+                        Password required to access the admin panel, independent of the server authentication.
+  --admin-users ADMIN_USERS [ADMIN_USERS ...]
+                        Users, as authenticated by --basic-auth or --oauth-provider, allowed to access the admin panel.
   --admin-log-level {debug,info,warning,error,critical}
                         One of: debug (default), info, warning, error or critical
   --profiler PROFILER   The profiler to use by default, e.g. pyinstrument, snakeviz or memray.
@@ -142,7 +150,38 @@ options:
   --reuse-sessions      Whether to reuse sessions when serving the initial request.
   --global-loading-spinner
                         Whether to add a global loading spinner to the application(s).
+  --server {tornado,fastapi,asgi}
+                        The server implementation to serve the application(s) with. 'tornado' serves on the Bokeh/Tornado server, 'asgi' and 'fastapi' serve the ASGI application on uvicorn.
 ```
+
+## Choosing a server implementation
+
+By default `panel serve` runs the application(s) on the Bokeh/Tornado server. The `--server` option lets you pick a different implementation:
+
+- `tornado` (the default): the Bokeh/Tornado server.
+- `asgi`: Panel's ASGI application served by [uvicorn](https://www.uvicorn.org/).
+- `fastapi`: the same ASGI application mounted on a [FastAPI](https://fastapi.tiangolo.com/) application and served by uvicorn.
+
+```bash
+panel serve app.py --server fastapi
+```
+
+Both ASGI implementations require `uvicorn` to be installed (and `fastapi` additionally requires `fastapi`):
+
+```bash
+pip install uvicorn fastapi
+```
+
+The ASGI implementations support the same options as the Tornado server, with the exception of a few options that are implemented as Tornado request handlers or rely on Tornado specific functionality, and will error out if you supply them:
+
+- `--rest-provider`, which is deprecated, see [Add custom endpoints](endpoints) for the replacement
+- `--enable-xsrf-cookies`
+- `--num-procs` (run multiple uvicorn processes behind a load balancer instead)
+- `--plugins` on `--server asgi`. On `--server fastapi` the plugin module must declare a FastAPI `APIRouter` instead of Tornado request handlers, see [Add custom endpoints](endpoints).
+
+The Tornado specific websocket tuning options (`--websocket-compression-level` and `--websocket-compression-mem-level`) are also ignored.
+
+If you want more control over the ASGI server, or need to serve Panel apps alongside your own routes, embed Panel in your own application instead. See the [FastAPI](../integrations/FastAPI) and [Django](../integrations/Django) how-to guides.
 
 To turn a notebook into a deployable app simply append `.servable()` to one or more Panel objects, which will add the app to Bokeh's `curdoc`, ensuring it can be discovered by Bokeh server on deployment. In this way it is trivial to build dashboards that can be used interactively in a notebook and then seamlessly deployed on Bokeh server.
 

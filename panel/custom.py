@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import hashlib
 import importlib
 import inspect
@@ -22,8 +21,10 @@ from .config import config
 from .io.datamodel import construct_data_model
 from .io.document import freeze_doc, hold
 from .io.model import apply_changes_without_dispatch
+from .io.resource_spec import resource_spec
 from .io.resources import component_resource_path
 from .io.state import state
+from .io.watcher import get_path_watcher
 from .layout.base import Panel
 from .models import (
     AnyWidgetComponent as _BkAnyWidgetComponent,
@@ -406,34 +407,11 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
                     if isinstance(children, list):
                         for child in children:
                             if isinstance(child, Viewable):
-                                child._cleanup(root)
+                                child._release_model(root, model)
         super()._cleanup(root)
         if not self._models and self._watching_esm:
-            self._watching_esm.set()
-            if self._watching_esm in state._watch_events:
-                state._watch_events.remove(self._watching_esm)
+            self._watching_esm.unsubscribe(self, '_update_esm')
             self._watching_esm = None
-
-    async def _watch_esm(self):
-        import watchfiles
-        path = self._esm_path(compiled=False)
-        async for changes in watchfiles.awatch(path, stop_event=self._watching_esm):
-            update = False
-            for (change, path) in changes:
-                if change != watchfiles.Change.modified:
-                    continue
-                # Ensure that the file exists (in case filesystem write is not atomic)
-                retries = 0
-                while not os.path.exists(path):
-                    await asyncio.sleep(0.1)
-                    retries += 1
-                    if retries == 5:
-                        break
-                # Ignore change if file is not written within 0.5 seconds
-                if retries != 5:
-                    update = True
-            if update:
-                self._update_esm()
 
     def _update_esm(self):
         for ref, (model, _) in self._models.copy().items():
@@ -531,18 +509,12 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             models = []
             for sv in child:
                 if ref in sv._models:
-                    model = sv._models[ref][0]
-                    old.append(model)
-                else:
-                    model = sv._get_model(doc, root, parent, comm)
-                models.append(model)
+                    old.append(sv._models[ref][0])
+                models.append(sv._acquire_model(doc, root, parent, comm))
             return models, old
-        elif ref in child._models:
-            model = child._models[ref][0]
-            old.append(model)
-        else:
-            model = child._get_model(doc, root, parent, comm)
-        return model, old
+        if ref in child._models:
+            old.append(child._models[ref][0])
+        return child._acquire_model(doc, root, parent, comm), old
 
     def _get_children(self, data_model, doc, root, parent, comm) -> tuple[dict[str, list[UIElement] | UIElement | None], list[UIElement]]:
         children = {}
@@ -561,17 +533,22 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         if not ((config.autoreload or getattr(self, '_debug', False)) and import_available('watchfiles')):
             return
         super()._setup_autoreload()
-        if (self._esm_path(compiled=False) and not self._watching_esm):
-            self._watching_esm = event = asyncio.Event()
-            state._watch_events.append(event)
-            state.execute(self._watch_esm)
+        esm_path = self._esm_path(compiled=False)
+        if esm_path and not self._watching_esm:
+            # Components rendering from the same file, e.g. all components in
+            # a shared bundle, subscribe to a single watcher for that path.
+            self._watching_esm = watcher = get_path_watcher(esm_path)
+            watcher.subscribe(self, '_update_esm')
 
     def _get_model(
         self, doc: Document, root: Model | None = None,
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         props = self._get_properties(doc)
-        model = self._bokeh_model(**props)
+        # The Bokeh model is shared across all ESM components, so the resource
+        # spec has to be derived from the Panel class that declares them.
+        props['external_resources'] = resource_spec(type(self))
+        model = self._bokeh_model(**props) # type: ignore[abstract]
         root = root or model
         children, _ = self._get_children(model.data, doc, root, model, comm)
         model.data.update(**children)
@@ -630,7 +607,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             for old in old_objects:
                 if old is None or old is new or (isinstance(new, list) and old in new):
                     continue
-                old._cleanup(root)
+                old._release_model(root, model)
 
         update_children = any(e in model.children for e in events)
         if update_children:

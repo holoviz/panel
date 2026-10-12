@@ -178,7 +178,7 @@ class Tabs(NamedListPanel):
         for obj in old_objects:
             if obj in self.objects:
                 continue
-            obj._cleanup(root)
+            obj._release_model(root, model)
             panels.pop(id(obj), None)
             rendered.pop(id(obj), None)
 
@@ -214,7 +214,7 @@ class Tabs(NamedListPanel):
                 child.tags = ['hidden']
             else:
                 try:
-                    rendered[pref] = child = pane._get_model(doc, root, model, comm)
+                    rendered[pref] = child = pane._acquire_model(doc, root, model, comm)
                 except RerenderError as e:
                     if e.layout is not None and e.layout is not self:
                         raise e

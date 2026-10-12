@@ -10,14 +10,7 @@ from collections.abc import Iterator
 
 
 def entry_points_for(group: str) -> Iterator[importlib.metadata.EntryPoint]:
-    try:
-        eps = importlib.metadata.entry_points(group=group)
-    except TypeError:
-        # Load-time selection requires Python >= 3.10 or importlib_metadata >= 3.6,
-        # so we'll retain this fallback logic for some time to come.  See also
-        # https://importlib-metadata.readthedocs.io/en/latest/using.html
-        eps = importlib.metadata.entry_points().get(group, [])  # type: ignore[arg-type]
-    yield from eps
+    yield from importlib.metadata.entry_points(group=group)
 
 
 def load_entry_points(group: str) -> None:

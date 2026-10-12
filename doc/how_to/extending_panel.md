@@ -1,6 +1,6 @@
 .. raw:: html
     <head>
-        <meta http-equiv='refresh' content='0; URL=./index.html#extending-panel>
+        <meta http-equiv='refresh' content='0; URL=./index.html#extending-panel'>
     </head>
 
 # Extending Panel

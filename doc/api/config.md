@@ -3,7 +3,7 @@
 The `pn.config` object holds global configuration options for Panel.
 
 The options can be set directly on the global config instance, via
-keyword arguments to [`pn.extension`](cheatsheet#pn-extension) or via environment variables.
+keyword arguments to [`pn.extension`](cheatsheet.md#pn-extension) or via environment variables.
 
 For example to set the `embed` option the following approaches can be used:
 
@@ -370,6 +370,17 @@ The notification to display when the application is ready and
 fully loaded.
 
 Default: '' | Type: String
+
+### `respect_explicit_sizing`
+
+When enabled, explicitly set sizing_mode/width_policy/height_policy on a
+layout are respected and never overridden by values inferred from the
+layout's children. When disabled (the default) the legacy behaviour is
+preserved: child-inferred values silently override explicit settings, but
+a warning is emitted whenever such an override would occur so that the
+incorrect specification can be corrected.
+
+Default: False | Type: Boolean
 
 ### `reuse_sessions`
 

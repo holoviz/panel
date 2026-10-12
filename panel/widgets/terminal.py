@@ -287,13 +287,30 @@ class Terminal(Widget):
         else:
             cleaned = str(__s)
 
-        if self._output == cleaned:
+        chunk = cleaned
+        if self._has_held_output():
+            # A 'combine' hold only dispatches the last value of the
+            # incremental output, so append to the chunk not yet sent.
+            chunk = self._output + cleaned
+        elif self._output == cleaned:
             # Hack to support writing the same string multiple times in a row
             self._output = ''
 
-        self._output = cleaned
+        self._output = chunk
         self.output += cleaned
         return len(self.output)
+
+    def _has_held_output(self) -> bool:
+        for model, _ in self._models.values():
+            doc = model.document
+            if doc is None or doc.callbacks.hold_value != 'combine':
+                continue
+            if any(
+                getattr(event, 'model', None) is model and getattr(event, 'attr', None) == 'output'
+                for event in doc.callbacks._held_events
+            ):
+                return True
+        return False
 
     def _get_model(
         self, doc: Document, root: Model | None = None,

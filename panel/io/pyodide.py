@@ -12,12 +12,14 @@ import uuid
 
 import bokeh
 import js
+import pandas
 import param
 
 import pyodide # isort: split
 
 from bokeh import __version__
 from bokeh.core.serialization import Buffer, Serialized, Serializer
+from bokeh.core.types import ID
 from bokeh.document import Document
 from bokeh.document.json import PatchJson
 from bokeh.embed.elements import script_for_render_items
@@ -29,11 +31,9 @@ from bokeh.model import Model
 from bokeh.settings import settings as bk_settings
 from js import JSON, XMLHttpRequest
 
-from ..config import config
 from ..util import edit_readonly, isurl
 from . import resources
 from .document import MockSessionContext
-from .loading import LOADING_INDICATOR_CSS_CLASS
 from .mime_render import WriteCallbackStream, exec_with_return, format_mime
 from .state import state
 
@@ -42,8 +42,6 @@ os.environ['BOKEH_RESOURCES'] = 'cdn'
 
 if t.TYPE_CHECKING:
     from collections.abc import Callable
-
-    from bokeh.core.types import ID
 
     from ..template.base import TemplateBase
     from ..viewable import Viewable
@@ -77,12 +75,6 @@ if _IN_WORKER:
     os.environ['MPLBACKEND'] = 'agg'
 
 try:
-    import pyodide_http
-    pyodide_http.patch_all()
-except Exception:
-    pyodide_http = None
-
-try:
     # Patch fsspec with synchronous http support
     import fsspec.implementations.http_sync  # noqa
 except Exception:
@@ -101,31 +93,28 @@ if 'pyolite' in sys.modules and os.path.exists('/drive/assets/sampledata'):
         return '/drive/assets/sampledata'
     bokeh.util.sampledata.external_data_dir = _sampledata_dir
 
-if pyodide_http is None:
-    import pandas
+def _read_file(*args, **kwargs):
+    if args and isurl(args[0]):
+        args = (pyodide.http.open_url(args[0]),)+args[1:]
+    elif isurl(kwargs.get('filepath_or_buffer')):
+        kwargs['filepath_or_buffer'] = pyodide.http.open_url(kwargs['filepath_or_buffer'])
+    return args, kwargs
 
-    def _read_file(*args, **kwargs):
-        if args and isurl(args[0]):
-            args = (pyodide.http.open_url(args[0]),)+args[1:]
-        elif isurl(kwargs.get('filepath_or_buffer')):
-            kwargs['filepath_or_buffer'] = pyodide.http.open_url(kwargs['filepath_or_buffer'])
-        return args, kwargs
+# Patch pandas.read_csv
+_read_csv_original = pandas.read_csv
+@functools.wraps(pandas.read_csv)
+def _read_csv(*args, **kwargs):
+    args, kwargs = _read_file(*args, **kwargs)
+    return _read_csv_original(*args, **kwargs)
+pandas.read_csv = _read_csv  # type: ignore
 
-    # Patch pandas.read_csv
-    _read_csv_original = pandas.read_csv
-    @functools.wraps(pandas.read_csv)
-    def _read_csv(*args, **kwargs):
-        args, kwargs = _read_file(*args, **kwargs)
-        return _read_csv_original(*args, **kwargs)
-    pandas.read_csv = _read_csv  # type: ignore
-
-    # Patch pandas.read_json
-    _read_json_original = pandas.read_json
-    @functools.wraps(pandas.read_json)
-    def _read_json(*args, **kwargs):
-        args, kwargs = _read_file(*args, **kwargs)
-        return _read_json_original(*args, **kwargs)
-    pandas.read_json = _read_json  # type: ignore
+# Patch pandas.read_json
+_read_json_original = pandas.read_json
+@functools.wraps(pandas.read_json)
+def _read_json(*args, **kwargs):
+    args, kwargs = _read_file(*args, **kwargs)
+    return _read_json_original(*args, **kwargs)
+pandas.read_json = _read_json  # type: ignore
 
 _tasks: set = set()
 
@@ -271,15 +260,16 @@ _dict_converter = pyodide.code.run_js("""
 _current_buffers: list = []
 _patching = False
 
+def _register_buffer(data: bytes) -> dict[str, str]:
+    uid = ID(uuid.uuid4().hex)
+    _current_buffers.append(Buffer(id=uid, data=data))
+    return {'id': uid}
+
 def _bytes_converter(value, converter, other):
     if not hasattr(value, 'buffer'):
         return value
     value = dict(value.object_entries())
-    uid = uuid.uuid4().hex
-    _current_buffers.append(
-        Buffer(id=uid, data=value['buffer'].to_bytes())
-    )
-    return {'id': uid}
+    return _register_buffer(value['buffer'].to_bytes())
 
 def to_py(obj):
     """Convert JS value to Python, replacing any jsnull (even nested) with None."""
@@ -298,6 +288,17 @@ def to_py(obj):
             return seen[oid]
 
         if isinstance(x, dict):
+            data = x.get('data')
+            if (
+                x.get('type') == 'bytes' and isinstance(data, dict)
+                and isinstance(data.get('buffer'), memoryview)
+            ):
+                # postMessage strips the Buffer class from patches sent to a
+                # worker, so _bytes_converter never sees it; only a plain
+                # {buffer: ArrayBuffer} object arrives.
+                out = {**x, 'data': _register_buffer(data['buffer'].tobytes())}
+                seen[oid] = out
+                return out
             out = {}
             seen[oid] = out
             for k, v in x.items():
@@ -558,8 +559,9 @@ def hide_loader() -> None:
     """
     from js import document
 
-    body = document.getElementsByTagName('body')[0]
-    body.classList.remove(LOADING_INDICATOR_CSS_CLASS, f'pn-{config.loading_spinner}')
+    loader = document.getElementById('loader')
+    if loader:
+        loader.style.display = 'none'
 
 def sync_location():
     """
@@ -603,6 +605,11 @@ async def write_doc(doc: Document | None = None) -> tuple[str, str, str]:
     if pydoc in state._templates and pydoc not in state._templates[pydoc]._documents:
         template = state._templates[pydoc]
         template.server_doc(title=template.title, location=True, doc=pydoc)
+    if not pydoc.roots:
+        raise RuntimeError(
+            'The app did not add anything to the page, ensure that at '
+            'least one component is marked as .servable().'
+        )
 
     # Test whether we have access to DOM
     try:

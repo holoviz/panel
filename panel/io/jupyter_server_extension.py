@@ -397,15 +397,15 @@ class PanelWSProxy(WSHandler, JupyterHandler):  # type: ignore
         self.session_id = get_session_id(token)
         if self.session_id not in state._kernels:
             self.close()
-            msg = f"Session ID '{self.session_id}' does not correspond to any active kernel."
-            raise RuntimeError(msg)
+            error = f"Session ID '{self.session_id}' does not correspond to any active kernel."
+            raise RuntimeError(error)
 
         kernel_info: tuple[t.Any, str, str, bool] = state._kernels[self.session_id]
         self.kernel, self.comm_id, self.kernel_id, _ = kernel_info
         state._kernels[self.session_id] = kernel_info[:-1] + (True,)
 
-        msg = protocol.create('ACK')
-        await self.send_message(msg)
+        ack_msg = protocol.create('ACK')
+        await self.send_message(ack_msg)
 
         self._ping_job.start()
         task = asyncio.create_task(self._check_for_message())

@@ -57,7 +57,9 @@ def test_jupyter_server_session_arg_theme(page, jupyter_preview):
     page.goto(f"{jupyter_preview}/app.py?theme=dark")
     page.wait_for_load_state('networkidle')
 
-    expect(page.locator('body')).to_have_css('color', 'rgb(0, 0, 0)')
+    # The base template styles the body for the dark theme.
+    expect(page.locator('body')).to_have_css('color', 'rgb(255, 255, 255)')
+    expect(page.locator('body')).to_have_css('background-color', 'rgb(18, 18, 18)')
 
 
 def test_jupyter_config():

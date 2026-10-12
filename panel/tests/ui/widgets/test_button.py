@@ -5,10 +5,13 @@ pytest.importorskip("playwright")
 from bokeh.models import Tooltip
 from playwright.sync_api import Expect, expect
 
+from panel.depends import bind
 from panel.layout import Column
+from panel.template import MaterialTemplate
 from panel.tests.util import serve_component, wait_until
 from panel.widgets import (
-    Button, CheckButtonGroup, RadioButtonGroup, TextAreaInput, TooltipIcon,
+    Button, CheckButtonGroup, MenuButton, RadioButtonGroup, TextAreaInput,
+    TooltipIcon,
 )
 
 pytestmark = pytest.mark.ui
@@ -29,9 +32,30 @@ def test_button_click(page):
     wait_until(lambda: len(events) == 1, page)
 
 
+@pytest.mark.parametrize('material_template', [False, True])
+def test_menu_button_repeated_selection(page, material_template):
+    menu_button = MenuButton(label='Menu', items=[('Option A', 'a')])
+    selections = []
+    bind(selections.append, menu_button.param.clicked, watch=True)
+    app = MaterialTemplate(main=[menu_button]) if material_template else menu_button
+
+    serve_component(page, app)
+
+    for count in (1, 2):
+        page.get_by_role('button', name='Menu', exact=True).click()
+        page.get_by_text('Option A', exact=True).click()
+        wait_until(lambda count=count: len(selections) == count, page)
+
+    assert selections == ['a', 'a']
+
+
 @pytest.mark.parametrize(
-    "description",
-    ["Test", Tooltip(content="Test", position="right"), TooltipIcon(value="Test")],
+    "description_fn",
+    [
+        lambda: "Test",
+        lambda: Tooltip(content="Test", position="right"),
+        lambda: TooltipIcon(value="Test"),
+    ],
     ids=["str", "Tooltip", "TooltipIcon"],
 )
 @pytest.mark.parametrize(
@@ -43,8 +67,12 @@ def test_button_click(page):
     ],
     ids=["Button", "CheckButtonGroup", "RadioButtonGroup"],
 )
-def test_button_tooltip(page, button_fn, button_locator, description):
-    pn_button = button_fn(label="test", description=description, description_delay=0)
+def test_button_tooltip(page, button_fn, button_locator, description_fn):
+    # description_fn must build a fresh Tooltip/TooltipIcon per test - a bokeh
+    # Model shared across documents gets its property values wiped when the
+    # first document's session is destroyed (Model.destroy() clears
+    # _property_values), silently breaking every other user of that instance.
+    pn_button = button_fn(label="test", description=description_fn(), description_delay=0)
 
     serve_component(page, pn_button)
 

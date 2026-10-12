@@ -1,9 +1,16 @@
 import datetime as dt
+import decimal
+import enum
+import fractions
 import io
+import ipaddress
 import pathlib
+import sys
 import time
+import uuid
 
-from collections import Counter
+from collections import Counter, namedtuple
+from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
@@ -18,9 +25,14 @@ except Exception:
 diskcache_available = pytest.mark.skipif(diskcache is None, reason="requires diskcache")
 
 from panel.config import config
-from panel.io.cache import _generate_hash, cache, is_equal
+from panel.io.cache import (
+    _HASH_MAP, _generate_hash, _get_fqn, cache, compute_hash, is_equal,
+)
 from panel.io.state import set_curdoc, state
 from panel.tests.util import serve_and_wait
+
+# panel.io.cache resolves to the cache function, not the module
+cache_module = sys.modules[cache.__module__]
 
 ################
 # Test hashing #
@@ -137,6 +149,13 @@ def test_ndarray_hash():
         np.array([2, 1, 0])
     )
 
+def test_ndarray_hash_dtype():
+    # Same bytes, different dtype
+    assert not hashes_equal(
+        np.array([0, 1, 2], dtype='int64'),
+        np.array([0, 1, 2], dtype='uint64')
+    )
+
 def test_dataframe_hash():
     data = {
         "A": [0.0, 1.0, 2.0, 3.0, 4.0],
@@ -149,12 +168,38 @@ def test_dataframe_hash():
     df2['A'] = df2['A'].values[::-1]
     assert not hashes_equal(df1, df2)
 
+@pytest.mark.parametrize('rows', [10, 100_001])
+def test_dataframe_hash_row_order(rows):
+    # Reductions over the per-row hashes must be order sensitive,
+    # including above the size at which the frame is sampled
+    df = pd.DataFrame({'a': np.arange(rows)})
+    assert not hashes_equal(df, df.iloc[::-1])
+    assert not hashes_equal(df, df.iloc[::-1].reset_index(drop=True))
+
+def test_dataframe_hash_dtype():
+    df1 = pd.DataFrame({'a': np.array([0, 1, 2], dtype='int64')})
+    df2 = pd.DataFrame({'a': np.array([0, 1, 2], dtype='float64')})
+    assert not hashes_equal(df1, df2)
+
+def test_dataframe_hash_column_order():
+    data = {'a': [0, 1], 'b': [2, 3]}
+    df = pd.DataFrame(data)
+    assert not hashes_equal(df, df[['b', 'a']])
+
 def test_series_hash():
     series1 = pd.Series([0.0, 1.0, 2.0, 3.0, 4.0])
     series2 = series1.copy()
     assert hashes_equal(series1, series2)
     series2.iloc[0] = 3.14
     assert not hashes_equal(series1, series2)
+
+def test_series_hash_row_order():
+    series = pd.Series([0.0, 1.0, 2.0, 3.0, 4.0])
+    assert not hashes_equal(series, series.iloc[::-1])
+
+def test_series_hash_name():
+    series = pd.Series([0.0, 1.0])
+    assert not hashes_equal(series, series.rename('a'))
 
 def test_polars_dataframe_hash():
     pl = pytest.importorskip("polars")
@@ -183,6 +228,20 @@ def test_polars_series_hash():
     assert hashes_equal(ser1, ser2)
     ser2 = ser2.replace(0.0, 3.14)
     assert not hashes_equal(ser1, ser2)
+
+def test_polars_dataframe_hash_row_order():
+    pl = pytest.importorskip("polars")
+    data = {"A": [0.0, 1.0, 2.0], "B": ["foo1", "foo2", "foo3"]}
+    df = pl.DataFrame(data)
+    assert not hashes_equal(df, df.reverse())
+    ldf = pl.LazyFrame(data)
+    assert not hashes_equal(ldf, ldf.reverse())
+
+def test_polars_dataframe_hash_dtype():
+    pl = pytest.importorskip("polars")
+    df1 = pl.DataFrame({"A": [0, 1, 2]}, schema={"A": pl.Int64})
+    df2 = pl.DataFrame({"A": [0, 1, 2]}, schema={"A": pl.Int32})
+    assert not hashes_equal(df1, df2)
 
 def test_ufunc_hash():
     assert hashes_equal(np.absolute, np.absolute)
@@ -222,6 +281,36 @@ def test_cache_with_args():
     fn = cache(function_with_args)
     assert fn(0, 0) == 0
     assert fn(0, 0) == 0
+
+@pytest.mark.parametrize('module_name', [None, 'unregistered_cache_test', 'builtins'])
+def test_cache_function_without_module_file(module_name):
+    """Executed docs functions without a module file should cache independently."""
+    functions = []
+    for result in ('first', 'second'):
+        namespace = {'cache': cache, 'result': result, 'calls': []}
+        exec('def callback(value):\n    calls.append(value)\n    return result', namespace)
+        namespace['callback'].__module__ = module_name
+        functions.append((cache(namespace['callback']), namespace['calls']))
+
+    for (fn, calls), expected in zip(functions, ('first', 'second')):
+        assert fn(1) == expected
+        assert fn(1) == expected
+        assert calls == [1]
+
+def test_cache_moduleless_function_identity_reuse(monkeypatch):
+    """Moduleless callbacks must not share cached results if function IDs are reused."""
+    monkeypatch.setattr(cache_module, 'id', lambda obj: 1 if callable(obj) else id(obj), raising=False)
+
+    namespace = {'result': 'first'}
+    exec('def callback(value):\n    return result', namespace)
+    first = cache(namespace['callback'])
+    assert first(1) == 'first'
+
+    del first
+    namespace = {'result': 'second'}
+    exec('def callback(value):\n    return result', namespace)
+    second = cache(namespace['callback'])
+    assert second(1) == 'second'
 
 @pytest.mark.asyncio
 async def test_async_cache_with_args():
@@ -423,3 +512,244 @@ def test_cache_clear_two_funcs():
     assert get_data_2() == 0
     assert get_data_1() == 1
     assert get_data_2() == 0
+
+def test_cache_functions_from_same_factory():
+    # Two closures generated by one factory share a module, a file and a
+    # qualified name, so they must be distinguished by what they close over
+    def multiplier(factor):
+        @cache
+        def multiply(value):
+            return value*factor
+        return multiply
+
+    times2, times3 = multiplier(2), multiplier(3)
+
+    assert times2(10) == 20
+    assert times3(10) == 30
+    assert times2(10) == 20
+
+def test_cache_functions_with_same_name():
+    def make_first():
+        @cache
+        def compute():
+            return 'first'
+        return compute
+
+    def make_second():
+        @cache
+        def compute():
+            return 'second'
+        return compute
+
+    assert make_first()() == 'first'
+    assert make_second()() == 'second'
+
+def test_cache_closure_mutation_does_not_switch_cache():
+    # The closure key is computed once, when the function is decorated,
+    # so mutating captured state must not move the function to a new cache
+    calls = []
+
+    @cache
+    def get_data():
+        calls.append(1)
+        return len(calls)
+
+    assert get_data() == 1
+    assert get_data() == 1
+    assert len(calls) == 1
+
+####################
+# Test approximate #
+####################
+
+def _outside_frame_sample(n):
+    frame = pd.DataFrame({'a': np.zeros(n, dtype='int64')})
+    sampled = set(frame.sample(n=100_000, random_state=0).index)
+    return frame, next(i for i in frame.index if i not in sampled)
+
+def test_approximate_frame_hash_ignores_unsampled_rows():
+    frame, outside = _outside_frame_sample(200_000)
+    before = _generate_hash(frame)
+    frame.loc[outside, 'a'] = 1
+    assert _generate_hash(frame) == before
+
+def test_exact_frame_hash_sees_unsampled_rows():
+    frame, outside = _outside_frame_sample(200_000)
+    calls = []
+
+    @cache(approximate=False)
+    def total(frame):
+        calls.append(1)
+        return int(frame['a'].sum())
+
+    assert total(frame) == 0
+    frame = frame.copy()
+    frame.loc[outside, 'a'] = 1
+    assert total(frame) == 1
+    assert len(calls) == 2
+
+def test_approximate_frame_hash_misses_unsampled_rows():
+    frame, outside = _outside_frame_sample(200_000)
+    calls = []
+
+    @cache
+    def total(frame):
+        calls.append(1)
+        return int(frame['a'].sum())
+
+    assert total(frame) == 0
+    frame = frame.copy()
+    frame.loc[outside, 'a'] = 1
+    assert total(frame) == 0
+    assert len(calls) == 1
+
+def test_exact_array_hash_sees_unsampled_elements():
+    arr = np.zeros(200_000, dtype='int64')
+    sampled = set(np.random.RandomState(0).choice(np.arange(arr.size), size=100_000))
+    outside = next(i for i in range(arr.size) if i not in sampled)
+
+    with cache_module._hash_context({}, approximate=False):
+        before = _generate_hash(arr)
+        arr[outside] = 1
+        assert _generate_hash(arr) != before
+
+def test_approximate_hashes_are_memoized_separately():
+    _HASH_MAP.clear()
+
+    def f(a):
+        return a
+
+    approx = compute_hash(f, {}, (1,), {}, True)
+    exact = compute_hash(f, {}, (1,), {}, False)
+    assert len(_HASH_MAP) == 2
+    assert compute_hash(f, {}, (1,), {}, True) == approx
+    assert compute_hash(f, {}, (1,), {}, False) == exact
+
+def test_approximate_is_reset_after_hashing():
+    @cache(approximate=False)
+    def total(frame):
+        return int(frame['a'].sum())
+
+    total(pd.DataFrame({'a': [0]}))
+    assert cache_module._APPROXIMATE.get()
+
+##################
+# Test hash memo #
+##################
+
+def test_hash_memo_populates_and_is_bounded(monkeypatch):
+    monkeypatch.setattr(cache_module, '_HASH_MAP_MAX_ITEMS', 4)
+    _HASH_MAP.clear()
+
+    def f(a, b=None):
+        return a
+
+    compute_hash(f, {}, (1,), {})
+    compute_hash(f, {}, (1,), {'b': 'a'})
+    assert len(_HASH_MAP) == 2
+
+    # Hits do not add entries
+    assert compute_hash(f, {}, (1,), {}) == compute_hash(f, {}, (1,), {})
+    assert len(_HASH_MAP) == 2
+
+    for i in range(10):
+        compute_hash(f, {}, (i,), {'b': [i, {'c': (i, 'd')}]})
+    assert len(_HASH_MAP) <= 4
+
+def test_hash_memo_distinguishes_equal_values_of_different_types():
+    _HASH_MAP.clear()
+
+    def f(a):
+        return a
+
+    Point = namedtuple('Point', ['x'])
+
+    assert compute_hash(f, {}, (0,), {}) != compute_hash(f, {}, (False,), {})
+    assert compute_hash(f, {}, (1,), {}) != compute_hash(f, {}, (1.0,), {})
+    assert compute_hash(f, {}, ('1',), {}) != compute_hash(f, {}, (b'1',), {})
+    assert compute_hash(f, {}, ((1,),), {}) != compute_hash(f, {}, ([1],), {})
+    assert compute_hash(f, {}, ((1,),), {}) != compute_hash(f, {}, (Point(1),), {})
+
+def test_hash_memo_distinguishes_functions():
+    _HASH_MAP.clear()
+
+    def f(a):
+        return a
+
+    def g(a):
+        return a
+
+    assert compute_hash(f, {}, (1,), {}) == compute_hash(g, {}, (1,), {})
+    assert len(_HASH_MAP) == 2
+
+def test_hash_memo_skipped_for_custom_hash_funcs():
+    _HASH_MAP.clear()
+
+    def f(a):
+        return a
+
+    hash1 = compute_hash(f, {int: lambda obj: b'1'}, (1,), {})
+    hash2 = compute_hash(f, {int: lambda obj: b'2'}, (1,), {})
+    assert hash1 != hash2
+    assert not _HASH_MAP
+
+def test_hash_memo_not_keyed_on_indeterminate_values():
+    _HASH_MAP.clear()
+
+    def f(a):
+        return a
+
+    compute_hash(f, {}, (DF1,), {})
+    compute_hash(f, {}, (object(),), {})
+    assert not _HASH_MAP
+
+@dataclass
+class _Point:
+    x: int
+
+class _Color(enum.Enum):
+    RED = 1
+    BLUE = 2
+
+def test_hash_value_types_by_value():
+    assert hashes_equal(uuid.UUID(int=1), uuid.UUID(int=1))
+    assert not hashes_equal(uuid.UUID(int=1), uuid.UUID(int=2))
+    assert not hashes_equal(decimal.Decimal('1.5'), decimal.Decimal('7'))
+    assert not hashes_equal(fractions.Fraction(1, 2), fractions.Fraction(1, 3))
+    assert not hashes_equal(ipaddress.ip_address('10.0.0.1'), ipaddress.ip_address('10.0.0.2'))
+    assert not hashes_equal(_Color.RED, _Color.BLUE)
+    assert hashes_equal(_Point(1), _Point(1))
+    assert not hashes_equal(_Point(1), _Point(2))
+
+class _Number(enum.IntEnum):
+    ONE = 1
+
+class _Name(enum.StrEnum):
+    A = 'a'
+
+class _Perm(enum.IntFlag):
+    R = 4
+
+@pytest.mark.parametrize('member', [_Color.RED, _Number.ONE, _Name.A, _Perm.R])
+def test_hash_enum_members_as_enum(member):
+    assert _generate_hash(member) == f'enum:{_get_fqn(member)}.{member.name}'.encode()
+    assert not hashes_equal(member, member.value)
+
+def test_hash_identity_types_by_identity():
+    a, b = object(), object()
+    assert not hashes_equal(a, b)
+
+def test_cache_temporary_value_arguments():
+    @cache
+    def double(value):
+        return value * 2
+
+    @cache
+    def as_str(value):
+        return str(value)
+
+    # The arguments are freed after each call, so their addresses can be
+    # reused by the next one
+    assert double(decimal.Decimal('1.5')) == decimal.Decimal('3.0')
+    assert double(decimal.Decimal('7')) == decimal.Decimal('14')
+    assert [as_str(uuid.UUID(int=i))[-1] for i in range(1, 6)] == ['1', '2', '3', '4', '5']

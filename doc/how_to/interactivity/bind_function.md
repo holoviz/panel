@@ -15,14 +15,14 @@ def star_creator(number):
 star_creator(5)
 ```
 
-Calling a function repeatedly with different arguments is not very interactive, so as a second step we will create a widget. Here we have chosen the `pn.widgets.IntSlider` with a value of 5 and a range between 1 and 10:
+Calling a function repeatedly with different arguments is not very interactive, so as a second step we will create a widget. Here we have chosen the `pn.ui.IntSlider` with a value of 5 and a range between 1 and 10:
 
 ```{pyodide}
 import panel as pn
 
 pn.extension()
 
-slider = pn.widgets.IntSlider(value=5, start=1, end=10)
+slider = pn.ui.IntSlider(value=5, start=1, end=10)
 slider
 ```
 
@@ -32,7 +32,7 @@ To make our `star_creator` function interactive we can now bind the widget to th
 ```{pyodide}
 interactive_star_creator = pn.bind(star_creator, slider)
 
-pn.Column(slider, interactive_star_creator)
+pn.ui.Column(slider, interactive_star_creator)
 ```
 
 :::{note}

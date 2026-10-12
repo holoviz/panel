@@ -3,6 +3,7 @@ Editable template
 """
 from __future__ import annotations
 
+import json
 import pathlib
 import typing as t
 
@@ -104,7 +105,7 @@ class EditableTemplate(VanillaTemplate):
     ]
 
     _resources = {
-        "css": {"lato": "https://fonts.googleapis.com/css?family=Lato&subset=latin,latin-ext"},
+        "font": {"lato": "https://fonts.googleapis.com/css?family=Lato&subset=latin,latin-ext"},
         "js": {
             "interactjs": f"{config.npm_cdn}/interactjs@1.10.19/dist/interact.min.js",
             "muuri": f"{config.npm_cdn}/muuri@0.9.5/dist/muuri.min.js",
@@ -122,7 +123,9 @@ class EditableTemplate(VanillaTemplate):
         self._render_variables['muuri_layout'] = list(layout.values())
         self._render_variables['editable'] = self.editable
         self._render_variables['local_save'] = self.local_save
-        self._render_variables['loading_spinner'] = config.loading_spinner
+        self._render_variables['loading_classes'] = json.dumps(
+            self._design.loading_css_classes()
+        )
         super()._update_vars()
 
     def _init_doc(

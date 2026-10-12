@@ -8,6 +8,7 @@ import os
 import pathlib
 import shutil
 import subprocess
+import tempfile
 import zipfile
 
 try:
@@ -25,6 +26,7 @@ bokeh_dev = Requirement(bokeh_requirement).specifier.prereleases
 
 parser = argparse.ArgumentParser()
 parser.add_argument("out", default="panel/dist/wheels", nargs="?", help="Output dir")
+parser.add_argument("--panel-only", action="store_true", help="Build only the Panel wheel for documentation")
 parser.add_argument(
     "--no-deps",
     action="store_true",
@@ -53,20 +55,22 @@ command = ["pip", "wheel", "."]
 if bokeh_dev:
     command.append("--pre")
 
-if args.no_deps:
+if args.no_deps or args.panel_only:
     command.append("--no-deps")
-command.extend(["-w", str(PANEL_BASE / "build")])
+wheel_dir = pathlib.Path(tempfile.mkdtemp(prefix="panel-doc-wheel-")) if args.panel_only else PANEL_BASE / "build"
+command.extend(["-w", str(wheel_dir)])
 print("command: ", " ".join(command))
 
 out = PANEL_BASE / args.out
-out.mkdir(exist_ok=True)
+out.mkdir(parents=True, exist_ok=True)
 print("out dir: ", out)
 
 sp = subprocess.Popen(command, env=dict(os.environ, PANEL_LITE="1"))
-sp.wait()
+if sp.wait():
+    raise RuntimeError("Failed to build Panel wheel")
 
 
-panel_wheels = list(PANEL_BASE.glob("build/panel-*-py3-none-any.whl"))
+panel_wheels = list(wheel_dir.glob("panel-*-py3-none-any.whl"))
 if not panel_wheels:
     raise RuntimeError("Panel wheel not found.")
 panel_wheel = sorted(panel_wheels)[-1]
@@ -79,8 +83,10 @@ with (
         filename = item.filename
         if filename.startswith("panel/tests"):
             continue
+        if args.panel_only and filename.startswith('panel/dist/wheels/'):
+            continue
         buffer = zin.read(filename)
-        if bokeh_dev and filename.startswith("panel-") and filename.endswith("METADATA"):
+        if filename.startswith("panel-") and filename.endswith("METADATA"):
             lines = buffer.decode("utf-8").split("\n")
             lines = [
                 f"Requires-Dist: {bokeh_requirement}"
@@ -89,6 +95,11 @@ with (
             ]
             buffer = "\n".join(lines).encode('utf-8')
         zout.writestr(item, buffer)
+
+if args.panel_only:
+    shutil.rmtree(wheel_dir)
+    print(f"\nPanel wheel was written to {out}")
+    raise SystemExit(0)
 
 bokeh_wheels = PANEL_BASE.glob("build/bokeh-*-py3-none-any.whl")
 

@@ -9,6 +9,12 @@ import {isNumber} from "@bokehjs/core/util/types"
 
 import modal_css from "styles/models/modal.css"
 
+import type {ResourceSpec} from "./resources"
+import {
+  await_resources, define_external_resources, load_resources,
+  render_resource_error,
+} from "./resources"
+
 declare type A11yDialogView = {
   on(event: string, listener: () => void): void
   show(): void
@@ -42,6 +48,14 @@ export class ModalView extends BkColumnView {
   modal: A11yDialogView
   close_button: HTMLButtonElement
   content: HTMLElement
+
+  override async lazy_initialize(): Promise<void> {
+    await super.lazy_initialize()
+    const error = await await_resources(this.model)
+    if (error != null) {
+      render_resource_error(this, error, UIElementView.prototype.render)
+    }
+  }
 
   override connect_signals(): void {
     super.connect_signals()
@@ -151,6 +165,7 @@ export namespace Modal {
     open: p.Property<boolean>
     show_close_button: p.Property<boolean>
     background_close: p.Property<boolean>
+    external_resources: p.Property<ResourceSpec | null>
   }
 }
 
@@ -171,5 +186,11 @@ export class Modal extends BkColumn {
       show_close_button: [Bool, true],
       background_close: [Bool, true],
     }))
+    define_external_resources(this)
+  }
+
+  override initialize(): void {
+    super.initialize()
+    load_resources(this)
   }
 }

@@ -68,7 +68,7 @@ def get_plot(year):
 
 # Add widgets
 
-year = pn.widgets.Player(
+year = pn.ui.Player(
     value=max_year,
     start=min_year,
     end=max_year,
@@ -86,10 +86,10 @@ pn.bind(pause_player_at_max_year, year, watch=True) # Stops the player when max_
 
 # Bind the plot to the Player widget
 
-plot = pn.pane.Vega(pn.bind(get_plot, year))
+plot = pn.ui.Vega(pn.bind(get_plot, year))
 
 # Layout the components
-pn.Column("# Wind Turbine Capacity 1982-2022", plot, year, sizing_mode="stretch_width").servable()
+pn.ui.Column("# Wind Turbine Capacity 1982-2022", plot, year, sizing_mode="stretch_width").servable()
 ```
 
 :::
@@ -200,7 +200,7 @@ Time to bring our visualization to life! This function generates an Altair chart
 ⏩ **Step 4: Adding Interactive Controls**
 
 ```{pyodide}
-year = pn.widgets.Player(
+year = pn.ui.Player(
     value=max_year,
     start=min_year,
     end=max_year,
@@ -224,7 +224,7 @@ Let's make it interactive! We introduce a [`Player`](../../reference/widgets/Pla
 🎨 **Step 5: Binding Plot to Widget**
 
 ```{pyodide}
-plot = pn.pane.Vega(pn.bind(get_plot, year))
+plot = pn.ui.Vega(pn.bind(get_plot, year))
 ```
 
 Now, let's bind our plot function to the selected year. Whenever the user changes the year, the plot dynamically updates to reflect the selected timeframe.
@@ -234,7 +234,7 @@ Now, let's bind our plot function to the selected year. Whenever the user change
 🖼️ **Step 6: Layout and Presentation**
 
 ```{pyodide}
-pn.Column("# Wind Turbine Capacity 1982-2022", plot, year, sizing_mode="stretch_width").servable()
+pn.ui.Column("# Wind Turbine Capacity 1982-2022", plot, year, sizing_mode="stretch_width").servable()
 ```
 
 Lastly, we organize our components into a neat layout. A title sets the stage, followed by our interactive plot and the year selection widget. The layout adjusts to fill the available width.

@@ -10,6 +10,7 @@ from bokeh.models.sources import DataSource
 
 from ..config import config
 from ..util import classproperty
+from .resource import ExternalResourcesMixin
 
 VIZZU_VERSION = "0.17.1"
 
@@ -22,7 +23,7 @@ class VizzuEvent(ModelEvent):
         super().__init__(model=model)
 
 
-class VizzuChart(LayoutDOM):
+class VizzuChart(LayoutDOM, ExternalResourcesMixin):
     """
     A Bokeh model that wraps around a Vizzu chart and renders it
     inside a Bokeh.
@@ -37,7 +38,7 @@ class VizzuChart(LayoutDOM):
     @classproperty
     def __js_skip__(cls):
         return {
-            'Vizzu': cls.__javascript__[0]
+            'Vizzu': cls.__javascript_modules__
         }
 
     animation = Dict(String, Any)

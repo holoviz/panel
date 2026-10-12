@@ -22,7 +22,7 @@ jobs:
         downstream_repo: [holoviews, lumen]
       fail-fast: false
     steps:
-      - uses: holoviz-dev/holoviz_tasks/downstream-tests@ffddda04b2894fea39b407f64d3622d2f19e5a9f # v1
+      - uses: holoviz-dev/holoviz_tasks/downstream-tests@11eb638302f76ec64217e2eeddfb11df1f788b54 # v1.0.2
         with:
           downstream_repo: ${{ matrix.downstream_repo }}
           github_token: ${{ secrets.ACCESS_TOKEN }}

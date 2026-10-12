@@ -19,6 +19,7 @@ ACTIVE_SVG = """
 """  # noqa: E501
 
 
+@pytest.mark.internet
 def test_toggle_icon_click(page):
     icon = ToggleIcon()
     serve_component(page, icon)
@@ -42,6 +43,7 @@ def test_toggle_icon_click(page):
     assert icon.value
 
 
+@pytest.mark.internet
 def test_toggle_icon_width_height(page):
     icon = ToggleIcon(width=100, height=100)
     serve_component(page, icon)
@@ -54,6 +56,7 @@ def test_toggle_icon_width_height(page):
     wait_until(lambda: icon_element.bounding_box()["width"] == 100)
 
 
+@pytest.mark.internet
 def test_toggle_icon_size(page):
     icon = ToggleIcon(size="120px")
     serve_component(page, icon)
@@ -66,6 +69,7 @@ def test_toggle_icon_size(page):
     wait_until(lambda: icon_element.bounding_box()["width"] == 120)
 
 
+@pytest.mark.internet
 def test_toggle_icon_active_icon(page):
     icon = ToggleIcon(icon="thumb-down", active_icon="thumb-up")
     serve_component(page, icon)
@@ -89,6 +93,7 @@ def test_toggle_icon_active_icon(page):
     assert page.locator(".thumb-up")
 
 
+@pytest.mark.internet
 def test_toggle_icon_update_params_dynamically(page):
     icon = ToggleIcon(icon="thumb-down", active_icon="thumb-up")
     serve_component(page, icon)
@@ -157,6 +162,7 @@ def test_toggle_icon_svg(page):
     assert page.locator(".icon-tabler-ad-filled")
 
 
+@pytest.mark.internet
 def test_toggle_icon_tabler_to_svg(page):
     tabler = "ad-off"
 
@@ -182,6 +188,7 @@ def test_toggle_icon_tabler_to_svg(page):
     assert page.locator(".icon-tabler-ad-filled")
 
 
+@pytest.mark.internet
 def test_toggle_icon_svg_to_tabler(page):
     icon = ToggleIcon(icon=SVG, active_icon="ad-filled")
     serve_component(page, icon)
@@ -205,6 +212,7 @@ def test_toggle_icon_svg_to_tabler(page):
     assert page.locator(".icon-tabler-ad-filled")
 
 
+@pytest.mark.internet
 def test_button_icon(page):
     icon = ButtonIcon(
         icon="clipboard", active_icon="check", toggle_duration=2000, size="5em"
@@ -236,6 +244,7 @@ def test_button_icon(page):
     assert page.locator(".clipboard")
 
 
+@pytest.mark.internet
 def test_button_icon_disabled(page):
     icon = ButtonIcon(
         icon="clipboard",
@@ -283,6 +292,7 @@ def test_button_icon_disabled(page):
     assert len(events) == 1
 
 
+@pytest.mark.internet
 def test_button_icon_on_click_method(page):
     def on_click(event):
         static_text.value = f"Clicks: {button.clicks}"
@@ -302,6 +312,7 @@ def test_button_icon_on_click_method(page):
     assert static_text.value == "Clicks: 2"
 
 
+@pytest.mark.internet
 def test_button_icon_on_click_kwarg(page):
     def on_click(event):
         static_text.value = f"Clicks: {button.clicks}"
@@ -320,6 +331,7 @@ def test_button_icon_on_click_kwarg(page):
     assert static_text.value == "Clicks: 2"
 
 
+@pytest.mark.internet
 def test_button_icon_js_on_click(page):
     button = ButtonIcon()
     int_slider = IntInput(value=0)
@@ -333,6 +345,7 @@ def test_button_icon_js_on_click(page):
     assert int_slider.value == 1
 
 
+@pytest.mark.internet
 def test_button_icon_tooltip(page):
     button = ButtonIcon(description="Click me")
     serve_component(page, button)
@@ -342,6 +355,7 @@ def test_button_icon_tooltip(page):
     assert page.locator(".bk-tooltip-content").text_content() == "Click me"
 
 
+@pytest.mark.internet
 def test_button_icon_name(page):
     button = ButtonIcon(label="Like")
     serve_component(page, button)
@@ -350,6 +364,7 @@ def test_button_icon_name(page):
     wait_until(lambda: page.locator(".bk-IconLabel").text_content() == "Like", page)
 
 
+@pytest.mark.internet
 def test_button_icon_name_dynamically(page):
     button = ButtonIcon(label="Like")
     serve_component(page, button)
@@ -368,6 +383,7 @@ def test_button_icon_name_dynamically(page):
     wait_until(lambda: page.locator(".bk-IconLabel").bounding_box()["width"] >= 40, page)
 
 
+@pytest.mark.internet
 def test_button_icon_description_dynamically(page):
     button = ButtonIcon(description="Like")
     serve_component(page, button)

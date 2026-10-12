@@ -33,7 +33,7 @@ class FeatureInput(WidgetBase, PyComponent):
     )
 
     _selected_widgets = param.ClassSelector(
-        class_=pn.Column, doc="The widgets used to edit the selected features"
+        class_=pn.ui.Column, doc="The widgets used to edit the selected features"
     )
 
     def __init__(self, **params):
@@ -45,12 +45,12 @@ class FeatureInput(WidgetBase, PyComponent):
 
         super().__init__(**params)
 
-        self._selected_features_widget = pn.widgets.MultiChoice.from_param(
+        self._selected_features_widget = pn.ui.MultiChoice.from_param(
             self.param.selected_features, sizing_mode="stretch_width"
         )
 
     def __panel__(self):
-        return pn.Column(self._selected_features_widget, self._selected_widgets)
+        return pn.ui.Column(self._selected_features_widget, self._selected_widgets)
 
     @param.depends("features", watch=True, on_init=True)
     def _reset_selected_features(self):
@@ -88,7 +88,7 @@ class FeatureInput(WidgetBase, PyComponent):
         self._selected_widgets[:] = list(new_widgets.values())
 
     def _new_widget(self, feature, value):
-        widget = pn.widgets.FloatInput(
+        widget = pn.ui.FloatInput(
             label=feature, value=value, sizing_mode="stretch_width"
         )
         pn.bind(self._update_value, widget, watch=True)
@@ -99,7 +99,7 @@ This is a lot to take in so let us break it down into a few pieces:
 
 ### Inheritance
 
-The `FeatureInput` class inherits from `pn.custom.PyComponent` and `pn.widgets.WidgetBase`. This multiple inheritance structure allows us to create custom components that behave one of the three core component types that Panel defines `Widget`, `Pane` and `Panel` (i.e. a layout). You should always inherit from the component type base class first, i.e. `WidgetBase` in this case and the component implementation class second, i.e. `PyComponent` in this case.
+The `FeatureInput` class inherits from `pn.custom.PyComponent` and `panel.widgets.base.WidgetBase`. This multiple inheritance structure allows us to create custom components that behave one of the three core component types that Panel defines `Widget`, `Pane` and `Panel` (i.e. a layout). You should always inherit from the component type base class first, i.e. `WidgetBase` in this case and the component implementation class second, i.e. `PyComponent` in this case.
 
 ### Parameter Definitions
 
@@ -157,14 +157,14 @@ widget = FeatureInput(
     width=500,
 )
 
-pn.FlexBox(
-    pn.Column(
+pn.ui.FlexBox(
+    pn.ui.Column(
         "## Widget",
         widget,
     ),
-    pn.Column(
+    pn.ui.Column(
         "## Value",
-        pn.pane.JSON(widget.param.value, width=500, height=200),
+        pn.ui.JSON(widget.param.value, width=500, height=200),
     ),
 )
 ```

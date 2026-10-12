@@ -93,7 +93,7 @@ Some of the concepts this component demonstrates:
 Now let's try this component:
 
 ```{pyodide}
-pn.extension(template='bootstrap')
+pn.extension(template='page')
 
 url = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_month.csv"
 
@@ -110,11 +110,11 @@ heatmap = LeafletHeatMap(
     zoom=2,
 )
 
-description=pn.pane.Markdown(f'## Earthquakes between {earthquakes.time.min()} and {earthquakes.time.max()}\n\n[Data Source]({url})', sizing_mode="stretch_width")
+description=pn.ui.Markdown(f'## Earthquakes between {earthquakes.time.min()} and {earthquakes.time.max()}\n\n[Data Source]({url})', sizing_mode="stretch_width")
 
-pn.Column(
+pn.ui.Column(
     description,
-    pn.Row(
+    pn.ui.Row(
         heatmap.controls(['blur', 'min_alpha', 'radius', 'zoom']).servable(target='sidebar'),
         heatmap.servable(),
         sizing_mode='stretch_both'

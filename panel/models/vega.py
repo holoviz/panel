@@ -15,6 +15,7 @@ from bokeh.models import ColumnDataSource, LayoutDOM
 from ..config import config
 from ..io.resources import bundled_files
 from ..util import classproperty
+from .resource import ExternalResourcesMixin
 
 VEGA_VERSION = "6.1.2"
 VEGA_LITE_VERSION = "6.3.0"
@@ -23,7 +24,7 @@ VEGA_EMBED_VERSION = "7.0.2"
 VegaThemeType = t.Literal[
         'excel', 'ggplot2', 'quartz', 'vox', 'fivethirtyeight', 'dark',
         'latimes', 'urbaninstitute', 'googlecharts', 'powerbi', 'carbonwhite', 'carbong10', 'carbong90', 'carbong100']
-VegaTheme = enumeration(VegaThemeType)
+VegaTheme = enumeration(*t.get_args(VegaThemeType))
 
 class VegaEvent(ModelEvent):
 
@@ -34,7 +35,7 @@ class VegaEvent(ModelEvent):
         super().__init__(model=model)
 
 
-class VegaPlot(LayoutDOM):
+class VegaPlot(LayoutDOM, ExternalResourcesMixin):
     """
     A Bokeh model that wraps around a Vega plot and renders it inside
     a Bokeh plot.

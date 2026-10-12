@@ -11,10 +11,11 @@ import pytest
 
 from bokeh.document import Document
 from bokeh.io.doc import patch_curdoc
-from bokeh.models import Div
+from bokeh.models import Div, ImportedStyleSheet
 
 from panel.depends import bind, depends
-from panel.io.state import set_curdoc
+from panel.io.resources import stylesheet_url
+from panel.io.state import set_curdoc, state
 from panel.layout import Tabs, WidgetBox
 from panel.pane import Markdown
 from panel.reactive import Reactive, ReactiveHTML
@@ -898,6 +899,131 @@ def test_reactive_design_stylesheets_update(document, comm):
     assert len(model.stylesheets) == 5
     assert model.stylesheets[-1] == widget.stylesheets[0]
 
+
+def test_reactive_stylesheets_shared_component_across_documents(document, comm):
+    """A reused component's stylesheets belong to each notebook output's document."""
+    other_doc = Document()
+    widget = TextInput(stylesheets=['https://example.com/custom.css'])
+
+    with set_curdoc(document):
+        model1 = widget.get_root(document, comm)
+        document.add_root(model1)
+        model2 = widget.get_root(other_doc, comm)
+        other_doc.add_root(model2)
+
+        widget.stylesheets = ['https://example.com/updated.css']
+
+    for model, doc in ((model1, document), (model2, other_doc)):
+        assert all(sts.document is doc for sts in model.stylesheets if isinstance(sts, ImportedStyleSheet))
+        assert any(
+            isinstance(sts, ImportedStyleSheet) and sts.url == 'https://example.com/updated.css'
+            for sts in model.stylesheets
+        )
+        doc.to_json()
+    assert not {
+        id(sts) for sts in model1.stylesheets if isinstance(sts, ImportedStyleSheet)
+    } & {
+        id(sts) for sts in model2.stylesheets if isinstance(sts, ImportedStyleSheet)
+    }
+
+
+def test_reactive_pane_stylesheets_shared_across_documents(document, comm):
+    """Updating a pane reused in notebook outputs keeps stylesheets document-local."""
+    other_doc = Document()
+    pane = Markdown('first')
+
+    with set_curdoc(document):
+        model1 = pane.get_root(document, comm)
+        document.add_root(model1)
+        model2 = pane.get_root(other_doc, comm)
+        other_doc.add_root(model2)
+        pane.object = 'second'
+
+    assert model1.text == model2.text
+    for model, doc in ((model1, document), (model2, other_doc)):
+        assert all(sts.document is doc for sts in model.stylesheets if isinstance(sts, ImportedStyleSheet))
+        doc.to_json()
+
+
+def test_reactive_html_stylesheet_updates_across_documents(document, comm):
+    """ReactiveHTML updates do not share stylesheet models across outputs."""
+    other_doc = Document()
+    component = ReactiveHTML(stylesheets=['https://example.com/first.css'])
+
+    with set_curdoc(document):
+        model1 = component.get_root(document, comm)
+        document.add_root(model1)
+        model2 = component.get_root(other_doc, comm)
+        other_doc.add_root(model2)
+        shared = ImportedStyleSheet(url='https://example.com/shared.css')
+        process = component._process_param_change
+
+        def add_shared(params):
+            props = process(params)
+            if 'stylesheets' in props:
+                props['stylesheets'].append(shared)
+            return props
+
+        component._process_param_change = add_shared
+        component.stylesheets = ['https://example.com/second.css']
+
+    for model, doc in ((model1, document), (model2, other_doc)):
+        assert any(
+            isinstance(sts, ImportedStyleSheet) and sts.url == 'https://example.com/shared.css'
+            for sts in model.stylesheets
+        )
+        assert all(sts.document is doc for sts in model.stylesheets if isinstance(sts, ImportedStyleSheet))
+        doc.to_json()
+
+
+def test_reactive_destroyed_stylesheet_dropped(document, comm):
+    # Regression: https://github.com/holoviz/panel/issues/8106
+    widget = Markdown('foo')
+
+    # Emulates a Design injecting a stylesheet that was destroyed along
+    # with the Document it was originally rendered into. Patched on the
+    # instance since subclassing a Pane would register a new pane type.
+    process_param_change = widget._process_param_change
+
+    def _process_param_change(params):
+        props = process_param_change(params)
+        if 'stylesheets' in props:
+            props['stylesheets'] = [*props['stylesheets'], ImportedStyleSheet()]
+        return props
+
+    widget._process_param_change = _process_param_change
+
+    model = widget.get_root(document, comm)
+
+    assert all(
+        stylesheet_url(sts) is not None for sts in model.stylesheets
+        if isinstance(sts, ImportedStyleSheet)
+    )
+    # The Document must remain serializable
+    document.to_json()
+
+def test_reactive_recreates_destroyed_stylesheet(document, comm):
+    with set_curdoc(document):
+        widget1 = TextInput()
+        widget1.get_root(document, comm)
+
+        cache = state._stylesheets[document]
+        assert cache
+        stale = list(cache.values())
+
+        # Bokeh clears the property values of every model on a Document
+        # when the Document is destroyed at the end of a session
+        for stylesheet in stale:
+            stylesheet.destroy()
+
+        widget2 = TextInput()
+        model2 = widget2.get_root(document, comm)
+
+    stale_ids = {id(stylesheet) for stylesheet in stale}
+    for stylesheet in model2.stylesheets:
+        if isinstance(stylesheet, ImportedStyleSheet):
+            assert stylesheet_url(stylesheet) is not None
+            assert id(stylesheet) not in stale_ids
 
 def test_reactive_attribute_no_name(document, comm):
     # Regression: https://github.com/holoviz/panel/pull/7655

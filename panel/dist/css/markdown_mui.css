@@ -1,0 +1,45 @@
+:host table {
+  border: 1px solid var(--mui-palette-divider);
+  border-collapse: separate;
+  border-radius: var(--mui-shape-borderRadius);
+  border-spacing: 0;
+  overflow: hidden;
+}
+
+:host th,
+:host td {
+  border: 0;
+  border-bottom: 1px solid var(--mui-palette-divider);
+  padding: 6px 16px;
+}
+
+:host thead th {
+  background-color: var(--mui-palette-action-hover);
+  color: var(--mui-palette-text-secondary);
+  font-weight: 500;
+}
+
+:host tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+/* Code blocks keep the dark highlighting palette, inline code follows the text. */
+:host :not(pre) > code {
+  background-color: var(--mui-palette-action-hover);
+  border-radius: 4px;
+  color: var(--mui-palette-text-primary);
+  font-size: 0.875em;
+  padding: 0.1em 0.35em;
+}
+
+:host blockquote {
+  border-left: 4px solid var(--mui-palette-divider);
+  color: var(--mui-palette-text-secondary);
+  margin-left: 0;
+  padding-left: 1em;
+}
+
+:host hr {
+  border: 0;
+  border-top: 1px solid var(--mui-palette-divider);
+}

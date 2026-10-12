@@ -3,7 +3,6 @@ from importlib.util import find_spec
 collect_ignore_glob = [
     "apps/",
     "developer_guide/",
-    "homepage.ipynb",
     "*VTK*.ipynb",
     "*Vega.ipynb",
     "*DeckGL*.ipynb",
@@ -26,6 +25,7 @@ if find_spec("streamz") is None:
 
 if find_spec("datashader") is None:
     collect_ignore_glob += [
+        "gallery/gaia_million_star_atlas.ipynb",
         "gallery/glaciers.ipynb",
         "gallery/windturbines.ipynb",
         "gallery/vtk_slicer.ipynb",
@@ -36,6 +36,47 @@ if find_spec("pyvista") is None:
         "gallery/vtk_interactive.ipynb",
         "gallery/vtk_warp.ipynb",
     ]
+
+if find_spec("scikit-learn") is None:
+    collect_ignore_glob += [
+        "gallery/iris_kmeans.ipynb",
+        "gallery/penguin_kmeans.ipynb",
+        "gallery/xgboost_classifier.ipynb",
+    ]
+
+if find_spec("scikit-image") is None:
+    collect_ignore_glob += [
+        "gallery/streaming_videostream.ipynb",
+    ]
+
+if find_spec("fastparquet") is None and find_spec("pyarrow") is None:
+    collect_ignore_glob += [
+        "gallery/gaia_million_star_atlas.ipynb",
+        "gallery/nyc_deckgl.ipynb",
+    ]
+
+if find_spec("scipy") is None:
+    collect_ignore_glob += [
+        "gallery/penguin_crossfilter.ipynb",
+        "gallery/portfolio_optimizer.ipynb",
+        "reference/layouts/Swipe.ipynb",
+        "reference/panes/Audio.ipynb",
+        "reference/panes/HoloViews.ipynb",
+    ]
+if find_spec("ipyvolume") is None:
+    collect_ignore_glob += [
+        "reference/panes/IPyWidget.ipynb",
+    ]
+
+if find_spec("seaborn") is None:
+    collect_ignore_glob += [
+        "reference/panes/Matplotlib.ipynb",
+    ]
+
+
+def pytest_configure(config):
+    # A cell that never finishes would otherwise hang until the job times out
+    config.option.nbval_cell_timeout = min(config.option.nbval_cell_timeout, 60)
 
 
 def pytest_runtest_makereport(item, call):

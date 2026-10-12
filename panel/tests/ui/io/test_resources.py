@@ -26,6 +26,7 @@ def test_serve_page_on_nested_route(page):
     assert [msg for msg in msgs if msg.type == "error"] == []
 
 
+@pytest.mark.internet
 def test_serve_page_with_reactive_html_css_on_nested_route(page):
     def app():
         extension(notifications=True, template='material')

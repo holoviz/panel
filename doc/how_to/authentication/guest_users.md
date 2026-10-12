@@ -10,20 +10,20 @@ The simplest way to make authentication optional is to set the `--oauth-optional
 panel serve app.py ... --oauth-optional
 ```
 
-Panel will now let the user access all endpoints without being redirected to the authentication provider or local login page. If specific functionality in your application requires authentication you may then redirect the user to the [login endpoint](./configuration#endpoints), e.g. by default you would redirect them to `/login`. As an example let's take this app:
+Panel will now let the user access all endpoints without being redirected to the authentication provider or local login page. If specific functionality in your application requires authentication you may then redirect the user to the [login endpoint](./configuration.md#endpoints), e.g. by default you would redirect them to `/login`. As an example let's take this app:
 
 ```python
 import panel as pn
 
-pn.extension(template='material')
+pn.extension(template='page')
 
 pn.state.template.title = 'Optional Auth'
 
 if pn.state.user == 'guest':
-    button = pn.widgets.Button(label='Login').servable(target='header')
+    button = pn.ui.Button(label='Login').servable(target='header')
     button.js_on_click(code='window.location.href="/login"')
 
-pn.Column(f'# Hello {pn.state.user}!', pn.state.user_info).servable()
+pn.ui.Column(f'# Hello {pn.state.user}!', pn.state.user_info).servable()
 ```
 
 Serving this app with `panel serve app.py ... --oauth-optional` and then visiting the `/app` endpoint will show the following:
@@ -42,11 +42,11 @@ def authorize(user_info, path):
         return '/login'
     return True
 
-pn.extension(authorize_callback=authorize, template='material')
+pn.extension(authorize_callback=authorize, template='page')
 
 pn.state.template.title = 'Admin'
 
-pn.Column(f'# Hello {pn.state.user}!', pn.state.user_info).servable()
+pn.ui.Column(f'# Hello {pn.state.user}!', pn.state.user_info).servable()
 ```
 
 ## Guest Endpoints

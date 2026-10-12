@@ -46,7 +46,7 @@ from .layout import (
 from .layout.base import ListLike, NamedListLike
 from .pane import DataFrame as DataFramePane
 from .pane.base import Pane, ReplacementPane
-from .reactive import Reactive
+from .reactive import Reactive, ReactiveData
 from .util import (
     abbreviated_repr, flatten, full_groupby, fullpath, is_parameterized,
     param_name, recursive_parameterized, to_async_gen,
@@ -54,11 +54,11 @@ from .util import (
 from .util.checks import is_dataframe, is_mpl_axes, is_series
 from .viewable import Layoutable, Viewable
 from .widgets import (
-    ArrayInput, Button, Checkbox, ColorPicker, DataFrame, DatePicker,
-    DateRangeSlider, DatetimeInput, DatetimeRangeSlider, DiscreteSlider,
-    FileInput, FileSelector, FloatInput, FloatSlider, IntInput, IntSlider,
-    LiteralInput, MultiSelect, RangeSlider, Select, StaticText, Tabulator,
-    TextInput, Toggle, Widget, WidgetBase,
+    ArrayInput, Button, Checkbox, ColorPicker, DatePicker, DateRangeSlider,
+    DatetimeInput, DatetimeRangeSlider, DiscreteSlider, FileInput,
+    FileSelector, FloatInput, FloatSlider, IntInput, IntSlider, LiteralInput,
+    MultiSelect, RangeSlider, Select, StaticText, Tabulator, TextInput, Toggle,
+    Widget, WidgetBase,
 )
 from .widgets.button import _ButtonBase
 
@@ -89,13 +89,6 @@ def LiteralInputTyped(pobj: param.Parameter) -> type[Widget]:
     elif isinstance(pobj, param.List):
         return type('ListInput', (LiteralInput,), {'type': list})
     return LiteralInput
-
-
-def DataFrameWidget(pobj: param.Parameter) -> type[WidgetBase]:
-    if 'panel.models.tabulator' in sys.modules:
-        return Tabulator
-    else:
-        return DataFrame
 
 
 @contextmanager
@@ -222,7 +215,7 @@ class Param(Pane):
         param.Date:              DatetimeInput,
         param.DateRange:         DatetimeRangeSlider,
         param.CalendarDateRange: DateRangeSlider,
-        param.DataFrame:         DataFrameWidget,
+        param.DataFrame:         Tabulator,
         param.Dict:              LiteralInputTyped,
         param.FileSelector:      SingleFileSelector,
         param.Filename:          TextInput,
@@ -512,14 +505,16 @@ class Param(Pane):
                 not isinstance(p_obj, (param.Date, param.CalendarDate))):
                 # Do not change widget class if mapping was overridden
                 if not widget_class_overridden:
+                    from .theme.base import resolve_component, resolve_widget
+                    designed = resolve_widget(p_obj)
                     if isinstance(p_obj, param.Number):
-                        widget_class = self_or_cls.input_widgets[float]
-                        if is_int:
-                            widget_class = self_or_cls.input_widgets[int]
-                    elif not issubclass(widget_class, LiteralInput):
+                        if designed is None:
+                            widget_class = self_or_cls.input_widgets[int if is_int else float]
+                    elif designed is None and not issubclass(widget_class, LiteralInput):
                         widget_class = self_or_cls.input_widgets['literal']
                     if isinstance(widget_class, FunctionType):
                         widget_class = widget_class(p_obj)
+                    widget_class = resolve_component(t.cast('type', widget_class))
             if hasattr(widget_class, 'step') and getattr(p_obj, 'step', None):
                 kw['step'] = p_obj.step
             pbounds = getattr(p_obj, 'bounds', None)
@@ -578,6 +573,13 @@ class Param(Pane):
                     reset = True
             try:
                 updating.append(p_key)
+                if isinstance(widget, ReactiveData) and getattr(parameterized, p_name) is new:
+                    # Data widgets such as Tabulator edit the value in place,
+                    # so the Parameterized already holds the mutated object and
+                    # param would report old is new. Restore the pre-edit value
+                    # silently to ensure a correct event is emitted.
+                    with discard_events(parameterized):
+                        parameterized.param.update(**{p_name: change.old})
                 parameterized.param.update(**{p_name: new})
             finally:
                 updating.remove(p_key)
@@ -814,14 +816,18 @@ class Param(Pane):
 
     @classmethod
     def widget_type(cls, pobj):
+        from .theme.base import resolve_component, resolve_widget
+        designed = resolve_widget(pobj)
+        if designed is not None:
+            return designed
         ptype = type(pobj)
         for wt in classlist(ptype)[::-1]:
             if wt not in cls.mapping:
                 continue
             wtype = cls.mapping[wt]
             if isinstance(wtype, types.FunctionType):
-                return wtype(pobj)
-            return wtype
+                wtype = wtype(pobj)
+            return resolve_component(t.cast('type', wtype))
 
     def get_root(
         self, doc: Document | None = None, comm: Comm | None = None,

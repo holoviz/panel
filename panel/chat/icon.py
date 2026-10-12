@@ -25,7 +25,7 @@ class ChatReactionIcons(CompositeWidget):
         The selected reactions.
     options : Dict
         A key-value pair of reaction values and their corresponding tabler icon names
-        found on https://tabler-icons.io.
+        found on https://tabler.io/icons.
     active_icons : Dict
         The mapping of reactions to their corresponding active icon names;
         if not set, the active icon name will default to its "filled" version.
@@ -50,7 +50,7 @@ class ChatReactionIcons(CompositeWidget):
 
     options = param.Dict(default={"favorite": "heart"}, doc="""
         A key-value pair of reaction values and their corresponding tabler icon names
-        found on https://tabler-icons.io.""")
+        found on https://tabler.io/icons.""")
 
     value = param.List(default=[], doc="The active reactions.")
 
