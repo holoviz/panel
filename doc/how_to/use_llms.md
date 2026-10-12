@@ -18,6 +18,8 @@ By the end of this guide you'll be able to:
 
 The [holoviz-skills](https://skills.holoviz.org/) repository provides a curated collection of [Agent Skills](https://www.anthropic.com/news/skills) for the HoloViz ecosystem, including Panel. Agent Skills are folders of instructions and references that teach an assistant how to work with a library correctly.
 
+The [Panel skill](https://github.com/holoviz-dev/holoviz-skills/tree/main/developing-with-holoviz/skills/panel) steers your assistant toward current patterns, such as `pn.viewable.Viewer` classes, `panel-material-ui` pages and `panel serve --dev`. It also includes guides for Tabulator, custom components, testing with pytest-playwright, and reviewing and troubleshooting apps.
+
 ::::{tab-set}
 
 :::{tab-item} uv
