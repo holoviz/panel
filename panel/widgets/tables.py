@@ -56,6 +56,7 @@ if t.TYPE_CHECKING:
         headerFilter: str | bool
         headerFilterParams: dict[str, t.Any]
         headerFilterFunc: str
+        headerFilterFuncParams: dict[str, t.Any]
         headerFilterPlaceholder: str
 
 class ColumnSpec(t.TypedDict, total=False):
@@ -2135,11 +2136,22 @@ class Tabulator(BaseTable):
                 filter_params = {'valuesLookup': True}
             if filter_func is None:
                 filter_func = 'in' if filter_params.get('multiselect') else 'like'
+        # Tabulator's keywords filter reads matchAll and separator from
+        # headerFilterFuncParams. headerFilterParams only configures the
+        # header input, so leaving them there makes a local table match any
+        # keyword. Remote pagination still filters in Python.
+        func_params: dict[str, t.Any] = {}
+        if filter_func == 'keywords':
+            for key in ('matchAll', 'separator'):
+                if key in filter_params:
+                    func_params[key] = filter_params.pop(key)
         fspec['headerFilter'] = filter_type
         if filter_params:
             fspec['headerFilterParams'] = filter_params
         if filter_func:
             fspec['headerFilterFunc'] = filter_func
+        if func_params:
+            fspec['headerFilterFuncParams'] = func_params
         if filter_placeholder:
             fspec['headerFilterPlaceholder'] = filter_placeholder
         return fspec
