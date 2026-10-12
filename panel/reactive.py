@@ -1482,7 +1482,8 @@ class ReactiveData(SyncableData):
                         dtype.na_value if v == '<NA>' else v for v in values
                     ]
             converted = pd.Series(tmp_values).astype(dtype).values
-        else:
+        elif dtype.kind not in 'SU':
+            # Casting to a fixed width string dtype would truncate longer edits
             converted = values.astype(dtype)  # type: ignore
         return values if converted is None else converted
 
