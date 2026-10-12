@@ -7,6 +7,7 @@ import pytest
 
 pytest.importorskip("playwright")
 
+from bokeh.plotting import figure
 from playwright.sync_api import expect
 
 from panel.config import config
@@ -14,9 +15,9 @@ from panel.custom import (
     AnyWidgetComponent, Child, Children, JSComponent, ReactComponent,
 )
 from panel.io.compile import compile_components
-from panel.layout import Row
+from panel.layout import Column, Row
 from panel.layout.base import ListLike
-from panel.pane import Markdown
+from panel.pane import Bokeh, Markdown
 from panel.tests.util import serve_component, wait_until
 
 pytestmark = pytest.mark.ui
@@ -891,6 +892,50 @@ def test_children_append_without_rerender(page, component):
     assert example.render_count == 2
 
 
+# Counts layout passes of layout roots, i.e. ESM views laying out their own
+# tree, from the moment the Bokeh bundles have loaded.
+COUNT_ROOT_LAYOUTS = """
+window.__root_layouts = 0
+document.addEventListener('DOMContentLoaded', () => {
+  const view_cls = Bokeh.Models.get('panel.models.esm.ReactiveESM').prototype.default_view
+  const compute_layout = view_cls.prototype.compute_layout
+  view_cls.prototype.compute_layout = function() {
+    if (!this.is_managed) { window.__root_layouts++ }
+    return compute_layout.call(this)
+  }
+})
+"""
+
+@pytest.mark.internet
+@pytest.mark.parametrize('component', [JSChildren, ReactChildren])
+def test_children_initial_render_layout_passes_independent_of_count(page, component):
+    page.add_init_script(COUNT_ROOT_LAYOUTS)
+    example = component(objects=[f'<div class="item">{i}</div>' for i in range(50)])
+
+    serve_component(page, example)
+
+    expect(page.locator('.item')).to_have_count(50)
+    page.wait_for_function('Bokeh.index.roots[0].is_idle')
+    page.wait_for_timeout(200)
+
+    # Each mounted child used to lay out the whole root, one pass per child.
+    assert page.evaluate('window.__root_layouts') < 10
+
+@pytest.mark.internet
+@pytest.mark.parametrize('component', [JSChildren, ReactChildren])
+def test_children_bokeh_plot_laid_out_after_mount(page, component):
+    plot = figure(width=300, height=200)
+    plot.line([0, 1], [0, 1])
+    example = component(objects=['<div class="item">A</div>', Bokeh(plot)])
+
+    serve_component(page, example)
+
+    canvas = page.locator('.bk-Canvas').first
+    expect(canvas).to_be_visible()
+    wait_until(lambda: (canvas.bounding_box() or {}).get('width') == 300, page)
+    assert canvas.bounding_box()['height'] == 200
+
+
 JS_CODE_BEFORE = """
 export function render() {
   const h1 = document.createElement('h1')
@@ -1153,6 +1198,27 @@ def test_react_child_no_shadow_dom_remove_lifecycle_hook(page):
     expect(page.locator('h1')).to_have_count(1)
 
     expect(page.locator('h1')).to_have_text("New ¶")
+
+
+@pytest.mark.internet
+def test_react_child_no_shadow_dom_remove_disconnects_view(page):
+    child = ReactUpdate(text='Hello', use_shadow_dom=False)
+    example = ReactChild(child=child)
+
+    serve_component(page, example)
+
+    expect(page.locator('h1')).to_have_text('Hello')
+
+    model_id = next(iter(child._models.values()))[0].ref['id']
+    page.evaluate(f"window.__child = Bokeh.documents[0].get_model_by_id('{model_id}')")
+    assert page.evaluate('window.__child._event_views.size') == 1
+
+    example.child = '# New'
+
+    expect(page.locator('h1')).to_have_text('New ¶')
+    wait_until(lambda: page.evaluate(
+        '[window.__child._event_views.size, window.__child._esm_watchers.size]'
+    ) == [0, 0], page)
 
 
 class JSDefaultExport(JSComponent):
@@ -1685,3 +1751,341 @@ def test_children_updates_do_not_overlap(page):
             return new Promise(r => setTimeout(() => r(resolved), 100))
         }
     """, timeout=10000)
+
+
+class ReactChildrenList(ListLike, ReactComponent):
+
+    objects = Children()
+
+    _esm = """
+    export function render({ model }) {
+      return <div id="container">{model.get_child("objects")}</div>
+    }
+    """
+
+
+@pytest.mark.internet
+def test_react_children_shrink_from_end(page):
+    example = ReactChildrenList(objects=[
+        ReactChildInner(text="child-0"), ReactChildInner(text="child-1")
+    ])
+
+    serve_component(page, example)
+
+    expect(page.locator('.inner')).to_have_count(2)
+    expect(page.locator('#container > .child-wrapper')).to_have_count(2)
+
+    example.pop(-1)
+
+    # A list that only shrank has to drop the trailing wrapper too.
+    expect(page.locator('#container > .child-wrapper')).to_have_count(1)
+    expect(page.locator('.inner')).to_have_text('child-0')
+
+
+class ReactChildrenWatcher(ListLike, ReactComponent):
+
+    objects = Children()
+
+    _esm = """
+    import {useEffect, useState} from "react"
+
+    export function render({ model }) {
+      const [changes, setChanges] = useState(0)
+      useEffect(() => {
+        const cb = () => setChanges((c) => c + 1)
+        model.on("objects", cb)
+        return () => model.off("objects", cb)
+      }, [])
+      return (
+        <div>
+          <div id="changes">{changes}</div>
+          {model.get_child("objects")}
+        </div>
+      )
+    }
+    """
+
+
+@pytest.mark.internet
+def test_react_children_watcher_fires(page):
+    example = ReactChildrenWatcher(objects=[ReactChildInner(text="child-0")])
+
+    serve_component(page, example)
+
+    expect(page.locator('#changes')).to_have_text('0')
+
+    example.append(ReactChildInner(text="child-1"))
+
+    expect(page.locator('.inner')).to_have_count(2)
+    expect(page.locator('#changes')).to_have_text('1')
+
+
+class JSDuplicateDisplay(JSComponent):
+
+    _esm = """
+    export function render({ el }) {
+      const div = document.createElement("div")
+      div.className = "duplicate"
+      return div
+    }
+    """
+
+
+def test_esm_component_displayed_twice_renders_both_views(page):
+    component = JSDuplicateDisplay()
+
+    serve_component(page, Row(Column(component), Column(component)))
+
+    # Both views of the one model render, not just the first one found.
+    expect(page.locator('.duplicate')).to_have_count(2)
+
+
+class ReactDuplicateDisplay(ReactComponent):
+
+    _esm = """
+    export function render() {
+      return <div className="duplicate"/>
+    }
+    """
+
+
+class AnyWidgetDuplicateDisplay(AnyWidgetComponent):
+
+    _esm = """
+    export function render({ el }) {
+      const div = document.createElement("div")
+      div.className = "duplicate"
+      el.append(div)
+    }
+    """
+
+
+@pytest.mark.internet
+@pytest.mark.parametrize('component', [ReactDuplicateDisplay, AnyWidgetDuplicateDisplay])
+def test_react_component_displayed_twice_renders_both_views(page, component):
+    example = component()
+
+    serve_component(page, Row(Column(example), Column(example)))
+
+    expect(page.locator('.duplicate')).to_have_count(2)
+
+
+class JSEventUnwatch(JSComponent):
+
+    event = param.Event()
+
+    _esm = """
+    export function render({ model }) {
+      const h1 = document.createElement('h1')
+      h1.textContent = "0"
+      const cb = () => {
+        h1.textContent = `${parseInt(h1.textContent) + 1}`
+        model.off('event', cb)
+      }
+      model.on('event', cb)
+      return h1
+    }
+    """
+
+
+def test_unwatch_event(page):
+    example = JSEventUnwatch()
+
+    serve_component(page, example)
+
+    expect(page.locator('h1')).to_have_text('0')
+
+    example.param.trigger('event')
+
+    expect(page.locator('h1')).to_have_text('1')
+
+    example.param.trigger('event')
+    page.wait_for_timeout(300)
+
+    expect(page.locator('h1')).to_have_text('1')
+
+
+class JSRerenderWatchers(JSComponent):
+
+    child = Child()
+
+    nested = param.ClassSelector(class_=Nested)
+
+    _esm = """
+    export function render({ model }) {
+      window.__renders = (window.__renders || 0) + 1
+      window.__nested_calls = window.__nested_calls || 0
+      window.__width_calls = window.__width_calls || 0
+      model.on('nested.text', () => { window.__nested_calls++ })
+      model.on('width', () => { window.__width_calls++ })
+      const div = document.createElement('div')
+      div.append(model.get_child('child'))
+      return div
+    }
+    """
+
+
+def test_rerender_disconnects_nested_and_model_property_watchers(page):
+    nested = Nested(text='a')
+    example = JSRerenderWatchers(child=INIT, nested=nested, width=200)
+
+    serve_component(page, example)
+
+    expect(page.locator('.markdown')).to_have_text(INIT)
+
+    example.child = ALT
+
+    expect(page.locator('.markdown')).to_have_text(ALT)
+    wait_until(lambda: page.evaluate('window.__renders') == 2, page)
+
+    nested.text = 'b'
+    example.width = 300
+
+    wait_until(lambda: page.evaluate('window.__nested_calls') >= 1, page)
+    wait_until(lambda: page.evaluate('window.__width_calls') >= 1, page)
+    page.wait_for_timeout(200)
+
+    # The first render's watchers must not survive the re-render.
+    assert page.evaluate('window.__nested_calls') == 1
+    assert page.evaluate('window.__width_calls') == 1
+
+
+class JSCustomMsg(JSComponent):
+
+    _esm = """
+    export function render({ model }) {
+      window.__msgs = window.__msgs || 0
+      model.on('msg:custom', () => { window.__msgs++ })
+      const div = document.createElement('div')
+      div.className = 'msg-target'
+      return div
+    }
+    """
+
+
+def test_custom_msg_reaches_live_views_only(page):
+    example = JSCustomMsg()
+    layout = Row(Column(example), Column(example))
+
+    serve_component(page, layout)
+
+    expect(page.locator('.msg-target')).to_have_count(2)
+
+    example._send_msg({'text': 'a'})
+
+    wait_until(lambda: page.evaluate('window.__msgs') == 2, page)
+
+    model_id = next(iter(example._models.values()))[0].ref['id']
+    event_views = f"Bokeh.documents[0].get_model_by_id('{model_id}')._event_views.size"
+    assert page.evaluate(event_views) == 2
+
+    layout[1] = Markdown('removed')
+
+    expect(page.locator('.msg-target')).to_have_count(1)
+    # Removing a Column cleans up the shared component's Python models, so
+    # the dispatch set is checked in the browser instead of sending again.
+    wait_until(lambda: page.evaluate(event_views) == 1, page)
+
+
+def _same_name_components():
+    # Two classes sharing a name and an ESM length used to share a cache key.
+    def make(text):
+        class Collide(JSComponent):
+            _esm = f"""
+            export function render() {{
+              const h1 = document.createElement('h1')
+              h1.textContent = "{text}"
+              return h1
+            }}
+            """
+        return Collide
+    return make('AAA'), make('BBB')
+
+
+def test_same_name_and_length_components_do_not_share_module(page):
+    first, second = _same_name_components()
+
+    serve_component(page, Row(first(), second()))
+
+    expect(page.locator('h1')).to_have_count(2)
+    expect(page.locator('h1').nth(0)).to_have_text('AAA')
+    expect(page.locator('h1').nth(1)).to_have_text('BBB')
+
+
+MUI_BLUE = 'rgb(25, 118, 210)'
+
+
+class MuiButton(ReactComponent):
+
+    _importmap = {
+        "imports": {
+            "@mui/material/": "https://esm.sh/@mui/material@5.16.7/",
+        }
+    }
+
+    _esm = """
+    import Button from "@mui/material/Button"
+
+    export function render() {
+      return <Button variant="contained">MUI</Button>
+    }
+    """
+
+
+class ReactRenderCounter(ReactComponent):
+
+    _esm = """
+    export function render({ model }) {
+      window.__renders = (window.__renders || 0) + 1
+      return <h1 className="counter">counter</h1>
+    }
+    """
+
+
+@pytest.mark.internet
+def test_mui_component_styled_after_plain_react_component(page):
+    layout = Row(ReactRenderCounter())
+
+    serve_component(page, layout)
+
+    expect(page.locator('.counter')).to_have_count(1)
+
+    # The plain component defines the React wrappers first, which must not
+    # strip emotion from a later MUI component sharing the same React.
+    layout.append(MuiButton())
+
+    expect(page.locator('.MuiButton-root')).to_have_css('background-color', MUI_BLUE)
+
+
+@pytest.mark.internet
+def test_mui_component_keeps_styles_when_moved(page):
+    layout = Column(ReactRenderCounter(), MuiButton())
+
+    serve_component(page, layout)
+
+    button = page.locator('.MuiButton-root')
+    expect(button).to_have_css('background-color', MUI_BLUE)
+
+    layout.objects = layout.objects[::-1]
+
+    expect(page.locator('.counter')).to_have_count(1)
+    expect(button).to_have_css('background-color', MUI_BLUE)
+
+
+@pytest.mark.internet
+def test_append_does_not_rerender_unmoved_siblings(page):
+    layout = Column(*(ReactRenderCounter() for _ in range(3)))
+
+    serve_component(page, layout)
+
+    expect(page.locator('.counter')).to_have_count(3)
+    page.wait_for_function('Bokeh.index.roots[0].is_idle')
+    page.wait_for_timeout(200)
+    renders = page.evaluate('window.__renders')
+
+    layout.append(ReactRenderCounter())
+
+    expect(page.locator('.counter')).to_have_count(4)
+    page.wait_for_timeout(300)
+
+    assert page.evaluate('window.__renders') == renders + 1

@@ -86,10 +86,10 @@ class SessionTaskRunner(pn.viewable.Viewer):
         self._stop_thread_func()
 
     def __panel__(self):
-        return pn.Column(
+        return pn.ui.Column(
             f"## Session TaskRunner {id(self)}",
-            pn.pane.Str(self.param.status),
-            pn.pane.Str(pn.rx("Last Result: {value}").format(value=self.param.value)),
+            pn.ui.Str(self.param.status),
+            pn.ui.Str(pn.rx("Last Result: {value}").format(value=self.param.value)),
         )
 
     def append(self, task):
@@ -113,9 +113,9 @@ task_runner = SessionTaskRunner(worker=example_worker)
 def add_task(event):
     task_runner.append("task")
 
-button = pn.widgets.Button(label="Add Task", on_click=add_task, color="primary")
+button = pn.ui.Button(label="Add Task", on_click=add_task, color="primary")
 
-pn.Column(button, task_runner).servable()
+pn.ui.Column(button, task_runner).servable()
 ```
 
 The application should look like:
@@ -237,11 +237,11 @@ class GlobalTaskRunner(pn.viewable.Viewer):
         pn.state.cache[cls._global_task_runner_key] = {}
 
     def __panel__(self):
-        return pn.Column(
+        return pn.ui.Column(
             f"## Global TaskRunner {id(self)}",
             self.param.seconds,
-            pn.pane.Str(pn.rx("Last Result: {value}").format(value=self.param.value)),
-            pn.pane.Str(
+            pn.ui.Str(pn.rx("Last Result: {value}").format(value=self.param.value)),
+            pn.ui.Str(
                 pn.rx("Last Exception: {value}").format(value=self.param.exception)
             ),
         )
@@ -265,7 +265,7 @@ def result_view(value):
     results.append(value)
     return f"{len(results)} results produced during this session"
 
-pn.Column(
+pn.ui.Column(
     task_runner, result_view,
 ).servable()
 ```

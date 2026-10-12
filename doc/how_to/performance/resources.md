@@ -15,16 +15,16 @@ import panel as pn
 
 pn.extension()
 
-pn.widgets.Tabulator(df).servable()
+pn.ui.Tabulator(df).servable()
 ```
 
 The same holds for components created long after the page loaded, e.g. in a callback:
 
 ```python
 def show_table(event):
-    layout[:] = [pn.widgets.Tabulator(df)]
+    layout[:] = [pn.ui.Tabulator(df)]
 
-pn.widgets.Button(name='Show', on_click=show_table)
+pn.ui.Button(name='Show', on_click=show_table)
 ```
 
 A library is fetched at most once per page no matter how many components ask for it, and components that share a library share the download. If a library cannot be fetched the component renders an error message in place of itself and the rest of the page is unaffected.

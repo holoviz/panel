@@ -73,7 +73,7 @@ Reactivity is a key concept in both Param and Panel. This means changes in one p
 In Panel, understanding the distinction between a Parameter's value and the Parameter object itself is important. The value represents the current value at a specific moment, while the object contains information about the Parameter and serves as a reference to its value over time. In many cases, you can utilize a Parameter object, and Panel will handle updating the value reactively as it changes. For instance, consider a widget:
 
 ```python
-text = pn.widgets.TextInput()
+text = pn.ui.TextInput()
 
 text.value  # 👈 The current value of the widget
 text.param.value  # 👈 A reference to the "value" Parameter, used in Panel to bind to the "value"
@@ -104,7 +104,7 @@ df_pane = pn.panel(df)
 To inspect the type of an object, simply `print` it:
 
 ```python
->>> print(pn.Row(df))
+>>> print(pn.ui.Row(df))
 Row
     [0] DataFrame(DataFrame)
 ```
@@ -118,7 +118,7 @@ At times, an object may have multiple possible representations to choose from. I
 :::{tab-item} DataFrame Pane
 
 ```python
-pn.pane.DataFrame(df)
+pn.ui.DataFrame(df)
 ```
 
 <table border="0" class="dataframe panel-df">
@@ -158,7 +158,7 @@ pn.pane.DataFrame(df)
 :::{tab-item} HTML Pane
 
 ```python
-pn.pane.HTML(df)
+pn.ui.HTML(df)
 ```
 
 <div>
@@ -213,7 +213,7 @@ pn.pane.HTML(df)
 :::{tab-item} Str Pane
 
 ```python
-pn.pane.Str(df)
+pn.ui.Str(df)
 ```
 
 <pre>
@@ -233,7 +233,7 @@ pn.pane.Str(df)
 Discover more about Panes in the [Component Overview - Panes](https://panel.holoviz.org/explanation/components/components_overview.html#panes) section.
 :::
 
-So far, we've learned how to display data. However, to actually incorporate it into your served application, you also need to mark it as `.servable()`. Marking an object as servable adds it to the current template, something we'll delve into later. You can either mark multiple objects as servable, which adds them to the page sequentially, or you can use layouts to arrange objects explicitly.
+So far, we've learned how to display data. However, to actually incorporate it into your served application, you also need to mark it as `.servable()`. Marking an object as servable adds it to the served page; the [Templates](#templates) section below shows how to give that page a structure. You can either mark multiple objects as servable, which adds them to the page sequentially, or you can use layouts to arrange objects explicitly.
 
 ```python
 df_pane.servable()
@@ -251,15 +251,17 @@ To craft an interactive application, you'll typically add widget components (suc
 ```{pyodide}
 import panel as pn
 
-x = pn.widgets.IntSlider(label='x', start=0, end=100)
+pn.extension(throttled=True)
+
+x = pn.ui.IntSlider(label='x', start=0, end=100)
 
 def square(x):
     return f'{x} squared is {x**2}'
 
-pn.Row(x, pn.bind(square, x))
+pn.ui.Row(x, pn.ui.Markdown(pn.bind(square, x)))
 ```
 
-The `pn.bind` function allows us to bind a widget or a *Parameter* **object** to a function that returns an item to be displayed. Once bound, the function can be added to a layout or rendered directly using `pn.panel` and `.servable()`. This enables you to express reactivity between widgets and output very easily.
+The `pn.bind` function binds a widget or a *Parameter* **object** to a function and returns a reference to the function's result. Passing that reference to a pane, here `Markdown`, creates the pane once and updates its content in place every time the slider moves.
 
 :::{admonition} Reminder
 :class: info
@@ -267,13 +269,15 @@ The `pn.bind` function allows us to bind a widget or a *Parameter* **object** to
 Recall our discussion on the difference between a *Parameter* **value** and a *Parameter* **object**. In the previous example, the widget itself effectively serves as an alias for the *Parameter* object, i.e., the binding operation is exactly equivalent to `pn.bind(square, x.param.value)`. This holds true for all widgets: the widget object is treated as an alias for the widget's `value` *Parameter* object. Thus, you can generally pass either the widget (as a convenient shorthand) or the underlying *Parameter* object.
 :::
 
-While the binding approach above works, it can be somewhat heavy-handed. Whenever the slider value changes, Panel will recreate a whole new Pane and re-render the output. For finer control, we can instead explicitly instantiate a `Markdown` pane and pass it bound functions and *Parameters* by reference:
+You could also put the bound function directly into the layout, `pn.ui.Row(x, pn.bind(square, x))`, and Panel would infer a pane for it. Creating the pane yourself is better practice: you choose the pane type, and every parameter of the pane, not only its content, can be bound by reference in the same way:
 
 ```{pyodide}
 import panel as pn
 
-x = pn.widgets.IntSlider(label='x', start=0, end=100)
-background = pn.widgets.ColorPicker(label='Background', value='lightgray')
+pn.extension(throttled=True)
+
+x = pn.ui.IntSlider(label='x', start=0, end=100)
+background = pn.ui.ColorPicker(label='Background', value='lightgray')
 
 def square(x):
     return f'{x} squared is {x**2}'
@@ -281,59 +285,41 @@ def square(x):
 def styles(background):
     return {'background-color': background, 'padding': '0 10px'}
 
-pn.Column(
+pn.ui.Column(
     x,
     background,
-    pn.pane.Markdown(pn.bind(square, x), styles=pn.bind(styles, background))
+    pn.ui.Markdown(pn.bind(square, x), styles=pn.bind(styles, background))
 )
 ```
 
 ## Templates
 
-Once you've begun building an application, you'll likely want to enhance its appearance, which is where templates come into play. When you mark an object as `.servable()`, you're inserting it into a template. By default, Panel employs a completely blank template, but selecting another template is straightforward by setting `pn.config.template`. You'll have several options based on different frameworks, including `'bootstrap'`, `'material'`, and `'fast'`.
-
-```python
-pn.config.template = 'fast'
-```
-
-:::{note}
-:class: info
-
-The `pn.config` object offers a range of options to configure your application. As a shortcut, you may provide options for the `config` object as keywords to the `pn.extension` call. In other words, `pn.extension(template='fast')` is equivalent to `pn.config.template = 'fast'`, providing a clean way to set multiple config options at once.
-:::
-
-Once you've configured a template, you can control where to render your components using the `target` argument of the `.servable()` method. Most templates feature multiple target areas including 'main', 'sidebar', 'header', and 'modal'. For example, you might want to render your widgets into the sidebar and your plots into the main area:
+Once you've begun building an application, you'll likely want to give it a proper page structure: a header with a title, a sidebar for controls and a main area for content. `pn.ui.Page` provides this, along with a light/dark theme toggle. Pass the components for each area as lists and mark the `Page` as `.servable()`:
 
 ```python
 import numpy as np
-import matplotlib.pyplot as plt
 import panel as pn
+from matplotlib.figure import Figure
 
-pn.extension(template='fast')
+pn.extension(throttled=True)
 
-freq = pn.widgets.FloatSlider(
-    label='Frequency', start=0, end=10, value=5
-).servable(target='sidebar')
-
-ampl = pn.widgets.FloatSlider(
-    label='Amplitude', start=0, end=1, value=0.5
-).servable(target='sidebar')
+freq = pn.ui.FloatSlider(label='Frequency', start=0, end=10, value=5)
+ampl = pn.ui.FloatSlider(label='Amplitude', start=0, end=1, value=0.5)
 
 def plot(freq, ampl):
-    fig = plt.figure()
+    fig = Figure(figsize=(8, 3.5), layout='tight')
     ax = fig.add_subplot(111)
     xs = np.linspace(0, 1)
-    ys = np.sin(xs*freq)*ampl
-    ax.plot(xs, ys)
+    ax.plot(xs, np.sin(xs*freq)*ampl)
     return fig
 
-mpl = pn.pane.Matplotlib(
-    pn.bind(plot, freq, ampl)
-)
+mpl = pn.ui.Matplotlib(pn.bind(plot, freq, ampl), format='svg', sizing_mode='stretch_width')
 
-pn.Column(
-    '# Sine curve', mpl
-).servable(target='main')
+pn.ui.Page(
+    title='Sine curve',
+    sidebar=[freq, ampl],
+    main=[mpl],
+).servable()
 ```
 
 <img src="../_static/images/core_concepts_app.png" style="margin-left: auto; margin-right: auto; display: block;"></img>
@@ -344,7 +330,7 @@ In this **Getting Started** guide, you've installed Panel, built a simple app, a
 
 For a hands-on approach to **learning Panel**, dive into our [Tutorials](../tutorials/index.md). If you seek clarity or wish to deepen your understanding of specific topics, refer to the [Explanation](../explanation/index.md) section of the docs.
 
-During **Panel usage**, consult the [Component Gallery](../reference/index.rst) reference guides, find solutions to specific problems in the [How-to](../how_to/index.md) guides, or explore the [API Reference](../api/index.md) sections for technical specifications and descriptions.
+During **Panel usage**, consult the [Component Gallery](../reference/index.md) reference guides, find solutions to specific problems in the [How-to](../how_to/index.md) guides, or explore the [API Reference](../api/index.md) sections for technical specifications and descriptions.
 
 ## Getting Help
 

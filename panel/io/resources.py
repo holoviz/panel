@@ -25,7 +25,8 @@ import bokeh.embed.wrappers
 from bokeh.core.property.descriptors import UnsetValueError
 from bokeh.embed.bundle import (
     CSS_RESOURCES as BkCSS_RESOURCES, URL, Bundle as BkBundle, _any,
-    _bundle_extensions, _use_mathjax, bundle_models, extension_dirs,
+    _bundle_extensions, _query_extensions, _use_mathjax, _use_tables,
+    bundle_models, extension_dirs,
 )
 from bokeh.model import Model
 from bokeh.models import ImportedStyleSheet
@@ -37,6 +38,7 @@ from markupsafe import Markup
 
 from ..config import config, panel_extension as extension
 from ..util import _descendents, isurl, url_path
+from .pages import page_theme
 from .state import state
 
 if t.TYPE_CHECKING:
@@ -91,6 +93,9 @@ _env.lstrip_blocks = True
 _env.filters['json'] = lambda obj: Markup(json.dumps(obj, cls=json_dumps))
 _env.filters['conffilter'] = conffilter
 _env.filters['sorted'] = sorted
+# A global so that user supplied auth, logout and error templates can use the
+# page theme without every handler passing it.
+_env.globals['page'] = page_theme
 
 @functools.cache
 def parse_template(*args, **kwargs):
@@ -537,6 +542,22 @@ def _panel_use_mathjax(roots) -> bool:
     return _any(roots, lambda obj: isinstance(obj, PanelHTML))
 
 
+def _panel_use_tables(roots) -> bool:
+    """
+    Whether any model reachable from roots requires the bokeh-tables bundle.
+
+    Tabulator renders without it, but Bokeh's DataTable and DataCube need it
+    and so do extensions defining custom cell editors or formatters.
+    """
+    from bokeh.models.widgets.tables import CellEditor, CellFormatter
+    models = set()
+    for root in roots:
+        models |= root.references()
+    return _use_tables(models) or _query_extensions(
+        models, lambda cls: issubclass(cls, (CellEditor, CellFormatter))
+    )
+
+
 def bundle_resources(
     roots,
     resources: BkResources,
@@ -567,10 +588,19 @@ def bundle_resources(
     else:
         use_mathjax = 'mathjax' in ext._loaded_extensions
 
+    # Notebooks load resources before anything is rendered, so we cannot
+    # know whether a table will be displayed later and always load it
+    use_tables = (
+        notebook or roots is None or 'bokeh-tables' in ext._loaded_extensions or
+        _panel_use_tables(roots)
+    )
+
     if js_resources:
         js_resources = js_resources.clone()
         if not use_mathjax and "bokeh-mathjax" in js_resources.components:
             js_resources.components.remove("bokeh-mathjax")
+        if not use_tables and "bokeh-tables" in js_resources.components:
+            js_resources.components.remove("bokeh-tables")
         if reloading:
             js_resources.components.clear()
 
@@ -945,12 +975,8 @@ class Resources(BkResources):
 
         # Add loading spinner
         if config.global_loading_spinner:
-            loading_base = (DIST_DIR / "css" / "loading.css").read_text(encoding='utf-8').replace(
-                '../assets', self.dist_dir + 'assets'
-            )
-            raw.extend([loading_base, loading_css(
-                config.loading_spinner, config.loading_color, config.loading_max_height
-            )])
+            from .loading import loading_resources
+            raw.extend(loading_resources(inline=True, dist_path=self.dist_dir)['raw_css'])
         return raw + process_raw_css(config.raw_css) + process_raw_css(config.global_css)
 
     @property

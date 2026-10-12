@@ -12,12 +12,14 @@ import pytest
 
 pytest.importorskip("playwright")
 
+from bokeh.models import LinearColorMapper
 from bokeh.models.widgets.tables import (
     BooleanFormatter, CheckboxEditor, DateEditor, DateFormatter,
     HTMLTemplateFormatter, IntEditor, NumberEditor, NumberFormatter,
     ScientificFormatter, SelectEditor, StringEditor, StringFormatter,
     TextEditor,
 )
+from bokeh.transform import transform
 from playwright.sync_api import Error, expect
 
 from panel import extension
@@ -487,6 +489,30 @@ def test_tabulator_formatters_bokeh_string(page, df_mixed):
 
     style = "font-weight: bold; text-align: center; color: red;"
     expect(page.locator('text="A"')).to_have_attribute("style", style)
+
+
+def test_tabulator_formatters_bokeh_string_color_mapper(page, df_mixed):
+    mapper = LinearColorMapper(palette=['#ff0000', '#0000ff'], low=1, high=4)
+    widget = Tabulator(
+        df_mixed,
+        formatters={
+            'str': StringFormatter(background_color=transform('int', mapper)),
+        },
+    )
+
+    serve_component(page, widget)
+
+    expect(page.locator('text="A"')).to_have_css("background-color", "rgb(255, 0, 0)")
+    expect(page.locator('text="D"')).to_have_css("background-color", "rgb(0, 0, 255)")
+
+
+def test_tabulator_renders_without_bokeh_tables(page, df_mixed):
+    widget = Tabulator(df_mixed, formatters={'float': NumberFormatter(format='0.000')})
+
+    serve_component(page, widget)
+
+    expect(page.locator('text="3.140"')).to_have_count(1)
+    assert not page.evaluate("Bokeh.Models._known_models.has('DataTable')")
 
 
 def test_tabulator_formatters_bokeh_html_multiple_columns(page, df_mixed):
@@ -1660,6 +1686,40 @@ def test_tabulator_theming(page, df_mixed, df_mixed_as_string, theme):
             break
     assert found
     assert response.status
+
+
+def test_tabulator_hidden_until_stylesheet_loads(page, df_mixed):
+    # The theme CSS is also linked from the document head, and whether the
+    # table then requests it again depends on the browser cache, so hold a
+    # stylesheet only the table links.
+    held = []
+    page.route('https://example.com/held.css', lambda route: held.append(route))
+    widget = Tabulator(df_mixed, stylesheets=['https://example.com/held.css'])
+
+    serve_component(page, widget, wait=False)
+
+    table = page.locator('.pnx-tabulator.tabulator')
+    expect(page.locator('.tabulator-row')).to_have_count(len(df_mixed))
+    # wait_until waits for the network to idle, which the held request prevents.
+    for _ in range(50):
+        if held:
+            break
+        page.wait_for_timeout(100)
+    assert held
+    page.wait_for_timeout(200)
+    expect(table).to_have_css('visibility', 'hidden')
+
+    for route in held:
+        route.fulfill(content_type='text/css', body='.tabulator-cell { padding: 12px; }')
+
+    expect(table).to_have_css('visibility', 'visible')
+    widths = table.locator('.tabulator-col').evaluate_all(
+        'cols => cols.map(c => c.getBoundingClientRect().width)'
+    )
+    page.wait_for_timeout(200)
+    assert table.locator('.tabulator-col').evaluate_all(
+        'cols => cols.map(c => c.getBoundingClientRect().width)'
+    ) == widths
 
 
 def test_tabulator_selection_selectable_by_default(page, df_mixed):
@@ -3748,6 +3808,19 @@ def test_tabulator_loading_no_vertical_rescroll(page):
     page.wait_for_timeout(400)
     # The table should keep the same scroll position
     wait_until(lambda: target.bounding_box() == bb, page)
+
+
+def test_tabulator_loading_spinner_not_clipped_without_value(page):
+    # https://github.com/holoviz/panel/issues/8555
+    widget = Tabulator(loading=True)
+
+    serve_component(page, widget)
+
+    table = page.locator('.pn-loading')
+    expect(table).to_have_count(1)
+    # Without columns the table would be 1px wide and clip the 40px spinner
+    wait_until(lambda: table.bounding_box()['width'] >= 40, page)
+    wait_until(lambda: table.bounding_box()['height'] >= 40, page)
 
 
 def test_tabulator_trigger_value_update(page):

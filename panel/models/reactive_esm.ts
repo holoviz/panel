@@ -6,6 +6,7 @@ import {div} from "@bokehjs/core/dom"
 import type {StyleSheetLike} from "@bokehjs/core/dom"
 import {ImportedStyleSheet} from "@bokehjs/core/dom"
 import {DOMView} from "@bokehjs/core/dom_view"
+import type {View} from "@bokehjs/core/view"
 import {Enum} from "@bokehjs/core/kinds"
 import type * as p from "@bokehjs/core/properties"
 import type {Attrs} from "@bokehjs/core/types"
@@ -17,7 +18,7 @@ import type {UIElement} from "@bokehjs/models/ui/ui_element"
 
 import {serializeEvent} from "./event-to-object"
 import {DOMEvent} from "./html"
-import {HTMLBox, HTMLBoxView, set_size} from "./layout"
+import {HTMLBox, HTMLBoxView, rerender_view, set_size} from "./layout"
 import {resources} from "./resources"
 import {convertUndefined, formatError} from "./util"
 
@@ -27,6 +28,25 @@ import esm_css from "styles/models/esm.css"
 // its keys are logical (class name plus source length), so two Panel
 // versions on one page must not be able to satisfy each other from it.
 const MODULE_CACHE = new Map()
+
+// Transpiled source by model type and module cache key, so instances of one
+// component class do not each run sucrase over the same source.
+const COMPILE_CACHE = new Map<string, string>()
+
+// Interns ESM sources so cache keys stay short and cannot collide, unlike
+// keys derived from the source length.
+const SOURCE_IDS = new Map<string, number>()
+
+const DECLARED_IMPORTMAPS = new Set<string>()
+
+function source_id(source: string): number {
+  let id = SOURCE_IDS.get(source)
+  if (id === undefined) {
+    id = SOURCE_IDS.size
+    SOURCE_IDS.set(source, id)
+  }
+  return id
+}
 
 export class DataEvent extends ModelEvent {
 
@@ -54,7 +74,31 @@ export class ESMEvent extends DataEvent {
   }
 }
 
+const PROXY_METHODS = new Set(["get_child", "send_msg", "send_event", "off", "on"])
+
 export function model_getter(target: ReactiveESMView, name: string) {
+  const model = target.model
+  if (PROXY_METHODS.has(name)) {
+    // Cached so the methods are stable across accesses, e.g. as hook
+    // dependencies, instead of a new closure per property read.
+    let method = target._proxy_methods.get(name)
+    if (method === undefined) {
+      method = proxy_method(target, name)
+      target._proxy_methods.set(name, method)
+    }
+    return method
+  } else if (Reflect.has(model.data, name)) {
+    if (name in model.data.attributes && !target.accessed_properties.includes(name)) {
+      target.accessed_properties.push(name)
+    }
+    return Reflect.get(model.data, name)
+  } else if (Reflect.has(model, name)) {
+    return Reflect.get(model, name)
+  }
+  return undefined
+}
+
+function proxy_method(target: ReactiveESMView, name: string): (...args: any[]) => any {
   const model = target.model
   if (name === "get_child") {
     return (child: string) => {
@@ -133,15 +177,8 @@ export function model_getter(target: ReactiveESMView, name: string) {
         console.warn(`Could not register callback for event type '${p}'`)
       }
     }
-  } else if (Reflect.has(model.data, name)) {
-    if (name in model.data.attributes && !target.accessed_properties.includes(name)) {
-      target.accessed_properties.push(name)
-    }
-    return Reflect.get(model.data, name)
-  } else if (Reflect.has(model, name)) {
-    return Reflect.get(model, name)
   }
-  return undefined
+  throw new Error(`unknown proxy method '${name}'`)
 }
 
 export function model_setter(target: ReactiveESMView, name: string, value: any): boolean {
@@ -171,6 +208,34 @@ function init_model_setter(target: ReactiveESM, name: string, value: any): boole
   return false
 }
 
+function render_esm_view(view: ReactiveESMView): void {
+  if (view.is_destroyed) {
+    return
+  }
+  const output = view.render_fn!({
+    view, model: view.model_proxy, data: view.model.data, el: view.container,
+  })
+  Promise.resolve(output).then((out) => {
+    if (out instanceof Element) {
+      view.container.replaceChildren(out)
+    }
+    view.after_rendered()
+  })
+}
+
+// Resolved values of render module promises, so a view whose module has
+// already loaded can render synchronously instead of a microtask later.
+const RESOLVED_MODULES = new WeakMap<Promise<any>, any>()
+
+function track_module<T>(module: Promise<T>): Promise<T> {
+  module.then((value) => RESOLVED_MODULES.set(module, value), () => {})
+  return module
+}
+
+const ESM_RENDER_MODULE = track_module(Promise.resolve({default: {render: render_esm_view}}))
+
+const PENDING_FINISHED = new Set<View>()
+
 export class ReactiveESMView extends HTMLBoxView {
   declare model: ReactiveESM
   container: HTMLDivElement
@@ -194,6 +259,9 @@ export class ReactiveESMView extends HTMLBoxView {
   _stale_children: boolean = false
   _mounted: Map<string, Set<string>> = new Map()
   _update_children_chain: Promise<void> = Promise.resolve()
+  _layout_pending: boolean = false
+  _proxy_methods: Map<string, (...args: any[]) => any> = new Map()
+  _last_size: [number, number] | null = null
 
   override initialize(): void {
     super.initialize()
@@ -237,22 +305,20 @@ export class ReactiveESMView extends HTMLBoxView {
     for (const cp of child_props) {
       this.connect(cp.change, () => this.update_children())
     }
-    this.on_change([], () => {
-      if (this.model.render_policy !== "manual") {
-        this.render_esm()
-      }
-    })
-    this.model.on_event(ESMEvent, (event: ESMEvent) => {
-      for (const cb of this._event_handlers) {
-        cb(event.data)
-      }
-    })
+    this.model._event_views.add(this)
   }
 
   override disconnect_signals(): void {
     super.disconnect_signals()
     this._child_callbacks = new Map()
+    this.model._event_views.delete(this)
     this.model.disconnect_watchers(this)
+  }
+
+  _dispatch_event(data: unknown): void {
+    for (const cb of this._event_handlers) {
+      cb(data)
+    }
   }
 
   _on_mounted(): void {}
@@ -301,7 +367,10 @@ export class ReactiveESMView extends HTMLBoxView {
     if (!isArray(children)) {
       children = [children]
     }
-    if (children.every((model: UIElement) => this._mounted.get(child)?.has(model.id))) {
+    const mounted = this._mounted.get(child)!
+    // The size check skips the full scan while children are still mounting,
+    // which would otherwise make mounting a list quadratic in its length.
+    if (mounted.size >= children.length && children.every((model: UIElement) => mounted.has(model.id))) {
       this._on_mounted()
       for (const cb of this._lifecycle_handlers.get("mounted") || []) {
         cb(child)
@@ -391,7 +460,41 @@ export class ReactiveESMView extends HTMLBoxView {
     return this.parent instanceof LayoutDOMView && !(this.parent instanceof ReactiveESMView)
   }
 
+  /**
+   * Renders a child without laying it out and schedules a single layout pass
+   * instead. Children mount one at a time (e.g. once per React
+   * `componentDidMount`), and a child's `compute_layout` lays out, and so
+   * measures, the whole tree; doing that per child is quadratic in the
+   * number of children.
+   */
+  render_child(view: DOMView): void {
+    rerender_view(view, false)
+    this.schedule_layout()
+  }
+
+  /**
+   * Lays out once all synchronous work queued in the current task (such as
+   * a React commit mounting every child) has run. A pass that happens in the
+   * meantime, e.g. `_on_mounted`'s, makes the scheduled one a no-op.
+   */
+  schedule_layout(): void {
+    if (this._layout_pending) {
+      return
+    }
+    this._layout_pending = true
+    queueMicrotask(() => {
+      if (!this._layout_pending || this.is_destroyed) {
+        return
+      }
+      this.compute_layout()
+      // `finish()` may already have run and found the layout missing, and
+      // nothing else re-checks once it exists.
+      this.notify_finished()
+    })
+  }
+
   override compute_layout(): void {
+    this._layout_pending = false
     if (this.is_managed) {
       super.compute_layout()
       return
@@ -420,6 +523,18 @@ export class ReactiveESMView extends HTMLBoxView {
 
     // Override private property
     (this as any)._is_displayed = displayed
+
+    // `after_resize` lays out the whole root whenever this reports a change.
+    // Reporting only actual size changes lets the first sibling's root pass,
+    // which visits every view, absorb the resize callbacks of all the others;
+    // always reporting one made initial render quadratic in sibling count.
+    const width = displayed ? this.el.offsetWidth : 0
+    const height = displayed ? this.el.offsetHeight : 0
+    const last = this._last_size
+    if (last != null && last[0] === width && last[1] === height) {
+      return false
+    }
+    this._last_size = [width, height]
     return true
   }
 
@@ -448,7 +563,10 @@ export class ReactiveESMView extends HTMLBoxView {
       (this._lifecycle_handlers.get(lf) || []).splice(0)
     }
     this.model.disconnect_watchers(this)
-    const render_promise = this.model.render_module.then((mod: any) => mod.default.render(this.model.id))
+    // The view is passed rather than looked up by id: `Bokeh.index` lookups
+    // walk every view on the page and pick the first view of a model that
+    // is displayed more than once.
+    const render_promise = this.model.render_module.then((mod: any) => mod.default.render(this))
     this._await_ready(render_promise)
   }
 
@@ -464,7 +582,7 @@ export class ReactiveESMView extends HTMLBoxView {
         const parent = view.el.parentNode
         if (parent) {
           this._child_rendered.set(view, false)
-          this.rerender_(view)
+          this.render_child(view)
           this._child_rendered.set(view, true)
         }
       }
@@ -483,7 +601,7 @@ export class ReactiveESMView extends HTMLBoxView {
     }
 
     for (const child_view of this.child_views) {
-      if (!child_view.has_finished() && this._child_rendered.has(child_view)) {
+      if (this._child_rendered.has(child_view) && !child_view.has_finished()) {
         return false
       }
     }
@@ -491,13 +609,40 @@ export class ReactiveESMView extends HTMLBoxView {
     return true
   }
 
+  /**
+   * Each notification makes the root walk the whole tree in `has_finished`,
+   * and every component and child reports finishing separately, so loading
+   * N components would walk the tree N times. Notifications issued in the
+   * same task are coalesced into one per root.
+   */
+  override notify_finished(): void {
+    if (this.is_root) {
+      super.notify_finished()
+      return
+    }
+    const root = this.root
+    if (PENDING_FINISHED.has(root)) {
+      return
+    }
+    PENDING_FINISHED.add(root)
+    queueMicrotask(() => {
+      PENDING_FINISHED.delete(root)
+      if (!root.is_destroyed) {
+        root.notify_finished()
+      }
+    })
+  }
+
   override invalidate_layout(): void {
     if (this.is_managed) {
       super.invalidate_layout()
       return
     }
+    // Deferred so that the children of one parent, which each invalidate on
+    // render, do not interleave DOM writes with the measurements of their
+    // own layout passes, forcing a reflow per child.
     this.update_layout()
-    this.compute_layout()
+    this.schedule_layout()
   }
 
   override remove(): void {
@@ -528,17 +673,21 @@ export class ReactiveESMView extends HTMLBoxView {
     }
   }
 
-  protected _lookup_child(child_view: UIElementView): string | null {
+  /**
+   * Maps each child model to the name of the children property holding it,
+   * built once per update pass rather than searched per child view.
+   */
+  protected _child_names(): Map<UIElement, string> {
+    const names = new Map()
     for (const child of this.model.children) {
-      let models = this.model.data[child]
-      models = isArray(models) ? models : [models]
-      for (const model of models) {
-        if (model === child_view.model) {
-          return child
+      const models = this.model.data[child]
+      for (const model of isArray(models) ? models : [models]) {
+        if (model != null && !names.has(model)) {
+          names.set(model, child)
         }
       }
     }
-    return null
+    return names
   }
 
   /**
@@ -558,6 +707,30 @@ export class ReactiveESMView extends HTMLBoxView {
     return run
   }
 
+  /**
+   * Groups newly created child views by the children property they belong to.
+   */
+  protected _group_new_views(created: Set<UIElementView>): Map<string, UIElementView[]> {
+    const names = this._child_names()
+    const new_views = new Map<string, UIElementView[]>()
+    for (const child_view of this.child_views) {
+      if (!created.has(child_view)) {
+        continue
+      }
+      const child = names.get(child_view.model)
+      if (child == null) {
+        continue
+      }
+      const views = new_views.get(child)
+      if (views == null) {
+        new_views.set(child, [child_view])
+      } else {
+        views.push(child_view)
+      }
+    }
+    return new_views
+  }
+
   protected async _update_children_pass(): Promise<void> {
     const created_children = new Set(await this.build_child_views())
 
@@ -568,25 +741,11 @@ export class ReactiveESMView extends HTMLBoxView {
       }
     }
 
-    const new_views = new Map()
-    for (const child_view of this.child_views) {
-      if (!created_children.has(child_view)) {
-        continue
-      }
-      const child = this._lookup_child(child_view)
-      if (!child) {
-        continue
-      }
+    const new_views = this._group_new_views(created_children)
 
-      if (new_views.has(child)) {
-        new_views.get(child).push(child_view)
-      } else {
-        new_views.set(child, [child_view])
-      }
-    }
-
+    const current = new Set(all_views)
     for (const view of this._child_rendered.keys()) {
-      if (!all_views.includes(view)) {
+      if (!current.has(view)) {
         this._child_rendered.delete(view)
       }
     }
@@ -660,8 +819,10 @@ export class ReactiveESM extends HTMLBox {
   render_module: Promise<any> | null = null
   sucrase_transforms: Transform[] = ["typescript"]
   _destroyer: any | null = null
-  _esm_watchers: any = {}
-  _event_callbacks: Map<(data: unknown) => void, (data: unknown) => void> = new Map()
+  // Keyed by the watched path; `orig` is the callback the caller passed,
+  // `cb` the wrapper actually connected to `signal`.
+  _esm_watchers: Map<string, {view: ReactiveESMView | null, orig: any, cb: any, signal: any}[]> = new Map()
+  _event_views: Set<ReactiveESMView> = new Set()
 
   constructor(attrs?: Partial<ReactiveESM.Attrs>) {
     super(attrs)
@@ -680,168 +841,145 @@ export class ReactiveESM extends HTMLBox {
     super.connect_signals()
     this.connect(this.properties.esm.change, () => this.recompile())
     this.connect(this.properties.importmap.change, () => this.recompile())
+    // Registered once per model: `on_event` cannot be undone, so views
+    // subscribe through `_event_views` instead.
+    this.on_event(ESMEvent, (event: ESMEvent) => {
+      for (const view of this._event_views) {
+        view._dispatch_event(event.data)
+      }
+    })
   }
 
-  watch(view: ReactiveESMView | null, prop: string, cb: any, force: boolean = false): void {
-    const propPath = prop.split(".")
+  /**
+   * Resolves a possibly dotted property path to the property's change
+   * signal and the model owning it, falling back to the component model's
+   * own properties.
+   */
+  protected _resolve_watch(prop: string): {target: any, name: string, signal: any} | null {
+    const path = prop.split(".")
     let target: any = this.data
-    let resolvedProp: string | null = null
-    for (let i = 0; i < propPath.length - 1; i++) {
-      if (target && target.properties && propPath[i] in target.properties) {
-        target = target[propPath[i]]
+    for (let i = 0; i < path.length - 1; i++) {
+      if (target != null && target.properties != null && path[i] in target.properties) {
+        target = target[path[i]]
       } else {
-        // Break if any level of the path is invalid
         target = null
         break
       }
     }
-
-    if (target && target.properties && propPath[propPath.length - 1] in target.properties) {
-      resolvedProp = propPath[propPath.length - 1]
+    const name = path[path.length - 1]
+    if (target != null && target.properties != null && name in target.properties) {
+      return {target, name, signal: target.property(name).change}
+    } else if (prop in this.properties) {
+      return {target: this, name: prop, signal: this.property(prop).change}
     }
+    return null
+  }
+
+  watch(view: ReactiveESMView | null, prop: string, cb: any, force: boolean = false): void {
+    const resolved = this._resolve_watch(prop)
+    if (resolved == null) {
+      return
+    }
+    const {target, name, signal} = resolved
+    const orig = cb
 
     // Handle reset of param.Event properties
-    if (!force && target === this.data && resolvedProp && this.events.includes(resolvedProp)) {
-      const orig_cb = cb
+    if (!force && target === this.data && this.events.includes(name)) {
+      const event_cb = cb
       cb = () => {
-        if (resolvedProp && this.data[resolvedProp]) {
-          orig_cb()
-          this.data.setv({[resolvedProp]: false})
+        if (this.data[name]) {
+          event_cb()
+          this.data.setv({[name]: false})
         }
       }
-      this._event_callbacks.set(orig_cb, cb)
     }
 
-    // Attach watcher if property is found
-    if (resolvedProp && target) {
-      if (this.children.includes(resolvedProp)) {
-        const orig_cb = cb
-        cb = async () => {
-          if (view) {
-            view._stale_children = true
+    if (target === this.data && this.children.includes(name)) {
+      const children_cb = cb
+      cb = async () => {
+        if (view == null) {
+          children_cb()
+          return
+        }
+        view._stale_children = true
+        // The view connected `update_children` to this signal before any
+        // watcher, so the pass handling this change is already queued.
+        await view._update_children_chain
+        if (this.render_policy !== "manual") {
+          children_cb()
+          return
+        }
+        let resolve_ready: () => void
+        ;(view.root as any)._await_ready(new Promise<void>((r) => { resolve_ready = r }))
+        children_cb()
+        view.render_children();
+        (view as any)._update_children()
+        view.invalidate_layout()
+        const collect_ready = (v: any): Promise<void>[] => {
+          const promises: Promise<void>[] = [v.ready]
+          for (const child of v.child_views || []) {
+            promises.push(...collect_ready(child))
           }
-          if (view && view._stale_children) {
-            await new Promise(resolve => {
-              const check = () => {
-                if (!view._stale_children) {
-                  resolve(undefined)
-                } else {
-                  setTimeout(check, 10)
-                }
-              }
-              check()
-            })
-          }
-          if (view && this.render_policy === "manual") {
-            let resolve_ready: () => void
-            ;(view.root as any)._await_ready(new Promise<void>((r) => { resolve_ready = r }))
-            orig_cb()
-            view.render_children();
-            (view as any)._update_children()
-            view.invalidate_layout()
-            // Collect ready promises from all newly rendered descendants
-            const collect_ready = (v: any): Promise<void>[] => {
-              const promises: Promise<void>[] = [v.ready]
-              for (const child of v.child_views || []) {
-                promises.push(...collect_ready(child))
-              }
-              return promises
-            }
-            const all_ready: Promise<void>[] = []
-            for (const child_view of view.child_views) {
-              all_ready.push(...collect_ready(child_view))
-            }
-            if (all_ready.length > 0) {
-              Promise.all(all_ready).then(() => resolve_ready!())
-            } else {
-              resolve_ready!()
-            }
-          } else {
-            orig_cb()
-          }
+          return promises
+        }
+        const all_ready: Promise<void>[] = []
+        for (const child_view of view.child_views) {
+          all_ready.push(...collect_ready(child_view))
+        }
+        if (all_ready.length > 0) {
+          Promise.all(all_ready).then(() => resolve_ready!())
+        } else {
+          resolve_ready!()
         }
       }
-      target.property(resolvedProp).change.connect(cb)
-    } else if (prop in this.properties) {
-      this.property(prop).change.connect(cb)
     }
 
-    if (prop in this._esm_watchers) {
-      this._esm_watchers[prop].push([view, cb])
+    signal.connect(cb)
+    const watchers = this._esm_watchers.get(prop)
+    const watcher = {view, orig, cb, signal}
+    if (watchers == null) {
+      this._esm_watchers.set(prop, [watcher])
     } else {
-      this._esm_watchers[prop] = [[view, cb]]
+      watchers.push(watcher)
     }
   }
 
   unwatch(view: ReactiveESMView | null, prop: string, cb: any): boolean {
-    if (!(prop in this._esm_watchers)) {
+    const watchers = this._esm_watchers.get(prop)
+    if (watchers == null) {
       return false
     }
-
-    // Filter out the specific callback for this view
+    let disconnected = false
     const remaining = []
-    for (const [wview, wcb] of this._esm_watchers[prop]) {
-      if (wview !== view || wcb !== cb) {
-        remaining.push([wview, wcb])
-      }
-    }
-
-    // Update or delete watcher list
-    if (remaining.length > 0) {
-      this._esm_watchers[prop] = remaining
-    } else {
-      delete this._esm_watchers[prop]
-    }
-
-    // Resolve nested properties
-    const propPath = prop.split(".")
-    let target: any = this.data
-    let resolvedProp: string | null = null
-
-    for (let i = 0; i < propPath.length - 1; i++) {
-      if (target && target.properties && propPath[i] in target.properties) {
-        target = target[propPath[i]]
+    for (const watcher of watchers) {
+      if (watcher.view === view && watcher.orig === cb) {
+        disconnected = watcher.signal.disconnect(watcher.cb) || disconnected
       } else {
-        // Stop if the path does not exist
-        target = null
-        break
+        remaining.push(watcher)
       }
     }
-
-    if (target && target.properties && propPath[propPath.length - 1] in target.properties) {
-      resolvedProp = propPath[propPath.length - 1]
+    if (remaining.length > 0) {
+      this._esm_watchers.set(prop, remaining)
+    } else {
+      this._esm_watchers.delete(prop)
     }
-
-    if (this._event_callbacks.has(cb)) {
-      cb = this._event_callbacks.get(cb)
-      this._event_callbacks.delete(cb)
-    }
-
-    // Detach watcher if property is found
-    if (resolvedProp && target) {
-      return target.property(resolvedProp).change.disconnect(cb)
-    } else if (prop in this.properties) {
-      return this.property(prop).change.disconnect(cb)
-    }
-
-    return false
+    return disconnected
   }
 
   disconnect_watchers(view: ReactiveESMView): void {
-    for (const p in this._esm_watchers) {
-      const prop = this.data.properties[p]
+    for (const [prop, watchers] of this._esm_watchers) {
       const remaining = []
-      for (const [wview, cb] of this._esm_watchers[p]) {
-        if (wview === view) {
-          prop?.change.disconnect(cb)
+      for (const watcher of watchers) {
+        if (watcher.view === view) {
+          watcher.signal.disconnect(watcher.cb)
         } else {
-          remaining.push([wview, cb])
+          remaining.push(watcher)
         }
       }
       if (remaining.length > 0) {
-        this._esm_watchers[p] = remaining
+        this._esm_watchers.set(prop, remaining)
       } else {
-        delete this._esm_watchers[p]
+        this._esm_watchers.delete(prop)
       }
     }
   }
@@ -849,7 +987,13 @@ export class ReactiveESM extends HTMLBox {
   protected async _declare_importmap(): Promise<void> {
     await resources.ensure_shim(this.external_resources?.shim)
     if (this.importmap) {
-      resources.add_import_map(this.importmap)
+      // Every instance of a component class carries the same map, and
+      // es-module-shims re-resolves the whole map on each addition.
+      const key = JSON.stringify(this.importmap)
+      if (!DECLARED_IMPORTMAPS.has(key)) {
+        DECLARED_IMPORTMAPS.add(key)
+        resources.add_import_map(this.importmap)
+      }
     }
   }
 
@@ -868,43 +1012,36 @@ export class ReactiveESM extends HTMLBox {
   init_module(): void {
     if (this.compile_error) {
       return
-    } else if (MODULE_CACHE.has(this._render_cache_key)) {
-      this.render_module = MODULE_CACHE.get(this._render_cache_key)
-    } else {
-      const code = this._render_code()
-      const render_url = URL.createObjectURL(
-        new Blob([code], {type: "text/javascript"}),
-      )
-      this.render_module = resources.import_module(render_url, this.external_resources?.shim)
-      MODULE_CACHE.set(this._render_cache_key, this.render_module)
     }
+    this.render_module = this._render_module()
   }
 
-  protected _render_code(): string {
-    return `
-function render(id) {
-  const view = Bokeh.index.find_one_by_id(id)
-  if (view == null) {
-    return null
+  /**
+   * The module whose `default.render(view)` renders a view of this model.
+   */
+  protected _render_module(): Promise<any> {
+    return ESM_RENDER_MODULE
   }
 
-  const output = view.render_fn({
-    view: view, model: view.model_proxy, data: view.model.data, el: view.container
-  })
-
-  Promise.resolve(output).then((out) => {
-    if (out instanceof Element) {
-      view.container.replaceChildren(out)
+  protected _cached_module(key: string, load: () => Promise<any>): Promise<any> {
+    let module = MODULE_CACHE.get(key)
+    if (module == null) {
+      module = track_module(load())
+      MODULE_CACHE.set(key, module)
     }
-    view.after_rendered()
-  })
-}
-
-export default {render}`
+    return module
   }
 
-  protected get _render_cache_key() {
-    return "reactive_esm"
+  get resolved_render_module(): any | null {
+    return this.render_module == null ? null : RESOLVED_MODULES.get(this.render_module) ?? null
+  }
+
+  protected _import_source(code: string): Promise<any> {
+    const url = URL.createObjectURL(new Blob([code], {type: "text/javascript"}))
+    const module = resources.import_module(url, this.external_resources?.shim)
+    // Fetched by the time the import settles, and otherwise held until unload.
+    module.finally(() => URL.revokeObjectURL(url)).catch(() => {})
+    return module
   }
 
   compile(): string | null {
@@ -935,21 +1072,37 @@ export default {render}`
     return compiled
   }
 
+  get _module_cache_key(): string {
+    if (this.bundle === "url") {
+      return this.esm
+    }
+    return this.bundle || `${this.class_name}-${source_id(this.esm)}`
+  }
+
   async recompile(): Promise<void> {
     this.compile_error = null
-    const compiled = this.compile()
-    if (compiled === null) {
-      this.compiled_module = Promise.resolve(null)
-      return
+    const use_cache = (!this.dev || this.bundle)
+    // Not computed in dev mode, where every edit would be interned.
+    const cache_key = use_cache ? this._module_cache_key : ""
+    const compile_key = `${this.type}:${cache_key}`
+    let source = use_cache ? COMPILE_CACHE.get(compile_key) ?? null : null
+    if (source === null) {
+      source = this.compile()
+      if (source === null) {
+        this.compiled_module = Promise.resolve(null)
+        return
+      }
+      if (use_cache) {
+        COMPILE_CACHE.set(compile_key, source)
+      }
     }
+    const compiled = source
     this.compiled = compiled
     // Awaiting the import map here would leave compiled_module holding the
     // previous module for a tick, and a view handling the same esm change
     // awaits that property, so it has to be replaced synchronously.
     const declared = this._declare_importmap()
     let esm_module
-    const use_cache = (!this.dev || this.bundle)
-    const cache_key = (this.bundle === "url") ? this.esm : (this.bundle || `${this.class_name}-${this.esm.length}`)
     let resolve: (value: any) => void
     if (use_cache && MODULE_CACHE.has(cache_key)) {
       const cached = MODULE_CACHE.get(cache_key)
@@ -958,13 +1111,11 @@ export default {render}`
       if (use_cache) {
         MODULE_CACHE.set(cache_key, new Promise((res) => { resolve = res }))
       }
-      let url
       if (this.bundle === "url") {
-        url = this.esm
+        esm_module = declared.then(() => resources.import_module(this.esm, this.external_resources?.shim))
       } else {
-        url = URL.createObjectURL(new Blob([this.compiled], {type: "text/javascript"}))
+        esm_module = declared.then(() => this._import_source(compiled))
       }
-      esm_module = declared.then(() => resources.import_module(url, this.external_resources?.shim))
     }
     this.compiled_module = (esm_module).then((mod: any) => {
       if (resolve) {

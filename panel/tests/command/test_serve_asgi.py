@@ -15,6 +15,7 @@ pytest.importorskip('uvicorn')
 import uvicorn
 
 from bokeh.server.tornado import DEFAULT_WEBSOCKET_MAX_MESSAGE_SIZE_BYTES
+from starlette.testclient import TestClient
 
 from panel.command import serve as serve_module
 from panel.command.serve import Serve
@@ -103,17 +104,34 @@ def plugin(monkeypatch, tmp_path):
     return write
 
 
-@pytest.mark.parametrize('args', [
-    ['--rest-provider', 'param'],
-    ['--rest-session-info'],
-    ['--enable-xsrf-cookies'],
-])
-def test_serve_asgi_rejects_tornado_only_args(invoke_asgi, args, capsys):
+def test_serve_asgi_rejects_tornado_only_args(invoke_asgi, capsys):
     with pytest.raises(SystemExit):
-        invoke_asgi(*args)
+        invoke_asgi('--enable-xsrf-cookies')
     err = capsys.readouterr().err
-    assert args[0] in err
+    assert '--enable-xsrf-cookies' in err
     assert '--server tornado' in err
+
+
+def test_serve_asgi_rejects_rest_provider(invoke_asgi, capsys):
+    with pytest.raises(SystemExit):
+        invoke_asgi('--rest-provider', 'param')
+    err = capsys.readouterr().err
+    assert '--rest-provider is deprecated' in err
+    assert '--plugins' in err
+
+
+def test_serve_asgi_session_info(invoke_asgi):
+    asgi = _panel_asgi(invoke_asgi('--rest-session-info', '--session-history', '5'))
+    with TestClient(asgi) as client:
+        r = client.get('/session_info')
+    assert r.status_code == 200
+    assert r.json() == state.session_info
+
+
+def test_serve_asgi_session_history_does_not_serve_session_info(invoke_asgi):
+    asgi = _panel_asgi(invoke_asgi('--session-history', '5'))
+    with TestClient(asgi) as client:
+        assert client.get('/session_info').status_code == 404
 
 
 def test_serve_asgi_rejects_num_procs(invoke_asgi, capsys):
@@ -234,6 +252,39 @@ def test_serve_asgi_admin(invoke_asgi):
     # The admin dashboard depends on the periodic cleanup callback its own
     # ApplicationContext adds, so the context must not be the generic one.
     assert asgi.core._applications['/admin'] is state._admin_context
+
+
+@pytest.fixture
+def admin_access_cleanup():
+    try:
+        yield
+    finally:
+        config.param.update(_admin_password=None, _admin_users=[])
+
+
+def test_serve_asgi_admin_password(invoke_asgi, admin_access_cleanup):
+    from starlette.testclient import TestClient
+
+    asgi = _panel_asgi(invoke_asgi('--admin', '--admin-password', 'pw'))
+    assert config.admin_password == 'pw'
+    with TestClient(asgi) as client:
+        r = client.get('/admin', follow_redirects=False)
+        assert r.status_code == 302
+        assert r.headers['location'] == 'admin/login'
+        assert client.get('/admin/login').status_code == 200
+
+
+def test_serve_asgi_admin_users_requires_server_auth(invoke_asgi, admin_access_cleanup):
+    with pytest.raises(ValueError, match='requires server authentication'):
+        invoke_asgi('--admin', '--admin-users', 'alice')
+
+
+def test_serve_asgi_admin_users(invoke_asgi, admin_access_cleanup):
+    invoke_asgi(
+        '--admin', '--admin-users', 'alice', 'bob', '--basic-auth', 'pw',
+        '--cookie-secret', 'secret'
+    )
+    assert config.admin_users == ['alice', 'bob']
 
 
 def test_serve_fastapi_wraps_panel_asgi(invoke_asgi):

@@ -26,8 +26,8 @@ import asyncio
 
 pn.extension()
 
-button = pn.widgets.Button(label='Click me!')
-text = pn.widgets.StaticText()
+button = pn.ui.Button(label='Click me!')
+text = pn.ui.StaticText()
 
 async def run_async(event):
     text.value = f'Running {event.new}'
@@ -36,26 +36,26 @@ async def run_async(event):
 
 button.on_click(run_async)
 
-pn.Row(button, text)
+pn.ui.Row(button, text)
 ```
 
 ## `.bind`
 
 ```{pyodide}
-widget = pn.widgets.IntSlider(start=0, end=10)
+widget = pn.ui.IntSlider(start=0, end=10)
 
 async def get_img(index):
     url = f"https://picsum.photos/800/300?image={index}"
     if pn.state._is_pyodide:
         from pyodide.http import pyfetch
-        return pn.pane.JPG(await (await pyfetch(url)).bytes())
+        return pn.ui.JPG(await (await pyfetch(url)).bytes())
 
     import aiohttp
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as resp:
-            return pn.pane.JPG(await resp.read())
+            return pn.ui.JPG(await resp.read())
 
-pn.Column(widget, pn.bind(get_img, widget))
+pn.ui.Column(widget, pn.bind(get_img, widget))
 ```
 
 In this example Panel will invoke the function and update the output when the function returns while leaving the process unblocked for the duration of the `aiohttp` request.
@@ -65,9 +65,9 @@ In this example Panel will invoke the function and update the output when the fu
 The app from the section above can be written using `.param.watch` as:
 
 ```{pyodide}
-widget = pn.widgets.IntSlider(start=0, end=10)
+widget = pn.ui.IntSlider(start=0, end=10)
 
-image = pn.pane.JPG()
+image = pn.ui.JPG()
 
 async def update_img(event):
     url = f"https://picsum.photos/800/300?image={event.new}"
@@ -84,7 +84,7 @@ async def update_img(event):
 widget.param.watch(update_img, 'value')
 widget.param.trigger('value')
 
-pn.Column(widget, image)
+pn.ui.Column(widget, image)
 ```
 
 In this example Param will await the asynchronous function and the image will be updated when the request completes.
@@ -96,12 +96,12 @@ import numpy as np
 from bokeh.plotting import figure
 from bokeh.models import ColumnDataSource
 
-button = pn.widgets.Button(label='Click me!')
+button = pn.ui.Button(label='Click me!')
 
 p = figure(width=500, height=300)
 cds = ColumnDataSource(data={'x': [0], 'y': [0]})
 p.line(x='x', y='y', source=cds)
-pane = pn.pane.Bokeh(p)
+pane = pn.ui.Bokeh(p)
 
 @pn.io.with_lock
 async def stream(event):
@@ -113,7 +113,7 @@ async def stream(event):
 # Equivalent to `.on_click` but shown
 button.param.watch(stream, 'clicks')
 
-pn.Row(button, pane)
+pn.ui.Row(button, pane)
 ```
 
 ## Related Resources

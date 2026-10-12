@@ -49,7 +49,7 @@ async function startApplication() {
     const traceback = `${e}`
     const tblines = traceback.split('\n')
     self.postMessage({
-      type: 'status',
+      type: 'error',
       msg: tblines[tblines.length-2]
     });
     throw e
@@ -66,11 +66,18 @@ self.onmessage = async (event) => {
     _link_docs_worker(state.curdoc, sendPatch, setter='js')
     `)
   } else if (msg.type === 'patch') {
-    self.pyodide.globals.set('patch', msg.patch)
-    self.pyodide.runPythonAsync(`
+    // Patches can arrive back to back; passing each one in its own locals keeps a
+    // later message from overwriting a shared global before Python has read it.
+    const locals = self.pyodide.toPy({patch: msg.patch}, {depth: 1})
+    try {
+      await self.pyodide.runPythonAsync(`
     from panel.io.pyodide import _convert_json_patch
+    from panel.io.state import state
     state.curdoc.apply_json_patch(_convert_json_patch(patch), setter='js')
-    `)
+    `, {locals})
+    } finally {
+      locals.destroy()
+    }
     self.postMessage({type: 'idle'})
   } else if (msg.type === 'location') {
     self.pyodide.globals.set('location', msg.location)

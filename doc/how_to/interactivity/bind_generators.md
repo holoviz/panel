@@ -22,7 +22,7 @@ A *generator* function is a function that use `yield` to *return* results as the
 In the example below we add a `Button` to trigger some calculation. Initially the calculation hasn't yet run, so we check the value provided by the `Button` indicating whether a calculation has been triggered and while it is `False` we `yield` some text and `return`. However, when the `Button` is clicked the function is called again with `run=True` and we kick off some calculation. As this calculation progresses we can `yield` updates and then once the calculation is successful we `yield` again with the final result:
 
 ```{pyodide}
-run = pn.widgets.Button(label="Press to run calculation", align='center')
+run = pn.ui.Button(label="Press to run calculation", align='center')
 
 def runner(run):
     if not run:
@@ -30,11 +30,11 @@ def runner(run):
         return
     for i in range(101):
         time.sleep(0.01) # Some calculation
-        yield pn.Column(
+        yield pn.ui.Column(
             f'Running ({i}/100%)', pn.indicators.Progress(value=i)
         )
     yield "Success ✅︎"
-pn.Row(run, pn.bind(runner, run))
+pn.ui.Row(run, pn.bind(runner, run))
 ```
 
 This provides a powerful mechanism for providing incrememental updates as we load some data, perform some data processing, etc.
@@ -52,16 +52,16 @@ async def slideshow():
         if pn.state._is_pyodide:
             from pyodide.http import pyfetch
             img, _ = await asyncio.gather(pyfetch(url), asyncio.sleep(1))
-            yield pn.pane.JPG(await img.bytes())
+            yield pn.ui.JPG(await img.bytes())
 
         import aiohttp
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as resp:
                 img, _ = await asyncio.gather(resp.read(), asyncio.sleep(1))
-                yield pn.pane.JPG(img)
+                yield pn.ui.JPG(img)
         index = (index + 1) % 10
 
-pn.Row(slideshow)
+pn.ui.Row(slideshow)
 ```
 
 ## Related Resources

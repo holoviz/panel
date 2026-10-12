@@ -219,3 +219,19 @@ def get_app():
 
 if pn.state.served:
     get_app().servable()
+
+
+def test_terminal_writes_are_not_combined_away_by_a_hold(document):
+    terminal = pn.widgets.Terminal()
+    model = terminal.get_root(document)
+    document.add_root(model)
+
+    document.hold('combine')
+    terminal.write('first ')
+    terminal.write('second')
+    assert model.output == 'first second'
+    document.unhold()
+
+    terminal.write('third')
+    assert model.output == 'third'
+    assert terminal.output == 'first secondthird'

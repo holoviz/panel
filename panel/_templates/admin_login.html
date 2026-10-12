@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ page.title or 'Panel' }} Admin | Login</title>
+    <link rel="icon" href="{{ page.favicon or PANEL_CDN ~ 'images/favicon.ico' }}">
+    {{ page.head }}
+  </head>
+  <body>
+    <header class="pn-appbar">
+      {{ page.brand((page.title or 'Panel') ~ ' Admin') }}
+    </header>
+    <main class="pn-main pn-main--center">
+      <form class="pn-paper pn-dialog login-form" action="{{ login_endpoint }}" method="post">
+        <div class="pn-dialog-header">
+          {% if not page.logo %}
+          <span class="pn-mark pn-mark--primary"></span>
+          {% endif %}
+          <h1 class="pn-title">Admin panel</h1>
+          <p class="pn-subtitle">Enter the admin password to continue.</p>
+        </div>
+        {% if errormessage %}
+        <div id="error-message" class="pn-alert pn-alert--error" role="alert">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M11 15h2v2h-2zm0-8h2v6h-2zm.99-5C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2M12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8"/></svg>
+          <span class="pn-alert-message errormessage">{{ errormessage|escape }}</span>
+        </div>
+        {% endif %}
+        <div class="pn-stack">
+          {# Lets password managers associate the saved password with this form. #}
+          <input type="text" name="username" value="admin" autocomplete="username" hidden>
+          <div class="pn-field">
+            <input id="password" name="password" type="password" class="pn-input" placeholder=" " autocomplete="current-password" autofocus required>
+            <label class="pn-label" for="password">Password</label>
+          </div>
+        </div>
+        <button class="pn-button pn-button--block" type="submit">Log in</button>
+      </form>
+    </main>
+  </body>
+</html>

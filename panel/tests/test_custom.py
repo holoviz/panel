@@ -6,7 +6,7 @@ from bokeh.document import Document
 from bokeh.models import ImportedStyleSheet
 from bokeh.plotting import figure
 
-from panel.custom import PyComponent, ReactiveESM
+from panel.custom import PyComponent, ReactComponent, ReactiveESM
 from panel.io.state import set_curdoc, state
 from panel.layout import Row
 from panel.pane import Bokeh, Markdown
@@ -126,6 +126,23 @@ class ESMWithChildren(ReactiveESM):
     child = Child(doc="""A child Viewable to be displayed in the ESM.""")
 
     children = Children(doc="""Child Viewables to be displayed in the ESM.""")
+
+
+class ReactWithChildren(ReactComponent):
+
+    items = Children()
+
+    _esm = "export function render({model}) { return null }"
+
+
+def test_react_component_initial_data_serialization(document, comm):
+    component = ReactWithChildren(items=[Markdown("foo")])
+
+    model = component.get_root(document, comm)
+    document.add_root(model)
+
+    data = document.to_json(deferred=False)["roots"][0]["attributes"]["data"]
+    assert [item["id"] for item in data["attributes"]["items"]] == [model.data.items[0].id]
 
 
 def test_reactive_esm_model_cleanup(document, comm):

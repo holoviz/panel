@@ -48,13 +48,13 @@ def plot(template, color):
 
 # Widget for template selection and color picker
 templates = sorted(pio.templates)
-template = pn.widgets.Select(value="plotly_dark", options=templates, label="Template")
-color = pn.widgets.ColorPicker(value="#F08080", label="Color")
+template = pn.ui.Select(value="plotly_dark", options=templates, label="Template")
+color = pn.ui.ColorPicker(value="#F08080", label="Color")
 
 # Display the plot and widgets
-pn.Column(
-    pn.Row(template, color),
-    pn.pane.Plotly(pn.bind(plot, template, color), sizing_mode="stretch_width"),
+pn.ui.Column(
+    pn.ui.Row(template, color),
+    pn.ui.Plotly(pn.bind(plot, template, color), sizing_mode="stretch_width"),
     "**Plotly Templates**: " + ", ".join(templates),
 ).servable()
 ```
@@ -87,7 +87,7 @@ fig.layout.autosize = True
 fig.update_layout(template=TEMPLATE, title=f"Mt Bruno Elevation in '{TEMPLATE}' template")
 
 # Display the plot
-pn.pane.Plotly(fig, height=500, sizing_mode="stretch_width").servable()
+pn.ui.Plotly(fig, height=500, sizing_mode="stretch_width").servable()
 ```
 
 ## Changing the Default Theme in Plotly Express

@@ -42,12 +42,12 @@ from sklearn.datasets import load_iris
 from sklearn.metrics import accuracy_score
 from xgboost import XGBClassifier
 
-pn.extension(sizing_mode="stretch_width", template="fast")
-pn.state.template.param.update(site="Panel in the Browser", title="XGBoost Example")
+pn.extension(sizing_mode="stretch_width", template="page")
+pn.state.template.param.update(title="XGBoost Example")
 
 iris_df = load_iris(as_frame=True)
 
-trees = pn.widgets.IntSlider(start=2, end=30, label="Number of trees")
+trees = pn.ui.IntSlider(start=2, end=30, label="Number of trees")
 
 def pipeline(trees):
     model = XGBClassifier(max_depth=2, n_estimators=trees)
@@ -60,7 +60,7 @@ def pipeline(trees):
         colors=[(97.5, "red"), (99.0, "orange"), (100, "green")],
     )
 
-pn.Column(
+pn.ui.Column(
     "Simple example of training an XGBoost classification model on the small Iris dataset.",
     iris_df.data.head(),
     "Move the slider below to change the number of training rounds for the XGBoost classifier. The training accuracy score will adjust accordingly.",
@@ -124,6 +124,16 @@ panel convert script.py --to pyodide-worker --out pyodide --resources iris.csv
 :::note
 The included resources need to be located in the directory of the main panel app or its subdirectories.
 :::
+
+## Air-gapped environments
+
+By default converted applications load Pyodide from `https://cdn.jsdelivr.net/pyodide/`. If that CDN is not reachable, e.g. in an air-gapped network, host a copy of the Pyodide distribution yourself and set the `PANEL_PYODIDE_CDN_ROOT` environment variable when converting:
+
+```bash
+PANEL_PYODIDE_CDN_ROOT="https://intranet.example.com/pyodide/" panel convert script.py --to pyodide-worker --out pyodide
+```
+
+The self-hosted copy has to mirror the layout of the jsDelivr CDN, i.e. Pyodide is loaded from `<root>/<version>/full/` (or `<root>/<version>/pyc/` for `--compiled` builds), where the version is the one in `panel.io.convert.PYODIDE_VERSION`. The Panel and Bokeh wheels are loaded from the Panel CDN, which can be configured in the same way with `PANEL_CDN_ROOT`.
 
 ## Index
 

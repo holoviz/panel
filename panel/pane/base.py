@@ -352,6 +352,51 @@ class Pane(PaneBase, Reactive):
             return
         super()._param_change(*events)
 
+    @staticmethod
+    def _replace_model(parent: Model, old_model: Model, new_model: Model) -> bool:
+        """
+        Replaces the old model with the new model in the parent model,
+        returning whether the old model was found.
+        """
+        if isinstance(parent, _BkGridBox):
+            for i, child in enumerate(parent.children):  # type: ignore
+                if child[0] is old_model:
+                    parent.children[i] = (new_model,) + child[1:]  # type: ignore
+                    return True
+        elif isinstance(parent, _BkReactiveHTML):
+            for node, children in parent.children.items():
+                if old_model in children:
+                    new_models = list(children)
+                    new_models[children.index(old_model)] = new_model
+                    parent.children[node] = new_models  # type: ignore
+                    return True
+        elif isinstance(parent, _BkTabs):
+            tabs = t.cast('list[_BkTabPanel]', parent.tabs)
+            for i, tab in enumerate(tabs):
+                if tab.child is old_model:
+                    props = dict(tab.properties_with_values(), child=new_model)
+                    parent.tabs[i] = _BkTabPanel(**props)  # type: ignore
+                    return True
+        elif isinstance(parent, _ReactiveESM):
+            for child_prop in parent.children:
+                try:
+                    values = getattr(parent.data, child_prop)
+                except AttributeError:
+                    # Skip child properties that are not present on parent.data
+                    continue
+                if isinstance(values, list) and old_model in values:
+                    new_values = list(values)
+                    new_values[values.index(old_model)] = new_model
+                    setattr(parent.data, child_prop, new_values)
+                    return True
+                elif old_model is values:
+                    setattr(parent.data, child_prop, new_model)
+                    return True
+        elif old_model in parent.children:
+            parent.children[parent.children.index(old_model)] = new_model
+            return True
+        return False
+
     def _update_object(
         self, ref: str, doc: Document, root: Model, parent: Model, comm: Comm | None
     ) -> None:
@@ -377,53 +422,13 @@ class Pane(PaneBase, Reactive):
         if hasattr(self, '_plots') and fake_ref in self._plots:
             self._plots[fake_ref] = self._plots[ref]
 
-        try:
-            if isinstance(parent, _BkGridBox):
-                indexes: list[int] = []
-                for i, child in enumerate(parent.children):  # type: ignore
-                    if child[0] is old_model:
-                        indexes.append(i)
-                if indexes:
-                    index = indexes[0]
-                    new_model = (new_model,) + parent.children[index][1:]  # type: ignore
-                    parent.children[index] = new_model  # type: ignore
-                else:
-                    raise ValueError
-            elif isinstance(parent, _BkReactiveHTML):
-                for node, children in parent.children.items():
-                    if old_model in children:
-                        index = children.index(old_model)
-                        new_models = list(children)
-                        new_models[index] = new_model
-                        parent.children[node] = new_models  # type: ignore
-                        break
-            elif isinstance(parent, _BkTabs):
-                parent.tabs = t.cast('list[_BkTabPanel]', parent.tabs)
-                index = [tab.child for tab in parent.tabs].index(old_model)
-                old_tab = parent.tabs[index]  # type: ignore
-                props = dict(old_tab.properties_with_values(), child=new_model)
-                parent.tabs[index] = _BkTabPanel(**props)  # type: ignore
-            elif isinstance(parent, _ReactiveESM):
-                for child_prop in parent.children:
-                    try:
-                        values = getattr(parent.data, child_prop)
-                    except AttributeError:
-                        # Skip child properties that are not present on parent.data
-                        continue
-                    if isinstance(values, list) and old_model in values:
-                        new_values = list(values)
-                        new_values[values.index(old_model)] = new_model
-                        setattr(parent.data, child_prop, new_values)
-                        break
-                    elif old_model is values:
-                        setattr(parent.data, child_prop, new_model)
-                        break
-                else:
-                    raise ValueError("No child value to replace found.")
-            else:
-                index = parent.children.index(old_model)
-                parent.children[index] = new_model
-        except ValueError:
+        # The model may be shared by multiple parents in the same root
+        parents: list[Model] = []
+        for p in self._model_parents.get(ref) or [parent]:
+            if p is not None and not any(p is q for q in parents):
+                parents.append(p)
+        replaced = [p for p in parents if self._replace_model(p, old_model, new_model)]
+        if not replaced:
             self.param.warning(
                 f'{type(self).__name__} pane model {old_model!r} could not be '
                 f'replaced with new model {new_model!r}, ensure that the parent '
@@ -432,9 +437,9 @@ class Pane(PaneBase, Reactive):
             return
 
         layout_parent = self.layout._models.get(ref, [None])[0]
-        if parent is layout_parent:
-            parent.update(**self.layout._compute_sizing_mode(
-                parent.children,
+        if any(p is layout_parent for p in replaced):
+            layout_parent.update(**self.layout._compute_sizing_mode(
+                layout_parent.children,
                 dict(
                     sizing_mode=self.layout.sizing_mode,
                     styles=self.layout.styles,

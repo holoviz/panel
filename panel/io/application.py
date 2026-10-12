@@ -23,11 +23,12 @@ from bokeh.application.handlers.document_lifecycle import (
 from bokeh.models import CustomJS
 
 from ..config import config
+from .admin_auth import mark_admin_application
 from .document import _destroy_document
 from .handlers import (
     FunctionHandler, MarkdownHandler, NotebookHandler, ScriptHandler,
 )
-from .loading import LOADING_INDICATOR_CSS_CLASS
+from .loading import _loading_css_classes
 from .logging import LOG_SESSION_DESTROYED, LOG_SESSION_LAUNCHING
 from .state import set_curdoc, state
 
@@ -60,7 +61,7 @@ def _eval_panel(
         doc.js_on_event(
             'document_ready', CustomJS(code=f"""
             const body = document.getElementsByTagName('body')[0]
-            body.classList.remove({LOADING_INDICATOR_CSS_CLASS!r}, {config.loading_spinner!r})
+            body.classList.remove(...{json.dumps(_loading_css_classes())})
             """)
         )
 
@@ -359,6 +360,6 @@ def build_applications(
             )
         from .admin import admin_panel
         admin_handler = FunctionHandler(admin_panel)
-        apps['/admin'] = Application(admin_handler)
+        apps['/admin'] = mark_admin_application(Application(admin_handler))
 
     return apps

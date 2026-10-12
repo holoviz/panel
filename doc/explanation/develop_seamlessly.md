@@ -60,9 +60,9 @@ def compute(i):
     print(f'debug {i}')
     return '❤️' * i
 
-w = pn.widgets.IntSlider(value=1, start=1, end=10)
+w = pn.ui.IntSlider(value=1, start=1, end=10)
 
-pn.Row(w, pn.bind(compute, w))
+pn.ui.Row(w, pn.bind(compute, w))
 ```
 
 ### Render templates
@@ -97,7 +97,7 @@ template = pn.template.BootstrapTemplate(title='HM Training!')
 def compute(i):
     return '❤️' * i
 
-w_number = pn.widgets.IntSlider(value=5, start=1, end=5)
+w_number = pn.ui.IntSlider(value=5, start=1, end=5)
 p_hearts = pn.panel(pn.bind(compute, w_number))
 
 template.sidebar.append(w_number)
@@ -135,7 +135,7 @@ def compute(i):
     return '❤️' * i
 
 
-w_number = pn.widgets.IntSlider(value=5, start=1, end=5)
+w_number = pn.ui.IntSlider(value=5, start=1, end=5)
 p_hearts = pn.panel(pn.bind(compute, w_number))
 
 template.sidebar.append(w_number)

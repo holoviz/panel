@@ -19,6 +19,7 @@ import pyodide # isort: split
 
 from bokeh import __version__
 from bokeh.core.serialization import Buffer, Serialized, Serializer
+from bokeh.core.types import ID
 from bokeh.document import Document
 from bokeh.document.json import PatchJson
 from bokeh.embed.elements import script_for_render_items
@@ -30,11 +31,9 @@ from bokeh.model import Model
 from bokeh.settings import settings as bk_settings
 from js import JSON, XMLHttpRequest
 
-from ..config import config
 from ..util import edit_readonly, isurl
 from . import resources
 from .document import MockSessionContext
-from .loading import LOADING_INDICATOR_CSS_CLASS
 from .mime_render import WriteCallbackStream, exec_with_return, format_mime
 from .state import state
 
@@ -43,8 +42,6 @@ os.environ['BOKEH_RESOURCES'] = 'cdn'
 
 if t.TYPE_CHECKING:
     from collections.abc import Callable
-
-    from bokeh.core.types import ID
 
     from ..template.base import TemplateBase
     from ..viewable import Viewable
@@ -263,15 +260,16 @@ _dict_converter = pyodide.code.run_js("""
 _current_buffers: list = []
 _patching = False
 
+def _register_buffer(data: bytes) -> dict[str, str]:
+    uid = ID(uuid.uuid4().hex)
+    _current_buffers.append(Buffer(id=uid, data=data))
+    return {'id': uid}
+
 def _bytes_converter(value, converter, other):
     if not hasattr(value, 'buffer'):
         return value
     value = dict(value.object_entries())
-    uid = uuid.uuid4().hex
-    _current_buffers.append(
-        Buffer(id=uid, data=value['buffer'].to_bytes())
-    )
-    return {'id': uid}
+    return _register_buffer(value['buffer'].to_bytes())
 
 def to_py(obj):
     """Convert JS value to Python, replacing any jsnull (even nested) with None."""
@@ -290,6 +288,17 @@ def to_py(obj):
             return seen[oid]
 
         if isinstance(x, dict):
+            data = x.get('data')
+            if (
+                x.get('type') == 'bytes' and isinstance(data, dict)
+                and isinstance(data.get('buffer'), memoryview)
+            ):
+                # postMessage strips the Buffer class from patches sent to a
+                # worker, so _bytes_converter never sees it; only a plain
+                # {buffer: ArrayBuffer} object arrives.
+                out = {**x, 'data': _register_buffer(data['buffer'].tobytes())}
+                seen[oid] = out
+                return out
             out = {}
             seen[oid] = out
             for k, v in x.items():
@@ -550,8 +559,9 @@ def hide_loader() -> None:
     """
     from js import document
 
-    body = document.getElementsByTagName('body')[0]
-    body.classList.remove(LOADING_INDICATOR_CSS_CLASS, f'pn-{config.loading_spinner}')
+    loader = document.getElementById('loader')
+    if loader:
+        loader.style.display = 'none'
 
 def sync_location():
     """
@@ -595,6 +605,11 @@ async def write_doc(doc: Document | None = None) -> tuple[str, str, str]:
     if pydoc in state._templates and pydoc not in state._templates[pydoc]._documents:
         template = state._templates[pydoc]
         template.server_doc(title=template.title, location=True, doc=pydoc)
+    if not pydoc.roots:
+        raise RuntimeError(
+            'The app did not add anything to the page, ensure that at '
+            'least one component is marked as .servable().'
+        )
 
     # Test whether we have access to DOM
     try:

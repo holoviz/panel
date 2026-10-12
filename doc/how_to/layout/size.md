@@ -23,17 +23,17 @@ Let's create a simple example that fixes the height or width of several componen
 import panel as pn
 pn.extension() # for notebook
 
-pn.Row(
-    pn.pane.Markdown('ABCDE', styles={'background': '#f0f0f0'}, width=75, height=100),
-    pn.widgets.FloatSlider(width=200, styles={'background': '#f0f0f0'}),
-    pn.pane.PNG('https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png', width=300, styles={'background': '#f0f0f0'}),
+pn.ui.Row(
+    pn.ui.Markdown('ABCDE', styles={'background': '#f0f0f0'}, width=75, height=100),
+    pn.ui.FloatSlider(width=200, styles={'background': '#f0f0f0'}),
+    pn.ui.PNG('https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png', width=300, styles={'background': '#f0f0f0'}),
 )
 ```
 
 Now let's use ``sizing_mode='fixed'`` to create a fixed-size component. This will retain the object's original width and height regardless of any subsequent browser window resize events. This is usually the default behavior and simply respects the provided width and height.
 
 ```{pyodide}
-pn.pane.PNG('https://upload.wikimedia.org/wikipedia/commons/8/89/PNG-Gradient.png', sizing_mode='fixed')
+pn.ui.PNG('https://upload.wikimedia.org/wikipedia/commons/8/89/PNG-Gradient.png', sizing_mode='fixed')
 ```
 
 ## Responsive Sizing
@@ -43,8 +43,8 @@ Most panel objects support reactive sizing which adjusts depending on the size o
 * **"stretch_width"**: Component will responsively resize to stretch to the available width, without maintaining any aspect ratio. The height of the component depends on the type of the component and may be fixed or fit to component's contents. To demonstrate this behavior we create a Row with a fixed height and responsive width to fill:
 
 ```{pyodide}
-pn.Row(
-    pn.pane.Str(styles={'background': '#f0f0f0'}, height=100, sizing_mode='stretch_width'),
+pn.ui.Row(
+    pn.ui.Str(styles={'background': '#f0f0f0'}, height=100, sizing_mode='stretch_width'),
     width_policy='max', height=200
 )
 ```
@@ -52,8 +52,8 @@ pn.Row(
 * **"stretch_height"**: Component will responsively resize to stretch to the available height, without maintaining any aspect ratio. The width of the component depends on the type of the component and may be fixed or fit to component's contents. To demonstrate the filling behavior in a document we declare a Column with a fixed height for the component to fill:
 
 ```{pyodide}
-pn.Column(
-    pn.pane.Str(styles={'background': '#f0f0f0'}, sizing_mode='stretch_height', width=200),
+pn.ui.Column(
+    pn.ui.Str(styles={'background': '#f0f0f0'}, sizing_mode='stretch_height', width=200),
     height=200
 )
 ```
@@ -61,8 +61,8 @@ pn.Column(
 * **"stretch_both"**: Component is completely responsive, independently in width and height, and will occupy all the available horizontal and vertical space, even if this changes the aspect ratio of the component. To demonstrate this behavior we will declare a Column with a fixed height and responsive width for the component to fill:
 
 ```{pyodide}
-pn.Column(
-    pn.pane.Str(styles={'background': '#f0f0f0'}, sizing_mode='stretch_both'),
+pn.ui.Column(
+    pn.ui.Str(styles={'background': '#f0f0f0'}, sizing_mode='stretch_both'),
     height=200, width_policy='max'
 )
 ```
@@ -73,8 +73,8 @@ pn.Column(
 
 
 ```{pyodide}
-pn.Column(
-    pn.pane.PNG(
+pn.ui.Column(
+    pn.ui.PNG(
         'https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_transparency_demonstration_1.png',
         sizing_mode='scale_both'
     ), height=400, width=500, styles={'background': '#f0f0f0'})
@@ -91,7 +91,7 @@ For example, the pane below fills the available width until it reaches 500
 pixels, and never shrinks below 200 pixels:
 
 ```{pyodide}
-pn.pane.Markdown(
+pn.ui.Markdown(
     "Resize the browser to see the width change.",
     sizing_mode="stretch_width",
     min_width=200,
@@ -141,9 +141,9 @@ For example, `width_policy="max"` makes this row use the available horizontal
 space, while `max_width` prevents it from becoming wider than 600 pixels:
 
 ```{pyodide}
-pn.Row(
-    pn.widgets.TextInput(label="Name", width_policy="max"),
-    pn.widgets.Button(label="Submit"),
+pn.ui.Row(
+    pn.ui.TextInput(label="Name", width_policy="max"),
+    pn.ui.Button(label="Submit"),
     width_policy="max",
     max_width=600,
 )
@@ -177,8 +177,8 @@ background fills the available width because it inherited `stretch_width` from
 its child:
 
 ```{pyodide}
-pn.Column(
-    pn.pane.Markdown('Responsive child', sizing_mode='stretch_width'),
+pn.ui.Column(
+    pn.ui.Markdown('Responsive child', sizing_mode='stretch_width'),
     styles={'background': '#f0f0f0'},
 )
 ```
@@ -196,8 +196,8 @@ inferred `'stretch_width'` wins and your setting is dropped. Panel warns when
 this happens:
 
 ```python
-pn.Column(
-    pn.pane.Markdown('...', sizing_mode='stretch_width'),
+pn.ui.Column(
+    pn.ui.Markdown('...', sizing_mode='stretch_width'),
     sizing_mode='stretch_height',
 )
 # WARNING: sizing_mode='stretch_height' on Column is being overridden to
@@ -223,8 +223,8 @@ example below the layout still reports an inferred `stretch_width`, but
 column shrinks to its contents:
 
 ```{pyodide}
-pn.Column(
-    pn.pane.Markdown('Responsive child', sizing_mode='stretch_width'),
+pn.ui.Column(
+    pn.ui.Markdown('Responsive child', sizing_mode='stretch_width'),
     styles={'background': '#f0f0f0'},
     width_policy='min',
 )
@@ -234,8 +234,8 @@ Setting a fixed `width` or `height` on the layout also suppresses inference on
 that axis, since a fixed size is unambiguous:
 
 ```{pyodide}
-pn.Column(
-    pn.pane.Markdown('Responsive child', sizing_mode='stretch_width'),
+pn.ui.Column(
+    pn.ui.Markdown('Responsive child', sizing_mode='stretch_width'),
     styles={'background': '#f0f0f0'},
     width=300,
 )

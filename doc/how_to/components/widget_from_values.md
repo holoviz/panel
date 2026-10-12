@@ -13,7 +13,7 @@ pn.extension() # for notebook
 
 df = pd.read_csv("https://datasets.holoviz.org/penguins/v1/penguins.csv")
 
-species = pn.widgets.MultiSelect.from_values(df.species)
+species = pn.ui.MultiSelect.from_values(df.species)
 
 species
 ```
@@ -23,7 +23,7 @@ As we can see the special constructor automatically inferred both the `option` a
 Similarly we can also use this to infer the values of a numeric column:
 
 ```{pyodide}
-body_mass = pn.widgets.RangeSlider.from_values(df.body_mass_g)
+body_mass = pn.ui.RangeSlider.from_values(df.body_mass_g)
 
 body_mass
 ```

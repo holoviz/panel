@@ -31,7 +31,7 @@ def test_server_index_redirect_via_proxy(page, prefix, reverse_proxy):
 def test_server_index_page_links(page, prefix):
     serve_component(page, {'app1': '### App1', 'app2': '### App2'}, prefix=prefix, suffix=prefix, wait=False)
 
-    card = page.locator('.card-link').nth(0)
+    card = page.locator('.pn-card-link').nth(0)
     expect(card).to_be_attached()
     card.click()
 
@@ -43,7 +43,7 @@ def test_server_index_page_links_via_proxy(page, prefix, reverse_proxy):
     port, proxy = reverse_proxy
     serve_component(page, {'app1': '### App1', 'app2': '### App2'}, prefix=prefix, suffix=f"/proxy{prefix or '/'}", port=port, proxy=proxy, wait=False)
 
-    card = page.locator('.card-link').nth(0)
+    card = page.locator('.pn-card-link').nth(0)
     expect(card).to_be_attached()
     card.click()
 

@@ -1,0 +1,114 @@
+:host div.jsoneditor {
+  border: 1px solid var(--mui-palette-divider);
+  border-radius: var(--mui-shape-borderRadius);
+  overflow: hidden;
+}
+
+:host div.jsoneditor-menu {
+  background-color: var(--mui-palette-action-hover);
+  border-bottom: 1px solid var(--mui-palette-divider);
+  color: var(--mui-palette-text-primary);
+}
+
+/* The menu icons are white sprites; inverting them twice in dark mode
+   cancels out so they follow the text color in both themes. */
+:host div.jsoneditor-menu > button,
+:host div.jsoneditor-menu > .jsoneditor-modes > button,
+:host div.jsoneditor-menu > .jsoneditor-search button {
+  filter: invert(1) var(--panel-icon-filter, none);
+  opacity: 0.6;
+}
+
+:host div.jsoneditor-menu > button:hover:not(:disabled),
+:host div.jsoneditor-menu > .jsoneditor-search button:hover {
+  opacity: 0.9;
+}
+
+:host div.jsoneditor-menu > .jsoneditor-search input {
+  background-color: transparent;
+  color: var(--mui-palette-text-primary);
+}
+
+:host div.jsoneditor-menu > .jsoneditor-search .jsoneditor-frame {
+  background-color: transparent;
+  border: 1px solid var(--mui-palette-divider);
+  border-radius: var(--mui-shape-borderRadius);
+}
+
+:host div.jsoneditor-navigation-bar,
+:host div.jsoneditor-statusbar {
+  background-color: transparent;
+  border-color: var(--mui-palette-divider);
+  color: var(--mui-palette-text-secondary);
+  font-family: var(--bokeh-base-font);
+}
+
+:host div.jsoneditor-tree,
+:host textarea.jsoneditor-text {
+  background-color: transparent;
+  color: var(--mui-palette-text-primary);
+}
+
+:host div.jsoneditor-field,
+:host div.jsoneditor-value,
+:host div.jsoneditor-default {
+  color: var(--mui-palette-text-primary);
+}
+
+:host div.jsoneditor-readonly,
+:host div.jsoneditor-field.jsoneditor-readonly {
+  color: var(--mui-palette-text-secondary);
+}
+
+:host div.jsoneditor-value.jsoneditor-string {
+  color: var(--mui-palette-success-main);
+}
+
+:host div.jsoneditor-value.jsoneditor-number {
+  color: var(--mui-palette-error-main);
+}
+
+:host div.jsoneditor-value.jsoneditor-boolean {
+  color: var(--mui-palette-warning-main);
+}
+
+:host div.jsoneditor-value.jsoneditor-null,
+:host div.jsoneditor-value.jsoneditor-url {
+  color: var(--mui-palette-info-main);
+}
+
+:host div.jsoneditor-tree tr.jsoneditor-highlight,
+:host div.jsoneditor-tree tr.jsoneditor-selected {
+  background-color: var(--mui-palette-action-selected);
+}
+
+:host div.jsoneditor-field[contenteditable='true']:focus,
+:host div.jsoneditor-field[contenteditable='true']:hover,
+:host div.jsoneditor-value[contenteditable='true']:focus,
+:host div.jsoneditor-value[contenteditable='true']:hover {
+  background-color: var(--mui-palette-action-hover);
+  border-color: var(--mui-palette-divider);
+}
+
+/* The tree's expand and drag icons are dark sprites. */
+:host div.jsoneditor-tree button.jsoneditor-button {
+  filter: var(--panel-icon-filter, none);
+}
+
+:host .jsoneditor-contextmenu .jsoneditor-menu {
+  background-color: var(--mui-palette-background-paper);
+  border-color: var(--mui-palette-divider);
+  border-radius: var(--mui-shape-borderRadius);
+  box-shadow: var(--mui-shadows-8);
+}
+
+:host .jsoneditor-contextmenu .jsoneditor-menu button {
+  color: var(--mui-palette-text-primary);
+  font-family: var(--bokeh-base-font);
+}
+
+:host .jsoneditor-contextmenu .jsoneditor-menu button:hover,
+:host .jsoneditor-contextmenu .jsoneditor-menu button:focus {
+  background-color: var(--mui-palette-action-hover);
+  color: var(--mui-palette-text-primary);
+}

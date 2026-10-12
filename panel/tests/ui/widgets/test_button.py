@@ -5,10 +5,13 @@ pytest.importorskip("playwright")
 from bokeh.models import Tooltip
 from playwright.sync_api import Expect, expect
 
+from panel.depends import bind
 from panel.layout import Column
+from panel.template import MaterialTemplate
 from panel.tests.util import serve_component, wait_until
 from panel.widgets import (
-    Button, CheckButtonGroup, RadioButtonGroup, TextAreaInput, TooltipIcon,
+    Button, CheckButtonGroup, MenuButton, RadioButtonGroup, TextAreaInput,
+    TooltipIcon,
 )
 
 pytestmark = pytest.mark.ui
@@ -27,6 +30,23 @@ def test_button_click(page):
     page.click('.bk-btn')
 
     wait_until(lambda: len(events) == 1, page)
+
+
+@pytest.mark.parametrize('material_template', [False, True])
+def test_menu_button_repeated_selection(page, material_template):
+    menu_button = MenuButton(label='Menu', items=[('Option A', 'a')])
+    selections = []
+    bind(selections.append, menu_button.param.clicked, watch=True)
+    app = MaterialTemplate(main=[menu_button]) if material_template else menu_button
+
+    serve_component(page, app)
+
+    for count in (1, 2):
+        page.get_by_role('button', name='Menu', exact=True).click()
+        page.get_by_text('Option A', exact=True).click()
+        wait_until(lambda count=count: len(selections) == count, page)
+
+    assert selections == ['a', 'a']
 
 
 @pytest.mark.parametrize(

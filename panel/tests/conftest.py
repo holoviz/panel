@@ -10,6 +10,7 @@ import re
 import shutil
 import signal
 import socket
+import sys
 import tempfile
 import time
 import unittest
@@ -37,7 +38,8 @@ from panel.io.resources import EXTENSION_CDN
 from panel.io.state import set_curdoc, state
 from panel.pane import HTML, Markdown
 from panel.tests.util import (
-    get_open_ports, reverse_proxy as reverse_proxy_ctx, serve_and_wait,
+    get_open_ports, global_design, import_panel_ui, restore_classic_globals,
+    reverse_proxy as reverse_proxy_ctx, serve_and_wait, set_global_design,
 )
 from panel.theme import Design
 
@@ -164,6 +166,7 @@ def pytest_configure(config):
         start_jupyter()
 
     config.addinivalue_line("markers", "internet: mark test as requiring an internet connection")
+    config.addinivalue_line("markers", "panel_ui: mark test as importing panel.ui")
 
 
 def pytest_generate_tests(metafunc):
@@ -200,10 +203,25 @@ def pytest_collection_modifyitems(config, items):
         if item.get_closest_marker("internet") and not item.get_closest_marker("flaky"):
             item.add_marker(pytest.mark.flaky(reruns=3, reason="Downloads remote files, which can fail on a bad connection"))
 
+    if 'panel_material_ui' in sys.modules:
+        raise pytest.UsageError(
+            'panel.ui was imported while collecting tests, which adds the Material '
+            'widgets to every test parametrized over Widget subclasses. Import it '
+            'inside the test or through the panel_ui fixture.'
+        )
+
+    for item in selected:
+        if 'panel_ui' in getattr(item, 'fixturenames', ()):
+            item.add_marker(pytest.mark.panel_ui)
+
     config.hook.pytest_deselected(items=skipped)
     # Sorted because pytest 8.4.0 and pytest-playwright
     # https://github.com/microsoft/playwright-pytest/pull/284
-    items[:] = sorted(selected, key=lambda x: x.path)
+    # Tests importing panel.ui run last: its components cannot be unregistered,
+    # and every later render on the same worker would include their resources.
+    items[:] = sorted(
+        selected, key=lambda x: (x.get_closest_marker('panel_ui') is not None, x.path)
+    )
 
 
 def pytest_runtest_setup(item):
@@ -512,6 +530,34 @@ def server_cleanup():
         _watched_files.clear()
         _modules.clear()
         _local_modules.clear()
+
+@pytest.fixture
+def panel_ui():
+    """
+    panel.ui with the classic suite shielded from its import side effects.
+    Tests wanting the Material design have to select it explicitly.
+    """
+    return import_panel_ui()
+
+@pytest.fixture(autouse=True)
+def classic_isolation():
+    """
+    Fails a test that imports panel.ui without the panel_ui fixture, since the
+    patches would silently switch every later test on the worker to Material.
+    """
+    yield
+    if 'panel_material_ui' not in sys.modules:
+        return
+    patched = restore_classic_globals()
+    design = global_design()
+    leaked = getattr(design, '__module__', '').startswith(('panel_material_ui', 'panel.ui'))
+    if leaked:
+        set_global_design(None)
+    if patched or leaked:
+        pytest.fail(
+            'Test imported panel.ui without the panel_ui fixture, leaking '
+            f'{patched + ["config.design"] * leaked} into the classic suite.'
+        )
 
 @pytest.fixture(autouse=True)
 def cache_cleanup():
