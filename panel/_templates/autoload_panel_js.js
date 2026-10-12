@@ -39,6 +39,70 @@ calls it with the rendered model.
     return !live_notebook && index !== -1 ? CDN_DIST + url.slice(index + JUPYTER_EXTENSION_PATH.length) : url;
   }
 
+  // Pending until this bootstrap has loaded everything (or given up), so
+  // that output rendered meanwhile can wait for Panel's models.
+  let bootstrap_resolve;
+  const bootstrap = new Promise((resolve) => { bootstrap_resolve = resolve });
+  root.__panel_bootstrap__ = bootstrap;
+  function bootstrap_done() {
+    if (root.__panel_bootstrap__ === bootstrap) {
+      root.__panel_bootstrap__ = null;
+    }
+    bootstrap_resolve();
+  }
+  setTimeout(bootstrap_done, Math.max({{ timeout|default(0)|json }}, 15000));
+
+  // jupyter_bokeh, which renders Panel output for comms='ipywidgets' and in
+  // VS Code, builds a view as soon as its output arrives, so a notebook run
+  // top to bottom can render before BokehJS has loaded or before panel.js
+  // has registered the models the view needs. Both the classic notebook and
+  // VS Code load jupyter_bokeh through RequireJS, so its fetch is held until
+  // the bootstrap is done, and should it already be loaded, ipywidgets
+  // awaits render(), which is held instead.
+  function hold_bokeh_views(module) {
+    const View = module?.BokehView;
+    if (View == null || View.prototype.__panel_hold__ === true) {
+      return;
+    }
+    const render = View.prototype.render;
+    View.prototype.render = function(...args) {
+      const pending = root.__panel_bootstrap__;
+      return pending == null ? render.apply(this, args) : pending.then(() => render.apply(this, args));
+    };
+    View.prototype.__panel_hold__ = true;
+  }
+  if (root.requirejs != null) {
+    for (const name of ["@bokeh/jupyter_bokeh", "nbextensions/jupyter_bokeh/index"]) {
+      if (root.requirejs.defined(name)) {
+        hold_bokeh_views(root.requirejs(name));
+      }
+    }
+    const load = root.requirejs.load;
+    if (load?.__panel_hold__ !== true) {
+      root.requirejs.load = function(context, name, url) {
+        const pending = root.__panel_bootstrap__;
+        if (pending != null && name.includes("jupyter_bokeh")) {
+          pending.then(() => load.call(this, context, name, url));
+          return;
+        }
+        return load.call(this, context, name, url);
+      };
+      root.requirejs.load.__panel_hold__ = true;
+    }
+    const on_resource_load = root.requirejs.onResourceLoad;
+    if (on_resource_load?.__panel_hold__ !== true) {
+      // Called once a module is defined but before it is handed to the
+      // widget manager that asked for it.
+      root.requirejs.onResourceLoad = function(context, map, deps) {
+        if (map.id.includes("jupyter_bokeh")) {
+          hold_bokeh_views(context.defined[map.id]);
+        }
+        return on_resource_load?.apply(this, arguments);
+      };
+      root.requirejs.onResourceLoad.__panel_hold__ = true;
+    }
+  }
+
   // Set a timeout for this load but only if we are not already initializing
   if (typeof (root._bokeh_timeout) === "undefined" || (force || !root._bokeh_is_initializing)) {
     root._bokeh_timeout = Date.now() + {{ timeout|default(0)|json }};
@@ -132,8 +196,57 @@ calls it with the rendered model.
       return true;
     }
 
+    // Mirrors the AMD guard in panel/models/resources.ts: a UMD library that
+    // is not loaded by RequireJS must take its browser-global branch, so
+    // define.amd reads as undefined while one of these scripts executes. A
+    // module script has no currentScript, so it is told apart by the
+    // directory its code was loaded from.
+    function install_amd_guard() {
+      const define = root.define;
+      if (typeof define !== "function" || define.amd == null || define.__panel_no_amd__ === true) {
+        return;
+      }
+      const dirs = root.__panel_no_amd_dirs__ = root.__panel_no_amd_dirs__ || [];
+      const hidden = () => {
+        const script = document.currentScript;
+        if (script != null) {
+          return script.hasAttribute("data-panel-no-amd");
+        }
+        const stack = new Error().stack || "";
+        return dirs.some((dir) => stack.includes(dir));
+      };
+      let amd = define.amd;
+      try {
+        Object.defineProperty(define, "amd", {
+          configurable: true,
+          enumerable: true,
+          get: () => hidden() ? undefined : amd,
+          set: (value) => { amd = value },
+        });
+        Object.defineProperty(define, "__panel_no_amd__", {value: true});
+      } catch (e) {
+        console.warn(`Panel: could not hide RequireJS from component libraries: ${e}`);
+      }
+    }
+
+    function hide_amd(element) {
+      element.setAttribute("data-panel-no-amd", "");
+      install_amd_guard();
+    }
+
+    function hide_amd_module(url) {
+      const dirs = root.__panel_no_amd_dirs__ = root.__panel_no_amd_dirs__ || [];
+      const dir = new URL(url, document.baseURI).href.split("?")[0].replace(/[^/]*$/, "");
+      // panel.js itself lives in a dist root, and must never match.
+      if (!/\/(dist|static\/extensions\/panel)\/$/.test(dir) && !dirs.includes(dir)) {
+        dirs.push(dir);
+      }
+      install_amd_guard();
+    }
+
     function inject_script_tag(url) {
       const element = document.createElement('script');
+      hide_amd(element);
       element.onload = on_load;
       element.onerror = () => {
         if (!fallback_to_cdn(element, url, "src", document.head)) {
@@ -152,8 +265,15 @@ calls it with the rendered model.
     root._bokeh_is_loading = 1;
     if (window.requirejs) {
       const require_config = {{ config|conffilter }};
+      // RequireJS tries each path in turn, so a bundled copy the Jupyter
+      // extension cannot serve falls back to the CDN, then to the original.
+      const require_urls = (url) => {
+        url = resource_url(url);
+        const index = url.indexOf(JUPYTER_EXTENSION_PATH);
+        return index === -1 ? [url] : [url, CDN_DIST + url.slice(index + JUPYTER_EXTENSION_PATH.length)];
+      };
       for (const [name, path] of Object.entries(require_config.paths || {})) {
-        require_config.paths[name] = Array.isArray(path) ? path.map(resource_url) : resource_url(path);
+        require_config.paths[name] = (Array.isArray(path) ? path : [path]).flatMap(require_urls);
       }
       window.requirejs.config(require_config);
       {% if requirements %}
@@ -165,6 +285,11 @@ calls it with the rendered model.
       define("{{ r }}{{ global_suffix }}", ["{{ r }}"], function(module) {
         const name = "{{ exports[r] }}"
         const existing = window[name]
+        // A library that never calls define() (plotly.js) resolves to
+        // undefined but has assigned its global itself.
+        if (module == null) {
+          return existing
+        }
         // Several packages can contribute to one namespace (deck.gl's core,
         // json and carto bundles all publish `deck`), so merge into a fresh
         // object rather than overwrite.
@@ -288,6 +413,7 @@ calls it with the rendered model.
         continue;
       }
       var element = document.createElement('script');
+      hide_amd_module(resource_url(url));
       root._bokeh_is_loading++;
       element.onerror = () => {
         if (!fallback_to_cdn(element, url, "src", document.head)) {
@@ -338,7 +464,10 @@ calls it with the rendered model.
     {%- endfor %}
     {%- for js in (bundle.js_raw if bundle else js_raw) %}
     function(Bokeh, define, module, exports) {
-      {{ js|indent(6) }}
+      {# No indent filter: it splits on every character Python's splitlines()
+         treats as a line break, which minified libraries (xterm.js) carry
+         inside their string literals. #}
+{{ js }}
     },
     {% endfor -%}
     function(Bokeh, define, module, exports) {} // ensure no trailing comma for IE
@@ -413,11 +542,15 @@ calls it with the rendered model.
           }
         }
       }
+      // Views waiting on this run once the current task is done, by which
+      // point the load callback has also restored root.Bokeh.
+      bootstrap_done();
     } else if (Date.now() < root._bokeh_timeout) {
       setTimeout(run_inline_js, 100);
     } else if (!root._bokeh_failed_load) {
       console.log("Bokeh: BokehJS failed to load within specified timeout.");
       root._bokeh_failed_load = true;
+      bootstrap_done();
     }
     root._bokeh_is_initializing = false;
   }

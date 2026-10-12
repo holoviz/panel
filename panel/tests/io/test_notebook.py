@@ -9,12 +9,12 @@ from bokeh.models import ImportedStyleSheet, InlineStyleSheet
 from panel.config import config, panel_extension
 from panel.io import resources as resources_module
 from panel.io.notebook import (
-    LOAD_MIME, ipywidget, load_notebook, replace_inline_css,
-    require_components,
+    LOAD_MIME, _autoload_js, _bundled_require_path, _cdn_url_key, ipywidget,
+    load_notebook, replace_inline_css, require_components,
 )
 from panel.io.resource_spec import _SPEC_CACHE, resource_spec
 from panel.io.resources import (
-    CDN_DIST, CDN_ROOT, JS_VERSION, set_resource_mode,
+    CDN_DIST, CDN_ROOT, JS_VERSION, Bundle, Resources, set_resource_mode,
 )
 from panel.layout import Column
 from panel.models.echarts import ECharts
@@ -181,6 +181,103 @@ def test_require_components_only_includes_active_panel_extensions(monkeypatch):
     assert any('echarts' in config['paths'] for config in configs)
 
 
+def _tabulator_require(monkeypatch, mode, notebook):
+    from bokeh.core.has_props import _default_resolver
+    from bokeh.resources import CDN, INLINE
+
+    monkeypatch.setattr(panel_extension, '_loaded_extensions', ['tabulator'])
+    monkeypatch.setitem(
+        _default_resolver._known_models, 'panel.models.tabulator.DataTabulator', DataTabulator
+    )
+    base = INLINE if mode == 'inline' else CDN
+    with set_resource_mode(mode):
+        resources = Resources.from_bokeh(base, notebook=notebook)
+        return require_components(resources)
+
+
+@pytest.mark.parametrize('notebook', [True, False])
+def test_require_components_load_bundled_copies(monkeypatch, notebook):
+    """
+    RequireJS must load Panel's bundled copies rather than the npm CDN,
+    which a notebook on a restricted network cannot reach.
+
+    See https://github.com/holoviz/panel/issues/8750.
+    """
+    configs, requirements, _, _, require_skip = _tabulator_require(monkeypatch, 'cdn', notebook)
+
+    paths = next(config['paths'] for config in configs if 'tabulator' in config['paths'])
+    bundled, original = paths['tabulator']
+    dist = '/panel-preview/static/extensions/panel/' if notebook else CDN_DIST
+    assert bundled == f'{dist}bundled/datatabulator/tabulator-tables@6.4.0/dist/js/tabulator.min'
+    assert original == DataTabulator.__js_require__['paths']['tabulator']
+    assert f'{bundled}.js' in require_skip
+    assert 'tabulator' in requirements
+    # The class-level declaration must not be rewritten in place.
+    assert isinstance(DataTabulator.__js_require__['paths']['tabulator'], str)
+
+
+def test_require_components_skip_inlined_libraries(monkeypatch):
+    """
+    Inlined libraries assign their globals themselves, so RequireJS must not
+    fetch them a second time from the network.
+    """
+    configs, requirements, exports, _, require_skip = _tabulator_require(monkeypatch, 'inline', True)
+
+    assert not any('tabulator' in config['paths'] for config in configs)
+    assert 'tabulator' not in requirements
+    assert 'tabulator' not in exports
+    assert require_skip == []
+
+
+@pytest.mark.parametrize(('path', 'raw', 'url', 'expected'), [
+    # The same file
+    (
+        'https://cdn.jsdelivr.net/npm/echarts@6.0.0/dist/echarts.min',
+        'https://cdn.jsdelivr.net/npm/echarts@6.0.0/dist/echarts.min.js',
+        '/bundled/echarts/echarts@6.0.0/dist/echarts.min.js',
+        '/bundled/echarts/echarts@6.0.0/dist/echarts.min',
+    ),
+    # A package resolved to its default file, bundled without `.js`
+    (
+        'https://cdn.jsdelivr.net/npm/vega@6.1.2/build/vega.min',
+        'https://cdn.jsdelivr.net/npm/vega@6.1.2',
+        '/bundled/vegaplot/vega@6.1.2',
+        '/bundled/vegaplot/vega@6.1.2?',
+    ),
+    # A path naming the directory the bundled files live in
+    (
+        '//cdn.jsdelivr.net/npm/ace-builds@1.40.1/src-min-noconflict',
+        'https://cdn.jsdelivr.net/npm/ace-builds@1.40.1/src-min-noconflict/ace.js',
+        '/bundled/aceplot/ace-builds@1.40.1/src-min-noconflict/ace.js',
+        '/bundled/aceplot/ace-builds@1.40.1/src-min-noconflict',
+    ),
+    # Unrelated files that only share a prefix
+    (
+        'https://cdn.jsdelivr.net/npm/@deck.gl/carto@^9.1.14/dist.min',
+        'https://cdn.jsdelivr.net/npm/@loaders.gl/3d-tiles@4.2.2/dist/dist.min.js',
+        '/bundled/deckglplot/@loaders.gl/3d-tiles@4.2.2/dist/dist.min.js',
+        None,
+    ),
+], ids=['file', 'package', 'directory', 'unrelated'])
+def test_bundled_require_path(path, raw, url, expected):
+    assert _bundled_require_path(_cdn_url_key(path), _cdn_url_key(raw), url) == expected
+
+
+def test_autoload_js_preserves_inline_source():
+    """
+    Characters Python's splitlines() treats as line breaks (xterm.js has
+    them in string literals) must reach the page untouched, otherwise the
+    whole bootstrap is a syntax error.
+    """
+    source = 'var C0 = {FS: "\x1c", GS: "\x1d", RS: "\x1e", NEL: "\x85", LS: "\u2028"};'
+    bundle = Bundle(js_raw=[source])
+    bootstrap = _autoload_js(
+        bundle=bundle, configs=[], requirements=[], exports={}, error_id='error',
+        skip_imports={}, require_skip=[], ipywidget=False
+    )
+    assert source in bootstrap
+
+
 def test_notebook_endpoint_alert_stays_in_notebook_output(monkeypatch, notebook_bootstrap):
     """
     Endpoint failures must update Panel's output rather than the notebook UI.
@@ -208,7 +305,7 @@ def test_notebook_endpoint_alert_stays_in_notebook_output(monkeypatch, notebook_
     assert 'element.src = resource_url(url)' in bootstrap
     assert 'element.href = resource_url(url)' in bootstrap
     assert 'new URL(resource_url(url), document.baseURI)' in bootstrap
-    assert 'require_config.paths[name] = Array.isArray(path) ? path.map(resource_url) : resource_url(path)' in bootstrap
+    assert 'require_config.paths[name] = (Array.isArray(path) ? path : [path]).flatMap(require_urls)' in bootstrap
 
 
 def test_notebook_vscode_resources_use_cdn(monkeypatch, notebook_bootstrap):

@@ -128,6 +128,65 @@ function inject(el: HTMLScriptElement | HTMLLinkElement): Promise<void> {
 }
 
 /**
+ * Hides RequireJS from the scripts the registry loads while they execute.
+ *
+ * On a page with RequireJS (the classic notebook, VS Code) a UMD bundle
+ * finds `define.amd` and registers an anonymous AMD module instead of
+ * assigning the global the components read, and RequireJS attributes that
+ * anonymous define() to whichever script it loads next. Hiding `define`
+ * itself for as long as the scripts load would also hide it from whatever
+ * RequireJS loads in the meantime, so instead `define.amd` reads as
+ * undefined only while Panel's own code is running: a classic script is
+ * recognized by a marker attribute, a module script, which has no
+ * `document.currentScript`, by the directory it was loaded from.
+ */
+const NO_AMD_ATTR = "data-panel-no-amd"
+
+function install_amd_guard(): void {
+  const global = globalThis as any
+  const define = global.define
+  if (typeof define !== "function" || define.amd == null || define.__panel_no_amd__ === true) {
+    return
+  }
+  const dirs: string[] = global.__panel_no_amd_dirs__ ??= []
+  const hidden = (): boolean => {
+    const script = document.currentScript
+    if (script != null) {
+      return script.hasAttribute(NO_AMD_ATTR)
+    }
+    const stack = new Error().stack ?? ""
+    return dirs.some((dir) => stack.includes(dir))
+  }
+  let amd = define.amd
+  try {
+    Object.defineProperty(define, "amd", {
+      configurable: true,
+      enumerable: true,
+      get: () => hidden() ? undefined : amd,
+      set: (value) => { amd = value },
+    })
+    Object.defineProperty(define, "__panel_no_amd__", {value: true})
+  } catch (e) {
+    console.warn(`Panel: could not hide RequireJS from component libraries: ${e}`)
+  }
+}
+
+function hide_amd(el: HTMLScriptElement): void {
+  el.setAttribute(NO_AMD_ATTR, "")
+  install_amd_guard()
+}
+
+function hide_amd_module(url: string): void {
+  const dirs: string[] = (globalThis as any).__panel_no_amd_dirs__ ??= []
+  const dir = url_key(url).split("?")[0].replace(/[^/]*$/, "")
+  // panel.js itself lives in a dist root, and must never match.
+  if (!/\/(dist|static\/extensions\/panel)\/$/.test(dir) && !dirs.includes(dir)) {
+    dirs.push(dir)
+  }
+  install_amd_guard()
+}
+
+/**
  * Injects a classic script tag.
  *
  * `async = false` on a dynamically inserted script keeps execution in
@@ -139,6 +198,7 @@ function inject_script(url: string): Promise<void> {
   const el = document.createElement("script")
   el.async = false
   el.src = resource_url(url)
+  hide_amd(el)
   return inject(el)
 }
 
@@ -162,6 +222,7 @@ function inject_module(url: string, name?: string): Promise<void> {
   const el = document.createElement("script")
   el.type = "module"
   el.async = false
+  hide_amd_module(url)
   if (name == null) {
     el.src = resource_url(url)
     return inject(el)
