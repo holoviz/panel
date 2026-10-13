@@ -2064,3 +2064,48 @@ def test_param_widget_updates_from_own_callback(document, comm, param_type, init
 
     assert instance.value == expected_value
     assert widget.value == expected_value
+
+
+@pytest.mark.parametrize('bound', [0, 2])
+def test_throttled_number_param_repeated_exclusive_boundary(document, comm, bound):
+    class Test(param.Parameterized):
+        a = param.Number(default=1, bounds=(0, 2), inclusive_bounds=(False, False))
+
+    obj = Test()
+    pane = Param(obj, widgets={'a': {'throttled': True}})
+    model = pane.get_root(document, comm=comm).children[1]
+    widget = pane._widgets['a']
+
+    for _ in range(2):
+        widget._process_events({'value': bound, 'value_throttled': bound})
+        assert obj.a == 1
+        assert widget.value == 1
+        assert model.value == 1
+
+    widget._process_events({'value': 1.5})
+    assert obj.a == 1
+    widget._process_events({'value_throttled': 1.5})
+    assert obj.a == 1.5
+    assert widget.value == 1.5
+
+
+@pytest.mark.parametrize('value', [(0, 1.5), (0.5, 2)])
+def test_throttled_range_param_repeated_exclusive_boundary(document, comm, value):
+    class Test(param.Parameterized):
+        a = param.Range(default=(0.5, 1.5), bounds=(0, 2), inclusive_bounds=(False, False))
+
+    obj = Test()
+    pane = Param(obj, widgets={'a': {'throttled': True}})
+    model = pane.get_root(document, comm=comm).children[1]
+    widget = pane._widgets['a']
+
+    for _ in range(2):
+        widget._process_events({'value': value, 'value_throttled': value})
+        assert obj.a == (0.5, 1.5)
+        assert widget.value == (0.5, 1.5)
+        assert model.value == (0.5, 1.5)
+
+    widget._process_events({'value': (0.7, 1.3)})
+    assert obj.a == (0.5, 1.5)
+    widget._process_events({'value_throttled': (0.7, 1.3)})
+    assert obj.a == (0.7, 1.3)
