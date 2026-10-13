@@ -206,7 +206,7 @@ nbsite_gallery_conf = {
                         },
                         {
                             'title': 'panel-web-llm',
-                            'url': 'https://github.com/holoviz/panel-web-llm',
+                            'url': 'https://panel-extensions.github.io/panel-web-llm/',
                         },
                         {
                             'title': 'panel-live-server',
