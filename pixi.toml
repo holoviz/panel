@@ -104,11 +104,11 @@ tqdm = ">=4.48.0"
 typing_extensions = "*"
 
 [feature.required.tasks]
-install = 'python -m pip install --no-deps --disable-pip-version-check -e .'
+install = { cmd = 'python -m pip install --no-deps --disable-pip-version-check -e .', description = "Install Panel in editable mode" }
 # Rebuilds panel/dist/ui without a full reinstall; watch-ui additionally
 # recompiles on every JSX change for the `panel serve --dev` loop.
-build-ui = 'panel compile panel.ui --file-loaders woff woff2'
-watch-ui = 'panel compile panel.ui --file-loaders woff woff2 --unminified --watch'
+build-ui = { cmd = 'panel compile panel.ui --file-loaders woff woff2', description = "Rebuild the panel.ui bundle" }
+watch-ui = { cmd = 'panel compile panel.ui --file-loaders woff woff2 --unminified --watch', description = "Rebuild the panel.ui bundle on every change" }
 
 [feature.py312.dependencies]
 python = "3.12.*"
@@ -257,9 +257,9 @@ jupyterlab = "*"
 setuptools_scm = ">=6"
 
 [feature.dev.tasks]
-lab = 'jupyter lab'
-sync-git-tags = 'python scripts/sync_git_tags.py param'
-setup-dev = { depends-on = ["install", "lint-install"] }
+lab = { cmd = 'jupyter lab', description = "Start JupyterLab" }
+sync-git-tags = { cmd = 'python scripts/sync_git_tags.py param', description = "Sync git tags from upstream to your fork" }
+setup-dev = { depends-on = ["install", "lint-install"], description = "Set up the development environment" }
 
 # =============================================
 # =================== TESTS ===================
@@ -275,12 +275,12 @@ pytest-timeout = "*"
 pytest-xdist = "*"
 
 [feature.test-unit-task.tasks] # So it is not showing up in the test-ui environment
-test-unit = 'pytest panel/tests -n logical --dist loadgroup'
-test-subprocess = 'pytest panel/tests --subprocess'
+test-unit = { cmd = 'pytest panel/tests -n logical --dist loadgroup', description = "Run the unit tests" }
+test-subprocess = { cmd = 'pytest panel/tests --subprocess', description = "Run the tests that need a subprocess" }
 
 [feature.test-example.tasks]
-test-docs = 'pytest panel/tests --docs'
-test-example = 'pytest -n logical --dist loadscope --nbval-lax examples'
+test-docs = { cmd = 'pytest panel/tests --docs', description = "Run the documentation tests" }
+test-example = { cmd = 'pytest -n logical --dist loadscope --nbval-lax examples', description = "Run the example notebooks" }
 
 [feature.test-example.dependencies]
 nbval = "*"
@@ -302,6 +302,7 @@ PLAYWRIGHT_BROWSERS_PATH = ".pixi/playwright-browsers"
 _install-ui = 'playwright install chromium'
 
 [feature.test-ui.tasks.test-ui]
+description = "Run the UI tests with Playwright"
 cmd = 'pytest panel/tests/ui --ui --browser chromium -n logical --dist loadgroup'
 depends-on = ["_install-ui"]
 
@@ -322,7 +323,7 @@ typing-extensions = "*"
 param = ">=2.4.1"
 
 [feature.type.tasks]
-test-type = 'mypy --cache-dir=.mypy_cache/pixi-test-type panel'
+test-type = { cmd = 'mypy --cache-dir=.mypy_cache/pixi-test-type panel', description = "Type check with mypy" }
 
 # =============================================
 # =================== DOCS ====================
@@ -345,7 +346,7 @@ pydeck = ">=0.8"  # Add back to examples, when it support ipywidgets 8.0
 sphinx = ">=9"
 
 [feature.doc.tasks]
-install = 'python -m pip install --no-deps --disable-pip-version-check -e .'
+install = { cmd = 'python -m pip install --no-deps --disable-pip-version-check -e .', description = "Install Panel in editable mode" }
 _docs-pyodide-npm = 'npm install --no-save --no-package-lock --prefix . pyodide@314.0.7'
 _docs-pyodide-wheels = 'python scripts/docs_pyodide.py wheels'
 _docs-refmanual = 'sphinx-apidoc -e -o doc/api/ panel/ panel/tests --ext-autodoc --ext-intersphinx'
@@ -355,9 +356,10 @@ _docs-generate-parallel = { cmd = 'nbsite build --what=html --output=builtdocs -
 _docs_markdown = 'python -m nbsite build-llms --config scripts/llms_config.py'
 _docs-copy-panel-dist = { cmd = 'cp -r ./panel/dist ./builtdocs/panel_dist', depends-on = ['_docs-pyodide-wheels'] }
 _docs-pyodide = { cmd = 'python scripts/docs_pyodide.py convert', depends-on = ['_docs-pyodide-wheels'] }
-docs-server = 'python -m http.server 5500 --directory ./builtdocs'
+docs-server = { cmd = 'python -m http.server 5500 --directory ./builtdocs', description = "Serve the built documentation" }
 
 [feature.doc.tasks.docs-build]
+description = "Build the documentation"
 depends-on = [
     '_docs-refmanual',
     '_docs-convert-gallery',
@@ -368,6 +370,7 @@ depends-on = [
 ]
 
 [feature.doc.tasks.docs-build-parallel]
+description = "Build the documentation in parallel"
 depends-on = [
     '_docs-refmanual',
     '_docs-convert-gallery',
@@ -396,12 +399,12 @@ _homepage-install = { cmd = 'npm ci', cwd = 'doc/homepage', inputs = [
     'doc/homepage/package.json',
     'doc/homepage/package-lock.json',
 ], outputs = ['doc/homepage/node_modules/.package-lock.json'] }
-homepage-serve = { cmd = 'npm run dev', cwd = 'doc/homepage', depends-on = ['_homepage-install'] }
-homepage-preview = { cmd = 'npm run preview', cwd = 'doc/homepage' }
-homepage-typecheck = { cmd = 'npm run typecheck', cwd = 'doc/homepage', depends-on = ['_homepage-install'] }
-homepage-build = { cmd = 'npm run build', cwd = 'doc/homepage', depends-on = ['_homepage-install'] }
-homepage-test = 'pytest doc/homepage/tests --browser chromium'
-homepage-og-image = 'python doc/homepage/scripts/og-image.py'
+homepage-serve = { cmd = 'npm run dev', cwd = 'doc/homepage', depends-on = ['_homepage-install'], description = "Start the homepage dev server" }
+homepage-preview = { cmd = 'npm run preview', cwd = 'doc/homepage', description = "Preview the built homepage" }
+homepage-typecheck = { cmd = 'npm run typecheck', cwd = 'doc/homepage', depends-on = ['_homepage-install'], description = "Type check the homepage" }
+homepage-build = { cmd = 'npm run build', cwd = 'doc/homepage', depends-on = ['_homepage-install'], description = "Build the homepage" }
+homepage-test = { cmd = 'pytest doc/homepage/tests --browser chromium', description = "Run the homepage tests" }
+homepage-og-image = { cmd = 'python doc/homepage/scripts/og-image.py', description = "Render the homepage social preview image" }
 
 # =============================================
 # ================== BUILD ====================
@@ -412,10 +415,10 @@ conda-build = "*"
 conda-libmamba-solver = "!=25.11.0" # tmp pin https://github.com/conda/conda-libmamba-solver/issues/790
 
 [feature.build.tasks]
-build-conda = 'bash scripts/conda/build.sh'
-build-pip = 'python -m build .'
-build-pyodide = 'python scripts/build_pyodide_wheels.py'
-build-npm = { cmd = "npm pack .", cwd = "panel" }
+build-conda = { cmd = 'bash scripts/conda/build.sh', description = "Build the conda package" }
+build-pip = { cmd = 'python -m build .', description = "Build the sdist and wheel" }
+build-pyodide = { cmd = 'python scripts/build_pyodide_wheels.py', description = "Build the Pyodide wheels" }
+build-npm = { cmd = "npm pack .", cwd = "panel", description = "Build the npm package" }
 
 # =============================================
 # =================== LINT ====================
@@ -424,8 +427,8 @@ build-npm = { cmd = "npm pack .", cwd = "panel" }
 pre-commit = "*"
 
 [feature.lint.tasks]
-lint = 'pre-commit run --all-files'
-lint-install = 'pre-commit install -t=pre-commit'
+lint = { cmd = 'pre-commit run --all-files', description = "Run the linters on all files" }
+lint-install = { cmd = 'pre-commit install -t=pre-commit', description = "Install the pre-commit hooks" }
 
 # =============================================
 # =================== LITE ====================
@@ -439,7 +442,7 @@ python-build = "*"
 python-libarchive-c = "*"
 
 [feature.lite.tasks]
-lite-build = "bash scripts/jupyterlite/build.sh"
+lite-build = { cmd = "bash scripts/jupyterlite/build.sh", description = "Build the JupyterLite site" }
 # Service worker only work on 127.0.0.1
 # https://jupyterlite.readthedocs.io/en/latest/howto/configure/advanced/service-worker.html#limitations
-lite-server = "python -m http.server --directory ./lite/dist --bind 127.0.0.1"
+lite-server = { cmd = "python -m http.server --directory ./lite/dist --bind 127.0.0.1", description = "Serve the JupyterLite site" }
