@@ -553,7 +553,7 @@ class Param(Pane):
             watchers, updating = [], []
             widgets = {p_name: widget}
 
-        def link_widget(change):
+        def link_widget(change, only_reset=False):
             p_key = p_name if config.nthreads is None else (threading.get_ident(), p_name)
             if p_key in updating:
                 return
@@ -563,14 +563,16 @@ class Param(Pane):
                 istart, iend = getattr(p_obj, 'inclusive_bounds', (True, True))
                 bounds = p_obj.get_soft_bounds()
                 if (not istart and new == bounds[0]) or (not iend and new == bounds[1]):
-                    new = change.old
+                    new = getattr(parameterized, p_name)
                     reset = True
             elif isinstance(p_obj, param.Range):
                 istart, iend = getattr(p_obj, 'inclusive_bounds', (True, True))
                 bounds = p_obj.get_soft_bounds()
                 if (not istart and new[0] == bounds[0]) or (not iend and new[1] == bounds[1]):
-                    new = change.old
+                    new = getattr(parameterized, p_name)
                     reset = True
+            if only_reset and not reset:
+                return
             try:
                 updating.append(p_key)
                 if isinstance(widget, ReactiveData) and getattr(parameterized, p_name) is new:
@@ -602,6 +604,7 @@ class Param(Pane):
         elif onkeyup and hasattr(widget, 'value_input'):
             watcher = widget.param.watch(link_widget, 'value_input')
         elif throttled and hasattr(widget, 'value_throttled'):
+            watchers.append(widget.param.watch(lambda change: link_widget(change, only_reset=True), 'value'))
             watcher = widget.param.watch(link_widget, 'value_throttled')
         else:
             watcher = widget.param.watch(link_widget, 'value')
