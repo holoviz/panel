@@ -3,4 +3,4 @@
 - Attribution must follow this format: `Assisted-by: AGENT_NAME:MODEL_VERSION` instead of `Co-Authored-By`.
 - The project uses `pixi` for development; list the available tasks with `pixi task list`.
 - After changing TypeScript models in `panel/models`, rebuild the bundle with `panel build panel`.
-- Follow the Pull Request Template.
+- Follow the [Pull Request Template](https://github.com/holoviz/.github/blob/main/.github/pull_request_template.md).
