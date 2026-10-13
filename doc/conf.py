@@ -194,7 +194,7 @@ nbsite_gallery_conf = {
                         },
                         {
                             'title': 'panel-graphic-walker',
-                            'url': 'https://github.com/holoviz/panel-graphic-walker',
+                            'url': 'https://github.com/panel-extensions/panel-graphic-walker',
                         },
                         {
                             'title': 'panel-reactflow',
