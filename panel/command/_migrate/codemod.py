@@ -6,7 +6,8 @@ The ``libcst`` codemod implementing the migration rewrite rules:
     ``panel.indicators.X``) to the ``panel.ui`` equivalent, inserting
    ``import panel as pn`` when needed.
 2. ``name=`` to ``label=`` on calls resolved to a class with a ``label`` param.
-3. ``button_type=``/``button_style=`` to ``color=``/``variant=``.
+3. ``button_type=``/``button_style=`` to ``color=``/``variant=``, and
+   ``size=`` to ``icon_size=`` on icon widgets.
 4. ``MenuButton(split=True)`` to ``SplitButton(...)``.
 5. Classic template instantiation to ``panel.ui.Page(...)`` when every keyword
    used is confirmed compatible.
@@ -57,6 +58,7 @@ from .report import ManualReview, Rewrite
 RULE_IMPORT_PATH = 'import-path'
 RULE_NAME_TO_LABEL = 'name-to-label'
 RULE_BUTTON_APPEARANCE = 'button-appearance'
+RULE_ICON_SIZE = 'icon-size'
 RULE_MENU_BUTTON_SPLIT = 'menu-button-split'
 RULE_TEMPLATE_TO_PAGE = 'template-to-page'
 RULE_REMOVE_DESIGN = 'remove-design'
@@ -457,6 +459,18 @@ class _PanelMigrateTransformer(cst.CSTTransformer):
             if renamed:
                 self.rewrites.append(Rewrite(
                     line, RULE_BUTTON_APPEARANCE, f'{dotted}: {classic_kw}= -> {modern_kw}='
+                ))
+
+        if match.has_icon_size_alias:
+            classic_kw, modern_kw = compat.ICON_SIZE_RENAME
+            if classic_kw in used_kwargs and modern_kw not in used_kwargs:
+                new_args, renamed = _rename_kwarg(new_args, classic_kw, modern_kw)
+                if renamed:
+                    self.rewrites.append(Rewrite(line, RULE_ICON_SIZE, f'{dotted}: {classic_kw}= -> {modern_kw}='))
+            elif used_kwargs & {'width', 'height'}:
+                self.manual_reviews.append(ManualReview(
+                    line, f'{dotted} scales its icon to width/height, panel.ui.{match.ui_name} does not; '
+                    f'set {modern_kw}= to size the icon.'
                 ))
 
         if dotted in ('panel.widgets.RadioButtonGroup', 'panel.widgets.CheckButtonGroup'):
