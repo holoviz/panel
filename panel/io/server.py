@@ -7,20 +7,20 @@ import asyncio
 import datetime as dt
 import importlib
 import inspect
+import json
 import logging
 import os
 import pathlib
+import re
 import signal
 import sys
 import threading
+import time
+import typing as t
 import uuid
 
-from collections.abc import Callable, Mapping
 from functools import partial, wraps
 from html import escape
-from typing import (
-    TYPE_CHECKING, Any, Literal, TypedDict,
-)
 from urllib.parse import urlparse
 
 import bokeh
@@ -36,17 +36,23 @@ from bokeh.embed.bundle import Script
 from bokeh.embed.elements import script_for_render_items
 from bokeh.embed.util import RenderItem
 from bokeh.embed.wrappers import wrap_in_script_tag
+from bokeh.server.contexts import _RequestProxy as BkRequestProxy
 from bokeh.server.server import Server as BokehServer
 from bokeh.server.urls import per_app_patterns, toplevel_patterns
 from bokeh.server.views.autoload_js_handler import (
     AutoloadJsHandler as BkAutoloadJsHandler,
 )
 from bokeh.server.views.doc_handler import DocHandler as BkDocHandler
+from bokeh.server.views.metadata_handler import (
+    MetadataHandler as BkMetadataHandler,
+)
 from bokeh.server.views.root_handler import RootHandler as BkRootHandler
 from bokeh.server.views.static_handler import StaticHandler
+from bokeh.server.views.ws import WSHandler as BkWSHandler
 from bokeh.util.serialization import make_id
 from bokeh.util.token import (
-    generate_jwt_token, generate_session_id, get_token_payload,
+    check_token_signature, generate_jwt_token, generate_session_id,
+    get_session_id, get_token_payload,
 )
 # Tornado imports
 from tornado.ioloop import IOLoop
@@ -57,15 +63,23 @@ from tornado.wsgi import WSGIContainer
 
 # Internal imports
 from ..config import config
-from ..util import edit_readonly, fullpath
+from ..util import HTML_SANITIZER, edit_readonly, fullpath
 from ..util.warnings import warn
+from .admin_auth import (
+    ADMIN_COOKIE, INVALID_PASSWORD, LOGIN_ENDPOINT, LOGOUT_ENDPOINT,
+    AdminAccess, admin_cookie, admin_document_url, admin_protected,
+    check_admin_access, create_admin_token, is_admin_application,
+    relative_endpoint, render_admin_login, validate_admin_password,
+)
 from .application import build_applications
+from .auth import configure_auth
 from .document import (  # noqa
     _cleanup_doc, init_doc, unlocked, with_lock,
 )
 from .liveness import LivenessHandler
-from .loading import LOADING_INDICATOR_CSS_CLASS
+from .loading import _loading_css_classes
 from .logging import LOG_SESSION_CREATED
+from .pages import page_theme
 from .reload import record_modules
 from .resources import (
     BASE_TEMPLATE, CDN_DIST, COMPONENT_PATH, DIST_DIR, ERROR_TEMPLATE,
@@ -78,8 +92,14 @@ from .threads import StoppableThread
 
 logger = logging.getLogger(__name__)
 
-if TYPE_CHECKING:
-    from bokeh.application.application import SessionContext
+if t.TYPE_CHECKING:
+    from collections.abc import (
+        Awaitable, Callable, Iterable, Mapping,
+    )
+
+    from bokeh.application.application import (
+        Application as BkApplication, SessionContext,
+    )
     from bokeh.core.types import ID
     from bokeh.document.document import DocJson
     from bokeh.embed.bundle import Bundle
@@ -89,10 +109,10 @@ if TYPE_CHECKING:
     from .application import TViewableFuncOrPath
     from .location import Location
 
-    class TokenPayload(TypedDict):
-        headers: dict[str, Any]
-        cookies: dict[str, Any]
-        arguments: dict[str, Any]
+    class TokenPayload(t.TypedDict):
+        headers: dict[str, t.Any]
+        cookies: dict[str, t.Any]
+        arguments: dict[str, t.Any]
 
 
 #---------------------------------------------------------------------
@@ -101,6 +121,63 @@ if TYPE_CHECKING:
 
 INDEX_HTML = os.path.join(os.path.dirname(__file__), '..', '_templates', "index.html")
 DEFAULT_TITLE = "Panel Application"
+_PATH_TEMPLATE_PATTERN = re.compile(
+    r'^\{(?P<name>[A-Za-z_][A-Za-z0-9_]*)(?::(?P<converter>str|path|int|float|uuid))?\}$'
+)
+_PATH_TEMPLATE_CONVERTERS = {
+    'str': r'[^/]+',
+    'path': r'.*',
+    'int': r'[+-]?[0-9]+',
+    'float': r'[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?',
+    'uuid': r'[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}',
+}
+_MAX_ROUTE_PARAMS = 32
+_MAX_ROUTE_PARAM_KEY_CHARS = 128
+_MAX_ROUTE_PARAM_VALUE_CHARS = 1024
+_MAX_APP_PATH_CHARS = 2048
+
+
+def _has_prefix_boundary(path: str, prefix: str) -> bool:
+    if path == prefix:
+        return True
+    if prefix == '/':
+        return path.startswith('/')
+    return path.startswith(prefix + '/')
+
+
+def _strip_prefixed_path(path: str, prefix: str) -> str:
+    if not prefix:
+        return path
+    if _has_prefix_boundary(path, prefix):
+        stripped = path[len(prefix):]
+        return stripped or '/'
+    return path
+
+
+def _sanitize_route_context(
+    route_params: dict[str, t.Any], app_path: str | None
+) -> tuple[dict[str, str], str | None]:
+    sanitized_params: dict[str, str] = {}
+    for i, (key, value) in enumerate(route_params.items()):
+        if i >= _MAX_ROUTE_PARAMS:
+            break
+        sanitized_key = str(key)[:_MAX_ROUTE_PARAM_KEY_CHARS]
+        sanitized_value = str(value)[:_MAX_ROUTE_PARAM_VALUE_CHARS]
+        sanitized_params[sanitized_key] = sanitized_value
+    sanitized_app_path = None if app_path is None else str(app_path)[:_MAX_APP_PATH_CHARS]
+    return sanitized_params, sanitized_app_path
+
+
+def _validate_token_for_resign(token: str, secret_key: bytes | None, signed: bool) -> tuple[dict[str, t.Any], str, int]:
+    if not check_token_signature(token, secret_key=secret_key, signed=signed):
+        raise RuntimeError("Token signature validation failed before websocket re-sign.")
+    payload = dict(get_token_payload(token))
+    expiry = int(payload.get('session_expiry', 0) or 0)
+    now = int(time.time())
+    if expiry and expiry <= now:
+        raise RuntimeError("Token expired before websocket re-sign.")
+    expires_in = max(1, expiry - now) if expiry else 300
+    return payload, get_session_id(token), expires_in
 
 def _origin_url(url: str) -> str:
     if url.startswith("http"):
@@ -113,7 +190,44 @@ def _server_url(url: str, port: int) -> str:
     else:
         return f"http://{url.split(':')[0]}:{port}/"
 
-_tasks = set()
+
+def compile_route_template(route: str) -> tuple[str, tuple[str, ...]]:
+    """
+    Translate a FastAPI-style route template into a regex source string
+    and the tuple of parameter names it captures.
+
+    Literal segments are escaped so that a mixed route such as
+    ``/user/{name}/detail`` matches only the literal parts it declares.
+    """
+    if route == '/':
+        return '/', ()
+    sources, params = [], []
+    for segment in route.lstrip('/').split('/'):
+        match = _PATH_TEMPLATE_PATTERN.fullmatch(segment)
+        if match:
+            name = match.group('name')
+            converter = match.group('converter') or 'str'
+            params.append(name)
+            sources.append(f"(?P<{name}>{_PATH_TEMPLATE_CONVERTERS[converter]})")
+            continue
+        if '{' in segment or '}' in segment:
+            raise ValueError(
+                f"Invalid path template segment {segment!r} in route {route!r}."
+            )
+        sources.append(re.escape(segment))
+    return '/' + '/'.join(sources), tuple(params)
+
+
+def _path_template_to_tornado_route(route: str) -> str:
+    """
+    Convert FastAPI-style route templates into Tornado-compatible regex routes.
+    """
+    if route == '/' or ('{' not in route and '}' not in route):
+        return route
+    pattern, params = compile_route_template(route)
+    return pattern if params else route
+
+_tasks: set = set()
 
 def async_execute(func: Callable[..., None]) -> None:
     """
@@ -160,7 +274,7 @@ def async_execute(func: Callable[..., None]) -> None:
                 state._handle_exception(e)
     if unlock:
         wrapped.nolock = True # type: ignore
-    state.curdoc.add_next_tick_callback(wrapped)
+    state.curdoc.add_next_tick_callback(wrapped)  # type: ignore[arg-type]
 
 param.parameterized.async_executor = async_execute
 
@@ -197,7 +311,7 @@ state._on_session_created_internal.append(_initialize_session_info)
 def html_page_for_render_items(
     bundle: Bundle | tuple[str, str], docs_json: dict[ID, DocJson],
     render_items: list[RenderItem], title: str, template: Template | str | None = None,
-    template_variables: dict[str, Any] = {}
+    template_variables: dict[str, t.Any] = {}
 ) -> str:
     """
     Render an HTML page from a template and Bokeh render items.
@@ -232,7 +346,8 @@ def html_page_for_render_items(
 
     script = wrap_in_script_tag(script_for_render_items(json_id, render_items))
 
-    context = template_variables.copy()
+    from ..theme.base import design_template_variables
+    context = {**design_template_variables(), **template_variables}
 
     context.update(dict(
         title = title,
@@ -266,7 +381,7 @@ def server_html_page_for_session(
     title: str,
     token: str | None = None,
     template: str | Template = BASE_TEMPLATE,
-    template_variables: dict[str, Any] | None = None,
+    template_variables: dict[str, t.Any] | None = None,
 ) -> str:
 
     # ALERT: Replace with better approach before Bokeh 3.x compatible release
@@ -302,7 +417,7 @@ def server_html_page_for_session(
         )
         if config.global_loading_spinner:
             html = html.replace(
-                '<body>', f'<body class="{LOADING_INDICATOR_CSS_CLASS} pn-{config.loading_spinner}">'
+                '<body>', f'<body class="{" ".join(_loading_css_classes())}">'
             )
     return html
 
@@ -317,6 +432,275 @@ def autoload_js_script(doc, resources, token, element_id, app_path, absolute_url
     return AUTOLOAD_JS.render(bundle=bundle, elementid=element_id)
 
 
+#---------------------------------------------------------------------
+# Transport neutral request handling
+#
+# The helpers below implement the parts of request handling that are
+# independent of the web framework, so that the Tornado handlers further
+# down and the ASGI implementation in panel.io.asgi share one behavior.
+#---------------------------------------------------------------------
+
+class AuthorizationResult(t.NamedTuple):
+    """
+    Outcome of evaluating ``config.authorize_callback`` for a request.
+
+    ``authorized`` is None when the callback asked for a redirect, in
+    which case ``redirect`` holds the target URL.
+    """
+
+    authorized: bool | None
+    error: str | None
+    redirect: str | None = None
+
+
+def authorize_request(path: str, session: bool = False) -> AuthorizationResult:
+    """
+    Determine whether the current user is authorized to access an app.
+
+    Parameters
+    ----------
+    path: str
+        The URL path the user is trying to access.
+    session: bool
+        Whether the check is being performed inside a session, in which
+        case a globally configured callback is skipped since it already
+        ran for the HTTP request.
+    """
+    auth_cb = config.authorize_callback
+    # If inside a session ensure the authorize callback is not global
+    if not auth_cb or (session and auth_cb is config._param__private.values['authorize_callback']):
+        return AuthorizationResult(True, None)
+    authorized = False
+    auth_params = inspect.signature(auth_cb).parameters
+    auth_args: tuple[dict[str, t.Any] | None] | tuple[dict[str, t.Any] | None, str]
+    if len(auth_params) == 1:
+        auth_args = (state.user_info,)
+    elif len(auth_params) == 2:
+        auth_args = (state.user_info, path,)
+    else:
+        raise RuntimeError(
+            'Authorization callback must accept either 1) a single argument '
+            'which is the user name or 2) two arguments which includes the '
+            'user name and the url path the user is trying to access.'
+        )
+    auth_error: str | None = f'{state.user} is not authorized to access this application.'
+    try:
+        authorized = auth_cb(*auth_args)
+        if isinstance(authorized, str):
+            return AuthorizationResult(None, None, authorized)
+        elif not authorized:
+            auth_error = (
+                f'Access denied! User {state.user!r} is not authorized '
+                f'for the given app {path!r}.'
+            )
+        if authorized:
+            auth_error = None
+    except Exception:
+        auth_error = f'Authorization callback errored. Could not validate user {state.user}.'
+        logger.warning(auth_error)
+    return AuthorizationResult(bool(authorized), auth_error)
+
+
+def render_auth_error(auth_error: str) -> str:
+    """
+    Render the authorization error page for the given message.
+    """
+    if config.auth_template:
+        with open(config.auth_template) as f:
+            template = _env.from_string(f.read())
+    else:
+        template = ERROR_TEMPLATE
+    return template.render(
+        npm_cdn=config.npm_cdn,
+        title='Panel: Authorization Error',
+        error_type='Authorization Error',
+        error='User is not authorized.',
+        error_msg=HTML_SANITIZER.clean(auth_error)
+    )
+
+
+def token_payload_for_request(app: t.Any, request: t.Any) -> TokenPayload:
+    """
+    Build the session token payload for a request.
+
+    Parameters
+    ----------
+    app:
+        An object declaring the ``include_headers``, ``exclude_headers``,
+        ``include_cookies`` and ``exclude_cookies`` filters, i.e. either a
+        ``BokehTornado`` application or a ``BokehServerCore``.
+    request:
+        Any request exposing the ``bokeh.server.request.RequestLike``
+        interface, i.e. a Tornado ``HTTPServerRequest`` or a
+        ``bokeh.server.request.ServerRequest``.
+    """
+    if app.include_headers is None:
+        excluded_headers = (app.exclude_headers or [])
+        allowed_headers = [header for header in request.headers
+                           if header not in excluded_headers]
+    else:
+        allowed_headers = app.include_headers
+    headers = {k: v for k, v in request.headers.items()
+               if k in allowed_headers}
+
+    if app.include_cookies is None:
+        excluded_cookies = (app.exclude_cookies or [])
+        allowed_cookies = [cookie for cookie in request.cookies
+                           if cookie not in excluded_cookies]
+    else:
+        allowed_cookies = app.include_cookies
+    cookies = {k: v.value for k, v in request.cookies.items()
+               if k in allowed_cookies}
+
+    if cookies and 'Cookie' in headers and 'Cookie' not in (app.include_headers or []):
+        # Do not include Cookie header since cookies can be restored from cookies dict
+        del headers['Cookie']
+
+    arguments = {} if request.arguments is None else request.arguments
+    payload: TokenPayload = {'headers': headers, 'cookies': cookies, 'arguments': arguments}
+    return payload
+
+
+async def resolve_session(
+    request: t.Any,
+    create_session: Callable[[], Awaitable[ServerSession]],
+    path: str | None = None
+) -> ServerSession:
+    """
+    Resolve the session for a request, reusing an existing session if
+    ``config.reuse_sessions`` is enabled.
+
+    Parameters
+    ----------
+    request:
+        The request the session is being created for.
+    create_session:
+        Zero-argument coroutine function creating a new session.
+    path: str
+        The application path, defaults to the request path.
+    """
+    from ..config import config
+    app_path: str = request.path if path is None else path
+    session = None
+    if config.reuse_sessions and app_path in state._session_key_funcs:
+        key = state._session_key_funcs[app_path](request)
+        session = state._sessions.get(key)
+    if session is None:
+        session = await create_session()
+        with set_curdoc(session.document):
+            if config.reuse_sessions:
+                key_func = config.session_key_func or (lambda r: (r.path, r.arguments.get('theme', [b'default'])[0].decode('utf-8')))
+                state._session_key_funcs[app_path] = key_func
+                key = key_func(request)
+                state._sessions[key] = session
+                session.block_expiration()
+    return session
+
+
+_REGEX_TOKENS = ('(', ')', '[', ']', '{', '}', '?', '+', '*', '|', '\\', '^', '$')
+
+
+def is_concrete_route(route: str) -> bool:
+    """
+    Whether a route is a literal path rather than a pattern or template.
+    """
+    return not any(token in route for token in _REGEX_TOKENS)
+
+
+def index_redirect(app_paths: Mapping[str, t.Any] | Iterable[str], use_redirect: bool) -> str | None:
+    """
+    Return the relative redirect target for the root URL, if the root
+    should redirect to the single served application instead of rendering
+    an index page.
+    """
+    routes = list(app_paths)
+    if use_redirect and len(routes) == 1 and is_concrete_route(routes[0]):
+        return f'.{routes[0]}'
+    return None
+
+
+def index_page_items(
+    app_paths: Iterable[str], prefix: str, index: str | None = None, uri: str = '/'
+) -> list[str] | list[tuple[str, str]]:
+    """
+    Compute the items rendered on the index page.
+
+    Without a custom index a sorted list of slugs is returned, matching
+    Bokeh's default template. With a custom index a sorted list of
+    ``(slug, title)`` tuples is returned, applying ``config.index_titles``.
+    """
+    if index is None:
+        return sorted(app_paths)
+    items = []
+    for slug in app_paths:
+        default_title = slug[1:]
+        slug = (
+            slug
+            if uri.endswith("/") or not prefix
+            else f"{prefix}{slug}"
+        )
+        # Try to get custom application page card title from config
+        # using as default value the application name
+        title = config.index_titles.get(slug, default_title)
+        items.append((slug, title))
+    return sorted(items, key=lambda app: app[1])
+
+
+def render_index_page(
+    app_paths: Iterable[str], prefix: str, index: str | None = None, uri: str = '/'
+) -> str:
+    """
+    Render the index page listing the available applications.
+
+    Both the Bokeh default (``app_index.html``) and Panel's own index are
+    Tornado templates, so they are rendered with a ``tornado.template``
+    loader rooted at Bokeh's views directory. Absolute ``index`` paths
+    resolve correctly since ``os.path.join`` ignores the root for them,
+    which is the same resolution Tornado's ``RequestHandler.render``
+    performs.
+    """
+    import bokeh.server.views
+
+    from tornado.template import Loader
+    items = index_page_items(app_paths, prefix, index=index, uri=uri)
+    root = os.path.dirname(t.cast('str', bokeh.server.views.__file__))
+    template = Loader(root).load(index or 'app_index.html')
+    return template.generate(
+        prefix=prefix, items=items, PANEL_CDN=CDN_DIST, page=page_theme
+    ).decode('utf-8')
+
+
+def resolve_component_resource(path: str) -> str:
+    """
+    Resolve a component resource URL path to a file on disk.
+
+    ``ComponentResourceHandler.parse_url_path`` only ever accesses
+    ``self._resource_attrs``, which is a class attribute, so it can be
+    called without instantiating the handler.
+    """
+    self_ = t.cast('ComponentResourceHandler', ComponentResourceHandler)
+    return ComponentResourceHandler.parse_url_path(self_, path)
+
+
+def validate_static_dirs(static_dirs: Mapping[str, str]) -> dict[str, str]:
+    """
+    Validate a mapping of URL slugs to static directories and return it
+    with normalized slugs and absolute paths.
+    """
+    static: dict[str, str] = {}
+    for slug, path in static_dirs.items():
+        if not slug.startswith('/'):
+            slug = '/' + slug
+        if slug == '/static':
+            raise ValueError("Static file route may not use /static "
+                             "this is reserved for internal use.")
+        path = fullpath(path)
+        if not os.path.isdir(path):
+            raise ValueError(f"Cannot serve non-existent path {path}")
+        static[slug] = path
+    return static
+
+
 # Patch Server to attach task factory to asyncio loop and handle Admin server context
 class Server(BokehServer):
 
@@ -328,6 +712,10 @@ class Server(BokehServer):
 
     def start(self) -> None:
         super().start()
+        # Route Bokeh's asyncio.to_thread offloading (locked callbacks and
+        # eligible Document initialization) through Panel's bounded thread
+        # pool so --num-threads bounds it.
+        state._install_thread_pool(self._loop.asyncio_loop)
         if state._admin_context:
             self._loop.add_callback(state._admin_context.run_load_hook)
         if state._setup_module and state._setup_file_callback:
@@ -337,21 +725,35 @@ class Server(BokehServer):
             self._autoreload_stop_event = stop_event = asyncio.Event()
             self._autoreload_task = self._loop.asyncio_loop.create_task(setup_autoreload_watcher(stop_event))
 
+    async def _stop_autoreload(self) -> None:
+        for event in state._watch_events:
+            event.set()
+        state._watch_events.clear()
+        self._autoreload_stop_event.set()
+        try:
+            await self._autoreload_task
+        except asyncio.CancelledError:
+            pass
+        except Exception:
+            # A failed watcher must not keep the server from stopping.
+            logger.exception('Autoreload watcher failed')
+
     def stop(self, wait: bool = True) -> None:
         if self._autoreload_stop_event:
             # For the stop event to be processed we have to restart
             # the IOLoop briefly, ensuring an orderly cleanup
-            async def stop_autoreload():
-                for event in state._watch_events:
-                    event.set()
-                state._watch_events = []
-                self._autoreload_stop_event.set()
-                await self._autoreload_task
             try:
-                self._loop.asyncio_loop.run_until_complete(stop_autoreload())
+                self._loop.asyncio_loop.run_until_complete(self._stop_autoreload())
             except RuntimeError:
                 pass # Ignore if the event loop is still running
         super().stop(wait=wait)
+        if state._admin_context:
+            state._admin_context.run_unload_hook()
+
+    async def stop_async(self) -> None:
+        if self._autoreload_stop_event:
+            await self._stop_autoreload()
+        await super().stop_async()
         if state._admin_context:
             state._admin_context.run_unload_hook()
 
@@ -375,53 +777,85 @@ class LoginUrlMixin:
         raise RuntimeError('login_url or get_login_url() must be supplied when authentication hooks are enabled')
 
 
+class RequestProxy(BkRequestProxy):
+
+    def __init__(self, request, *args, route_params=None, app_path=None, **kwargs):
+        super().__init__(request, *args, **kwargs)
+        if route_params is None:
+            route_params = getattr(request, 'route_params', None)
+            if route_params is None and isinstance(request, dict):
+                route_params = request.get('route_params')
+        if app_path is None:
+            app_path = getattr(request, 'app_path', None)
+            if app_path is None and isinstance(request, dict):
+                app_path = request.get('app_path')
+        sanitized_params, sanitized_app_path = _sanitize_route_context(
+            route_params if isinstance(route_params, dict) else {}, app_path
+        )
+        self._route_params = sanitized_params
+        self._app_path = sanitized_app_path
+
+    @property
+    def route_params(self) -> dict[str, str]:
+        return self._route_params
+
+    @property
+    def app_path(self) -> str | None:
+        return self._app_path
+
+    def __getattr__(self, name: str) -> t.Any:
+        if not name.startswith("_") and isinstance(self._request, dict):
+            if name in self._request:
+                return self._request[name]
+        return super().__getattr__(name)
+
+
+bokeh.server.contexts._RequestProxy = RequestProxy  # type: ignore[misc]
+
+
+def _normalize_app_path(path: str, prefix: str, suffix: str = '') -> str:
+    app_path = _strip_prefixed_path(path, prefix)
+    if suffix and app_path.endswith(suffix):
+        app_path = app_path[:-len(suffix)]
+    if not app_path:
+        app_path = '/'
+    if not app_path.startswith('/'):
+        app_path = '/' + app_path
+    return app_path
+
+
+def _route_params(args: tuple[t.Any, ...], kwargs: dict[str, t.Any]) -> dict[str, str]:
+    route_params = {str(i): value for i, value in enumerate(args)}
+    route_params.update({str(key): value for key, value in kwargs.items()})
+    sanitized_params, _ = _sanitize_route_context(route_params, app_path=None)
+    return sanitized_params
+
+
+def _set_request_route_context(handler: t.Any, *args, suffix: str = '', **kwargs) -> None:
+    request = handler.request
+    raw_route_params = _route_params(args, kwargs)
+    raw_app_path = _normalize_app_path(request.path, handler.application.prefix, suffix=suffix)
+    request.route_params, request.app_path = _sanitize_route_context(raw_route_params, raw_app_path)
+
+
+def _admin_access(handler: t.Any) -> AdminAccess:
+    """
+    Checks a request to an application route against the admin access
+    configuration, which only restricts the admin application.
+    """
+    if not admin_protected() or not is_admin_application(handler.application_context.application):
+        return AdminAccess(True)
+    return check_admin_access(handler.current_user, handler.get_cookie(ADMIN_COOKIE))
+
+
 class DocHandler(LoginUrlMixin, BkDocHandler):
 
     @authenticated  # type: ignore
     async def get_session(self) -> ServerSession:
-        from ..config import config
-        path = self.request.path
-        session = None
-        if config.reuse_sessions and path in state._session_key_funcs:
-            key = state._session_key_funcs[path](self.request)
-            session = state._sessions.get(key)
-        if session is None:
-            session = await super().get_session()  # type: ignore
-            with set_curdoc(session.document):
-                if config.reuse_sessions:
-                    key_func = config.session_key_func or (lambda r: (r.path, r.arguments.get('theme', [b'default'])[0].decode('utf-8')))
-                    state._session_key_funcs[path] = key_func
-                    key = key_func(self.request)
-                    state._sessions[key] = session
-                    session.block_expiration()
-        return session
+        return await resolve_session(self.request, partial(super().get_session))  # type: ignore
 
     def _generate_token_payload(self) -> TokenPayload:
-        app = self.application
-        if app.include_headers is None:
-            excluded_headers = (app.exclude_headers or [])
-            allowed_headers = [header for header in self.request.headers
-                               if header not in excluded_headers]
-        else:
-            allowed_headers = app.include_headers
-        headers = {k: v for k, v in self.request.headers.items()
-                   if k in allowed_headers}
-
-        if app.include_cookies is None:
-            excluded_cookies = (app.exclude_cookies or [])
-            allowed_cookies = [cookie for cookie in self.request.cookies
-                               if cookie not in excluded_cookies]
-        else:
-            allowed_cookies = app.include_cookies
-        cookies = {k: v.value for k, v in self.request.cookies.items()
-                   if k in allowed_cookies}
-
-        if cookies and 'Cookie' in headers and 'Cookie' not in (app.include_headers or []):
-            # Do not include Cookie header since cookies can be restored from cookies dict
-            del headers['Cookie']
-
-        arguments = {} if self.request.arguments is None else self.request.arguments
-        payload: TokenPayload = {'headers': headers, 'cookies': cookies, 'arguments': arguments}
+        payload = token_payload_for_request(self.application, self.request)
         payload.update(self.application_context.application.process_request(self.request))  # type: ignore
         return payload
 
@@ -429,63 +863,38 @@ class DocHandler(LoginUrlMixin, BkDocHandler):
         """
         Determine if user is authorized to access this application.
         """
-        auth_cb = config.authorize_callback
-        # If inside a session ensure the authorize callback is not global
-        if not auth_cb or (session and auth_cb is config._param__private.values['authorize_callback']):
-            return True, None
-        authorized = False
-        auth_params = inspect.signature(auth_cb).parameters
-        auth_args: tuple[dict[str, Any] | None] | tuple[dict[str, Any] | None, str]
-        if len(auth_params) == 1:
-            auth_args = (state.user_info,)
-        elif len(auth_params) == 2:
-            auth_args = (state.user_info, self.request.path,)
-        else:
-            raise RuntimeError(
-                'Authorization callback must accept either 1) a single argument '
-                'which is the user name or 2) two arguments which includes the '
-                'user name and the url path the user is trying to access.'
-            )
-        auth_error: str | None = f'{state.user} is not authorized to access this application.'
-        try:
-            authorized = auth_cb(*auth_args)
-            if isinstance(authorized, str):
-                self.redirect(authorized)
-                return None, None
-            elif not authorized:
-                auth_error = (
-                    f'Access denied! User {state.user!r} is not authorized '
-                    f'for the given app {self.request.path!r}.'
-                )
-            if authorized:
-                auth_error = None
-        except Exception:
-            auth_error = f'Authorization callback errored. Could not validate user {state.user}.'
-            logger.warning(auth_error)
-        return authorized, auth_error
+        result = authorize_request(self.request.path, session=session)
+        if result.redirect is not None:
+            self.redirect(result.redirect)
+            return None, None
+        return result.authorized, result.error
 
     def _render_auth_error(self, auth_error: str) -> str:
-        if config.auth_template:
-            with open(config.auth_template) as f:
-                template = _env.from_string(f.read())
-        else:
-            template = ERROR_TEMPLATE
-        return template.render(
-            npm_cdn=config.npm_cdn,
-            title='Panel: Authorization Error',
-            error_type='Authorization Error',
-            error='User is not authorized.',
-            error_msg=auth_error
-        )
+        return render_auth_error(auth_error)
 
     @authenticated
     async def get(self, *args, **kwargs):
+        # Prevent the browser from caching the document page. The page embeds
+        # a short-lived Bokeh session token; a cached page served after a
+        # logout/login cycle would carry a stale token and the subsequent
+        # WebSocket connection would fail (see e.g. holoviz/panel#8634).
+        self.set_header("Cache-Control", "no-store")
+        access = _admin_access(self)
+        if access.login:
+            self.redirect(relative_endpoint(self.request.path, LOGIN_ENDPOINT))
+            return
+        elif not access.allowed:
+            self.set_status(403)
+            self.set_header("Content-Type", 'text/html')
+            self.write(self._render_auth_error(t.cast('str', access.error)))
+            return
         prefix = self.application.prefix
         if prefix and self.request.path == prefix and not prefix.endswith('/'):
             query_string = self.request.query if self.request.query else ''
             redirect_url = f'{prefix}/' + (f'?{query_string}' if query_string else '')
             self.redirect(redirect_url)
             return
+        _set_request_route_context(self, *args, **kwargs)
 
         # Run global authorization callback
         payload = self._generate_token_payload()
@@ -553,8 +962,6 @@ class DocHandler(LoginUrlMixin, BkDocHandler):
         self.set_header("Content-Type", 'text/html')
         self.write(page)
 
-per_app_patterns[0] = (r'/?', DocHandler)
-
 # Patch Bokeh Autoload handler
 class AutoloadJsHandler(BkAutoloadJsHandler):
     ''' Implements a custom Tornado handler for the autoload JS chunk
@@ -562,6 +969,10 @@ class AutoloadJsHandler(BkAutoloadJsHandler):
     '''
 
     async def get(self, *args, **kwargs) -> None:
+        _set_request_route_context(self, *args, suffix='/autoload.js', **kwargs)
+        if not _admin_access(self).allowed:
+            self.send_error(status_code=403, reason='Not authorized to access the admin panel')
+            return
         element_id = self.get_argument("bokeh-autoload-element", default=None)
         if not element_id:
             self.send_error(status_code=400, reason='No bokeh-autoload-element query parameter')
@@ -588,7 +999,109 @@ class AutoloadJsHandler(BkAutoloadJsHandler):
         self.set_header("Content-Type", 'application/javascript')
         self.write(js)
 
-per_app_patterns[3] = (r'/autoload.js', AutoloadJsHandler)
+
+class WSHandler(BkWSHandler):
+
+    async def prepare(self):
+        await super().prepare()
+        # A WebSocket upgrade cannot be redirected to a login page, so the
+        # @authenticated check on Bokeh's open() (which runs after the
+        # handshake) raises an uncaught RuntimeError ("Method not supported for
+        # Web Sockets") for unauthenticated connections. Reject the handshake
+        # cleanly with a 403 here instead, before it is performed.
+        if self.current_user is None:
+            logger.debug(
+                "Rejecting unauthenticated WebSocket connection to %r with 403.",
+                self.request.path
+            )
+            self.set_status(403)
+            self.finish()
+        elif not _admin_access(self).allowed:
+            logger.debug(
+                "Rejecting unauthorized WebSocket connection to admin panel %r with 403.",
+                self.request.path
+            )
+            self.set_status(403)
+            self.finish()
+
+    def open(self, *args, **kwargs):
+        _set_request_route_context(self, *args, suffix='/ws', **kwargs)
+        return super().open()
+
+    async def _async_open(self, token: str) -> None:
+        payload, session_id, expires_in = _validate_token_for_resign(
+            token, secret_key=self.application.secret_key, signed=self.application.sign_sessions
+        )
+        request_data = self.application_context.application.process_request(self.request)  # type: ignore[arg-type]
+        route_params, app_path = _sanitize_route_context(
+            request_data.get('route_params', {}), request_data.get('app_path')
+        )
+        if route_params:
+            request_data['route_params'] = route_params
+        if app_path:
+            request_data['app_path'] = app_path
+        payload.update(request_data)
+        payload.pop('session_expiry', None)
+        token = generate_jwt_token(
+            t.cast("ID", session_id),
+            secret_key=self.application.secret_key,
+            signed=self.application.sign_sessions,
+            expiration=min(self.application.session_token_expiration, expires_in),
+            extra_payload=payload
+        )
+        return await super()._async_open(token)
+
+
+_metadata_handler = per_app_patterns[2][1] if len(per_app_patterns) > 2 else BkMetadataHandler
+per_app_patterns[:] = [
+    (r'/ws', WSHandler),
+    (r'/metadata', _metadata_handler),
+    (r'/autoload.js', AutoloadJsHandler),
+    (r'/?', DocHandler),
+]
+
+class AdminLoginHandler(RequestHandler):
+    """
+    Serves the password login page of the admin panel.
+    """
+
+    def get(self):
+        self.set_header("Cache-Control", "no-store")
+        self.write(render_admin_login())
+
+    def post(self):
+        if validate_admin_password(self.get_argument('password', '')):
+            secure = self.request.protocol == 'https'
+            self.add_header('Set-Cookie', admin_cookie(create_admin_token(), secure=secure))
+            self.redirect(admin_document_url(self.request.path))
+            return
+        self.set_status(401)
+        self.write(render_admin_login(INVALID_PASSWORD))
+
+
+class AdminLogoutHandler(RequestHandler):
+    """
+    Clears the admin cookie and returns to the admin login page.
+    """
+
+    def get(self):
+        self.add_header('Set-Cookie', admin_cookie(None))
+        self.redirect(LOGIN_ENDPOINT)
+
+
+def admin_auth_patterns(admin_path: str) -> list[tuple[str, type[RequestHandler]]]:
+    """
+    The routes of the admin login and logout pages, if the admin panel is
+    password protected.
+    """
+    if not config.admin_password:
+        return []
+    admin_path = admin_path.rstrip('/')
+    return [
+        (f'{admin_path}/{LOGIN_ENDPOINT}', AdminLoginHandler),
+        (f'{admin_path}/{LOGOUT_ENDPOINT}', AdminLogoutHandler),
+    ]
+
 
 class RootHandler(LoginUrlMixin, BkRootHandler):
     """
@@ -596,35 +1109,25 @@ class RootHandler(LoginUrlMixin, BkRootHandler):
     template variable.
     """
 
+    _regex_tokens = _REGEX_TOKENS
+
+    @classmethod
+    def _is_concrete_route(cls, route: str) -> bool:
+        return is_concrete_route(route)
+
     @authenticated
     async def get(self, *args, **kwargs):
-        if self.use_redirect and len(self.applications) == 1:
-            app_names = list(self.applications.keys())
-            redirect_to = f".{app_names[0]}"
-            self.redirect(redirect_to)
-        else:
-            if self.index is None:
-                apps = sorted(self.applications.keys())
-                index = "app_index.html"
-            else:
-                index = self.index
-                apps = []
-                for slug in self.applications.keys():
-                    default_title = slug[1:]
-                    slug = (
-                        slug
-                        if self.request.uri.endswith("/") or not self.prefix
-                        else f"{self.prefix}{slug}"
-                    )
-                    # Try to get custom application page card title from config
-                    # using as default value the application name
-                    title = config.index_titles.get(slug, default_title)
-                    apps.append((slug, title))
-                apps = sorted(apps, key=lambda app: app[1])
-            self.render(index, prefix=self.prefix, items=apps)
+        if (redirect := index_redirect(self.applications, self.use_redirect)) is not None:
+            self.redirect(redirect)
+            return
+        items = index_page_items(
+            self.applications.keys(), self.prefix, index=self.index, uri=self.request.uri
+        )
+        self.render(self.index or 'app_index.html', prefix=self.prefix, items=items)
 
     def render(self, *args, **kwargs):
         kwargs['PANEL_CDN'] = CDN_DIST
+        kwargs['page'] = page_theme
         return super().render(*args, **kwargs)
 
 toplevel_patterns[0] = (r'/?', RootHandler)
@@ -664,14 +1167,23 @@ class AuthenticatedStaticFileHandler(StaticFileHandler):
     async def get(self, *args, **kwargs):
         return await super().get(*args, **kwargs)
 
+def _to_non_capturing_groups(route: str) -> str:
+    route = re.sub(r'\(\?P<[^>]+>', '(?:', route)
+    return re.sub(r'(?<!\\)\((?!\?)', '(?:', route)
 
 # Copied from bokeh 2.4.0, to fix directly in bokeh at some point.
 def create_static_handler(prefix, key, app):
     # patch
-    key = '/__patchedroot' if key == '/' else key
+    is_root = key == '/'
+    key = '/__patchedroot' if is_root else key
 
     route = prefix
-    route += "/static/(.*)" if key == "/" else key + "/static/(.*)"
+    if is_root:
+        # Avoid matching /static/extensions/... here so Bokeh's top-level
+        # MultiRootStaticHandler route can serve extension assets.
+        route += "/static/(?!extensions/)(.*)"
+    else:
+        route += _to_non_capturing_groups(key) + "/static/(.*)"
     if app.static_path is not None:
         return (route, StaticFileHandler, {"path" : app.static_path})
     return (route, StaticHandler, {})
@@ -717,9 +1229,8 @@ class ComponentResourceHandler(StaticFileHandler):
         '_css', '_js', 'base_css', 'css', '_stylesheets', 'modifiers', '_bundle_path', '_bundle_css'
     ]
 
-    def initialize(self, path: str | Literal['root'] = 'root', default_filename: str | None = None):
-        self.root = path
-        self.default_filename = default_filename
+    def initialize(self, path: str | t.Literal['root'] = 'root', default_filename: str | None = None, *args: t.Any, **kwargs: t.Any):
+        super().initialize(path, default_filename, *args, **kwargs)
 
     def parse_url_path(self, path: str) -> str:
         """
@@ -862,14 +1373,15 @@ def serve(
         location=location, admin=admin
     ))
     if threaded:
-        kwargs['loop'] = loop = IOLoop(make_current=False) if loop is None else loop
+        owns_loop = loop is None
+        kwargs['loop'] = loop = IOLoop(make_current=False) if owns_loop else loop
         # To ensure that we have correspondence between state._threads and state._servers
         # we must provide a server_id here
         if 'server_id' not in kwargs:
             kwargs['server_id'] = uuid.uuid4().hex
 
         server = StoppableThread(
-            target=get_server, io_loop=loop, args=(panels,), kwargs=kwargs
+            target=get_server, io_loop=loop, args=(panels,), kwargs=kwargs, owns_loop=owns_loop
         )
         server_id = kwargs['server_id']
         state._threads[server_id] = server
@@ -896,21 +1408,43 @@ class ProxyFallbackHandler(RequestHandler):
         self.on_finish()
 
 
+class SessionInfoHandler(RequestHandler):
+    """
+    Serves ``state.session_info`` as JSON, matching ``PanelASGI``'s
+    ``/session_info`` endpoint.
+    """
+
+    def initialize(self, legacy: bool = False):
+        # The deprecated /rest/session_info route was served by the param
+        # REST provider, which nested the value under its parameter name.
+        self.legacy = legacy
+
+    def get(self):
+        info = {'session_info': state.session_info} if self.legacy else state.session_info
+        self.set_header('Content-Type', 'application/json')
+        self.write(json.dumps(info))
+
+    def head(self):
+        self.set_header('Content-Type', 'application/json')
+
+
+def get_session_info_routes():
+    """
+    Returns the Tornado routes serving ``state.session_info``.
+    """
+    return [
+        (r"/session_info/?", SessionInfoHandler, {}),
+        (r"/rest/session_info/?", SessionInfoHandler, {'legacy': True}),
+    ]
+
+
 def get_static_routes(static_dirs):
     """
     Returns a list of tornado routes of StaticFileHandlers given a
     dictionary of slugs and file paths to serve.
     """
     patterns = []
-    for slug, path in static_dirs.items():
-        if not slug.startswith('/'):
-            slug = '/' + slug
-        if slug == '/static':
-            raise ValueError("Static file route may not use /static "
-                             "this is reserved for internal use.")
-        path = fullpath(path)
-        if not os.path.isdir(path):
-            raise ValueError(f"Cannot serve non-existent path {path}")
+    for slug, path in validate_static_dirs(static_dirs).items():
         patterns.append(
             (rf"{slug}/(.*)", AuthenticatedStaticFileHandler, {"path": path, "default_filename": "index.html"})
         )
@@ -943,7 +1477,7 @@ def get_server(
     cookie_secret: str | None = None,
     oauth_encryption_key: str | None = None,
     oauth_jwt_user: str | None = None,
-    oauth_refresh_tokens: str | None = None,
+    oauth_refresh_tokens: bool | None = None,
     oauth_guest_endpoints: list[str] | None = None,
     oauth_optional: bool | None = None,
     root_path: str | None = None,
@@ -1040,9 +1574,8 @@ def get_server(
       authentication is enabled.
     session_history: int (optional, default=None)
       The amount of session history to accumulate. If set to non-zero
-      and non-None value will launch a REST endpoint at
-      /rest/session_info, which returns information about the session
-      history.
+      and non-None value will launch an endpoint at /session_info,
+      which returns information about the session history.
     liveness: bool | str (optional, default=False)
       Whether to add a liveness endpoint. If a string is provided
       then this will be used as the endpoint, otherwise the endpoint
@@ -1059,7 +1592,6 @@ def get_server(
       Bokeh Server instance running this panel
     """
     from ..config import config
-    from .rest import REST_PROVIDERS
 
     silence(EMPTY_LAYOUT, True)
     server_id = kwargs.pop('server_id', uuid.uuid4().hex)
@@ -1084,6 +1616,18 @@ def get_server(
     apps = build_applications(
         panel, title=title, location=location, admin=admin, custom_handlers=(flask_handler,)
     )
+    normalized_apps: dict[str, BkApplication] = {}
+    normalized_sources: dict[str, str] = {}
+    for endpoint, app in apps.items():
+        normalized_endpoint = _path_template_to_tornado_route(endpoint)
+        if normalized_endpoint in normalized_apps:
+            raise ValueError(
+                f"Application routes {endpoint!r} and {normalized_sources[normalized_endpoint]!r} "
+                "normalize to the same Tornado route."
+            )
+        normalized_apps[normalized_endpoint] = app
+        normalized_sources[normalized_endpoint] = endpoint
+    apps = normalized_apps
 
     if warm or config.autoreload:
         for endpoint, app in apps.items():
@@ -1103,13 +1647,14 @@ def get_server(
     if session_history is not None:
         config.session_history = session_history
     if config.session_history != 0:
-        pattern = REST_PROVIDERS['param']([], 'rest')
-        extra_patterns.extend(pattern)
-        state.publish('session_info', state, ['session_info'])
+        extra_patterns += get_session_info_routes()
 
     if liveness:
         liveness_endpoint = 'liveness' if isinstance(liveness, bool) else liveness
         extra_patterns += [(rf"/{liveness_endpoint}", LivenessHandler, dict(applications=apps))]
+
+    if admin:
+        extra_patterns += admin_auth_patterns('/admin')
 
     opts = dict(kwargs)
     if loop:
@@ -1134,44 +1679,28 @@ def get_server(
 
     # Configure OAuth
     from ..config import config
-    server_config = {}
-    login_template = kwargs.pop('basic_login_template', login_template)
-    if basic_auth or oauth_provider:
-        from ..auth import BasicAuthProvider, OAuthProvider
-        if basic_auth:
-            server_config['basic_auth'] = basic_auth
-            provider = BasicAuthProvider
-        else:
-            config.oauth_provider = oauth_provider  # type: ignore
-            provider = OAuthProvider
-        opts['auth_provider'] = provider(
-            login_endpoint=login_endpoint,
-            logout_endpoint=logout_endpoint,
-            login_template=login_template,
-            logout_template=logout_template,
-            error_template=oauth_error_template,
-            guest_endpoints=oauth_guest_endpoints,
-        )
-    if oauth_key:
-        config.oauth_key = oauth_key # type: ignore
-    if oauth_secret:
-        config.oauth_secret = oauth_secret # type: ignore
-    if oauth_extra_params:
-        config.oauth_extra_params = oauth_extra_params # type: ignore
-    if cookie_path:
-        config.cookie_path = cookie_path # type: ignore
-    if cookie_secret:
-        config.cookie_secret = cookie_secret # type: ignore
-    if oauth_redirect_uri:
-        config.oauth_redirect_uri = oauth_redirect_uri # type: ignore
-    if oauth_refresh_tokens is not None:
-        config.oauth_refresh_tokens = oauth_refresh_tokens  # type: ignore
-    if oauth_optional is not None:
-        config.oauth_optional = oauth_optional  # type: ignore
-    if oauth_guest_endpoints is not None:
-        config.oauth_guest_endpoints = oauth_guest_endpoints  # type: ignore
-    if oauth_jwt_user is not None:
-        config.oauth_jwt_user = oauth_jwt_user  # type: ignore
+    provider, server_config = configure_auth(
+        basic_auth=basic_auth,
+        oauth_provider=oauth_provider,
+        oauth_key=oauth_key,
+        oauth_secret=oauth_secret,
+        oauth_redirect_uri=oauth_redirect_uri,
+        oauth_extra_params=oauth_extra_params,
+        oauth_error_template=oauth_error_template,
+        cookie_path=cookie_path,
+        cookie_secret=cookie_secret,
+        oauth_encryption_key=oauth_encryption_key,
+        oauth_jwt_user=oauth_jwt_user,
+        oauth_refresh_tokens=oauth_refresh_tokens,
+        oauth_guest_endpoints=oauth_guest_endpoints,
+        oauth_optional=oauth_optional,
+        login_endpoint=login_endpoint,
+        logout_endpoint=logout_endpoint,
+        login_template=kwargs.pop('basic_login_template', login_template),
+        logout_template=logout_template,
+    )
+    if provider is not None:
+        opts['auth_provider'] = provider
     if root_path:
         with edit_readonly(state):
             state.base_url = root_path  # type: ignore
@@ -1206,13 +1735,14 @@ def get_server(
 
     if start:
         server.start()
-        try:
-            server.io_loop.start()
-        except RuntimeError:
-            pass
-        except TypeError:
-            warn(
-                "IOLoop couldn't be started. Ensure it is started by "
-                "process invoking the panel.io.server.serve."
-            )
+        # starting an already running loop raises AssertionError on
+        # ProactorEventLoop and RuntimeError on SelectorEventLoop
+        if not server.io_loop.asyncio_loop.is_running():
+            try:
+                server.io_loop.start()
+            except TypeError:
+                warn(
+                    "IOLoop couldn't be started. Ensure it is started by "
+                    "process invoking the panel.io.server.serve."
+                )
     return server

@@ -2,10 +2,12 @@ import numpy as np
 import pandas as pd
 import param
 
+from bokeh.document import Document
+from bokeh.models import ImportedStyleSheet
 from bokeh.plotting import figure
 
-from panel.custom import PyComponent, ReactiveESM
-from panel.io.state import state
+from panel.custom import PyComponent, ReactComponent, ReactiveESM
+from panel.io.state import set_curdoc, state
 from panel.layout import Row
 from panel.pane import Bokeh, Markdown
 from panel.util import edit_readonly
@@ -69,9 +71,40 @@ def test_reactive_esm_sync_dataframe(document, comm):
         np.testing.assert_array_equal(values, expected.get(col))
 
 
+def test_reactive_esm_stylesheet_updates_across_documents(document, comm):
+    """A reused ESM component does not attach stylesheets to another document."""
+    other_doc = Document()
+    component = ReactiveESM(stylesheets=['https://example.com/first.css'])
+
+    with set_curdoc(document):
+        model1 = component.get_root(document, comm)
+        document.add_root(model1)
+        model2 = component.get_root(other_doc, comm)
+        other_doc.add_root(model2)
+        shared = ImportedStyleSheet(url='https://example.com/shared.css')
+        process = component._process_param_change
+
+        def add_shared(params):
+            props = process(params)
+            if 'stylesheets' in props:
+                props['stylesheets'].append(shared)
+            return props
+
+        component._process_param_change = add_shared
+        component.stylesheets = ['https://example.com/second.css']
+
+    for model, doc in ((model1, document), (model2, other_doc)):
+        assert all(sts.document is doc for sts in model.stylesheets if isinstance(sts, ImportedStyleSheet))
+        assert any(
+            isinstance(sts, ImportedStyleSheet) and sts.url == 'https://example.com/shared.css'
+            for sts in model.stylesheets
+        )
+        doc.to_json()
+
+
 class ESMBundle(ReactiveESM):
 
-    _bundle_path = "esm.js"
+    _bundle_path = "esm.js"  # type: ignore[assignment]
 
 
 def test_esm_bundle_resource_path():
@@ -93,6 +126,23 @@ class ESMWithChildren(ReactiveESM):
     child = Child(doc="""A child Viewable to be displayed in the ESM.""")
 
     children = Children(doc="""Child Viewables to be displayed in the ESM.""")
+
+
+class ReactWithChildren(ReactComponent):
+
+    items = Children()
+
+    _esm = "export function render({model}) { return null }"
+
+
+def test_react_component_initial_data_serialization(document, comm):
+    component = ReactWithChildren(items=[Markdown("foo")])
+
+    model = component.get_root(document, comm)
+    document.add_root(model)
+
+    data = document.to_json(deferred=False)["roots"][0]["attributes"]["data"]
+    assert [item["id"] for item in data["attributes"]["items"]] == [model.data.items[0].id]
 
 
 def test_reactive_esm_model_cleanup(document, comm):
@@ -213,7 +263,7 @@ def test_reactive_esm_children_pane_replace(document, comm):
 
 class ESMOverride(ReactiveESM):
 
-    width = param.Integer(default=42)
+    width = param.Integer(default=42, allow_None=True)
 
 def test_esm_parameter_override(document, comm):
     esm = ESMOverride()
@@ -225,3 +275,56 @@ def test_esm_parameter_override(document, comm):
     esm.width = 84
 
     assert model.width == 84
+
+
+class ESMWithValue(ReactiveESM):
+
+    value = param.String(default='A', doc="Test value")
+
+
+def test_esm_python_update_not_suppressed_by_stale_frontend_event(document, comm):
+    esm = ESMWithValue(value='A')
+
+    model = esm.get_root(document, comm)
+
+    # Simulate a frontend event setting value to 'B'
+    with set_curdoc(document):
+        esm._process_events({'value': 'B'})
+
+    assert esm.value == 'B'
+
+    # Now a Python-side update sets a different value
+    esm.value = 'C'
+
+    # The model must reflect the Python update
+    assert model.data.value == 'C'
+
+
+def test_esm_boomerang_suppresses_model_update(document, comm):
+    esm = ESMWithValue(value='A')
+
+    model = esm.get_root(document, comm)
+
+    with set_curdoc(document):
+        esm._process_events({'value': 'B'})
+
+    assert esm.value == 'B'
+    assert model.data.value == 'A'
+
+
+def test_esm_python_update_different_from_frontend_is_applied(document, comm):
+    esm = ESMWithValue(value='A')
+
+    model = esm.get_root(document, comm)
+
+    # Frontend sends 'B'
+    with set_curdoc(document):
+        esm._process_events({'value': 'B'})
+
+    assert esm.value == 'B'
+
+    # Python sets a different value from what the frontend sent
+    esm.value = 'C'
+
+    # The model must reflect the Python update since 'C' != 'B'
+    assert model.data.value == 'C'

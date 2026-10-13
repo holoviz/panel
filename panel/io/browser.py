@@ -4,8 +4,7 @@ navigator APIs.
 """
 from __future__ import annotations
 
-from collections.abc import Mapping
-from typing import TYPE_CHECKING, ClassVar
+import typing as t
 
 import param  # type: ignore
 
@@ -14,7 +13,9 @@ from ..reactive import Syncable
 from .document import create_doc_if_none_exists
 from .state import state
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
@@ -51,7 +52,7 @@ class BrowserInfo(Syncable):
         Indicates whether the browser has WebGL support.""")
 
     # Mapping from parameter name to bokeh model property name
-    _rename: ClassVar[Mapping[str, str | None]] = {"name": None}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {"name": None}
 
     def _get_model(
         self, doc: Document, root: Model | None = None,

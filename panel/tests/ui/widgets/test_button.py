@@ -5,16 +5,20 @@ pytest.importorskip("playwright")
 from bokeh.models import Tooltip
 from playwright.sync_api import Expect, expect
 
+from panel.depends import bind
+from panel.layout import Column
+from panel.template import MaterialTemplate
 from panel.tests.util import serve_component, wait_until
 from panel.widgets import (
-    Button, CheckButtonGroup, RadioButtonGroup, TooltipIcon,
+    Button, CheckButtonGroup, MenuButton, RadioButtonGroup, TextAreaInput,
+    TooltipIcon,
 )
 
 pytestmark = pytest.mark.ui
 
 
 def test_button_click(page):
-    button = Button(name='Click')
+    button = Button(label='Click')
 
     events = []
     def cb(event):
@@ -28,9 +32,30 @@ def test_button_click(page):
     wait_until(lambda: len(events) == 1, page)
 
 
+@pytest.mark.parametrize('material_template', [False, True])
+def test_menu_button_repeated_selection(page, material_template):
+    menu_button = MenuButton(label='Menu', items=[('Option A', 'a')])
+    selections = []
+    bind(selections.append, menu_button.param.clicked, watch=True)
+    app = MaterialTemplate(main=[menu_button]) if material_template else menu_button
+
+    serve_component(page, app)
+
+    for count in (1, 2):
+        page.get_by_role('button', name='Menu', exact=True).click()
+        page.get_by_text('Option A', exact=True).click()
+        wait_until(lambda count=count: len(selections) == count, page)
+
+    assert selections == ['a', 'a']
+
+
 @pytest.mark.parametrize(
-    "description",
-    ["Test", Tooltip(content="Test", position="right"), TooltipIcon(value="Test")],
+    "description_fn",
+    [
+        lambda: "Test",
+        lambda: Tooltip(content="Test", position="right"),
+        lambda: TooltipIcon(value="Test"),
+    ],
     ids=["str", "Tooltip", "TooltipIcon"],
 )
 @pytest.mark.parametrize(
@@ -42,8 +67,12 @@ def test_button_click(page):
     ],
     ids=["Button", "CheckButtonGroup", "RadioButtonGroup"],
 )
-def test_button_tooltip(page, button_fn, button_locator, description):
-    pn_button = button_fn(name="test", description=description, description_delay=0)
+def test_button_tooltip(page, button_fn, button_locator, description_fn):
+    # description_fn must build a fresh Tooltip/TooltipIcon per test - a bokeh
+    # Model shared across documents gets its property values wiped when the
+    # first document's session is destroyed (Model.destroy() clears
+    # _property_values), silently breaking every other user of that instance.
+    pn_button = button_fn(label="test", description=description_fn(), description_delay=0)
 
     serve_component(page, pn_button)
 
@@ -74,7 +103,7 @@ def test_button_tooltip(page, button_fn, button_locator, description):
     ids=["Button", "CheckButtonGroup", "RadioButtonGroup"],
 )
 def test_button_tooltip_with_delay(page, button_fn, button_locator):
-    pn_button = button_fn(name="test", description="Test", description_delay=300)
+    pn_button = button_fn(label="test", description="Test", description_delay=300)
 
     exp = Expect()
     exp.set_options(timeout=200)
@@ -105,3 +134,39 @@ def test_button_tooltip_with_delay(page, button_fn, button_locator):
     page.hover("body")
     page.wait_for_timeout(300)
     exp(tooltip).to_have_count(0)
+
+
+def test_widget_disabled_toggle(page):
+    dummy_button = Button(label="dummy", color='primary')
+    dummy_text = TextAreaInput()
+    toggle_button = Button(label="toggle")
+
+    def toggle(_):
+        dummy_button.disabled = True
+        dummy_text.disabled = True
+        dummy_button.disabled = False
+        dummy_text.disabled = False
+
+    toggle_button.on_click(toggle)
+
+    serve_component(page, Column(dummy_button, dummy_text, toggle_button))
+
+    toggle_btn = page.locator('button', has_text='toggle')
+    expect(toggle_btn).to_have_count(1)
+
+    dummy_btn = page.locator('button', has_text='dummy')
+    textarea = page.locator('textarea')
+
+    # Click toggle and verify widgets are not stuck disabled
+    toggle_btn.click()
+    page.wait_for_timeout(500)
+
+    expect(dummy_btn).to_be_enabled()
+    expect(textarea).to_be_enabled()
+
+    # Click toggle again to verify repeated toggling works
+    toggle_btn.click()
+    page.wait_for_timeout(500)
+
+    expect(dummy_btn).to_be_enabled()
+    expect(textarea).to_be_enabled()

@@ -19,6 +19,7 @@ DATA = {
 
 CONFIG = {'geometry': 'rectangle', 'x': 'Name', 'y': 'Weight', 'title': 'Weight by person'}
 
+@pytest.mark.internet
 def test_vizzu_no_console_errors(page):
     vizzu = Vizzu(
         DATA, config=CONFIG, duration=400, height=400, sizing_mode='stretch_width', tooltip=True
@@ -35,6 +36,7 @@ def test_vizzu_no_console_errors(page):
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
 
+@pytest.mark.internet
 def test_vizzu_click(page):
     vizzu = Vizzu(
         DATA, config=CONFIG, duration=400, height=400, sizing_mode='stretch_width', tooltip=True

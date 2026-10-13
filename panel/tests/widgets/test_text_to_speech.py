@@ -1,4 +1,5 @@
-from typing import Any
+
+import typing as t
 
 import pytest
 
@@ -50,8 +51,8 @@ yourself to be taken in just like that!”
 
 Aesop
 """
-_VOICES_NONE: list[dict[str, Any]] = []
-_VOICES_FIREFOX_WIN10: list[dict[str, Any]] = [
+_VOICES_NONE: list[dict[str, t.Any]] = []
+_VOICES_FIREFOX_WIN10: list[dict[str, t.Any]] = [
     {
         "default": False,
         "lang": "en-US",
@@ -67,7 +68,7 @@ _VOICES_FIREFOX_WIN10: list[dict[str, Any]] = [
         "voice_uri": "urn:moz-tts:sapi:Microsoft Zira Desktop - English (United States)?en-US",
     },
 ]
-_VOICES_CHROME_WIN10: list[dict[str, Any]] = [
+_VOICES_CHROME_WIN10: list[dict[str, t.Any]] = [
     {
         "default": True,
         "lang": "en-US",
@@ -258,7 +259,7 @@ def test_can_set_voices():
 
 
 def manualtest_get_app():
-    text_to_speech = TextToSpeech(name="Speaker", value=TEXT, auto_speak=False)
+    text_to_speech = TextToSpeech(label="Speaker", value=TEXT, auto_speak=False)
     speaker_settings = pn.Param(
         text_to_speech,
         parameters=[
@@ -279,7 +280,7 @@ def manualtest_get_app():
             "value",
         ],
         widgets={
-            "speak": {"button_type": "success"},
+            "speak": {"color": "success"},
             "value": {"widget_type": pn.widgets.TextAreaInput, "height": 300},
         },
         expand_button=False,

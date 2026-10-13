@@ -8,15 +8,15 @@ from bokeh.core.properties import (
     Tuple,
 )
 from bokeh.events import ModelEvent
+from bokeh.model import Model
 from bokeh.models import ColumnDataSource, LayoutDOM
-from bokeh.models.widgets.tables import TableColumn
 
 from ..config import config
 from ..io.resources import bundled_files
 from ..util import classproperty
 from .layout import HTMLBox
 
-TABULATOR_VERSION = "6.3.1"
+TABULATOR_VERSION = "6.4.0"
 
 JS_SRC = f"{config.npm_cdn}/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js"
 MOMENT_SRC = f"{config.npm_cdn}/luxon/build/global/luxon.min.js"
@@ -38,12 +38,11 @@ class TableEditEvent(ModelEvent):
 
     event_name = 'table-edit'
 
-    def __init__(self, model, column, row, pre=False, value=None, old=None):
+    def __init__(self, model, column, row, value=None, old=None):
         self.column = column
         self.row = row
         self.value = value
         self.old = old
-        self.pre = pre
         super().__init__(model=model)
 
     def __repr__(self):
@@ -108,6 +107,34 @@ for theme in TABULATOR_THEMES:
     CSS_URLS.append(f'{THEME_URL}{_theme_file}')
 
 
+class TabulatorColumn(Model):
+    """
+    Column definition for the DataTabulator model. Unlike Bokeh's
+    TableColumn the formatter and editor are plain specs, so the
+    bokeh-tables bundle is not required to render a Tabulator.
+    """
+
+    field = String(help="""
+    The name of the field mapping to a column in the data source.
+    """)
+
+    title = Nullable(String, help="""
+    The title of this column.
+    """)
+
+    width = Int(default=300, help="""
+    The width of the column, zero means it is determined automatically.
+    """)
+
+    formatter = Nullable(Any, help="""
+    Spec of a Bokeh CellFormatter or a custom CellFormatter model.
+    """)
+
+    editor = Nullable(Any, help="""
+    Spec of a Bokeh CellEditor or a custom CellEditor model.
+    """)
+
+
 class DataTabulator(HTMLBox):
     """A Bokeh Model that enables easy use of Tabulator tables
     See http://tabulator.info/
@@ -119,7 +146,7 @@ class DataTabulator(HTMLBox):
 
     configuration = Dict(String, Any)
 
-    columns = List(Instance(TableColumn), help="""
+    columns = List(Instance(TabulatorColumn), help="""
     The list of child column widgets.
     """)
 
@@ -148,6 +175,8 @@ class DataTabulator(HTMLBox):
     indexes = List(String)
 
     layout = Enum('fit_data', 'fit_data_fill', 'fit_data_stretch', 'fit_data_table', 'fit_columns', default="fit_data")
+
+    movable_columns = Bool(default=False)
 
     source = Instance(ColumnDataSource)
 
@@ -192,7 +221,7 @@ class DataTabulator(HTMLBox):
 
     @classproperty
     def __js_skip__(cls):
-        return {'Tabulator': cls.__javascript__[:1], 'moment': cls.__javascript__[1:]}
+        return {'Tabulator': cls.__javascript__[:1], 'luxon': cls.__javascript__[1:]}
 
     __js_require__ = {
         'paths': {

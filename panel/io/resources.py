@@ -13,20 +13,20 @@ import os
 import pathlib
 import re
 import textwrap
+import typing as t
 import uuid
 
 from contextlib import contextmanager
 from functools import lru_cache
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING, ClassVar, Literal, TypedDict,
-)
 
 import bokeh.embed.wrappers
 
+from bokeh.core.property.descriptors import UnsetValueError
 from bokeh.embed.bundle import (
     CSS_RESOURCES as BkCSS_RESOURCES, URL, Bundle as BkBundle, _any,
-    _bundle_extensions, _use_mathjax, bundle_models, extension_dirs,
+    _bundle_extensions, _query_extensions, _use_mathjax, _use_tables,
+    bundle_models, extension_dirs,
 )
 from bokeh.model import Model
 from bokeh.models import ImportedStyleSheet
@@ -38,18 +38,19 @@ from markupsafe import Markup
 
 from ..config import config, panel_extension as extension
 from ..util import _descendents, isurl, url_path
+from .pages import page_theme
 from .state import state
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from bokeh.resources import Urls
 
-    class TarballType(TypedDict, total=False):
+    class TarballType(t.TypedDict, total=False):
         tar: str
         src: str
         dest: str
         exclude: list[str]
 
-    class ResourcesType(TypedDict, total=False):
+    class ResourcesType(t.TypedDict, total=False):
         css: dict[str, str]
         font: dict[str, str]
         js: dict[str, str]
@@ -58,11 +59,11 @@ if TYPE_CHECKING:
         tarball: dict[str, TarballType]
         bundle: bool
 
-    MODES = Literal['inline', 'cdn', 'server', 'relative', 'absolute', 'server-dev', 'relative-dev', 'absolute-dev']
+    MODES = t.Literal['inline', 'cdn', 'server', 'relative', 'absolute', 'server-dev', 'relative-dev', 'absolute-dev']
 
 logger = logging.getLogger(__name__)
 
-ResourceAttr = Literal["__css__", "__javascript__"]
+ResourceAttr = t.Literal["__css__", "__javascript__"]
 
 with open(Path(__file__).parent.parent / 'package.json') as f:
     package_json = json.load(f)
@@ -92,6 +93,9 @@ _env.lstrip_blocks = True
 _env.filters['json'] = lambda obj: Markup(json.dumps(obj, cls=json_dumps))
 _env.filters['conffilter'] = conffilter
 _env.filters['sorted'] = sorted
+# A global so that user supplied auth, logout and error templates can use the
+# page theme without every handler passing it.
+_env.globals['page'] = page_theme
 
 @functools.cache
 def parse_template(*args, **kwargs):
@@ -99,6 +103,7 @@ def parse_template(*args, **kwargs):
 
 # Handle serving of the panel extension before session is loaded
 RESOURCE_MODE: MODES = 'server'
+NOTEBOOK_RESOURCES = False
 PANEL_DIR = Path(__file__).parent.parent
 DIST_DIR = PANEL_DIR / 'dist'
 BUNDLE_DIR = DIST_DIR / 'bundled'
@@ -110,7 +115,7 @@ LOGOUT_TEMPLATE = _env.get_template('logout.html')
 BASIC_LOGIN_TEMPLATE = _env.get_template('basic_login.html')
 DEFAULT_TITLE = "Panel Application"
 JS_RESOURCES = _env.get_template('js_resources.html')
-CDN_ROOT = "https://cdn.holoviz.org/panel/"
+CDN_ROOT = config.cdn_root
 CDN_URL = f"{CDN_ROOT}{JS_VERSION}/"
 CDN_DIST = f"{CDN_URL}dist/"
 DOC_DIST = "https://panel.holoviz.org/_static/"
@@ -191,10 +196,40 @@ def set_resource_mode(mode: MODES | None):
         else:
             _settings.resources.set_value(old_resources)  # type: ignore
 
+def get_resource_mode() -> MODES:
+    """
+    The mode urls are currently being resolved for.
+
+    Has to be read through a function: ``set_resource_mode`` rebinds the
+    module global, so a module that imported the name would keep whatever
+    it happened to be at import time.
+    """
+    return RESOURCE_MODE
+
+def get_notebook_resources() -> bool:
+    """Whether resource urls should use the Jupyter extension endpoint."""
+    return NOTEBOOK_RESOURCES
+
+def set_default_resource_mode(mode: MODES, *, notebook: bool = False):
+    """
+    Sets the mode urls are resolved for outside a set_resource_mode block.
+
+    The module default is ``server``, i.e. relative urls into the static
+    endpoint Panel itself serves, which is the right guess for an
+    application but wrong for a notebook: the page is served by Jupyter
+    from an unrelated url, so ``static/extensions/panel/...`` resolves
+    against ``/lab/tree/<dir>/`` and 404s. It cannot be handled by a
+    context manager either, because components created in a later cell
+    resolve their resources long after ``pn.extension()`` returned.
+    """
+    global NOTEBOOK_RESOURCES, RESOURCE_MODE
+    RESOURCE_MODE = mode
+    NOTEBOOK_RESOURCES = notebook
+
 def use_cdn() -> bool:
     return _settings.resources(default="server") != 'server' or state._is_pyodide
 
-def get_dist_path(cdn: bool | Literal['auto'] = 'auto') -> str:
+def get_dist_path(cdn: bool | t.Literal['auto'] = 'auto') -> str:
     cdn = use_cdn() if cdn == 'auto' else cdn
     if cdn:
         dist_path = CDN_DIST
@@ -215,11 +250,14 @@ def process_raw_css(raw_css: list[str]) -> list[str]:
 
 @lru_cache(maxsize=None)
 def loading_css(loading_spinner: str, color: str, max_height: int):
+    size = f"calc(min(40px, {max_height}px))"
     return textwrap.dedent(f"""
     :host(.pn-loading):before, .pn-loading:before {{
       background-color: {color};
-      mask-size: auto calc(min(50%, {max_height}px));
-      -webkit-mask-size: auto calc(min(50%, {max_height}px));
+      width: {size};
+      height: {size};
+      mask-size: {size} {size};
+      -webkit-mask-size: {size} {size};
     }}""")
 
 def resolve_custom_path(
@@ -301,10 +339,26 @@ def component_resource_path(component, attr: str, path: str | os.PathLike) -> st
     rel_path = os.fspath(custom_path).replace(os.path.sep, '/') if custom_path else path
     return f'{component_path}{component.__module__}/{component.__name__}/{attr}/{rel_path}'
 
-def patch_stylesheet(stylesheet, dist_url):
+def stylesheet_url(stylesheet: ImportedStyleSheet) -> str | None:
+    """
+    Returns the url of an ImportedStyleSheet or None if it is unset.
+
+    Bokeh clears the property values of every model on a Document when
+    the Document is destroyed at the end of a session. An
+    ImportedStyleSheet that outlives the Document it was rendered into,
+    e.g. because it is held in a cache, is therefore left without a url
+    and reading it raises an UnsetValueError. Such a stylesheet must
+    never be reused since it breaks both model creation and the
+    serialization of the Document it is added to.
+    """
     try:
-        url = stylesheet.url
-    except Exception:
+        return stylesheet.url
+    except UnsetValueError:
+        return None
+
+def patch_stylesheet(stylesheet, dist_url):
+    url = stylesheet_url(stylesheet)
+    if url is None:
         return
     if url.startswith(CDN_DIST+dist_url) and dist_url != CDN_DIST:
         patched_url = url.replace(CDN_DIST+dist_url, dist_url)
@@ -449,10 +503,59 @@ def bundled_files(model: Model, file_type: str = 'javascript') -> list[str]:
             files.append(url)
     return files
 
+def extension_declared(cls: type) -> bool:
+    """
+    Whether a model class' extension was declared in this session.
+
+    Classes that do not belong to an extension always pass, as does every
+    class when there is no session to ask (a notebook, or rendering
+    outside a document), which is what keeps those paths eager.
+    """
+    extensions = state._extensions
+    if extensions is None:
+        return True
+    ext = {module: name for name, module in extension._imports.items()}.get(cls.__module__)
+    return ext is None or ext in extensions
+
+
+def module_tags(
+    js_modules: list[str], js_module_exports: dict[str, str]
+) -> list[tuple[str, str | None]]:
+    """
+    Pairs each module url with the global its namespace is exported as.
+
+    A module that has an export wrapper is loaded by that wrapper's ``import``,
+    so emitting a bare ``<script type="module" src>`` for it as well leaves two
+    tags for one url. Pairing them keeps every module in the order
+    ``js_modules`` gives, which is the order they execute in.
+    """
+    exports = {url: name for name, url in js_module_exports.items()}
+    tags: list[tuple[str, str | None]] = [
+        (url, exports.pop(url, None)) for url in js_modules
+    ]
+    return tags + list(exports.items())
+
+
 def _panel_use_mathjax(roots) -> bool:
     """Whether any model in roots is a Panel HTML model (may need MathJax)."""
     from ..models.markup import HTML as PanelHTML
     return _any(roots, lambda obj: isinstance(obj, PanelHTML))
+
+
+def _panel_use_tables(roots) -> bool:
+    """
+    Whether any model reachable from roots requires the bokeh-tables bundle.
+
+    Tabulator renders without it, but Bokeh's DataTable and DataCube need it
+    and so do extensions defining custom cell editors or formatters.
+    """
+    from bokeh.models.widgets.tables import CellEditor, CellFormatter
+    models = set()
+    for root in roots:
+        models |= root.references()
+    return _use_tables(models) or _query_extensions(
+        models, lambda cls: issubclass(cls, (CellEditor, CellFormatter))
+    )
 
 
 def bundle_resources(
@@ -460,7 +563,7 @@ def bundle_resources(
     resources: BkResources,
     notebook: bool = False,
     reloading: bool = False,
-    enable_mathjax: bool | Literal['auto'] = 'auto'
+    enable_mathjax: bool | t.Literal['auto'] = 'auto'
 ):
     from ..config import panel_extension as ext
     global RESOURCE_MODE
@@ -485,10 +588,19 @@ def bundle_resources(
     else:
         use_mathjax = 'mathjax' in ext._loaded_extensions
 
+    # Notebooks load resources before anything is rendered, so we cannot
+    # know whether a table will be displayed later and always load it
+    use_tables = (
+        notebook or roots is None or 'bokeh-tables' in ext._loaded_extensions or
+        _panel_use_tables(roots)
+    )
+
     if js_resources:
         js_resources = js_resources.clone()
         if not use_mathjax and "bokeh-mathjax" in js_resources.components:
             js_resources.components.remove("bokeh-mathjax")
+        if not use_tables and "bokeh-tables" in js_resources.components:
+            js_resources.components.remove("bokeh-tables")
         if reloading:
             js_resources.components.clear()
 
@@ -539,6 +651,7 @@ def bundle_resources(
         js_raw=js_raw,
         js_module_exports=resources.js_module_exports,
         js_modules=resources.js_modules,
+        resource_declarations=resources.resource_declarations,
         notebook=notebook,
     )
 
@@ -549,7 +662,7 @@ class ResourceComponent:
     that have to be resolved.
     """
 
-    _resources: ClassVar[ResourcesType] = {
+    _resources: t.ClassVar[ResourcesType] = {
         'css': {},
         'font': {},
         'js': {},
@@ -599,7 +712,7 @@ class ResourceComponent:
 
     def resolve_resources(
         self,
-        cdn: bool | Literal['auto'] = 'auto',
+        cdn: bool | t.Literal['auto'] = 'auto',
         extras: dict[str, dict[str, str]] | None = None
     ) -> ResourcesType:
         """
@@ -694,17 +807,9 @@ class Resources(BkResources):
         """ Collect external resources set on resource_attr attribute of all models."""
         external_resources: list[str] = []
 
-        if state._extensions is not None:
-            external_modules = {
-                module: ext for ext, module in extension._imports.items()
-            }
-        else:
-            external_modules = None
-
         for _, cls in sorted(Model.model_class_reverse_map.items(), key=lambda arg: arg[0]):
-            if external_modules is not None and cls.__module__ in external_modules:
-                if external_modules[cls.__module__] not in state._extensions:
-                    continue
+            if not extension_declared(cls):
+                continue
             external: list[str] | str | None = getattr(cls, resource_attr, None)
 
             if isinstance(external, str):
@@ -775,6 +880,20 @@ class Resources(BkResources):
                     resource = f'{self.root_url}{resource}'
             if resource.endswith('.css') and not resource.startswith(('http:', 'https:')):
                 resource += version_suffix
+            if self.notebook:
+                # The render endpoint sets `rel_path` to its own
+                # `panel-preview` root already, so building on `base_url`
+                # there would double it. nbclassic never sets `rel_path`,
+                # so `base_url` is the raw server root there instead.
+                if state.rel_path and state.rel_path.rstrip('/').endswith('panel-preview'):
+                    endpoint = f"{state.rel_path.rstrip('/')}/static/extensions/panel/"
+                else:
+                    base_url = state.base_url.removesuffix('nbclassic/')
+                    endpoint = f'{base_url}panel-preview/static/extensions/panel/'
+                if resource.startswith(CDN_DIST):
+                    resource = endpoint + resource.removeprefix(CDN_DIST)
+                elif resource.startswith(LOCAL_DIST):
+                    resource = endpoint + resource.removeprefix(LOCAL_DIST)
             new_resources.append(resource)
         return new_resources
 
@@ -856,12 +975,8 @@ class Resources(BkResources):
 
         # Add loading spinner
         if config.global_loading_spinner:
-            loading_base = (DIST_DIR / "css" / "loading.css").read_text(encoding='utf-8').replace(
-                '../assets', self.dist_dir + 'assets'
-            )
-            raw.extend([loading_base, loading_css(
-                config.loading_spinner, config.loading_color, config.loading_max_height
-            )])
+            from .loading import loading_resources
+            raw.extend(loading_resources(inline=True, dist_path=self.dist_dir)['raw_css'])
         return raw + process_raw_css(config.raw_css) + process_raw_css(config.global_css)
 
     @property
@@ -899,7 +1014,7 @@ class Resources(BkResources):
 
         modules = list(config.js_modules.values())
         for model in Model.model_class_reverse_map.values():
-            if not hasattr(model, '__javascript_modules__'):
+            if not hasattr(model, '__javascript_modules__') or not extension_declared(model):
                 continue
             for module in model.__javascript_modules__:
                 if module not in modules:
@@ -932,7 +1047,7 @@ class Resources(BkResources):
     def js_module_exports(self):
         modules = {}
         for model in Model.model_class_reverse_map.values():
-            if hasattr(model, '__javascript_module_exports__'):
+            if hasattr(model, '__javascript_module_exports__') and extension_declared(model):
                 modules.update(dict(zip(model.__javascript_module_exports__, model.__javascript_modules__)))
         return dict(zip(modules, self.adjust_paths(modules.values())))
 
@@ -969,11 +1084,17 @@ class Resources(BkResources):
         return raw_js
 
     @property
+    def resource_declarations(self):
+        from .resource_spec import declared_specs
+        return declared_specs(self.mode)
+
+    @property
     def render_js(self):
         return JS_RESOURCES.render(
             js_raw=self.js_raw, js_files=self.js_files,
-            js_modules=self.js_modules, hashes=self.hashes,
-            js_module_exports=self.js_module_exports
+            js_modules=module_tags(self.js_modules, self.js_module_exports),
+            hashes=self.hashes,
+            resource_declarations=self.resource_declarations
         )
 
 
@@ -982,6 +1103,7 @@ class Bundle(BkBundle):
     def __init__(self, notebook=False, **kwargs):
         self.js_modules = kwargs.pop("js_modules", [])
         self.js_module_exports = kwargs.pop("js_module_exports", {})
+        self.resource_declarations = kwargs.pop("resource_declarations", {})
         self.notebook = notebook
         super().__init__(**kwargs)
 
@@ -996,6 +1118,10 @@ class Bundle(BkBundle):
             hashes=bk_bundle.hashes,
         )
 
+    @property
+    def js_module_tags(self):
+        return module_tags(self.js_modules, self.js_module_exports)
+
     def _render_css(self) -> str:
         return BkCSS_RESOURCES.render(
             css_files=self.css_files,
@@ -1006,7 +1132,7 @@ class Bundle(BkBundle):
         return JS_RESOURCES.render(
             js_raw=self.js_raw,
             js_files=self.js_files,
-            js_modules=self.js_modules,
-            js_module_exports=self.js_module_exports,
+            js_modules=module_tags(self.js_modules, self.js_module_exports),
+            resource_declarations=self.resource_declarations,
             hashes=self.hashes
         )

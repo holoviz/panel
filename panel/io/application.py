@@ -6,11 +6,11 @@ from __future__ import annotations
 import json
 import logging
 import os
+import threading
+import typing as t
 
-from collections.abc import Callable, Sequence
 from functools import partial
 from types import FunctionType, MethodType
-from typing import TYPE_CHECKING, Any, TypeAlias
 from urllib.parse import urljoin
 
 import bokeh.command.util
@@ -23,15 +23,18 @@ from bokeh.application.handlers.document_lifecycle import (
 from bokeh.models import CustomJS
 
 from ..config import config
+from .admin_auth import mark_admin_application
 from .document import _destroy_document
 from .handlers import (
     FunctionHandler, MarkdownHandler, NotebookHandler, ScriptHandler,
 )
-from .loading import LOADING_INDICATOR_CSS_CLASS
+from .loading import _loading_css_classes
 from .logging import LOG_SESSION_DESTROYED, LOG_SESSION_LAUNCHING
 from .state import set_curdoc, state
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from collections.abc import Callable, Sequence
+
     from bokeh.application.application import SessionContext
     from bokeh.application.handlers.handler import Handler
     from bokeh.document.document import Document
@@ -40,8 +43,8 @@ if TYPE_CHECKING:
     from ..viewable import Viewable, Viewer
     from .location import Location
 
-    TViewable: TypeAlias = Viewable | Viewer | BaseTemplate
-    TViewableFuncOrPath: TypeAlias = TViewable | Callable[[], TViewable] | os.PathLike | str
+    TViewable: t.TypeAlias = Viewable | Viewer | BaseTemplate
+    TViewableFuncOrPath: t.TypeAlias = TViewable | Callable[[], TViewable] | os.PathLike | str
 
 
 logger = logging.getLogger('panel.io.application')
@@ -58,7 +61,7 @@ def _eval_panel(
         doc.js_on_event(
             'document_ready', CustomJS(code=f"""
             const body = document.getElementsByTagName('body')[0]
-            body.classList.remove({LOADING_INDICATOR_CSS_CLASS!r}, {config.loading_spinner!r})
+            body.classList.remove(...{json.dumps(_loading_css_classes())})
             """)
         )
 
@@ -129,17 +132,34 @@ class Application(BkApplication):
         if not (session_context and session_context.server_context):
             return
         request = session_context.request
+        if request is None:
+            return
         app_context = session_context.server_context.application_context
-        prefix = request.uri.replace(app_context._url, '')
-        if not prefix.endswith('/'):
+        app_path = getattr(request, 'app_path', None) or app_context._url
+        if app_path == app_context._url:
+            try:
+                app_path = session_context.token_payload.get('app_path', app_path)
+            except AssertionError:
+                pass
+        if not app_path.startswith('/'):
+            app_path = f'/{app_path}'
+
+        request_path = getattr(request, 'path', None) or app_path
+        prefix = ''
+        if app_path != '/' and (request_path == app_path or request_path.endswith(app_path)):
+            prefix = request_path[:-len(app_path)]
+        elif app_path == '/' and request_path.endswith('/'):
+            prefix = request_path[:-1]
+
+        if prefix and not prefix.endswith('/'):
             prefix += '/'
-        base_url = urljoin('/', prefix)
-        rel_path = '/'.join(['..'] * app_context._url.strip('/').count('/'))
+        base_url = urljoin('/', prefix.lstrip('/'))
+        rel_path = '/'.join(['..'] * app_path.strip('/').count('/'))
 
         # Handle autoload.js absolute paths
         abs_url = request.arguments.get('bokeh-absolute-url')
         if abs_url:
-            rel_path = abs_url[0].decode('utf-8').replace(app_context._url, '')
+            rel_path = abs_url[0].decode('utf-8').replace(app_path, '')
 
         with set_curdoc(doc):
             state.base_url = base_url
@@ -147,6 +167,10 @@ class Application(BkApplication):
 
     def initialize_document(self, doc):
         logger.info(LOG_SESSION_LAUNCHING, id(doc))
+        # Claim the Document for the current thread before user code runs,
+        # so APIs that behave differently when invoked off the Document's
+        # thread (e.g. hold) can tell the two cases apart during the build.
+        state._thread_id_[doc] = threading.get_ident()
         self._set_session_prefix(doc)
         super().initialize_document(doc)
         if doc in state._templates and doc not in state._templates[doc]._documents:
@@ -159,18 +183,19 @@ class Application(BkApplication):
         doc.on_event('document_ready', partial(state._schedule_on_load, doc))
         doc.on_session_destroyed(_log_session_destroyed)
 
-    def process_request(self, request) -> dict[str, Any]:
-        ''' Processes incoming HTTP request returning a dictionary of
-        additional data to add to the session_context.
-
-        Args:
-            request: HTTP request
-
-        Returns:
-            A dictionary of JSON serializable data to be included on
-            the session context.
-        '''
-        request_data = super().process_request(request)
+    def _extra_request_data(self, request) -> dict[str, t.Any]:
+        """
+        Panel specific additions to the token payload, i.e. the route
+        parameters captured by a wildcard route, the path the application
+        was served on and the OAuth user data associated with the request.
+        """
+        request_data: dict[str, t.Any] = {}
+        route_params = getattr(request, 'route_params', {})
+        if route_params:
+            request_data['route_params'] = route_params
+        app_path = getattr(request, 'app_path', None)
+        if app_path:
+            request_data['app_path'] = app_path
         user = request.cookies.get('user')
         if user and config.cookie_secret:
             from tornado.web import decode_signed_value
@@ -187,6 +212,36 @@ class Application(BkApplication):
                 if state.encryption:
                     user_data = state.encryption.encrypt(user_data.encode('utf-8'))
                 request_data['user_data'] = user_data
+        return request_data
+
+    def process_request(self, request) -> dict[str, t.Any]:
+        ''' Processes incoming HTTP request returning a dictionary of
+        additional data to add to the session_context.
+
+        Args:
+            request: HTTP request
+
+        Returns:
+            A dictionary of JSON serializable data to be included on
+            the session context.
+        '''
+        request_data = super().process_request(request)
+        request_data.update(self._extra_request_data(request))
+        return request_data
+
+    async def process_request_async(self, request) -> dict[str, t.Any]:
+        ''' Asynchronously processes an incoming HTTP request returning a
+        dictionary of additional data to add to the session_context.
+
+        Args:
+            request: HTTP request
+
+        Returns:
+            A dictionary of JSON serializable data to be included on
+            the session context.
+        '''
+        request_data = await super().process_request_async(request)
+        request_data.update(self._extra_request_data(request))
         return request_data
 
 bokeh.command.util.Application = Application # type: ignore
@@ -288,8 +343,9 @@ def build_applications(
             app = str(app) # enables serving apps from Paths
         if (isinstance(app, str) and app.endswith(('.py', '.ipynb', '.md'))
             and os.path.isfile(app)):
-            apps[slug] = app = build_single_handler_application(app)
-            app._admin = admin
+            built_app = build_single_handler_application(app)
+            apps[slug] = built_app
+            built_app._admin = admin
         elif isinstance(app, BkApplication):
             apps[slug] = app
         else:
@@ -304,6 +360,6 @@ def build_applications(
             )
         from .admin import admin_panel
         admin_handler = FunctionHandler(admin_panel)
-        apps['/admin'] = Application(admin_handler)
+        apps['/admin'] = mark_admin_application(Application(admin_handler))
 
     return apps

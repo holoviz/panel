@@ -1,0 +1,11 @@
+/* Lets the editor pick up the surface of its container, the Ace theme
+   still provides the syntax colors and pmui switches it with the theme. */
+:host div.ace_editor,
+:host div.ace_editor .ace_gutter {
+  background-color: transparent;
+}
+
+:host div.ace_editor .ace_gutter {
+  border-right: 1px solid var(--mui-palette-divider);
+  color: var(--mui-palette-text-disabled);
+}

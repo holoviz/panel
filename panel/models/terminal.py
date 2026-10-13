@@ -39,7 +39,8 @@ class Terminal(HTMLBox):
     @classproperty
     def __js_skip__(cls):
         return {
-            'xtermjs': cls.__javascript__[0:2],
+            'Terminal': cls.__javascript__[:1],
+            'WebLinksAddon': cls.__javascript__[1:2],
         }
 
     __js_require__ = {

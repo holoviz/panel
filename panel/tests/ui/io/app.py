@@ -4,7 +4,7 @@ pn.config.raw_css = ['.bk-Row { background-color: purple; }']
 
 md = pn.pane.Markdown(f"{pn.state.cache.get('num', 0)}", css_classes=['counter'])
 
-button = pn.widgets.Button(name='Click')
+button = pn.widgets.Button(label='Click')
 
 string = pn.pane.Str(object=0, css_classes=['string'])
 

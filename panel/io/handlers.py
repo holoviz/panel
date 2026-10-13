@@ -9,39 +9,41 @@ import pathlib
 import re
 import sys
 import traceback
+import typing as t
 import urllib.parse as urlparse
 
-from collections.abc import Callable, Iterator
 from contextlib import contextmanager
-from types import ModuleType
-from typing import IO, TYPE_CHECKING, Any
 
 import bokeh.command.util
 
 from bokeh.application.handlers.code import CodeHandler
-from bokeh.application.handlers.code_runner import CodeRunner
+from bokeh.application.handlers.code_runner import (
+    CodeRunner, _hold_process_globals, _patch_process_state,
+)
 from bokeh.application.handlers.function import (
     FunctionHandler as BokehFunctionHandler,
 )
 from bokeh.application.handlers.handler import Handler, handle_exception
-from bokeh.core.types import PathLike
-from bokeh.document import Document
 from bokeh.io.doc import curdoc, patch_curdoc, set_curdoc as bk_set_curdoc
 from bokeh.util.dependencies import import_required
 
 from ..config import config
-from ..util import BOKEH_GE_3_8
 from .mime_render import MIME_RENDERERS
 from .profile import profile_ctx
 from .reload import record_modules
 from .state import set_curdoc, state
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from collections.abc import Callable, Iterator, Sequence
+    from types import ModuleType
+
+    from bokeh.core.types import PathLike
+    from bokeh.document import Document
     from nbformat import NotebookNode
 
 log = logging.getLogger('panel.io.handlers')
 
-CELL_DISPLAY = []
+CELL_DISPLAY: list = []
 
 
 @contextmanager
@@ -64,7 +66,7 @@ def _monkeypatch_io(loggers: dict[str, Callable[..., None]] | None) -> Iterator[
         yield
         return
     import bokeh.io as io
-    old: dict[str, Any] = {}
+    old: dict[str, t.Any] = {}
     for f in CodeHandler._io_functions:
         old[f] = getattr(io, f)
         setattr(io, f, loggers[f])
@@ -105,7 +107,7 @@ def display(*args, **kwargs):
         CELL_DISPLAY.extend(args)
 
 def extract_code(
-    filehandle: IO, supported_syntax: tuple[str, ...] = ('{pyodide}', 'python')
+    filehandle: t.IO, supported_syntax: tuple[str, ...] = ('{pyodide}', 'python')
 ) -> str:
     """
     Extracts Panel application code from a Markdown file.
@@ -336,7 +338,7 @@ def run_app(handler, module, doc: Document, post_run=None, allow_empty: bool = F
         old_doc = None
         bk_set_curdoc(doc)
 
-    sessions: list[Any] = []
+    sessions: list[t.Any] = []
 
     def post_check():
         newdoc = state.curdoc
@@ -393,12 +395,11 @@ def run_app(handler, module, doc: Document, post_run=None, allow_empty: bool = F
                      'the bokeh document manually.'),
                     alert_type='danger', margin=5, sizing_mode='stretch_width'
                 ).servable()
-            if BOKEH_GE_3_8:
-                doc.config.update(
-                    reconnect_session=config.reconnect == True,
-                    notifications=None,
-                    notify_connection_status=False
-                )
+            doc.config.update(
+                reconnect_session=config.reconnect == True,
+                notifications=None,
+                notify_connection_status=False
+            )
     finally:
         if config.profiler and doc.session_context is not None:
             try:
@@ -412,9 +413,9 @@ def run_app(handler, module, doc: Document, post_run=None, allow_empty: bool = F
             bk_set_curdoc(old_doc)
 
 def parse_notebook(
-    filename: str | os.PathLike | IO,
+    filename: str | os.PathLike | t.IO,
     preamble: list[str] | None = None
-) -> tuple[NotebookNode, str, dict[str, Any]]:
+) -> tuple[NotebookNode, str, dict[str, t.Any]]:
     """
     Parses a notebook on disk and returns a script.
 
@@ -443,7 +444,7 @@ def parse_notebook(
         out all magics (i.e IPython specific syntax).
         """
 
-        _magic_pattern = re.compile(r'^\s*(?P<magic>%%\w\w+)($|(\s+))')
+        _magic_pattern = re.compile(r'^\s*(?P<magic>%%?\w+)($|(\s+))')
 
         def strip_magics(self, source: str) -> str:
             """
@@ -528,28 +529,18 @@ class PanelCodeRunner(CodeRunner):
 
         See bokeh.application.handlers.code_runner for original implementation.
         """
-        _cwd = os.getcwd()
-        _sys_path = list(sys.path)
-        _sys_argv = list(sys.argv)
-        sys.path.insert(0, os.path.dirname(self._path))
-        sys.argv = [os.path.basename(self._path), *self._argv]
-
         # XXX: self._code shouldn't be None at this point but types don't reflect this
         assert self._code is not None
 
-        try:
-            exec(self._code, module.__dict__)
-
-            if post_check:
-                post_check()
-        except Exception as e:
-            autoreload_handle_exception(self, module, e)
-        finally:
-            # undo sys.path, CWD fixups
-            os.chdir(_cwd)
-            sys.path = _sys_path
-            sys.argv = _sys_argv
-            self.ran = True
+        with _hold_process_globals(), _patch_process_state(self._path, self._argv):
+            try:
+                exec(self._code, module.__dict__)
+                if post_check:
+                    post_check()
+            except Exception as e:
+                autoreload_handle_exception(self, module, e)
+            finally:
+                self.ran = True
 
 
 class PanelCodeHandler(CodeHandler):
@@ -569,7 +560,7 @@ class PanelCodeHandler(CodeHandler):
         self,
         *,
         source: str | None = None,
-        filename: PathLike, argv: list[str] = [],
+        filename: PathLike, argv: Sequence[str] = [],
         package: ModuleType | None = None,
         runner: PanelCodeRunner | None = None
     ) -> None:
@@ -578,7 +569,7 @@ class PanelCodeHandler(CodeHandler):
         if runner:
             self._runner = runner
         elif source is not None:
-            self._runner = PanelCodeRunner(source, filename, argv, package=package)
+            self._runner = PanelCodeRunner(source, filename, list(argv), package=package)
         else:
             raise ValueError("Must provide source code to PanelCodeHandler")
 

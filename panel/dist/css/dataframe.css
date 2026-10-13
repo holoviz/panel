@@ -1,10 +1,10 @@
 table.panel-df {
-  margin-left: auto;
-  margin-right: auto;
-  border: none;
   border-collapse: collapse;
   border-spacing: 0;
-  font-size: 12px;
+  color: var(--design-surface-text-color, var(--panel-on-surface-color));
+  font-size: 0.8125rem;
+  margin-left: auto;
+  margin-right: auto;
   table-layout: auto;
   width: 100%;
 }
@@ -12,36 +12,60 @@ table.panel-df {
 .panel-df tr,
 .panel-df th,
 .panel-df td {
+  border: none;
+  line-height: 1.43;
+  max-width: none;
+  padding: 8px 16px;
   text-align: right;
   vertical-align: middle;
-  padding: 0.5em 0.5em;
-  line-height: normal;
   white-space: normal;
-  max-width: none;
-  border: none;
+}
+
+.panel-df thead {
+  vertical-align: bottom;
+}
+
+.panel-df thead th {
+  border-bottom: 1px solid
+    color-mix(
+      in srgb,
+      var(--design-surface-text-color, var(--panel-on-surface-color)) 15%,
+      transparent
+    );
+  font-weight: 500;
+  white-space: nowrap;
 }
 
 .panel-df tbody {
   display: table-row-group;
   vertical-align: middle;
-  border-color: inherit;
 }
 
-.panel-df tbody tr:nth-child(odd) {
-  background: var(--design-surface-color, var(--panel-surface-color));
-  color: var(--design-surface-text-color, var(--panel-on-surface-color));
+.panel-df tbody th {
+  font-weight: 500;
 }
 
-.panel-df thead {
+.panel-df tbody tr td,
+.panel-df tbody tr th {
   border-bottom: 1px solid
-    var(--design-background-text-color, var(--panel-on-background-color));
-  vertical-align: bottom;
+    color-mix(
+      in srgb,
+      var(--design-surface-text-color, var(--panel-on-surface-color)) 8%,
+      transparent
+    );
+}
+
+.panel-df tbody tr:last-child td,
+.panel-df tbody tr:last-child th {
+  border-bottom: none;
 }
 
 .panel-df tbody tr:hover {
-  background-color: #e1f5fe;
-  color: #000000;
-  cursor: pointer;
+  background-color: color-mix(
+    in srgb,
+    var(--design-primary-color, var(--panel-primary-color)) 8%,
+    transparent
+  );
 }
 
 :host {
@@ -49,22 +73,16 @@ table.panel-df {
   padding-right: 1px;
 }
 
-th[halign='left'] {
-  text-align: left;
-}
-
-th[halign='left'] {
-  text-align: right;
-}
-
-th[halign='center'] {
-  text-align: center;
-}
-
+.panel-df th[halign='left'],
 .panel-df.start-align td {
   text-align: left;
 }
 
+.panel-df th[halign='right'] {
+  text-align: right;
+}
+
+.panel-df th[halign='center'],
 .panel-df.center-align td {
   text-align: center;
 }

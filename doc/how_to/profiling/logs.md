@@ -15,4 +15,6 @@ def get_clusters(x, y, n_clusters):
 
 <img src="../../_static/images/admin_logs.png" width="80%"></img>
 
+The filters above the table narrow down the log messages by level, by session and by text contained in the app (the logger name) and the message. The text filters match literally and ignore case, and the session filter lists every session that appears in the log. Each admin session has its own filters, so narrowing the logs does not affect other admins. **Clear filters** resets them and **Download log** saves the currently filtered messages as a CSV file.
+
 ## Related Resources

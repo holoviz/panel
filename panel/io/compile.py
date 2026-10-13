@@ -10,16 +10,16 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import typing as t
 
 from collections import defaultdict
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Any
 
 from bokeh.application.handlers.code_runner import CodeRunner
 
 from ..custom import ReactComponent, ReactiveESM
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from ..custom import ExportSpec
 
 
@@ -319,7 +319,7 @@ def packages_from_importmap(esm_code: str, imports: dict[str, str]) -> tuple[str
     return esm_code, dependencies
 
 
-def extract_dependencies(component: type[ReactiveESM]) -> tuple[str, dict[str, Any]]:
+def extract_dependencies(component: type[ReactiveESM]) -> tuple[str, dict[str, t.Any]]:
     """
     Extracts dependencies from a ReactiveESM component by parsing its
     importmap and the associated code and replaces URL import
@@ -394,7 +394,7 @@ def generate_index(imports: str, exports: list[str], export_spec: ExportSpec):
 def generate_project(
     components: list[type[ReactiveESM]],
     path: str | os.PathLike,
-    project_config: dict[str, Any] | None = None
+    project_config: dict[str, t.Any] | None = None
 ):
     """
     Converts a set of ESM components into a Javascript project with

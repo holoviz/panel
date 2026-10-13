@@ -11,16 +11,17 @@ import pytest
 
 from bokeh.document import Document
 from bokeh.io.doc import patch_curdoc
-from bokeh.models import Div
+from bokeh.models import Div, ImportedStyleSheet
 
 from panel.depends import bind, depends
-from panel.io.state import set_curdoc
+from panel.io.resources import stylesheet_url
+from panel.io.state import set_curdoc, state
 from panel.layout import Tabs, WidgetBox
 from panel.pane import Markdown
 from panel.reactive import Reactive, ReactiveHTML
 from panel.viewable import Viewable
 from panel.widgets import (
-    Checkbox, IntInput, IntSlider, StaticText, TextInput,
+    Button, Checkbox, IntInput, IntSlider, StaticText, TextInput,
 )
 
 
@@ -143,8 +144,8 @@ def test_text_input_controls():
     assert len(controls) == 2
     wb1, wb2 = controls
     assert isinstance(wb1, WidgetBox)
-    assert len(wb1) == 7
-    name, value, disabled, *(ws) = wb1
+    assert len(wb1) == 8
+    name, label, value, disabled, *(ws) = wb1
 
     assert isinstance(value, TextInput)
     text_input.value = "New value"
@@ -154,18 +155,22 @@ def test_text_input_controls():
 
     not_checked = []
     for w in ws:
-        if w.name == 'Value input':
+        if w.label == 'Value input':
             assert isinstance(w, TextInput)
-        elif w.name == 'Placeholder':
+        elif w.label == 'Placeholder':
             assert isinstance(w, TextInput)
             text_input.placeholder = "Test placeholder..."
             assert w.value == "Test placeholder..."
-        elif w.name == 'Max length':
+        elif w.label == 'Max length':
             assert isinstance(w, IntInput)
-        elif w.name == 'Description':
+        elif w.label == 'Description':
             assert isinstance(w, TextInput)
             text_input.description = "Test description..."
             assert w.value == "Test description..."
+        elif w.label == 'Label':
+            assert isinstance(w, TextInput)
+            text_input.description = "Test label..."
+            assert w.value == ""
         else:
             not_checked.append(w)
 
@@ -173,8 +178,8 @@ def test_text_input_controls():
 
     assert isinstance(wb2, WidgetBox)
 
-    params1 = {w.name.replace(" ", "_").lower() for w in wb2 if len(w.name)}
-    params2 = set(Viewable.param) - {"background", "design", "stylesheets", "loading"}
+    params1 = {w.label.replace(" ", "_").lower() for w in wb2 if len(w.label)}
+    params2 = set(Viewable.param) - {"background", "design", "stylesheets", "loading", "name"}
     # Background should be moved when Layoutable.background is removed.
 
     assert not len(params1 - params2)
@@ -265,8 +270,8 @@ async def test_pass_bind_multi_async_generator_by_reference():
     assert text_input.width == 121
 
 def test_pass_refs():
-    slider = IntSlider(value=5, start=1, end=10, name='Number')
-    size = IntSlider(value=12, start=6, end=24, name='Size')
+    slider = IntSlider(value=5, start=1, end=10, label='Number')
+    size = IntSlider(value=12, start=6, end=24, label='Size')
 
     def refs(number, size):
         return {
@@ -410,6 +415,63 @@ def test_in_process_change_event_cleaned_up(document, comm):
         checkbox._process_events({'active': True})
 
     assert document not in checkbox._in_process__events
+
+def test_rapid_toggle_disabled(document, comm):
+    button = Button(label="dummy")
+    model = button.get_root(document, comm)
+
+    assert model.disabled is False
+
+    # Rapid toggle: True then immediately False
+    button.disabled = True
+    button.disabled = False
+
+    assert model.disabled is False
+    assert button.disabled is False
+    assert 'disabled' not in button._events
+
+def test_rapid_toggle_disabled_repeated(document, comm):
+    button = Button(label="dummy")
+    model = button.get_root(document, comm)
+
+    for _ in range(5):
+        button.disabled = True
+        button.disabled = False
+
+    assert model.disabled is False
+    assert button.disabled is False
+    assert 'disabled' not in button._events
+
+def test_python_update_clears_stale_events(document, comm):
+    text_input = TextInput(value='A')
+    model = text_input.get_root(document, comm)
+
+    # Simulate stale frontend event contaminating _events
+    text_input._events['value'] = 'stale'
+
+    # Python sets a new value
+    text_input.value = 'C'
+
+    assert model.value == 'C'
+    assert text_input.value == 'C'
+    assert 'value' not in text_input._events
+
+def test_boomerang_value_is_skipped(document, comm):
+    # When the Python update matches the recorded frontend value
+    # it is a boomerang echo and must not be re-pushed to the model.
+    text_input = TextInput(value='A')
+    model = text_input.get_root(document, comm)
+
+    # Prime _events as if the frontend just pushed 'frontend'
+    text_input._events['value'] = 'frontend'
+
+    # Python sets the same value — treated as a boomerang echo
+    text_input.value = 'frontend'
+
+    # Model stays at its original value since the echo is skipped
+    assert model.value == 'A'
+    assert text_input.value == 'frontend'
+    assert 'value' not in text_input._events
 
 def test_reactive_html_basic():
 
@@ -837,6 +899,131 @@ def test_reactive_design_stylesheets_update(document, comm):
     assert len(model.stylesheets) == 5
     assert model.stylesheets[-1] == widget.stylesheets[0]
 
+
+def test_reactive_stylesheets_shared_component_across_documents(document, comm):
+    """A reused component's stylesheets belong to each notebook output's document."""
+    other_doc = Document()
+    widget = TextInput(stylesheets=['https://example.com/custom.css'])
+
+    with set_curdoc(document):
+        model1 = widget.get_root(document, comm)
+        document.add_root(model1)
+        model2 = widget.get_root(other_doc, comm)
+        other_doc.add_root(model2)
+
+        widget.stylesheets = ['https://example.com/updated.css']
+
+    for model, doc in ((model1, document), (model2, other_doc)):
+        assert all(sts.document is doc for sts in model.stylesheets if isinstance(sts, ImportedStyleSheet))
+        assert any(
+            isinstance(sts, ImportedStyleSheet) and sts.url == 'https://example.com/updated.css'
+            for sts in model.stylesheets
+        )
+        doc.to_json()
+    assert not {
+        id(sts) for sts in model1.stylesheets if isinstance(sts, ImportedStyleSheet)
+    } & {
+        id(sts) for sts in model2.stylesheets if isinstance(sts, ImportedStyleSheet)
+    }
+
+
+def test_reactive_pane_stylesheets_shared_across_documents(document, comm):
+    """Updating a pane reused in notebook outputs keeps stylesheets document-local."""
+    other_doc = Document()
+    pane = Markdown('first')
+
+    with set_curdoc(document):
+        model1 = pane.get_root(document, comm)
+        document.add_root(model1)
+        model2 = pane.get_root(other_doc, comm)
+        other_doc.add_root(model2)
+        pane.object = 'second'
+
+    assert model1.text == model2.text
+    for model, doc in ((model1, document), (model2, other_doc)):
+        assert all(sts.document is doc for sts in model.stylesheets if isinstance(sts, ImportedStyleSheet))
+        doc.to_json()
+
+
+def test_reactive_html_stylesheet_updates_across_documents(document, comm):
+    """ReactiveHTML updates do not share stylesheet models across outputs."""
+    other_doc = Document()
+    component = ReactiveHTML(stylesheets=['https://example.com/first.css'])
+
+    with set_curdoc(document):
+        model1 = component.get_root(document, comm)
+        document.add_root(model1)
+        model2 = component.get_root(other_doc, comm)
+        other_doc.add_root(model2)
+        shared = ImportedStyleSheet(url='https://example.com/shared.css')
+        process = component._process_param_change
+
+        def add_shared(params):
+            props = process(params)
+            if 'stylesheets' in props:
+                props['stylesheets'].append(shared)
+            return props
+
+        component._process_param_change = add_shared
+        component.stylesheets = ['https://example.com/second.css']
+
+    for model, doc in ((model1, document), (model2, other_doc)):
+        assert any(
+            isinstance(sts, ImportedStyleSheet) and sts.url == 'https://example.com/shared.css'
+            for sts in model.stylesheets
+        )
+        assert all(sts.document is doc for sts in model.stylesheets if isinstance(sts, ImportedStyleSheet))
+        doc.to_json()
+
+
+def test_reactive_destroyed_stylesheet_dropped(document, comm):
+    # Regression: https://github.com/holoviz/panel/issues/8106
+    widget = Markdown('foo')
+
+    # Emulates a Design injecting a stylesheet that was destroyed along
+    # with the Document it was originally rendered into. Patched on the
+    # instance since subclassing a Pane would register a new pane type.
+    process_param_change = widget._process_param_change
+
+    def _process_param_change(params):
+        props = process_param_change(params)
+        if 'stylesheets' in props:
+            props['stylesheets'] = [*props['stylesheets'], ImportedStyleSheet()]
+        return props
+
+    widget._process_param_change = _process_param_change
+
+    model = widget.get_root(document, comm)
+
+    assert all(
+        stylesheet_url(sts) is not None for sts in model.stylesheets
+        if isinstance(sts, ImportedStyleSheet)
+    )
+    # The Document must remain serializable
+    document.to_json()
+
+def test_reactive_recreates_destroyed_stylesheet(document, comm):
+    with set_curdoc(document):
+        widget1 = TextInput()
+        widget1.get_root(document, comm)
+
+        cache = state._stylesheets[document]
+        assert cache
+        stale = list(cache.values())
+
+        # Bokeh clears the property values of every model on a Document
+        # when the Document is destroyed at the end of a session
+        for stylesheet in stale:
+            stylesheet.destroy()
+
+        widget2 = TextInput()
+        model2 = widget2.get_root(document, comm)
+
+    stale_ids = {id(stylesheet) for stylesheet in stale}
+    for stylesheet in model2.stylesheets:
+        if isinstance(stylesheet, ImportedStyleSheet):
+            assert stylesheet_url(stylesheet) is not None
+            assert id(stylesheet) not in stale_ids
 
 def test_reactive_attribute_no_name(document, comm):
     # Regression: https://github.com/holoviz/panel/pull/7655

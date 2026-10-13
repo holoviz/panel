@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping
-from typing import TYPE_CHECKING, ClassVar
+import typing as t
 
 import param
 
@@ -11,7 +10,9 @@ from ..reactive import Reactive
 from .base import NamedListPanel
 from .card import Card
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from collections.abc import Callable, Mapping
+
     from bokeh.model import Model
 
     from ..viewable import Viewable
@@ -39,8 +40,9 @@ class Accordion(NamedListPanel):
     active_header_background = param.String(default=None, doc="""
         Color for currently active headers.""")
 
-    active = param.List(default=[], doc="""
-        List of indexes of active cards.""")
+    # Override of NamedListPanel.active (which is an integer)
+    active = param.List(default=[], item_type=int, doc="""
+        List of indexes of active cards.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     header_color = param.String(doc="""
         A valid CSS color to apply to the expand button.""")
@@ -53,9 +55,9 @@ class Accordion(NamedListPanel):
 
     _bokeh_model = BkColumn
 
-    _direction: ClassVar[str | None] = 'vertical'
+    _direction: t.ClassVar[str | None] = 'vertical'
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'active': None, 'active_header_background': None,
         'header_background': None, 'objects': 'children',
         'dynamic': None, 'toggle': None, 'header_color': None

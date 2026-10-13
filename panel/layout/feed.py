@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
-from typing import TYPE_CHECKING, ClassVar
+import typing as t
 
 import param
 
@@ -9,7 +8,9 @@ from ..models.feed import Feed as PnFeed, ScrollButtonClick, ScrollLatestEvent
 from ..util import edit_readonly, isIn
 from .base import Column
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
@@ -40,7 +41,9 @@ class Feed(Column):
         When scrolled halfway into the buffer, the feed will automatically
         load additional objects while unloading objects on the opposite side.""")
 
-    scroll = param.Selector(
+    scroll: t.Literal[
+        False, True, "both-auto", "y-auto", "x-auto", "both", "x", "y"
+    ] = param.Selector(
         default="y",
         objects=[False, True, "both-auto", "y-auto", "x-auto", "both", "x", "y"],
         doc="""Whether to add scrollbars if the content overflows the size
@@ -51,28 +54,33 @@ class Feed(Column):
         If "x" or "y", will always add scrollbars in the respective
         direction. If False, overflowing content will be clipped.
         If True, will only add scrollbars in the direction of the container,
-        (e.g. Column: vertical, Row: horizontal).""")
+        (e.g. Column: vertical, Row: horizontal).""")  # type: ignore[assignment, ty:invalid-assignment]
 
     visible_range = param.Range(readonly=True, doc="""
         Read-only upper and lower bounds of the currently visible feed objects.
         This list is automatically updated based on scrolling.""")
 
-    _bokeh_model: ClassVar[type[Model]] = PnFeed
+    _bokeh_model: t.ClassVar[type[Model]] = PnFeed
 
     _direction = 'vertical'
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'objects': 'children', 'visible_range': 'visible_children',
         'load_buffer': None,
     }
 
     def __init__(self, *objects, **params):
-        for height_param in ["height", "min_height", "max_height"]:
-            if height_param in params:
-                break
-        else:
-            # sets a default height to prevent infinite load
-            params["height"] = 300
+        # Only a scrolling Feed clips a viewport to virtualize against, so it
+        # needs a bounding height to avoid loading everything (#8661). A
+        # non-scrolling Feed renders all its objects (see _synced_range) and must
+        # not get a height, which would clip it rather than let the page scroll.
+        if params.get('scroll', type(self).param.scroll.default):
+            for height_param in ["height", "min_height", "max_height"]:
+                if height_param in params:
+                    break
+            else:
+                # sets a default height to prevent infinite load
+                params["height"] = 300
 
         super().__init__(*objects, **params)
         self._last_synced = None
@@ -80,7 +88,9 @@ class Feed(Column):
 
     @param.depends("visible_range", "load_buffer", watch=True)
     def _trigger_get_objects(self):
-        if self.visible_range is None:
+        # A non-scrolling Feed renders every object up front (see _synced_range),
+        # so there is nothing further to load as visible_range changes.
+        if self.visible_range is None or not self.scroll:
             return
 
         # visible start, end / synced start, end
@@ -107,6 +117,11 @@ class Feed(Column):
     @property
     def _synced_range(self):
         n = len(self.objects)
+        if not self.scroll:
+            # A non-scrolling Feed cannot clip a viewport to virtualize against,
+            # so it renders every object; the frontend measures visible_range
+            # against the page viewport instead (#8661).
+            return (0, n)
         if self.visible_range:
             return (
                 max(self.visible_range[0] - self.load_buffer, 0),
@@ -125,17 +140,19 @@ class Feed(Column):
         self._register_events('scroll_button_click', model=model, doc=doc, comm=comm)
         return model
 
-    def _process_property_change(self, msg):
-        if 'visible_children' in msg:
-            visible = msg.pop('visible_children')
+    def _process_property_change(self, props: dict[str, t.Any]) -> dict[str, t.Any]:
+        if 'visible_children' in props:
+            visible = props.pop('visible_children')
             for model, _ in self._models.values():
                 refs = [c.ref['id'] for c in model.children]
                 if visible and visible[0] in refs:
                     indexes = sorted(refs.index(v) for v in visible if v in refs)
                     break
             else:
-                return super()._process_property_change(msg)
-            offset = self._synced_range[0]
+                return super()._process_property_change(props)
+            # The range the rendered children were synced from, which the
+            # current visible_range and load_buffer may no longer give.
+            offset = (self._last_synced or self._synced_range)[0]
             n = len(self.objects)
             visible_range = [
                 max(offset + indexes[0], 0),
@@ -143,12 +160,12 @@ class Feed(Column):
             ]
             if visible_range[0] >= visible_range[1]:
                 visible_range[0] = visible_range[1] - self.load_buffer
-            msg['visible_range'] = tuple(visible_range)
-        return super()._process_property_change(msg)
+            props['visible_range'] = tuple(visible_range)
+        return super()._process_property_change(props)
 
-    def _process_param_change(self, msg):
-        msg.pop('visible_range', None)
-        return super()._process_param_change(msg)
+    def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
+        params.pop('visible_range', None)
+        return super()._process_param_change(params)
 
     def _get_objects(
         self, model: Model, old_objects: list[Viewable], doc: Document,
@@ -166,23 +183,21 @@ class Feed(Column):
 
         for obj in old_objects:
             if obj not in self.objects:
-                obj._cleanup(root)
+                obj._release_model(root, model)
 
         current_objects = list(self.objects)
         ref = root.ref['id']
         for i in range(*self._last_synced):
             pane = current_objects[i]
             if ref in pane._models:
-                child, _ = pane._models[root.ref['id']]
-                old_models.append(child)
-            else:
-                try:
-                    child = pane._get_model(doc, root, model, comm)
-                except RerenderError as e:
-                    if e.layout is not None and e.layout is not self:
-                        raise e
-                    e.layout = None
-                    return self._get_objects(model, current_objects[:i], doc, root, comm)
+                old_models.append(pane._models[ref][0])
+            try:
+                child = pane._acquire_model(doc, root, model, comm)
+            except RerenderError as e:
+                if e.layout is not None and e.layout is not self:
+                    raise e
+                e.layout = None
+                return self._get_objects(model, current_objects[:i], doc, root, comm)
             new_models.append(child)
         return new_models, old_models
 
@@ -193,21 +208,11 @@ class Feed(Column):
         if not self.visible_range:
             return
 
-        # need to get it all the way to the bottom rather
-        # than the center of the buffer zone
-        load_buffer = self.load_buffer
-        with param.discard_events(self):
-            self.load_buffer = 1
-
         n = len(self.objects)
         n_visible = self.visible_range[-1] - self.visible_range[0]
         with edit_readonly(self):
             # plus one to center on the last object
             self.visible_range = (min(max(n - n_visible + 1, 0), n), n)
-
-        with param.discard_events(self):
-            # reset the buffers and loaded objects
-            self.load_buffer = load_buffer
 
     def scroll_to_latest(self, scroll_limit: float | None = None) -> None:
         """

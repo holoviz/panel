@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from typing import (
-    TYPE_CHECKING, ClassVar, Literal, Mapping, Optional,
-)
+import typing as t
 
 import param
 
@@ -12,7 +10,7 @@ from ..util import lazy_load
 from ..util.warnings import PanelUserWarning, warn
 from .base import ListPanel
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
@@ -27,13 +25,13 @@ class Modal(ListPanel):
 
     background_close = param.Boolean(default=True, doc="Whether to enable closing the modal when clicking the background.")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {}
+    _rename: t.ClassVar[t.Mapping[str, str | None]] = {}
 
-    _source_transforms: ClassVar[Mapping[str, str | None]] = {'objects': None}
+    _source_transforms: t.ClassVar[t.Mapping[str, str | None]] = {'objects': None}
 
     def _get_model(
-        self, doc: Document, root: Optional[Model] = None,
-        parent: Optional[Model] = None, comm: Optional[Comm] = None
+        self, doc: Document, root: t.Optional[Model] = None,
+        parent: t.Optional[Model] = None, comm: t.Optional[Comm] = None
     ) -> Model:
         Modal._bokeh_model = lazy_load(
             'panel.models.modal', 'Modal', isinstance(comm, JupyterComm), root
@@ -57,7 +55,7 @@ class Modal(ListPanel):
             warn(msg, category=PanelUserWarning)
         self._send_event(ModalDialogEvent, open=self.open)
 
-    def create_button(self, action: Literal["show", "hide", "toggle"], **kwargs):
+    def create_button(self, action: t.Literal["show", "hide", "toggle"], **kwargs):
         """Create a button to show, hide or toggle the modal."""
         from panel.widgets import Button
         match action:

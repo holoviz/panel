@@ -1,6 +1,8 @@
 import type * as p from "@bokehjs/core/properties"
 import {Markup} from "@bokehjs/models/widgets/markup"
 import {PanelMarkupView} from "./layout"
+import type {ResourceSpec} from "./resources"
+import {define_external_resources, load_resources} from "./resources"
 
 export class KaTeXView extends PanelMarkupView {
   declare model: KaTeX
@@ -33,6 +35,7 @@ export namespace KaTeX {
   export type Attrs = p.AttrsOf<Props>
   export type Props = Markup.Props & {
     text: p.Property<string>
+    external_resources: p.Property<ResourceSpec | null>
   }
 }
 
@@ -49,5 +52,11 @@ export class KaTeX extends Markup {
 
   static {
     this.prototype.default_view = KaTeXView
+    define_external_resources(this)
+  }
+
+  override initialize(): void {
+    super.initialize()
+    load_resources(this)
   }
 }

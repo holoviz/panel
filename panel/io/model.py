@@ -4,9 +4,7 @@ Utilities for manipulating bokeh models.
 from __future__ import annotations
 
 import textwrap
-
-from collections.abc import Iterable, Sequence
-from typing import TYPE_CHECKING, Any
+import typing as t
 
 import numpy as np
 
@@ -23,7 +21,9 @@ from bokeh.protocol.messages.patch_doc import patch_doc
 
 from .state import state
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from collections.abc import Iterable, Sequence
+
     from bokeh.protocol.message import Message
 
 #---------------------------------------------------------------------
@@ -35,10 +35,10 @@ class comparable_array(np.ndarray):
     Array subclass that allows comparisons.
     """
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: t.Any) -> bool:
         return np.array_equal(self, other, equal_nan=True)
 
-    def __ne__(self, other: Any) -> bool:
+    def __ne__(self, other: t.Any) -> bool:
         return not np.array_equal(self, other, equal_nan=True)
 
 def monkeypatch_events(events: Sequence[DocumentChangedEvent]) -> None:
@@ -73,7 +73,7 @@ except AssertionError:
 
 def diff(
     doc: Document, binary: bool = True, events: list[DocumentChangedEvent] | None = None
-) -> Message[Any] | None:
+) -> Message[t.Any] | None:
     """
     Returns a json diff required to update an existing plot with
     the latest plot data.

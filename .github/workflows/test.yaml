@@ -23,6 +23,8 @@ on:
   schedule:
     - cron: "0 19 * * SUN"
 
+permissions: {}
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
@@ -43,17 +45,20 @@ jobs:
     name: Run pre-commit
     needs: [setup]
     runs-on: "ubuntu-latest"
+    permissions:
+      contents: write
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pre-commit@v0
-      - uses: pre-commit/action@v3.0.1
-        if: needs.setup.outputs.img_change == 'true'
+      - uses: holoviz-dev/holoviz_tasks/pre-commit@11eb638302f76ec64217e2eeddfb11df1f788b54 # v1.0.2
+
+  optimize_png:
+    name: optimize-png
+    runs-on: "ubuntu-latest"
+    permissions:
+      contents: write
+    steps:
+      - uses: holoviz-dev/holoviz_tasks/optimize-png@e9aaca7738db5d27bf34d0f69e25990b74a85eaf # v1.0.7
         with:
-          extra_args: -a --hook-stage manual oxipng || true --
-      - uses: stefanzweifel/git-auto-commit-action@v4
-        if: needs.setup.outputs.img_change == 'true'
-        with:
-          commit_message: "Optimize PNG images (lossless)"
-          file_pattern: "*.png"
+          oxipng-version: "10.2.1"
 
   setup:
     name: Setup workflow
@@ -66,10 +71,12 @@ jobs:
       img_change: ${{ steps.filter.outputs.img }}
       matrix: ${{ env.MATRIX }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         if: github.event_name != 'pull_request'
+        with:
+          persist-credentials: false
       - name: Check for code changes
-        uses: dorny/paths-filter@v3
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         id: filter
         with:
           filters: |
@@ -84,15 +91,15 @@ jobs:
               - 'doc/how_to/**'
               - 'scripts/**'
               - 'lite/**'
-            img:
-              - '**/*.png'
       - name: Set matrix option
+        env:
+          GITHUB_EVENT_INPUTS_TARGET: ${{ github.event.inputs.target }}
         run: |
-          if [[ '${{ github.event_name }}' == 'workflow_dispatch' ]]; then
-            OPTION=${{ github.event.inputs.target }}
-          elif [[ '${{ github.event_name }}' == 'schedule' ]]; then
+          if [[ "${GITHUB_EVENT_NAME}" == 'workflow_dispatch' ]]; then
+            OPTION=${GITHUB_EVENT_INPUTS_TARGET}
+          elif [[ "${GITHUB_EVENT_NAME}" == 'schedule' ]]; then
             OPTION="full"
-          elif [[ '${{ github.event_name }}' == 'push' && '${{ github.ref_type }}' == 'tag' ]]; then
+          elif [[ "${GITHUB_EVENT_NAME}" == 'push' && "${GITHUB_REF_TYPE}" == 'tag' ]]; then
             OPTION="full"
           else
             OPTION="default"
@@ -103,7 +110,9 @@ jobs:
         run: |
           MATRIX=$(jq -nsc '{
               "os": ["ubuntu-latest", "macos-latest", "windows-latest"],
-              "environment": ["test-310", "test-314"]
+              "environment": ["test-312", "test-314"],
+              "include": [{"os": "ubuntu-latest", "environment": "test-315"}]
+
           }')
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
       - name: Set test matrix with 'full' option
@@ -111,7 +120,7 @@ jobs:
         run: |
           MATRIX=$(jq -nsc '{
               "os": ["ubuntu-latest", "macos-latest", "windows-latest"],
-              "environment": ["test-310", "test-311", "test-312", "test-313", "test-314"]
+              "environment": ["test-312", "test-313", "test-314", "test-315"]
           }')
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
       - name: Set test matrix with 'downstream' option
@@ -119,7 +128,7 @@ jobs:
         run: |
           MATRIX=$(jq -nsc '{
               "os": ["ubuntu-latest"],
-              "environment": ["test-310"]
+              "environment": ["test-312"]
           }')
           echo "MATRIX=$MATRIX" >> $GITHUB_ENV
 
@@ -127,7 +136,7 @@ jobs:
     name: Pixi lock
     runs-on: ubuntu-latest
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi_lock@v0
+      - uses: holoviz-dev/holoviz_tasks/pixi-lock@11eb638302f76ec64217e2eeddfb11df1f788b54 # v1.0.2
         with:
           cache: ${{ github.event.inputs.cache == 'true' || github.event.inputs.cache == '' }}
 
@@ -139,26 +148,28 @@ jobs:
     strategy:
       fail-fast: false
       matrix: ${{ fromJson(needs.setup.outputs.matrix) }}
+    env:
+      ENV: ${{ matrix.environment }}
     timeout-minutes: 30
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi_install@v0
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@11eb638302f76ec64217e2eeddfb11df1f788b54 # v1.0.2
         with:
           environments: ${{ matrix.environment }}
           opengl: true
       - name: Test unit
         run: |
-          pixi run -e ${{ matrix.environment }} test-unit $COV
+          pixi run -e "${ENV}" test-unit $COV
       - name: Test subprocess
-        if: contains(matrix.os, 'ubuntu')
+        if: contains(matrix.os, 'ubuntu') && matrix.environment != 'test-315'
         run: |
-          pixi run -e ${{ matrix.environment }} test-subprocess $COV
+          pixi run -e "${ENV}" test-subprocess $COV
       - name: Test docs
         run: |
-          pixi run -e ${{ matrix.environment }} test-docs $COV
+          pixi run -e "${ENV}" test-docs $COV
       - name: Test Examples
         run: |
-          pixi run -e ${{ matrix.environment }} test-example
-      - uses: codecov/codecov-action@v4
+          pixi run -e "${ENV}" test-example
+      - uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
@@ -189,8 +200,9 @@ jobs:
       OKTA_OAUTH_EXTRA_PARAMS: ${{ secrets.OKTA_OAUTH_EXTRA_PARAMS }}
       OKTA_OAUTH_USER: ${{ secrets.OKTA_OAUTH_USER }}
       OKTA_OAUTH_PASSWORD: ${{ secrets.OKTA_OAUTH_PASSWORD }}
+      ENV: ${{ matrix.environment }}
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi_install@v0
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@0d2b48d28d94714bf566148cd050233ec875a92d # v1.0.13
         with:
           environments: ${{ matrix.environment }}
         id: install
@@ -201,26 +213,19 @@ jobs:
         run: |
           jupyter server extension enable panel.io.jupyter_server_extension --sys-prefix
           (jupyter lab --config panel/tests/ui/jupyter_server_test_config.py --port 8887 > /tmp/jupyterlab_server.log 2>&1) &
+          curl -fsS --retry 180 --retry-delay 1 --retry-connrefused http://127.0.0.1:8887/lab >/dev/null
       - name: Build JupyterLite
         shell: pixi run -e test-ui bash -e {0}
         run: pixi run -e lite lite-build
-      - name: Wait for JupyterLab
-        uses: ifaxity/wait-on-action@v1.2.1
-        with:
-          resource: http-get://localhost:8887/lab
-          timeout: 180000
       - name: Check if auth should run
-        if: '!github.event.pull_request.head.repo.fork'
+        if: "!github.event.pull_request.head.repo.fork"
         run: |
           echo "PANEL_TEST_AUTH=1" >> $GITHUB_ENV
       - name: Test UI
         run: |
-          # Create a .uicoveragerc file to set the concurrency library to greenlet
-          # https://github.com/microsoft/playwright-python/issues/313
-          echo "[run]\nconcurrency = greenlet" > .uicoveragerc
           FAIL="--screenshot only-on-failure --full-page-screenshot --output ui_screenshots --tracing retain-on-failure"
-          pixi run -e ${{ matrix.environment }} test-ui --jupyter $COV --cov-config=.uicoveragerc $FAIL
-      - uses: actions/upload-artifact@v4
+          pixi run -e "${ENV}" test-ui --jupyter $COV $FAIL
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: ui_screenshots_${{ runner.os }}
@@ -231,7 +236,7 @@ jobs:
         shell: pixi run -e test-ui bash -e {0}
         run: |
           jupyter lab stop 8887 || true
-      - uses: codecov/codecov-action@v4
+      - uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
@@ -240,19 +245,21 @@ jobs:
     needs: [pre_commit, setup, pixi_lock]
     runs-on: ${{ matrix.os }}
     if: needs.setup.outputs.code_change == 'true'
+    env:
+      ENV: ${{ matrix.environment }}
     strategy:
       fail-fast: false
       matrix:
         os: ["ubuntu-latest"]
-        environment: ["test-core", "test-bokeh37", "test-bokeh38"]
+        environment: ["test-core"]
     timeout-minutes: 30
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi_install@v0
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@11eb638302f76ec64217e2eeddfb11df1f788b54 # v1.0.2
         with:
           environments: ${{ matrix.environment }}
       - name: Test Unit
         run: |
-          pixi run -e ${{ matrix.environment }} test-unit
+          pixi run -e "${ENV}" test-unit
 
   type_test_suite:
     name: type:${{ matrix.environment }}:${{ matrix.os }}
@@ -264,15 +271,17 @@ jobs:
       matrix:
         os: ["ubuntu-latest"]
         environment: ["test-type"]
+    env:
+      ENV: ${{ matrix.environment }}
     timeout-minutes: 30
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi_install@v0
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@11eb638302f76ec64217e2eeddfb11df1f788b54 # v1.0.2
         with:
           environments: ${{ matrix.environment }}
           install: false
       - name: Test Type
         run: |
-          pixi run -e ${{ matrix.environment }} test-type
+          pixi run -e "${ENV}" test-type
 
   result_test_suite:
     name: result:test

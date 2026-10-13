@@ -28,18 +28,18 @@ The above approach works well for simple cases but sometimes the layout or confi
 import random
 import panel as pn
 
-pn.extension(template='material')
+pn.extension(template='page')
 
 city = pn.state.session_args.get('city', [b'Berlin'])[0].decode('utf-8')
 
 pn.state.template.title = f'{city} Weather'
 
-pn.FlexBox(
-    pn.Card(pn.indicators.Number(
-        name='Temperature', value=random.randint(-20, 45), format='{value} °C'
+pn.ui.FlexBox(
+    pn.ui.Card(pn.indicators.Number(
+        label='Temperature', value=random.randint(-20, 45), format='{value} °C'
     ), hide_header=True),
-    pn.Card(pn.indicators.Number(
-        name='Humidity', value=random.randint(0, 100), format='{value}%'
+    pn.ui.Card(pn.indicators.Number(
+        label='Humidity', value=random.randint(0, 100), format='{value}%'
     ), hide_header=True)
 ).servable()
 ```
@@ -60,7 +60,7 @@ In our example we will write a function that returns the 'city' request argument
 def session_key_func(request):
     return request.arguments.get('city', [b'Berlin'])[0]
 
-pn.extension(template='material', session_key_func=session_key_func)
+pn.extension(template='page', session_key_func=session_key_func)
 ```
 
 Now when a request arrives to serve our application it will check whether the city has been seen previously and if not it will create a new session for that unique key.

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import hashlib
 import importlib
 import inspect
@@ -8,16 +7,11 @@ import os
 import pathlib
 import sys
 import textwrap
+import typing as t
 
 from abc import abstractmethod
 from collections import defaultdict
-from collections.abc import (
-    Awaitable, Callable, Iterator, Mapping,
-)
 from functools import partial
-from typing import (
-    TYPE_CHECKING, Any, ClassVar, Literal,
-)
 
 import param
 
@@ -27,8 +21,10 @@ from .config import config
 from .io.datamodel import construct_data_model
 from .io.document import freeze_doc, hold
 from .io.model import apply_changes_without_dispatch
+from .io.resource_spec import resource_spec
 from .io.resources import component_resource_path
 from .io.state import state
+from .io.watcher import get_path_watcher
 from .layout.base import Panel
 from .models import (
     AnyWidgetComponent as _BkAnyWidgetComponent,
@@ -47,7 +43,11 @@ from .viewable import (  # noqa
 )
 from .widgets.base import WidgetBase  # noqa
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from collections.abc import (
+        Awaitable, Callable, Iterator, Mapping,
+    )
+
     from bokeh.document import Document
     from bokeh.events import Event
     from bokeh.model import Model
@@ -139,7 +139,7 @@ class PyComponent(Viewable, Layoutable):
             view = ParamMethod(self.__panel__, lazy=True)
         else:
             view = panel(self.__panel__())
-        params = view.param.values()
+        params = {p: getattr(view, p) for p in view.param}
         overrides, sync = {}, {}
         for p in Layoutable.param:
             if p != 'name' and view.param[p].default != params[p]:
@@ -177,9 +177,9 @@ class PyComponent(Viewable, Layoutable):
 
 class ReactiveESMMetaclass(ReactiveMetaBase):
 
-    def __init__(mcs, name: str, bases: tuple[type, ...], dict_: Mapping[str, Any]):
+    def __init__(mcs, name: str, bases: tuple[type, ...], dict_: Mapping[str, t.Any]):
         mcs.__original_doc__ = mcs.__doc__
-        ParameterizedMetaclass.__init__(mcs, name, bases, dict_)
+        ParameterizedMetaclass.__init__(mcs, name, bases, dict(dict_))
 
         # Create model with unique name
         ReactiveMetaBase._name_counter[name] += 1
@@ -188,7 +188,9 @@ class ReactiveESMMetaclass(ReactiveMetaBase):
             p for p in Reactive.param
             if not issubclass(type(mcs.param[p].owner), ReactiveESMMetaclass)
         ]
-        mcs._data_model__initialized = not (state.curdoc and state.curdoc.session_context and state._connected.get(state.curdoc, False))
+        mcs._data_model__initialized = not (
+            state.curdoc and state.curdoc.session_context and state._connected.get(state.curdoc, None)
+        )
         mcs._data_model = construct_data_model(
             mcs, name=model_name, ignore=ignored, extras={'esm_constants': param.Dict}
         )
@@ -238,23 +240,23 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
 
     _bokeh_model = _BkReactiveESM
 
-    _bundle: ClassVar[str | os.PathLike | None] = None
+    _bundle: t.ClassVar[str | os.PathLike | None] = None
 
-    _constants: ClassVar[dict[str, Any]] = {}
+    _constants: t.ClassVar[dict[str, t.Any]] = {}
 
-    _esm: ClassVar[str | os.PathLike] = ""
+    _esm: t.ClassVar[str | os.PathLike] = ""
 
-    _esm_shared: ClassVar[dict[str, str | os.PathLike]] = {}
+    _esm_shared: t.ClassVar[dict[str, str | os.PathLike]] = {}
 
     # Specifies exports to make available to JS in a bundled file
     # 1. Default export: "<export>"
     # 2. Import all (`* as`): "*<export>"
     # 3. Named export (`{ <export>, ... }`): ("<export>", ...)
-    _exports__: ClassVar[ExportSpec] = {}
+    _exports__: t.ClassVar[ExportSpec] = {}
 
-    _importmap: ClassVar[dict[Literal['imports', 'scopes'], dict[str,str]]] = {}
+    _importmap: t.ClassVar[dict[t.Literal['imports', 'scopes'], dict[str,str]]] = {}
 
-    _render_policy: Literal['manual', 'children'] = "children"
+    _render_policy: t.Literal['manual', 'children'] = "children"
 
     __abstract = True
 
@@ -340,7 +342,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         return []
 
     @classmethod
-    def _esm_path(cls, compiled: bool | Literal['compiling'] = True) -> os.PathLike | None:
+    def _esm_path(cls, compiled: bool | t.Literal['compiling'] = True) -> os.PathLike | None:
         if compiled is True or not cls._esm:
             bundle_path = cls._bundle_path
             if bundle_path:
@@ -373,7 +375,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         return component_resource_path(base_cls, '_bundle_path', esm_path)
 
     @classmethod
-    def _render_esm(cls, compiled: bool | Literal['compiling'] = True, server: bool = False):
+    def _render_esm(cls, compiled: bool | t.Literal['compiling'] = True, server: bool = False):
         esm_path = cls._esm_path(compiled=compiled is True)
         if esm_path:
             if esm_path == cls._bundle_path and cls.__module__ in sys.modules and server:
@@ -405,34 +407,11 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
                     if isinstance(children, list):
                         for child in children:
                             if isinstance(child, Viewable):
-                                child._cleanup(root)
+                                child._release_model(root, model)
         super()._cleanup(root)
         if not self._models and self._watching_esm:
-            self._watching_esm.set()
-            if self._watching_esm in state._watch_events:
-                state._watch_events.remove(self._watching_esm)
+            self._watching_esm.unsubscribe(self, '_update_esm')
             self._watching_esm = None
-
-    async def _watch_esm(self):
-        import watchfiles
-        path = self._esm_path(compiled=False)
-        async for changes in watchfiles.awatch(path, stop_event=self._watching_esm):
-            update = False
-            for (change, path) in changes:
-                if change != watchfiles.Change.modified:
-                    continue
-                # Ensure that the file exists (in case filesystem write is not atomic)
-                retries = 0
-                while not os.path.exists(path):
-                    await asyncio.sleep(0.1)
-                    retries += 1
-                    if retries == 5:
-                        break
-                # Ignore change if file is not written within 0.5 seconds
-                if retries != 5:
-                    update = True
-            if update:
-                self._update_esm()
 
     def _update_esm(self):
         for ref, (model, _) in self._models.copy().items():
@@ -454,7 +433,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             if p not in _IGNORED_ESM_PROPERTIES and not isinstance(params[mapping.get(p, p)], (Child, Children))
         )
 
-    def _get_properties(self, doc: Document | None) -> dict[str, Any]:
+    def _get_properties(self, doc: Document | None) -> dict[str, t.Any]:
         props = super()._get_properties(doc)
         cls = type(self)
         data_props = {}
@@ -468,7 +447,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
              and type(Reactive.param[p]) is type(cls.param[p]))
         ]
         events = []
-        for k in self.param.values():
+        for k in self.param:
             p = self.param[k]
             if is_viewable_param(p) or type(self)._property_mapping.get(k, "") is None:
                 props.pop(k, None)
@@ -530,26 +509,21 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             models = []
             for sv in child:
                 if ref in sv._models:
-                    model = sv._models[ref][0]
-                    old.append(model)
-                else:
-                    model = sv._get_model(doc, root, parent, comm)
-                models.append(model)
+                    old.append(sv._models[ref][0])
+                models.append(sv._acquire_model(doc, root, parent, comm))
             return models, old
-        elif ref in child._models:
-            model = child._models[ref][0]
-            old.append(model)
-        else:
-            model = child._get_model(doc, root, parent, comm)
-        return model, old
+        if ref in child._models:
+            old.append(child._models[ref][0])
+        return child._acquire_model(doc, root, parent, comm), old
 
     def _get_children(self, data_model, doc, root, parent, comm) -> tuple[dict[str, list[UIElement] | UIElement | None], list[UIElement]]:
         children = {}
         old_models = []
-        for k, v in self.param.values().items():
+        for k in self.param:
             p = self.param[k]
             if not is_viewable_param(p) or type(self)._property_mapping.get(k, "") is None:
                 continue
+            v = getattr(self, k)
             children[k], old = self._get_child_model(v, doc, root, parent, comm)
             old_models += old
         return children, old_models
@@ -559,17 +533,22 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         if not ((config.autoreload or getattr(self, '_debug', False)) and import_available('watchfiles')):
             return
         super()._setup_autoreload()
-        if (self._esm_path(compiled=False) and not self._watching_esm):
-            self._watching_esm = event = asyncio.Event()
-            state._watch_events.append(event)
-            state.execute(self._watch_esm)
+        esm_path = self._esm_path(compiled=False)
+        if esm_path and not self._watching_esm:
+            # Components rendering from the same file, e.g. all components in
+            # a shared bundle, subscribe to a single watcher for that path.
+            self._watching_esm = watcher = get_path_watcher(esm_path)
+            watcher.subscribe(self, '_update_esm')
 
     def _get_model(
         self, doc: Document, root: Model | None = None,
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         props = self._get_properties(doc)
-        model = self._bokeh_model(**props)
+        # The Bokeh model is shared across all ESM components, so the resource
+        # spec has to be derived from the Panel class that declares them.
+        props['external_resources'] = resource_spec(type(self))
+        model = self._bokeh_model(**props) # type: ignore[abstract]
         root = root or model
         children, _ = self._get_children(model.data, doc, root, model, comm)
         model.data.update(**children)
@@ -596,19 +575,30 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             state.execute(partial(cb, event), schedule=False)
 
     def _update_model(
-        self, events: dict[str, param.parameterized.Event], msg: dict[str, Any],
+        self, events: dict[str, param.parameterized.Event], msg: dict[str, t.Any],
         root: Model, model: Model, doc: Document, comm: Comm | None
     ) -> None:
         model_msg, data_msg, data_resets  = {}, {}, {}
-        for prop, v in list(msg.items()):
+        curdoc_events = self._in_process__events.get(doc, {})
+        for prop, value in list(msg.items()):
             if prop in list(Reactive.param)+['esm', 'importmap']:
-                model_msg[prop] = v
+                model_msg[prop] = value
+                continue
             elif prop in model.children:
                 continue
-            else:
-                data_msg[prop] = v
-                if prop in self.param and isinstance(self.param[prop], param.Event) and v:
-                    data_resets[prop] = False
+
+            if prop in curdoc_events:
+                try:
+                    is_boomerang = bool(value == curdoc_events[prop])
+                except Exception:
+                    is_boomerang = value is curdoc_events[prop]
+                if is_boomerang:
+                    continue
+
+            data_msg[prop] = value
+            if prop in self.param and isinstance(self.param[prop], param.Event) and value:
+                data_resets[prop] = False
+
         for name, event in events.items():
             if name not in model.children:
                 continue
@@ -617,7 +607,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             for old in old_objects:
                 if old is None or old is new or (isinstance(new, list) and old in new):
                     continue
-                old._cleanup(root)
+                old._release_model(root, model)
 
         update_children = any(e in model.children for e in events)
         if update_children:
@@ -649,7 +639,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         if data_resets:
             apply_changes_without_dispatch(doc, model.data, data_resets)
 
-    def _handle_msg(self, data: Any) -> None:
+    def _handle_msg(self, data: t.Any) -> None:
         """
         Message handler for messages sent from the frontend using the
         `model.send_msg` API.
@@ -660,7 +650,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             Data received from the frontend.
         """
 
-    def _send_msg(self, data: Any) -> None:
+    def _send_msg(self, data: t.Any) -> None:
         """
         Sends data to the frontend which can be observed on the frontend
         with the `model.on("msg:custom", callback)` API.
@@ -852,7 +842,7 @@ class ReactComponent(ReactiveESM):
         return exports
 
     @classmethod
-    def _render_esm(cls, compiled: bool | Literal['compiling'] = True, server: bool = False):
+    def _render_esm(cls, compiled: bool | t.Literal['compiling'] = True, server: bool = False):
         esm = super()._render_esm(compiled=compiled, server=server)
         if compiled == 'compiling':
             esm = 'import * as React from "react"\n' + esm
@@ -893,7 +883,7 @@ class ReactComponent(ReactiveESM):
             'scopes': cls._importmap.get('scopes', {})
         }
 
-    def _get_properties(self, doc: Document | None) -> dict[str, Any]:
+    def _get_properties(self, doc: Document | None) -> dict[str, t.Any]:
         props = super()._get_properties(doc)
         props['use_shadow_dom'] = self.use_shadow_dom
         return props
@@ -955,7 +945,7 @@ class AnyWidgetComponent(ReactComponent):
         """
         self._send_msg(msg)
 
-    def _get_properties(self, doc: Document | None) -> dict[str, Any]:
+    def _get_properties(self, doc: Document | None) -> dict[str, t.Any]:
         props = super()._get_properties(doc)
         del props['use_shadow_dom']
         return props

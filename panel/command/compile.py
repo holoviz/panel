@@ -3,11 +3,14 @@ from __future__ import annotations
 import os
 import pathlib
 import sys
+import typing as t
 
 from bokeh.command.subcommand import Argument, Subcommand
 
-from ..custom import ReactiveESM
 from ..io.compile import RED, compile_components, find_module_bundles
+
+if t.TYPE_CHECKING:
+    from ..custom import ReactiveESM
 
 
 def run_compile(
@@ -45,7 +48,7 @@ def run_compile(
     file_loaders = file_loaders or []
     errors = 0
     for bundle, components in bundles.items():
-        component_names = '\n- '.join(c.name for c in components)
+        component_names = '\n- '.join([cn for c in components if (cn := c.name) is not None])
         print(f"Building {bundle} containing the following components:\n\n- {component_names}\n")  # noqa
         out = compile_components(
             components,

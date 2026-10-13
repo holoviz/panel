@@ -14,10 +14,10 @@ Whenever a request is made to an endpoint that is serving a Panel application a 
 
 A session creation callback can be registered globally using the `pn.state.on_session_created` method. When we are already in a session it is not possible to set up such a callback. This means that to set up session creation callbacks when using `panel serve` on the commandline you must provide a `--setup` script, that will run before the server is started. In the case of a dynamically started server using `pn.serve` you can set the callback up before starting the server.
 
-The callback must accept a `BokehSessionContext` as the first and only argument:
+The callback must accept a `bokeh.application.SessionContext` as the first and only argument:
 
 ```python
-def session_created(session_context: BokehSessionContext):
+def session_created(session_context: SessionContext):
     print(f'Created a session running at the {session_context.request.uri} endpoint')
 
 pn.state.on_session_created(session_created)
@@ -28,7 +28,7 @@ pn.state.on_session_created(session_created)
 In many cases it is useful to define `on_session_destroyed` callbacks to perform any custom cleanup that is required, e.g. dispose a database engine, log out a user etc. This can also be done globally in the `--setup` script or before launching the server but you may also register a session destroyed callback for a particular session by setting it up from inside a session. The callback must have the same signature as session creation callbacks:
 
 ```python
-def session_destroyed(session_context):
+def session_destroyed(session_context: SessionContext):
     ...
 ```
 

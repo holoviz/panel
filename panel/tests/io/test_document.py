@@ -1,7 +1,49 @@
-from panel.io.document import unlocked
-from panel.io.state import set_curdoc
-from panel.tests.util import serve_and_request
+import asyncio
+import gc
+import threading
+import time
+import weakref
+
+from concurrent.futures import ThreadPoolExecutor
+from functools import partial
+
+import pytest
+import tornado.locks
+
+from bokeh.document import Document
+from bokeh.document.events import MessageSentEvent, ModelChangedEvent
+from bokeh.protocol import Protocol
+
+import panel as pn
+
+from panel.io.document import (
+    _UNCONNECTED_EVENTS, _WRITE_BLOCK, MockSessionContext, _cleanup_doc,
+    _client_has_document, _destroy_document, _is_write_blocked,
+    _keep_unsent_models_new, _socket_dispatcher, _suppress_property_callbacks,
+    _write_tasks, dispatch_django, dispatch_tornado, extra_socket_handlers,
+    hold, init_doc, schedule_write_events, unlocked, write_events,
+)
+from panel.io.state import _state, set_curdoc, state
+from panel.tests.util import serve_and_request, wait_until
 from panel.widgets import IntSlider
+
+
+def test_cleanup_doc_does_not_shadow_class_views():
+    doc = Document()
+    pane = pn.pane.Markdown("test")
+    pane.get_root(doc)
+
+    assert state._views
+    views_id_before = id(_state._views)
+
+    _cleanup_doc(doc, destroy=True)
+
+    # The class-level dict should be mutated in place, not shadowed
+    assert id(_state._views) == views_id_before
+    # No instance-level shadow should be created
+    assert '_views' not in state.__dict__
+    # The entry should be cleaned up
+    assert not state._views
 
 
 def test_document_hold():
@@ -18,3 +60,594 @@ def test_document_hold():
             model.value = 3
 
     assert doc.callbacks._held_events
+
+
+@pytest.mark.xdist_group(name="server")
+def test_hold_does_not_get_stuck_with_threaded_callbacks(threads):
+    column = pn.FlexBox(*[pn.pane.Str('0') for _ in range(20)])
+    layout = pn.Column(column)
+
+    serve_and_request(layout)
+
+    doc = list(layout._documents.keys())[0]
+
+    def update_in_hold(i):
+        with set_curdoc(doc):
+            with hold(doc):
+                for obj in column:
+                    obj.object = str(i)
+
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        futures = [executor.submit(update_in_hold, i) for i in range(10)]
+        for f in futures:
+            f.result()
+
+    wait_until(lambda: not doc.callbacks.hold_value, timeout=5000)
+
+
+def test_hold_before_connected_does_not_strand_events():
+    """
+    A hold exiting before the session connects must leave nothing queued
+    on the Document, and must not swallow the session callback events
+    that scheduled updates rely on to register on the IOLoop.
+    """
+    state_info, docs, ran = {}, [], []
+
+    def app():
+        md = pn.pane.Markdown("initial")
+        doc = state.curdoc
+        docs.append(doc)
+
+        def before_ready():
+            with hold(doc):
+                md.object = "changed"
+                doc.add_next_tick_callback(lambda: ran.append('scheduled'))
+            state_info['connected'] = state._connected.get(doc)
+            state_info['hold'] = doc.callbacks.hold_value
+            state_info['queued'] = list(doc.callbacks._held_events)
+
+        doc.add_next_tick_callback(before_ready)
+        return md
+
+    serve_and_request(app)
+    wait_until(lambda: 'queued' in state_info)
+
+    # The hold exited before the session was connected
+    assert state_info['connected'] is None
+    assert state_info['hold'] is None
+    # Nothing is left queued behind the hold
+    assert state_info['queued'] == []
+
+    doc = docs[0]
+    # The scheduled callback was registered and ran, so the model update
+    # that Reactive schedules pre-connect is not lost
+    wait_until(lambda: ran == ['scheduled'])
+    wait_until(lambda: docs[0].roots[0].text == '&lt;p&gt;changed&lt;/p&gt;\n')
+    assert not doc.callbacks._held_events
+
+
+def test_hold_before_connected_defers_message_sent():
+    """
+    MessageSentEvent carries a protocol message with no representation in
+    the model graph, so it cannot be dropped like a model change. It has
+    to be deferred until a connection exists to write it to.
+    """
+    docs, state_info = [], {}
+
+    def app():
+        doc = state.curdoc
+        docs.append(doc)
+
+        def before_ready():
+            with hold(doc):
+                doc.callbacks.trigger_on_change(
+                    MessageSentEvent(doc, "panel_test", "payload")
+                )
+            state_info['deferred'] = list(_UNCONNECTED_EVENTS.get(doc, []))
+            state_info['queued'] = list(doc.callbacks._held_events)
+
+        doc.add_next_tick_callback(before_ready)
+        return pn.pane.Markdown("initial")
+
+    serve_and_request(app)
+    wait_until(lambda: 'deferred' in state_info)
+
+    # Not dropped, and not left queued on the Document
+    assert len(state_info['deferred']) == 1
+    assert isinstance(state_info['deferred'][0], MessageSentEvent)
+    assert state_info['queued'] == []
+
+
+def test_hold_before_connected_drops_recoverable_events():
+    """
+    Model changes are dropped rather than deferred, since the Document is
+    serialized in full once the session connects.
+    """
+    docs, state_info = [], {}
+
+    def app():
+        doc = state.curdoc
+        docs.append(doc)
+        slider = IntSlider(value=1)
+        model = slider.get_root(doc)
+
+        def before_ready():
+            with hold(doc):
+                model.value = 3
+            state_info['deferred'] = list(_UNCONNECTED_EVENTS.get(doc, []))
+            state_info['queued'] = list(doc.callbacks._held_events)
+            state_info['value'] = model.value
+
+        doc.add_next_tick_callback(before_ready)
+        return slider
+
+    serve_and_request(app)
+    wait_until(lambda: 'queued' in state_info)
+
+    assert state_info['queued'] == []
+    assert state_info['deferred'] == []
+    # The change is on the model, so the full serialization reproduces it
+    assert state_info['value'] == 3
+
+
+def test_threaded_hold_before_connected_does_not_strand_events():
+    """
+    The threaded branch must apply the same policy as the non-threaded
+    one; previously it unconditionally scheduled an unhold, ignoring
+    whether the session was connected.
+    """
+    docs, state_info, ran = [], {}, []
+
+    def app():
+        md = pn.pane.Markdown("initial")
+        doc = state.curdoc
+        docs.append(doc)
+
+        def worker():
+            with hold(doc):
+                md.object = "changed"
+                doc.add_next_tick_callback(lambda: ran.append('scheduled'))
+            state_info['threaded'] = state._current_thread != state._thread_id
+            state_info['connected'] = state._connected.get(doc)
+            state_info['hold'] = doc.callbacks.hold_value
+            state_info['queued'] = list(doc.callbacks._held_events)
+
+        thread = threading.Thread(target=worker)
+        thread.start()
+        thread.join()
+        return md
+
+    serve_and_request(app)
+    wait_until(lambda: 'queued' in state_info)
+
+    # Confirm we exercised the threaded branch while unconnected
+    assert state_info['threaded']
+    assert state_info['connected'] is None
+    assert state_info['hold'] is None
+    assert state_info['queued'] == []
+    wait_until(lambda: ran == ['scheduled'])
+
+
+@pytest.mark.xdist_group(name="server")
+def test_hold_in_app_callable_does_not_leak_hold():
+    build = {}
+
+    def app():
+        with hold():
+            pass
+        # A hold leaked here defers the unhold past ServerSession
+        # construction, which registers this callback a second time
+        # when the queued SessionCallbackAdded event is replayed.
+        pn.state.add_periodic_callback(lambda: None, period=10000)
+        build['thread_id'] = state._thread_id
+        build['hold'] = state.curdoc.callbacks.hold_value
+        return IntSlider()
+
+    serve_and_request(app)
+
+    assert build['thread_id'] is not None
+    assert build['hold'] is None
+
+
+class _FakeProtocol:
+    def __init__(self):
+        self.created = []
+
+    def create(self, msgtype, events):
+        msg = object()
+        self.created.append(msg)
+        return msg
+
+
+class _FakeSocket:
+    def __init__(self, lock_held):
+        self.write_lock = tornado.locks.Lock()
+        if lock_held:
+            self.write_lock._block._value = 0
+        self.ws_connection = type("W", (), {"is_closing": lambda s: True})()
+
+
+class _FakeConn:
+    def __init__(self, lock_held, socket_cls=_FakeSocket):
+        self._socket = socket_cls(lock_held)
+        self.protocol = _FakeProtocol()
+
+
+def _asgi_transport():
+    """
+    Builds the real ASGI websocket transport Bokeh writes to, whose write
+    lock wraps an asyncio.Lock rather than exposing Tornado's semaphore.
+    """
+    from bokeh.server.asgi import _ASGIWebSocketTransport
+    return _ASGIWebSocketTransport(lambda event: None, supports_close_reason=True)
+
+
+class _FakeASGISocket:
+    """An ASGI transport shaped socket which can be handed a held lock."""
+
+    def __init__(self, lock_held):
+        from bokeh.server.asgi import _WriteLock
+        self.write_lock = _WriteLock()
+        if lock_held:
+            # Acquiring is a coroutine, so lock the wrapped asyncio.Lock
+            # directly to hold the lock without an event loop.
+            self.write_lock._lock._locked = True
+
+
+def test_socket_dispatcher_resolves_transport():
+    from bokeh.server.asgi import _ASGIWebSocketTransport
+    from tornado.websocket import WebSocketHandler
+
+    import panel.io.asgi as asgi_module
+
+    class FakeTornadoSocket(WebSocketHandler):
+        def __init__(self):
+            pass
+
+    class ASGISubclass(_ASGIWebSocketTransport):
+        pass
+
+    assert _socket_dispatcher(FakeTornadoSocket()) is dispatch_tornado
+    assert _socket_dispatcher(_asgi_transport()) is asgi_module.dispatch_asgi
+    # A subclass of a registered transport must resolve via the MRO rather
+    # than falling through to the Django consumer API.
+    subclass = ASGISubclass(lambda event: None, supports_close_reason=True)
+    assert _socket_dispatcher(subclass) is asgi_module.dispatch_asgi
+    assert _socket_dispatcher(object()) is dispatch_django
+
+
+def test_is_write_blocked_across_transports():
+    # Tornado exposes the lock state on an internal semaphore
+    tornado_socket = _FakeSocket(lock_held=False)
+    assert not _is_write_blocked(tornado_socket)
+    tornado_socket.write_lock._block._value = 0
+    assert _is_write_blocked(tornado_socket)
+
+    # Bokeh's ASGI _WriteLock wraps an asyncio.Lock
+    asgi_socket = _asgi_transport()
+    assert not _is_write_blocked(asgi_socket)
+    asgi_socket.write_lock._lock._locked = True
+    assert _is_write_blocked(asgi_socket)
+
+    # A socket without a write lock is never blocked
+    assert not _is_write_blocked(object())
+
+
+@pytest.mark.xdist_group(name="server")
+def test_unlocked_dispatches_from_worker_thread():
+    """
+    A model change made inside unlocked() from a worker thread (as happens
+    when Bokeh runs a locked callback via asyncio.to_thread) must be
+    scheduled for write rather than silently dropped with an error.
+    """
+    slider = IntSlider()
+
+    serve_and_request(slider)
+    wait_until(lambda: bool(slider._documents))
+
+    doc, model = list(slider._documents.items())[0]
+    session = doc.session_context.session
+    asyncio_loop = doc.session_context.server_context.application_context.io_loop.asyncio_loop
+
+    seen = {}
+
+    def callback():
+        # On Bokeh the synchronous body of a locked callback runs on a
+        # worker thread via asyncio.to_thread. Previously unlocked() logged an
+        # error and dropped events when off the loop thread.
+        seen['thread'] = threading.get_ident()
+        seen['on_loop'] = state._on_loop_thread
+        with unlocked():
+            model.value = 3
+
+    async def trigger():
+        # with_document_locked routes through _needs_document_lock, the same
+        # wrapper Bokeh uses to dispatch protocol messages and session
+        # callbacks. Entered without already holding the document lock, as
+        # Bokeh does when handling an incoming message.
+        result = session.with_document_locked(callback)
+        if asyncio.iscoroutine(result):
+            await result
+
+    # Drive the locked callback from the server event loop thread.
+    future = asyncio.run_coroutine_threadsafe(trigger(), asyncio_loop)
+    future.result(timeout=5)
+
+    # The model change made inside unlocked() must land regardless of which
+    # thread the locked callback body ran on.
+    wait_until(lambda: model.value == 3)
+    assert 'on_loop' in seen
+
+
+@pytest.mark.xdist_group(name="server")
+def test_threaded_hold_does_not_boomerang_python_changes():
+    """
+    A Python-side change made inside a hold on a worker thread is
+    released on a later tick, after ``Syncable._changing`` is torn down,
+    so it must not be re-processed as a frontend change.
+    """
+    slider = IntSlider()
+
+    serve_and_request(slider)
+    wait_until(lambda: bool(slider._documents))
+
+    doc, model = list(slider._documents.items())[0]
+    # Stands in for a client, so the hold is released on a later tick
+    state._connected[doc] = True
+
+    received = []
+    process_events = slider._process_events
+    slider._process_events = lambda events: received.append(events) or process_events(events)
+
+    seen = {}
+
+    def callback():
+        # Bokeh runs locked next-tick callbacks on a worker thread
+        seen['on_loop'] = state._on_loop_thread
+        with hold(doc):
+            slider.value = 3
+
+    doc.add_next_tick_callback(callback)
+
+    wait_until(lambda: model.value == 3 and not doc.callbacks.hold_value)
+    # Leave time for a boomerang to pass through the change debounce
+    time.sleep(0.5)
+
+    assert seen['on_loop'] is False
+    assert received == []
+
+
+def test_suppress_property_callbacks_keeps_frontend_changes():
+    doc = Document()
+    model = IntSlider().get_root(doc)
+    doc.add_root(model)
+
+    def invoker():
+        pass
+
+    python_event = ModelChangedEvent(doc, model, 'value', 1, callback_invoker=invoker)
+    frontend_event = ModelChangedEvent(doc, model, 'value', 2, setter=object(), callback_invoker=invoker)
+
+    _suppress_property_callbacks([python_event, frontend_event])
+
+    assert python_event.callback_invoker is None
+    assert frontend_event.callback_invoker is invoker
+
+
+def test_write_events_shares_one_message_across_connections():
+    """
+    Serializing a patch marks the models it defines as synced on the
+    Document, so a message must be created once and shared, otherwise
+    every connection but the first receives references to models it was
+    never sent.
+    """
+    written = []
+    extra_socket_handlers[_FakeSocket] = lambda conn, msg=None: written.append((conn, msg)) or []
+
+    try:
+        doc = Document()
+        conns = [_FakeConn(lock_held=False) for _ in range(3)]
+
+        assert write_events(doc, conns, [object()], run=False) == []
+
+        assert len(conns[0].protocol.created) == 1
+        assert [conn for conn, _ in written] == conns
+        assert {id(msg) for _, msg in written} == {id(conns[0].protocol.created[0])}
+        assert not any(conn.protocol.created for conn in conns[1:])
+    finally:
+        extra_socket_handlers.pop(_FakeSocket, None)
+
+
+def test_write_events_with_nothing_to_write():
+    doc = Document()
+    conn = _FakeConn(lock_held=False)
+
+    assert write_events(doc, [conn], []) == []
+    assert write_events(doc, [], [object()]) == []
+    assert not conn.protocol.created
+
+
+@pytest.mark.asyncio
+async def test_schedule_write_events_defers_serialization():
+    """
+    Queued events must be serialized when they are written, not when they
+    are queued, otherwise a message serialized later can be written first
+    and reference models the client has not been sent yet.
+    """
+    written = []
+    extra_socket_handlers[_FakeSocket] = lambda conn, msg=None: written.append(msg) or []
+
+    try:
+        doc = Document()
+        conn = _FakeConn(lock_held=True)
+
+        schedule_write_events(doc, [conn], [object()])
+        await asyncio.sleep(0.05)
+
+        # The socket is being written to, so nothing has been serialized
+        assert conn.protocol.created == []
+        assert written == []
+
+        # Release the socket and let the write task drain the queue
+        conn._socket.write_lock._block._value = 1
+        await asyncio.sleep(0.05)
+
+        assert len(conn.protocol.created) == 1
+        assert written == conn.protocol.created
+    finally:
+        extra_socket_handlers.pop(_FakeSocket, None)
+        _WRITE_BLOCK.pop(doc, None)
+
+
+@pytest.mark.asyncio
+async def test_schedule_write_events_defers_on_asgi_socket():
+    """
+    The write lock of an ASGI transport wraps an asyncio.Lock, so it has to
+    be probed differently from Tornado's. If it is not detected, queued
+    events are serialized and written while the socket is being written to,
+    reordering messages relative to the ones Bokeh writes itself.
+    """
+    written = []
+    extra_socket_handlers[_FakeASGISocket] = lambda conn, msg=None: written.append(msg) or []
+
+    try:
+        doc = Document()
+        conn = _FakeConn(lock_held=True, socket_cls=_FakeASGISocket)
+
+        schedule_write_events(doc, [conn], [object()])
+        await asyncio.sleep(0.05)
+
+        assert conn.protocol.created == []
+        assert written == []
+
+        conn._socket.write_lock._lock._locked = False
+        await asyncio.sleep(0.05)
+
+        assert len(conn.protocol.created) == 1
+        assert written == conn.protocol.created
+    finally:
+        extra_socket_handlers.pop(_FakeASGISocket, None)
+        _WRITE_BLOCK.pop(doc, None)
+
+
+@pytest.mark.asyncio
+async def test_dispatch_msgs_terminates_on_document_destroy():
+    """Pending _dispatch_msgs loop must stop after document is destroyed."""
+    extra_socket_handlers[_FakeSocket] = lambda conn, msg=None: []
+
+    try:
+        doc = Document()
+        conn = _FakeConn(lock_held=True)
+        ref = weakref.ref(doc)
+
+        schedule_write_events(doc, [conn], [object()])
+        await asyncio.sleep(0.05)
+
+        assert doc in _write_tasks
+        assert doc in _WRITE_BLOCK
+
+        doc.destroy = partial(_destroy_document, doc)
+        doc.destroy(None)
+        del doc, conn
+        await asyncio.sleep(0.05)
+        gc.collect()
+
+        assert ref() is None
+    finally:
+        extra_socket_handlers.pop(_FakeSocket, None)
+
+
+def test_keep_unsent_models_new_across_client_patch():
+    doc = Document()
+    column = pn.Column()
+    root = column.get_root(doc)
+    doc.add_root(root)
+    _keep_unsent_models_new(doc)
+    doc.to_json()
+
+    with set_curdoc(doc):
+        column.append(pn.pane.Markdown('unsent'))
+    unsent = set(doc.models._new_models)
+    assert unsent
+
+    doc.apply_json_patch({'events': [
+        {'kind': 'ModelChanged', 'model': {'id': root.id}, 'attr': 'name', 'new': 'renamed'}
+    ]})
+
+    assert unsent <= doc.models._new_models
+
+
+def test_keep_unsent_models_new_still_flushes_own_patches():
+    doc = Document()
+    column = pn.Column()
+    doc.add_root(column.get_root(doc))
+    _keep_unsent_models_new(doc)
+    doc.to_json()
+
+    sizes = []
+    with set_curdoc(doc):
+        for i in range(3):
+            doc.hold()
+            column.append(pn.pane.Markdown(f'item {i}'))
+            events, doc.callbacks._held_events = list(doc.callbacks._held_events), []
+            sizes.append(len(Protocol().create('PATCH-DOC', events).content_json))
+            doc.callbacks._hold = None
+
+    assert sizes[2] == pytest.approx(sizes[1], abs=100)
+
+
+def test_client_has_document_handles_destroyed_document():
+    doc = Document()
+    doc.add_root(pn.Column().get_root(doc))
+    doc._session_context = lambda: MockSessionContext(doc)
+    assert not _client_has_document(doc)
+
+    doc.to_json()
+    assert _client_has_document(doc)
+
+    doc.models.destroy()
+    assert not _client_has_document(doc)
+
+
+def test_client_has_document_ignores_sessionless_document():
+    doc = Document()
+    doc.add_root(pn.Column().get_root(doc))
+
+    doc.to_json()
+    assert not _client_has_document(doc)
+
+
+def test_client_has_document_counts_a_notebook_comm():
+    doc = Document()
+    root = pn.Column().get_root(doc)
+    doc.add_root(root)
+
+    doc.to_json()
+    _state._views[root.ref['id']] = (None, root, doc, object())
+    try:
+        assert _client_has_document(doc)
+    finally:
+        del _state._views[root.ref['id']]
+
+
+def test_keep_unsent_models_new_skips_a_bokeh_without_new_models():
+    doc = Document()
+    doc.add_root(pn.Column().get_root(doc))
+    doc._session_context = lambda: MockSessionContext(doc)
+    del doc.models._new_models
+    _keep_unsent_models_new(doc)
+
+    assert not getattr(doc.apply_json_patch, '_panel_keeps_unsent', False)
+
+
+def test_init_doc_keeps_unsent_models_new_once():
+    doc = Document()
+    doc.add_root(pn.Column().get_root(doc))
+    doc._session_context = lambda: MockSessionContext(doc)
+
+    init_doc(doc)
+    wrapper = doc.apply_json_patch
+    assert getattr(wrapper, '_panel_keeps_unsent', False)
+
+    init_doc(doc)
+    assert doc.apply_json_patch is wrapper

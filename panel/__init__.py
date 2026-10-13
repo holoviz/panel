@@ -45,6 +45,8 @@ https://blog.holoviz.org/panel_0.12.0.html#JupyterLab-previews
 To learn more about Panel check out
 https://panel.holoviz.org/getting_started/index.html
 """
+from typing import TYPE_CHECKING
+
 from param import rx
 
 from . import layout  # noqa
@@ -120,3 +122,14 @@ __all__ = (
     "widgets",
     "widget"
 )
+
+if TYPE_CHECKING:
+    from . import ui  # noqa
+
+
+def __getattr__(name: str):
+    # Lazy import until Panel 2.0.
+    if name == 'ui':
+        import importlib
+        return importlib.import_module('panel.ui')
+    raise AttributeError(f'module {__name__!r} has no attribute {name!r}')

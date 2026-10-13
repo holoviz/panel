@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import ClassVar
+import typing as t
 
 import param
 
@@ -9,6 +9,10 @@ from ..io.resources import CDN_DIST, bundled_files
 from ..reactive import ReactiveHTML
 from ..util import classproperty
 from .base import ListLike
+
+if t.TYPE_CHECKING:
+    from typing_extensions import Self
+
 
 POSITIONS = [
     'center',
@@ -52,8 +56,18 @@ class FloatPanel(ListLike, ReactiveHTML):
        Whether the component is contained within parent container
        or completely free floating.""")
 
-    position = param.Selector(default='right-top', objects=POSITIONS, doc="""
-       The initial position if the container is free-floating.""")
+    position: t.Literal[
+        'center',
+        'left-top',
+        'center-top',
+        'right-top',
+        'right-center',
+        'right-bottom',
+        'center-bottom',
+        'left-bottom',
+        'left-center',
+    ] = param.Selector(default='right-top', objects=POSITIONS, doc="""
+       The initial position if the container is free-floating.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     offsetx = param.Integer(default=None, bounds=(0, None), doc="""
        Horizontal offset in pixels.""")
@@ -73,8 +87,15 @@ class FloatPanel(ListLike, ReactiveHTML):
           'filled', 'filledlight', 'filleddark' or 'fillcolor'
           separated from the theme color by a space like 'primary""")
 
-    status = param.Selector(default="normalized", objects=STATUS, doc="""
-        The current status of the panel.""")
+    status: t.Literal[
+        "normalized",
+        "maximized",
+        "minimized",
+        "smallified",
+        "smallifiedmax",
+        "closed",
+    ] = param.Selector(default="normalized", objects=STATUS, doc="""
+        The current status of the panel.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     _extension_name = 'floatpanel'
 
@@ -194,7 +215,7 @@ class FloatPanel(ListLike, ReactiveHTML):
         }
     }
 
-    _stylesheets: ClassVar[list[str]] = [
+    _stylesheets: t.ClassVar[list[str]] = [
         f'{CDN_DIST}css/floatpanel.css'
     ]
 
@@ -214,6 +235,9 @@ class FloatPanel(ListLike, ReactiveHTML):
 
     def __init__(self, *objects, name='', **params):
         super().__init__(objects=list(objects), name=name, **params)
+
+    def clone(self, *objects: t.Any, **params: t.Any) -> Self:
+        return super().clone(*objects, **params)
 
     def select(self, selector=None):
         """

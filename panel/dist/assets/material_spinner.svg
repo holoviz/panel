@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" style="margin: auto; background: none; display: block; shape-rendering: auto;" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid">
+  <g>
+    <animateTransform attributeName="transform" type="rotate" repeatCount="indefinite" dur="1.4s" calcMode="linear" values="-90 50 50;270 50 50" keyTimes="0;1"></animateTransform>
+    <circle cx="50" cy="50" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" r="45">
+      <animate attributeName="stroke-dasharray" repeatCount="indefinite" dur="1.4s" calcMode="spline" keySplines="0.4 0 0.2 1;0.4 0 0.2 1" values="2 300;220 300;220 300" keyTimes="0;0.5;1"></animate>
+      <animate attributeName="stroke-dashoffset" repeatCount="indefinite" dur="1.4s" calcMode="spline" keySplines="0.4 0 0.2 1;0.4 0 0.2 1" values="0;-33;-280" keyTimes="0;0.5;1"></animate>
+    </circle>
+  </g>
+</svg>

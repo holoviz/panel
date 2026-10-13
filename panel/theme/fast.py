@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import pathlib
-
-from collections.abc import Callable
+import typing as t
 
 import param
 
@@ -18,6 +17,9 @@ from ..widgets.indicators import Dial, Number, String
 from .base import (
     DarkTheme, DefaultTheme, Design, Inherit,
 )
+
+if t.TYPE_CHECKING:
+    from collections.abc import Callable
 
 COLLAPSED_SVG_ICON = """
 <svg style="stroke: var(--accent-fill-rest);" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" slot="collapsed-icon">
@@ -249,7 +251,7 @@ class Fast(Design):
             'opensans': f'https:{FONT_URL}',
         },
         'js_modules': {
-            'fast': f'{config.npm_cdn}/@microsoft/fast-components@2.30.6/dist/fast-components.js',
+            'fast': f'{config.npm_cdn}/@microsoft/fast-components@2.30.6/dist/fast-components.min.js',
             'fast-design': 'js/fast_design.js'
         },
         'bundle': True,

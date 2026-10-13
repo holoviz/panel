@@ -1,24 +1,30 @@
 from __future__ import annotations
 
 import inspect
+import typing as t
 
-from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Any
 
 import param
 
+if t.TYPE_CHECKING:
+    from collections.abc import Iterator
 
-def should_inherit(parameterized: param.Parameterized, p: str, v: Any) -> Any:
+
+def should_inherit(parameterized: param.Parameterized, p: str, v: t.Any) -> t.Any:
     pobj = parameterized.param[p]
     return v is not pobj.default and not pobj.readonly and (v is not None or pobj.allow_None)
 
 
 def get_params_to_inherit(parameterized: param.Parameterized) -> dict:
-    return {
-        p: v for p, v in parameterized.param.values().items()
-        if should_inherit(parameterized, p, v)
-    }
+    params = {}
+    for p in parameterized.param:
+        if p == 'name':
+            continue
+        v = getattr(parameterized, p)
+        if should_inherit(parameterized, p, v):
+            params[p] = v
+    return params
 
 
 def get_method_owner(meth):
