@@ -1,5 +1,8 @@
 import json
+import pathlib
 import time
+
+from urllib.parse import unquote
 
 import pytest
 import requests
@@ -7,6 +10,8 @@ import requests
 pytest.importorskip("playwright")
 
 from playwright.sync_api import TimeoutError, expect
+
+from panel.io.resources import CDN_DIST, DIST_DIR
 
 pytestmark = [pytest.mark.ui, pytest.mark.jupyter, pytest.mark.flaky(reruns=3)]
 
@@ -131,6 +136,47 @@ def run_notebook(page, nbclassic_server, notebook_name, cells):
     assert not errors, '\n'.join(errors)
 
 
+#: Hosts the bundled libraries originally come from. Panel must not need
+#: them, so a notebook on a network that blocks them still renders.
+PUBLIC_CDNS = ('cdn.jsdelivr.net', 'unpkg.com', 'cdn.plot.ly', 'api.mapbox.com')
+
+
+def _serve_local_dist(page):
+    """
+    Serves Panel's CDN urls from the local build, so modes that resolve
+    resources against the CDN (comms='ipywidgets', like VS Code) exercise
+    this checkout rather than the last release.
+    """
+    dist = pathlib.Path(DIST_DIR)
+
+    def fulfill(route):
+        path = dist / unquote(route.request.url.split('?')[0].removeprefix(CDN_DIST))
+        if path.is_file():
+            route.fulfill(path=str(path))
+        else:
+            route.fallback()
+
+    page.route(f'{CDN_DIST}**', fulfill)
+
+
+def _enable_jupyter_bokeh(page):
+    """
+    Maps the widget module the way jupyter_bokeh's nbextension does, which
+    is not necessarily enabled where the tests run.
+    """
+    page.add_init_script("""
+    const timer = setInterval(() => {
+      if (window.requirejs == null) {
+        return
+      }
+      clearInterval(timer)
+      window.requirejs.config({map: {'*': {'@bokeh/jupyter_bokeh': 'nbextensions/jupyter_bokeh/index'}}})
+    }, 1)
+    """)
+
+
+@pytest.mark.parametrize('comms', ['default', 'ipywidgets'])
+@pytest.mark.parametrize('mode', ['eager', 'inline', 'lazy'])
 @pytest.mark.parametrize(
     ('extension', 'component', 'selector'),
     [
@@ -141,53 +187,49 @@ def run_notebook(page, nbclassic_server, notebook_name, cells):
         ('jsoneditor', "pn.widgets.JSONEditor(value={'answer': 42}, height=160)", '.jsoneditor'),
         ('echarts', "pn.pane.ECharts({'xAxis': {}, 'yAxis': {}, 'series': []}, height=180)", '[_echarts_instance_]'),
         ('vega', "pn.pane.Vega({'$schema': 'https://vega.github.io/schema/vega-lite/v5.json', 'mark': 'bar', 'data': {'values': []}}, height=180)", '.vega-embed'),
-        pytest.param(
-            'deckgl',
-            "pn.pane.DeckGL({'initialViewState': {'longitude': 0, 'latitude': 0, 'zoom': 1}, 'layers': []}, height=180)",
-            '.deckgl canvas',
-            marks=pytest.mark.xfail(
-                reason=(
-                    "deck.gl's json and carto bundles each call define() more than "
-                    "once anonymously, because they embed UMD copies of their own "
-                    "dependencies (long.js). RequireJS can attribute only one "
-                    "anonymous define per script and rejects the rest with "
-                    "'Mismatched anonymous define()', so window.deck never gains "
-                    "JSONConverter. No paths/shim/exports configuration can fix a "
-                    "script that defines more than one anonymous module; loading "
-                    "them outside RequireJS is the only remedy."
-                ),
-                strict=True,
-            ),
-        ),
+        ('deckgl', "pn.pane.DeckGL({'initialViewState': {'longitude': 0, 'latitude': 0, 'zoom': 1}, 'layers': []}, height=180)", '.deckgl canvas'),
         ('terminal', 'pn.widgets.Terminal(height=100)', '.xterm'),
         ('katex', "pn.pane.LaTeX(r'$E = mc^2$')", '.katex'),
+        ('plotly', "pn.pane.Plotly({'data': [{'type': 'bar', 'y': [1, 2, 3]}], 'layout': {}}, height=200)", '.js-plotly-plot'),
     ],
     ids=[
         'tabulator', 'perspective', 'filedropper', 'codeeditor', 'jsoneditor',
-        'echarts', 'vega', 'deckgl', 'terminal', 'katex',
+        'echarts', 'vega', 'deckgl', 'terminal', 'katex', 'plotly',
     ],
 )
-def test_nbclassic_component_resources(page, nbclassic_server, extension, component, selector):
-    """Load each bundled component independently through nbclassic resources."""
+def test_nbclassic_component_resources(page, nbclassic_server, extension, component, selector, mode, comms):
+    """
+    Load each bundled component independently through nbclassic resources,
+    declared up front (eager), inlined, or only requested on render (lazy).
+
+    comms='ipywidgets' renders through jupyter_bokeh's widget, the way VS
+    Code renders Panel output.
+
+    See https://github.com/holoviz/panel/issues/8750.
+    """
+    if comms == 'ipywidgets':
+        pytest.importorskip('jupyter_bokeh')
+        _enable_jupyter_bokeh(page)
+    _serve_local_dist(page)
+    for host in PUBLIC_CDNS:
+        page.route(f'**://{host}/**', lambda route: route.abort())
     console_errors = []
     page.on('console', lambda message: console_errors.append(message.text) if message.type == 'error' else None)
     page.on('pageerror', lambda error: console_errors.append(str(error)))
-    run_notebook(page, nbclassic_server, extension, [
+    if mode == 'lazy':
+        load = f"pn.extension(comms='{comms}', inline=False)"
+    else:
+        load = f"pn.extension('{extension}', comms='{comms}', inline={mode == 'inline'})"
+    run_notebook(page, nbclassic_server, f'{extension}_{mode}_{comms}', [
         'import pandas as pd\nimport panel as pn',
-        f"pn.extension('{extension}', comms='default', inline=False)",
+        load,
         component,
     ])
 
     try:
         expect(page.locator(selector)).to_have_count(1, timeout=10000)
     except AssertionError as error:
-        globals_ = page.evaluate("""() => ({
-            vega: typeof window.vega,
-            vegaLiteCompile: typeof window.vegaLite?.compile,
-            vlCompile: typeof window.vl?.compile,
-            vegaEmbed: typeof window.vegaEmbed,
-        })""")
-        raise AssertionError(f'{error}\nVega globals: {globals_}\nConsole errors:\n' + '\n'.join(console_errors)) from error
+        raise AssertionError(f'{error}\nConsole errors:\n' + '\n'.join(console_errors)) from error
 
 
 def test_nbclassic_component_comm(page, nbclassic_server):
