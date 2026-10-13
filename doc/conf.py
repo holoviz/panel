@@ -202,7 +202,7 @@ nbsite_gallery_conf = {
                         },
                         {
                             'title': 'panel-splitjs',
-                            'url': 'https://github.com/holoviz/panel-splitjs',
+                            'url': 'https://github.com/panel-extensions/panel-splitjs',
                         },
                         {
                             'title': 'panel-web-llm',
