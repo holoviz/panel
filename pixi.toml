@@ -6,6 +6,7 @@ platforms = ["linux-64", "osx-arm64", "win-64"]
 [activation.env]
 MPLBACKEND = "Agg"
 PYTHONIOENCODING = "utf-8"
+COVERAGE_CORE = "sysmon"
 
 [environments]
 default = [
@@ -45,13 +46,6 @@ no-default-feature = true
 [environments.test-core]
 features = ["py314", "required", "test-core", "test-unit-task"]
 no-default-feature = true
-
-[feature.py315]
-channels = ["conda-forge/label/python_rc"]
-
-[feature.py315.dependencies]
-python = "3.15.*"
-_python_rc = "*"
 
 [environments.test-type]
 features = ["py312", "required", "type", "optional"]
@@ -113,20 +107,16 @@ watch-ui = { cmd = 'panel compile panel.ui --file-loaders woff woff2 --unminifie
 [feature.py312.dependencies]
 python = "3.12.*"
 
-[feature.py312.activation.env]
-COVERAGE_CORE = "sysmon"
-
 [feature.py313.dependencies]
 python = "3.13.*"
 
-[feature.py313.activation.env]
-COVERAGE_CORE = "sysmon"
-
 [feature.py314.dependencies]
 python = "3.14.*"
+python-gil = "*"
 
-[feature.py314.activation.env]
-COVERAGE_CORE = "sysmon"
+[feature.py315.dependencies]
+python = "3.15.*"
+python-gil = "*"
 
 [feature.optional.dependencies]
 # Optional dependencies - recommended
@@ -206,10 +196,10 @@ bokeh_sampledata = "*"
 caddy = "*"
 croniter = "*"
 cryptography = "*"
-# datashader = "*"
+datashader = "*"
 diskcache = "*"
 django = "*"
-# fastapi = "*"  # needs pydantic 2
+fastapi = "*"
 # fastparquet = "*"
 folium = "*"
 fsspec = "*"
@@ -224,21 +214,21 @@ ipywidgets_bokeh = ">=1.8.0"
 jupyter_bokeh = ">=3.0.7"
 libcst = ">=1.1"
 networkx = ">=2.5"
-# numba = "*"
+numba = "*"
 polars = "*"
 # pyarrow = "*"
 # pydeck = ">=0.8"  # Add back when it support ipywidgets 8.0
 pyecharts = "*"
 pygraphviz = "*"
-# pyinstrument = ">=4.0"
+pyinstrument = ">=4.0"
 python-graphviz = "*"
 # pyvista = ">=0.47"
 reacton = "*"
 s3fs = "*"
 # scikit-image = "*"
-# scikit-learn = "*"
-# scipy = "*"
-# seaborn = "*"
+scikit-learn = "*"
+scipy = "*"
+seaborn = "*"
 starlette = "*"
 streamz = "*"
 textual = "*"
