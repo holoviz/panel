@@ -33,6 +33,7 @@ Many thanks to the contributors to this release: @philippjfr, @hoxbro, @chiruu12
 * Add `Design.component_mapping` and `Design.widget_mapping` so designs can substitute the widgets Panel generates in `Param`, `interact` and `HoloViews` widgets ([#8752](https://github.com/holoviz/panel/pull/8752))
 * Route the loading indicator through the `Design`, allowing designs to declare their own spinner, and add a `material` spinner whose overlay follows the theme so dark themes no longer flash white ([#8752](https://github.com/holoviz/panel/pull/8752))
 * Add `config.set_if_unset()`, `panel.theme.resolve_design()` and string values for `config.design` (e.g. `config.design = 'material-ui'`) ([#8752](https://github.com/holoviz/panel/pull/8752))
+* Rename `size` to `icon_size` on `ToggleIcon` and `ButtonIcon` in `panel migrate`, flagging calls that size the icon through `width` or `height` for review ([#8854](https://github.com/holoviz/panel/pull/8854))
 * Theme classic components such as `Tabulator`, `CodeEditor`, `JSONEditor`, `Markdown`, `Terminal`, `Dial`, `Gauge` and `LinearGauge` from the MUI palette under the `MaterialUIDesign` ([#8752](https://github.com/holoviz/panel/pull/8752))
 * Share and reference count a single model per root when the same component is rendered in several places, so every view keeps receiving updates and removing it from one parent no longer breaks the others ([#8830](https://github.com/holoviz/panel/pull/8830))
 * Serve session info from a built-in `/session_info` endpoint on every server implementation instead of via the `param` REST provider ([#8828](https://github.com/holoviz/panel/pull/8828))
@@ -130,6 +131,7 @@ Many thanks to the contributors to this release: @philippjfr, @hoxbro, @chiruu12
 * Note that cell editing takes precedence over row-click selection in the `Tabulator` reference ([#8817](https://github.com/holoviz/panel/pull/8817))
 * Only show the Material version banner on classic reference pages ([#8845](https://github.com/holoviz/panel/pull/8845))
 * Fix links to the Tabler icons site ([#8765](https://github.com/holoviz/panel/pull/8765))
+* Fix dead Extensions links in the gallery and use `label=` in the README example ([#8855](https://github.com/holoviz/panel/pull/8855))
 * Fix broken relative links in how-to guides ([c3fa877](https://github.com/holoviz/panel/commit/c3fa8774c32357641b5ec731c0ce45efc65d2886))
 * Fix unresolved cross-page anchor links ([#8836](https://github.com/holoviz/panel/pull/8836))
 
