@@ -1526,10 +1526,11 @@ class ReactiveHTMLMetaclass(ReactiveMetaBase):
 
         # Declarations are resolved while the class is created and then shared.
         # Freeze that mapping so an instance cannot change scripts for anyone else.
-        if '_scripts' in dict_ or not isinstance(mcs._scripts, MappingProxyType):
+        scripts: Mapping[str, t.Any] = getattr(mcs, '_scripts', {})
+        if '_scripts' in dict_ or not isinstance(scripts, MappingProxyType):
             mcs._scripts = MappingProxyType({
                 key: tuple(value) if isinstance(value, list) else value
-                for key, value in mcs._scripts.items()
+                for key, value in scripts.items()
             })
 
         # Validate _child_config
