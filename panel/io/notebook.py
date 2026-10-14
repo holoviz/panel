@@ -44,7 +44,8 @@ from .embed import embed_state
 from .model import add_to_doc, diff
 from .resources import (
     CDN_DIST, DIST_DIR, PANEL_DIR, Resources, _env, bundle_resources,
-    is_cdn_url, patch_model_css, set_default_resource_mode, set_resource_mode,
+    is_cdn_url, jupyter_endpoint_available, patch_model_css,
+    set_default_resource_mode, set_resource_mode,
 )
 from .state import state
 
@@ -663,7 +664,12 @@ def load_notebook(
     # The Jupyter extension endpoint only exists for a plain notebook kernel:
     # 'vscode'/'colab'/'ipywidgets' render through a different mimebundle
     # path (see Renderable._repr_mimebundle_) and never hit this endpoint.
-    nb_endpoint = not state._is_pyodide and config.comms == 'default'
+    # Other frontends, e.g. nteract, also use 'default' comms, so the server
+    # has to have announced the endpoint as well.
+    nb_endpoint = (
+        not state._is_pyodide and config.comms == 'default'
+        and jupyter_endpoint_available()
+    )
 
     # Components rendered in a later cell resolve their resources outside
     # any set_resource_mode block, so the notebook mode has to become the
