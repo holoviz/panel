@@ -3362,6 +3362,14 @@ def test_header_filter_like_on_number_matches_the_digits():
     assert list(widget.current_view['n']) == [1, 12]
 
 
+def test_header_filter_like_stringifies_a_non_string_value():
+    widget = Tabulator(pd.DataFrame({'n': [1, 12, 20]}), header_filters=True)
+
+    widget.filters = [{'field': 'n', 'type': 'like', 'value': 1}]
+
+    assert list(widget.current_view['n']) == [1, 12]
+
+
 def test_header_filter_datetime_equals_keeps_that_timestamp():
     df = pd.DataFrame({'dt': pd.date_range('2023-01-01', periods=6, freq='8h')})
     widget = Tabulator(df, header_filters={'dt': {'type': 'date', 'func': '='}})
