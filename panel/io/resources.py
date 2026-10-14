@@ -104,6 +104,9 @@ def parse_template(*args, **kwargs):
 # Handle serving of the panel extension before session is loaded
 RESOURCE_MODE: MODES = 'server'
 NOTEBOOK_RESOURCES = False
+# Kernels inherit the environment of the Jupyter server that launched them,
+# which is the only reliable sign the server registered Panel's endpoint.
+JUPYTER_ENDPOINT_ENV = 'PANEL_JUPYTER_ENDPOINT'
 PANEL_DIR = Path(__file__).parent.parent
 DIST_DIR = PANEL_DIR / 'dist'
 BUNDLE_DIR = DIST_DIR / 'bundled'
@@ -209,6 +212,13 @@ def get_resource_mode() -> MODES:
 def get_notebook_resources() -> bool:
     """Whether resource urls should use the Jupyter extension endpoint."""
     return NOTEBOOK_RESOURCES
+
+def jupyter_endpoint_available() -> bool:
+    """
+    Whether this process was launched by a Jupyter server that serves
+    Panel's extension endpoint.
+    """
+    return bool(os.environ.get(JUPYTER_ENDPOINT_ENV))
 
 def set_default_resource_mode(mode: MODES, *, notebook: bool = False):
     """
@@ -880,7 +890,9 @@ class Resources(BkResources):
                     resource = f'{self.root_url}{resource}'
             if resource.endswith('.css') and not resource.startswith(('http:', 'https:')):
                 resource += version_suffix
-            if self.notebook:
+            # Embedders such as nteract pass notebook=True without serving
+            # the endpoint, so the flag alone must not trigger the rewrite.
+            if self.notebook and jupyter_endpoint_available():
                 # The render endpoint sets `rel_path` to its own
                 # `panel-preview` root already, so building on `base_url`
                 # there would double it. nbclassic never sets `rel_path`,

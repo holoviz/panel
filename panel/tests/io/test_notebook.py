@@ -37,7 +37,7 @@ def nb_loaded():
 
 
 @pytest.fixture
-def notebook_bootstrap():
+def notebook_bootstrap(jupyter_endpoint):
     """
     Runs the notebook bootstrap, undoing the global state it sets.
     """
@@ -196,7 +196,7 @@ def _tabulator_require(monkeypatch, mode, notebook):
 
 
 @pytest.mark.parametrize('notebook', [True, False])
-def test_require_components_load_bundled_copies(monkeypatch, notebook):
+def test_require_components_load_bundled_copies(monkeypatch, jupyter_endpoint, notebook):
     """
     RequireJS must load Panel's bundled copies rather than the npm CDN,
     which a notebook on a restricted network cannot reach.
@@ -349,7 +349,7 @@ def test_notebook_ipywidgets_resources_use_cdn(monkeypatch, notebook_bootstrap):
     assert 'https://cdn.holoviz.org/panel/' in js_urls
 
 
-def test_notebook_checks_extension_only_for_default_comms(monkeypatch):
+def test_notebook_checks_extension_only_for_default_comms(monkeypatch, jupyter_endpoint):
     """
     The proactive liveness check only makes sense where the endpoint is
     actually expected to exist, i.e. a plain notebook kernel.
@@ -379,6 +379,42 @@ def test_notebook_checks_extension_only_for_default_comms(monkeypatch):
             resources_module.NOTEBOOK_RESOURCES = notebook_resources
             bk_state._notebook, bk_state._notebook_type = notebook, notebook_type
             _SPEC_CACHE.clear()
+
+
+def test_notebook_without_jupyter_endpoint_uses_cdn(monkeypatch):
+    """
+    Frontends other than Jupyter, e.g. nteract, also use 'default' comms but
+    never serve the endpoint, so without the server's announcement neither
+    the bootstrap nor later components may point at it.
+    """
+    from bokeh.io.state import curstate
+
+    published = []
+    monkeypatch.setattr(
+        'IPython.display.publish_display_data', lambda data, **kwargs: published.append(data)
+    )
+
+    bk_state, mode = curstate(), resources_module.RESOURCE_MODE
+    notebook_resources = resources_module.NOTEBOOK_RESOURCES
+    notebook, notebook_type = bk_state.notebook, bk_state.notebook_type
+    _SPEC_CACHE.clear()
+    try:
+        load_notebook(inline=False)
+        bootstrap = next(data[LOAD_MIME] for data in published if LOAD_MIME in data)
+        js_urls = next(line for line in bootstrap.splitlines() if 'const js_urls' in line)
+        spec = resource_spec(DataTabulator)
+        spec_urls = [url for lib in spec['libs'] for url in lib['js']] + spec['css']
+    finally:
+        resources_module.RESOURCE_MODE = mode
+        resources_module.NOTEBOOK_RESOURCES = notebook_resources
+        bk_state._notebook, bk_state._notebook_type = notebook, notebook_type
+        _SPEC_CACHE.clear()
+
+    assert '/panel-preview/' not in js_urls
+    assert 'https://cdn.holoviz.org/panel/' in js_urls
+    assert 'panel.min.js", {method: "HEAD"}' not in bootstrap
+    assert spec_urls
+    assert not any('panel-preview' in url for url in spec_urls)
 
 
 def test_notebook_resources_use_jupyter_extension_endpoint(notebook_bootstrap):
@@ -412,7 +448,7 @@ def test_notebook_dynamic_component_resources_use_jupyter_extension_endpoint(
 @pytest.mark.filterwarnings(
     "ignore:Attempted to send message over Jupyter Comm.*:UserWarning"
 )
-def test_notebook_resources_do_not_reuse_spec_cached_before_bootstrap(nb_loaded):
+def test_notebook_resources_do_not_reuse_spec_cached_before_bootstrap(nb_loaded, jupyter_endpoint):
     """
     Regression test for a CI failure under xdist: a spec cached by an
     earlier, unrelated test under the same resolved mode was handed back

@@ -56,7 +56,9 @@ from tornado.web import StaticFileHandler
 
 from ..config import config
 from ..util import HTML_SANITIZER
-from .resources import DIST_DIR, ERROR_TEMPLATE, _env
+from .resources import (
+    DIST_DIR, ERROR_TEMPLATE, JUPYTER_ENDPOINT_ENV, _env,
+)
 from .server import COMPONENT_PATH, ComponentResourceHandler
 from .state import state
 
@@ -494,6 +496,7 @@ def _load_jupyter_server_extension(notebook_app):
              ComponentResourceHandler, {})
         ]
     )
+    os.environ[JUPYTER_ENDPOINT_ENV] = '1'
 
 
 # compat for older versions of Jupyter

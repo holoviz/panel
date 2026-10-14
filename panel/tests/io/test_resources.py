@@ -144,7 +144,16 @@ def test_bundle_resources_notebook_loads_bokeh_tables(monkeypatch):
     assert _uses_bokeh_tables(bundle_resources(None, Resources(mode='cdn')))
 
 
-def test_notebook_resources_respect_jupyterhub_base_url():
+def test_notebook_resources_without_jupyter_endpoint_keep_cdn():
+    """
+    Embedders such as nteract render with notebook=True but have no Jupyter
+    server serving Panel's endpoint, so CDN urls must stay untouched.
+    """
+    resource = f'{CDN_DIST}bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js'
+    assert Resources(mode='cdn', notebook=True).adjust_paths([resource]) == [resource]
+
+
+def test_notebook_resources_respect_jupyterhub_base_url(jupyter_endpoint):
     resource = f'{CDN_DIST}bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js'
     with edit_readonly(state):
         state.base_url = '/user/alice/'
@@ -160,7 +169,7 @@ def test_notebook_resources_respect_jupyterhub_base_url():
     ]
 
 
-def test_notebook_resources_do_not_double_render_endpoint_root():
+def test_notebook_resources_do_not_double_render_endpoint_root(jupyter_endpoint):
     """
     The render endpoint sets `rel_path` to its own `panel-preview` root
     already, so it must not be appended a second time on top of
