@@ -113,8 +113,10 @@ def _client_has_document(doc: Document) -> bool:
         comm is not None and view_doc is doc
         for _, _, view_doc, comm in state._views.values()
     ):
-        # Serializing the document, e.g. to save it, also marks models sent
-        return False
+        # Serializing the document, e.g. to save it, also marks models
+        # sent, so only an embedder that subscribed to its changes to sync
+        # them over its own transport counts as a client.
+        return bool(doc.callbacks.change_callbacks())
     live = getattr(doc.models, '_models', None)
     unsent = getattr(doc.models, '_new_models', None)
     if not live or unsent is None:
@@ -841,7 +843,15 @@ def hold(
                 pass
             elif threaded:
                 if not held or we_held:
-                    if _client_has_document(doc):
+                    if not _client_has_document(doc):
+                        _dispatch_events(doc, _drain_unconnected_events(doc, hold_lock))
+                    elif doc.session_context is None:
+                        # Without a server loop a next tick callback never
+                        # runs, so the hold has to be released right away.
+                        with hold_lock:
+                            _suppress_property_callbacks(doc.callbacks._held_events)
+                            doc.unhold()
+                    else:
                         def _unhold(lock=hold_lock, doc=doc):
                             with lock:
                                 _suppress_property_callbacks(doc.callbacks._held_events)
@@ -854,8 +864,6 @@ def hold(
                             doc.callbacks._hold = None
                             doc.add_next_tick_callback(_unhold)
                             doc.callbacks._hold = policy
-                    else:
-                        _dispatch_events(doc, _drain_unconnected_events(doc, hold_lock))
             elif held:
                 doc.callbacks._hold = held
             elif comm is not None:

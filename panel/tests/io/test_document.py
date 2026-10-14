@@ -7,6 +7,7 @@ import weakref
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 
+import param
 import pytest
 import tornado.locks
 
@@ -628,6 +629,47 @@ def test_client_has_document_counts_a_notebook_comm():
         assert _client_has_document(doc)
     finally:
         del _state._views[root.ref['id']]
+
+
+def test_client_has_document_counts_a_change_subscriber():
+    doc = Document()
+    doc.add_root(pn.Column().get_root(doc))
+    assert not _client_has_document(doc)
+
+    doc.on_change(lambda event: None)
+    assert _client_has_document(doc)
+
+
+class _ESMValue(pn.custom.JSComponent):
+
+    value = param.Integer(default=0)
+
+    _esm = "export function render() {}"
+
+
+@pytest.mark.parametrize('threaded', [False, True])
+def test_hold_dispatches_to_sessionless_change_subscriber(threaded, monkeypatch):
+    """
+    An embedder that syncs a sessionless Document over its own transport
+    subscribes to its changes and must receive changes made in a hold,
+    e.g. by ReactiveESM._update_model.
+    """
+    if threaded:
+        monkeypatch.setattr(type(state), '_on_loop_thread', property(lambda self: False))
+    component = _ESMValue()
+    doc = Document()
+    model = component.get_root(doc)
+    doc.add_root(model)
+    events = []
+    doc.on_change(events.append)
+
+    component.value = 3
+
+    assert doc.callbacks.hold_value is None
+    assert [
+        (event.attr, event.new) for event in events if isinstance(event, ModelChangedEvent)
+    ] == [('value', 3)]
+    _cleanup_doc(doc, destroy=True)
 
 
 def test_keep_unsent_models_new_skips_a_bokeh_without_new_models():
