@@ -853,10 +853,14 @@ class BaseTable(ReactiveData, Widget):
         """
         import pandas as pd
 
-        if not np.isfinite(self.value.index.max()):
-            value_index_start = 1
+        # A DatetimeIndex max is a Timestamp. np.isfinite cannot accept that,
+        # so streaming raised TypeError (#4504). Only a finite number has a
+        # next integer index; any other index starts at 1.
+        index_max = self.value.index.max()
+        if isinstance(index_max, (int, float, np.number)) and np.isfinite(index_max):
+            value_index_start = index_max + 1
         else:
-            value_index_start = self.value.index.max() + 1
+            value_index_start = 1
 
         if isinstance(stream_value, pd.DataFrame):
             if reset_index:
