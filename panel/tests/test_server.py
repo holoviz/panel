@@ -631,13 +631,17 @@ def test_server_schedule_at(server_implementation):
         state.cache['at'] = dt.datetime.now()
 
     scheduled = []
+    served = []
 
     def app():
-        scheduled.append(dt.datetime.now() + dt.timedelta(seconds=0.57))
-        state.schedule_task('periodic', periodic_cb, at=scheduled[0])
+        served.append(None)
+        if len(served) > 1:
+            scheduled.append(dt.datetime.now() + dt.timedelta(seconds=0.57))
+            state.schedule_task('periodic', periodic_cb, at=scheduled[0])
         return '# state.schedule test'
 
-    serve_and_request(app)
+    # A cold first request delays the callback on slow runners
+    serve_and_request(app, n=2)
 
     # Check callback was executed within small margin of error
     wait_until(lambda: 'at' in state.cache)
@@ -657,15 +661,20 @@ def test_server_schedule_at_iterator(server_implementation):
     def schedule():
         yield from scheduled
 
+    served = []
+
     def app():
-        scheduled.extend([
-            dt.datetime.now() + dt.timedelta(seconds=0.57),
-            dt.datetime.now() + dt.timedelta(seconds=0.86)
-        ])
-        state.schedule_task('periodic', periodic_cb, at=schedule())
+        served.append(None)
+        if len(served) > 1:
+            scheduled.extend([
+                dt.datetime.now() + dt.timedelta(seconds=0.57),
+                dt.datetime.now() + dt.timedelta(seconds=0.86)
+            ])
+            state.schedule_task('periodic', periodic_cb, at=schedule())
         return '# state.schedule test'
 
-    serve_and_request(app)
+    # A cold first request delays the callback on slow runners
+    serve_and_request(app, n=2)
 
     # Check callbacks were executed within small margin of error
     wait_until(lambda: len(state.cache['at']) == 2)
@@ -684,15 +693,20 @@ def test_server_schedule_at_callable(server_implementation):
     def schedule(siter, utcnow):
         return next(siter)
 
+    served = []
+
     def app():
-        scheduled[:] = [
-            dt.datetime.now(dt.timezone.utc) + dt.timedelta(seconds=s)
-            for s in (0.57, 0.86)
-        ]
-        state.schedule_task('periodic', periodic_cb, at=partial(schedule, iter(scheduled)))
+        served.append(None)
+        if len(served) > 1:
+            scheduled[:] = [
+                dt.datetime.now(dt.timezone.utc) + dt.timedelta(seconds=s)
+                for s in (0.57, 0.86)
+            ]
+            state.schedule_task('periodic', periodic_cb, at=partial(schedule, iter(scheduled)))
         return '# state.schedule test'
 
-    serve_and_request(app)
+    # A cold first request delays the callback on slow runners
+    serve_and_request(app, n=2)
 
     # Check callbacks were executed within small margin of error
     wait_until(lambda: len(state.cache['at']) == 2)
@@ -702,6 +716,31 @@ def test_server_schedule_at_callable(server_implementation):
     assert abs(state.cache['at'][0] - converted[0]) < dt.timedelta(seconds=0.2)
     assert abs(state.cache['at'][1] - converted[1]) < dt.timedelta(seconds=0.2)
     wait_until(lambda: 'periodic' not in {k.split('_', 1)[-1] for k in state._scheduled})
+
+
+def test_server_schedule_from_thread_while_loop_idle(server_implementation):
+    state.cache['at'] = []
+    def periodic_cb():
+        state.cache['at'].append(dt.datetime.now())
+
+    scheduled = []
+
+    def app():
+        doc = state.curdoc
+
+        def schedule():
+            time.sleep(0.5)
+            with set_curdoc(doc):
+                scheduled.append(dt.datetime.now() + dt.timedelta(seconds=0.3))
+                state.schedule_task('periodic', periodic_cb, at=scheduled[0])
+
+        threading.Thread(target=schedule, daemon=True).start()
+        return '# state.schedule test'
+
+    serve_and_request(app)
+
+    wait_until(lambda: len(state.cache['at']) == 1)
+    assert abs(state.cache['at'][0] - scheduled[0]) < dt.timedelta(seconds=0.2)
 
 
 @pytest.mark.xdist_group(name="server")

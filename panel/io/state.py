@@ -626,8 +626,16 @@ class _state(param.Parameterized):
         be scheduled on from a worker thread.
         """
         loop = self._ioloop
+        try:
+            running = asyncio.get_running_loop()
+        except RuntimeError:
+            running = None
+        deadline = loop.time() + delay
         if not isinstance(loop, asyncio.AbstractEventLoop):
-            loop.call_later(delay=delay, callback=callback)
+            if running is getattr(loop, 'asyncio_loop', None):
+                loop.call_at(deadline, callback)
+            else:
+                loop.add_callback(loop.call_at, deadline, callback)
             return
 
         def _run() -> None:
@@ -635,14 +643,10 @@ class _state(param.Parameterized):
             _tasks.add(task)
             task.add_done_callback(_tasks.discard)
 
-        try:
-            on_loop = asyncio.get_running_loop() is loop
-        except RuntimeError:
-            on_loop = False
-        if on_loop:
-            loop.call_later(delay, _run)
+        if running is loop:
+            loop.call_at(deadline, _run)
         else:
-            loop.call_soon_threadsafe(loop.call_later, delay, _run)
+            loop.call_soon_threadsafe(loop.call_at, deadline, _run)
 
     async def _scheduled_cb(self, name: str, threaded: bool = False) -> None:
         if name not in self._scheduled:
