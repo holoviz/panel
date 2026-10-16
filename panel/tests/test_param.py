@@ -1,4 +1,5 @@
 import asyncio
+import datetime as dt
 import os
 import typing as t
 
@@ -232,6 +233,130 @@ def test_boolean_param(document, comm):
     test.a = False
     assert checkbox.active == True
     assert checkbox.disabled == True
+
+
+@pytest.mark.parametrize('parameter_type,date_type', [
+    (param.DateRange, dt.date),
+    (param.DateRange, dt.datetime),
+    (param.CalendarDateRange, dt.date),
+])
+def test_date_range_param_without_default(parameter_type, date_type, document, comm):
+    start, end = date_type(2020, 1, 1), date_type(2020, 1, 5)
+
+    class Test(param.Parameterized):
+        value = parameter_type(bounds=(start, end))
+
+    obj = Test()
+    pane = Param(obj)
+    pane.get_root(document, comm=comm)
+    slider = pane._widgets['value']
+    assert slider.value == (start, end)
+    assert obj.value is None
+
+    selected = (date_type(2020, 1, 2), date_type(2020, 1, 4))
+    slider.value = selected
+    assert obj.value == selected
+    obj.value = (start, selected[1])
+    assert slider.value == obj.value
+
+
+@pytest.mark.parametrize('bounds', [None, (None, dt.date(2020, 1, 5)), (dt.date(2020, 1, 1), None)])
+def test_date_range_param_without_complete_bounds(bounds):
+    class Test(param.Parameterized):
+        value = param.DateRange(bounds=bounds)
+
+    obj = Test()
+    widget = Param(obj)._widgets['value']
+    assert isinstance(widget, LiteralInput)
+    assert widget.value is None
+    assert obj.value is None
+
+
+@pytest.mark.parametrize('parameter_type', [param.DateRange, param.CalendarDateRange])
+def test_date_range_param_preserves_explicit_default(parameter_type):
+    bounds = (dt.date(2020, 1, 1), dt.date(2020, 1, 5))
+    selected = (dt.date(2020, 1, 2), dt.date(2020, 1, 4))
+
+    class Test(param.Parameterized):
+        value = parameter_type(default=selected, bounds=bounds)
+
+    obj = Test()
+    assert Param(obj)._widgets['value'].value == selected
+    assert obj.value == selected
+
+
+def test_date_range_param_preserves_widget_override():
+    class Test(param.Parameterized):
+        value = param.DateRange(bounds=(dt.date(2020, 1, 1), dt.date(2020, 1, 5)))
+
+    obj = Test()
+    widget = Param(obj, widgets={'value': LiteralInput})._widgets['value']
+    assert isinstance(widget, LiteralInput)
+    assert widget.value is None
+    selected = (dt.date(2020, 1, 2), dt.date(2020, 1, 4))
+    widget = Param(obj, widgets={'value': {'value': selected}})._widgets['value']
+    assert widget.value == selected
+    assert obj.value is None
+
+
+def test_date_range_param_exclusive_bounds_without_default():
+    class Test(param.Parameterized):
+        value = param.DateRange(
+            bounds=(dt.date(2020, 1, 1), dt.date(2020, 1, 5)),
+            inclusive_bounds=(False, False),
+        )
+
+    obj = Test()
+    widget = Param(obj)._widgets['value']
+    assert widget.value == obj.param.value.bounds
+    assert obj.value is None
+    widget.value = (dt.date(2020, 1, 2), dt.date(2020, 1, 4))
+    assert obj.value == widget.value
+
+
+def test_date_range_param_preserves_explicit_none_widget_value():
+    class Test(param.Parameterized):
+        value = param.DateRange(bounds=(dt.date(2020, 1, 1), dt.date(2020, 1, 5)))
+
+    obj = Test()
+    widget = Param(obj, widgets={'value': {'value': None}})._widgets['value']
+    assert widget.value is None
+    assert obj.value is None
+
+
+def test_date_range_class_param_without_default():
+    class Test(param.Parameterized):
+        value = param.DateRange(bounds=(dt.date(2020, 1, 1), dt.date(2020, 1, 5)))
+
+    widget = Param(Test)._widgets['value']
+    assert widget.value == Test.param.value.bounds
+    assert Test.value is None
+
+
+def test_date_range_param_soft_bounds_without_default():
+    bounds = (dt.date(2020, 1, 1), dt.date(2020, 1, 5))
+
+    class Test(param.Parameterized):
+        value = param.DateRange(softbounds=bounds)
+
+    obj = Test()
+    widget = Param(obj)._widgets['value']
+    assert widget.value == bounds
+    assert obj.value is None
+
+
+def test_date_range_param_preserves_widget_instance():
+    from panel.widgets import DateRangeSlider
+
+    class Test(param.Parameterized):
+        value = param.DateRange(bounds=(dt.date(2020, 1, 1), dt.date(2020, 1, 5)))
+
+    obj = Test()
+    custom = DateRangeSlider(value=None)
+    widget = Param(obj, widgets={'value': custom})._widgets['value']
+    assert widget is custom
+    assert widget.value is None
+    assert obj.value is None
 
 
 def test_range_param(document, comm):
