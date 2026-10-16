@@ -1,5 +1,4 @@
-import {transform} from "sucrase"
-import type {Transform} from "sucrase"
+import type {Transform, transform} from "sucrase"
 
 import {ModelEvent, server_event} from "@bokehjs/core/bokeh_events"
 import {div} from "@bokehjs/core/dom"
@@ -32,6 +31,10 @@ const MODULE_CACHE = new Map()
 // Transpiled source by model type and module cache key, so instances of one
 // component class do not each run sucrase over the same source.
 const COMPILE_CACHE = new Map<string, string>()
+
+// The in-browser compiler (sucrase) is only needed by components without a
+// precompiled bundle, so it is loaded on demand rather than shipped in panel.js.
+let COMPILER: {transform: typeof transform} | null = null
 
 // Interns ESM sources so cache keys stay short and cannot collide, unlike
 // keys derived from the source length.
@@ -797,6 +800,7 @@ export namespace ReactiveESM {
     _defs: p.Property<any[]>
     css_bundle: p.Property<string | null>
     bundle: p.Property<string | null>
+    compiler: p.Property<string | null>
     children: p.Property<any>
     class_name: p.Property<string>
     data: p.Property<any>
@@ -1044,13 +1048,24 @@ export class ReactiveESM extends HTMLBox {
     return module
   }
 
+  protected async _load_compiler(): Promise<void> {
+    if (this.compiler == null) {
+      throw new Error("No ESM compiler url available")
+    }
+    const module = await resources.import_module(this.compiler, this.external_resources?.shim)
+    COMPILER ??= module
+  }
+
   compile(): string | null {
     if (this.bundle != null) {
       return this.esm
     }
+    if (COMPILER == null) {
+      throw new Error("ESM compiler was not loaded")
+    }
     let compiled
     try {
-      compiled = transform(
+      compiled = COMPILER.transform(
         this.esm, {
           transforms: this.sucrase_transforms,
           filePath: "render.tsx",
@@ -1086,6 +1101,22 @@ export class ReactiveESM extends HTMLBox {
     const cache_key = use_cache ? this._module_cache_key : ""
     const compile_key = `${this.type}:${cache_key}`
     let source = use_cache ? COMPILE_CACHE.get(compile_key) ?? null : null
+    if (source === null && this.bundle == null && COMPILER == null) {
+      // Views await compiled_module right after an esm change, so it has to
+      // be replaced synchronously, resolving once the compiler is loaded.
+      const loading: Promise<any> = this._load_compiler().then(() => {
+        void this.recompile()
+        return this.compiled_module === loading ? null : this.compiled_module
+      }, (e: any) => {
+        if (this.dev) {
+          this.compile_error = e
+        }
+        console.error(`Could not load ESM compiler due to error: ${e}`)
+        return null
+      })
+      this.compiled_module = loading
+      return
+    }
     if (source === null) {
       source = this.compile()
       if (source === null) {
@@ -1158,6 +1189,7 @@ export class ReactiveESM extends HTMLBox {
       _defs:       [ Array(Any),          [] ],
       css_bundle:  [ Nullable(Str),     null ],
       bundle:      [ Nullable(Str),     null ],
+      compiler:    [ Nullable(Str),     null ],
       children:    [ Array(Str),          [] ],
       class_name:  [ Str,                 "" ],
       data:        [ Any                     ],

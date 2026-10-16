@@ -21,7 +21,7 @@ from .config import config
 from .io.datamodel import construct_data_model
 from .io.document import freeze_doc, hold
 from .io.model import apply_changes_without_dispatch
-from .io.resource_spec import resource_spec
+from .io.resource_spec import compiler_url, resource_spec
 from .io.resources import component_resource_path
 from .io.state import state
 from .io.watcher import get_path_watcher
@@ -548,6 +548,9 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         # The Bokeh model is shared across all ESM components, so the resource
         # spec has to be derived from the Panel class that declares them.
         props['external_resources'] = resource_spec(type(self))
+        # Decided once the properties are final, since subclasses may
+        # override the bundle in _get_properties.
+        props['compiler'] = None if props.get('bundle') else compiler_url()
         model = self._bokeh_model(**props) # type: ignore[abstract]
         root = root or model
         children, _ = self._get_children(model.data, doc, root, model, comm)
