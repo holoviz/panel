@@ -88,6 +88,13 @@ def run_check(check):
     return check_output([sys.executable, '-c', dedent(check)]).decode().strip()
 
 
+def test_theme_exports_palette_helpers(ui, pmui):
+    assert ui.theme.generate_palette is pmui.theme.generate_palette
+    assert ui.theme.linear_gradient is pmui.theme.linear_gradient
+    assert 'generate_palette' not in ui.__all__
+    assert 'linear_gradient' not in ui.__all__
+
+
 @pytest.mark.parametrize('module', CLASSIC_MODULES)
 def test_classic_components_reachable_from_submodule(ui, module):
     classic, ui_module = CLASSIC_MODULES[module], getattr(ui, module)
