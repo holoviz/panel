@@ -38,8 +38,6 @@ def admin_config_cleanup():
         yield
     finally:
         config.param.update(**values)
-        # The admin panel records the full session history.
-        state.session_info = {'total': 0, 'live': 0, 'sessions': {}}
 
 
 @pytest.fixture

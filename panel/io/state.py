@@ -1100,6 +1100,7 @@ class _state(param.Parameterized):
         self._inline_stylesheets.clear()
         self._scheduled.clear()
         self._periodic.clear()
+        self.session_info = {'total': 0, 'live': 0, 'sessions': {}}
 
     def schedule_task(
         self,
