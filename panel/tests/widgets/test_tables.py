@@ -3335,6 +3335,50 @@ def test_header_filter_comparison_operators(op, value, expected):
 
     assert list(widget.current_view['n']) == expected
 
+
+@pytest.mark.parametrize('pagination', ['local', 'remote', None])
+def test_header_filter_like_on_datetime_matches_that_day(pagination):
+    # https://github.com/holoviz/panel/issues/4543
+    df = pd.DataFrame({
+        'dt': pd.date_range('2023-01-01', periods=6, freq='8h'),
+        'j': range(6),
+    })
+    widget = Tabulator(
+        df,
+        header_filters={'dt': {'type': 'date', 'func': 'like'}},
+        pagination=pagination,
+    )
+
+    widget.filters = [{'field': 'dt', 'type': 'like', 'value': '2023-01-01'}]
+
+    assert list(widget.current_view['j']) == [0, 1, 2]
+
+
+def test_header_filter_like_on_number_matches_the_digits():
+    widget = Tabulator(pd.DataFrame({'n': [1, 12, 20]}), header_filters=True)
+
+    widget.filters = [{'field': 'n', 'type': 'like', 'value': '1'}]
+
+    assert list(widget.current_view['n']) == [1, 12]
+
+
+def test_header_filter_like_stringifies_a_non_string_value():
+    widget = Tabulator(pd.DataFrame({'n': [1, 12, 20]}), header_filters=True)
+
+    widget.filters = [{'field': 'n', 'type': 'like', 'value': 1}]
+
+    assert list(widget.current_view['n']) == [1, 12]
+
+
+def test_header_filter_datetime_equals_keeps_that_timestamp():
+    df = pd.DataFrame({'dt': pd.date_range('2023-01-01', periods=6, freq='8h')})
+    widget = Tabulator(df, header_filters={'dt': {'type': 'date', 'func': '='}})
+
+    widget.filters = [{'field': 'dt', 'type': '=', 'value': '2023-01-01'}]
+
+    assert list(widget.current_view['dt']) == [pd.Timestamp('2023-01-01')]
+
+
 @pytest.mark.parametrize('aggs', [{}, {'Country': 'sum'}, {'Country': {'Int': 'sum', 'Float': 'mean'}}])
 def test_tabulator_aggregators(document, comm, df_agg, aggs):
     tabulator = Tabulator(df_agg, hierarchical=True, aggregators=aggs)
