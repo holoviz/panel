@@ -1819,6 +1819,24 @@ def test_server_exception_handler_bokeh_event(threads, handler, request):
     wait_until(lambda: len(exceptions) == 1)
 
 
+def test_server_busy_cleanup_starts_from_locked_callback():
+    button = Button()
+
+    def app():
+        state.curdoc.add_next_tick_callback(
+            lambda: button._comm_event(state.curdoc, ButtonClick(model=None))
+        )
+        return button
+
+    serve_and_request(app)
+
+    wait_until(lambda: button.clicks == 1)
+    wait_until(lambda: (
+        type(state)._busy_cleanup_scheduled is not None and
+        type(state)._busy_cleanup_scheduled._cb is not None
+    ))
+
+
 @pytest.mark.parametrize(
     'threads, handler', [
         ('threads', synchronous_handler),
