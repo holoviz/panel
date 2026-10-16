@@ -60,8 +60,11 @@ def test_file_download_updates_when_navigating_between_dynamic_tabs(page):
     finally:
         tmp.close()
 
+    # A late re-render from the server replaces the input while typing
     page.click('.bk-tab:not(.bk-active)')
+    expect(page.locator('.bk-input')).to_have_count(0)
     page.click('.bk-tab:not(.bk-active)')
+    expect(page.locator('.bk-input')).to_have_count(1)
 
     page.click('.bk-input')
 
