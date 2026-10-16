@@ -1185,6 +1185,16 @@ def test_threaded_server_stop_does_not_leave_unstarted_tasks(monkeypatch):
     assert [u.object for u in unraisable] == []
 
 
+def test_threaded_server_stop_closes_tornado_loop():
+    serve_and_wait(Markdown('# Title'))
+    server_id = next(iter(state._threads))
+    io_loop = state._servers[server_id][0].io_loop
+
+    state.kill_all_servers()
+
+    assert io_loop.closing
+
+
 @pytest.mark.xdist_group(name="server")
 def test_multiple_titles(multiple_apps_server_sessions):
     """Serve multiple apps with a title per app."""
