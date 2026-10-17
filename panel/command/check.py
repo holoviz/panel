@@ -9,8 +9,10 @@ import traceback
 from tornado.httpclient import AsyncHTTPClient
 from tornado.ioloop import IOLoop
 
+from ..config import config
 from ..io.application import build_single_handler_application
 from ..io.server import get_server
+from ..io.state import state
 
 _FRAME = re.compile(r'^  File "(.+?)", line (\d+)')
 
@@ -69,6 +71,17 @@ async def _serve_once(app, path: str) -> dict | None:
             return _parse_traceback(f'HTTPError: {response.code} {response.reason}', path)
         elif not sessions or not sessions[0].document.roots:
             return _parse_traceback('EmptyApp: the app did not mark anything as servable', path)
+        # A browser would now connect and run the pn.state.onload callbacks.
+        # ponytail: async onload errors surface only when their task is
+        # collected, so only sync callbacks and scheduling errors are caught
+        errors = []
+        with config.param.update(exception_handler=errors.append):
+            try:
+                state._on_load(sessions[0].document)
+            except Exception as e:
+                errors.append(e)
+        if errors:
+            return _parse_traceback(''.join(traceback.format_exception(errors[0])), path)
         return None
     finally:
         server.stop()
