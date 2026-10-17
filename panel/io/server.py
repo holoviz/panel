@@ -14,7 +14,6 @@ import pathlib
 import re
 import signal
 import sys
-import threading
 import time
 import typing as t
 import uuid
@@ -235,29 +234,23 @@ def async_execute(func: Callable[..., None]) -> None:
     is propagated from function to partial wrapping it.
     """
     if not state.curdoc or not state.curdoc.session_context:
+        wrapper = state._handle_exception_wrapper(func)
         try:
             loop = asyncio.get_running_loop()
         except RuntimeError:
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-        # Avoid creating IOLoop if one is not already associated
-        # with the asyncio loop or we're on a child thread
-        if hasattr(IOLoop, '_ioloop_for_asyncio') and loop in IOLoop._ioloop_for_asyncio:
-            ioloop = IOLoop._ioloop_for_asyncio[loop]
-        elif threading.current_thread() is not threading.main_thread():
-            ioloop = IOLoop.current()
+            # Nothing else would close a loop created here, and on
+            # Windows every loop holds a socket pair.
+            with asyncio.Runner(loop_factory=asyncio.new_event_loop) as runner:
+                runner.run(wrapper())
+            return
+        # Creating an IOLoop here would leak it, so only reuse an existing one
+        ioloop = getattr(IOLoop, '_ioloop_for_asyncio', {}).get(loop)
+        if ioloop is None:
+            task = asyncio.ensure_future(wrapper())
+            _tasks.add(task)
+            task.add_done_callback(_tasks.discard)
         else:
-            ioloop = None
-        wrapper = state._handle_exception_wrapper(func)
-        if loop.is_running():
-            if ioloop is None:
-                task = asyncio.ensure_future(wrapper())
-                _tasks.add(task)
-                task.add_done_callback(_tasks.discard)
-            else:
-                ioloop.add_callback(wrapper)
-        else:
-            loop.run_until_complete(wrapper())
+            ioloop.add_callback(wrapper)
         return
 
     if isinstance(func, partial) and hasattr(func.func, 'lock'):
