@@ -1,5 +1,6 @@
 import json
 import sys
+import time
 
 import nbformat
 import pytest
@@ -169,7 +170,7 @@ def test_cli_crash_exits_one(app, monkeypatch, capsys):
 def test_cli_json(app, monkeypatch, capsys):
     good = app("import panel as pn\nprint('noise')\npn.panel('Hello').servable()\n")
     bad = app("import panel as pn\n1 / 0\n", name='bad.py')
-    assert run_cli(monkeypatch, '--json', good, bad) == 1
+    assert run_cli(monkeypatch, '--json', '--jobs', '1', good, bad) == 1
     output = json.loads(capsys.readouterr().out)
     assert output['ok'] is False
     assert [r['ok'] for r in output['results']] == [True, False]
@@ -204,6 +205,23 @@ def test_cli_timeout_reports_hanging_line(app, monkeypatch, capsys):
     path = app("import time\n\ntime.sleep(60)\n")
     assert run_cli(monkeypatch, '--timeout', '1', path) == 1
     assert capsys.readouterr().out.startswith(f'{path}:3: Timeout: ')
+
+
+def test_cli_kills_app_past_deadline(app, monkeypatch, capsys):
+    path = app("import faulthandler\nimport time\nfaulthandler.cancel_dump_traceback_later()\ntime.sleep(60)\n")
+    assert run_cli(monkeypatch, '--timeout', '1', path) == 1
+    assert capsys.readouterr().out.startswith(f'{path}: Timeout: ')
+
+
+def test_cli_does_not_wait_for_leftover_threads(app, monkeypatch):
+    path = app(
+        "import threading\nimport time\nimport panel as pn\n"
+        "threading.Thread(target=time.sleep, args=(60,)).start()\n"
+        "pn.panel('Hello').servable()\n"
+    )
+    start = time.monotonic()
+    assert run_cli(monkeypatch, '--timeout', '30', path) == 0
+    assert time.monotonic() - start < 20
 
 
 def test_cli_reports_hard_crash(app, monkeypatch, capsys):
