@@ -86,8 +86,8 @@ async def _serve_once(app, path: str) -> dict | None:
         elif not sessions or not sessions[0].document.roots:
             return _parse_traceback('EmptyApp: the app did not mark anything as servable', path)
         # A browser would now connect and run the pn.state.onload callbacks.
-        # ponytail: async onload errors surface only when their task is
-        # collected, so only sync callbacks and scheduling errors are caught
+        # Errors in async callbacks only surface once their task is
+        # collected, so only sync callbacks and scheduling errors are caught.
         errors = []
         with config.param.update(exception_handler=errors.append):
             try:
