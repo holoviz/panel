@@ -11,8 +11,10 @@ import re
 import tempfile
 import time
 import traceback
+import warnings
 
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import contextmanager
 from functools import partial
 from itertools import takewhile
 
@@ -126,6 +128,17 @@ def _format(result: dict) -> str:
     return f"{location}: {error['type']}: {message}"
 
 
+@contextmanager
+def _formattable_app_frames():
+    # Python 3.15 warns when a traceback through an app module is formatted,
+    # since Bokeh creates those modules without a __spec__.loader
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            'ignore', 'Module globals is missing a __spec__.loader', DeprecationWarning
+        )
+        yield
+
+
 def check_app(path: str, argv: list[str] | None = None) -> dict:
     """
     Serve the app at ``path`` on a local port, request it once and
@@ -135,12 +148,13 @@ def check_app(path: str, argv: list[str] | None = None) -> dict:
     unless the process is about to exit.
     """
     error: dict | None
-    try:
-        app = build_single_handler_application(path, argv)
-    except Exception as e:
-        error = _parse_traceback(''.join(traceback.format_exception_only(e)), path)
-    else:
-        error = asyncio.run(_serve_once(app, path))
+    with _formattable_app_frames():
+        try:
+            app = build_single_handler_application(path, argv)
+        except Exception as e:
+            error = _parse_traceback(''.join(traceback.format_exception_only(e)), path)
+        else:
+            error = asyncio.run(_serve_once(app, path))
     return {'file': path, 'ok': error is None, 'error': error}
 
 
@@ -156,7 +170,9 @@ def _check_in_child(conn, path: str, argv: list[str] | None, num_threads: int | 
             result = check_app(path, argv)
         except BaseException as e:
             # sys.exit() or KeyboardInterrupt in the app escapes the handler
-            error = _parse_traceback(''.join(traceback.format_exception(e)), path)
+            with _formattable_app_frames():
+                text = ''.join(traceback.format_exception(e))
+            error = _parse_traceback(text, path)
             result = {'file': path, 'ok': False, 'error': error}
         conn.send(result)
 
