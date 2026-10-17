@@ -113,6 +113,16 @@ async def test_reset_stops_busy_cleanup_and_allows_rescheduling():
     assert _state._busy_cleanup_scheduled not in (None, cleanup)
 
 
+def test_reset_clears_session_info():
+    state.session_info['total'] = 3
+    state.session_info['live'] = 1
+    state.session_info['sessions']['abc'] = {}
+
+    state.reset()
+
+    assert state.session_info == {'total': 0, 'live': 0, 'sessions': {}}
+
+
 async def test_periodic_callback_failed_thread_submit_does_not_leak_busy_event():
     class _ShutdownPool:
         def submit(self, *args, **kwargs):

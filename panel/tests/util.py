@@ -458,15 +458,16 @@ def wait_for_server(port, prefix=None, timeout=3):
     if not prefix.endswith('/'):
         prefix += '/'
     url = f"http://127.0.0.1:{port}{prefix}liveness"
+    error = None
     while True:
         try:
             if requests.get(url, timeout=timeout).ok:
                 return
-        except Exception:
-            pass
+        except Exception as e:
+            error = e
         time.sleep(0.05)
         if (time.time()-start) > timeout:
-            raise RuntimeError(f'{url} did not respond before timeout.')
+            raise RuntimeError(f'{url} did not respond before timeout: {error}')
 
 
 def terminate_panel_serve(p):
