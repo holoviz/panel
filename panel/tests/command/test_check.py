@@ -141,6 +141,12 @@ def test_cli_reports_exit_code(app, monkeypatch, capsys):
     assert capsys.readouterr().out == f'{path}: ProcessExited: exit code 3\n'
 
 
+def test_cli_reports_sys_exit_line(app, monkeypatch, capsys):
+    path = app("import sys\n\nsys.exit(2)\n")
+    assert run_cli(monkeypatch, path) == 1
+    assert capsys.readouterr().out == f'{path}:3: SystemExit: 2\n'
+
+
 def test_cli_json_ignores_low_level_output(app, monkeypatch, capsys):
     path = app("import os\nimport panel as pn\nos.write(1, b'noise')\npn.panel('Hello').servable()\n")
     assert run_cli(monkeypatch, '--json', path) == 0
