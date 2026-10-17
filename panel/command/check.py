@@ -2,13 +2,14 @@
 Check that a Panel app runs the way it does under ``panel serve``.
 """
 import asyncio
+import faulthandler
 import json
+import multiprocessing
 import os
+import pathlib
 import re
-import sys
+import tempfile
 import traceback
-
-from contextlib import redirect_stdout
 
 from bokeh.command.subcommand import Argument, Subcommand
 from tornado.httpclient import AsyncHTTPClient
@@ -22,26 +23,42 @@ from ..io.state import state
 _FRAME = re.compile(r'^  File "(.+?)", line (\d+)')
 
 
-def _parse_traceback(text: str, path: str) -> dict:
+def _error(etype: str, message: str, frames: list, path: str, text: str) -> dict:
     """
-    Turn a formatted traceback into an error record pointing at the
-    deepest frame inside the app file, or the deepest frame overall.
+    Build an error record pointing at the innermost frame inside the
+    app file, or the innermost frame overall. Frames run outermost first.
     """
-    lines = text.rstrip().splitlines()
-    frames = [(i, m) for i, line in enumerate(lines) if (m := _FRAME.match(line))]
-    last = frames[-1][0] if frames else -1
-    summary = '\n'.join(line for line in lines[last+1:] if line and not line[0].isspace())
-    etype, _, message = summary.partition(': ')
     app_path = os.path.realpath(path)
-    in_app = [m for _, m in frames if os.path.realpath(m[1]) == app_path]
-    frame = (in_app or [m for _, m in frames] or [None])[-1]
+    in_app = [line for file, line in frames if os.path.realpath(file) == app_path]
+    if in_app:
+        file, line = path, in_app[-1]
+    else:
+        file, line = frames[-1] if frames else (None, None)
     return {
         'type': etype,
         'message': message,
-        'file': path if in_app else frame[1] if frame else None,
-        'line': int(frame[2]) if frame else None,
+        'file': file,
+        'line': None if line is None else int(line),
         'traceback': text,
     }
+
+
+def _parse_traceback(text: str, path: str) -> dict:
+    lines = text.rstrip().splitlines()
+    frames = [(i, m.groups()) for i, line in enumerate(lines) if (m := _FRAME.match(line))]
+    last = frames[-1][0] if frames else -1
+    summary = '\n'.join(line for line in lines[last+1:] if line and not line[0].isspace())
+    etype, _, message = summary.partition(': ')
+    return _error(etype, message, [f for _, f in frames], path, text)
+
+
+def _parse_dump(text: str, path: str, exitcode: int, timeout: float) -> dict:
+    # faulthandler lists the most recent call first
+    frames = [m.groups() for line in text.splitlines() if (m := _FRAME.match(line))][::-1]
+    if text.startswith('Timeout'):
+        return _error('Timeout', f'the app did not finish loading within {timeout}s', frames, path, text)
+    message = text.splitlines()[0] if text else f'exit code {exitcode}'
+    return _error('ProcessExited', message, frames, path, text)
 
 
 def _format(result: dict) -> str:
@@ -67,6 +84,46 @@ def check_app(path: str, argv: list[str] | None = None) -> dict:
 
     result['error'] = asyncio.run(_serve_once(app, path))
     result['ok'] = result['error'] is None
+    return result
+
+
+def _check_in_child(conn, path: str, argv: list[str] | None, num_threads: int | None, timeout: float, dump_path: str) -> None:
+    # Anything the app writes, even from C code, must stay out of the report
+    os.dup2(2, 1)
+    if num_threads is not None:
+        config.nthreads = num_threads
+    with open(dump_path, 'w') as dump:
+        faulthandler.enable(dump)
+        faulthandler.dump_traceback_later(timeout, exit=True, file=dump)
+        conn.send(check_app(path, argv))
+
+
+def check_app_isolated(
+    path: str, argv: list[str] | None = None, timeout: float = 60, num_threads: int | None = None
+) -> dict:
+    """
+    Run ``check_app`` in a fresh process, so apps cannot affect each
+    other and a hanging or crashing app is reported with its location.
+    """
+    ctx = multiprocessing.get_context('spawn')
+    receiver, sender = ctx.Pipe(duplex=False)
+    with tempfile.TemporaryDirectory() as tmp:
+        dump_path = os.path.join(tmp, 'dump')
+        proc = ctx.Process(
+            target=_check_in_child, args=(sender, path, argv, num_threads, timeout, dump_path)
+        )
+        proc.start()
+        sender.close()
+        try:
+            result = receiver.recv()
+        except EOFError:
+            proc.join()
+            # The child can die before it opens the dump, e.g. on a bad option
+            dump = pathlib.Path(dump_path)
+            text = dump.read_text() if dump.exists() else ''
+            error = _parse_dump(text, path, proc.exitcode, timeout)
+            result = {'file': path, 'ok': False, 'error': error}
+        proc.join()
     return result
 
 
@@ -121,6 +178,12 @@ class Check(Subcommand):
             action  = 'store_true',
             help    = "Print the results as JSON",
         )),
+        ('--timeout', Argument(
+            action  = 'store',
+            type    = float,
+            help    = "Seconds an app may take to load before it is reported as hanging",
+            default = 60
+        )),
         ('--num-threads', Argument(
             action  = 'store',
             type    = int,
@@ -135,13 +198,10 @@ class Check(Subcommand):
     )
 
     def invoke(self, args):
-        if args.num_threads is not None:
-            config.nthreads = args.num_threads
-        results = []
-        for path in args.files:
-            # App output must not end up in the report, e.g. in the JSON
-            with redirect_stdout(sys.stderr):
-                results.append(check_app(path, args.args))
+        results = [
+            check_app_isolated(path, args.args, args.timeout, args.num_threads)
+            for path in args.files
+        ]
         ok = all(r['ok'] for r in results)
         if args.json:
             report = json.dumps({'ok': ok, 'results': results}, indent=2)
