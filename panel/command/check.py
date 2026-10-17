@@ -39,7 +39,7 @@ def _parse_traceback(text: str, path: str) -> dict:
     return {
         'type': etype,
         'message': message,
-        'file': frame[1] if frame else None,
+        'file': path if in_app else frame[1] if frame else None,
         'line': int(frame[2]) if frame else None,
         'traceback': text,
     }
