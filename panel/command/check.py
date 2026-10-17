@@ -22,7 +22,7 @@ from tornado.ioloop import IOLoop
 
 from ..config import config
 from ..io.application import build_single_handler_application
-from ..io.handlers import MarkdownHandler, NotebookHandler
+from ..io.handlers import MarkdownHandler, NotebookHandler, PanelCodeHandler
 from ..io.server import get_server
 from ..io.state import state
 
@@ -36,19 +36,21 @@ def _error(etype: str, message: str, frames: list, path: str, text: str) -> dict
     """
     app_path = os.path.realpath(path)
     in_app = [int(line) for file, line in frames if os.path.realpath(file) == app_path]
-    cell = None
+    file: str | None = None
+    line: int | None = None
+    cell: int | None = None
     if in_app:
         file, line = path, in_app[-1]
         if path.endswith(('.md', '.ipynb')):
             cell, line = _source_location(path, line)
-    else:
-        file, line = frames[-1] if frames else (None, None)
+    elif frames:
+        file, line = frames[-1][0], int(frames[-1][1])
     return {
         'type': etype,
         'message': message,
         'file': file,
         'cell': cell,
-        'line': None if line is None else int(line),
+        'line': line,
         'traceback': text,
     }
 
@@ -58,6 +60,8 @@ def _source_location(path: str, line: int) -> tuple[int | None, int]:
     Map a line of the code Panel runs for a Markdown or notebook app back
     to (cell, line) in the source, matching the n-th occurrence of its text.
     """
+    handler: PanelCodeHandler
+    units: list[tuple[int | None, int, str]]
     if path.endswith('.md'):
         handler = MarkdownHandler(filename=path)
         source = pathlib.Path(path).read_text(encoding='utf-8').splitlines()
@@ -130,6 +134,7 @@ def check_app(path: str, argv: list[str] | None = None) -> dict:
     This shuts down Panel's thread pool, so use ``check_app_isolated``
     unless the process is about to exit.
     """
+    error: dict | None
     try:
         app = build_single_handler_application(path, argv)
     except Exception as e:
@@ -143,7 +148,7 @@ def _check_in_child(conn, path: str, argv: list[str] | None, num_threads: int | 
     # Anything the app writes, even from C code, must stay out of the report
     os.dup2(2, 1)
     if num_threads is not None:
-        config.nthreads = num_threads
+        config.nthreads = num_threads  # type: ignore[misc]
     with open(dump_path, 'w') as dump:
         faulthandler.enable(dump)
         faulthandler.dump_traceback_later(max(deadline - time.time(), 0.1), exit=True, file=dump)
@@ -215,7 +220,7 @@ async def _serve_once(app, path: str) -> dict | None:
             return _parse_traceback('EmptyApp: the app did not mark anything as servable', path)
         # A browser would now connect and run the pn.state.onload callbacks;
         # async ones start on the next tick, so wait for them to finish
-        errors = []
+        errors: list[BaseException] = []
         with config.param.update(exception_handler=errors.append):
             try:
                 state._on_load(sessions[0].document)
