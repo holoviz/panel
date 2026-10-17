@@ -95,7 +95,13 @@ def _check_in_child(conn, path: str, argv: list[str] | None, num_threads: int | 
     with open(dump_path, 'w') as dump:
         faulthandler.enable(dump)
         faulthandler.dump_traceback_later(timeout, exit=True, file=dump)
-        conn.send(check_app(path, argv))
+        try:
+            result = check_app(path, argv)
+        except BaseException as e:
+            # sys.exit() or KeyboardInterrupt in the app escapes the handler
+            error = _parse_traceback(''.join(traceback.format_exception(e)), path)
+            result = {'file': path, 'ok': False, 'error': error}
+        conn.send(result)
 
 
 def check_app_isolated(
