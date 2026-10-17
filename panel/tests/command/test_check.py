@@ -67,6 +67,20 @@ def test_check_onload_error(app):
     assert result['error']['line'] == 3
 
 
+def test_check_async_onload_error(app):
+    result = check_app(app(
+        "import asyncio\n"
+        "import panel as pn\n"
+        "pn.panel('Hello').servable()\n"
+        "async def load():\n"
+        "    await asyncio.sleep(0.1)\n"
+        "    1 / 0\n"
+        "pn.state.onload(load)\n"
+    ))
+    assert result['error']['type'] == 'ZeroDivisionError'
+    assert result['error']['line'] == 6
+
+
 def test_check_threaded_onload_without_threads(app):
     result = check_app(app(
         "import panel as pn\n"
@@ -170,6 +184,20 @@ def test_cli_num_threads_allows_threaded_onload(app, monkeypatch):
     )
     assert run_cli(monkeypatch, '--num-threads', '2', path) == 0
     assert config.nthreads is None
+
+
+def test_cli_threaded_onload_error(app, monkeypatch, capsys):
+    path = app(
+        "import time\n"
+        "import panel as pn\n"
+        "pn.panel('Hello').servable()\n"
+        "def load():\n"
+        "    time.sleep(0.2)\n"
+        "    1 / 0\n"
+        "pn.state.onload(load, threaded=True)\n"
+    )
+    assert run_cli(monkeypatch, '--num-threads', '2', path) == 1
+    assert capsys.readouterr().out == f'{path}:6: ZeroDivisionError: division by zero\n'
 
 
 def test_cli_timeout_reports_hanging_line(app, monkeypatch, capsys):
