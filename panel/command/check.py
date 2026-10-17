@@ -10,10 +10,9 @@ import traceback
 
 from contextlib import redirect_stdout
 
+from bokeh.command.subcommand import Argument, Subcommand
 from tornado.httpclient import AsyncHTTPClient
 from tornado.ioloop import IOLoop
-
-from bokeh.command.subcommand import Argument, Subcommand
 
 from ..config import config
 from ..io.application import build_single_handler_application
