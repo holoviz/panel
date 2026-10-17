@@ -50,6 +50,27 @@ def test_check_template_app(app):
     assert result['ok'] is True
 
 
+def test_check_onload_error(app):
+    result = check_app(app(
+        "import panel as pn\n"
+        "pn.panel('Hello').servable()\n"
+        "pn.state.onload(lambda: 1 / 0)\n"
+    ))
+    assert result['ok'] is False
+    assert result['error']['type'] == 'ZeroDivisionError'
+    assert result['error']['line'] == 3
+
+
+def test_check_threaded_onload_without_threads(app):
+    result = check_app(app(
+        "import panel as pn\n"
+        "pn.panel('Hello').servable()\n"
+        "pn.state.onload(lambda: None, threaded=True)\n"
+    ))
+    assert result['ok'] is False
+    assert result['error']['type'] == 'RuntimeError'
+
+
 def test_check_missing_file(tmp_path):
     result = check_app(str(tmp_path / 'missing.py'))
     assert result['ok'] is False
