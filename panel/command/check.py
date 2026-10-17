@@ -21,6 +21,7 @@ from tornado.ioloop import IOLoop
 
 from ..config import config
 from ..io.application import build_single_handler_application
+from ..io.handlers import MarkdownHandler, NotebookHandler
 from ..io.server import get_server
 from ..io.state import state
 
@@ -33,18 +34,52 @@ def _error(etype: str, message: str, frames: list, path: str, text: str) -> dict
     app file, or the innermost frame overall. Frames run outermost first.
     """
     app_path = os.path.realpath(path)
-    in_app = [line for file, line in frames if os.path.realpath(file) == app_path]
+    in_app = [int(line) for file, line in frames if os.path.realpath(file) == app_path]
+    cell = None
     if in_app:
         file, line = path, in_app[-1]
+        if path.endswith(('.md', '.ipynb')):
+            cell, line = _source_location(path, line)
     else:
         file, line = frames[-1] if frames else (None, None)
     return {
         'type': etype,
         'message': message,
         'file': file,
+        'cell': cell,
         'line': None if line is None else int(line),
         'traceback': text,
     }
+
+
+def _source_location(path: str, line: int) -> tuple[int | None, int]:
+    """
+    Map a line of the code Panel runs for a Markdown or notebook app back
+    to (cell, line) in the source, matching the n-th occurrence of its text.
+    """
+    if path.endswith('.md'):
+        handler = MarkdownHandler(filename=path)
+        source = pathlib.Path(path).read_text(encoding='utf-8').splitlines()
+        units = [(None, i, text) for i, text in enumerate(source, 1)]
+    else:
+        handler = NotebookHandler(filename=path)
+        cells = list(enumerate(handler._nb.cells, 1))
+        units = [
+            (c, i, text) for c, cell in cells if cell.cell_type == 'code'
+            for i, text in enumerate(cell.source.splitlines(), 1)
+        ]
+    code = handler._runner.source.splitlines()
+    target = code[line-1].strip()
+    nth = sum(text.strip() == target for text in code[:line-1])
+    matches = [(c, i) for c, i, text in units if text.strip() == target]
+    if target and nth < len(matches):
+        return matches[nth]
+    # A notebook cell's last expression is rewritten to capture its output
+    if path.endswith('.ipynb') and (m := re.search(r"_cell_outputs\['(\w+)'\]", target)):
+        for c, cell in cells:
+            if cell.get('id') == m[1]:
+                return c, len(cell.source.rstrip().splitlines())
+    return None, line
 
 
 def _parse_traceback(text: str, path: str) -> dict:
@@ -77,6 +112,8 @@ def _format(result: dict) -> str:
     location = error['file'] or result['file']
     if error['line'] is not None:
         location += f":{error['line']}"
+    if error['cell'] is not None:
+        location += f" (cell {error['cell']})"
     return f"{location}: {error['type']}: {error['message']}"
 
 
@@ -85,16 +122,13 @@ def check_app(path: str, argv: list[str] | None = None) -> dict:
     Serve the app at ``path`` on a local port, request it once and
     report whether the session ran and published any content.
     """
-    result = {'file': path, 'ok': False, 'error': None}
     try:
         app = build_single_handler_application(path, argv)
     except Exception as e:
-        result['error'] = _parse_traceback(''.join(traceback.format_exception_only(e)), path)
-        return result
-
-    result['error'] = asyncio.run(_serve_once(app, path))
-    result['ok'] = result['error'] is None
-    return result
+        error = _parse_traceback(''.join(traceback.format_exception_only(e)), path)
+    else:
+        error = asyncio.run(_serve_once(app, path))
+    return {'file': path, 'ok': error is None, 'error': error}
 
 
 def _check_in_child(conn, path: str, argv: list[str] | None, num_threads: int | None, timeout: float, dump_path: str) -> None:
