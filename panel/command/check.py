@@ -11,6 +11,9 @@ import re
 import tempfile
 import traceback
 
+from concurrent.futures import ThreadPoolExecutor
+from functools import partial
+
 from bokeh.command.subcommand import Argument, Subcommand
 from tornado.httpclient import AsyncHTTPClient
 from tornado.ioloop import IOLoop
@@ -204,10 +207,11 @@ class Check(Subcommand):
     )
 
     def invoke(self, args):
-        results = [
-            check_app_isolated(path, args.args, args.timeout, args.num_threads)
-            for path in args.files
-        ]
+        check = partial(
+            check_app_isolated, argv=args.args, timeout=args.timeout, num_threads=args.num_threads
+        )
+        with ThreadPoolExecutor(max_workers=os.cpu_count()) as pool:
+            results = list(pool.map(check, args.files))
         ok = all(r['ok'] for r in results)
         if args.json:
             report = json.dumps({'ok': ok, 'results': results}, indent=2)
