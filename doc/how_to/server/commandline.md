@@ -227,7 +227,7 @@ $ panel check --json dashboard.py
 }
 ```
 
-`--args` and `--num-threads` work as they do for `panel serve`.
+`--args` and `--num-threads` work as they do for `panel serve`. `--jobs` sets how many apps are checked at once, half the CPU count by default, since each one is a full Python process. The `--timeout` clock starts when the app's process starts, so it includes importing Panel.
 
 For a hang or a hard crash the report points at the line that was running. For Markdown apps the line refers to the `.md` file, and for notebooks `cell` gives the position of the cell and `line` the line within it.
 
