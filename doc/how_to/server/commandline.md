@@ -197,7 +197,7 @@ app.py: ok
 dashboard.py:12: KeyError: 'price'
 ```
 
-Each app runs in its own process, several at a time. The command exits with status 1 if any app raises while loading or in a `pn.state.onload` callback, does not mark anything as servable, crashes the interpreter, or is still loading after `--timeout` seconds (60 by default), and 0 otherwise, so it can gate a CI job:
+Each app runs in its own process, several at a time. The command exits with status 1 if any app raises while loading or in a `pn.state.onload` callback (sync, `async` or threaded), does not mark anything as servable, crashes the interpreter, or is still loading after `--timeout` seconds (60 by default), and 0 otherwise, so it can gate a CI job:
 
 ```yaml
 - name: Check Panel apps
@@ -231,4 +231,4 @@ $ panel check --json dashboard.py
 
 For a hang or a hard crash the report points at the line that was running. For Markdown apps the line refers to the `.md` file, and for notebooks `cell` gives the position of the cell and `line` the line within it.
 
-`panel check` does not open a browser, so it does not catch errors in JavaScript, in callbacks triggered by user interaction, or in `async` onload callbacks.
+`panel check` does not open a browser, so it does not catch errors in JavaScript or in callbacks triggered by user interaction.
