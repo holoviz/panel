@@ -9,6 +9,7 @@ import os
 import pathlib
 import re
 import tempfile
+import time
 import traceback
 
 from concurrent.futures import ThreadPoolExecutor
@@ -99,10 +100,10 @@ def _parse_traceback(text: str, path: str) -> dict:
     return _error(etype, message, [f for _, f in frames], path, text)
 
 
-def _parse_dump(text: str, path: str, exitcode: int, timeout: float) -> dict:
+def _parse_dump(text: str, path: str, exitcode: int | None, timeout: float, timed_out: bool) -> dict:
     # faulthandler lists the most recent call first
     frames = [m.groups() for line in text.splitlines() if (m := _FRAME.match(line))][::-1]
-    if text.startswith('Timeout'):
+    if timed_out or text.startswith('Timeout'):
         return _error('Timeout', f'the app did not finish loading within {timeout}s', frames, path, text)
     message = text.splitlines()[0] if text else f'exit code {exitcode}'
     return _error('ProcessExited', message, frames, path, text)
@@ -136,14 +137,14 @@ def check_app(path: str, argv: list[str] | None = None) -> dict:
     return {'file': path, 'ok': error is None, 'error': error}
 
 
-def _check_in_child(conn, path: str, argv: list[str] | None, num_threads: int | None, timeout: float, dump_path: str) -> None:
+def _check_in_child(conn, path: str, argv: list[str] | None, num_threads: int | None, deadline: float, dump_path: str) -> None:
     # Anything the app writes, even from C code, must stay out of the report
     os.dup2(2, 1)
     if num_threads is not None:
         config.nthreads = num_threads
     with open(dump_path, 'w') as dump:
         faulthandler.enable(dump)
-        faulthandler.dump_traceback_later(timeout, exit=True, file=dump)
+        faulthandler.dump_traceback_later(max(deadline - time.time(), 0.1), exit=True, file=dump)
         try:
             result = check_app(path, argv)
         except BaseException as e:
@@ -162,23 +163,34 @@ def check_app_isolated(
     """
     ctx = multiprocessing.get_context('spawn')
     receiver, sender = ctx.Pipe(duplex=False)
+    # Wall clock, as the deadline is shared with the child process
+    deadline = time.time() + timeout
     with tempfile.TemporaryDirectory() as tmp:
         dump_path = os.path.join(tmp, 'dump')
         proc = ctx.Process(
-            target=_check_in_child, args=(sender, path, argv, num_threads, timeout, dump_path)
+            target=_check_in_child, args=(sender, path, argv, num_threads, deadline, dump_path)
         )
         proc.start()
         sender.close()
-        try:
-            result = receiver.recv()
-        except EOFError:
+        result = None
+        # The child's watchdog normally ends a hang first; this is the backstop
+        ready = receiver.poll(max(deadline - time.time(), 0) + 5)
+        if ready:
+            try:
+                result = receiver.recv()
+            except EOFError:
+                pass
+        proc.join(1)
+        if proc.is_alive():
+            # e.g. a thread the app left running keeps the child from exiting
+            proc.kill()
             proc.join()
+        if result is None:
             # The child can die before it opens the dump, e.g. on a bad option
             dump = pathlib.Path(dump_path)
             text = dump.read_text() if dump.exists() else ''
-            error = _parse_dump(text, path, proc.exitcode, timeout)
+            error = _parse_dump(text, path, proc.exitcode, timeout, timed_out=not ready)
             result = {'file': path, 'ok': False, 'error': error}
-        proc.join()
     return result
 
 
@@ -186,8 +198,10 @@ async def _serve_once(app, path: str) -> dict | None:
     server = get_server({'app': app}, port=0, address='127.0.0.1', loop=IOLoop.current(), start=False)
     server.start()
     try:
+        # No HTTP timeouts: the --timeout deadline is the only clock
         response = await AsyncHTTPClient().fetch(
-            f'http://127.0.0.1:{server.port}/app', raise_error=False
+            f'http://127.0.0.1:{server.port}/app', raise_error=False,
+            connect_timeout=0, request_timeout=0,
         )
         handler = app.handlers[0]
         sessions = server.get_sessions('/app')
@@ -248,6 +262,12 @@ class Check(Subcommand):
             help    = "Seconds an app may take to load before it is reported as hanging",
             default = 60
         )),
+        ('--jobs', Argument(
+            action  = 'store',
+            type    = int,
+            help    = "Number of apps to check at once, half the CPU count by default",
+            default = None
+        )),
         ('--num-threads', Argument(
             action  = 'store',
             type    = int,
@@ -265,7 +285,9 @@ class Check(Subcommand):
         check = partial(
             check_app_isolated, argv=args.args, timeout=args.timeout, num_threads=args.num_threads
         )
-        with ThreadPoolExecutor(max_workers=os.cpu_count()) as pool:
+        # Each check is a full Panel process, so leave headroom by default
+        jobs = args.jobs or max(1, (os.cpu_count() or 2) // 2)
+        with ThreadPoolExecutor(max_workers=jobs) as pool:
             results = list(pool.map(check, args.files))
         ok = all(r['ok'] for r in results)
         if args.json:
