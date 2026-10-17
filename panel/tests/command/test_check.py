@@ -167,6 +167,12 @@ def test_cli_crash_exits_one(app, monkeypatch, capsys):
     assert capsys.readouterr().out == f'{path}:3: ZeroDivisionError: division by zero\n'
 
 
+def test_cli_prints_one_line_per_app(app, monkeypatch, capsys):
+    path = app("import panel as pn\nraise ValueError('first\\nsecond')\n")
+    assert run_cli(monkeypatch, path) == 1
+    assert capsys.readouterr().out == f'{path}:2: ValueError: first\n'
+
+
 def test_cli_json(app, monkeypatch, capsys):
     good = app("import panel as pn\nprint('noise')\npn.panel('Hello').servable()\n")
     bad = app("import panel as pn\n1 / 0\n", name='bad.py')
