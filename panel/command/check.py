@@ -117,7 +117,9 @@ def _format(result: dict) -> str:
         location += f":{error['line']}"
     if error['cell'] is not None:
         location += f" (cell {error['cell']})"
-    return f"{location}: {error['type']}: {error['message']}"
+    # One line per app, so editors and CI can parse it; the JSON has it all
+    message = error['message'].partition('\n')[0]
+    return f"{location}: {error['type']}: {message}"
 
 
 def check_app(path: str, argv: list[str] | None = None) -> dict:
