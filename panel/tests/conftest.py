@@ -215,12 +215,11 @@ def pytest_collection_modifyitems(config, items):
             item.add_marker(pytest.mark.panel_ui)
 
     config.hook.pytest_deselected(items=skipped)
-    # Sorted because pytest 8.4.0 and pytest-playwright
-    # https://github.com/microsoft/playwright-pytest/pull/284
     # Tests importing panel.ui run last: its components cannot be unregistered,
     # and every later render on the same worker would include their resources.
-    items[:] = sorted(
-        selected, key=lambda x: (x.get_closest_marker('panel_ui') is not None, x.path)
+    items[:] = (
+        [item for item in selected if not item.get_closest_marker('panel_ui')] +
+        [item for item in selected if item.get_closest_marker('panel_ui')]
     )
 
 
