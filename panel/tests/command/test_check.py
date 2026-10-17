@@ -123,3 +123,10 @@ def test_cli_num_threads_allows_threaded_onload(app, monkeypatch):
         assert run_cli(monkeypatch, '--num-threads', '2', path) == 0
     finally:
         config.nthreads = None
+
+
+def test_cli_reports_path_as_given(app, monkeypatch, capsys, tmp_path):
+    app("import panel as pn\n1 / 0\n")
+    monkeypatch.chdir(tmp_path)
+    assert run_cli(monkeypatch, 'app.py') == 1
+    assert capsys.readouterr().out == 'app.py:2: ZeroDivisionError: division by zero\n'
