@@ -229,17 +229,40 @@ def _path_template_to_tornado_route(route: str) -> str:
 
 _tasks: set = set()
 
+
+class _ThreadLoop:
+    """
+    Event loop owned by a thread, closed once the thread exits.
+    """
+
+    def __init__(self) -> None:
+        self.loop = asyncio.new_event_loop()
+
+    def __del__(self) -> None:
+        if not self.loop.is_running() and not self.loop.is_closed():
+            self.loop.close()
+
+
+_thread_loops = threading.local()
+
 def async_execute(func: Callable[..., None]) -> None:
     """
     Wrap async event loop scheduling to ensure that with_lock flag
     is propagated from function to partial wrapping it.
     """
     if not state.curdoc or not state.curdoc.session_context:
+        wrapper = state._handle_exception_wrapper(func)
         try:
             loop = asyncio.get_running_loop()
         except RuntimeError:
-            loop = asyncio.new_event_loop()
+            # Reuse the thread's loop, each new loop holds sockets until it is closed
+            owner = getattr(_thread_loops, 'owner', None)
+            if owner is None or owner.loop.is_closed():
+                owner = _thread_loops.owner = _ThreadLoop()
+            loop = owner.loop
             asyncio.set_event_loop(loop)
+            loop.run_until_complete(wrapper())
+            return
         # Avoid creating IOLoop if one is not already associated
         # with the asyncio loop or we're on a child thread
         if hasattr(IOLoop, '_ioloop_for_asyncio') and loop in IOLoop._ioloop_for_asyncio:
@@ -248,16 +271,12 @@ def async_execute(func: Callable[..., None]) -> None:
             ioloop = IOLoop.current()
         else:
             ioloop = None
-        wrapper = state._handle_exception_wrapper(func)
-        if loop.is_running():
-            if ioloop is None:
-                task = asyncio.ensure_future(wrapper())
-                _tasks.add(task)
-                task.add_done_callback(_tasks.discard)
-            else:
-                ioloop.add_callback(wrapper)
+        if ioloop is None:
+            task = asyncio.ensure_future(wrapper())
+            _tasks.add(task)
+            task.add_done_callback(_tasks.discard)
         else:
-            loop.run_until_complete(wrapper())
+            ioloop.add_callback(wrapper)
         return
 
     if isinstance(func, partial) and hasattr(func.func, 'lock'):

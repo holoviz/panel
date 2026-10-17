@@ -16,6 +16,7 @@ import requests
 
 from bokeh.events import ButtonClick
 from packaging.version import Version
+from tornado.ioloop import IOLoop
 
 from panel.config import config
 from panel.io import state
@@ -24,8 +25,8 @@ from panel.io.compile import check_cli_tool
 from panel.io.resources import DIST_DIR, JS_VERSION
 from panel.io.server import (
     _MAX_APP_PATH_CHARS, _MAX_ROUTE_PARAM_VALUE_CHARS, INDEX_HTML, RootHandler,
-    _normalize_app_path, _path_template_to_tornado_route, get_server,
-    set_curdoc,
+    _normalize_app_path, _path_template_to_tornado_route, async_execute,
+    get_server, set_curdoc,
 )
 from panel.layout import Row
 from panel.models import HTML as BkHTML
@@ -1156,6 +1157,25 @@ def test_kill_all_servers(html_server_session, markdown_server_session):
     state.kill_all_servers()
     assert server_1._stopped
     assert server_2._stopped
+
+
+def test_async_execute_without_running_loop_reuses_thread_loop():
+    loops = []
+
+    async def cb():
+        loops.append(asyncio.get_running_loop())
+
+    def run():
+        async_execute(cb)
+        async_execute(cb)
+
+    thread = threading.Thread(target=run)
+    thread.start()
+    thread.join()
+
+    assert len(loops) == 2
+    assert loops[0] is loops[1]
+    assert loops[0] not in getattr(IOLoop, '_ioloop_for_asyncio', {})
 
 
 def test_threaded_server_stop_does_not_leave_unstarted_tasks(monkeypatch):
