@@ -121,6 +121,9 @@ def check_app(path: str, argv: list[str] | None = None) -> dict:
     """
     Serve the app at ``path`` on a local port, request it once and
     report whether the session ran and published any content.
+
+    This shuts down Panel's thread pool, so use ``check_app_isolated``
+    unless the process is about to exit.
     """
     try:
         app = build_single_handler_application(path, argv)
@@ -192,13 +195,22 @@ async def _serve_once(app, path: str) -> dict | None:
             return _parse_traceback(f'HTTPError: {response.code} {response.reason}', path)
         elif not sessions or not sessions[0].document.roots:
             return _parse_traceback('EmptyApp: the app did not mark anything as servable', path)
-        # A browser would now connect and run the pn.state.onload callbacks.
-        # Errors in async callbacks only surface once their task is
-        # collected, so only sync callbacks and scheduling errors are caught.
+        # A browser would now connect and run the pn.state.onload callbacks;
+        # async ones start on the next tick, so wait for them to finish
         errors = []
         with config.param.update(exception_handler=errors.append):
             try:
                 state._on_load(sessions[0].document)
+                await asyncio.sleep(0)
+                if state._thread_pool:
+                    # Threaded callbacks report errors as their futures finish.
+                    # The shared pool is also the loop's default executor, so
+                    # it is drained from a thread of its own.
+                    drain = partial(state._thread_pool.shutdown, _shared=False)
+                    with ThreadPoolExecutor(1) as waiter:
+                        await asyncio.get_running_loop().run_in_executor(waiter, drain)
+                while pending := asyncio.all_tasks() - {asyncio.current_task()}:
+                    await asyncio.wait(pending)
             except Exception as e:
                 errors.append(e)
         if errors:
