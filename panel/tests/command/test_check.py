@@ -1,6 +1,11 @@
+import json
+import sys
+
 import pytest
 
+from panel.command import main
 from panel.command.check import check_app
+from panel.config import config
 
 
 @pytest.fixture
@@ -75,3 +80,46 @@ def test_check_missing_file(tmp_path):
     result = check_app(str(tmp_path / 'missing.py'))
     assert result['ok'] is False
     assert result['error']['type'] == 'ValueError'
+
+
+def run_cli(monkeypatch, *args):
+    monkeypatch.setattr(sys, 'argv', ['panel', 'check', *args])
+    try:
+        main()
+    except SystemExit as e:
+        return e.code
+    return 0
+
+
+def test_cli_good_exits_zero(app, monkeypatch, capsys):
+    path = app("import panel as pn\npn.panel('Hello').servable()\n")
+    assert run_cli(monkeypatch, path) == 0
+    assert capsys.readouterr().out == f'{path}: ok\n'
+
+
+def test_cli_crash_exits_one(app, monkeypatch, capsys):
+    path = app("import panel as pn\n\n1 / 0\n")
+    assert run_cli(monkeypatch, path) == 1
+    assert capsys.readouterr().out == f'{path}:3: ZeroDivisionError: division by zero\n'
+
+
+def test_cli_json(app, monkeypatch, capsys):
+    good = app("import panel as pn\nprint('noise')\npn.panel('Hello').servable()\n")
+    bad = app("import panel as pn\n1 / 0\n", name='bad.py')
+    assert run_cli(monkeypatch, '--json', good, bad) == 1
+    output = json.loads(capsys.readouterr().out)
+    assert output['ok'] is False
+    assert [r['ok'] for r in output['results']] == [True, False]
+    assert output['results'][1]['error']['line'] == 2
+
+
+def test_cli_num_threads_allows_threaded_onload(app, monkeypatch):
+    path = app(
+        "import panel as pn\n"
+        "pn.panel('Hello').servable()\n"
+        "pn.state.onload(lambda: None, threaded=True)\n"
+    )
+    try:
+        assert run_cli(monkeypatch, '--num-threads', '2', path) == 0
+    finally:
+        config.nthreads = None
