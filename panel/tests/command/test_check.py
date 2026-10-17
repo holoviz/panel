@@ -119,10 +119,44 @@ def test_cli_num_threads_allows_threaded_onload(app, monkeypatch):
         "pn.panel('Hello').servable()\n"
         "pn.state.onload(lambda: None, threaded=True)\n"
     )
-    try:
-        assert run_cli(monkeypatch, '--num-threads', '2', path) == 0
-    finally:
-        config.nthreads = None
+    assert run_cli(monkeypatch, '--num-threads', '2', path) == 0
+    assert config.nthreads is None
+
+
+def test_cli_timeout_reports_hanging_line(app, monkeypatch, capsys):
+    path = app("import time\n\ntime.sleep(60)\n")
+    assert run_cli(monkeypatch, '--timeout', '1', path) == 1
+    assert capsys.readouterr().out.startswith(f'{path}:3: Timeout: ')
+
+
+def test_cli_reports_hard_crash(app, monkeypatch, capsys):
+    path = app("import ctypes\n\nctypes.string_at(0)\n")
+    assert run_cli(monkeypatch, path) == 1
+    assert capsys.readouterr().out.startswith(f'{path}:3: ProcessExited: Fatal Python error')
+
+
+def test_cli_reports_exit_code(app, monkeypatch, capsys):
+    path = app("import os\nos._exit(3)\n")
+    assert run_cli(monkeypatch, path) == 1
+    assert capsys.readouterr().out == f'{path}: ProcessExited: exit code 3\n'
+
+
+def test_cli_json_ignores_low_level_output(app, monkeypatch, capsys):
+    path = app("import os\nimport panel as pn\nos.write(1, b'noise')\npn.panel('Hello').servable()\n")
+    assert run_cli(monkeypatch, '--json', path) == 0
+    assert json.loads(capsys.readouterr().out)['ok'] is True
+
+
+def test_cli_reports_child_failure_before_check(app, monkeypatch, capsys):
+    path = app("import panel as pn\npn.panel('Hello').servable()\n")
+    assert run_cli(monkeypatch, '--num-threads', '-1', path) == 1
+    assert capsys.readouterr().out == f'{path}: ProcessExited: exit code 1\n'
+
+
+def test_cli_runs_apps_in_isolation(app, monkeypatch):
+    first = app("import sys\nimport panel as pn\nsys.leaked = 1\npn.panel('a').servable()\n", name='first.py')
+    second = app("import sys\nimport panel as pn\nassert 'leaked' not in vars(sys)\npn.panel('b').servable()\n", name='second.py')
+    assert run_cli(monkeypatch, first, second) == 0
 
 
 def test_cli_reports_path_as_given(app, monkeypatch, capsys, tmp_path):
