@@ -2,7 +2,6 @@ import json
 import sys
 import time
 
-import nbformat
 import pytest
 
 from panel.command import main
@@ -123,6 +122,7 @@ def test_check_markdown_reports_source_line(app):
 
 
 def notebook(app, *sources):
+    nbformat = pytest.importorskip('nbformat')
     nb = nbformat.v4.new_notebook()
     nb.cells = [nbformat.v4.new_markdown_cell('Intro')] + [nbformat.v4.new_code_cell(s) for s in sources]
     return app(nbformat.writes(nb), name='app.ipynb')
