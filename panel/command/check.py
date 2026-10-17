@@ -2,12 +2,18 @@
 Check that a Panel app runs the way it does under ``panel serve``.
 """
 import asyncio
+import json
 import os
 import re
+import sys
 import traceback
+
+from contextlib import redirect_stdout
 
 from tornado.httpclient import AsyncHTTPClient
 from tornado.ioloop import IOLoop
+
+from bokeh.command.subcommand import Argument, Subcommand
 
 from ..config import config
 from ..io.application import build_single_handler_application
@@ -37,6 +43,15 @@ def _parse_traceback(text: str, path: str) -> dict:
         'line': int(frame[2]) if frame else None,
         'traceback': text,
     }
+
+
+def _format(result: dict) -> str:
+    if (error := result['error']) is None:
+        return f"{result['file']}: ok"
+    location = error['file'] or result['file']
+    if error['line'] is not None:
+        location += f":{error['line']}"
+    return f"{location}: {error['type']}: {error['message']}"
 
 
 def check_app(path: str, argv: list[str] | None = None) -> dict:
@@ -86,3 +101,52 @@ async def _serve_once(app, path: str) -> dict | None:
     finally:
         server.stop()
         server.unlisten()
+
+
+class Check(Subcommand):
+    ''' Subcommand to run Panel apps as ``panel serve`` would and report errors.
+
+    '''
+
+    name = "check"
+
+    help = "Run apps as 'panel serve' would and report the file and line of any error."
+
+    args = (
+        ('files', Argument(
+            metavar = 'DIRECTORY-OR-SCRIPT',
+            nargs   = '+',
+            help    = "The app directories or scripts to check",
+        )),
+        ('--json', Argument(
+            action  = 'store_true',
+            help    = "Print the results as JSON",
+        )),
+        ('--num-threads', Argument(
+            action  = 'store',
+            type    = int,
+            help    = "Thread pool size, as passed to 'panel serve'",
+            default = None
+        )),
+        ('--args', Argument(
+            metavar = 'COMMAND-LINE-ARGS',
+            nargs   = "...",
+            help    = "Command line arguments passed on to the applications",
+        )),
+    )
+
+    def invoke(self, args):
+        if args.num_threads is not None:
+            config.nthreads = args.num_threads
+        results = []
+        for path in args.files:
+            # App output must not end up in the report, e.g. in the JSON
+            with redirect_stdout(sys.stderr):
+                results.append(check_app(path, args.args))
+        ok = all(r['ok'] for r in results)
+        if args.json:
+            report = json.dumps({'ok': ok, 'results': results}, indent=2)
+        else:
+            report = '\n'.join(_format(r) for r in results)
+        print(report)  # noqa
+        return ok
