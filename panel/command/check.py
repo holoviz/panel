@@ -13,6 +13,7 @@ import traceback
 
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
+from itertools import takewhile
 
 from bokeh.command.subcommand import Argument, Subcommand
 from tornado.httpclient import AsyncHTTPClient
@@ -48,6 +49,12 @@ def _error(etype: str, message: str, frames: list, path: str, text: str) -> dict
 
 def _parse_traceback(text: str, path: str) -> dict:
     lines = text.rstrip().splitlines()
+    # An exception group draws its sub-exceptions in a gutter below its own
+    # traceback; the group is what propagated, so only its block is parsed
+    groups = [i for i, line in enumerate(lines) if line.startswith('  + Exception Group Traceback')]
+    if groups:
+        block = takewhile(lambda line: not line.startswith('  +-'), lines[groups[-1]+1:])
+        lines = [line[4:] for line in block]
     frames = [(i, m.groups()) for i, line in enumerate(lines) if (m := _FRAME.match(line))]
     last = frames[-1][0] if frames else -1
     summary = '\n'.join(line for line in lines[last+1:] if line and not line[0].isspace())
