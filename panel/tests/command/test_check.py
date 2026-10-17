@@ -76,6 +76,30 @@ def test_check_threaded_onload_without_threads(app):
     assert result['error']['type'] == 'RuntimeError'
 
 
+def test_check_exception_group(app):
+    result = check_app(app(
+        "import panel as pn\n"
+        "try:\n"
+        "    {}['k']\n"
+        "except KeyError as e:\n"
+        "    raise ExceptionGroup('many', [e, ValueError('v')])\n"
+    ))
+    assert result['error']['type'] == 'ExceptionGroup'
+    assert result['error']['message'] == 'many (2 sub-exceptions)'
+    assert result['error']['line'] == 5
+
+
+def test_check_http_error(app, monkeypatch):
+    monkeypatch.setattr('panel.io.server.DocHandler.get', _respond_500)
+    result = check_app(app("import panel as pn\npn.panel('Hello').servable()\n"))
+    assert result['error']['type'] == 'HTTPError'
+    assert result['error']['message'].startswith('500')
+
+
+async def _respond_500(self, *args, **kwargs):
+    self.send_error(500)
+
+
 def test_check_missing_file(tmp_path):
     result = check_app(str(tmp_path / 'missing.py'))
     assert result['ok'] is False
