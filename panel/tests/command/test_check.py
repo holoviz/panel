@@ -1,6 +1,7 @@
 import json
 import sys
 
+import nbformat
 import pytest
 
 from panel.command import main
@@ -98,6 +99,30 @@ def test_check_http_error(app, monkeypatch):
 
 async def _respond_500(self, *args, **kwargs):
     self.send_error(500)
+
+
+def test_check_markdown_reports_source_line(app):
+    path = app("# Title\n\n```python\nimport panel as pn\npn.panel(1 / 0).servable()\n```\n", name='app.md')
+    error = check_app(path)['error']
+    assert (error['type'], error['line'], error['cell']) == ('ZeroDivisionError', 5, None)
+
+
+def notebook(app, *sources):
+    nb = nbformat.v4.new_notebook()
+    nb.cells = [nbformat.v4.new_markdown_cell('Intro')] + [nbformat.v4.new_code_cell(s) for s in sources]
+    return app(nbformat.writes(nb), name='app.ipynb')
+
+
+def test_check_notebook_reports_cell_and_line(app):
+    path = notebook(app, "import panel as pn", "x = 1\n{}['k']\npn.panel(x).servable()")
+    error = check_app(path)['error']
+    assert (error['type'], error['cell'], error['line']) == ('KeyError', 3, 2)
+
+
+def test_check_notebook_reports_last_expression(app):
+    path = notebook(app, "import panel as pn", "x = 0\npn.panel(1 / x)")
+    error = check_app(path)['error']
+    assert (error['type'], error['cell'], error['line']) == ('ZeroDivisionError', 3, 2)
 
 
 def test_check_missing_file(tmp_path):
