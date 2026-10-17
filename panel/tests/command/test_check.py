@@ -231,7 +231,7 @@ def test_cli_does_not_wait_for_leftover_threads(app, monkeypatch):
 
 
 def test_cli_reports_hard_crash(app, monkeypatch, capsys):
-    path = app("import ctypes\n\nctypes.string_at(0)\n")
+    path = app("import faulthandler\n\nfaulthandler._sigsegv()\n")
     assert run_cli(monkeypatch, path) == 1
     assert capsys.readouterr().out.startswith(f'{path}:3: ProcessExited: Fatal Python error')
 
