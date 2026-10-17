@@ -69,6 +69,8 @@ def _source_location(path: str, line: int) -> tuple[int | None, int]:
             for i, text in enumerate(cell.source.splitlines(), 1)
         ]
     code = handler._runner.source.splitlines()
+    if not 0 < line <= len(code):
+        return None, line
     target = code[line-1].strip()
     nth = sum(text.strip() == target for text in code[:line-1])
     matches = [(c, i) for c, i, text in units if text.strip() == target]
