@@ -1842,14 +1842,8 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
       * <node>: All named DOM nodes in the HTML template, e.g. the
                 `input_el` node in the example above.
 
-    `_scripts` is processed and frozen when the class is created. The
-    mapping is read-only on the class and on instances. A subclass
-    inherits that mapping until it declares `_scripts` itself, which
-    replaces the inherited declaration. To extend a parent, unpack it
-    into a new mapping (`{**Parent._scripts, ...}`). List values are
-    stored as tuples at class creation, so later changes to the
-    original list do not change the scripts that run; string values
-    stay strings.
+    `_scripts` is read-only after class creation; extend a parent with
+    `{**Parent._scripts, ...}`.
     """
 
     _child_config: t.ClassVar[Mapping[str, str]] = {}

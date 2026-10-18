@@ -823,6 +823,9 @@ def test_reactive_html_scripts_update_before_init_does_not_change_shared_scripts
     with pytest.raises(AttributeError):
         TestScripts()
 
+    with pytest.raises(TypeError):
+        TestScripts._scripts['render'] = 'data.clicks += 2'
+
     assert TestScripts._scripts['render'] == 'data.clicks += 1'
 
 def test_reactive_html_templated_literal_add_loop_id_and_for_loop_var():
