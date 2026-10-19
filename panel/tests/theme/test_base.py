@@ -381,6 +381,21 @@ def test_explicit_design_does_not_follow_config():
         assert isinstance(widget._design, Bootstrap)
 
 
+def test_explicit_none_design_does_not_follow_config():
+    widget = TextInput(design=None)
+
+    with config.set(design=Material):
+        assert isinstance(widget._design, Native)
+
+
+def test_design_set_to_none_does_not_follow_config():
+    widget = TextInput(design=Bootstrap)
+    widget.design = None
+
+    with config.set(design=Material):
+        assert isinstance(widget._design, Native)
+
+
 def test_design_configured_after_creation_applies_at_render(document, comm):
     widget = TextInput()
 

@@ -851,12 +851,14 @@ class Viewable(Renderable, Layoutable, ServableMixin):
 
     def __init__(self, **params):
         hooks = params.pop('hooks', [])
+        # An explicit design=None opts out of the configured design.
+        explicit_none = 'design' in params and params['design'] is None
         super().__init__(**params)
         self._hooks = hooks
 
         if self.loading:
             self._update_loading()
-        self._update_design()
+        self._update_design(explicit_none)
         self._internal_callbacks.extend([
             self.param.watch(self._update_design, 'design'),
             self.param.watch(self._update_loading, 'loading')
@@ -882,12 +884,13 @@ class Viewable(Renderable, Layoutable, ServableMixin):
     def _design(self, design):
         self._assigned_design = design
 
-    def _update_design(self, *_):
+    def _update_design(self, explicit=True):
         from .theme import Design
+        from .theme.native import Native
         if isinstance(self.design, Design):
             self._design = self.design
         elif self.design is None:
-            self._design = None
+            self._design = self._instantiate_design(Native, config.theme) if explicit else None
         else:
             self._design = self._instantiate_design(self.design, config.theme)
 
