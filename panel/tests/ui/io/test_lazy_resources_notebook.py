@@ -63,3 +63,16 @@ def test_notebook_declared_extensions_load_each_module_once(page, jupyter_previe
         """() => ({perspective: window.perspective != null, filepond: window.FilePond != null})"""
     )
     assert globals_defined == {'perspective': True, 'filepond': True}
+
+
+def test_notebook_esm_component_loads_compiler_on_demand(page, jupyter_preview):
+    """
+    ``esm.ipynb`` renders a ReactComponent without a precompiled bundle, so
+    the in-browser compiler has to be fetched before it can render.
+    """
+    page.goto(f"{jupyter_preview}/esm.ipynb")
+
+    expect(page.locator('#react-compiled')).to_have_text('Rendered', timeout=30000)
+    assert page.evaluate(
+        """() => performance.getEntriesByType('resource').some((r) => r.name.includes('sucrase.min.js'))"""
+    )

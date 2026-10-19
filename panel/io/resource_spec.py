@@ -30,7 +30,7 @@ from bokeh.model import Model
 from ..config import config
 from ..util import isurl
 from .resources import (
-    Resources, component_resource_path, extension_declared,
+    CDN_DIST, Resources, component_resource_path, extension_declared,
     get_notebook_resources, get_resource_mode, resolve_resource_cdn,
     set_resource_mode,
 )
@@ -266,6 +266,16 @@ def _shim_url(resources: Resources) -> str | None:
     from ..models.esm import ReactiveESM
     urls = resources.adjust_paths(ReactiveESM.__javascript__)
     return urls[0] if urls else None
+
+
+def compiler_url(mode: MODES | None = None) -> str:
+    """
+    The url of the in-browser compiler (sucrase) that ESM components
+    without a precompiled bundle load on demand.
+    """
+    resolved_mode, _ = _spec_mode(mode)
+    with set_resource_mode(resolved_mode):  # type: ignore[arg-type]
+        return _resources(resolved_mode).adjust_paths([f'{CDN_DIST}sucrase.min.js'])[0]
 
 
 def _has_resources(cls: type) -> bool:
