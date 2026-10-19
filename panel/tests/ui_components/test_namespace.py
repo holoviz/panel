@@ -260,6 +260,65 @@ def test_importing_panel_ui_replaces_dependency_default():
     assert output == 'True'
 
 
+def test_importing_panel_ui_in_a_session_only_switches_that_session():
+    output = run_check("""\
+    import param
+    from bokeh.document import Document
+
+    import panel as pn
+    from panel.io.state import set_curdoc
+
+    with set_curdoc(Document()):
+        import panel.ui
+        material = pn.config.design is pn.ui.MaterialUIDesign
+    with set_curdoc(Document()):
+        classic = pn.config.design is None
+    global_design = param.Parameterized.__getattribute__(pn.config, 'design')
+
+    print(material, classic, global_design is None, end='')
+    """)
+    assert output == 'True True True'
+
+
+def test_later_sessions_accessing_panel_ui_switch():
+    output = run_check("""\
+    from bokeh.document import Document
+
+    import panel as pn
+    from panel.io.state import set_curdoc
+
+    with set_curdoc(Document()):
+        import panel.ui
+    with set_curdoc(Document()):
+        from panel.ui import Button
+        from_import = pn.config.design is pn.ui.MaterialUIDesign
+    with set_curdoc(Document()):
+        pn.extension(design='fast')
+        pn.ui.Button
+        explicit = pn.config.design.__name__
+
+    print(from_import, explicit, end='')
+    """)
+    assert output == 'True Fast'
+
+
+def test_classic_component_created_before_using_panel_ui_follows_session():
+    output = run_check("""\
+    from bokeh.document import Document
+
+    import panel as pn
+    from panel.io.state import set_curdoc
+
+    with set_curdoc(Document()):
+        import panel.ui
+    with set_curdoc(Document()):
+        widget = pn.widgets.TextInput()
+        pn.ui.Button
+        print(type(widget._design).__name__, end='')
+    """)
+    assert output == 'MaterialUIDesign'
+
+
 def test_explicit_design_survives_importing_panel_ui():
     # panel-material-ui assigns config.design unconditionally at import time;
     # panel.ui has to undo that.
