@@ -57,7 +57,7 @@ NOT_FLAT = {
     'Pane', 'PaneBase', 'BooleanIndicator', 'ValueIndicator',
     'MaterialComponent', 'MaterialUIComponent', 'MaterialWidget',
     'MaterialLayout', 'MaterialListLike', 'MaterialNamedListLike',
-    'MaterialPaneBase',
+    'MaterialPaneBase', 'MaterialWrapper',
     'Grammar', 'GrammarList', 'Utterance', 'Voice',
 }
 
