@@ -19,7 +19,7 @@ pn.ui.widgets.Button(label='Run')   # same class
 pn.ui.Tabulator(value=pd.DataFrame({'value': [1, 2]}))  # classic component, re-exported unchanged
 ```
 
-Material components can be mixed with classic components in an app. Panel 1.9 added `label` as an alias for `name` on classic components, so you can adopt that spelling before switching namespaces. We have made a best effort to keep classic and Material components compatible, but they are not 1:1 everywhere. Check {ref}`panel-ui-compatibility` for known parameter and default differences, and test callback behavior before replacing a classic widget. Importing `panel.ui` selects the Material UI design if you have not explicitly configured another design. To keep a chosen design, set it before importing `panel.ui`.
+Material components can be mixed with classic components in an app. Panel 1.9 added `label` as an alias for `name` on classic components, so you can adopt that spelling before switching namespaces. We have made a best effort to keep classic and Material components compatible, but they are not 1:1 everywhere. Check {ref}`panel-ui-compatibility` for known parameter and default differences, and test callback behavior before replacing a classic widget. Using `panel.ui` selects the Material UI design if you have not explicitly configured another design. In a served application only the sessions that use `panel.ui` switch, so classic applications served from the same process keep their design. To keep a chosen design, set it before using `panel.ui`.
 
 #### Migrate Python files
 
