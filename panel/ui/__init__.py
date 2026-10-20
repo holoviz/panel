@@ -60,9 +60,9 @@ from .notifications import NotificationArea
 from .pane import (
     AVIF, GIF, HTML, ICO, JPG, JSON, PDF, PNG, SVG, VTK, YT, Audio, Bokeh,
     DataFrame, DeckGL, ECharts, HoloViews, Image, Interactive, IPyLeaflet,
-    IPyWidget, LaTeX, Markdown, Matplotlib, ParamFunction, ParamMethod,
+    IPyWidget, LaTeX, Markdown, Matplotlib, Param, ParamFunction, ParamMethod,
     ParamRef, Perspective, Placeholder, Plotly, ReactiveExpr, Reacton, RGGPlot,
-    Str, Streamz, Textual, Typography, Vega, Video, Vizzu, VTKVolume,
+    Str, Streamz, Textual, Typography, Vega, Video, Vizzu, VTKVolume, panel,
 )
 from .template import (
     AppBar, BreakpointSwitcher, Page, ThemeToggle,
@@ -215,7 +215,9 @@ __all__ = (
     "NumberInput",
     "Page",
     "Pagination",
+    "panel",
     "Paper",
+    "Param",
     "ParamFunction",
     "ParamMethod",
     "ParamRef",
