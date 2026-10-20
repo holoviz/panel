@@ -398,12 +398,13 @@ class _config(_base_config):
         are loaded from CDN if one is available, or in a notebook from
         the Jupyter server extension, see notebook_resources.""")
 
-    _notebook_resources = param.Selector(default='auto', objects=['auto', 'jupyter', 'cdn'], doc="""
+    _notebook_resources: t.Literal['auto', 'jupyter', 'cdn'] = param.Selector(
+        default='auto', objects=['auto', 'jupyter', 'cdn'], doc="""
         Where a notebook loads resources from if they are not inlined.
         'jupyter' loads them from Panel's Jupyter server extension, 'cdn'
         from the CDN and 'auto' from the Jupyter server extension if the
         Jupyter server running the kernel serves it. Resources the server
-        extension cannot serve fall back to the CDN.""")
+        extension cannot serve fall back to the CDN.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     _theme: t.Literal['default', 'dark'] | None = param.Selector(
         default=None, objects=['default', 'dark'], allow_None=True, doc="""
