@@ -254,34 +254,6 @@ def notebook_extension_url(path: str) -> str | None:
         return None
     return f'{jupyter_endpoint_root()}{path}'
 
-def jupyter_endpoint_root() -> str:
-    """
-    The root url of the Jupyter server extension, e.g. ``/panel-preview/``.
-    """
-    # The render endpoint sets `rel_path` to its own `panel-preview` root
-    # already, so building on `base_url` there would double it. nbclassic
-    # never sets `rel_path`, so `base_url` is the raw server root there.
-    if state.rel_path and state.rel_path.rstrip('/').endswith('panel-preview'):
-        return f"{state.rel_path.rstrip('/')}/"
-    base_url = state.base_url.removesuffix('nbclassic/')
-    return f'{base_url}panel-preview/'
-
-def notebook_extension_url(path: str) -> str | None:
-    """
-    Resolves a ``static/extensions/<name>/...`` path against the Jupyter
-    server extension when notebook output is served by it.
-
-    Returns None if the endpoint is not in use, e.g. in a server session,
-    with inlined resources or when the endpoint is not available.
-    """
-    if (
-        config.inline or state._is_pyodide or state._is_server_session
-        or not (NOTEBOOK_RESOURCES and jupyter_endpoint_available())
-        or not path.startswith('static/extensions/')
-    ):
-        return None
-    return f'{jupyter_endpoint_root()}{path}'
-
 def set_default_resource_mode(mode: MODES, *, notebook: bool = False):
     """
     Sets the mode urls are resolved for outside a set_resource_mode block.
