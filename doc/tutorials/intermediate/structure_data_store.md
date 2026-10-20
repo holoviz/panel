@@ -74,11 +74,6 @@ class DataStore(Viewer):
         )
         self._widgets = widgets
 
-    def filter(
-        self,
-    ):
-        return
-
     def __panel__(self):
         return pn.ui.Column(
             "## Filters",
@@ -157,25 +152,25 @@ class Indicators(View):
     def __panel__(self):
         style = {"stylesheets": [CARD_STYLE.format(padding="10px")]}
         return pn.ui.FlexBox(
-            pn.indicators.Number(
+            pn.ui.Number(
                 value=self.data_store.total_capacity / 1e6,
                 label="Total Capacity (GW)",
                 format="{value:,.2f}",
                 **style
             ),
-            pn.indicators.Number(
+            pn.ui.Number(
                 value=self.data_store.count,
                 label="Count",
                 format="{value:,.0f}",
                 **style
             ),
-            pn.indicators.Number(
+            pn.ui.Number(
                 value=self.data_store.avg_capacity,
                 label="Avg. Capacity (kW)",
                 format="{value:,.2f}",
                 **style
             ),
-            pn.indicators.Number(
+            pn.ui.Number(
                 value=self.data_store.avg_rotor_diameter,
                 label="Avg. Rotor Diameter (m)",
                 format="{value:,.2f}",
@@ -220,17 +215,12 @@ class App(Viewer):
         self._views = pn.ui.FlexBox(
             *(view(data_store=self.data_store) for view in self.views), loading=updating
         )
-        self._template = pn.template.MaterialTemplate(title=self.title)
-        self._template.sidebar.append(self.data_store)
-        self._template.main.append(self._views)
-
-    def servable(self):
-        if pn.state.served:
-            return self._template.servable()
-        return self
+        self._page = pn.ui.Page(
+            title=self.title, sidebar=[self.data_store], main=[self._views]
+        )
 
     def __panel__(self):
-        return pn.ui.Row(self.data_store, self._views)
+        return self._page
 
 
 data = get_turbines()
