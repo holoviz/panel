@@ -158,7 +158,8 @@ GLOBAL_MODULE_SUFFIX = '__panel_global'
 
 def _autoload_js(
     *, bundle, configs, requirements, exports, error_id, skip_imports, require_skip,
-    check_extension=False, ipywidget, reloading=False, load_timeout=5000
+    check_extension=False, ipywidget, reloading=False, load_timeout=5000,
+    cdn_map=()
 ):
     config = {'packages': {}, 'paths': {}, 'shim': {}}
     for conf in configs:
@@ -181,6 +182,7 @@ def _autoload_js(
         reloading = reloading,
         timeout   = load_timeout,
         cdn_dist  = CDN_DIST,
+        cdn_map   = [list(pair) for pair in cdn_map],
         config    = config,
         requirements = requirements,
         require_stages = stages,
@@ -700,6 +702,7 @@ def load_notebook(
             skip_imports=skip_imports,
             require_skip=require_skip,
             check_extension=nb_endpoint,
+            cdn_map=resources.jupyter_cdn_map() if nb_endpoint else (),
             ipywidget=ipywidget,
             reloading=reloading,
             load_timeout=load_timeout

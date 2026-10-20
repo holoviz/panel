@@ -413,3 +413,19 @@ def test_notebook_resources_rewrite_extension_paths_to_jupyter_endpoint(jupyter_
     assert resources.adjust_paths(['static/extensions/panel-foo/foo.bundle.js']) == [
         '/panel-preview/static/extensions/panel-foo/foo.bundle.js'
     ]
+
+
+def test_jupyter_cdn_map(tmp_path, monkeypatch):
+    from bokeh.embed.bundle import extension_dirs
+
+    from panel.io.resources import EXTENSION_CDN
+
+    monkeypatch.setitem(extension_dirs, 'panel-foo', tmp_path)
+    monkeypatch.setitem(EXTENSION_CDN, tmp_path, 'https://cdn.holoviz.org/panel-foo/v1.0.0')
+
+    cdn_map = dict(Resources(mode='cdn', notebook=True, minified=True).jupyter_cdn_map())
+
+    assert cdn_map['static/extensions/panel/'] == CDN_DIST
+    assert cdn_map['static/extensions/panel-foo/'] == 'https://cdn.holoviz.org/panel-foo/v1.0.0/'
+    assert cdn_map['static/js/bokeh.min.js'] == f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-{bokeh_version}.min.js'
+    assert cdn_map['static/js/bokeh-widgets.min.js'] == f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-widgets-{bokeh_version}.min.js'

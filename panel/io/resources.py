@@ -880,6 +880,27 @@ class Resources(BkResources):
             )
         return super()._cdn_urls()
 
+    def jupyter_cdn_map(self) -> list[tuple[str, str]]:
+        """
+        Pairs of paths relative to the Jupyter server extension root and
+        the CDN urls serving the same files.
+
+        Lets the notebook bootstrap load the files from the CDN when the
+        endpoint cannot serve them, e.g. in an exported notebook.
+        """
+        cdn_map = [(LOCAL_DIST, CDN_DIST)]
+        extension_cdns = {Path(path).resolve(): cdn for path, cdn in EXTENSION_CDN.items()}
+        for name, dist in extension_dirs.items():
+            cdn = extension_cdns.get(Path(dist).resolve())
+            if name != 'panel' and cdn:
+                cdn_map.append((f'static/extensions/{name}/', f"{cdn.rstrip('/')}/"))
+        minified = False if self.dev else self.minified
+        components = list(self.components)
+        cdn_urls = super()._cdn_urls().urls(components, 'js')
+        server_urls = _get_server_urls('', minified).urls(components, 'js')
+        cdn_map.extend(zip(server_urls, cdn_urls, strict=True))
+        return cdn_map
+
     def _server_urls(self) -> Urls:
         return _get_server_urls(
             self.root_url if self.absolute else '',

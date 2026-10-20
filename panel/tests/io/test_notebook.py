@@ -1,3 +1,4 @@
+import json
 import re
 
 import pytest
@@ -306,6 +307,10 @@ def test_notebook_endpoint_alert_stays_in_notebook_output(monkeypatch, notebook_
     assert 'element.href = resource_url(url)' in bootstrap
     assert 'new URL(resource_url(url), document.baseURI)' in bootstrap
     assert 'require_config.paths[name] = (Array.isArray(path) ? path : [path]).flatMap(require_urls)' in bootstrap
+    cdn_map = json.loads(re.search(r'const CDN_MAP = (.*);', bootstrap).group(1))
+    assert ['static/extensions/panel/', CDN_DIST] in cdn_map
+    assert any(path.startswith('static/js/bokeh') for path, _ in cdn_map)
+    assert 'root.__panel_endpoint_failed__ = true;' in bootstrap
 
 
 def test_notebook_vscode_resources_use_cdn(monkeypatch, notebook_bootstrap):

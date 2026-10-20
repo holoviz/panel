@@ -458,6 +458,49 @@ def test_notebook_resource_urls(page, live_notebook):
                for url in requests if '/bundled/export-test/' in url)
 
 
+@pytest.mark.parametrize('state', ['export', 'endpoint_failed', 'live'])
+def test_notebook_extension_resource_urls(page, state):
+    """
+    Extension and BokehJS urls on the endpoint map to their CDN through the
+    bootstrap's map, in exports and once the endpoint was found unreachable.
+    """
+    serve_component(page, lambda: pn.pane.Markdown('export'))
+    requests = []
+    page.on('request', lambda request: requests.append(request.url))
+    page.route('**/cdn-test/**', lambda route: route.fulfill(
+        status=200,
+        content_type='text/css' if route.request.url.endswith('.css') else 'text/javascript',
+        body='window.cdnTestLoaded = true' if route.request.url.endswith('.js') else 'body {}',
+    ))
+    page.route('**/panel-preview/**', lambda route: route.fulfill(
+        status=200,
+        content_type='text/css' if route.request.url.endswith('.css') else 'text/javascript',
+        body='window.cdnTestLoaded = true' if route.request.url.endswith('.js') else 'body {}',
+    ))
+    result = page.evaluate("""async (state) => {
+        const endpoint = '/panel-preview/static/extensions/panel-test/'
+        window.__panel_live_notebook__ = state !== 'export'
+        window.__panel_endpoint_failed__ = state === 'endpoint_failed'
+        window.__panel_cdn_map__ = [['static/extensions/panel-test/', location.origin + '/cdn-test/']]
+        const registry = window.__panel_resources__
+        await registry.ensure({v: 1, libs: [{name: 'cdn-test', js: [endpoint + 'script.js']}],
+                               css: [endpoint + 'style.css']})
+        const {ImportedStyleSheet} = Bokeh.require('models/dom/stylesheets')
+        const model = new ImportedStyleSheet({url: endpoint + 'model.css'})
+        return [window.cdnTestLoaded, model.underlying().el.getAttribute('href')]
+    }""", state)
+    loaded, stylesheet = result
+    assert loaded
+    urls = [url for url in requests if 'script.js' in url or 'style.css' in url]
+    assert len(urls) == 2
+    if state == 'live':
+        assert all('/panel-preview/static/extensions/panel-test/' in url for url in urls)
+        assert stylesheet == '/panel-preview/static/extensions/panel-test/model.css'
+    else:
+        assert all('/cdn-test/' in url for url in urls)
+        assert stylesheet.endswith('/cdn-test/model.css')
+
+
 def test_library_not_loaded_until_module_exports_assigned(page):
     def app():
         extension()
