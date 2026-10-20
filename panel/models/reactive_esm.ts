@@ -19,7 +19,7 @@ import type {UIElement} from "@bokehjs/models/ui/ui_element"
 import {serializeEvent} from "./event-to-object"
 import {DOMEvent} from "./html"
 import {HTMLBox, HTMLBoxView, rerender_view, set_size} from "./layout"
-import {resources} from "./resources"
+import {resource_url, resources} from "./resources"
 import {convertUndefined, formatError} from "./util"
 
 import esm_css from "styles/models/esm.css"
@@ -283,7 +283,7 @@ export class ReactiveESMView extends HTMLBoxView {
     stylesheets.push(esm_css)
     if (this.model.css_bundle) {
       if (this.model.bundle === "url") {
-        stylesheets.push(new ImportedStyleSheet(this.model.css_bundle))
+        stylesheets.push(new ImportedStyleSheet(resource_url(this.model.css_bundle)))
       } else {
         stylesheets.push(this.model.css_bundle)
       }
