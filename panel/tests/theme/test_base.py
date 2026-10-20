@@ -367,6 +367,29 @@ def test_design_follows_session_config_after_creation(server_document):
         assert isinstance(widget._design, Native)
 
 
+def _imported_urls(model):
+    return [s.url for s in model.stylesheets if isinstance(s, ImportedStyleSheet)]
+
+
+def test_design_update_resolves_config_of_model_document():
+    doc1, doc2 = Document(), Document()
+    widget = TextInput()
+    with set_curdoc(doc1):
+        config.design = Material
+        model1 = widget.get_root(doc1)
+    with set_curdoc(doc2):
+        config.design = Bootstrap
+        model2 = widget.get_root(doc2)
+
+    with set_curdoc(doc2):
+        widget.stylesheets = [':host { color: red; }']
+
+    assert any(url.endswith('/bundled/theme/material.css') for url in _imported_urls(model1))
+    assert not any(url.endswith('/bundled/theme/bootstrap.css') for url in _imported_urls(model1))
+    assert any(url.endswith('/bundled/theme/bootstrap.css') for url in _imported_urls(model2))
+    assert not any(url.endswith('/bundled/theme/material.css') for url in _imported_urls(model2))
+
+
 def test_design_follows_config_theme():
     widget = TextInput()
 
