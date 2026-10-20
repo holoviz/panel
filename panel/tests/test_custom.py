@@ -347,3 +347,25 @@ def test_esm_python_update_different_from_frontend_is_applied(document, comm):
 
     # The model must reflect the Python update since 'C' != 'B'
     assert model.data.value == 'C'
+
+
+class ESMWithEvent(ReactiveESM):
+
+    clicks = param.Integer(default=0)
+
+    value = param.Event()
+
+
+def test_esm_event_reset_does_not_retrigger_watchers(document, comm):
+    esm = ESMWithEvent()
+
+    model = esm.get_root(document, comm)
+
+    values = []
+    esm.param.watch(lambda e: values.append(e.new), 'value')
+
+    with set_curdoc(document):
+        esm.param.update(clicks=1, value=True)
+
+    assert values == [True]
+    assert model.data.value is False

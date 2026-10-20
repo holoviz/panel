@@ -668,7 +668,16 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             elif ref in self._changing:
                 del self._changing[ref]
         if data_resets:
-            apply_changes_without_dispatch(doc, model.data, data_resets)
+            # Mark resets as changing so the Python-side echo isn't processed as a frontend event
+            prev_changing = self._changing.get(ref, [])
+            self._changing[ref] = prev_changing + list(data_resets)
+            try:
+                apply_changes_without_dispatch(doc, model.data, data_resets)
+            finally:
+                if prev_changing:
+                    self._changing[ref] = prev_changing
+                elif ref in self._changing:
+                    del self._changing[ref]
 
     def _handle_msg(self, data: t.Any) -> None:
         """
