@@ -47,7 +47,6 @@ OMITTED = {
     'widgets.Spinner': 'deprecated alias of NumberInput',
     'widgets.DataFrame': 'deprecated in favour of Tabulator',
     'pane.Alert': 'superseded by the Material panel.ui.Alert',
-    'pane.panel': 'a function, reachable as panel.panel',
 }
 
 # Reachable through the submodules but kept out of the flat namespace, matching
@@ -131,6 +130,14 @@ def test_classic_components_are_not_wrapped(ui):
     assert ui.Matplotlib is pn.pane.Matplotlib
     assert ui.Image is ui.pane.Image is pn.pane.Image
     assert ui.GridStack is pn.layout.GridStack
+
+
+def test_panel_and_param_exported(ui):
+    assert ui.panel is ui.pane.panel
+    assert ui.Param is ui.pane.Param
+    assert issubclass(ui.Param, pn.Param)
+    assert issubclass(ui.HoloViews, pn.pane.HoloViews)
+    assert 'panel' in ui.__all__ and 'Param' in ui.__all__
 
 
 def test_material_components_come_from_panel_material_ui(ui, pmui):
