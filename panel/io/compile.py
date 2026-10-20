@@ -144,7 +144,7 @@ def find_module_bundles(module_spec: str) -> dict[pathlib.Path, list[type[Reacti
     except ValueError:
         cls_error = f' and that class(es) {cls!r} are defined therein' if cls else ''
         raise RuntimeError(  # noqa
-            f'Could not find any ESM components to compile, ensure '
+            f'Could not find any ESM components to compile. Ensure '
             f'you provided the right module{cls_error}.'
         )
     if module in sys.modules:
@@ -397,7 +397,7 @@ def generate_project(
     project_config: dict[str, t.Any] | None = None
 ):
     """
-    Converts a set of ESM components into a Javascript project with
+    Converts a set of ESM components into a JavaScript project with
     an index.js, package.json and a T|JS(X) per component.
     """
     path = pathlib.Path(path)
@@ -465,7 +465,7 @@ def compile_components(
 ) -> int | str | None:
     """
     Compiles a list of ReactiveESM components into a single JavaScript bundle
-    including their Javascript dependencies.
+    including their JavaScript dependencies.
 
     Parameters
     ----------
@@ -476,13 +476,13 @@ def compile_components(
         temporary directory will be used.
     outfile : str | os.PathLike, optional
         The path to the output file where the compiled bundle will be saved.
-        If None the compiled output will be returned.
+        If None, the compiled output will be returned.
     skip_npm: bool
         Whether to skip npm install (assumes build_dir is set)
     minify : bool, optional
         If True, minifies the compiled JavaScript bundle.
     file_loaders: list[str]
-        List of file types (e.g. woff2 or svg) loaders to carry along
+        List of file types (e.g. woff2 or svg) of loaders to carry along
     verbose : bool, optional
         If True, prints detailed logs during the compilation process.
 
@@ -499,7 +499,7 @@ def compile_components(
         raise RuntimeError(
             'Could not find `npm` or it generated an error. Ensure it is '
             'installed and can be run with `npm --version`. You can get it '
-            'with conda or you favorite package manager or nodejs manager.'
+            'with conda or your favorite package manager or nodejs manager.'
         )
     if not check_cli_tool('esbuild'):
         raise RuntimeError(
