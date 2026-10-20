@@ -215,10 +215,16 @@ def get_notebook_resources() -> bool:
 
 def jupyter_endpoint_available() -> bool:
     """
-    Whether this process was launched by a Jupyter server that serves
-    Panel's extension endpoint.
+    Whether notebook output loads resources from Panel's Jupyter server
+    extension, as selected by `config.notebook_resources`.
+
+    By default that is the case if this process was launched by a Jupyter
+    server that serves the extension.
     """
-    return bool(os.environ.get(JUPYTER_ENDPOINT_ENV))
+    mode = config.notebook_resources
+    if mode == 'cdn':
+        return False
+    return mode == 'jupyter' or bool(os.environ.get(JUPYTER_ENDPOINT_ENV))
 
 def jupyter_endpoint_root() -> str:
     """

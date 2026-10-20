@@ -333,6 +333,45 @@ def test_notebook_vscode_resources_use_cdn(monkeypatch, notebook_bootstrap):
     assert 'https://cdn.holoviz.org/panel/' in js_urls
 
 
+@pytest.mark.parametrize('notebook_resources', ['cdn', 'jupyter'])
+def test_notebook_resources_option(monkeypatch, notebook_resources, notebook_bootstrap):
+    """
+    `notebook_resources` overrides whether the server announced the Jupyter
+    extension endpoint, for Panel's own resources and BokehJS alike.
+    """
+    published = []
+
+    def publish_display_data(data, **kwargs):
+        published.append(data)
+
+    monkeypatch.setattr('IPython.display.publish_display_data', publish_display_data)
+    if notebook_resources == 'jupyter':
+        monkeypatch.delenv('PANEL_JUPYTER_ENDPOINT')
+
+    with config.set(notebook_resources=notebook_resources):
+        load_notebook(inline=False)
+
+    bootstrap = next(data[LOAD_MIME] for data in published if LOAD_MIME in data)
+    js_urls = next(line for line in bootstrap.splitlines() if 'const js_urls' in line)
+    if notebook_resources == 'cdn':
+        assert '/panel-preview/' not in js_urls
+        assert 'https://cdn.holoviz.org/panel/' in js_urls
+        assert 'https://cdn.bokeh.org/bokeh/' in js_urls
+    else:
+        assert '/panel-preview/static/extensions/panel/' in js_urls
+        assert '/panel-preview/static/js/bokeh' in js_urls
+        assert 'cdn.bokeh.org' not in js_urls
+
+
+def test_notebook_resources_env_var(monkeypatch, jupyter_endpoint):
+    from panel.io.resources import jupyter_endpoint_available
+
+    assert jupyter_endpoint_available()
+    monkeypatch.setenv('PANEL_NOTEBOOK_RESOURCES', 'CDN')
+    assert config.notebook_resources == 'cdn'
+    assert not jupyter_endpoint_available()
+
+
 def test_notebook_ipywidgets_resources_use_cdn(monkeypatch, notebook_bootstrap):
     """
     ipywidgets mode (Voila and similar) has no Jupyter extension endpoint
