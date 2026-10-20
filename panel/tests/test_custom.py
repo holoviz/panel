@@ -121,9 +121,14 @@ def test_esm_bundle_resource_rel_path():
             state.rel_path = None
 
 
-def test_react_bundle_url_omits_importmap(tmp_path, server_document):
+def test_react_bundle_url_omits_importmap(tmp_path, monkeypatch, server_document):
+    from bokeh.embed.bundle import extension_dirs
+
     bundle = tmp_path / 'mui.bundle.js'
     bundle.write_text('export default {}')
+    # Served as an extension, since a url relative to the module cannot be
+    # computed across drives, e.g. for tmp_path on Windows.
+    monkeypatch.setitem(extension_dirs, 'panel-test-ext', tmp_path)
 
     class MuiBundle(ReactComponent):
         _bundle = bundle
