@@ -479,6 +479,9 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         else:
             defs = [cls._data_model]
             cls._data_model__initialized = True
+        if bundle_hash == 'url':
+            # A bundle ships its own dependencies
+            importmap = {}
         props.update({
             '_defs': defs,
             'bundle': bundle_hash,

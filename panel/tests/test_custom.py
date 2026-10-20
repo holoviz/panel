@@ -121,6 +121,20 @@ def test_esm_bundle_resource_rel_path():
             state.rel_path = None
 
 
+def test_react_bundle_url_omits_importmap(tmp_path, server_document):
+    bundle = tmp_path / 'mui.bundle.js'
+    bundle.write_text('export default {}')
+
+    class MuiBundle(ReactComponent):
+        _bundle = bundle
+        _importmap = {'imports': {'@mui/material': 'https://esm.sh/@mui/material@7.1.0'}}
+
+    model = MuiBundle().get_root(server_document)
+
+    assert model.bundle == 'url'
+    assert model.importmap == {}
+
+
 class ESMWithChildren(ReactiveESM):
 
     child = Child(doc="""A child Viewable to be displayed in the ESM.""")
