@@ -409,6 +409,13 @@ function clone_column(group: any): any {
 /** Ignore Tabulator redraw after `after_resize` when `this.el` client size changes by at most this many pixels per axis. */
 const EL_CLIENT_RESIZE_EPSILON_PX = 3
 
+/**
+ * Upper bound on waiting for `root.ready`. A view removed before its pending work
+ * settles, e.g. a figure replaced before its scheduled paint, leaves the root's
+ * ready chain pending forever, which would otherwise block every later redraw.
+ */
+const ROOT_READY_TIMEOUT_MS = 250
+
 export class DataTabulatorView extends HTMLBoxView {
   declare model: DataTabulator
 
@@ -442,6 +449,7 @@ export class DataTabulatorView extends HTMLBoxView {
   _automatic_page_size: boolean = false
   _last_after_resize_el_width: number | null = null
   _last_after_resize_el_height: number | null = null
+  _fonts_loaded: (() => void) | null = null
 
   override connect_signals(): void {
     super.connect_signals()
@@ -661,7 +669,10 @@ export class DataTabulatorView extends HTMLBoxView {
       if (!this._resize_pending) {
         return
       }
-      await this.root.ready
+      await Promise.race([
+        this.root.ready,
+        new Promise((resolve) => setTimeout(resolve, ROOT_READY_TIMEOUT_MS)),
+      ])
       // `remove()` can clear `_resize_pending` while awaiting `root.ready`.
       /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- cleared asynchronously in `remove()` */
       if (!this._resize_pending) {
@@ -732,6 +743,7 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   override remove(): void {
+    this.unwatch_fonts()
     this._resize_pending = false
     this._last_after_resize_el_width = null
     this._last_after_resize_el_height = null
@@ -756,7 +768,25 @@ export class DataTabulatorView extends HTMLBoxView {
     const configuration = this.getConfiguration()
     this.tabulator = new Tabulator(el, configuration)
     this.watch_stylesheets()
+    this.watch_fonts()
     this.init_callbacks()
+  }
+
+  /**
+   * Column widths are measured from the rendered text, so a web font that
+   * finishes loading after the table was built leaves them too narrow.
+   */
+  watch_fonts(): void {
+    this.unwatch_fonts()
+    this._fonts_loaded = () => this._request_resize_redraw()
+    document.fonts.addEventListener("loadingdone", this._fonts_loaded)
+  }
+
+  unwatch_fonts(): void {
+    if (this._fonts_loaded !== null) {
+      document.fonts.removeEventListener("loadingdone", this._fonts_loaded)
+      this._fonts_loaded = null
+    }
   }
 
   override style_redraw(): void {
@@ -1300,7 +1330,7 @@ export class DataTabulatorView extends HTMLBoxView {
     if (this.model.container_popup && (this.model.layout !== "fit_data_stretch")) {
       // We insert an empty last column to ensure select editor is rendered in correct position
       // see: https://github.com/holoviz/panel/issues/7295
-      columns.push({width: 1, maxWidth: 1, minWidth: 1, resizable: false, cssClass: "empty", sorter: null})
+      columns.push({width: 1, maxWidth: 1, minWidth: 1, resizable: false, cssClass: "empty", headerSort: false})
     }
     return columns
   }
