@@ -395,7 +395,15 @@ class _config(_base_config):
 
     _inline = param.Boolean(default=_LOCAL_DEV_VERSION, allow_None=True, doc="""
         Whether to inline JS and CSS resources. If disabled, resources
-        are loaded from CDN if one is available.""")
+        are loaded from CDN if one is available, or in a notebook from
+        the Jupyter server extension, see notebook_resources.""")
+
+    _notebook_resources = param.Selector(default='auto', objects=['auto', 'jupyter', 'cdn'], doc="""
+        Where a notebook loads resources from if they are not inlined.
+        'jupyter' loads them from Panel's Jupyter server extension, 'cdn'
+        from the CDN and 'auto' from the Jupyter server extension if the
+        Jupyter server running the kernel serves it. Resources the server
+        extension cannot serve fall back to the CDN.""")
 
     _theme: t.Literal['default', 'dark'] | None = param.Selector(
         default=None, objects=['default', 'dark'], allow_None=True, doc="""
@@ -412,7 +420,8 @@ class _config(_base_config):
         'oauth_encryption_key', 'oauth_extra_params', 'npm_cdn',
         'layout_compatibility', 'oauth_refresh_tokens', 'oauth_guest_endpoints',
         'oauth_optional', 'admin', 'admin_password', 'admin_users',
-        'index_titles', 'disable_validation', 'pyodide_cdn_root', 'page_config'
+        'index_titles', 'disable_validation', 'pyodide_cdn_root', 'page_config',
+        'notebook_resources'
     }
 
     _truthy = ['True', 'true', '1', True, 1]
@@ -693,6 +702,10 @@ class _config(_base_config):
     @property
     def inline(self):
         return os.environ.get('PANEL_INLINE', _config._inline) in self._truthy
+
+    @property
+    def notebook_resources(self):
+        return os.environ.get('PANEL_NOTEBOOK_RESOURCES', self._notebook_resources).lower()
 
     @property
     def log_level(self):
