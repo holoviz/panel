@@ -43,9 +43,10 @@ from ..util import _descendents
 from .embed import embed_state
 from .model import add_to_doc, diff
 from .resources import (
-    CDN_DIST, DIST_DIR, PANEL_DIR, Resources, _env, bundle_resources,
-    is_cdn_url, jupyter_endpoint_available, patch_model_css,
-    set_default_resource_mode, set_resource_mode,
+    CDN_DIST, DIST_DIR, LOCAL_DIST, PANEL_DIR, Resources, _env,
+    bundle_resources, is_cdn_url, jupyter_endpoint_available,
+    notebook_extension_url, patch_model_css, set_default_resource_mode,
+    set_resource_mode,
 )
 from .state import state
 
@@ -248,9 +249,13 @@ def render_model(
 
     target = model.ref['id']
 
+    dist_url = None
     if not state._is_pyodide and resources == 'server':
         # ALERT: Replace with better approach before Bokeh 3.x compatible release
         dist_url = '/panel-preview/static/extensions/panel/'
+    elif resources == 'cdn':
+        dist_url = notebook_extension_url(LOCAL_DIST)
+    if dist_url:
         patch_model_css(model, dist_url=dist_url)
         if model.document:
             model.document._template_variables['dist_url'] = dist_url

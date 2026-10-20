@@ -220,6 +220,34 @@ def jupyter_endpoint_available() -> bool:
     """
     return bool(os.environ.get(JUPYTER_ENDPOINT_ENV))
 
+def jupyter_endpoint_root() -> str:
+    """
+    The root url of the Jupyter server extension, e.g. ``/panel-preview/``.
+    """
+    # The render endpoint sets `rel_path` to its own `panel-preview` root
+    # already, so building on `base_url` there would double it. nbclassic
+    # never sets `rel_path`, so `base_url` is the raw server root there.
+    if state.rel_path and state.rel_path.rstrip('/').endswith('panel-preview'):
+        return f"{state.rel_path.rstrip('/')}/"
+    base_url = state.base_url.removesuffix('nbclassic/')
+    return f'{base_url}panel-preview/'
+
+def notebook_extension_url(path: str) -> str | None:
+    """
+    Resolves a ``static/extensions/<name>/...`` path against the Jupyter
+    server extension when notebook output is served by it.
+
+    Returns None if the endpoint is not in use, e.g. in a server session,
+    with inlined resources or when the endpoint is not available.
+    """
+    if (
+        config.inline or state._is_pyodide or state._is_server_session
+        or not (NOTEBOOK_RESOURCES and jupyter_endpoint_available())
+        or not path.startswith('static/extensions/')
+    ):
+        return None
+    return f'{jupyter_endpoint_root()}{path}'
+
 def set_default_resource_mode(mode: MODES, *, notebook: bool = False):
     """
     Sets the mode urls are resolved for outside a set_resource_mode block.
@@ -832,6 +860,26 @@ class Resources(BkResources):
 
         return external_resources
 
+    @property
+    def _jupyter_endpoint(self) -> bool:
+        # Embedders such as nteract pass notebook=True without serving
+        # the endpoint, so the flag alone must not trigger the rewrite.
+        return self.notebook and jupyter_endpoint_available()
+
+    def _cdn_urls(self) -> Urls:
+        # BokehJS is served by the extension's static handler as well, so
+        # asking Bokeh for server urls rooted there keeps its own naming
+        # and cache busting rather than rewriting the CDN urls after the
+        # fact, which depend on the release channel and version string.
+        if self._jupyter_endpoint:
+            from bokeh.server.views.static_handler import StaticHandler
+            return _get_server_urls(
+                jupyter_endpoint_root(),
+                False if self.dev else self.minified,
+                StaticHandler.append_version
+            )
+        return super()._cdn_urls()
+
     def _server_urls(self) -> Urls:
         return _get_server_urls(
             self.root_url if self.absolute else '',
@@ -855,7 +903,7 @@ class Resources(BkResources):
             for resource in getattr(model, resource_type, []):
                 if isinstance(resource, pathlib.PurePath):
                     continue
-                if self.mode == 'cdn':
+                if self.mode == 'cdn' and not self._jupyter_endpoint:
                     resource = resolve_resource_cdn(resource)
                 if state.rel_path:
                     resource = resource.removeprefix(state.rel_path+'/')
@@ -871,9 +919,13 @@ class Resources(BkResources):
         new_resources = []
         version_suffix = f'?v={JS_VERSION}'
         cdn_base = f'{config.npm_cdn}/@holoviz/panel@{JS_VERSION}/dist/'
+        endpoint = jupyter_endpoint_root() if self._jupyter_endpoint else None
         for resource in resources:
             if not isinstance(resource, str):
                 resource = str(resource)
+            if endpoint and resource.startswith(endpoint):
+                new_resources.append(resource)
+                continue
             resource = resource.replace('https://unpkg.com', config.npm_cdn)
             if resource.startswith(cdn_base):
                 resource = resource.replace(cdn_base, CDN_DIST)
@@ -890,22 +942,11 @@ class Resources(BkResources):
                     resource = f'{self.root_url}{resource}'
             if resource.endswith('.css') and not resource.startswith(('http:', 'https:')):
                 resource += version_suffix
-            # Embedders such as nteract pass notebook=True without serving
-            # the endpoint, so the flag alone must not trigger the rewrite.
-            if self.notebook and jupyter_endpoint_available():
-                # The render endpoint sets `rel_path` to its own
-                # `panel-preview` root already, so building on `base_url`
-                # there would double it. nbclassic never sets `rel_path`,
-                # so `base_url` is the raw server root there instead.
-                if state.rel_path and state.rel_path.rstrip('/').endswith('panel-preview'):
-                    endpoint = f"{state.rel_path.rstrip('/')}/static/extensions/panel/"
-                else:
-                    base_url = state.base_url.removesuffix('nbclassic/')
-                    endpoint = f'{base_url}panel-preview/static/extensions/panel/'
+            if endpoint:
                 if resource.startswith(CDN_DIST):
-                    resource = endpoint + resource.removeprefix(CDN_DIST)
-                elif resource.startswith(LOCAL_DIST):
-                    resource = endpoint + resource.removeprefix(LOCAL_DIST)
+                    resource = f'{endpoint}{LOCAL_DIST}' + resource.removeprefix(CDN_DIST)
+                elif resource.startswith('static/extensions/'):
+                    resource = f'{endpoint}{resource}'
             new_resources.append(resource)
         return new_resources
 

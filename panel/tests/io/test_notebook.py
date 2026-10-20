@@ -502,3 +502,84 @@ def test_replace_inline_css_ignores_version_query():
     assert isinstance(unversioned, InlineStyleSheet)
     assert isinstance(versioned, InlineStyleSheet)
     assert versioned.css == unversioned.css
+
+
+def test_notebook_esm_bundle_uses_jupyter_extension_endpoint(
+    tmp_path, monkeypatch, document, comm, notebook_bootstrap
+):
+    """
+    A compiled bundle in the dist directory of a registered extension is
+    served by the Jupyter extension endpoint rather than inlined.
+    """
+    from bokeh.embed.bundle import extension_dirs
+
+    from panel.custom import JSComponent
+
+    bundle = tmp_path / 'test.bundle.js'
+    bundle.write_text('export function render() {}')
+    (tmp_path / 'test.bundle.css').write_text('div {}')
+    monkeypatch.setitem(extension_dirs, 'panel-test-ext', tmp_path)
+
+    class BundledComponent(JSComponent):
+        _bundle = bundle
+
+    with config.set(inline=False):
+        model = BundledComponent().get_root(document, comm)
+
+    url = '/panel-preview/static/extensions/panel-test-ext/test.bundle'
+    assert model.bundle == 'url'
+    assert model.esm == f'{url}.js'
+    assert model.css_bundle == f'{url}.css'
+
+
+def test_notebook_esm_bundle_respects_render_esm_override(
+    tmp_path, monkeypatch, document, comm, notebook_bootstrap
+):
+    """
+    Extensions override `_render_esm`, typically returning a url only for
+    server sessions, so the notebook has to ask for that same url.
+    """
+    from bokeh.embed.bundle import extension_dirs
+
+    from panel.custom import JSComponent
+
+    bundle = tmp_path / 'test.bundle.js'
+    bundle.write_text('export function render() {}')
+    monkeypatch.setitem(extension_dirs, 'panel-test-ext', tmp_path)
+
+    class ServerUrlComponent(JSComponent):
+        _bundle = bundle
+
+        @classmethod
+        def _render_esm(cls, compiled=True, server=False):
+            if server:
+                return './' + cls._component_resource_path(bundle, compiled) + '?abc'
+            return bundle.read_text()
+
+    class SourceComponent(ServerUrlComponent):
+
+        @classmethod
+        def _render_esm(cls, compiled=True, server=False):
+            return bundle.read_text()
+
+    with config.set(inline=False):
+        url_model = ServerUrlComponent().get_root(document, comm)
+        source_model = SourceComponent().get_root(document, comm)
+
+    assert url_model.bundle == 'url'
+    assert url_model.esm == '/panel-preview/static/extensions/panel-test-ext/test.bundle.js?abc'
+    assert source_model.bundle not in (None, 'url')
+    assert source_model.esm == 'export function render() {}'
+    assert source_model.css_bundle is None
+
+
+def test_notebook_component_css_uses_jupyter_extension_endpoint(nb_loaded, notebook_bootstrap):
+    column = Column(Str('a'))
+    with config.set(inline=False):
+        column._repr_mimebundle_()
+
+    (model, _) = list(column._models.values())[0]
+    urls = [sts.url for sts in model.select({'type': ImportedStyleSheet})]
+
+    assert urls
+    assert all(url.startswith('/panel-preview/static/extensions/panel/') for url in urls)

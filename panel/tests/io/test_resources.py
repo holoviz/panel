@@ -391,3 +391,25 @@ def test_resolve_resource_cdn_custom_esm(panel_test_cdn):
     resources = Resources(mode='cdn')
 
     assert resources.css_files == ['https://panel-test.holoviz.org/assets/custom.css']
+
+
+def test_notebook_resources_load_bokeh_from_jupyter_endpoint(jupyter_endpoint):
+    """
+    BokehJS has to come from the endpoint's own static handler, using the
+    versioned server urls rather than the CDN urls, whose path depends on
+    the release channel and version string.
+    """
+    js_files = Resources(mode='cdn', notebook=True, minified=True).js_files
+    bokeh_files = [url for url in js_files if '/bokeh' in url]
+
+    assert bokeh_files
+    assert not any('cdn.bokeh.org' in url for url in js_files)
+    for url in bokeh_files:
+        assert re.match(r'/panel-preview/static/js/bokeh(-\w+)?\.min\.js\?v=\w+$', url)
+
+
+def test_notebook_resources_rewrite_extension_paths_to_jupyter_endpoint(jupyter_endpoint):
+    resources = Resources(mode='cdn', notebook=True)
+    assert resources.adjust_paths(['static/extensions/panel-foo/foo.bundle.js']) == [
+        '/panel-preview/static/extensions/panel-foo/foo.bundle.js'
+    ]
