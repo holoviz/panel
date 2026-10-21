@@ -30,6 +30,7 @@ import bokeh.util.callback_manager
 import numpy as np
 import param
 
+from bokeh.core import properties as bokeh_properties
 from bokeh.core.has_props import _default_resolver
 from bokeh.core.property.bases import Property
 from bokeh.model import Model
@@ -672,7 +673,13 @@ def set_bokeh_validation(validate: bool):
     validate: bool
         Whether to enable validation.
     """
-    Property._should_validate = validate
+    # `Property._should_validate` is for Bokeh 3.10.1 or lower
+    # https://github.com/bokeh/bokeh/pull/15548
+    set_default = getattr(bokeh_properties, "set_validation_default", None)
+    if set_default is None:
+        Property._should_validate = validate
+    else:
+        set_default(validate)
     if validate:
         bokeh.util.callback_manager._check_callback = _orig_check_callback
         bokeh.util.callback_manager._nargs = _orig_nargs
