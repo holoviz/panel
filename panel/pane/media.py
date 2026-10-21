@@ -86,7 +86,7 @@ class _MediaBase(ModelPane):
     def applies(cls, object: t.Any) -> float | bool | None:
         if isinstance(object, (pathlib.Path, str)):
             path = str(object)
-            if isfile(path) and any(path.endswith('.'+fmt) for fmt in cls._formats):
+            if isfile(path) and any(path.lower().endswith('.'+fmt) for fmt in cls._formats):
                 return True
             if isurl(path, cls._formats):
                 return True
@@ -140,7 +140,7 @@ class _MediaBase(ModelPane):
             fmt = self._detect_format(bffr)
             data = b64encode(bffr)
         elif os.path.isfile(obj):
-            fmt = str(obj).split('.')[-1]
+            fmt = str(obj).split('.')[-1].lower()
             with open(obj, 'rb') as f:
                 data = f.read()
             data = b64encode(data)

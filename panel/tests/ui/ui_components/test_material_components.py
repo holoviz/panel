@@ -1,6 +1,7 @@
 import logging
 import re
 
+import pandas as pd
 import pytest
 
 from panel.tests.util import serve_component, wait_until
@@ -16,6 +17,21 @@ TERMINAL_TEXT = """() => {
   const model = [...Bokeh.documents[0].all_models].find(m => m.type.endsWith('Terminal'))
   const buffer = Bokeh.index.find_one_by_id(model.id).term.buffer.active
   return [...Array(buffer.length).keys()].map(i => buffer.getLine(i).translateToString(true)).join('\\n')
+}"""
+
+# Emulates a host like Jupyter, which owns the document element.
+STRIP_THEME_MANAGED = """
+new MutationObserver((_, observer) => {
+  if (document.documentElement) {
+    document.documentElement.removeAttribute("data-theme-managed")
+    observer.disconnect()
+  }
+}).observe(document, {childList: true})
+"""
+
+TABULATOR_HEADER_STYLE = """el => {
+  const style = getComputedStyle(el)
+  return [style.backgroundColor, style.color, style.borderBottomColor]
 }"""
 
 
@@ -81,3 +97,21 @@ def test_widgetbox_disables_widgets(page, panel_ui):
     box.disabled = False
 
     expect(page.locator('input')).to_be_enabled()
+
+
+def test_tabulator_in_unmanaged_host_matches_served_app(page, panel_ui):
+    from panel_material_ui.layout import MaterialWrapper
+
+    design = panel_ui.MaterialUIDesign
+    df = pd.DataFrame({'a': [1, 2]})
+
+    serve_component(page, panel_ui.Column(panel_ui.Tabulator(df, design=design), design=design))
+    served = page.locator('.tabulator-header').evaluate(TABULATOR_HEADER_STYLE)
+
+    page.add_init_script(STRIP_THEME_MANAGED)
+    serve_component(page, MaterialWrapper(panel_ui.Tabulator(df, design=design), design=design))
+    assert not page.evaluate("() => document.documentElement.hasAttribute('data-theme-managed')")
+    unmanaged = page.locator('.tabulator-header').evaluate(TABULATOR_HEADER_STYLE)
+
+    assert unmanaged == served
+    assert served[0] != 'rgba(0, 0, 0, 0)'

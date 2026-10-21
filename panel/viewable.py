@@ -318,8 +318,6 @@ class Layoutable(param.Parameterized):
                 params['sizing_mode'] = config.sizing_mode
             elif config.sizing_mode == 'stretch_height' and 'height' not in params:
                 params['sizing_mode'] = config.sizing_mode
-        if 'design' not in params and self.param.design.default is None:
-            params['design'] = config.design
         super().__init__(**params)
         self._sizing_initializing = False
         # Track dynamic (post-init) updates to the sizing parameters so
@@ -853,12 +851,14 @@ class Viewable(Renderable, Layoutable, ServableMixin):
 
     def __init__(self, **params):
         hooks = params.pop('hooks', [])
+        # An explicit design=None opts out of the configured design.
+        explicit_none = 'design' in params and params['design'] is None
         super().__init__(**params)
         self._hooks = hooks
 
         if self.loading:
             self._update_loading()
-        self._update_design()
+        self._update_design(explicit_none)
         self._internal_callbacks.extend([
             self.param.watch(self._update_design, 'design'),
             self.param.watch(self._update_loading, 'loading')
@@ -869,14 +869,30 @@ class Viewable(Renderable, Layoutable, ServableMixin):
     def _instantiate_design(design: type[Design], theme: str) -> Design:
         return design(theme=theme)
 
-    def _update_design(self, *_):
+    @property
+    def _design(self):
+        # Without an assigned design the configuration is read when the
+        # component renders, so a design a session selects after creating
+        # the component still applies to it.
+        design = getattr(self, '_assigned_design', None)
+        if design is not None:
+            return design
+        from .theme.native import Native
+        return self._instantiate_design(config.design or Native, config.theme)
+
+    @_design.setter
+    def _design(self, design):
+        self._assigned_design = design
+
+    def _update_design(self, explicit=True):
         from .theme import Design
         from .theme.native import Native
         if isinstance(self.design, Design):
             self._design = self.design
+        elif self.design is None:
+            self._design = self._instantiate_design(Native, config.theme) if explicit else None
         else:
-            design = self.design or Native
-            self._design = self._instantiate_design(design, config.theme)
+            self._design = self._instantiate_design(self.design, config.theme)
 
     def _update_loading(self, *_) -> None:
         if self.loading:

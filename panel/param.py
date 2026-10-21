@@ -68,6 +68,8 @@ if t.TYPE_CHECKING:
     from matplotlib.pyplot import Figure
     from pyviz_comms import Comm
 
+    from .theme.base import Design
+
 
 def SingleFileSelector(pobj: param.Parameter) -> type[Widget]:
     """
@@ -396,7 +398,7 @@ class Param(Pane):
                 elif change.new:
                     kwargs = {k: v for k, v in self.param.values().items()
                               if k not in ['name', 'object', 'parameters']}
-                    pane = Param(parameterized, name=parameterized.name,
+                    pane = type(self)(parameterized, name=parameterized.name,
                                  **kwargs)
                     if isinstance(self._expand_layout, Tabs):
                         title = self.object.param[parameter].label
@@ -417,7 +419,7 @@ class Param(Pane):
                     parameterized = change.new
                     kwargs = {k: v for k, v in self.param.values().items()
                               if k not in ['name', 'object', 'parameters']}
-                    pane = Param(parameterized, name=parameterized.name,
+                    pane = type(self)(parameterized, name=parameterized.name,
                                  **kwargs)
                     layout[layout.objects.index(existing[0])] = pane
                 else:
@@ -506,7 +508,8 @@ class Param(Pane):
                 # Do not change widget class if mapping was overridden
                 if not widget_class_overridden:
                     from .theme.base import resolve_component, resolve_widget
-                    designed = resolve_widget(p_obj)
+                    design = self_or_cls._widget_design()
+                    designed = resolve_widget(p_obj, design)
                     if isinstance(p_obj, param.Number):
                         if designed is None:
                             widget_class = self_or_cls.input_widgets[int if is_int else float]
@@ -514,7 +517,7 @@ class Param(Pane):
                         widget_class = self_or_cls.input_widgets['literal']
                     if isinstance(widget_class, FunctionType):
                         widget_class = widget_class(p_obj)
-                    widget_class = resolve_component(t.cast('type', widget_class))
+                    widget_class = resolve_component(t.cast('type', widget_class), design)
             if (value is None and isinstance(widget_class, type)
                 and issubclass(widget_class, DateRangeSlider)
                 and start is not None and end is not None):
@@ -822,9 +825,18 @@ class Param(Pane):
         return False
 
     @classmethod
+    def _widget_design(cls) -> type[Design] | None:
+        """
+        The design the generated widgets are resolved against, which
+        defaults to the active design.
+        """
+        return config.design
+
+    @classmethod
     def widget_type(cls, pobj):
         from .theme.base import resolve_component, resolve_widget
-        designed = resolve_widget(pobj)
+        design = cls._widget_design()
+        designed = resolve_widget(pobj, design)
         if designed is not None:
             return designed
         ptype = type(pobj)
@@ -834,7 +846,7 @@ class Param(Pane):
             wtype = cls.mapping[wt]
             if isinstance(wtype, types.FunctionType):
                 wtype = wtype(pobj)
-            return resolve_component(t.cast('type', wtype))
+            return resolve_component(t.cast('type', wtype), design)
 
     def get_root(
         self, doc: Document | None = None, comm: Comm | None = None,
