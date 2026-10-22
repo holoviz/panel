@@ -18,7 +18,7 @@ import numpy as np
 
 from matplotlib.figure import Figure
 
-ACCENT = "goldenrod"
+ACCENT = "#DAA520"
 LOGO = "https://assets.holoviz.org/panel/tutorials/matplotlib-logo.png"
 
 pn.extension(sizing_mode="stretch_width")
@@ -30,8 +30,11 @@ ax.hist(data, bins=20, color=ACCENT)
 
 component = pn.ui.Matplotlib(fig, format='svg', sizing_mode='scale_both')
 
-pn.template.FastListTemplate(
-    title="My App", sidebar=[LOGO], main=[component], accent=ACCENT
+pn.ui.Page(
+    title="My App",
+    sidebar=[LOGO],
+    main=[component],
+    theme_config={"palette": {"primary": {"main": ACCENT}}},
 ).servable()
 ```
 
@@ -51,7 +54,7 @@ It should look like
 
 Now change the
 
-- `ACCENT` value to `teal` and save the `app.py` file.
+- `ACCENT` value to `"#008080"` (teal) and save the `app.py` file.
 - `bins` value to `15` and save.
 - `title` value to `"My Matplotlib App"` and save.
 
@@ -66,9 +69,9 @@ It should look like
 
 One of the benefits of developing in an editor is the ability to inspect Panel objects conveniently via hover. Simply hover over the object you want to inspect, and you'll see tooltips providing useful information and links to reference guides.
 
-Let's say you want to inspect the `FastListTemplate` object in your code. Hover over it, and you'll see a tooltip with an example code snippet and a reference link. Clicking the reference link takes you directly to the reference guide for further information.
+Let's say you want to inspect the `Page` object in your code. Hover over it, and you'll see a tooltip with an example code snippet and a reference link. Clicking the reference link takes you directly to the reference guide for further information.
 
-![Tooltip of FastListTemplate](../../_static/images/develop_editor_hover.png)
+![Tooltip of a Panel component](../../_static/images/develop_editor_hover.png)
 
 ## Inspect via `print`
 
@@ -79,7 +82,7 @@ Consider the following code snippet:
 ```python
 import panel as pn
 
-pn.extension(design="material")
+pn.extension()
 
 component = pn.panel("Hello World")
 layout = pn.ui.Column(
@@ -102,15 +105,12 @@ Open [http://localhost:5006/app](http://localhost:5006/app) in a browser.
 This will look something like the below in the terminal.
 
 ```bash
-2024-02-22 20:39:50,405 Starting Bokeh server version 3.3.3 (running on Tornado 6.4)
-2024-02-22 20:39:50,406 User authentication hooks NOT provided (default user enabled)
-2024-02-22 20:39:50,413 Bokeh app running at: http://localhost:5006/app
-2024-02-22 20:39:50,413 Starting Bokeh server with process id: 38480
-Column(design=<class 'panel.theme.materi...)
-    [0] Markdown(str, design=<class 'panel.theme.materi...)
-    [1] IntSlider(design=<class 'panel.theme.materi..., end=10, name='Value', value=2)
-2024-02-22 20:39:52,712 WebSocket connection opened
-2024-02-22 20:39:52,713 ServerConnection created
+2026-10-20 16:55:54,851 Starting Bokeh server version 3.10.0 (running on Tornado 6.5.5)
+2026-10-20 16:55:54,852 Bokeh app running at: http://localhost:5006/app
+2026-10-20 16:55:54,852 Starting Bokeh server with process id: 56993
+Column(design=<class 'panel.ui.theme.Mat..., objects=[Markdown, IntSlider])
+2026-10-20 16:56:03,505 WebSocket connection opened
+2026-10-20 16:56:03,506 ServerConnection created
 ```
 
 ## Inspect Parameters via `.param`
@@ -122,7 +122,7 @@ Copy the code below into a file `app.py`:
 ```python
 import panel as pn
 
-pn.extension(design="material")
+pn.extension()
 
 component = pn.panel("Hello World")
 

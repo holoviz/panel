@@ -68,9 +68,9 @@ Once you're comfortable, it's time to dive deeper. Through a series of lessons w
 
 ### 4. Improve the Look
 
-- **[Templates](templates.md):** Learn to structure your app with pre-built templates.
-- **[Designs](design.md):** Style your apps using pre-built *designs*
-- **[Styles](style.md):** Further customize the look and feel by adding CSS styling.
+- **[Page](templates.md):** Structure your app with a header, sidebar and main area using a `Page`.
+- **[Theming](design.md):** Switch between light and dark themes and brand your app with `theme_config`.
+- **[Styles](style.md):** Further customize the look and feel with `sx`, `styles` and CSS `stylesheets`.
 
 ### 5. Improve the Feel
 
