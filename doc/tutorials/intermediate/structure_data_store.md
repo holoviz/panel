@@ -55,12 +55,15 @@ class DataStore(Viewer):
             dtype = self.data.dtypes[filt]
             if dtype.kind == "f":
                 widget = pn.ui.RangeSlider(
-                    label=filt, start=dfx[filt].min(), end=dfx[filt].max()
+                    label=filt, start=dfx[filt].min(), end=dfx[filt].max(),
+                    sizing_mode="stretch_width",
                 )
                 condition = dfx[filt].between(*widget.rx())
             else:
                 options = dfx[filt].unique().tolist()
-                widget = pn.ui.MultiChoice(label=filt, options=options)
+                widget = pn.ui.MultiChoice(
+                    label=filt, options=options, sizing_mode="stretch_width"
+                )
                 condition = dfx[filt].isin(widget.rx().rx.where(widget, options))
             dfx = dfx[condition]
             widgets.append(widget)
@@ -79,6 +82,7 @@ class DataStore(Viewer):
             "## Filters",
             *self._widgets,
             stylesheets=[CARD_STYLE.format(padding="5px 10px")],
+            sizing_mode="stretch_width",
             margin=10
         )
 ```
@@ -107,7 +111,7 @@ class View(Viewer):
 
 class Table(View):
     columns = param.List(
-        default=["p_name", "p_year", "t_state", "t_county", "t_manu", "t_cap", "p_cap"]
+        default=["p_name", "p_year", "t_state", "t_manu", "p_cap"]
     )
 
     def __panel__(self):
@@ -115,7 +119,11 @@ class Table(View):
         return pn.ui.Tabulator(
             data,
             pagination="remote",
-            page_size=13,
+            page_size=10,
+            layout="fit_data_stretch",
+            show_index=False,
+            sizing_mode="stretch_width",
+            min_width=500,
             stylesheets=[CARD_STYLE.format(padding="10px")],
             margin=10,
         )
@@ -140,7 +148,7 @@ class Histogram(View):
             .transform_calculate(jitter="sqrt(-2*log(random()))*cos(2*PI*random())")
             .properties(
                 height=400,
-                width=600,
+                width=400,
             )
         )
         return pn.ui.Vega(
@@ -213,7 +221,9 @@ class App(Viewer):
             else pn.state.curdoc.unhold()
         )
         self._views = pn.ui.FlexBox(
-            *(view(data_store=self.data_store) for view in self.views), loading=updating
+            *(view(data_store=self.data_store) for view in self.views),
+            loading=updating,
+            margin=10,
         )
         self._page = pn.ui.Page(
             title=self.title, sidebar=[self.data_store], main=[self._views]
