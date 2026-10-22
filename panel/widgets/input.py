@@ -1270,10 +1270,10 @@ class LiteralInput(Widget):
         props = super()._process_param_change(params)
         if 'value' in props:
             value = props['value']
-            if isinstance(value, str):
-                value = repr(value)
-            elif self.serializer == 'json':
+            if self.serializer == 'json':
                 value = json.dumps(value)
+            elif isinstance(value, str):
+                value = repr(value)
             else:
                 value = '' if value is None else str(value)
             props['value'] = value
