@@ -147,9 +147,9 @@ image = pn.ui.PNG("https://assets.holoviz.org/panel/tutorials/wind_turbine.png",
 
 card1 = pn.ui.Card(image, title='Turbine 1', height=150, width=200, align="center")
 card2 = pn.ui.Card(image, title='Turbine 2', height=150, width=200, align="center")
-spacer1 = pn.ui.Spacer(height=33)
-spacer2 = pn.ui.Spacer(height=33)
-spacer3 = pn.ui.Spacer(height=33)
+spacer1 = pn.ui.Spacer(height=20)
+spacer2 = pn.ui.Spacer(height=20)
+spacer3 = pn.ui.Spacer(height=20)
 
 pn.ui.Column(
     spacer1, card1, spacer2, card2, spacer3,
