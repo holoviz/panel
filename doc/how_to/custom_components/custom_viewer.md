@@ -23,10 +23,10 @@ class EditableRange(Viewer):
     width = param.Integer(default=300)
 
     def __init__(self, **params):
-        self._start_input = pn.widgets.FloatInput()
-        self._end_input = pn.widgets.FloatInput(align='end')
+        self._start_input = pn.ui.FloatInput()
+        self._end_input = pn.ui.FloatInput(align='end')
         super().__init__(**params)
-        self._layout = pn.Row(self._start_input, self._end_input)
+        self._layout = pn.ui.Row(self._start_input, self._end_input)
 ```
 
 Then, we set up callbacks to sync the parameters on the underlying widgets with the parameters on the `Viewer` component.
@@ -46,10 +46,10 @@ class EditableRange(Viewer):
     width = param.Integer(default=300)
 
     def __init__(self, **params):
-        self._start_input = pn.widgets.FloatInput()
-        self._end_input = pn.widgets.FloatInput(align='end')
+        self._start_input = pn.ui.FloatInput()
+        self._end_input = pn.ui.FloatInput(align='end')
         super().__init__(**params)
-        self._layout = pn.Row(self._start_input, self._end_input)
+        self._layout = pn.ui.Row(self._start_input, self._end_input)
         self._sync_widgets()
 
     @param.depends('value', 'width', watch=True)
@@ -83,10 +83,10 @@ class EditableRange(Viewer):
     width = param.Integer(default=300)
 
     def __init__(self, **params):
-        self._start_input = pn.widgets.FloatInput()
-        self._end_input = pn.widgets.FloatInput(align='end')
+        self._start_input = pn.ui.FloatInput()
+        self._end_input = pn.ui.FloatInput(align='end')
         super().__init__(**params)
-        self._layout = pn.Row(self._start_input, self._end_input)
+        self._layout = pn.ui.Row(self._start_input, self._end_input)
         self._sync_widgets()
 
     def __panel__(self):
@@ -106,7 +106,7 @@ class EditableRange(Viewer):
 
 range_widget = EditableRange(name='Range', value=(0, 10))
 
-pn.Column(
+pn.ui.Column(
     '#### This is a custom widget',
     range_widget
 )

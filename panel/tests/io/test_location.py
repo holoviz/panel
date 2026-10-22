@@ -85,11 +85,41 @@ def test_location_sync_query_init_rename(location):
     assert location._synced == []
     assert location.search == ""
 
+def test_location_sync_query_init_negative_integer(location):
+    location.search = "?integer=-3"
+    p = SyncParameterized()
+    location.sync(p, ['integer'])
+    assert p.integer == -3
+    assert location.search == "?integer=-3"
+
+@pytest.mark.parametrize('value', ['007', '-3', '1.5', 'true', '[1, 2]', '{"a": 1}'])
+def test_location_sync_param_init_string_not_parsed(location, value):
+    location.update_query(string=value)
+    search = location.search
+    p = SyncParameterized()
+    location.sync(p, ['string'])
+    assert p.string == value
+    assert location.search == search
+
 def test_location_sync_query(location):
     p = SyncParameterized()
     location.sync(p)
     p.integer = 2
     assert location.search == "?integer=2"
+    location.unsync(p)
+    assert location._synced == []
+    assert location.search == ""
+
+def test_location_sync_same_object_multiple_calls(location):
+    p = SyncParameterized(integer=1, string='abc')
+    location.sync(p, ['integer'])
+    location.sync(p, ['string'])
+
+    p.string = 'def'
+    assert location.search == "?integer=1&string=def"
+    p.integer = 2
+    assert location.search == "?integer=2&string=def"
+
     location.unsync(p)
     assert location._synced == []
     assert location.search == ""
@@ -161,7 +191,7 @@ def test_server_location_populate_from_request():
     loc = locs[0]
     assert loc.href == request.url
     assert loc.protocol == 'http:'
-    assert loc.hostname == 'localhost'
+    assert loc.hostname == '127.0.0.1'
     assert loc.pathname == '/'
     assert loc.search == '?foo=1'
 

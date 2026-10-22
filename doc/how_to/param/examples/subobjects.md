@@ -5,7 +5,7 @@ import panel as pn
 import param
 import numpy as np
 
-pn.extension(template='bootstrap')
+pn.extension(template='page')
 ```
 
 This example demonstrates how to use the Param library to express nested hierarchies of classes whose parameters can be edited in a GUI, without tying those classes to Panel or any other GUI framework.
@@ -93,15 +93,15 @@ class ShapeViewer(param.Parameterized):
         return '## %s (radius=%.1f)' % (type(self.shape).__name__, self.shape.radius)
 
     def panel(self):
-        return pn.Column(self.title, self.view, sizing_mode="stretch_width")
+        return pn.ui.Column(self.title, self.view, sizing_mode="stretch_width")
 
 
 # Instantiate and display ShapeViewer
 viewer = ShapeViewer()
-subpanel = pn.Column()
+subpanel = pn.ui.Column()
 
-pn.Row(
-    pn.Column(pn.Param(viewer.param, expand_layout=subpanel, name="Shape Settings"), subpanel),
+pn.ui.Row(
+    pn.ui.Column(pn.Param(viewer.param, expand_layout=subpanel, name="Shape Settings"), subpanel),
     viewer.panel(),
 ).servable()
 ```

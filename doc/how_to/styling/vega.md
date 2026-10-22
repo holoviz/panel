@@ -53,5 +53,5 @@ vegalite = {
 
 vegalite["config"] = VEGA_THEME
 
-pn.pane.Vega(vegalite, height=350, sizing_mode="stretch_width").servable()
+pn.ui.Vega(vegalite, height=350, sizing_mode="stretch_width").servable()
 ```

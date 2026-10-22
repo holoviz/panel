@@ -12,4 +12,5 @@
 
 Develop in a notebook<notebook/index>
 Develop in an editor<editor/index>
+Type check your code<typing/index>
 ```

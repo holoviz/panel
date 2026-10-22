@@ -26,7 +26,7 @@ commands:
   - panel serve app.py --port 6000 --allow-websocket-origin="*.outerbounds.com"
 
 environment:
-  BOKEH_RESOURCES: CDN
+  BOKEH_RESOURCES: cdn
 ```
 
 ```python

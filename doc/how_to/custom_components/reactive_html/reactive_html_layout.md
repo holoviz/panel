@@ -26,7 +26,7 @@ class LayoutSingleObject(ReactiveHTML):
     </div>
 """
 
-dial = pn.widgets.Dial(
+dial = pn.ui.Dial(
     label="°C",
     value=37,
     format="{value}",

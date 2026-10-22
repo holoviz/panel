@@ -46,7 +46,7 @@ from .layout import (
 from .layout.base import ListLike, NamedListLike
 from .pane import DataFrame as DataFramePane
 from .pane.base import Pane, ReplacementPane
-from .reactive import Reactive
+from .reactive import Reactive, ReactiveData
 from .util import (
     abbreviated_repr, flatten, full_groupby, fullpath, is_parameterized,
     param_name, recursive_parameterized, to_async_gen,
@@ -54,11 +54,11 @@ from .util import (
 from .util.checks import is_dataframe, is_mpl_axes, is_series
 from .viewable import Layoutable, Viewable
 from .widgets import (
-    ArrayInput, Button, Checkbox, ColorPicker, DataFrame, DatePicker,
-    DateRangeSlider, DatetimeInput, DatetimeRangeSlider, DiscreteSlider,
-    FileInput, FileSelector, FloatInput, FloatSlider, IntInput, IntSlider,
-    LiteralInput, MultiSelect, RangeSlider, Select, StaticText, Tabulator,
-    TextInput, Toggle, Widget, WidgetBase,
+    ArrayInput, Button, Checkbox, ColorPicker, DatePicker, DateRangeSlider,
+    DatetimeInput, DatetimeRangeSlider, DiscreteSlider, FileInput,
+    FileSelector, FloatInput, FloatSlider, IntInput, IntSlider, LiteralInput,
+    MultiSelect, RangeSlider, Select, StaticText, Tabulator, TextInput, Toggle,
+    Widget, WidgetBase,
 )
 from .widgets.button import _ButtonBase
 
@@ -67,6 +67,8 @@ if t.TYPE_CHECKING:
     from bokeh.model import Model
     from matplotlib.pyplot import Figure
     from pyviz_comms import Comm
+
+    from .theme.base import Design
 
 
 def SingleFileSelector(pobj: param.Parameter) -> type[Widget]:
@@ -89,13 +91,6 @@ def LiteralInputTyped(pobj: param.Parameter) -> type[Widget]:
     elif isinstance(pobj, param.List):
         return type('ListInput', (LiteralInput,), {'type': list})
     return LiteralInput
-
-
-def DataFrameWidget(pobj: param.Parameter) -> type[WidgetBase]:
-    if 'panel.models.tabulator' in sys.modules:
-        return Tabulator
-    else:
-        return DataFrame
 
 
 @contextmanager
@@ -222,7 +217,7 @@ class Param(Pane):
         param.Date:              DatetimeInput,
         param.DateRange:         DatetimeRangeSlider,
         param.CalendarDateRange: DateRangeSlider,
-        param.DataFrame:         DataFrameWidget,
+        param.DataFrame:         Tabulator,
         param.Dict:              LiteralInputTyped,
         param.FileSelector:      SingleFileSelector,
         param.Filename:          TextInput,
@@ -403,7 +398,7 @@ class Param(Pane):
                 elif change.new:
                     kwargs = {k: v for k, v in self.param.values().items()
                               if k not in ['name', 'object', 'parameters']}
-                    pane = Param(parameterized, name=parameterized.name,
+                    pane = type(self)(parameterized, name=parameterized.name,
                                  **kwargs)
                     if isinstance(self._expand_layout, Tabs):
                         title = self.object.param[parameter].label
@@ -424,7 +419,7 @@ class Param(Pane):
                     parameterized = change.new
                     kwargs = {k: v for k, v in self.param.values().items()
                               if k not in ['name', 'object', 'parameters']}
-                    pane = Param(parameterized, name=parameterized.name,
+                    pane = type(self)(parameterized, name=parameterized.name,
                                  **kwargs)
                     layout[layout.objects.index(existing[0])] = pane
                 else:
@@ -512,14 +507,17 @@ class Param(Pane):
                 not isinstance(p_obj, (param.Date, param.CalendarDate))):
                 # Do not change widget class if mapping was overridden
                 if not widget_class_overridden:
+                    from .theme.base import resolve_component, resolve_widget
+                    design = self_or_cls._widget_design()
+                    designed = resolve_widget(p_obj, design)
                     if isinstance(p_obj, param.Number):
-                        widget_class = self_or_cls.input_widgets[float]
-                        if is_int:
-                            widget_class = self_or_cls.input_widgets[int]
-                    elif not issubclass(widget_class, LiteralInput):
+                        if designed is None:
+                            widget_class = self_or_cls.input_widgets[int if is_int else float]
+                    elif designed is None and not issubclass(widget_class, LiteralInput):
                         widget_class = self_or_cls.input_widgets['literal']
                     if isinstance(widget_class, FunctionType):
                         widget_class = widget_class(p_obj)
+                    widget_class = resolve_component(t.cast('type', widget_class), design)
             if hasattr(widget_class, 'step') and getattr(p_obj, 'step', None):
                 kw['step'] = p_obj.step
             pbounds = getattr(p_obj, 'bounds', None)
@@ -558,7 +556,7 @@ class Param(Pane):
             watchers, updating = [], []
             widgets = {p_name: widget}
 
-        def link_widget(change):
+        def link_widget(change, only_reset=False):
             p_key = p_name if config.nthreads is None else (threading.get_ident(), p_name)
             if p_key in updating:
                 return
@@ -568,16 +566,25 @@ class Param(Pane):
                 istart, iend = getattr(p_obj, 'inclusive_bounds', (True, True))
                 bounds = p_obj.get_soft_bounds()
                 if (not istart and new == bounds[0]) or (not iend and new == bounds[1]):
-                    new = change.old
+                    new = getattr(parameterized, p_name)
                     reset = True
             elif isinstance(p_obj, param.Range):
                 istart, iend = getattr(p_obj, 'inclusive_bounds', (True, True))
                 bounds = p_obj.get_soft_bounds()
                 if (not istart and new[0] == bounds[0]) or (not iend and new[1] == bounds[1]):
-                    new = change.old
+                    new = getattr(parameterized, p_name)
                     reset = True
+            if only_reset and not reset:
+                return
             try:
                 updating.append(p_key)
+                if isinstance(widget, ReactiveData) and getattr(parameterized, p_name) is new:
+                    # Data widgets such as Tabulator edit the value in place,
+                    # so the Parameterized already holds the mutated object and
+                    # param would report old is new. Restore the pre-edit value
+                    # silently to ensure a correct event is emitted.
+                    with discard_events(parameterized):
+                        parameterized.param.update(**{p_name: change.old})
                 parameterized.param.update(**{p_name: new})
             finally:
                 updating.remove(p_key)
@@ -600,6 +607,7 @@ class Param(Pane):
         elif onkeyup and hasattr(widget, 'value_input'):
             watcher = widget.param.watch(link_widget, 'value_input')
         elif throttled and hasattr(widget, 'value_throttled'):
+            watchers.append(widget.param.watch(lambda change: link_widget(change, only_reset=True), 'value'))
             watcher = widget.param.watch(link_widget, 'value_throttled')
         else:
             watcher = widget.param.watch(link_widget, 'value')
@@ -813,15 +821,28 @@ class Param(Pane):
         return False
 
     @classmethod
+    def _widget_design(cls) -> type[Design] | None:
+        """
+        The design the generated widgets are resolved against, which
+        defaults to the active design.
+        """
+        return config.design
+
+    @classmethod
     def widget_type(cls, pobj):
+        from .theme.base import resolve_component, resolve_widget
+        design = cls._widget_design()
+        designed = resolve_widget(pobj, design)
+        if designed is not None:
+            return designed
         ptype = type(pobj)
         for wt in classlist(ptype)[::-1]:
             if wt not in cls.mapping:
                 continue
             wtype = cls.mapping[wt]
             if isinstance(wtype, types.FunctionType):
-                return wtype(pobj)
-            return wtype
+                wtype = wtype(pobj)
+            return resolve_component(t.cast('type', wtype), design)
 
     def get_root(
         self, doc: Document | None = None, comm: Comm | None = None,

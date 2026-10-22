@@ -1,6 +1,6 @@
 ## Classes vs functions in Panel: understanding the tradeoff
 
-In Panel, there are two main ways to structure reactive code: binding functions with `pn.bind` and `pn.rx`(the [reactive API](../../explanation/api/reactive.md)), or building classes that extend `param.Parameterized` or `pn.viewable.Viewer` (the [declarative API](../../explanation/api/parameterized.md)). Both approacheas are valid, and the right choice depends on what you're building.
+In Panel, there are two main ways to structure reactive code: binding functions with `pn.bind` and `pn.rx`(the [reactive API](../../explanation/api/reactive.md)), or building classes that extend `param.Parameterized` or `pn.viewable.Viewer` (the [declarative API](../../explanation/api/parameterized.md)). Both approaches are valid, and the right choice depends on what you're building.
 
 ### Why functions feel natural at first
 
@@ -24,7 +24,7 @@ Other objects can declare, using `@param.depends`, that they should recompute wh
 
 This structure naturally pushes you toward giving each class a single, clear responsibility: one class holds the current user selections, another handles data transformation, another handles presentation. Each piece can be developed and reasoned about independently.
 
-The practical consequence is testability. Because state lives in `param.Parameter` attributes rather than widget values, you can test data transformation logic by constructing an object, setting its parameters directly, and asserting on the output, no widgets, no layout, no browser. You can change how something is displayed without touching any of the underlying computation. With a pure function approach, this separation is much harder to maintain, because the layout code names the widgets and maps them to specific function arguments, so changes to either tend to ripple across both.
+The practical consequence is greatly improved testability. Because state lives in `param.Parameter` attributes rather than widget values, you can test data transformation logic by constructing an object, setting its parameters directly, and asserting on the output. No widgets, no layout, no browser are needed. You can change how something is displayed without touching any of the underlying computation. With a pure function approach, this separation is much harder to maintain, because the layout code names the widgets, and maps them to specific function arguments, so changes to either tend to ripple across both.
 
 ### Coupling and portability
 

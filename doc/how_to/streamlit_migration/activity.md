@@ -2,7 +2,7 @@
 
 Panel supports many ways of indicating activity
 
-- Indicators. See the [Indicators Section](../../reference/indicators/index#indicators) of the [Component Gallery](../../reference/index).
+- Indicators. See the [Indicators Section](../../reference/index.md#indicators) of the [Component Gallery](../../reference/index).
 - `disabled`/ `loading` parameters on Panel components
 - `loading_indicator` parameter for `pn.panel` or `pn.config`. If `True` a loading indicator will be shown on your *bound functions* when they are re-run.
 
@@ -13,7 +13,7 @@ The example below showcases some of the ways Panel can show activity.
 ```python
 import panel as pn
 
-pn.extension(sizing_mode="stretch_width", template="bootstrap")
+pn.extension(sizing_mode="stretch_width", template="page")
 
 SPIN_CSS = """
 @keyframes icon-rotation {
@@ -22,19 +22,19 @@ SPIN_CSS = """
 .bk-TablerIcon {animation: icon-rotation 2s infinite linear;}
 """
 
-pn.Row(
-    pn.Column(
+pn.ui.Row(
+    pn.ui.Column(
         "## Loading Spinner",
-        pn.Column(
+        pn.ui.Column(
             pn.indicators.LoadingSpinner(value=False, height=25, width=25),
             pn.indicators.LoadingSpinner(
                 value=True, height=25, width=25, color="secondary"
             ),
         ),
     ),
-    pn.Column(
+    pn.ui.Column(
         "## Progress",
-        pn.Column(
+        pn.ui.Column(
             pn.indicators.Progress(
                 label="Progress", value=20, width=150, bar_color="secondary"
             ),
@@ -43,22 +43,22 @@ pn.Row(
             ),
         ),
     ),
-    pn.Column(
+    pn.ui.Column(
         "## Disabled",
-        pn.Column(
-            pn.widgets.Button(label="Loading", icon="progress", disabled=True),
-            pn.widgets.Button(
+        pn.ui.Column(
+            pn.ui.Button(label="Loading", icon="progress", disabled=True),
+            pn.ui.Button(
                 label="Loading", icon="progress", disabled=True, stylesheets=[SPIN_CSS]
             ),
         ),
     ),
-    pn.Column(
+    pn.ui.Column(
         "## Loading",
-        pn.Column(
-            pn.widgets.Button(label="Loading", loading=True, color="primary"),
-            pn.WidgetBox(
-                pn.widgets.Checkbox(label="Checked", value=True),
-                pn.widgets.Button(label="Submit", color="primary"),
+        pn.ui.Column(
+            pn.ui.Button(label="Loading", loading=True, color="primary"),
+            pn.ui.WidgetBox(
+                pn.ui.Checkbox(label="Checked", value=True),
+                pn.ui.Button(label="Submit", color="primary"),
                 loading=True, margin=(10,10),
             ),
         ),

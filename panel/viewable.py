@@ -262,6 +262,14 @@ class Layoutable(param.Parameterized):
     __abstract = True
 
     def __init__(self, **params):
+        # Track which sizing parameters were explicitly supplied by the
+        # user (as opposed to their defaults or values inferred from
+        # children). This is computed before the config driven defaults
+        # below are applied so config defaults are not treated as explicit.
+        self._explicit_sizing_mode = params.get('sizing_mode') is not None
+        self._explicit_width_policy = params.get('width_policy') not in (None, 'auto')
+        self._explicit_height_policy = params.get('height_policy') not in (None, 'auto')
+        self._sizing_initializing = True
         sizing_mode = params.get('sizing_mode')
         if (sizing_mode in ('stretch_width', 'scale_width', 'stretch_both', 'scale_both') and
             params.get('width') is not None):
@@ -310,9 +318,27 @@ class Layoutable(param.Parameterized):
                 params['sizing_mode'] = config.sizing_mode
             elif config.sizing_mode == 'stretch_height' and 'height' not in params:
                 params['sizing_mode'] = config.sizing_mode
-        if 'design' not in params and self.param.design.default is None:
-            params['design'] = config.design
         super().__init__(**params)
+        self._sizing_initializing = False
+        # Track dynamic (post-init) updates to the sizing parameters so
+        # that explicitly set values are honored rather than being
+        # overridden by values inferred from a layout's children. Child
+        # inference writes to the underlying model rather than the
+        # parameter, so it does not trigger this watcher.
+        watcher = self.param.watch(
+            self._update_explicit_sizing,
+            ['sizing_mode', 'width_policy', 'height_policy']
+        )
+        if not hasattr(self, '_internal_callbacks'):
+            self._internal_callbacks = []
+        self._internal_callbacks.append(watcher)
+
+    def _update_explicit_sizing(self, *events):
+        if self._sizing_initializing:
+            return
+        for event in events:
+            explicit = event.new is not None if event.name == 'sizing_mode' else event.new != 'auto'
+            setattr(self, f'_explicit_{event.name}', explicit)
 
 
 class ServableMixin:
@@ -411,7 +437,27 @@ class ServableMixin:
                 for obj in self.select():
                     if not obj.design:
                         obj.design = template.design
-                if area == 'main':
+                from .template.base import BaseTemplate
+                if not isinstance(template, BaseTemplate):
+                    # Page-like templates hold areas as Children lists, which
+                    # must be reassigned so a render already in flight updates.
+                    if isinstance(self, type(template)):
+                        raise RuntimeError(
+                            f'Cannot mark a {type(self).__name__} as servable while '
+                            'it is also set as `pn.config.template`. Either serve '
+                            'the page explicitly OR set `pn.config.template`, not both.'
+                        )
+                    areas = [
+                        name for name, p in template.param.objects().items()
+                        if isinstance(p, Children) and not name.startswith('_')
+                    ]
+                    if area not in areas:
+                        raise ValueError(
+                            f'{type(template).__name__} has no {area!r} area to '
+                            f'serve to; valid targets are {areas}.'
+                        )
+                    setattr(template, area, [*getattr(template, area), self])
+                elif area == 'main':
                     template.main.append(self)
                 elif area == 'sidebar':
                     template.sidebar.append(self)
@@ -565,6 +611,7 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         self._internal_callbacks = []
         self._documents = {}
         self._models = {}
+        self._model_parents = {}
         self._comms = {}
         self._kernels = {}
         super().__init__(**params)
@@ -599,6 +646,73 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         """
         raise NotImplementedError
 
+    def _acquire_model(
+        self, doc: Document, root: Model, parent: Model | None = None,
+        comm: Comm | None = None
+    ) -> Model:
+        """
+        Returns the model for this object in the given root, creating
+        it only if it does not exist yet, and registers the parent as
+        a user of the model.
+
+        This allows the same object to be rendered in multiple places
+        within a single root, with all of them sharing a single model.
+        Acquiring a model is idempotent for a given parent and should
+        be balanced by a call to `_release_model` once the parent no
+        longer renders the object.
+
+        Parameters
+        ----------
+        doc: bokeh.Document
+          Bokeh document the bokeh model will be attached to.
+        root: bokeh.Model
+          The root layout the viewable will become part of.
+        parent: bokeh.Model
+          The parent layout the viewable will become part of.
+        comm: pyviz_comms.Comm
+          Optional pyviz_comms when working in notebook
+
+        Returns
+        -------
+        model: bokeh.Model
+        """
+        ref = root.ref['id']
+        if ref in self._models:
+            model, owner = self._models[ref]
+            # A model created by calling _get_model directly is owned
+            # by the parent it was created for.
+            parents = self._model_parents.setdefault(ref, [owner])
+        else:
+            model = self._get_model(doc, root, parent, comm)
+            parents = self._model_parents.setdefault(ref, [])
+        if not any(p is parent for p in parents):
+            parents.append(parent)
+        return model
+
+    def _release_model(self, root: Model | None, parent: Model | None = None) -> None:
+        """
+        Releases the model acquired by the parent via `_acquire_model`
+        and cleans up the object once no other parent in the same root
+        is using the model. Releasing from a parent that does not hold
+        the model while other parents still do is a no-op.
+
+        Parameters
+        ----------
+        root: bokeh.model.Model
+          Bokeh model for the view being cleaned up
+        parent: bokeh.model.Model
+          The parent model releasing the model.
+        """
+        parents = self._model_parents.get(root.ref['id']) if root else None
+        if parents:
+            index = next((i for i, p in enumerate(parents) if p is parent), None)
+            if index is None:
+                return
+            parents.pop(index)
+            if parents:
+                return
+        self._cleanup(root)
+
     def _cleanup(self, root: Model | None = None) -> None:
         """
         Clean up method which is called when a Viewable is destroyed.
@@ -611,6 +725,7 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         if root is None:
             return
         ref = root.ref['id']
+        self._model_parents.pop(ref, None)
         if ref in state._handles:
             del state._handles[ref]
 
@@ -626,10 +741,10 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         """
         ref = root.ref['id']
         if changed is not None and ref in changed._models and ref in state._views:
-            _, _, _, comm = state._views[ref]
+            _, _, doc, comm = state._views[ref]
             if comm is not None and config.inline:
                 for model in changed._models[ref][0].select({'type': UIElement}):
-                    patch_inline_stylesheets(model)
+                    patch_inline_stylesheets(model, doc)
 
         changed = self if changed is None else changed
         hooks = self._preprocessing_hooks+self._hooks
@@ -736,12 +851,14 @@ class Viewable(Renderable, Layoutable, ServableMixin):
 
     def __init__(self, **params):
         hooks = params.pop('hooks', [])
+        # An explicit design=None opts out of the configured design.
+        explicit_none = 'design' in params and params['design'] is None
         super().__init__(**params)
         self._hooks = hooks
 
         if self.loading:
             self._update_loading()
-        self._update_design()
+        self._update_design(explicit_none)
         self._internal_callbacks.extend([
             self.param.watch(self._update_design, 'design'),
             self.param.watch(self._update_loading, 'loading')
@@ -752,14 +869,30 @@ class Viewable(Renderable, Layoutable, ServableMixin):
     def _instantiate_design(design: type[Design], theme: str) -> Design:
         return design(theme=theme)
 
-    def _update_design(self, *_):
+    @property
+    def _design(self):
+        # Without an assigned design the configuration is read when the
+        # component renders, so a design a session selects after creating
+        # the component still applies to it.
+        design = getattr(self, '_assigned_design', None)
+        if design is not None:
+            return design
+        from .theme.native import Native
+        return self._instantiate_design(config.design or Native, config.theme)
+
+    @_design.setter
+    def _design(self, design):
+        self._assigned_design = design
+
+    def _update_design(self, explicit=True):
         from .theme import Design
         from .theme.native import Native
         if isinstance(self.design, Design):
             self._design = self.design
+        elif self.design is None:
+            self._design = self._instantiate_design(Native, config.theme) if explicit else None
         else:
-            design = self.design or Native
-            self._design = self._instantiate_design(design, config.theme)
+            self._design = self._instantiate_design(self.design, config.theme)
 
     def _update_loading(self, *_) -> None:
         if self.loading:
@@ -865,7 +998,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
             for submodel in model.select({'type': UIElement}):
                 if not isinstance(submodel, UIElement):
                     continue
-                patch_inline_stylesheets(submodel)
+                patch_inline_stylesheets(submodel, doc)
 
         bundle, meta = self._render_mimebundle(model, doc, comm, location)
 
@@ -963,7 +1096,7 @@ class Viewable(Renderable, Layoutable, ServableMixin):
 
     def save(
         self, filename: str | os.PathLike | t.IO, title: str | None = None,
-        resources: Resources | None = None, template: str | Template | None = None,
+        resources: Resources | str | None = None, template: str | Template | None = None,
         template_variables: dict[str, t.Any] = {}, embed: bool = False,
         max_states: int = 1000, max_opts: int = 3, embed_json: bool = False,
         json_prefix: str='', save_path: str='./', load_path: str | None = None,

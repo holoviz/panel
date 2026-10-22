@@ -67,6 +67,23 @@ class _TextInputBase(Widget):
       Width of this component. If sizing_mode is set to stretch
       or scale mode this will merely be used as a suggestion.""")
 
+    def __init__(self, **params):
+        if 'value' in params and 'value_input' not in params:
+            params['value_input'] = params['value']
+        super().__init__(**params)
+        self._internal_callbacks.append(
+            self.param.watch(self._sync_value_input, 'value')
+        )
+
+    def _sync_value_input(self, event):
+        # A `value` assigned from Python must also update `value_input`,
+        # otherwise pressing Enter in the browser submits the stale
+        # `value_input` and reverts `value`. Changes driven by the frontend
+        # arrive inside param's `_syncing` context and are left alone.
+        if 'value' in self._param__private.syncing:
+            return
+        self.value_input = event.new
+
     @classmethod
     def from_param(
         cls,
@@ -344,10 +361,10 @@ class FileDropper(Widget):
 
     layout: t.Literal["circle", "compact", "integrated"] | None = param.Selector(
         default=None, objects=["circle", "compact", "integrated"], doc="""
-        Compact mode will remove padding, integrated mode is used to render
-        FilePond as part of a bigger element. Circle mode adjusts the item
-        position offsets so buttons and progress indicators don't fall outside
-        of the circular shape.""")  # type: ignore[assignment, ty:invalid-assignment]
+        Compact mode removes padding. Integrated mode renders FilePond as part
+        of a bigger element. Circle mode keeps FilePond's per-file action
+        buttons and upload progress indicator inside the circular drop
+        area.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     max_file_size = param.String(default=None, doc="""
         Maximum size of a file as a string with units given in KB or MB,

@@ -685,12 +685,12 @@ def test_param_onkeyup(document, comm):
 
     ma.value = '1'
     assert ma.value == '1'
-    assert ma.value_input == ''
+    assert ma.value_input == '1.2'
     assert test.a == '1'
 
     test.a = '2'
     assert ma.value == '2'
-    assert ma.value_input == ''
+    assert ma.value_input == '2'
     assert test.a == '2'
 
     # `test.b` is linked to `mb.value_input` instead of `mb.value` when onkeyup
@@ -1285,6 +1285,30 @@ def test_param_function_pane(document, comm):
     pane._cleanup(row)
     assert pane._models == {}
     assert inner_pane._models == {}
+
+
+def test_param_function_inner_pane_uses_configured_design():
+    from panel.theme import Material
+
+    with config.set(design=Material):
+        pane = ParamFunction(lambda: Div(text='blah'))
+        assert isinstance(pane._pane._design, Material)
+
+
+def test_param_function_inner_pane_inherits_explicit_design():
+    from panel.theme import Material
+
+    pane = ParamFunction(lambda: Div(text='blah'), design=Material)
+    assert isinstance(pane._pane._design, Material)
+
+
+def test_param_function_inner_pane_inherits_design_opt_out():
+    from panel.theme import Material
+    from panel.theme.native import Native
+
+    with config.set(design=Material):
+        pane = ParamFunction(lambda: Div(text='blah'), design=None)
+        assert isinstance(pane._pane._design, Native)
 
 
 def test_resolve_param_function_pane_when_defer_load(document, comm):
@@ -1890,17 +1914,11 @@ async def test_param_generator_append(document, comm):
 
     root = pane.get_root(document, comm)
 
-    await async_wait_until(lambda: len(root.children) == 2)
-    assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
-    assert root.children[1].text == '&lt;p&gt;True&lt;/p&gt;\n'
+    await async_wait_until(lambda: [c.text for c in root.children] == ['&lt;p&gt;False&lt;/p&gt;\n', '&lt;p&gt;True&lt;/p&gt;\n'])
 
     checkbox.value = True
 
-    await async_wait_until(lambda: len(root.children) == 2)
-    await async_wait_until(lambda: (
-        (root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n') and
-        (root.children[1].text == '&lt;p&gt;False&lt;/p&gt;\n')
-    ))
+    await async_wait_until(lambda: [c.text for c in root.children] == ['&lt;p&gt;True&lt;/p&gt;\n', '&lt;p&gt;False&lt;/p&gt;\n'])
 
 
 async def test_param_async_generator(document, comm):
@@ -1920,7 +1938,6 @@ async def test_param_async_generator(document, comm):
     await async_wait_until(lambda: root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n')
 
 
-@pytest.mark.flaky(max_runs=3)
 async def test_param_async_generator_append(document, comm):
     checkbox = Checkbox(value=False)
 
@@ -1933,22 +1950,15 @@ async def test_param_async_generator_append(document, comm):
 
     root = pane.get_root(document, comm)
 
-    await async_wait_until(lambda: len(root.children) == 1, interval=10)
-    await async_wait_until(lambda: root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n')
-    await async_wait_until(lambda: len(root.children) == 2, interval=10)
-    assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
-    assert root.children[1].text == '&lt;p&gt;True&lt;/p&gt;\n'
+    await async_wait_until(lambda: [c.text for c in root.children] == ['&lt;p&gt;False&lt;/p&gt;\n'], interval=10)
+    await async_wait_until(lambda: [c.text for c in root.children] == ['&lt;p&gt;False&lt;/p&gt;\n', '&lt;p&gt;True&lt;/p&gt;\n'], interval=10)
 
     checkbox.value = True
 
-    await async_wait_until(lambda: len(root.children) == 1, interval=10)
-    assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
-    await async_wait_until(lambda: len(root.children) == 2, interval=10)
-    assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
-    assert root.children[1].text == '&lt;p&gt;False&lt;/p&gt;\n'
+    await async_wait_until(lambda: [c.text for c in root.children] == ['&lt;p&gt;True&lt;/p&gt;\n'], interval=10)
+    await async_wait_until(lambda: [c.text for c in root.children] == ['&lt;p&gt;True&lt;/p&gt;\n', '&lt;p&gt;False&lt;/p&gt;\n'], interval=10)
 
 
-@pytest.mark.flaky(max_runs=3)
 async def test_param_generator_multiple(document, comm):
     checkbox = Checkbox(value=False)
 
@@ -2078,3 +2088,48 @@ def test_param_widget_updates_from_own_callback(document, comm, param_type, init
 
     assert instance.value == expected_value
     assert widget.value == expected_value
+
+
+@pytest.mark.parametrize('bound', [0, 2])
+def test_throttled_number_param_repeated_exclusive_boundary(document, comm, bound):
+    class Test(param.Parameterized):
+        a = param.Number(default=1, bounds=(0, 2), inclusive_bounds=(False, False))
+
+    obj = Test()
+    pane = Param(obj, widgets={'a': {'throttled': True}})
+    model = pane.get_root(document, comm=comm).children[1]
+    widget = pane._widgets['a']
+
+    for _ in range(2):
+        widget._process_events({'value': bound, 'value_throttled': bound})
+        assert obj.a == 1
+        assert widget.value == 1
+        assert model.value == 1
+
+    widget._process_events({'value': 1.5})
+    assert obj.a == 1
+    widget._process_events({'value_throttled': 1.5})
+    assert obj.a == 1.5
+    assert widget.value == 1.5
+
+
+@pytest.mark.parametrize('value', [(0, 1.5), (0.5, 2)])
+def test_throttled_range_param_repeated_exclusive_boundary(document, comm, value):
+    class Test(param.Parameterized):
+        a = param.Range(default=(0.5, 1.5), bounds=(0, 2), inclusive_bounds=(False, False))
+
+    obj = Test()
+    pane = Param(obj, widgets={'a': {'throttled': True}})
+    model = pane.get_root(document, comm=comm).children[1]
+    widget = pane._widgets['a']
+
+    for _ in range(2):
+        widget._process_events({'value': value, 'value_throttled': value})
+        assert obj.a == (0.5, 1.5)
+        assert widget.value == (0.5, 1.5)
+        assert model.value == (0.5, 1.5)
+
+    widget._process_events({'value': (0.7, 1.3)})
+    assert obj.a == (0.5, 1.5)
+    widget._process_events({'value_throttled': (0.7, 1.3)})
+    assert obj.a == (0.7, 1.3)

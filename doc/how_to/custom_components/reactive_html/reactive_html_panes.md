@@ -58,13 +58,13 @@ def data(chart_type="line"):
     }
 
 
-chart_type = pn.widgets.RadioBoxGroup(
+chart_type = pn.ui.RadioBoxGroup(
     label="Chart Type", options=["bar", "line"], inline=True
 )
 grid = ChatJSComponent(
     object=pn.bind(data, chart_type), height=400, sizing_mode="stretch_width"
 )
-pn.Column(chart_type, grid).servable()
+pn.ui.Column(chart_type, grid).servable()
 ```
 
 Note that the chart is not created inside the `after_layout` callback since ChartJS requires the layout to be fully initialized before render. Dealing with layout issues like this sometimes requires a bit of iteration, if you get stuck, share your question and minimum, reproducible code example on [Discourse](https://discourse.holoviz.org/).
@@ -135,7 +135,7 @@ pn.extension('cytoscape', sizing_mode='stretch_width')
 
 elements =  [{"data":{"id":'A', "label":'A'}},{"data":{"id":'B', "label":'B'}}, {"data":{"id": "A-B", "source":'A', "target":'B'}}]
 graph = Cytoscape(object=elements, sizing_mode="stretch_width", height=600)
-pn.Row(
+pn.ui.Row(
     pn.Param(graph, parameters=["object", "zoom", "pan", "layout", "style", "selected_nodes", "selected_edges"], sizing_mode="fixed", width=300),
     graph
 ).servable()

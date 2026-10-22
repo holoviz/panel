@@ -17,7 +17,9 @@ from contextlib import contextmanager
 import bokeh.command.util
 
 from bokeh.application.handlers.code import CodeHandler
-from bokeh.application.handlers.code_runner import CodeRunner
+from bokeh.application.handlers.code_runner import (
+    CodeRunner, _hold_process_globals, _patch_process_state,
+)
 from bokeh.application.handlers.function import (
     FunctionHandler as BokehFunctionHandler,
 )
@@ -32,7 +34,7 @@ from .reload import record_modules
 from .state import set_curdoc, state
 
 if t.TYPE_CHECKING:
-    from collections.abc import Callable, Iterator
+    from collections.abc import Callable, Iterator, Sequence
     from types import ModuleType
 
     from bokeh.core.types import PathLike
@@ -442,7 +444,7 @@ def parse_notebook(
         out all magics (i.e IPython specific syntax).
         """
 
-        _magic_pattern = re.compile(r'^\s*(?P<magic>%%\w\w+)($|(\s+))')
+        _magic_pattern = re.compile(r'^\s*(?P<magic>%%?\w+)($|(\s+))')
 
         def strip_magics(self, source: str) -> str:
             """
@@ -527,28 +529,18 @@ class PanelCodeRunner(CodeRunner):
 
         See bokeh.application.handlers.code_runner for original implementation.
         """
-        _cwd = os.getcwd()
-        _sys_path = list(sys.path)
-        _sys_argv = list(sys.argv)
-        sys.path.insert(0, os.path.dirname(self._path))
-        sys.argv = [os.path.basename(self._path), *self._argv]
-
         # XXX: self._code shouldn't be None at this point but types don't reflect this
         assert self._code is not None
 
-        try:
-            exec(self._code, module.__dict__)
-
-            if post_check:
-                post_check()
-        except Exception as e:
-            autoreload_handle_exception(self, module, e)
-        finally:
-            # undo sys.path, CWD fixups
-            os.chdir(_cwd)
-            sys.path = _sys_path
-            sys.argv = _sys_argv
-            self.ran = True
+        with _hold_process_globals(), _patch_process_state(self._path, self._argv):
+            try:
+                exec(self._code, module.__dict__)
+                if post_check:
+                    post_check()
+            except Exception as e:
+                autoreload_handle_exception(self, module, e)
+            finally:
+                self.ran = True
 
 
 class PanelCodeHandler(CodeHandler):
@@ -568,7 +560,7 @@ class PanelCodeHandler(CodeHandler):
         self,
         *,
         source: str | None = None,
-        filename: PathLike, argv: list[str] = [],
+        filename: PathLike, argv: Sequence[str] = [],
         package: ModuleType | None = None,
         runner: PanelCodeRunner | None = None
     ) -> None:
@@ -577,7 +569,7 @@ class PanelCodeHandler(CodeHandler):
         if runner:
             self._runner = runner
         elif source is not None:
-            self._runner = PanelCodeRunner(source, filename, argv, package=package)
+            self._runner = PanelCodeRunner(source, filename, list(argv), package=package)
         else:
             raise ValueError("Must provide source code to PanelCodeHandler")
 

@@ -3,7 +3,6 @@ import pathlib
 import re
 import shutil
 import tempfile
-import time
 import uuid
 
 import pytest
@@ -12,7 +11,6 @@ pytest.importorskip("playwright")
 
 from playwright.sync_api import expect
 
-from panel.config import config
 from panel.io.convert import BOKEH_LOCAL_WHL, PANEL_LOCAL_WHL, convert_apps
 from panel.tests.util import http_serve_directory
 
@@ -23,7 +21,7 @@ if not (PANEL_LOCAL_WHL.is_file() and BOKEH_LOCAL_WHL.is_file()):
         allow_module_level=True
     )
 
-pytestmark = [pytest.mark.ui, pytest.mark.flaky(max_runs=3)]
+pytestmark = [pytest.mark.ui, pytest.mark.flaky(reruns=3)]
 
 
 if os.name == "nt":
@@ -95,6 +93,35 @@ png = pn.pane.PNG('https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_trans
 png.servable()
 """
 
+esm_msg_app = """
+import panel as pn
+from panel.custom import JSComponent
+
+class Sender(JSComponent):
+
+    _esm = '''
+    export function render({ model }) {
+      const button = document.createElement('button')
+      button.id = 'send'
+      button.onclick = () => {
+        model.send_msg({index: 0})
+        model.send_msg({index: 1, data: new Uint8Array([1, 2, 3]).buffer})
+        model.send_msg({index: 2})
+      }
+      return button
+    }
+    '''
+
+    def _handle_msg(self, msg):
+        data = msg.get('data')
+        received.append(f"{msg['index']}:{'-' if data is None else list(data)}")
+        out.object = ' '.join(received)
+
+received = []
+out = pn.pane.Str('')
+pn.Row(Sender(), out).servable();
+"""
+
 error_app = """
 import panel as pn
 
@@ -157,8 +184,6 @@ def http_serve():
 
     httpd, _ = http_serve_directory(str(temp_path), port=HTTP_PORT)
 
-    time.sleep(1)
-
     def write(app):
         app_name = uuid.uuid4().hex
         app_path = temp_path / f'{app_name}.py'
@@ -196,19 +221,33 @@ def wait_for_app(http_serve, app, page, runtime, wait=True, resources=None, **kw
 
     page.goto(f"{HTTP_URL}{app_path.name[:-3]}.html")
 
-    cls = f'pn-loading pn-{config.loading_spinner}'
-    expect(page.locator('body')).to_have_class(cls)
+    expect(page.locator('#loader')).to_be_visible()
     if wait:
-        expect(page.locator('body')).not_to_have_class(cls, timeout=TIMEOUT)
+        expect(page.locator('#loader')).to_be_hidden(timeout=TIMEOUT)
 
     return msgs
 
 
 
-def test_pyodide_test_error_handling_worker(http_serve, page):
-    wait_for_app(http_serve, error_app, page, 'pyodide-worker', wait=False)
+@pytest.mark.parametrize('runtime', ['pyodide', 'pyodide-worker'])
+def test_pyodide_test_error_handling(http_serve, page, runtime):
+    wait_for_app(http_serve, error_app, page, runtime, wait=False)
 
-    expect(page.locator('.pn-loading-msg')).to_have_text('RuntimeError: This app is broken', timeout=TIMEOUT)
+    expect(page.locator('#loader-error')).to_have_text('RuntimeError: This app is broken', timeout=TIMEOUT)
+    expect(page.locator('#loader .spinner')).to_be_hidden()
+
+
+@pytest.mark.parametrize('runtime', ['pyodide', 'pyodide-worker'])
+def test_pyodide_test_convert_esm_messages_with_binary_data(http_serve, page, runtime):
+    msgs = wait_for_app(http_serve, esm_msg_app, page, runtime)
+
+    page.click('#send')
+
+    # Each message, including the binary payload sent between the others, must
+    # arrive once and in order.
+    expect(page.locator('pre:not([class])')).to_have_text('0:- 1:[1, 2, 3] 2:-')
+
+    assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
 
 @pytest.mark.parametrize('runtime', RUNTIMES)
@@ -270,16 +309,9 @@ def test_pyodide_test_convert_tabulator_app(http_serve, page, runtime):
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
 
-@pytest.mark.parametrize(
-    'runtime, http_patch', [
-        ('pyodide', False),
-        ('pyodide', True),
-        ('pyodide-worker', False),
-        ('pyodide-worker', True)
-    ]
-)
-def test_pyodide_test_convert_csv_app(http_serve, page, runtime, http_patch):
-    msgs = wait_for_app(http_serve, csv_app, page, runtime, http_patch=http_patch)
+@pytest.mark.parametrize('runtime', ['pyodide', 'pyodide-worker'])
+def test_pyodide_test_convert_csv_app(http_serve, page, runtime):
+    msgs = wait_for_app(http_serve, csv_app, page, runtime)
 
     expected_titles = ['index', 'date', 'Temperature', 'Humidity', 'Light', 'CO2', 'HumidityRatio', 'Occupancy']
 

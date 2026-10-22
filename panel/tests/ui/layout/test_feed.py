@@ -8,7 +8,7 @@ from panel import Feed
 from panel.layout.spacer import Spacer
 from panel.tests.util import serve_component, wait_until
 
-pytestmark = [pytest.mark.ui, pytest.mark.flaky(max_runs=3, reruns_delay=2)]
+pytestmark = pytest.mark.ui
 
 ITEMS = 100  # 1000 items make the CI flaky
 
@@ -34,6 +34,22 @@ def test_feed_load_entries(page):
     # Now scroll to top
     feed_el.evaluate('(el) => el.scrollTo({top: 0})')
     wait_until(lambda: feed_el.locator('.bk-panel-models-markup-HTML').count() >= 50, page)
+
+def test_feed_scroll_false_reports_visible_subset(page):
+    """Regression test for #8661: a Feed embedded in a scrolling page
+    (scroll=False) renders all of its objects but must report only the on-screen
+    objects in visible_range, instead of expanding it to cover every rendered
+    object."""
+    feed = Feed(*list(range(ITEMS)), scroll=False)
+    serve_component(page, feed)
+
+    feed_el = page.locator(".bk-panel-models-feed-Feed")
+    expect(feed_el).to_be_attached()
+
+    wait_until(lambda: feed.visible_range is not None, page)
+    page.wait_for_timeout(500)
+    lo, hi = feed.visible_range
+    assert hi - lo < ITEMS - 1
 
 def test_feed_view_latest(page):
     feed = Feed(*list(range(ITEMS)), height=250, view_latest=True)
@@ -108,6 +124,51 @@ def test_feed_scroll_to_latest_always_when_limit_null(page):
     wait_until(lambda: int(page.locator('pre').last.inner_text() or 0) < 0.9 * ITEMS, page)
     feed.scroll_to_latest(scroll_limit=None)
     wait_until(lambda: int(page.locator('pre').last.inner_text() or 0) > 0.9 * ITEMS, page)
+
+
+def test_feed_scroll_to_latest_while_building_latest_children(page):
+    feed = Feed(*list(range(ITEMS)), height=250)
+    serve_component(page, feed)
+
+    wait_until(lambda: int(page.locator('pre').last.inner_text() or 0) < 0.9 * ITEMS, page)
+    # Delay the build the scroll event races, so it always lands mid-build
+    page.evaluate("""() => {
+        const view = Object.values(Bokeh.index)[0]
+        const build = view.build_child_views.bind(view)
+        view.build_child_views = async () => {
+            const created = await build()
+            view.build_child_views = build
+            await new Promise((resolve) => setTimeout(resolve, 500))
+            return created
+        }
+    }""")
+    feed.scroll_to_latest(scroll_limit=None)
+
+    feed_el = page.locator(".bk-panel-models-feed-Feed")
+
+    def at_latest():
+        assert int(page.locator('pre').last.inner_text() or 0) == pytest.approx(ITEMS - 1, abs=1)
+        assert feed_el.evaluate('(el) => el.scrollHeight - el.scrollTop - el.clientHeight') <= 1
+    wait_until(at_latest, page)
+
+
+def test_feed_scroll_to_latest_outside_limit_stays(page):
+    feed = Feed(*list(range(ITEMS)), height=250)
+    serve_component(page, feed)
+
+    feed_el = page.locator(".bk-panel-models-feed-Feed")
+    wait_until(lambda: int(page.locator('pre').last.inner_text() or 0) < 0.9 * ITEMS, page)
+
+    # The latest objects are not loaded, so the server rerenders them, but the
+    # distance to them is beyond the limit and the view must stay put
+    feed.scroll_to_latest(scroll_limit=50)
+
+    def away_from_latest():
+        assert feed_el.evaluate('(el) => el.scrollHeight - el.scrollTop - el.clientHeight') > 100
+    wait_until(away_from_latest, page)
+    # The scroll would land once the rerendered children arrive
+    page.wait_for_timeout(500)
+    away_from_latest()
 
 
 def test_feed_scroll_to_latest_within_limit(page):

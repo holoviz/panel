@@ -16,6 +16,7 @@ import param
 from bokeh.models import Row as BkRow
 from param.parameterized import iscoroutinefunction, resolve_ref
 
+from ..config import config
 from ..io.document import freeze_doc, hold
 from ..io.resources import CDN_DIST
 from ..models.layout import Column as PnColumn, ScrollToEvent
@@ -92,6 +93,8 @@ class SizingModeMixin:
         heights, widths = [], []
         all_expand_height, expand_width, expand_height, scale = True, self.width_policy=="max", self.height_policy=="max", False
 
+        explicit_width = getattr(self, '_explicit_width_policy', False)
+        explicit_height = getattr(self, '_explicit_height_policy', False)
         for child in children:
             smode = child.sizing_mode
             if smode and 'scale' in smode:
@@ -135,22 +138,73 @@ class SizingModeMixin:
                     height += margin*2
                 heights.append(height)
 
-        # Infer new sizing mode based on children
+        # An explicitly set width_policy/height_policy takes precedence over
+        # sizing_mode, so inferring expansion on that axis cannot change the
+        # rendered behavior. In strict mode we skip the inference entirely so
+        # the reported sizing_mode reflects what the user asked for; in either
+        # mode this is not a conflict and so is never warned about.
+        if config.respect_explicit_sizing:
+            if explicit_width and self.width_policy != 'max':
+                expand_width = False
+            if explicit_height and self.height_policy != 'max':
+                expand_height = False
+
+        # Infer new sizing mode based on children unless the user
+        # explicitly supplied a sizing_mode, in which case that setting is
+        # honored rather than inherited from the children.
         mode = 'scale' if scale else 'stretch'
         if self._direction == 'horizontal':
             allow_height_scale = all_expand_height
         else:
             allow_height_scale = True
 
+        # Infer what sizing_mode the children demand.
+        inferred_mode = None
         if expand_width and expand_height and not self.width and not self.height:
             if allow_height_scale or 'both' in (sizing_mode or ''):
-                sizing_mode = f'{mode}_both'
+                inferred_mode = f'{mode}_both'
             else:
-                sizing_mode = f'{mode}_width'
+                inferred_mode = f'{mode}_width'
         elif expand_width and not self.width:
-            sizing_mode = f'{mode}_width'
+            inferred_mode = f'{mode}_width'
         elif expand_height and not self.height and allow_height_scale:
-            sizing_mode = f'{mode}_height'
+            inferred_mode = f'{mode}_height'
+
+        explicit_sizing = getattr(self, '_explicit_sizing_mode', False)
+        if explicit_sizing and inferred_mode and inferred_mode != sizing_mode:
+            explicit_axes = {
+                axis for axis in ('width', 'height')
+                if sizing_mode and (axis in sizing_mode or 'both' in sizing_mode)
+            }
+            inferred_axes = {
+                axis for axis in ('width', 'height')
+                if axis in inferred_mode or 'both' in inferred_mode
+            }
+            # Inference only conflicts on axes it adds on top of the explicit
+            # sizing_mode. width_policy/height_policy take precedence over
+            # sizing_mode, so an axis with an explicit policy stays under the
+            # user's control and is not being overridden.
+            conflicting_axes = inferred_axes - explicit_axes
+            if explicit_width:
+                conflicting_axes.discard('width')
+            if explicit_height:
+                conflicting_axes.discard('height')
+            if conflicting_axes:
+                if config.respect_explicit_sizing:
+                    inferred_mode = None
+                else:
+                    self.param.warning(
+                        f"sizing_mode={sizing_mode!r} on {type(self).__name__} is being "
+                        f"overridden to {inferred_mode!r} by a child's sizing. Set "
+                        "pn.config.respect_explicit_sizing=True to prevent this."
+                    )
+            elif inferred_axes.issubset(explicit_axes):
+                # Inference would downgrade the explicit sizing_mode; the
+                # explicit setting is a superset so it should win.
+                inferred_mode = None
+
+        if inferred_mode:
+            sizing_mode = inferred_mode
         if sizing_mode is None:
             return {'sizing_mode': props.get('sizing_mode')}
 
@@ -285,17 +339,17 @@ class Panel(Reactive, SizingModeMixin):
 
         for obj in old_objects:
             if obj not in self.objects:
-                obj._cleanup(root)
+                obj._release_model(root, model)
 
         current_objects = list(self.objects)
         ref = root.ref['id']
         for i, pane in enumerate(self.objects):
-            if ref in pane._models:
-                child, _ = pane._models[root.ref['id']]
+            if pane in old_objects and ref in pane._models:
+                child, _ = pane._models[ref]
                 old_models.append(child)
             else:
                 try:
-                    child = pane._get_model(doc, root, model, comm)
+                    child = pane._acquire_model(doc, root, model, comm)
                 except RerenderError as e:
                     if e.layout is not None and e.layout is not self:
                         raise e
@@ -814,9 +868,10 @@ class ListPanel(ListLike, Panel):
         return super()._process_param_change(params)
 
     def _cleanup(self, root: Model | None = None) -> None:
+        parent = self._models.get(root.ref['id'], (None,))[0] if root else None
         super()._cleanup(root)
         for p in self.objects:
-            p._cleanup(root)
+            p._release_model(root, parent)
 
     def clone(self, *objects: t.Any, **params: t.Any):
         return super().clone(*objects, **params)
@@ -861,9 +916,10 @@ class NamedListPanel(NamedListLike, Panel):
         return super()._process_param_change(params)
 
     def _cleanup(self, root: Model | None = None) -> None:
+        parent = self._models.get(root.ref['id'], (None,))[0] if root else None
         super()._cleanup(root)
         for p in self.objects:
-            p._cleanup(root)
+            p._release_model(root, parent)
 
     def clone(self, *objects: t.Any, **params: t.Any) -> Self:
         return super().clone(*objects, **params)

@@ -24,24 +24,28 @@ from panel.theme import Material
 pn.config.design = Material
 ```
 
-Any component that is rendered will now inherit this design. However, alternatively we can also set a `design` explicitly on a particular component, e.g.:
+Any component without a `design` of its own uses the configured design when it is rendered, including components created before the design was set. In a served application the setting applies to the current session, so applications served from the same process can use different designs.
+
+Using `pn.ui` selects the `'material-ui'` design automatically, unless another design has been configured. To keep a different design, set it before using `pn.ui`.
+
+However, alternatively we can also set a `design` explicitly on a particular component, e.g.:
 
 ```{pyodide}
 from panel.theme import Bootstrap, Material, Native
 
 def create_components(design):
-    return pn.Column(
-        pn.widgets.FloatSlider(label='Slider', design=design),
-        pn.widgets.TextInput(label='TextInput', design=design),
-        pn.widgets.Select(
+    return pn.ui.Column(
+        pn.ui.FloatSlider(label='Slider', design=design),
+        pn.ui.TextInput(label='TextInput', design=design),
+        pn.ui.Select(
             label='Select', options=['Biology', 'Chemistry', 'Physics'], design=design
         ),
-        pn.widgets.Button(
+        pn.ui.Button(
             label='Click me!', icon='hand-click', color='primary', design=design
         )
     )
 
-pn.Tabs(
+pn.ui.Tabs(
     ('Bootstrap', create_components(Bootstrap)),
     ('Material', create_components(Material)),
     ('Native', create_components(Native)),

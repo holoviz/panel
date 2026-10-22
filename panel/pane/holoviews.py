@@ -20,6 +20,7 @@ from packaging.version import Version
 from param.parameterized import register_reference_transform
 from param.reactive import bind
 
+from ..config import config
 from ..io import state, unlocked
 from ..layout import (
     Column, HSpacer, Row, WidgetBox,
@@ -40,6 +41,8 @@ if t.TYPE_CHECKING:
     from bokeh.model import Model
     from holoviews.plotting.renderer import Renderer
     from pyviz_comms import Comm
+
+    from ..theme.base import Design
 
     WidgetType = type[WidgetBase]
     DimensionWidgetType = tuple[WidgetType, WidgetType] | WidgetType
@@ -630,17 +633,29 @@ class HoloViews(Pane):
     jslink.__doc__ = Pane.jslink.__doc__
 
     @classmethod
+    def _widget_design(cls) -> type[Design] | None:
+        """
+        The design the generated widgets are resolved against, which
+        defaults to the active design.
+        """
+        return config.design
+
+    @classmethod
     def _resolve_widget(
         cls, key: str, dynamic: bool, default_widgets: WidgetMapping | None = None
     ) -> WidgetType:
+        from ..theme.base import resolve_component
         if default_widgets is None:
             default_widgets = {}
+        overridden = key in default_widgets
         widget_type = default_widgets.get(key, cls.default_widgets.get(key, None))
         if widget_type is None:
             raise ValueError("No valid {key} widget type found.")
         elif isinstance(widget_type, tuple):
             widget_type = widget_type[int(dynamic)]
-        return widget_type  # type: ignore
+        if overridden:
+            return widget_type  # type: ignore
+        return resolve_component(widget_type, cls._widget_design())  # type: ignore
 
     @classmethod
     def widgets_from_dimensions(
@@ -717,8 +732,8 @@ class HoloViews(Pane):
                 widget = widget_types[dim.name]
                 if isinstance(widget, WidgetBase):
                     widget.param.update(**kwargs)
-                    if not widget.name:
-                        widget.name = dim.label
+                    if not widget.label:
+                        widget.label = dim.label
                     widgets.append(widget)
                     continue
                 elif isinstance(widget, dict):

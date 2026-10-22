@@ -63,7 +63,7 @@ class TextInput(pn.widgets.Widget):
 To explore all parameters on a `Parameterized` class, we inspect the `.param` namespace:
 
 ```{pyodide}
-pn.widgets.TextInput.param
+pn.ui.TextInput.param
 ```
 
 ## Utilizing Parameters
@@ -75,7 +75,7 @@ Let's now delve into practical usage scenarios.
 Consider working with a `TextInput` widget:
 
 ```{pyodide}
-text_input = pn.widgets.TextInput(value='A string!')
+text_input = pn.ui.TextInput(value='A string!')
 
 text_input
 ```
@@ -139,11 +139,11 @@ import panel as pn
 
 pn.extension()
 
-text_in = pn.widgets.TextInput(value='Hello world!')
+text_in = pn.ui.TextInput(value='Hello world!')
 
-text_out = pn.pane.Markdown(text_in.param.value)
+text_out = pn.ui.Markdown(text_in.param.value)
 
-pn.Column(text_in, text_out).servable()
+pn.ui.Column(text_in, text_out).servable()
 ```
 
 Observe how changes in `TextInput` are automatically reflected in the Markdown output.
@@ -151,19 +151,19 @@ Observe how changes in `TextInput` are automatically reflected in the Markdown o
 This also works when using it for other parameters, e.g. we can add a switch to toggle the visibility of some component:
 
 ```{pyodide}
-visible = pn.widgets.Switch(value=True)
+visible = pn.ui.Switch(value=True)
 
-pn.Row(visible, pn.pane.Markdown('Hello World!', visible=visible)).servable()
+pn.ui.Row(visible, pn.ui.Markdown('Hello World!', visible=visible)).servable()
 ```
 
 Many parameters that accept a container such as a `dictionary` or `list` can also resolve references when they are nested, e.g. if we declare a `styles` dictionary one of the values can be a widget:
 
 ```{pyodide}
-color = pn.widgets.ColorPicker(value='red')
+color = pn.ui.ColorPicker(value='red')
 
-md = pn.pane.Markdown('Some Text!', styles={'color': color})
+md = pn.ui.Markdown('Some Text!', styles={'color': color})
 
-pn.Row(color, md).servable()
+pn.ui.Row(color, md).servable()
 ```
 
 Notice that we passed in the widget object directly instead of the `.param.value`. This is possible because widgets are treated as a proxy of their `value` parameter just like a `Parameter` is treated as a proxy for current value.
@@ -179,13 +179,13 @@ import panel as pn
 
 pn.extension()
 
-text_input = pn.widgets.TextInput(value='World')
+text_input = pn.ui.TextInput(value='World')
 
 text = pn.rx('**Hello {}!**').format(text_input)
 
-md = pn.pane.Markdown(text)
+md = pn.ui.Markdown(text)
 
-pn.Row(text_input, md).servable()
+pn.ui.Row(text_input, md).servable()
 ```
 
 Similarly, we can make a DataFrame reactive:
@@ -221,7 +221,7 @@ df = pn.cache(pd.read_csv)(data_url)
 
 dfrx = pn.rx(df)
 
-slider = pn.widgets.IntSlider(value=2, start=1, end=10)
+slider = pn.ui.IntSlider(value=2, start=1, end=10)
 pn.panel(dfrx.head(slider)).servable()
 ```
 
@@ -241,12 +241,12 @@ df = pn.cache(pd.read_csv)(data_url)
 
 dfrx = pn.rx(df)
 
-cols  = pn.widgets.MultiChoice(
+cols  = pn.ui.MultiChoice(
     options=df.columns.to_list(), value=['p_name', 't_state', 't_county', 'p_year', 'p_cap'], height=300
 )
-nrows = pn.widgets.IntSlider(start=5, end=20, step=5, value=15, label='Samples')
+nrows = pn.ui.IntSlider(start=5, end=20, step=5, value=15, label='Samples')
 style = pn.rx('color: white; background-color: {color}')
-color = pn.widgets.ColorPicker(value='darkblue', label='Highlight color')
+color = pn.ui.ColorPicker(value='darkblue', label='Highlight color')
 
 def highlight_max(s, props=''):
     if s.dtype.kind not in 'f':
@@ -255,12 +255,12 @@ def highlight_max(s, props=''):
 
 styled_df = dfrx[cols].sample(nrows).style.apply(highlight_max, props=style.format(color=color), axis=0)
 
-pn.pane.DataFrame(styled_df).servable()
+pn.ui.DataFrame(styled_df).servable()
 ```
 
 As you can see, the Pandas code is identical to what you might have written if you were working with a regular DataFrame. However, now you can use widgets and even complex expressions as inputs.
 
-Try replacing `pn.pane.DataFrame` with `pn.panel` to display an interactive component with widgets.
+Try replacing `pn.ui.DataFrame` with `pn.panel` to display an interactive component with widgets.
 
 :::{dropdown} Solution
 
@@ -276,12 +276,12 @@ df = pn.cache(pd.read_csv)(data_url)
 
 dfrx = pn.rx(df)
 
-cols  = pn.widgets.MultiChoice(
+cols  = pn.ui.MultiChoice(
     options=df.columns.to_list(), value=['p_name', 't_state', 't_county', 'p_year', 'p_cap'], height=300
 )
-nrows = pn.widgets.IntSlider(start=5, end=20, step=5, value=15, label='Samples')
+nrows = pn.ui.IntSlider(start=5, end=20, step=5, value=15, label='Samples')
 style = pn.rx('color: white; background-color: {color}')
-color = pn.widgets.ColorPicker(value='darkblue', label='Highlight color')
+color = pn.ui.ColorPicker(value='darkblue', label='Highlight color')
 
 def highlight_max(s, props=''):
     if s.dtype.kind not in 'f':
@@ -313,11 +313,11 @@ import panel as pn
 
 pn.extension()
 
-intslider = pn.widgets.IntSlider(value=10, start=5, end=100, step=10, label="Font Size")
+intslider = pn.ui.IntSlider(value=10, start=5, end=100, step=10, label="Font Size")
 
 styles_rx = {"font-size": pn.rx("{value}px").format(value=intslider)}
-markdown = pn.pane.Markdown("We love dataviz!", styles=styles_rx)
-pn.Column(intslider, markdown).servable()
+markdown = pn.ui.Markdown("We love dataviz!", styles=styles_rx)
+pn.ui.Column(intslider, markdown).servable()
 ```
 
 :::
@@ -329,14 +329,14 @@ import panel as pn
 
 pn.extension()
 
-intslider = pn.widgets.IntSlider(value=10, start=5, end=100, step=10, label="Font Size")
+intslider = pn.ui.IntSlider(value=10, start=5, end=100, step=10, label="Font Size")
 
 def styles(font_size):
     return {"font-size": f"{font_size}px"}
 
 styles_rx = pn.rx(styles)(intslider)
-markdown = pn.pane.Markdown("We love dataviz!", styles=styles_rx)
-pn.Column(intslider, markdown).servable()
+markdown = pn.ui.Markdown("We love dataviz!", styles=styles_rx)
+pn.ui.Column(intslider, markdown).servable()
 ```
 
 :::
@@ -348,14 +348,14 @@ import panel as pn
 
 pn.extension()
 
-intslider = pn.widgets.IntSlider(value=10, start=5, end=100, step=10, label="Font Size")
+intslider = pn.ui.IntSlider(value=10, start=5, end=100, step=10, label="Font Size")
 
 def styles(font_size):
     return {"font-size": f"{font_size}px"}
 
 styles_bn = pn.bind(styles, font_size=intslider)
-markdown = pn.pane.Markdown("We love dataviz!", styles=styles_bn)
-pn.Column(intslider, markdown).servable()
+markdown = pn.ui.Markdown("We love dataviz!", styles=styles_bn)
+pn.ui.Column(intslider, markdown).servable()
 ```
 
 :::{note}

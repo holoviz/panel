@@ -1,13 +1,34 @@
 import type * as p from "@bokehjs/core/properties"
 
 import {Model} from "@bokehjs/model"
-import {mat4, vec3} from "gl-matrix"
 
 import {cartesian_product, vtkns} from "./util"
 
 type VTKTicker = {
   ticks: number[]
   labels: string[]
+}
+
+// In-place transpose of a 4x4 matrix
+function transpose4(m: number[]): void {
+  for (let i = 0; i < 4; i++) {
+    for (let j = i + 1; j < 4; j++) {
+      const tmp = m[i*4 + j]
+      m[i*4 + j] = m[j*4 + i]
+      m[j*4 + i] = tmp
+    }
+  }
+}
+
+// Transforms a point by a column-major 4x4 matrix, including the perspective divide
+function transform_point([x, y, z]: number[], m: number[]): number[] {
+  const wh = m[3]*x + m[7]*y + m[11]*z + m[15]
+  const w = wh === 0 || Number.isNaN(wh) ? 1 : wh
+  return [
+    (m[0]*x + m[4]*y + m[8]*z + m[12]) / w,
+    (m[1]*x + m[5]*y + m[9]*z + m[13]) / w,
+    (m[2]*x + m[6]*y + m[10]*z + m[14]) / w,
+  ]
 }
 
 export namespace VTKAxes {
@@ -201,17 +222,16 @@ export class VTKAxes extends Model {
         }
         const dataPoints = psMapper.getInputData().getPoints()
         const viewMatrix = camera.getViewMatrix()
-        mat4.transpose(viewMatrix, viewMatrix)
+        transpose4(viewMatrix)
         const projMatrix = camera.getProjectionMatrix(aspect, -1, 1)
-        mat4.transpose(projMatrix, projMatrix)
+        transpose4(projMatrix)
         textCtx.clearRect(0, 0, dims.width, dims.height)
         coordsList.forEach((xy, idx) => {
           const pdPoint = dataPoints.getPoint(idx)
-          const vc = vec3.fromValues(pdPoint[0], pdPoint[1], pdPoint[2])
-          vec3.transformMat4(vc, vc, viewMatrix)
+          const vc = transform_point(pdPoint, viewMatrix)
           vc[2] += 0.05 // sensibility
-          vec3.transformMat4(vc, vc, projMatrix)
-          if (vc[2] - 0.001 < xy[3]) {
+          const projected = transform_point(vc, projMatrix)
+          if (projected[2] - 0.001 < xy[3]) {
             textCtx.font = "30px serif"
             textCtx.textAlign = "center"
             textCtx.textBaseline = "alphabetic"

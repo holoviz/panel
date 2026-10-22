@@ -363,6 +363,11 @@ class Perspective(ModelPane, ReactiveData):
     def _get_data(self):
         if self.object is None:
             return {}, {}
+        # ReactiveData builds the data during super().__init__, before PaneBase
+        # gets to validate the object, so the type check has to happen here to
+        # cover both construction and later assignment to .object.
+        if self.applies(self.object) is False:
+            self._type_error(self.object)
         if isinstance(self.object, dict):
             ncols = len(self.object)
             df = data = self.object

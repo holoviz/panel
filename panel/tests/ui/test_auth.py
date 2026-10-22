@@ -1,6 +1,5 @@
 import os
 import pathlib
-import time
 
 import pytest
 
@@ -19,6 +18,19 @@ from panel.tests.util import (
 pytestmark = pytest.mark.ui
 auth_check = pytest.mark.skipif('PANEL_TEST_AUTH' not in os.environ, reason='PANEL_TEST_AUTH environment variable is required to run this test')
 
+
+def _auth0_login(page, user, password):
+    # Auth0's login page may re-render its inputs while hydrating, wiping values filled too early
+    page.wait_for_load_state('networkidle')
+    username = page.locator('input[name="username"]')
+    password_input = page.locator('input[name="password"]')
+    username.fill(user)
+    password_input.fill(password)
+    expect(username).not_to_have_value('')
+    expect(password_input).not_to_have_value('')
+    page.get_by_role("button", name="Continue", exact=True).click(force=True)
+
+@pytest.mark.internet
 @linux_only
 @pytest.mark.parametrize('prefix', ['', 'prefix'])
 def test_basic_auth(py_file, page, prefix):
@@ -41,6 +53,7 @@ def test_basic_auth(py_file, page, prefix):
 
         expect(page.locator('.markdown')).to_have_text('test_user', timeout=10000)
 
+@pytest.mark.internet
 @linux_only
 @pytest.mark.parametrize('prefix', ['', 'prefix'])
 def test_basic_auth_via_proxy(py_file, page, prefix, reverse_proxy):
@@ -130,7 +143,7 @@ def test_azure_oauth(py_file, page):
         page.locator('input[type="submit"]').click(force=True)
 
         expect(page.locator('input[type="submit"]')).to_have_attribute('value', 'Next')
-        time.sleep(1) # Loading password page is slow
+        expect(page.locator('input[type="password"]')).to_be_visible()
         page.locator('input[type="password"]').fill(azure_password)
         page.locator('button[type="submit"]').click(force=True)
         page.locator('button[type="submit"][id="acceptButton"]').click(force=True)  # Stay signed in
@@ -163,9 +176,7 @@ def test_auth0_oauth(py_file, page):
         port = wait_for_port(p.stdout)
         page.goto(f"http://localhost:{port}")
 
-        page.locator('input[name="username"]').fill(auth0_user)
-        page.locator('input[name="password"]').fill(auth0_password)
-        page.get_by_role("button", name="Continue", exact=True).click(force=True)
+        _auth0_login(page, auth0_user, auth0_password)
 
         expect(page.locator('.markdown')).to_have_text(auth0_user, timeout=10000)
 
@@ -199,12 +210,11 @@ def test_auth0_oauth_via_proxy(py_file, page):
             port = wait_for_port(p.stdout)
             page.goto(f"http://localhost:{port}")
 
-            page.locator('input[name="username"]').fill(auth0_user)
-            page.locator('input[name="password"]').fill(auth0_password)
-            page.get_by_role("button", name="Continue", exact=True).click(force=True)
+            _auth0_login(page, auth0_user, auth0_password)
 
             expect(page.locator('.markdown')).to_have_text(auth0_user, timeout=10000)
 
+@pytest.mark.internet
 @linux_only
 @pytest.mark.parametrize('logout_template', [None, (pathlib.Path(__file__).parent / 'logout.html').absolute()])
 def test_basic_auth_logout(py_file, page, logout_template):
@@ -239,6 +249,7 @@ def test_basic_auth_logout(py_file, page, logout_template):
         assert 'id_token' not in cookies
 
 
+@pytest.mark.internet
 @linux_only
 @pytest.mark.parametrize('logout_template', [None, (pathlib.Path(__file__).parent / 'logout.html').absolute()])
 def test_basic_auth_logout_via_proxy(py_file, page, logout_template, reverse_proxy):
@@ -278,6 +289,7 @@ def test_basic_auth_logout_via_proxy(py_file, page, logout_template, reverse_pro
         assert 'id_token' not in cookies
 
 
+@pytest.mark.internet
 @linux_only
 def test_authorize_callback_redirect(page):
 
@@ -315,6 +327,7 @@ def test_authorize_callback_redirect(page):
         expect(page.locator(".markdown").locator("div")).to_have_text('Page B\n')
 
 
+@pytest.mark.internet
 @linux_only
 def test_global_authorize_callback(page):
     users, sessions = [], []

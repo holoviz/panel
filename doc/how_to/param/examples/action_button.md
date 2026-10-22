@@ -4,7 +4,7 @@
 import param
 import panel as pn
 
-pn.extension(template='bootstrap')
+pn.extension(template='page')
 ```
 
 This example demonstrates how to use ``param.Action`` to trigger an update in a method that depends on that parameter. Actions can trigger any function, but if we simply want to trigger a method that depends on that action, then we can define a small ``lambda`` function that triggers the parameter explicitly:
@@ -26,8 +26,8 @@ class ActionExample(param.Parameterized):
 
 action_example = ActionExample()
 
-pn.Row(
-    pn.Column(
+pn.ui.Row(
+    pn.ui.Column(
         pn.panel(action_example, show_name=False, margin=0, widgets={"action": {"color": "primary"}, "number": {"disabled": True}}),
         '**Click the button** to trigger an update in the output.'
     ),

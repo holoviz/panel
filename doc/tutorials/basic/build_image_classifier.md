@@ -82,7 +82,7 @@ def get_label_view(fn, image: Image):
 
 
 def get_image_button(url, image_pane):
-    button = pn.widgets.Button(
+    button = pn.ui.Button(
         width=100,
         height=100,
         stylesheets=[
@@ -109,7 +109,7 @@ def image_classification_interface(fn, examples):
 
     ## State
 
-    image_view = pn.pane.Image(
+    image_view = pn.ui.Image(
         get_pil_image(examples[0]),
         height=IMAGE_DIM,
         width=IMAGE_DIM,
@@ -117,23 +117,23 @@ def image_classification_interface(fn, examples):
         margin=0,
     )
 
-    label_view = pn.pane.JSON()
+    label_view = pn.ui.JSON()
 
     ## Inputs
 
-    file_input = pn.widgets.FileInput(
+    file_input = pn.ui.FileInput(
         accept=".png,.jpeg",
     )
     pn.bind(handle_file_upload, file_input, image_view, watch=True)
-    file_input_component = pn.Column("### Upload Image", file_input)
+    file_input_component = pn.ui.Column("### Upload Image", file_input)
 
-    examples_input_component = pn.Column(
-        "### Examples", pn.Row(*(get_image_button(url, image_view) for url in examples))
+    examples_input_component = pn.ui.Column(
+        "### Examples", pn.ui.Row(*(get_image_button(url, image_view) for url in examples))
     )
 
     ## Views
 
-    label_view = pn.Row(
+    label_view = pn.ui.Row(
         pn.panel(
             pn.bind(get_label_view, fn=fn, image=image_view.param.object),
             defer_load=True,
@@ -145,7 +145,7 @@ def image_classification_interface(fn, examples):
 
     ## Layouts
 
-    input_component = pn.Column(
+    input_component = pn.ui.Column(
         "# Input",
         image_view,
         file_input_component,
@@ -154,13 +154,13 @@ def image_classification_interface(fn, examples):
         margin=10,
     )
 
-    output_component = pn.Column(
+    output_component = pn.ui.Column(
         "# Output",
         label_view,
         width=IMAGE_DIM,
         margin=10,
     )
-    return pn.FlexBox(input_component, output_component)
+    return pn.ui.FlexBox(input_component, output_component)
 
 
 def predict(image: Image):

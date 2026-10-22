@@ -5,9 +5,9 @@ When you're working on custom applications and dashboards, there are times when 
 This page will walk you through using the `ReactiveHTML` class to craft custom components without the need for complex JavaScript build tools. You'll be able to leverage basic HTML, CSS, and JavaScript to tailor your components to your specific needs.
 
 :::{admonition} warn
-`ReactiveHTML` was the recommended approach for building custom components before so-called [ESM components](../../how_to/custom_components/index#esm-components) were added to Panel. Refer to the [custom component how-to guides](../../how_to/custom_components/index) for more details.
+`ReactiveHTML` was the recommended approach for building custom components before so-called [ESM components](../../how_to/custom_components/index.md#esm-components) were added to Panel. Refer to the [custom component how-to guides](../../how_to/custom_components/index) for more details.
 
-We recommend using [`JSComponent`](../../how_to/custom_components/index#esm-examples) over `ReactiveHTML` for new custom components.
+We recommend using [`JSComponent`](../../how_to/custom_components/index.md#esm-examples) over `ReactiveHTML` for new custom components.
 :::
 
 ## Why Use `ReactiveHTML`?
@@ -230,7 +230,7 @@ class CustomComponent(ReactiveHTML):
 
 component = CustomComponent(width=500)
 
-pn.Column(component.param.color, component, )
+pn.ui.Column(component.param.color, component, )
 ```
 
 ## `_child_config`
@@ -292,7 +292,7 @@ svg = """<svg style="stroke: #e62f63;" width="18" height="18" viewBox="0 0 18 18
 CustomComponent(v_literal=svg, v_template=svg, width=500, height=200)
 ```
 
-Please note you cannot set `v_model=svg` because `ReactiveHTML` tries to set the `v_model` to a `pn.pane.SVG` pane.
+Please note you cannot set `v_model=svg` because `ReactiveHTML` tries to set the `v_model` to a `pn.ui.SVG` pane.
 
 ```{pyodide}
 try:
@@ -323,7 +323,7 @@ class CustomComponent(ReactiveHTML):
     _dom_events = {'input_el': ['change']}
 
 component=CustomComponent(width=500)
-pn.Column(component, component.param.value)
+pn.ui.Column(component, component.param.value)
 ```
 
 Once subscribed, the class may also define a method following the `_{element-id}_{event}` naming convention, which will fire when the DOM event triggers. For example we could define a `_input_el_change` method. Any such callback will be given a `DOMEvent` object as the first and only argument.
@@ -349,8 +349,8 @@ class CustomComponent(ReactiveHTML):
 
 
 component = CustomComponent(width=500)
-pn.Column(
-    component, component.param.value, pn.pane.JSON(component.param.event)
+pn.ui.Column(
+    component, component.param.value, pn.ui.JSON(component.param.event)
 )
 ```
 
@@ -410,7 +410,7 @@ class Counter(ReactiveHTML):
     }
 
 counter = Counter()
-pn.Column(counter, counter.param.count)
+pn.ui.Column(counter, counter.param.count)
 ```
 
 In this example, we have a `Counter` component that displays a count value and an *Increment* Button. The `_template` defines the HTML structure of the component, including the template variable `${count}` for the count value.
@@ -506,7 +506,9 @@ Note that the event that triggered the callback will be made available in the na
 
 ## External Dependencies
 
-Often the components you build will have dependencies on some external Javascript or CSS files. To make this possible `ReactiveHTML` components may declare `__javascript__`, `__javascript_modules__` and `__css__` attributes, specifying the external dependencies to load. Note that in a notebook as long as the component is imported before the call to `pn.extension` all its dependencies will be loaded automatically. If you want to require users to load the components as an extension explicitly via a `pn.extension` call you can declare an `_extension_name`.
+Often the components you build will have dependencies on some external Javascript or CSS files. To make this possible `ReactiveHTML` components may declare `__javascript__`, `__javascript_modules__` and `__css__` attributes, specifying the external dependencies to load. Panel derives what the browser needs from those declarations, so the dependencies are fetched the first time your component renders whether or not they were loaded up front. If you want users to be able to preload them with a `pn.extension` call you can declare an `_extension_name`; see [Control when resources load](../../how_to/performance/resources.md) for when that is worth doing.
+
+If your component pulls in several libraries that provide separate globals, also declare `__js_skip__` mapping each global to the urls that provide it. That is how Panel knows to skip a library the page already has, and it is what keeps two components that share a library from loading it twice.
 
 Below we will create a Material UI text field and declare the Javascript and CSS components to load:
 
@@ -549,7 +551,7 @@ pn.extension('material-components') # for notebook
 
 text_field = MaterialTextField(value="Some value")
 
-pn.Column(text_field, text_field.param.value).servable()
+pn.ui.Column(text_field, text_field.param.value).servable()
 ```
 
 In a notebook dependencies for this component will not be loaded unless the user explicitly loads them with a `pn.extension('material-components')`. In a server context you will also have to explicitly load this extension unless the component is rendered on initial page load, i.e. if the component is only added to the page in a callback you will also have to explicitly run `pn.extension('material-components')`.

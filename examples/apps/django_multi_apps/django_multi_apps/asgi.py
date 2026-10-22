@@ -1,20 +1,33 @@
 """
-ASGI config for django_multi_apps project.
+ASGI config for the django_multi_apps project.
 
-It exposes the ASGI callable as a module-level variable named ``application``.
+It exposes the ASGI callable as a module-level variable named ``application``,
+serving both the Django project and the Panel applications.
 
-For more information on this file, see
-https://docs.djangoproject.com/en/3.0/howto/deployment/asgi/
-https://channels.readthedocs.io/en/latest/deploying.html
+Run it with 'python manage.py runserver' or with an ASGI server directly:
+
+    uvicorn django_multi_apps.asgi:application
 """
-
-
 import os
 
 import django
 
-from channels.routing import get_default_application
-
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'django_multi_apps.settings')
+
 django.setup()
-application = get_default_application()
+
+import gbm.pn_app as gbm_app  # noqa: E402
+import sliders.pn_app as sliders_app  # noqa: E402
+import stockscreener.pn_app as stockscreener_app  # noqa: E402
+
+from panel.io.django import autoload, get_asgi_application  # noqa: E402
+
+from .themes import plot_themes  # noqa: E402
+
+plot_themes()
+
+application = get_asgi_application([
+    autoload('sliders', sliders_app.app),
+    autoload('gbm', gbm_app.app),
+    autoload('stockscreener', stockscreener_app.app),
+])

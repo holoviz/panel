@@ -51,7 +51,7 @@ def test_set_url_params_update_document(page):
 
     expected_location = {
         'protocol': 'http:',
-        'hostname': 'localhost',
+        'hostname': '127.0.0.1',
         'port': f'{port}',
         'pathname': '/',
         'hash': '',
@@ -79,9 +79,9 @@ def test_set_hash_update_document(page):
     _, port = serve_component(page, app)
 
     expected_location = {
-        'href': f'http://localhost:{port}/#123',
+        'href': f'http://127.0.0.1:{port}/#123',
         'protocol': 'http:',
-        'hostname': 'localhost',
+        'hostname': '127.0.0.1',
         'port': f'{port}',
         'pathname': '/',
         'search': '',

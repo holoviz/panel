@@ -13,6 +13,7 @@ from types import FunctionType, MethodType
 import numpy as np
 import param
 
+from bokeh.core.property.vectorization import Field, Value
 from bokeh.core.serialization import Serializer
 from bokeh.model import Model
 from bokeh.models import ColumnDataSource, ImportedStyleSheet
@@ -34,7 +35,7 @@ from ..util import (
     clone_model, datetime_as_utctimestamp, isdatetime, lazy_load,
     styler_update, updating,
 )
-from ..util.warnings import warn
+from ..util.warnings import deprecated, warn
 from .base import Widget
 from .button import Button
 from .input import TextInput
@@ -47,7 +48,7 @@ if t.TYPE_CHECKING:
     from pyviz_comms import Comm
 
     from ..models.tabulator import (
-        CellClickEvent, SelectionEvent, TableEditEvent,
+        CellClickEvent, SelectionEvent, TableEditEvent, TabulatorColumn,
     )
     from ..reactive import TDataColumn
 
@@ -55,6 +56,7 @@ if t.TYPE_CHECKING:
         headerFilter: str | bool
         headerFilterParams: dict[str, t.Any]
         headerFilterFunc: str
+        headerFilterFuncParams: dict[str, t.Any]
         headerFilterPlaceholder: str
 
 class ColumnSpec(t.TypedDict, total=False):
@@ -93,6 +95,29 @@ def _get_value_from_keys(d:dict, key1, key2, default=None):
         warn(msg, DeprecationWarning)
         return d[key2]
     return default
+
+def _cell_model_spec(model: CellEditor | CellFormatter | None) -> dict[str, t.Any] | Model | None:
+    """
+    Converts a builtin Bokeh CellEditor or CellFormatter into a plain
+    spec so it can be rendered without loading the bokeh-tables bundle.
+    Subclasses defined in custom extensions are passed through as is.
+    """
+    if model is None or type(model).__module__ != CellEditor.__module__:
+        return model
+    spec: dict[str, t.Any] = {'type': type(model).__name__}
+    for name, value in model.properties_with_values(include_defaults=True).items():
+        if name in Model.properties():
+            continue
+        if isinstance(value, Value):
+            value = {'value': value.value}
+        elif isinstance(value, Field):
+            field_spec: dict[str, t.Any] = {'field': value.field}
+            if isinstance(value.transform, Model):
+                field_spec['transform'] = value.transform
+            value = field_spec
+        spec[name] = value
+    return spec
+
 
 @contextmanager
 def _stringdtype_error(df: pd.DataFrame, column: str, array):
@@ -289,7 +314,7 @@ class BaseTable(ReactiveData, Widget):
                     editor = clone_model(editor)
 
             if col in indexes or editor is None:
-                editor = CellEditor()
+                editor = CellEditor() # type: ignore[abstract]
 
             if formatter is None or isinstance(formatter, (dict, str, JSCode)):
                 if kind == 'i':
@@ -566,11 +591,12 @@ class BaseTable(ReactiveData, Widget):
 
     def _get_header_filters(self, df: pd.DataFrame) -> list[pd.Series | np.ndarray]:
         filters = []
+        header_filters = getattr(self, 'header_filters', None)
+        filt_def = header_filters if isinstance(header_filters, dict) else {}
         for filt in getattr(self, 'filters', []):
             col_name = filt['field']
             op = filt['type']
             val = filt['value']
-            filt_def = getattr(self, 'header_filters', {}) or {}
             if col_name in df.columns:
                 col = df[col_name]
             elif col_name in self.indexes:
@@ -608,12 +634,15 @@ class BaseTable(ReactiveData, Widget):
             elif op == 'like':
                 filters.append(col.str.contains(val, case=False, regex=False))
             elif op == 'starts':
-                filters.append(col.str.startsWith(val))
+                filters.append(col.str.lower().str.startswith(val.lower()))
             elif op == 'ends':
-                filters.append(col.str.endsWith(val))
+                filters.append(col.str.lower().str.endswith(val.lower()))
             elif op == 'keywords':
-                match_all = filt_def.get(col_name, {}).get('matchAll', False)
-                sep = filt_def.get(col_name, {}).get('separator', ' ')
+                col_def = filt_def.get(col_name)
+                if not isinstance(col_def, dict):
+                    col_def = {}
+                match_all = col_def.get('matchAll', False)
+                sep = col_def.get('separator', ' ')
                 matches = val.split(sep)
                 if match_all:
                     for match in matches:
@@ -1033,9 +1062,9 @@ class DataFrame(BaseTable):
     Note that editing is not possible for multi-indexed DataFrames, in which
     case you will need to reduce the DataFrame to a single index.
 
-    Also note that the `DataFrame` widget will eventually be replaced with the
-    `Tabulator` widget, and so new code should be written to use `Tabulator`
-    instead.
+    .. deprecated:: 1.10.0
+        Use `Tabulator` instead. The `DataFrame` widget will be removed in
+        version 2.0.
 
     Reference: https://panel.holoviz.org/reference/widgets/DataFrame.html
 
@@ -1114,6 +1143,10 @@ class DataFrame(BaseTable):
     _rename: t.ClassVar[Mapping[str, str | None]] = {
         'selection': None, 'sorters': None, 'text_align': None
     }
+
+    def __init__(self, value=None, **params):
+        deprecated('2.0', 'DataFrame', 'Tabulator')
+        super().__init__(value=value, **params)
 
     @property
     def _widget_type(self) -> type[Model] | None:  # type: ignore[override]
@@ -1263,6 +1296,9 @@ class Tabulator(BaseTable):
     hidden_columns = param.List(default=[], item_type=str, nested_refs=True, doc="""
         List of columns to hide.""")  # type: ignore[assignment, ty:invalid-assignment]
 
+    movable_columns = param.Boolean(default=False, doc="""
+        Whether columns can be reordered by dragging their headers.""")
+
     layout: t.Literal[
         'fit_data', 'fit_data_fill', 'fit_data_stretch', 'fit_data_table',
         'fit_columns',
@@ -1400,7 +1436,7 @@ class Tabulator(BaseTable):
         self._explicit_pagination = 'pagination' in params
         self._on_edit_callbacks = []
         self._on_click_callbacks = {}
-        self._old_value = None
+        self._pending_edits = {}
         super().__init__(value=value, **params)
         self._configuration = configuration
         self.param.watch(self._update_children, self._content_params)
@@ -1485,32 +1521,64 @@ class Tabulator(BaseTable):
         iloc = self.value.index.get_loc(idx)
         self._validate_iloc(idx, iloc)
         event.row = iloc
+
+        if event.event_name == 'table-edit':
+            if event_col not in self.value.columns or event.value is None:
+                return
+            # value/old arrive as raw values straight from the frontend cell.
+            # Convert them to self.value's dtype instead of reading
+            # self.value/self._old_value: the ColumnDataSource patch for this
+            # same edit is applied via a different, independently-scheduled
+            # server-side dispatch path and is not guaranteed to have landed
+            # by the time this event is processed, so self.value may still
+            # reflect the pre-edit state.
+            old_col_values = self.value[event_col].values
+            event.value = self._convert_column(np.asarray([event.value]), old_col_values)[0]
+            if event.old is not None:
+                event.old = self._convert_column(np.asarray([event.old]), old_col_values)[0]
+
+            import pandas as pd
+            filter_df = pd.DataFrame({event.column: [event.value]})
+            filters = self._get_header_filters(filter_df)
+            # If the new value no longer passes the column's header filter,
+            # the row would otherwise be dropped from the masked data
+            # _process_data hands to _update_column, desyncing it from the
+            # row range _update_column assumes it is writing (the full
+            # column, or - for remote pagination - the full current page).
+            # Track it so the mask keeps it included.
+            if filters and not filters[0].any():
+                self._edited_indexes.append(idx)
+
+            # Firing on_edit is deferred to _update_column, which is where
+            # this same edit's value actually lands in self.value once the
+            # corresponding ColumnDataSource patch is processed - guaranteeing
+            # on_edit only fires once self.value/current_view reflect it,
+            # without depending on the relative order these two independently
+            # dispatched messages (this event and that patch) are handled in.
+            self._pending_edits.setdefault((event_col, idx), []).append(event)
+            return
+
         if event_col not in self.buttons:
             if event_col in self.value.columns:
                 event.value = self.value[event_col].iloc[event.row]
             else:
                 event.value = self.value.index[event.row]
+        for cb in self._on_click_callbacks.get(None, []):
+            state.execute(partial(cb, event), schedule=False)
+        for cb in self._on_click_callbacks.get(event_col, []):
+            state.execute(partial(cb, event), schedule=False)
 
-        # Set the old attribute on a table edit event
-        if event.event_name == 'table-edit':
-            if event.pre:
-                import pandas as pd
-                filter_df = pd.DataFrame({event.column: [event.value]})
-                filters = self._get_header_filters(filter_df)
-                # Check if edited cell was filtered
-                if filters and filters[0].any():
-                    self._edited_indexes.append(idx)
-            else:
-                if self._old_value is not None:
-                    event.old = self._old_value[event_col].iloc[event.row]
+    def _fire_pending_edits(self, column: str, index) -> None:
+        if not self._pending_edits:
+            return
+        for ind in index:
+            events = self._pending_edits.pop((column, ind), None)
+            if not events:
+                continue
+            for event in events:
                 for cb in self._on_edit_callbacks:
                     state.execute(partial(cb, event), schedule=False)
-                self._update_style()
-        else:
-            for cb in self._on_click_callbacks.get(None, []):
-                state.execute(partial(cb, event), schedule=False)
-            for cb in self._on_click_callbacks.get(event_col, []):
-                state.execute(partial(cb, event), schedule=False)
+            self._update_style()
 
     def _get_theme(self, theme, resources=None):
         from ..models.tabulator import _TABULATOR_THEMES_MAPPING, THEME_PATH
@@ -1539,10 +1607,6 @@ class Tabulator(BaseTable):
         # the new data and old data wrong. This extension replicates the
         # front-end filtering - if need be - to be able to correctly make the
         # comparison and update the data held by the backend.
-
-        # It also makes a copy of the value dataframe, to use it to obtain
-        # the old value in a table-edit event.
-        self._old_value = self.value.copy()
 
         import pandas as pd
         df = pd.DataFrame(data)
@@ -1890,23 +1954,26 @@ class Tabulator(BaseTable):
     def _update_column(self, column: str, array: TDataColumn) -> None:
         import pandas as pd
 
-        if self.pagination != 'remote':
+        remote = self.pagination == 'remote'
+        if remote:
+            nrows = self.page_size or self.initial_page_size
+            start = (self.page - 1) * nrows
+            index = self._processed.iloc[start:start+nrows].index.values
+        else:
             index = self._processed.index.values
-            with _stringdtype_error(self.value, column, array):
-                self.value.loc[index, column] = array
-
-            with pd.option_context('mode.chained_assignment', None):
-                self._processed[column] = array
+        if len(index) != len(array):
+            # Data sent for the table before its value was replaced cannot
+            # be mapped onto the current rows.
             return
-        nrows = self.page_size or self.initial_page_size
-        start = (self.page - 1) * nrows
-        end = start+nrows
-        index = self._processed.iloc[start:end].index.values
+
         with _stringdtype_error(self.value, column, array):
             self.value.loc[index, column] = array
-
         with pd.option_context('mode.chained_assignment', None):
-            self._processed.loc[index, column] = array
+            if remote:
+                self._processed.loc[index, column] = array
+            else:
+                self._processed[column] = array
+        self._fire_pending_edits(column, index)
 
     def _map_indexes(self, indexes: list[int], existing: list[int] = [], add: bool = True) -> list[int]:
         if self.pagination == 'remote':
@@ -1947,6 +2014,16 @@ class Tabulator(BaseTable):
         if isinstance(self.selectable, int) and not isinstance(self.selectable, bool):
             ilocs = ilocs[len(ilocs) - self.selectable:]
         self.selection = ilocs  # type: ignore
+
+    def _get_columns(self) -> list[TabulatorColumn]:  # type: ignore[override]
+        from ..models.tabulator import TabulatorColumn
+        return [
+            TabulatorColumn(
+                field=column.field, title=column.title, width=column.width,
+                formatter=_cell_model_spec(column.formatter),
+                editor=_cell_model_spec(column.editor),
+            ) for column in super()._get_columns()
+        ]
 
     def _get_properties(self, doc: Document | None = None) -> dict[str, t.Any]:
         properties = super()._get_properties(doc)
@@ -2002,7 +2079,7 @@ class Tabulator(BaseTable):
         self._register_events('cell-click', 'table-edit', 'selection-change', model=model, doc=doc, comm=comm)
         return model
 
-    def _get_filter_spec(self, column: TableColumn) -> FilterSpec:
+    def _get_filter_spec(self, column: TabulatorColumn) -> FilterSpec:
         fspec: FilterSpec = {}
         if not self.header_filters or (isinstance(self.header_filters, dict) and
                                        column.field not in self.header_filters):
@@ -2022,7 +2099,9 @@ class Tabulator(BaseTable):
                     fspec['headerFilter'] = False
                 else:
                     fspec['headerFilter'] = True
-            elif isinstance(column.editor, DateEditor):
+            elif isinstance(column.editor, DateEditor) or (
+                isinstance(column.editor, dict) and column.editor['type'] == 'DateEditor'
+            ):
                 # Datetime filtering currently broken with Tabulator 5.4.3
                 # Initial (empty) value of filter is passed to luxon.js
                 # and causes error
@@ -2061,16 +2140,27 @@ class Tabulator(BaseTable):
                 filter_params = {'valuesLookup': True}
             if filter_func is None:
                 filter_func = 'in' if filter_params.get('multiselect') else 'like'
+        # Tabulator's keywords filter reads matchAll and separator from
+        # headerFilterFuncParams. headerFilterParams only configures the
+        # header input, so leaving them there makes a local table match any
+        # keyword. Remote pagination still filters in Python.
+        func_params: dict[str, t.Any] = {}
+        if filter_func == 'keywords':
+            for key in ('matchAll', 'separator'):
+                if key in filter_params:
+                    func_params[key] = filter_params.pop(key)
         fspec['headerFilter'] = filter_type
         if filter_params:
             fspec['headerFilterParams'] = filter_params
         if filter_func:
             fspec['headerFilterFunc'] = filter_func
+        if func_params:
+            fspec['headerFilterFuncParams'] = func_params
         if filter_placeholder:
             fspec['headerFilterPlaceholder'] = filter_placeholder
         return fspec
 
-    def _config_columns(self, column_objs: list[TableColumn]) -> Sequence[ColumnSpec | GroupSpec]:
+    def _config_columns(self, column_objs: list[TabulatorColumn]) -> Sequence[ColumnSpec | GroupSpec]:
         column_objs = list(column_objs)
         groups: dict[str, GroupSpec] = {}
         columns: Sequence[ColumnSpec | GroupSpec] = []
@@ -2210,7 +2300,7 @@ class Tabulator(BaseTable):
                     if new:
                         children = last['columns']
                 children.append(col_dict)
-                column.title = self.titles.get(index, index[-1])
+                column.update(title=self.titles.get(index, index[-1]))
             elif matching_groups:
                 group = matching_groups[0]
                 if group in groups:
@@ -2226,7 +2316,7 @@ class Tabulator(BaseTable):
                 columns.append(col_dict)
         return columns
 
-    def _get_configuration(self, columns: list[TableColumn]) -> dict[str, t.Any]:
+    def _get_configuration(self, columns: list[TabulatorColumn]) -> dict[str, t.Any]:
         """
         Returns the Tabulator configuration.
         """

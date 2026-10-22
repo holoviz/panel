@@ -1,3 +1,5 @@
+import pytest
+
 from panel.pane import Perspective
 
 data = {
@@ -8,6 +10,18 @@ data = {
         '1981 01 01 04    72    39 10196 -9999     0     0     0 -9999'],
     'year': [1981, 1981, 1981, 1981, 1981],
  }
+
+
+def test_perspective_rejects_unsupported_object():
+    with pytest.raises(ValueError, match='does not support objects of type'):
+        Perspective('not tabular')
+
+
+def test_perspective_rejects_unsupported_object_on_assignment():
+    psp = Perspective(data)
+
+    with pytest.raises(ValueError, match='does not support objects of type'):
+        psp.object = 'not tabular'
 
 
 def test_perspective_int_cols(document, comm):

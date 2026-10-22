@@ -30,6 +30,7 @@ import bokeh.util.callback_manager
 import numpy as np
 import param
 
+from bokeh.core import properties as bokeh_properties
 from bokeh.core.has_props import _default_resolver
 from bokeh.core.property.bases import Property
 from bokeh.model import Model
@@ -109,7 +110,7 @@ def abbreviated_repr(value, max_length=25, natural_breaks=(',', ' ')):
     """
     if isinstance(value, list):
         vrepr = '[' + ', '.join([abbreviated_repr(v) for v in value]) + ']'
-    if isinstance(value, param.Parameterized):
+    elif isinstance(value, param.Parameterized):
         vrepr = type(value).__name__
     else:
         vrepr = repr(value)
@@ -211,7 +212,7 @@ def parse_query(query: str) -> dict[str, t.Any]:
     query_dict = dict(urlparse.parse_qsl(query[1:]))
     parsed_query: dict[str, t.Any] = {}
     for k, v in query_dict.items():
-        if v.isdigit():
+        if re.fullmatch(r'-?[0-9]+', v):
             parsed_query[k] = int(v)
         elif is_number(v):
             parsed_query[k] = float(v)
@@ -298,6 +299,26 @@ def lazy_load(module, model, notebook=False, root=None, ext=None):
             _default_resolver.add(model_cls)
         return model_cls
 
+    from ..io.resource_spec import lazy_load_available
+
+    # With lazy resource loading the component fetches what it needs at render
+    # time, so a missing extension is no longer a rendering failure. It still
+    # costs a round trip, hence the debug message. The extension is
+    # deliberately *not* registered after the fact: doing so would put the
+    # library in the page for every subsequent render and make the page
+    # contents depend on when the component happened to be created.
+    if lazy_load_available(notebook=notebook):
+        param.main.param.log(
+            param.DEBUG,
+            f'{model} was not imported on instantiation and will load the '
+            'resources it needs on demand. To load them up front pass the '
+            'extension explicitly:'
+            f'\n\npn.extension({ext!r})\n'
+        )
+        return getattr(import_module(module), model)
+
+    # Only reached when on-demand loading is unavailable, so these really are
+    # warnings about a component that may not render.
     if notebook:
         param.main.param.warning(
             f'{model} was not imported on instantiation and may not '
@@ -329,7 +350,7 @@ def lazy_load(module, model, notebook=False, root=None, ext=None):
         )
     elif root is not None and root.ref['id'] in state._views:
         param.main.param.warning(
-            f'{model} was not imported on instantiation may not '
+            f'{model} was not imported on instantiation and may not '
             'render in the served application. Ensure you add the '
             'following to the top of your application:'
             f'\n\npn.extension(\'{ext}\')\n'
@@ -366,11 +387,14 @@ def function_name(func) -> str:
     return str(func)
 
 
-_period_regex = re.compile(r'((?P<weeks>\d+?)w)?((?P<days>\d+?)d)?((?P<hours>\d+?)h)?((?P<minutes>\d+?)m)?((?P<seconds>\d+?\.?\d*?)s)?')
+_period_regex = re.compile(
+    r'((?P<weeks>\d+(\.\d+)?)w)?((?P<days>\d+(\.\d+)?)d)?((?P<hours>\d+(\.\d+)?)h)?'
+    r'((?P<minutes>\d+(\.\d+)?)m)?((?P<seconds>\d+(\.\d+)?)s)?'
+)
 
 def parse_timedelta(time_str: str) -> dt.timedelta | None:
-    parts = _period_regex.match(time_str)
-    if not parts:
+    parts = _period_regex.fullmatch(time_str)
+    if not parts or not time_str:
         return None
     parts_dict = parts.groupdict()
     time_params = {}
@@ -541,6 +565,62 @@ def prefix_length(a: str, b: str) -> int:
     return left
 
 
+def suffix_length(a: str, b: str, limit: int | None = None) -> int:
+    """
+    Searches for the length of the common suffix of strings a and b,
+    optionally capped at limit characters, using binary search.
+    """
+    la, lb = len(a), len(b)
+    right = min(la, lb)
+    if limit is not None:
+        right = min(right, limit)
+    # Common suffixes are usually short (closing tags), so gallop up
+    # from a small window to avoid slicing large parts of the strings.
+    left, probe = 0, 64
+    while probe < right and a[la-probe:] == b[lb-probe:]:
+        left, probe = probe, probe * 2
+    right = min(right, probe)
+    while left < right:
+        mid = (left + right + 1) // 2
+        if a[la-mid:] == b[lb-mid:]:
+            left = mid
+        else:
+            right = mid - 1
+    return left
+
+
+_ASTRAL = re.compile('[\U00010000-\U0010FFFF]')
+
+def utf16_offset(text: str, index: int) -> int:
+    """
+    Converts a code point index into text to the UTF-16 code unit
+    index JavaScript uses, where astral characters (e.g. emoji) take
+    up two units.
+    """
+    if text.isascii():
+        return index
+    return index + len(_ASTRAL.findall(text, 0, index))
+
+
+def splice_diff(old: str, new: str) -> tuple[int, int, str]:
+    """
+    Computes a single splice transforming old into new, such that
+    `new == old[:start] + patch + old[end:]`.
+
+    Returns
+    -------
+    start: int
+        Length of the common prefix.
+    end: int
+        Index in old where the common suffix begins.
+    patch: str
+        The replacement for old[start:end].
+    """
+    start = prefix_length(new, old)
+    suffix = suffix_length(new, old, min(len(old), len(new)) - start)
+    return start, len(old) - suffix, new[start:len(new)-suffix]
+
+
 def camel_to_kebab(name):
     # Use regular expressions to insert a hyphen before each uppercase letter not at the start,
     # and between a lowercase and uppercase letter.
@@ -570,7 +650,7 @@ def _descendents(class_: type, concrete: bool = False) -> list[type]:
         x = q.pop(0)
         out.insert(0, x)
         try:
-            subclasses = x.__subclasses__()
+            subclasses: list[type] = x.__subclasses__()
         except TypeError:
             # TypeError raised when __subclasses__ is called on unbound methods,
             # on `type` for example.
@@ -593,7 +673,13 @@ def set_bokeh_validation(validate: bool):
     validate: bool
         Whether to enable validation.
     """
-    Property._should_validate = validate
+    # `Property._should_validate` is for Bokeh 3.10.1 or lower
+    # https://github.com/bokeh/bokeh/pull/15548
+    set_default = getattr(bokeh_properties, "set_validation_default", None)
+    if set_default is None:
+        Property._should_validate = validate
+    else:
+        set_default(validate)
     if validate:
         bokeh.util.callback_manager._check_callback = _orig_check_callback
         bokeh.util.callback_manager._nargs = _orig_nargs

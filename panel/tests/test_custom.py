@@ -2,9 +2,11 @@ import numpy as np
 import pandas as pd
 import param
 
+from bokeh.document import Document
+from bokeh.models import ImportedStyleSheet
 from bokeh.plotting import figure
 
-from panel.custom import PyComponent, ReactiveESM
+from panel.custom import PyComponent, ReactComponent, ReactiveESM
 from panel.io.state import set_curdoc, state
 from panel.layout import Row
 from panel.pane import Bokeh, Markdown
@@ -69,6 +71,37 @@ def test_reactive_esm_sync_dataframe(document, comm):
         np.testing.assert_array_equal(values, expected.get(col))
 
 
+def test_reactive_esm_stylesheet_updates_across_documents(document, comm):
+    """A reused ESM component does not attach stylesheets to another document."""
+    other_doc = Document()
+    component = ReactiveESM(stylesheets=['https://example.com/first.css'])
+
+    with set_curdoc(document):
+        model1 = component.get_root(document, comm)
+        document.add_root(model1)
+        model2 = component.get_root(other_doc, comm)
+        other_doc.add_root(model2)
+        shared = ImportedStyleSheet(url='https://example.com/shared.css')
+        process = component._process_param_change
+
+        def add_shared(params):
+            props = process(params)
+            if 'stylesheets' in props:
+                props['stylesheets'].append(shared)
+            return props
+
+        component._process_param_change = add_shared
+        component.stylesheets = ['https://example.com/second.css']
+
+    for model, doc in ((model1, document), (model2, other_doc)):
+        assert all(sts.document is doc for sts in model.stylesheets if isinstance(sts, ImportedStyleSheet))
+        assert any(
+            isinstance(sts, ImportedStyleSheet) and sts.url == 'https://example.com/shared.css'
+            for sts in model.stylesheets
+        )
+        doc.to_json()
+
+
 class ESMBundle(ReactiveESM):
 
     _bundle_path = "esm.js"  # type: ignore[assignment]
@@ -88,11 +121,47 @@ def test_esm_bundle_resource_rel_path():
             state.rel_path = None
 
 
+def test_react_bundle_url_omits_importmap(tmp_path, monkeypatch, server_document):
+    from bokeh.embed.bundle import extension_dirs
+
+    bundle = tmp_path / 'mui.bundle.js'
+    bundle.write_text('export default {}')
+    # Served as an extension, since a url relative to the module cannot be
+    # computed across drives, e.g. for tmp_path on Windows.
+    monkeypatch.setitem(extension_dirs, 'panel-test-ext', tmp_path)
+
+    class MuiBundle(ReactComponent):
+        _bundle = bundle
+        _importmap = {'imports': {'@mui/material': 'https://esm.sh/@mui/material@7.1.0'}}
+
+    model = MuiBundle().get_root(server_document)
+
+    assert model.bundle == 'url'
+    assert model.importmap == {}
+
+
 class ESMWithChildren(ReactiveESM):
 
     child = Child(doc="""A child Viewable to be displayed in the ESM.""")
 
     children = Children(doc="""Child Viewables to be displayed in the ESM.""")
+
+
+class ReactWithChildren(ReactComponent):
+
+    items = Children()
+
+    _esm = "export function render({model}) { return null }"
+
+
+def test_react_component_initial_data_serialization(document, comm):
+    component = ReactWithChildren(items=[Markdown("foo")])
+
+    model = component.get_root(document, comm)
+    document.add_root(model)
+
+    data = document.to_json(deferred=False)["roots"][0]["attributes"]["data"]
+    assert [item["id"] for item in data["attributes"]["items"]] == [model.data.items[0].id]
 
 
 def test_reactive_esm_model_cleanup(document, comm):
@@ -278,3 +347,25 @@ def test_esm_python_update_different_from_frontend_is_applied(document, comm):
 
     # The model must reflect the Python update since 'C' != 'B'
     assert model.data.value == 'C'
+
+
+class ESMWithEvent(ReactiveESM):
+
+    clicks = param.Integer(default=0)
+
+    value = param.Event()
+
+
+def test_esm_event_reset_does_not_retrigger_watchers(document, comm):
+    esm = ESMWithEvent()
+
+    model = esm.get_root(document, comm)
+
+    values = []
+    esm.param.watch(lambda e: values.append(e.new), 'value')
+
+    with set_curdoc(document):
+        esm.param.update(clicks=1, value=True)
+
+    assert values == [True]
+    assert model.data.value is False

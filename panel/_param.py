@@ -6,7 +6,7 @@ from bokeh.core.enums import enumeration
 from param import Parameter, _is_number
 
 AlignmentType = t.Literal["auto", "start", "center", "end"]
-Alignment = enumeration(AlignmentType)
+Alignment = enumeration(*t.get_args(AlignmentType))
 MarginType: t.TypeAlias = int | tuple[int, int] | tuple[int, int, int, int]
 
 

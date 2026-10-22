@@ -5,7 +5,7 @@ Authentication flows have multiple stages and in certain scenarios Panel has to 
 - Error Template: The template that is displayed if the authentication errored for any reason, e.g. the user was not authorized to access the application.
 - Logout Template: The template served when a user hits the `/logout` endpoint.
 
-Both templates use Jinja2 syntax to render certain variables.
+Both templates use Jinja2 syntax to render certain variables. If you only want to change the colors, fonts, logo or title of the default templates, configure them with `pn.config.page_config` instead, as described in [Brand the index, login and error pages](../server/page_config). Custom templates can access that configuration through the `page` variable.
 
 ## Error Template
 
