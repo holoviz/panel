@@ -1,22 +1,23 @@
-# Utilize Templates
+# Structure Your App with a Page
 
-Welcome to the world of Panel templates! In this tutorial, we'll explore how to harness pre-made templates to effortlessly structure your app with a header, sidebar, and main area.
+Welcome to the world of Panel pages! In this tutorial, we'll explore how to use the `Page` component to effortlessly structure your app with a header, sidebar, and main area.
 
-Templates offer a streamlined approach to app layout and design, providing:
+A `Page` offers a streamlined approach to app layout and design, providing:
 
-- Ready-made templates accessible in the `pn.template` namespace.
-- A variety of customizable options to suit your specific needs.
+- A header with a title, an optional logo and a light/dark theme toggle.
+- A collapsible sidebar for controls and a main area for your content.
+- A single `theme_config` to brand the whole app with your own colors.
 
 ## Crafting a Hello World App
 
-Let's start by creating a basic app using the [`FastListTemplate`](../../reference/classic/templates/FastListTemplate.md). Copy the following code into a file named `app.py`:
+Let's start by creating a basic app using the [`Page`](../../reference/templates/Page.md). Copy the following code into a file named `app.py`:
 
 ```python
 import panel as pn
 
 pn.extension()
 
-pn.template.FastListTemplate(
+pn.ui.Page(
     title="Hello World",
     sidebar=["# Hello Sidebar", "This is text for the *sidebar*"],
     main=["# Hello Main", "This is text for the *main* area"],
@@ -31,27 +32,25 @@ panel serve app.py --dev
 
 It should resemble the following:
 
-![Hello World FastListTemplate App](../../_static/images/templates_hello_world.png)
+![Hello World Page App](../../_static/images/templates_hello_world.png)
 
 :::{note}
 In the code snippet:
 
-- `pn.template.FastListTemplate` defines the template to use.
-- `title` sets an optional title for the top header.
-- `sidebar` and `main` designate content areas for the sidebar and main section, respectively.
+- `pn.ui.Page` defines the overall layout of the app.
+- `title` sets the title shown in the header and in the browser tab.
+- `sidebar` and `main` designate content areas for the sidebar and main section, respectively. Both take a *list* of components.
 
-For additional configuration options, refer to the [`FastListTemplate` reference guide](../../reference/classic/templates/FastListTemplate.md).
+For additional configuration options, refer to the [`Page` reference guide](../../reference/templates/Page.md).
 :::
 
 :::{tip}
-Panel offers a rich assortment of built-in templates, including a versatile [`Slides`](../../reference/classic/templates/Slides.md) template.
+Panel also ships the classic templates, such as [`FastListTemplate`](../../reference/classic/templates/FastListTemplate.md) and the [`Slides`](../../reference/classic/templates/Slides.md) template, in the `pn.template` namespace.
 :::
 
-Take a moment to explore the [Templates Section](../../reference/index.md#templates) in the [Component Gallery](../../reference/index.md), then return here.
+## Displaying a Page in a Notebook
 
-## Integrating Templates in a Notebook
-
-While templates shine in serving apps, they're currently not displayable within notebooks. Copy the following two code cells into a notebook:
+A `Page` also renders inline in a notebook, so you can preview the final layout of your app while you develop it. Copy the following two code cells into a notebook:
 
 ```python
 import panel as pn
@@ -60,40 +59,31 @@ pn.extension()
 ```
 
 ```python
-pn.template.FastListTemplate(
+pn.ui.Page(
     title="Hello World",
     sidebar=["# Hello Sidebar", "This is text for the *sidebar*"],
     main=["# Hello Main", "This is text for the *main* area"],
 ).servable()
 ```
 
-Append a `;` after `.servable()` to prevent template display in the notebook. Preview the app; it should resemble:
+Run the cells. The `Page` is displayed below the second cell, header, sidebar and all.
 
-![Hello World FastListTemplate App](../../_static/images/templates_hello_world_notebook.png)
+Because the `Page` is marked `.servable()`, you can also serve the notebook with `panel serve app.ipynb --dev` or open it in the *Jupyter Panel Preview*.
 
-:::{warning}
-Notebook display of templates is not currently supported. Show your support for this feature by upvoting [Issue #2677](https://github.com/holoviz/panel/issues/2677).
-:::
+## Tailoring the Page
 
-## Tailoring the Template
-
-Let's customize the template further. Copy the code below into `app.py`:
+Let's customize the page further. Copy the code below into `app.py`:
 
 ```python
-import panel as pn
-import pandas as pd
 import altair as alt
+import pandas as pd
+import panel as pn
 
 pn.extension("vega")
 
-ACCENT = "teal"
+ACCENT = "#008080"
 
-image = pn.ui.JPG("https://assets.holoviz.org/panel/tutorials/wind_turbines_sunset.png")
-
-if pn.config.theme=="dark":
-    alt.theme.enable("dark")
-else:
-    alt.theme.enable("default")
+image = pn.ui.PNG("https://assets.holoviz.org/panel/tutorials/wind_turbines_sunset.png")
 
 @pn.cache # Add caching to only download data once
 def get_data():
@@ -126,12 +116,11 @@ fig = (
 )
 plot = pn.ui.Vega(fig, sizing_mode="stretch_both", max_height=800, margin=20)
 
-pn.template.FastListTemplate(
+pn.ui.Page(
     title="Wind Turbine Manufacturers",
     sidebar=[image, "**Note**: Only the 10 Manufacturers with the largest installed capacity are shown in the plot."],
     main=["# Installed Capacity", plot],
-    accent=ACCENT,
-    main_layout=None,
+    theme_config={"palette": {"primary": {"main": ACCENT}}},
 ).servable()
 ```
 
@@ -143,50 +132,76 @@ panel serve app.py --dev
 
 It should appear as shown below. Try toggling the theme button in the upper right corner.
 
-![Customized FastListTemplate App](../../_static/images/templates_customized_default.png)
+![Customized Page App](../../_static/images/templates_customized_default.png)
 
 Upon toggling, the app should switch to dark mode:
 
-![Customized FastListTemplate App](../../_static/images/templates_customized_dark.png)
+![Customized Page App](../../_static/images/templates_customized_dark.png)
 
 :::{note}
 In the code:
 
-- `pn.config.theme` determines the selected theme ("default" or "dark").
-- `alt.theme.enable("dark")` applies the "dark" theme to the plot. Panel doesn't do this automatically.
-- `accent` sets the primary or accent color for the template, allowing quick branding of the app.
-- `main_layout` specifies a layout to wrap each object in the main list. Choose from `"card"` (default) or `None`.
+- `theme_config` sets the primary color of the app. The header is drawn in the primary color, and buttons, sliders and other components with `color="primary"` pick it up too. Specify colors as hex codes like `"#008080"`, CSS color names such as `"teal"` are not supported here.
+- The theme toggle is built into the `Page`, so there is no need to add one yourself.
+- The Altair plot switches to a dark theme together with the rest of the app. A `Page` takes care of theming Altair, Bokeh, hvPlot, Plotly and many other plots for you.
+:::
 
-Note that `accent` and `main_layout` are exclusive to Fast templates like [FastListTemplate](../../reference/classic/templates/FastListTemplate.md) and [FastGridTemplate](../../reference/classic/templates/FastGridTemplate.md).
+## Adding to the Header
+
+The header has room for a few compact items such as buttons or links. Let's add a link to the data source, and hide the theme toggle to keep the app in its light theme:
+
+```python
+import panel as pn
+
+pn.extension()
+
+source = pn.ui.Button(
+    label="Data Source",
+    icon="open_in_new",
+    href="https://eerscmap.usgs.gov/uswtdb/",
+    target="_blank",
+    variant="outlined",
+    color="light",
+)
+
+pn.ui.Page(
+    title="Wind Turbine Manufacturers",
+    header=[source],
+    main=["# Installed Capacity"],
+    theme_config={"palette": {"primary": {"main": "#008080"}}},
+    theme_toggle=False,
+).servable()
+```
+
+:::{note}
+- `header` takes a list of items to display next to the title. The header is a single slim bar, so keep to buttons, links and small indicators.
+- `theme_toggle=False` hides the theme toggle. Use `theme="dark"` to start the app in the dark theme instead.
 :::
 
 ## Recap
 
-In this tutorial, we've explored the power of pre-made templates for structuring your app with ease:
+In this tutorial, we've explored how to structure an app with a `Page`:
 
-- Templates are available in the `pn.template` namespace.
-- Find a variety of templates in the [Templates Section](../../reference/index.md#templates) of the [Component Gallery](../../reference/index.md).
-- Templates offer high customizability.
+- `pn.ui.Page` gives your app a header, a sidebar and a main area.
+- The `sidebar`, `main` and `header` areas take lists of components.
+- A `Page` renders inline in notebooks, so you can preview your app as you build it.
+- `theme_config` sets the primary color, and the built-in theme toggle switches between light and dark.
+- The classic templates, like `FastListTemplate`, are still available in the `pn.template` namespace.
 
 ## References
+
+### Component Gallery
+
+- [Page](../../reference/templates/Page.md)
+- [ThemeToggle](../../reference/templates/ThemeToggle.md)
+- [AppBar](../../reference/templates/AppBar.md)
 
 ### How-to Guides
 
 - [Arrange Components in a Template](../../how_to/templates/template_arrange.md)
-- [Build a Custom Template](../../how_to/templates/template_custom.md)
-- [Customize Template Theme](../../how_to/templates/template_theme.md)
 - [Set a Template](../../how_to/templates/template_set.md)
 - [Style Altair Plots](../../how_to/styling/altair.md)
-- [Style Echarts Plots](../../how_to/styling/echarts.md)
-- [Style Matplotlib Plots](../../how_to/styling/matplotlib.md)
-- [Style Plotly Plots](../../how_to/styling/plotly.md)
-- [Style Vega/ Altair Plots](../../how_to/styling/vega.md)
-- [Toggle Modal](../../how_to/templates/template_modal.md)
 
 ### Explanations
 
 - [Templates Overview](../../explanation/styling/templates_overview.md)
-
-### Component Gallery
-
-- Explore the [Templates Section](../../reference/index.md#templates) in the [Component Gallery](../../reference/index.md) for more options.

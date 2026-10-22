@@ -18,6 +18,18 @@ from panel.tests.util import (
 pytestmark = pytest.mark.ui
 auth_check = pytest.mark.skipif('PANEL_TEST_AUTH' not in os.environ, reason='PANEL_TEST_AUTH environment variable is required to run this test')
 
+
+def _auth0_login(page, user, password):
+    # Auth0's login page may re-render its inputs while hydrating, wiping values filled too early
+    page.wait_for_load_state('networkidle')
+    username = page.locator('input[name="username"]')
+    password_input = page.locator('input[name="password"]')
+    username.fill(user)
+    password_input.fill(password)
+    expect(username).not_to_have_value('')
+    expect(password_input).not_to_have_value('')
+    page.get_by_role("button", name="Continue", exact=True).click(force=True)
+
 @pytest.mark.internet
 @linux_only
 @pytest.mark.parametrize('prefix', ['', 'prefix'])
@@ -164,9 +176,7 @@ def test_auth0_oauth(py_file, page):
         port = wait_for_port(p.stdout)
         page.goto(f"http://localhost:{port}")
 
-        page.locator('input[name="username"]').fill(auth0_user)
-        page.locator('input[name="password"]').fill(auth0_password)
-        page.get_by_role("button", name="Continue", exact=True).click(force=True)
+        _auth0_login(page, auth0_user, auth0_password)
 
         expect(page.locator('.markdown')).to_have_text(auth0_user, timeout=10000)
 
@@ -200,9 +210,7 @@ def test_auth0_oauth_via_proxy(py_file, page):
             port = wait_for_port(p.stdout)
             page.goto(f"http://localhost:{port}")
 
-            page.locator('input[name="username"]').fill(auth0_user)
-            page.locator('input[name="password"]').fill(auth0_password)
-            page.get_by_role("button", name="Continue", exact=True).click(force=True)
+            _auth0_login(page, auth0_user, auth0_password)
 
             expect(page.locator('.markdown')).to_have_text(auth0_user, timeout=10000)
 

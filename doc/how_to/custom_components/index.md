@@ -97,6 +97,13 @@ How to create panes using ESM components
 How to create a custom widget using ESM components
 :::
 
+:::{grid-item-card} {octicon}`paintbrush;2.5em;sd-mr-1 sd-animate-grow50` Build Material UI Components
+:link: esm/material_ui
+:link-type: doc
+
+How to build components on top of Material UI that share the theme of the `pn.ui` components.
+:::
+
 :::{grid-item-card} {octicon}`columns;2.5em;sd-mr-1 sd-animate-grow50` Create Custom Layouts
 :link: esm/custom_layout
 :link-type: doc
@@ -154,6 +161,7 @@ esm/callbacks
 esm/custom_panes
 esm/custom_widgets
 esm/custom_layout
+esm/material_ui
 esm/dataframe
 examples/esm_canvas
 examples/esm_leaflet

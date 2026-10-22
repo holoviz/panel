@@ -34,9 +34,9 @@ import holoviews as hv
 
 pn.extension()
 
-window = pn.ui.IntSlider(name="Window", value=30, start=5, end=90)
-sigma  = pn.ui.FloatSlider(name="Volatility", value=1.0, start=0.2, end=3)
-ticker = pn.ui.RadioButtonGroup(name="Series", options=["AAPL", "MSFT", "NVDA"])
+window = pn.ui.IntSlider(label="Window", value=30, start=5, end=90)
+sigma  = pn.ui.FloatSlider(label="Volatility", value=1.0, start=0.2, end=3)
+ticker = pn.ui.RadioButtonGroup(label="Series", options=["AAPL", "MSFT", "NVDA"])
 
 def series(window, sigma, ticker):
     rng = np.random.default_rng(sum(map(ord, ticker)))

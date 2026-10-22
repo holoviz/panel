@@ -1,5 +1,5 @@
 from panel.models import Player as BkPlayer
-from panel.widgets import DiscretePlayer
+from panel.widgets import DiscretePlayer, Player
 
 
 def test_discrete_player(document, comm):
@@ -32,3 +32,10 @@ def test_player_loop_policy_with_no_loop_options(document, comm):
     player = DiscretePlayer(label='Player', loop_policy='loop', visible_loop_options=[])
     assert player.loop_policy == 'loop'
     assert player.visible_loop_options == []
+
+
+def test_player_embed_state_includes_end(document, comm):
+    player = Player(start=0, end=3)
+    model = player.get_root(document, comm=comm)
+    _, _, values, *_ = player._get_embed_state(model)
+    assert values == [0, 1, 2, 3]

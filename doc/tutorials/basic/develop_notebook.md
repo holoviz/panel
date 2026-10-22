@@ -85,7 +85,7 @@ import numpy as np
 
 from matplotlib.figure import Figure
 
-ACCENT = "goldenrod"
+ACCENT = "#DAA520"
 LOGO = "https://assets.holoviz.org/panel/tutorials/matplotlib-logo.png"
 
 pn.extension(sizing_mode="stretch_width")
@@ -99,8 +99,11 @@ ax.hist(data, bins=20, color=ACCENT)
 
 component = pn.ui.Matplotlib(fig, format='svg', sizing_mode='scale_both')
 
-pn.template.FastListTemplate(
-    title="My App", sidebar=[LOGO], main=[component], accent=ACCENT
+pn.ui.Page(
+    title="My App",
+    sidebar=[LOGO],
+    main=[component],
+    theme_config={"palette": {"primary": {"main": ACCENT}}},
 ).servable();
 ```
 

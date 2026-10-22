@@ -198,6 +198,36 @@ def test_dynamic_button_group_variant_requires_review(keyword):
     assert result.manual_reviews
 
 
+@pytest.mark.parametrize('widget', ['ToggleIcon', 'ButtonIcon'])
+def test_icon_size_rewrite(widget):
+    source = f"import panel as pn\npn.widgets.{widget}(icon='heart', size='4em')\n"
+    result = migrate_source(source)
+    assert f"pn.ui.{widget}(icon='heart', icon_size='4em')" in result.source
+    assert 'icon-size' in _rules(result)
+    assert not result.manual_reviews
+
+
+def test_icon_size_not_renamed_when_icon_size_given():
+    source = "import panel as pn\npn.widgets.ToggleIcon(size='small', icon_size='2em')\n"
+    result = migrate_source(source)
+    assert "pn.ui.ToggleIcon(size='small', icon_size='2em')" in result.source
+    assert 'icon-size' not in _rules(result)
+
+
+@pytest.mark.parametrize('kwarg', ['width', 'height'])
+def test_icon_sized_by_dimensions_requires_review(kwarg):
+    source = f"import panel as pn\npn.widgets.ToggleIcon(icon='heart', {kwarg}=60)\n"
+    result = migrate_source(source)
+    assert f"pn.ui.ToggleIcon(icon='heart', {kwarg}=60)" in result.source
+    assert any('icon_size' in review.message for review in result.manual_reviews)
+
+
+def test_size_on_non_icon_widget_is_not_renamed():
+    source = "import panel as pn\npn.widgets.Select(options=['a'], size=3)\n"
+    result = migrate_source(source)
+    assert 'icon_size' not in result.source
+
+
 def test_menu_button_split_true_becomes_split_button():
     source = "import panel as pn\npn.widgets.MenuButton(name='Menu', items=[('A', 'a')], split=True)\n"
     result = migrate_source(source)

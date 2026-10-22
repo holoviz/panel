@@ -12,9 +12,13 @@ Components are available both flat and per module::
     from panel.ui import Button
     from panel.ui.widgets import Button
 """
+import sys
+import types
+
 import param
 
 from ..config import config
+from ..io.state import state
 
 
 def _global_design():
@@ -56,9 +60,9 @@ from .notifications import NotificationArea
 from .pane import (
     AVIF, GIF, HTML, ICO, JPG, JSON, PDF, PNG, SVG, VTK, YT, Audio, Bokeh,
     DataFrame, DeckGL, ECharts, HoloViews, Image, Interactive, IPyLeaflet,
-    IPyWidget, LaTeX, Markdown, Matplotlib, ParamFunction, ParamMethod,
+    IPyWidget, LaTeX, Markdown, Matplotlib, Param, ParamFunction, ParamMethod,
     ParamRef, Perspective, Placeholder, Plotly, ReactiveExpr, Reacton, RGGPlot,
-    Str, Streamz, Textual, Typography, Vega, Video, Vizzu, VTKVolume,
+    Str, Streamz, Textual, Typography, Vega, Video, Vizzu, VTKVolume, panel,
 )
 from .template import (
     AppBar, BreakpointSwitcher, Page, ThemeToggle,
@@ -211,7 +215,9 @@ __all__ = (
     "NumberInput",
     "Page",
     "Pagination",
+    "panel",
     "Paper",
+    "Param",
     "ParamFunction",
     "ParamMethod",
     "ParamRef",
@@ -281,9 +287,40 @@ __all__ = (
     "YT",
 )
 
+
+def _select_design():
+    """
+    Selects the Material UI design unless another one is configured. Within a
+    session only that session is switched, so classic applications served from
+    the same process keep their design.
+    """
+    if state.curdoc is None:
+        if _global_design() is None:
+            _set_global_design(MaterialUIDesign)
+    elif config.design is None:
+        config.design = MaterialUIDesign
+
+
+class _DesignSelectingModule(types.ModuleType):
+    """
+    The module is imported once per process, so the sessions after the first
+    select the design whenever they access a component through it.
+    """
+
+    def __getattribute__(self, name):
+        if not name.startswith('__') and state.curdoc is not None:
+            _select_design()
+        return super().__getattribute__(name)
+
+
 if _global_design() is not _prior_design:
     _set_global_design(_prior_design)
 
-if config.design is None or config.design is MaterialDesign:
-    # The dependency selects MaterialDesign on import, even without a user choice.
+if _prior_design is MaterialDesign:
+    # panel-material-ui was imported first and selected its design globally.
     _set_global_design(MaterialUIDesign)
+else:
+    _select_design()
+    for _name, _module in list(sys.modules.items()):
+        if _name == __name__ or _name.startswith(f'{__name__}.'):
+            _module.__class__ = _DesignSelectingModule

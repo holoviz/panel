@@ -22,7 +22,7 @@ from .io.datamodel import construct_data_model
 from .io.document import freeze_doc, hold
 from .io.model import apply_changes_without_dispatch
 from .io.resource_spec import resource_spec
-from .io.resources import component_resource_path
+from .io.resources import component_resource_path, notebook_extension_url
 from .io.state import state
 from .io.watcher import get_path_watcher
 from .layout.base import Panel
@@ -375,6 +375,16 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         return component_resource_path(base_cls, '_bundle_path', esm_path)
 
     @classmethod
+    def _notebook_bundle_url(cls, esm_path) -> str | None:
+        """
+        The url of the bundle on the Jupyter server extension, if the
+        bundle lives in the dist directory of a registered extension.
+        """
+        if config.autoreload or cls.__module__ not in sys.modules:
+            return None
+        return notebook_extension_url(cls._component_resource_path(esm_path, True))
+
+    @classmethod
     def _render_esm(cls, compiled: bool | t.Literal['compiling'] = True, server: bool = False):
         esm_path = cls._esm_path(compiled=compiled is True)
         if esm_path:
@@ -460,7 +470,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             data_props[k] = v
         bundle_path = self._bundle_path
         importmap = self._process_importmap()
-        is_session = False
+        is_session = notebook_bundle = False
         css_bundle = None
         if bundle_path:
             is_session = bool(doc and doc.session_context and doc.session_context.server_context)
@@ -469,16 +479,37 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
                 if self._bundle_css:
                     esm_bundle = self._component_resource_path(bundle_path, compiled=True)
                     css_bundle = esm_bundle.replace('_bundle_path', '_bundle_css').replace('.js', '.css')
+            elif (
+                not is_session and bundle_path == self._esm_path(True)
+                and (esm_url := self._notebook_bundle_url(bundle_path))
+            ):
+                bundle_hash = 'url'
+                notebook_bundle = True
+                if self._bundle_css:
+                    css_bundle = esm_url.removesuffix('.js') + '.css'
             else:
                 bundle_hash = hashlib.sha256(str(bundle_path).encode('utf-8')).hexdigest()
         else:
             bundle_hash = None
+        esm = self._render_esm(not config.autoreload, server=is_session or notebook_bundle)
+        if notebook_bundle:
+            # Subclasses may override _render_esm, so the bundle is only
+            # loaded from the Jupyter server extension if they rendered the
+            # url a server session would get rather than e.g. a CDN url.
+            if url := notebook_extension_url(esm.removeprefix('./')):
+                esm = url
+            else:
+                bundle_hash = hashlib.sha256(str(bundle_path).encode('utf-8')).hexdigest()
+                css_bundle = None
         data_props['esm_constants'] = self._constants
         if cls._data_model__initialized:
             defs = []
         else:
             defs = [cls._data_model]
             cls._data_model__initialized = True
+        if bundle_hash == 'url':
+            # A bundle ships its own dependencies
+            importmap = {}
         props.update({
             '_defs': defs,
             'bundle': bundle_hash,
@@ -486,7 +517,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             'class_name': cls.__name__,
             'data': self._data_model(**{p: v for p, v in data_props.items() if p not in ignored}),
             'dev': config.autoreload or getattr(self, '_debug', False),
-            'esm': self._render_esm(not config.autoreload, server=is_session),
+            'esm': esm,
             'events': events,
             'importmap': importmap,
             'render_policy': self._render_policy,
@@ -637,7 +668,16 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             elif ref in self._changing:
                 del self._changing[ref]
         if data_resets:
-            apply_changes_without_dispatch(doc, model.data, data_resets)
+            # Mark resets as changing so the Python-side echo isn't processed as a frontend event
+            prev_changing = self._changing.get(ref, [])
+            self._changing[ref] = prev_changing + list(data_resets)
+            try:
+                apply_changes_without_dispatch(doc, model.data, data_resets)
+            finally:
+                if prev_changing:
+                    self._changing[ref] = prev_changing
+                elif ref in self._changing:
+                    del self._changing[ref]
 
     def _handle_msg(self, data: t.Any) -> None:
         """

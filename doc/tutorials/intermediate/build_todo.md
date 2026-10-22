@@ -23,13 +23,12 @@ panel
 
 ```python
 """An app to manage tasks"""
-from typing import List
 import param
 import panel as pn
 
 BUTTON_WIDTH = 125
 
-pn.extension(sizing_mode="stretch_width", design="material")
+pn.extension(sizing_mode="stretch_width")
 
 class Task(pn.viewable.Viewer):
     """A model of a Task"""
@@ -50,7 +49,7 @@ class Task(pn.viewable.Viewer):
 class TaskList(param.Parameterized):
     """Provides methods to add and remove tasks as well as calculate summary statistics"""
 
-    value: List[Task] = param.List(item_type=Task, doc="A list of Tasks")
+    value: list[Task] = param.List(item_type=Task, doc="A list of Tasks")
 
     total_tasks = param.Integer(doc="The number of Tasks")
 
@@ -67,15 +66,16 @@ class TaskList(param.Parameterized):
 
         super().__init__(**params)
 
-        self._handle_completed_changed()
-
     def add_task(self, task: Task):
         """Adds a Task to the value list"""
         self.value = [*self.value, task]
 
+    def remove_task(self, task: Task):
+        """Removes a Task from the value list"""
+        self.value = [item for item in self.value if item is not task]
+
     def remove_all_tasks(self):
         """Removes all tasks from the value list"""
-        self._task_watchers = {}
         self.value = []
 
     def _handle_completed_changed(self, _=None):
@@ -83,16 +83,22 @@ class TaskList(param.Parameterized):
 
     @param.depends("value", watch=True, on_init=True)
     def _add_task_watchers(self):
+        for task in list(self._task_watchers):
+            if task not in self.value:
+                task.param.unwatch(self._task_watchers.pop(task))
         for task in self.value:
-            if not task in self._task_watchers:
+            if task not in self._task_watchers:
                 self._task_watchers[task] = task.param.watch(
                     self._handle_completed_changed, "completed"
                 )
 
     @param.depends("value", watch=True, on_init=True)
     def _handle_value_changed(self):
-        self.total_tasks = len(self.value)
-        self.has_tasks = self.total_tasks > 0
+        self.param.update(
+            total_tasks=len(self.value),
+            has_tasks=len(self.value) > 0,
+            completed_tasks=sum(task.completed for task in self.value),
+        )
 
     @param.depends("total_tasks", "completed_tasks", watch=True, on_init=True)
     def _update_status(self):
@@ -104,30 +110,30 @@ class TaskInput(pn.viewable.Viewer):
 
     value: Task = param.ClassSelector(class_=Task, doc="""The Task input by the user""")
 
-    def _no_value(self, value):
-        return not bool(value)
-
-    def __panel__(self):
-        text_input = pn.ui.TextInput(
+    def __init__(self, **params):
+        super().__init__(**params)
+        self.text_input = pn.ui.TextInput(
             label="Task", placeholder="Enter a task", sizing_mode="stretch_width"
         )
-        text_input_has_value = pn.rx(self._no_value)(text_input.param.value_input)
-        submit_task = pn.ui.Button(
+        self.submit_task = pn.ui.Button(
             label="Add",
             align="center",
             color="primary",
             width=BUTTON_WIDTH,
             sizing_mode="fixed",
-            disabled=text_input_has_value,
+            disabled=self.text_input.param.value_input.rx.not_(),
+            on_click=self._submit,
         )
+        pn.bind(self._submit, self.text_input, watch=True)
+        self._layout = pn.ui.Row(self.text_input, self.submit_task, sizing_mode="stretch_width")
 
-        @pn.depends(text_input, submit_task, watch=True)
-        def clear_text_input(*_):
-            if text_input.value:
-                self.value = Task(value=text_input.value)
-                text_input.value = text_input.value_input = ""
+    def _submit(self, *_):
+        if self.text_input.value_input:
+            self.value = Task(value=self.text_input.value_input)
+            self.text_input.value = self.text_input.value_input = ""
 
-        return pn.ui.Row(text_input, submit_task, sizing_mode="stretch_width")
+    def __panel__(self):
+        return self._layout
 
 
 class TaskRow(pn.viewable.Viewer):
@@ -141,11 +147,15 @@ class TaskRow(pn.viewable.Viewer):
         doc="The event is triggered when the user clicks the Remove Button"
     )
 
-    def __panel__(self):
-        remove_button = pn.ui.Button.from_param(
-            self.param.remove, width=BUTTON_WIDTH, icon="trash", sizing_mode="fixed"
+    def __init__(self, **params):
+        super().__init__(**params)
+        self.remove_button = pn.ui.Button.from_param(
+            self.param.remove, width=BUTTON_WIDTH, icon="delete", sizing_mode="fixed"
         )
-        return pn.ui.Row(self.value, remove_button)
+        self._layout = pn.ui.Row(self.value, self.remove_button)
+
+    def __panel__(self):
+        return self._layout
 
 
 class TaskListEditor(pn.viewable.Viewer):
@@ -153,40 +163,50 @@ class TaskListEditor(pn.viewable.Viewer):
 
     value: TaskList = param.ClassSelector(class_=TaskList)
 
-    @param.depends("value.value")
-    def _layout(self):
-        tasks = self.value.value
-        rows = [TaskRow(value=task) for task in tasks]
-        for row in rows:
-
-            def remove(_, task=row.value):
-                self.value.value = [item for item in tasks if not item == task]
-
-            pn.bind(remove, row.param.remove, watch=True)
-
-        return pn.ui.Column(*rows)
-
-    def __panel__(self):
-        task_input = TaskInput()
-        pn.bind(self.value.add_task, task_input.param.value, watch=True)
-        clear = pn.ui.Button(
+    def __init__(self, **params):
+        super().__init__(**params)
+        self._task_rows = {}
+        self.task_input = TaskInput()
+        self.task_column = pn.ui.Column()
+        self.clear_button = pn.ui.Button(
             label="Remove All",
             color="primary",
-            variant="outline",
+            variant="outlined",
             width=BUTTON_WIDTH,
             sizing_mode="fixed",
             visible=self.value.param.has_tasks,
             on_click=lambda e: self.value.remove_all_tasks(),
         )
-
-        return pn.ui.Column(
+        pn.bind(self.value.add_task, self.task_input.param.value, watch=True)
+        self._layout = pn.ui.Column(
             "## WTG Task List",
             pn.ui.Markdown(self.value.param.status),
-            task_input,
-            self._layout,
-            pn.ui.Row(pn.ui.Spacer(), clear),
+            self.task_input,
+            self.task_column,
+            pn.ui.Row(pn.ui.Spacer(), self.clear_button),
             max_width=500,
         )
+        self._update_task_rows()
+
+    @param.depends("value.value", watch=True)
+    def _update_task_rows(self):
+        task_rows = {}
+        for task in self.value.value:
+            if task in self._task_rows:
+                task_rows[task] = self._task_rows[task]
+                continue
+            row = TaskRow(value=task)
+
+            def remove(_, task=task):
+                self.value.remove_task(task)
+
+            pn.bind(remove, row.param.remove, watch=True)
+            task_rows[task] = row
+        self._task_rows = task_rows
+        self.task_column.objects = list(task_rows.values())
+
+    def __panel__(self):
+        return self._layout
 
 if pn.state.served:
     task_list = TaskList(
@@ -196,7 +216,7 @@ if pn.state.served:
             Task(value="Tighten the bolts"),
         ]
     )
-    TaskListEditor(value=task_list).servable()
+    pn.ui.Page(title="Todo App", main=[TaskListEditor(value=task_list)]).servable()
 ```
 
 :::
@@ -209,14 +229,13 @@ Let's break down the todo app.
 
 ```{pyodide}
 """An app to manage tasks"""
-from typing import List
 import param
 import panel as pn
 
-pn.extension(sizing_mode="stretch_width", design="material")
+pn.extension(sizing_mode="stretch_width")
 ```
 
-Here, we import the required libraries for our task management app. We use `List` from the `typing` module to define a list of tasks, [`param`](https://param.holoviz.org) for declaring parameters, and `panel` for creating the user interface. We configure the `"material"` design to give the todo app a modern look and feel.
+Here, we import the required libraries for our task management app. We use [`param`](https://param.holoviz.org) for declaring parameters and `panel` for creating the user interface. The `pn.ui` components we use below already give the todo app a modern Material look and feel.
 
 ### Define Constants
 
@@ -255,9 +274,10 @@ This class defines the model of a task. It has two attributes: `value` (descript
 class TaskList(param.Parameterized):
     """Provides methods to add and remove tasks as well as calculate summary statistics"""
 
-    value: List[Task] = param.List(item_type=Task, doc="A list of Tasks")
+    value: list[Task] = param.List(item_type=Task, doc="A list of Tasks")
 
     total_tasks = param.Integer(doc="The number of Tasks")
+
     has_tasks = param.Boolean(doc="Whether or not the TaskList contains Tasks")
 
     completed_tasks = param.Integer(doc="The number of completed tasks")
@@ -271,24 +291,50 @@ class TaskList(param.Parameterized):
 
         super().__init__(**params)
 
-        self._handle_completed_changed()
-
     def add_task(self, task: Task):
         """Adds a Task to the value list"""
         self.value = [*self.value, task]
 
+    def remove_task(self, task: Task):
+        """Removes a Task from the value list"""
+        self.value = [item for item in self.value if item is not task]
+
     def remove_all_tasks(self):
         """Removes all tasks from the value list"""
-        self._task_watchers = {}
         self.value = []
 
     def _handle_completed_changed(self, _=None):
         self.completed_tasks = sum(task.completed for task in self.value)
 
+    @param.depends("value", watch=True, on_init=True)
+    def _add_task_watchers(self):
+        for task in list(self._task_watchers):
+            if task not in self.value:
+                task.param.unwatch(self._task_watchers.pop(task))
+        for task in self.value:
+            if task not in self._task_watchers:
+                self._task_watchers[task] = task.param.watch(
+                    self._handle_completed_changed, "completed"
+                )
+
+    @param.depends("value", watch=True, on_init=True)
+    def _handle_value_changed(self):
+        self.param.update(
+            total_tasks=len(self.value),
+            has_tasks=len(self.value) > 0,
+            completed_tasks=sum(task.completed for task in self.value),
+        )
+
+    @param.depends("total_tasks", "completed_tasks", watch=True, on_init=True)
+    def _update_status(self):
+        self.status = f"{self.completed_tasks} of {self.total_tasks} tasks completed"
+
 TaskList(value=[Task(value="Inspect the blades")])
 ```
 
 This class represents a list of tasks. It provides methods to add and remove tasks, as well as calculate summary statistics such as the total number of tasks, the number of completed tasks, and a status message.
+
+Whenever `value` changes, `_add_task_watchers` starts watching the `completed` parameter of new tasks (and stops watching removed ones), while `_handle_value_changed` recomputes all the counts in a single `param.update` call. Ticking a checkbox only changes the `completed` count, which is handled by `_handle_completed_changed`. Finally `_update_status` keeps the `status` message in sync with the counts.
 
 :::{note}
 
@@ -304,36 +350,37 @@ class TaskInput(pn.viewable.Viewer):
 
     value: Task = param.ClassSelector(class_=Task, doc="""The Task input by the user""")
 
-    def _no_value(self, value):
-        return not bool(value)
-
-    def __panel__(self):
-        text_input = pn.ui.TextInput(
+    def __init__(self, **params):
+        super().__init__(**params)
+        self.text_input = pn.ui.TextInput(
             label="Task", placeholder="Enter a task", sizing_mode="stretch_width"
         )
-        text_input_has_value = pn.rx(self._no_value)(text_input.param.value_input)
-        submit_task = pn.ui.Button(
+        self.submit_task = pn.ui.Button(
             label="Add",
             align="center",
             color="primary",
             width=BUTTON_WIDTH,
             sizing_mode="fixed",
-            disabled=text_input_has_value,
+            disabled=self.text_input.param.value_input.rx.not_(),
+            on_click=self._submit,
         )
+        pn.bind(self._submit, self.text_input, watch=True)
+        self._layout = pn.ui.Row(self.text_input, self.submit_task, sizing_mode="stretch_width")
 
-        @pn.depends(text_input, submit_task, watch=True)
-        def clear_text_input(*_):
-            if text_input.value:
-                self.value = Task(value=text_input.value)
-                text_input.value = text_input.value_input = ""
-        return pn.ui.Row(text_input, submit_task, sizing_mode="stretch_width")
+    def _submit(self, *_):
+        if self.text_input.value_input:
+            self.value = Task(value=self.text_input.value_input)
+            self.text_input.value = self.text_input.value_input = ""
+
+    def __panel__(self):
+        return self._layout
 
 TaskInput()
 ```
 
 This class represents a widget for users to input tasks.
 
-The `__panel__` method defines the appearance and behavior of the task input widget. It consists of a text input field for entering task descriptions and a button to submit the task.
+The `__init__` method creates the widgets once: a text input field for entering task descriptions and a button to submit the task. The button is disabled while the text input is empty, and a task is submitted either by clicking the button or by pressing <kbd>Enter</kbd>. We keep the widgets as public attributes so we can interact with them in tests, and `__panel__` simply returns the layout.
 
 ### Define TaskRow Class
 
@@ -349,16 +396,20 @@ class TaskRow(pn.viewable.Viewer):
         doc="The event is triggered when the user clicks the Remove Button"
     )
 
-    def __panel__(self):
-        remove_button = pn.ui.Button.from_param(
-            self.param.remove, width=BUTTON_WIDTH, icon="trash", sizing_mode="fixed"
+    def __init__(self, **params):
+        super().__init__(**params)
+        self.remove_button = pn.ui.Button.from_param(
+            self.param.remove, width=BUTTON_WIDTH, icon="delete", sizing_mode="fixed"
         )
-        return pn.ui.Row(self.value, remove_button)
+        self._layout = pn.ui.Row(self.value, self.remove_button)
+
+    def __panel__(self):
+        return self._layout
 
 TaskRow(value=Task(value="Inspect the blades"))
 ```
 
-This method defines the appearance of the task row, which consists of the task description and a button to remove the task.
+This class displays a task in a row together with a button to remove it. Clicking the button triggers the `remove` event.
 
 ### Define TaskListEditor Class
 
@@ -368,40 +419,50 @@ class TaskListEditor(pn.viewable.Viewer):
 
     value: TaskList = param.ClassSelector(class_=TaskList)
 
-    @param.depends("value.value")
-    def _layout(self):
-        tasks = self.value.value
-        rows = [TaskRow(value=task) for task in tasks]
-        for row in rows:
-
-            def remove(_, task=row.value):
-                self.value.value = [item for item in tasks if not item == task]
-
-            pn.bind(remove, row.param.remove, watch=True)
-
-        return pn.ui.Column(*rows)
-
-    def __panel__(self):
-        task_input = TaskInput()
-        pn.bind(self.value.add_task, task_input.param.value, watch=True)
-        clear = pn.ui.Button(
+    def __init__(self, **params):
+        super().__init__(**params)
+        self._task_rows = {}
+        self.task_input = TaskInput()
+        self.task_column = pn.ui.Column()
+        self.clear_button = pn.ui.Button(
             label="Remove All",
             color="primary",
-            variant="outline",
+            variant="outlined",
             width=BUTTON_WIDTH,
             sizing_mode="fixed",
             visible=self.value.param.has_tasks,
             on_click=lambda e: self.value.remove_all_tasks(),
         )
-
-        return pn.ui.Column(
+        pn.bind(self.value.add_task, self.task_input.param.value, watch=True)
+        self._layout = pn.ui.Column(
             "## WTG Task List",
             pn.ui.Markdown(self.value.param.status),
-            task_input,
-            self._layout,
-            pn.ui.Row(pn.ui.Spacer(), clear),
+            self.task_input,
+            self.task_column,
+            pn.ui.Row(pn.ui.Spacer(), self.clear_button),
             max_width=500,
         )
+        self._update_task_rows()
+
+    @param.depends("value.value", watch=True)
+    def _update_task_rows(self):
+        task_rows = {}
+        for task in self.value.value:
+            if task in self._task_rows:
+                task_rows[task] = self._task_rows[task]
+                continue
+            row = TaskRow(value=task)
+
+            def remove(_, task=task):
+                self.value.remove_task(task)
+
+            pn.bind(remove, row.param.remove, watch=True)
+            task_rows[task] = row
+        self._task_rows = task_rows
+        self.task_column.objects = list(task_rows.values())
+
+    def __panel__(self):
+        return self._layout
 
 task_list = TaskList(
     value=[
@@ -410,12 +471,20 @@ task_list = TaskList(
         Task(value="Tighten the bolts"),
     ]
 )
-TaskListEditor(value=task_list).servable()
+TaskListEditor(value=task_list)
 ```
 
 This class represents a component that allows users to manage a list of tasks.
 
-This `__panel__` method defines the appearance and behavior of the task list editor component. It consists of an input field for adding tasks, a list of tasks, and a button to remove all tasks.
+The `__init__` method creates the layout once. It consists of an input field for adding tasks, a column of tasks, and a button to remove all tasks.
+
+Instead of returning a new `Column` of `TaskRow`s from a `@param.depends` method every time the list changes, `_update_task_rows` updates the `objects` of a single, stable `task_column`. It reuses the rows of tasks that are still in the list and only creates rows for new tasks, which avoids recreating every row and the flickering that goes with it.
+
+To serve the app, we wrap the editor in a `pn.ui.Page`:
+
+```python
+pn.ui.Page(title="Todo App", main=[TaskListEditor(value=task_list)]).servable()
+```
 
 ## Recap
 
