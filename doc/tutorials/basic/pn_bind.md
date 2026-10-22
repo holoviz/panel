@@ -34,6 +34,8 @@ pn.ui.Column(wind_speed, power).servable()
 
 As you interact with the slider, notice how the displayed power generation dynamically updates, reflecting changes in wind speed.
 
+Here we drop the bound function straight into the `Column` as a shortcut. Below, in [Using References](#using-references), you will learn the recommended way: passing it to a stable component like `pn.ui.Markdown`.
+
 You can of course bind multiple widgets. Let's make the `efficiency` a widget:
 
 ```{pyodide}
@@ -63,7 +65,7 @@ pn.ui.Column(wind_speed, efficiency, power).servable()
 
 ## Using References
 
-Bound functions can be displayed directly as we have done above or they can be used as references when passed to a Panel component. This approach is usually more efficient since we only have to update the specific parameter:
+Bound functions can be displayed directly as we have done above, but it is better to use them as references when passed to a Panel component. This approach is more efficient since we only have to update the specific parameter:
 
 ```{pyodide}
 import panel as pn
@@ -122,19 +124,19 @@ power = pn.bind(
 
 submit = pn.ui.Button(label="Submit", color="primary")
 
-def result(clicked):
-    if clicked:
+def submit_result(clicks):
+    if clicks:
         return power()
     return "Click Submit"
 
-result = pn.ui.Markdown(pn.bind(result, submit))
+result = pn.ui.Markdown(pn.bind(submit_result, submit.param.clicks))
 
 pn.ui.Column(
     wind_speed, efficiency, submit, result
 ).servable()
 ```
 
-Notice how the text is updated only when the Submit Button is clicked.
+Notice how the text is updated only when the Submit Button is clicked. We bind to the `clicks` parameter because it changes on every click.
 
 ## Harnessing Throttling for Performance
 
@@ -171,6 +173,10 @@ pn.ui.Column(wind_speed, power_md).servable()
 ```
 
 Try dragging the slider. Notice that the `calculate_power` function is only run when you release the mouse.
+
+:::{tip}
+Instead of binding to `value_throttled` on each slider, you can enable throttling globally with `pn.extension(throttled=True)`. Sliders then only update their `value` when you release the mouse, so you can bind to the widget directly.
+:::
 
 ### Binding to bound functions
 
@@ -231,13 +237,13 @@ pn.extension()
 
 submit = pn.ui.Button(label="Start the wind turbine")
 
-def start_stop_wind_turbine(clicked):
-    if submit.clicks % 2:
-        submit.label = "Start the wind turbine"
-    else:
+def start_stop_wind_turbine(clicks):
+    if clicks % 2:
         submit.label = "Stop the wind turbine"
+    else:
+        submit.label = "Start the wind turbine"
 
-pn.bind(start_stop_wind_turbine, submit, watch=True)
+pn.bind(start_stop_wind_turbine, submit.param.clicks, watch=True)
 
 pn.ui.Column(submit).servable()
 ```
@@ -258,15 +264,15 @@ pn.extension()
 
 submit = pn.ui.Button(label="Start the wind turbine")
 
-def start_stop_wind_turbine(clicked):
+def start_stop_wind_turbine(clicks):
     with submit.param.update(loading=True, disabled=True):
         time.sleep(2)
-        if bool(submit.clicks%2):
-            submit.label = "Start the wind turbine"
-        else:
+        if clicks % 2:
             submit.label = "Stop the wind turbine"
+        else:
+            submit.label = "Start the wind turbine"
 
-pn.bind(start_stop_wind_turbine, submit, watch=True)
+pn.bind(start_stop_wind_turbine, submit.param.clicks, watch=True)
 
 pn.ui.Column(submit).servable()
 ```
@@ -286,16 +292,16 @@ pn.extension()
 
 submit = pn.ui.Button(label="Start the wind turbine")
 
-async def start_stop_wind_turbine(clicked):
+async def start_stop_wind_turbine(clicks):
     with submit.param.update(loading=True, disabled=True):
         result = await asyncio.to_thread(sleep, 5)
 
-        if submit.clicks % 2:
-            submit.label = "Start the wind turbine"
-        else:
+        if clicks % 2:
             submit.label = "Stop the wind turbine"
+        else:
+            submit.label = "Start the wind turbine"
 
-pn.bind(start_stop_wind_turbine, submit, watch=True)
+pn.bind(start_stop_wind_turbine, submit.param.clicks, watch=True)
 
 pn.ui.Column(submit).servable()
 ```

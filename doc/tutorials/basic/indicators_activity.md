@@ -125,7 +125,7 @@ plot2 = pn.panel(bound_function2, height=400)
 bound_function3 = pn.bind(get_figure, button)
 plot3 = pn.panel(bound_function3, height=400)
 
-pn.ui.Column(button, plot, pn.ui.Row(plot2, plot3), sizing_mode="stretch_width").servable()
+pn.ui.Column(button, plot, pn.ui.Row(plot2, plot3)).servable()
 ```
 
 :::
@@ -166,7 +166,7 @@ plot2 = pn.panel(bound_function2, height=400)
 bound_function3 = pn.bind(get_figure, button)
 plot3 = pn.panel(bound_function3, height=400)
 
-pn.ui.Column(button, plot, pn.ui.Row(plot2, plot3), sizing_mode="stretch_width").servable()
+pn.ui.Column(button, plot, pn.ui.Row(plot2, plot3)).servable()
 ```
 
 Notice that it takes +6 seconds before the application loads.
@@ -203,7 +203,7 @@ plot2 = pn.panel(bound_function2, height=400)
 bound_function3 = pn.bind(get_figure, button)
 plot3 = pn.panel(bound_function3, height=400)
 
-pn.ui.Column(button, plot, pn.ui.Row(plot2, plot3), sizing_mode="stretch_width").servable()
+pn.ui.Column(button, plot, pn.ui.Row(plot2, plot3)).servable()
 ```
 
 :::
@@ -223,21 +223,15 @@ pn.ui.Row(
     pn.ui.Column(
         "## Loading Spinner",
         pn.ui.Column(
-            pn.indicators.LoadingSpinner(value=False, height=25, width=25),
-            pn.indicators.LoadingSpinner(
-                value=True, height=25, width=25, color="secondary"
-            ),
+            pn.ui.LoadingSpinner(value=False, size=25),
+            pn.ui.LoadingSpinner(value=True, size=25, color="secondary"),
         ),
     ),
     pn.ui.Column(
         "## Progress",
         pn.ui.Column(
-            pn.indicators.Progress(
-                label="Progress", value=20, width=150, bar_color="dark"
-            ),
-            pn.indicators.Progress(
-                label="Progress", active=True, width=150, bar_color="dark"
-            ),
+            pn.ui.Progress(label="Progress", value=20, width=150, color="dark"),
+            pn.ui.Progress(label="Progress", active=True, width=150, color="dark"),
         ),
     )
 ).servable()
@@ -256,8 +250,8 @@ pn.extension()
 
 button = pn.ui.Button(label="Submit", color="primary")
 
-running_indicator = pn.indicators.LoadingSpinner(
-    value=False, height=25, width=25, color="secondary", visible=True
+running_indicator = pn.ui.LoadingSpinner(
+    value=False, size=25, color="secondary", visible=True
 )
 
 
@@ -301,23 +295,20 @@ pn.extension()
 
 button = pn.ui.Button(label="Submit", color="primary")
 
-running_indicator = pn.indicators.LoadingSpinner(
-    value=False, height=25, width=25, color="secondary", visible=False
+running_indicator = pn.ui.LoadingSpinner(
+    value=False, size=25, color="secondary", visible=False
 )
+prediction = pn.ui.Markdown("Click Submit")
 
 
-def predict(running):
-    if not running:
-        return "Click Submit"
-
+def predict(event):
     running_indicator.value = running_indicator.visible = True
-
     sleep(2)
+    prediction.object = "It's a Wind Turbine!"
     running_indicator.value = running_indicator.visible = False
-    return "It's a Wind Turbine!"
 
 
-prediction = pn.bind(predict, button)
+button.on_click(predict)
 
 pn.ui.Column(button, running_indicator, prediction).servable()
 ```
@@ -340,25 +331,22 @@ button = pn.ui.Button(
     label="Submit", color="primary", disabled=is_running, loading=is_running
 )
 
-running_indicator = pn.indicators.LoadingSpinner(
-    value=is_running, height=25, width=25, color="secondary", visible=is_running
+running_indicator = pn.ui.LoadingSpinner(
+    value=is_running, size=25, color="secondary", visible=is_running
 )
+prediction = pn.rx("Click Submit")
 
 
-def predict(running):
-
-    if not running:
-        return "Click Submit"
-
-    is_running.rx.value=True
+def predict(event):
+    is_running.rx.value = True
     sleep(2)
-    is_running.rx.value=False
-    return "It's a Wind Turbine!"
+    prediction.rx.value = "It's a Wind Turbine!"
+    is_running.rx.value = False
 
 
-prediction = pn.bind(predict, button)
+button.on_click(predict)
 
-pn.ui.Column(button, running_indicator, prediction).servable()
+pn.ui.Column(button, running_indicator, pn.ui.Markdown(prediction)).servable()
 ```
 
 :::
@@ -395,7 +383,7 @@ Try changing `pn.state.notifications.info` to `pn.state.notifications.warning`. 
 
 Try changing `duration=3000` to `duration=0`. Then click the `Button`. What happens?
 
-See the [Notifications](../../reference/global/Notifications.md) reference guide for more detail.
+See the [Notifications](../../reference/classic/global/Notifications.md) reference guide for more detail.
 
 ## Recap
 
@@ -417,4 +405,4 @@ We've explored how to show activity with indicators, much like the rotating blad
 
 ### Reference Guides
 
-- [Notifications](../../reference/global/Notifications.md)
+- [Notifications](../../reference/classic/global/Notifications.md)

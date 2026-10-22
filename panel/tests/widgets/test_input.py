@@ -246,6 +246,17 @@ def test_literal_input(document, comm):
     with pytest.raises(ValueError):
         literal.value = []
 
+def test_literal_input_json_string_round_trip(document, comm):
+    literal = LiteralInput(value='abc', serializer='json', label='Literal')
+
+    widget = literal.get_root(document, comm=comm)
+
+    assert widget.value == '"abc"'
+
+    literal._process_events({'value': widget.value})
+    assert literal.value == 'abc'
+    assert widget.title == 'Literal'
+
 def test_literal_input_inheritance():
     """LiteralInput should be able to be subclassed as done in panel-material-ui."""
     class DictInput(LiteralInput):

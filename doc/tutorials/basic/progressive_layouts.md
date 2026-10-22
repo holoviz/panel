@@ -35,8 +35,8 @@ def classify(image):
 run = pn.ui.Button(label="Submit", color="primary")
 
 progress_message = pn.ui.Row(
-    pn.indicators.LoadingSpinner(
-        value=True, width=25, height=25, align="center", margin=(5, 0, 5, 10)
+    pn.ui.LoadingSpinner(
+        value=True, size=25, align="center", margin=(5, 0, 5, 10)
     ),
     pn.panel("Running classifier ...", margin=0),
 )
@@ -81,8 +81,8 @@ def classify(image):
 run = pn.ui.Button(label="Submit", color="primary")
 
 progress_message = pn.ui.Row(
-    pn.indicators.LoadingSpinner(
-        value=True, width=25, height=25, align="center", margin=(5, 0, 5, 10)
+    pn.ui.LoadingSpinner(
+        value=True, size=25, align="center", margin=(5, 0, 5, 10)
     ),
     pn.panel("Running classifier ...", margin=0),
 )
@@ -146,8 +146,8 @@ run = pn.ui.Button(
     label="Submit", color="primary", on_click=run_classification
 )
 progress_message = pn.ui.Row(
-    pn.indicators.LoadingSpinner(
-        value=True, width=25, height=25, align="center", margin=(5, 0, 5, 10)
+    pn.ui.LoadingSpinner(
+        value=True, size=25, align="center", margin=(5, 0, 5, 10)
     ),
     pn.panel("Running classifier ...", margin=0),
     visible=is_running,
@@ -183,8 +183,8 @@ def classify(image):
 run = pn.ui.Button(label="Submit", color="primary")
 
 progress_message = pn.ui.Row(
-    pn.indicators.LoadingSpinner(
-        value=True, width=25, height=25, align="center", margin=(5, 0, 5, 10)
+    pn.ui.LoadingSpinner(
+        value=True, size=25, align="center", margin=(5, 0, 5, 10)
     ),
     pn.panel("Running classifier ...", margin=0),
 )
@@ -263,10 +263,10 @@ run = pn.ui.Button(
 )
 
 # Outputs: Views
-results_view = results.rx.pipe(lambda value: pn.ui.Column(*value))
+results_view = pn.ui.Column(objects=results)
 progress_message = pn.ui.Row(
-    pn.indicators.LoadingSpinner(
-        value=True, width=25, height=25, align="center", margin=(5, 0, 5, 10)
+    pn.ui.LoadingSpinner(
+        value=True, size=25, align="center", margin=(5, 0, 5, 10)
     ),
     pn.panel("Running classifier ...", margin=0),
     visible=is_running,

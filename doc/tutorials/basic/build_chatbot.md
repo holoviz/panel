@@ -24,12 +24,12 @@ def get_response(contents, user, instance):
     sleep(1)
     return response
 
-chat_bot = pn.chat.ChatInterface(callback=get_response, max_height=500)
+chat_bot = pn.ui.ChatInterface(callback=get_response, max_height=500)
 chat_bot.send("Ask me what a wind turbine is", user="Assistant", respond=False)
 chat_bot.servable()
 ```
 
-Try entering `What is a wind turbine?` in the *text input* and click *Send*.
+Try entering `What is a wind turbine?` in the *text input* and press *Enter* or click the *send* button.
 
 :::{note}
 The `callback` function `get_response` will receive `"What is a wind turbine?"` in the `contents` argument. Since `contents` contains the word *turbine*, the chat bot will return `"A wind turbine converts wind energy into electricity."` as the `response`.
@@ -56,12 +56,12 @@ def get_response(contents, user, instance):
         yield response[0:index+1]
         sleep(0.03) # to simulate slowish response
 
-chat_bot = pn.chat.ChatInterface(callback=get_response, max_height=500)
+chat_bot = pn.ui.ChatInterface(callback=get_response, max_height=500)
 chat_bot.send("Ask me anything!", user="Assistant", respond=False)
 chat_bot.servable()
 ```
 
-Try entering `What is a wind turbine?` in the *text input* and click *Send*.
+Try entering `What is a wind turbine?` in the *text input* and press *Enter* or click the *send* button.
 
 :::{note}
 The chat app is now *streaming* because we `yield` the partial `response` instead of `return`ing the full `response`.

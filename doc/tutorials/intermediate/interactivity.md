@@ -85,7 +85,7 @@ You can filter a reactive DataFrame in the same way as a regular DataFrame.
 import pandas as pd
 import panel as pn
 
-pn.extension("tabulator")
+pn.extension("tabulator", throttled=True)
 
 data_url = "https://assets.holoviz.org/panel/tutorials/turbines.csv.gz"
 
@@ -122,7 +122,7 @@ pn.ui.Column(
 import pandas as pd
 import panel as pn
 
-pn.extension("tabulator")
+pn.extension("tabulator", throttled=True)
 
 data_url = "https://assets.holoviz.org/panel/tutorials/turbines.csv.gz"
 
@@ -190,7 +190,7 @@ import panel as pn
 import param
 from panel.viewable import Viewer
 
-pn.extension("tabulator")
+pn.extension("tabulator", throttled=True)
 
 data_url = "https://assets.holoviz.org/panel/tutorials/turbines.csv.gz"
 
@@ -247,7 +247,7 @@ import panel as pn
 import param
 from panel.viewable import Viewer
 
-pn.extension("tabulator")
+pn.extension("tabulator", throttled=True)
 
 data_url = "https://assets.holoviz.org/panel/tutorials/turbines.csv.gz"
 
@@ -305,7 +305,7 @@ import panel as pn
 import param
 from panel.viewable import Viewer
 
-pn.extension("tabulator")
+pn.extension("tabulator", throttled=True)
 
 data_url = "https://assets.holoviz.org/panel/tutorials/turbines.csv.gz"
 
@@ -384,13 +384,14 @@ plot = turbines.hvplot.hist("p_cap", height=400)
 :::{dropdown} Solution
 
 ```{pyodide}
+import holoviews as hv
 import hvplot.pandas
 import pandas as pd
 import panel as pn
 import param
 from panel.viewable import Viewer
 
-pn.extension("tabulator")
+pn.extension("tabulator", throttled=True)
 
 data_url = "https://assets.holoviz.org/panel/tutorials/turbines.csv.gz"
 
@@ -436,7 +437,7 @@ class DataExplorer(Viewer):
                 pn.ui.Column(self.param.year, self.param.capacity),
             ),
             pn.ui.Tabulator(self.table, page_size=10, pagination="remote"),
-            pn.ui.HoloViews(self.plot),
+            hv.DynamicMap(self.plot),
         )
 
 
