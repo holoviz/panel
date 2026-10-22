@@ -409,6 +409,9 @@ def refreshes(monkeypatch):
 
 def expire_access_token(client):
     expired = dt.datetime.now(dt.timezone.utc).timestamp() - 10
+    # Setting the cookie alongside the one issued at login would send both,
+    # and which one the server reads depends on the client's cookie order.
+    client.cookies.delete('oauth_expiry')
     client.cookies.set(
         'oauth_expiry',
         create_signed_value(COOKIE_SECRET, 'oauth_expiry', str(expired)).decode()
@@ -466,11 +469,7 @@ def test_oauth_code_flow(oauth_client):
 def test_oauth_refreshes_expired_access_token(oauth_client):
     with oauth_client(oauth_refresh_tokens=True) as client:
         oauth_login(client)
-        expired = dt.datetime.now(dt.timezone.utc).timestamp() - 10
-        client.cookies.set(
-            'oauth_expiry',
-            create_signed_value(COOKIE_SECRET, 'oauth_expiry', str(expired)).decode()
-        )
+        expire_access_token(client)
         assert client.get('/app').status_code == 200
         access_token = client.cookies['access_token']
     assert decode_signed_value(
