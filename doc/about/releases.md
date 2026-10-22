@@ -14,8 +14,9 @@ Many thanks to the contributors to this release: @philippjfr, @hoxbro, @chiruu12
 
 ### 🚀 Features
 
-* Add the `panel.ui` namespace, which exports every Material component from `panel-material-ui` and the classic components without a Material equivalent (e.g. `Tabulator`, `CodeEditor`, `Terminal`), both at the top level (`pn.ui.Button`) and through `widgets`, `layout`, `pane`, `chat`, `indicators`, `template` and `wrappers` submodules. The namespace is loaded lazily so `import panel` stays as light-weight as before, and importing it selects the `MaterialUIDesign` unless a design was chosen explicitly ([#8752](https://github.com/holoviz/panel/pull/8752))
+* Add the `panel.ui` namespace, which exports every Material component from `panel-material-ui` and the classic components without a Material equivalent (e.g. `Tabulator`, `CodeEditor`, `Terminal`), both at the top level (`pn.ui.Button`) and through `widgets`, `layout`, `pane`, `chat`, `indicators`, `template` and `wrappers` submodules. The namespace is loaded lazily so `import panel` stays as light-weight as before, and using it selects the `MaterialUIDesign` for the current session unless a design was chosen explicitly ([#8752](https://github.com/holoviz/panel/pull/8752), [#8877](https://github.com/holoviz/panel/pull/8877))
 * Add Material implementations of `Modal`, `WidgetBox` and `Debugger` that retain the classic API ([#8752](https://github.com/holoviz/panel/pull/8752))
+* Add `pn.ui.Param`, `pn.ui.HoloViews` and `pn.ui.panel`, which always generate Material UI widgets regardless of the active design, while `pn.Param` and `pn.pane.HoloViews` keep generating widgets for the active design ([#8883](https://github.com/holoviz/panel/pull/8883))
 * Add the `panel migrate` command (installed with the `panel[migrate]` extra), which rewrites classic imports to `pn.ui`, `name=` to `label=`, `button_type`/`button_style` to `color`/`variant`, `MenuButton(split=True)` to `SplitButton` and compatible templates to `pn.ui.Page`, and reports anything it cannot rewrite safely. `--check` and `--diff` preview the changes without writing them ([#8752](https://github.com/holoviz/panel/pull/8752))
 * Add native ASGI server implementations for FastAPI and Django built on Bokeh 3.10's transport-neutral server layer, dropping the `bokeh-fastapi` and `bokeh-django` dependencies. `panel serve` gains a `--server` option accepting `tornado` (the default), `fastapi` and `asgi`, and wildcard routes, `pn.state.route_params`, static directories and OAuth work the same on every server ([#8722](https://github.com/holoviz/panel/pull/8722))
 * Load component resources on demand, so components such as `Tabulator`, `ECharts` or `Perspective` render without first being declared via `pn.extension(...)`, including when they are created in a callback after the page has loaded. Declaring an extension is now only a preloading and bundling hint ([#8745](https://github.com/holoviz/panel/pull/8745))
@@ -33,6 +34,8 @@ Many thanks to the contributors to this release: @philippjfr, @hoxbro, @chiruu12
 * Add `Design.component_mapping` and `Design.widget_mapping` so designs can substitute the widgets Panel generates in `Param`, `interact` and `HoloViews` widgets ([#8752](https://github.com/holoviz/panel/pull/8752))
 * Route the loading indicator through the `Design`, allowing designs to declare their own spinner, and add a `material` spinner whose overlay follows the theme so dark themes no longer flash white ([#8752](https://github.com/holoviz/panel/pull/8752))
 * Add `config.set_if_unset()`, `panel.theme.resolve_design()` and string values for `config.design` (e.g. `config.design = 'material-ui'`) ([#8752](https://github.com/holoviz/panel/pull/8752))
+* Select the `MaterialUIDesign` per session when an app uses `panel.ui`, so classic apps served from the same process keep their design, and resolve the design and theme of components without an explicit design when they render rather than when they are created ([#8877](https://github.com/holoviz/panel/pull/8877))
+* Expose the `generate_palette` and `linear_gradient` palette helpers in `panel.ui.theme` ([#8868](https://github.com/holoviz/panel/pull/8868))
 * Rename `size` to `icon_size` on `ToggleIcon` and `ButtonIcon` in `panel migrate`, flagging calls that size the icon through `width` or `height` for review ([#8854](https://github.com/holoviz/panel/pull/8854))
 * Theme classic components such as `Tabulator`, `CodeEditor`, `JSONEditor`, `Markdown`, `Terminal`, `Dial`, `Gauge` and `LinearGauge` from the MUI palette under the `MaterialUIDesign` ([#8752](https://github.com/holoviz/panel/pull/8752))
 * Share and reference count a single model per root when the same component is rendered in several places, so every view keeps receiving updates and removing it from one parent no longer breaks the others ([#8830](https://github.com/holoviz/panel/pull/8830))
@@ -94,12 +97,18 @@ Many thanks to the contributors to this release: @philippjfr, @hoxbro, @chiruu12
 * Deliver every message, including binary data, to Python in apps converted with `--to pyodide-worker` ([#8844](https://github.com/holoviz/panel/pull/8844))
 * Handle the Windows `ProactorEventLoop` ([#8815](https://github.com/holoviz/panel/pull/8815))
 * Ensure the server thread shuts down fully before exiting ([#8741](https://github.com/holoviz/panel/pull/8741))
+* Resolve the design from the document each model was rendered into when a parameter changes, so a component shown in sessions with different designs no longer receives another session's stylesheets ([#8879](https://github.com/holoviz/panel/pull/8879))
+* Only load resources from the Jupyter server extension endpoint when Panel's server extension launched the kernel, fixing 404s for Panel's JS and component resources in other notebook frontends such as nteract ([#8863](https://github.com/holoviz/panel/pull/8863))
+* Dispatch changes made inside `hold()` to subscribers of a sessionless Document, so embedders that sync the Document over their own transport receive updates to `ReactiveESM` components and layout children ([#8862](https://github.com/holoviz/panel/pull/8862))
+* Detect the format of raw image bytes from the file signature, so JPEG, GIF and WebP bytes passed to `pn.pane.Image` are no longer encoded as PNG with nonsensical dimensions, and fix the dimensions of lossy WebP images ([#8875](https://github.com/holoviz/panel/pull/8875))
+* Detect local media files with uppercase extensions, e.g. `pn.pane.Video('CLIP.MP4')` ([#8867](https://github.com/holoviz/panel/pull/8867))
+* Fix an off-by-one error in `Player` in notebooks ([#8860](https://github.com/holoviz/panel/pull/8860))
 * Fix the inverted `apple_icon` condition in the base template that emitted an empty `apple-touch-icon` link ([#8752](https://github.com/holoviz/panel/pull/8752))
 
 ### ⚙️ Compatibility
 
 * Add compatibility with Bokeh 3.10, which is now the minimum supported version, and drop support for Python 3.10 and 3.11 ([#8716](https://github.com/holoviz/panel/pull/8716))
-* Add support for Python 3.15 ([#8767](https://github.com/holoviz/panel/pull/8767))
+* Add support for Python 3.15 ([#8767](https://github.com/holoviz/panel/pull/8767), [#8850](https://github.com/holoviz/panel/pull/8850))
 * Upgrade to the latest JupyterLite and Pyodide (v314.0.7) ([#8763](https://github.com/holoviz/panel/pull/8763))
 * Ignore the NumPy 2.5 `ndarray.shape` deprecation warning raised by VTK ([#8729](https://github.com/holoviz/panel/pull/8729))
 * Annotate subclasses in `_descendents` for mypy with Param 2.4 ([#8801](https://github.com/holoviz/panel/pull/8801))
@@ -112,6 +121,7 @@ Many thanks to the contributors to this release: @philippjfr, @hoxbro, @chiruu12
 * The `bokeh-fastapi` and `bokeh-django` dependencies have been dropped; see the upgrade guide for migrating Django integrations ([#8722](https://github.com/holoviz/panel/pull/8722))
 * The `--disable-http-patch` option of `panel convert` has been removed ([#8777](https://github.com/holoviz/panel/pull/8777))
 * `PercentEditor` and `TimeEditor` on `Tabulator` now use Tabulator's native input editor, and in served apps a `DataFrame` widget or `hv.Table` that first appears after the page has loaded requires `pn.extension('bokeh-tables')` ([#8837](https://github.com/holoviz/panel/pull/8837))
+* Components without an explicit design now have `design=None` and use the configured design when they render, so a design configured after a component is created but before it is rendered applies to it ([#8877](https://github.com/holoviz/panel/pull/8877))
 * Calling `.servable()` with an unknown `target` on the `page` template now raises a `ValueError` instead of being silently dropped ([#8808](https://github.com/holoviz/panel/pull/8808))
 
 ### 📚 Documentation
@@ -129,11 +139,13 @@ Many thanks to the contributors to this release: @philippjfr, @hoxbro, @chiruu12
 * Surface the guide on using Panel with an AI assistant in the How-to section ([#8846](https://github.com/holoviz/panel/pull/8846))
 * Explain running UI tests with Firefox and WebKit in the developer guide ([#8809](https://github.com/holoviz/panel/pull/8809))
 * Note that cell editing takes precedence over row-click selection in the `Tabulator` reference ([#8817](https://github.com/holoviz/panel/pull/8817))
+* Bring the parameter lists of the pane and layout reference notebooks in line with the code and add examples for many undocumented features ([#8882](https://github.com/holoviz/panel/pull/8882))
 * Only show the Material version banner on classic reference pages ([#8845](https://github.com/holoviz/panel/pull/8845))
 * Fix links to the Tabler icons site ([#8765](https://github.com/holoviz/panel/pull/8765))
 * Fix dead Extensions links in the gallery and use `label=` in the README example ([#8855](https://github.com/holoviz/panel/pull/8855))
-* Fix broken relative links in how-to guides ([c3fa877](https://github.com/holoviz/panel/commit/c3fa8774c32357641b5ec731c0ce45efc65d2886))
+* Fix broken relative links in how-to guides ([#8773](https://github.com/holoviz/panel/pull/8773))
 * Fix unresolved cross-page anchor links ([#8836](https://github.com/holoviz/panel/pull/8836))
+* Fix the broken Troubleshooting card icon ([#8865](https://github.com/holoviz/panel/pull/8865))
 
 ## Version 1.9.4
 

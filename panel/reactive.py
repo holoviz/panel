@@ -465,7 +465,11 @@ class Syncable(Renderable):
     def _param_change(self, *events: param.parameterized.Event) -> None:
         named_events = {event.name: event for event in events}
         for ref, (model, _) in self._models.copy().items():
-            properties = self._update_properties(*events, doc=model.document)
+            # Resolve the design and config of the session the model was
+            # rendered in, not the session that triggered the change.
+            doc = state._views[ref][2] if ref in state._views else model.document
+            with set_curdoc(doc):
+                properties = self._update_properties(*events, doc=doc)
             if not properties:
                 return
             self._apply_update(named_events, properties, model, ref)

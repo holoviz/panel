@@ -794,6 +794,10 @@ class ReplacementPane(Pane):
     def _update_inner(self, new_object: t.Any) -> None:
         kwargs = dict({p: getattr(self, p) for p in self.param}, **self._kwargs)
         del kwargs['object']
+        # Forwarding an unset design would opt the inner pane out of the
+        # configured design, so only an explicit opt-out is forwarded.
+        if self.design is None and getattr(self, '_assigned_design', None) is None:
+            del kwargs['design']
         with hold():
             new_pane, internal = self._update_from_object(
                 new_object, self._pane, self._internal, **kwargs

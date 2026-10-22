@@ -121,6 +121,25 @@ def test_esm_bundle_resource_rel_path():
             state.rel_path = None
 
 
+def test_react_bundle_url_omits_importmap(tmp_path, monkeypatch, server_document):
+    from bokeh.embed.bundle import extension_dirs
+
+    bundle = tmp_path / 'mui.bundle.js'
+    bundle.write_text('export default {}')
+    # Served as an extension, since a url relative to the module cannot be
+    # computed across drives, e.g. for tmp_path on Windows.
+    monkeypatch.setitem(extension_dirs, 'panel-test-ext', tmp_path)
+
+    class MuiBundle(ReactComponent):
+        _bundle = bundle
+        _importmap = {'imports': {'@mui/material': 'https://esm.sh/@mui/material@7.1.0'}}
+
+    model = MuiBundle().get_root(server_document)
+
+    assert model.bundle == 'url'
+    assert model.importmap == {}
+
+
 class ESMWithChildren(ReactiveESM):
 
     child = Child(doc="""A child Viewable to be displayed in the ESM.""")
@@ -328,3 +347,25 @@ def test_esm_python_update_different_from_frontend_is_applied(document, comm):
 
     # The model must reflect the Python update since 'C' != 'B'
     assert model.data.value == 'C'
+
+
+class ESMWithEvent(ReactiveESM):
+
+    clicks = param.Integer(default=0)
+
+    value = param.Event()
+
+
+def test_esm_event_reset_does_not_retrigger_watchers(document, comm):
+    esm = ESMWithEvent()
+
+    model = esm.get_root(document, comm)
+
+    values = []
+    esm.param.watch(lambda e: values.append(e.new), 'value')
+
+    with set_curdoc(document):
+        esm.param.update(clicks=1, value=True)
+
+    assert values == [True]
+    assert model.data.value is False

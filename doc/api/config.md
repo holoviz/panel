@@ -201,7 +201,8 @@ Default: False | Type: Boolean
 ### `inline` (`PANEL_INLINE`)
 
 Whether to inline JS and CSS resources. If disabled, resources
-are loaded from CDN if one is available.
+are loaded from CDN if one is available, or in a notebook from
+the Jupyter server extension, see `notebook_resources`.
 
 Default: True | Type: Boolean
 
@@ -262,6 +263,16 @@ Default: 'arc' | Type: Literal | Options: 'arc', 'arcs', 'bar', 'dots', 'petal'
 Log level of Panel loggers
 
 Default: 'WARNING' | Type: Literal | Options: 'DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'
+
+### `notebook_resources` (`PANEL_NOTEBOOK_RESOURCES`)
+
+Where a notebook loads resources from if they are not inlined.
+`'jupyter'` loads them from Panel's Jupyter server extension, `'cdn'`
+from the CDN and `'auto'` from the Jupyter server extension if the
+Jupyter server running the kernel serves it. Resources the server
+extension cannot serve fall back to the CDN.
+
+Default: 'auto' | Type: Selector
 
 ### `notifications`
 

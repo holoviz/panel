@@ -47,7 +47,6 @@ OMITTED = {
     'widgets.Spinner': 'deprecated alias of NumberInput',
     'widgets.DataFrame': 'deprecated in favour of Tabulator',
     'pane.Alert': 'superseded by the Material panel.ui.Alert',
-    'pane.panel': 'a function, reachable as panel.panel',
 }
 
 # Reachable through the submodules but kept out of the flat namespace, matching
@@ -57,7 +56,7 @@ NOT_FLAT = {
     'Pane', 'PaneBase', 'BooleanIndicator', 'ValueIndicator',
     'MaterialComponent', 'MaterialUIComponent', 'MaterialWidget',
     'MaterialLayout', 'MaterialListLike', 'MaterialNamedListLike',
-    'MaterialPaneBase',
+    'MaterialPaneBase', 'MaterialWrapper',
     'Grammar', 'GrammarList', 'Utterance', 'Voice',
 }
 
@@ -86,6 +85,13 @@ def material_components(module):
 
 def run_check(check):
     return check_output([sys.executable, '-c', dedent(check)]).decode().strip()
+
+
+def test_theme_exports_palette_helpers(ui, pmui):
+    assert ui.theme.generate_palette is pmui.theme.generate_palette
+    assert ui.theme.linear_gradient is pmui.theme.linear_gradient
+    assert 'generate_palette' not in ui.__all__
+    assert 'linear_gradient' not in ui.__all__
 
 
 @pytest.mark.parametrize('module', CLASSIC_MODULES)
@@ -124,6 +130,14 @@ def test_classic_components_are_not_wrapped(ui):
     assert ui.Matplotlib is pn.pane.Matplotlib
     assert ui.Image is ui.pane.Image is pn.pane.Image
     assert ui.GridStack is pn.layout.GridStack
+
+
+def test_panel_and_param_exported(ui):
+    assert ui.panel is ui.pane.panel
+    assert ui.Param is ui.pane.Param
+    assert issubclass(ui.Param, pn.Param)
+    assert issubclass(ui.HoloViews, pn.pane.HoloViews)
+    assert 'panel' in ui.__all__ and 'Param' in ui.__all__
 
 
 def test_material_components_come_from_panel_material_ui(ui, pmui):
@@ -251,6 +265,65 @@ def test_importing_panel_ui_replaces_dependency_default():
     print(pn.config.design is pn.ui.MaterialUIDesign, end='')
     """)
     assert output == 'True'
+
+
+def test_importing_panel_ui_in_a_session_only_switches_that_session():
+    output = run_check("""\
+    import param
+    from bokeh.document import Document
+
+    import panel as pn
+    from panel.io.state import set_curdoc
+
+    with set_curdoc(Document()):
+        import panel.ui
+        material = pn.config.design is pn.ui.MaterialUIDesign
+    with set_curdoc(Document()):
+        classic = pn.config.design is None
+    global_design = param.Parameterized.__getattribute__(pn.config, 'design')
+
+    print(material, classic, global_design is None, end='')
+    """)
+    assert output == 'True True True'
+
+
+def test_later_sessions_accessing_panel_ui_switch():
+    output = run_check("""\
+    from bokeh.document import Document
+
+    import panel as pn
+    from panel.io.state import set_curdoc
+
+    with set_curdoc(Document()):
+        import panel.ui
+    with set_curdoc(Document()):
+        from panel.ui import Button
+        from_import = pn.config.design is pn.ui.MaterialUIDesign
+    with set_curdoc(Document()):
+        pn.extension(design='fast')
+        pn.ui.Button
+        explicit = pn.config.design.__name__
+
+    print(from_import, explicit, end='')
+    """)
+    assert output == 'True Fast'
+
+
+def test_classic_component_created_before_using_panel_ui_follows_session():
+    output = run_check("""\
+    from bokeh.document import Document
+
+    import panel as pn
+    from panel.io.state import set_curdoc
+
+    with set_curdoc(Document()):
+        import panel.ui
+    with set_curdoc(Document()):
+        widget = pn.widgets.TextInput()
+        pn.ui.Button
+        print(type(widget._design).__name__, end='')
+    """)
+    assert output == 'MaterialUIDesign'
 
 
 def test_explicit_design_survives_importing_panel_ui():

@@ -34,7 +34,7 @@ from panel.io.compile import check_cli_tool
 from panel.io.reload import (
     _local_modules, _modules, _watched_files, async_file_watcher, watch,
 )
-from panel.io.resources import EXTENSION_CDN
+from panel.io.resources import EXTENSION_CDN, JUPYTER_ENDPOINT_ENV
 from panel.io.state import set_curdoc, state
 from panel.pane import HTML, Markdown
 from panel.tests.util import (
@@ -558,6 +558,15 @@ def classic_isolation():
             'Test imported panel.ui without the panel_ui fixture, leaking '
             f'{patched + ["config.design"] * leaked} into the classic suite.'
         )
+
+@pytest.fixture(autouse=True)
+def no_jupyter_endpoint(monkeypatch):
+    # A test run from a Jupyter terminal inherits the server's endpoint flag.
+    monkeypatch.delenv(JUPYTER_ENDPOINT_ENV, raising=False)
+
+@pytest.fixture
+def jupyter_endpoint(monkeypatch):
+    monkeypatch.setenv(JUPYTER_ENDPOINT_ENV, '1')
 
 @pytest.fixture(autouse=True)
 def cache_cleanup():
