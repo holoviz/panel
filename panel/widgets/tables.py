@@ -24,6 +24,7 @@ from bokeh.models.widgets.tables import (
     StringEditor, StringFormatter, SumAggregator, TableColumn,
 )
 from bokeh.util.serialization import convert_datetime_array
+from packaging.version import Version
 from param.parameterized import transform_reference
 from pyviz_comms import JupyterComm
 
@@ -132,6 +133,19 @@ def _stringdtype_error(df: pd.DataFrame, column: str, array):
                 f"`df[{column!r}] = df[{column!r}].astype(object)`."
             ) from None
         raise
+
+
+@contextmanager
+def _silence_chained_assignment():
+    import pandas as pd
+
+    # pandas 3 always uses Copy-on-Write, so the option is a no-op there and deprecated in 3.1.
+    if Version(pd.__version__).major >= 3:
+        yield
+        return
+    with pd.option_context('mode.chained_assignment', None):
+        yield
+
 
 class BaseTable(ReactiveData, Widget):
 
@@ -324,7 +338,8 @@ class BaseTable(ReactiveData, Widget):
                 elif kind == 'f':
                     formatter = NumberFormatter(format='0,0.0[00000]', text_align='right')
                 elif isdatetime(data) or kind == 'M':
-                    if len(data) and isinstance(data.values[0], dt.date):
+                    tz_aware = isinstance(data.dtype, pd.DatetimeTZDtype)
+                    if len(data) and not tz_aware and isinstance(data.values[0], dt.date):
                         date_format = '%Y-%m-%d'
                     else:
                         date_format = '%Y-%m-%d %H:%M:%S'
@@ -512,8 +527,7 @@ class BaseTable(ReactiveData, Widget):
         # Revert temporary changes to DataFrames
         if rename:
             df_sorted.index.name = None
-        df_sorted.drop(columns=['_index_'], inplace=True)
-        return df_sorted
+        return df_sorted.drop(columns=['_index_'])
 
     def _filter_dataframe(
         self,
@@ -767,11 +781,9 @@ class BaseTable(ReactiveData, Widget):
         return df, {k if isinstance(k, str) else str(k): self._process_column(v, k, df) for k, v in data.items()}
 
     def _update_column(self, column: str, array: TDataColumn):
-        import pandas as pd
-
         self.value[column] = array
         if self._processed is not None and self.value is not self._processed:
-            with pd.option_context('mode.chained_assignment', None):
+            with _silence_chained_assignment():
                 self._processed[column] = array
 
     #----------------------------------------------------------------
@@ -1952,8 +1964,6 @@ class Tabulator(BaseTable):
         super()._update_selected(*events, **kwargs)
 
     def _update_column(self, column: str, array: TDataColumn) -> None:
-        import pandas as pd
-
         remote = self.pagination == 'remote'
         if remote:
             nrows = self.page_size or self.initial_page_size
@@ -1968,7 +1978,7 @@ class Tabulator(BaseTable):
 
         with _stringdtype_error(self.value, column, array):
             self.value.loc[index, column] = array
-        with pd.option_context('mode.chained_assignment', None):
+        with _silence_chained_assignment():
             if remote:
                 self._processed.loc[index, column] = array
             else:
