@@ -20,8 +20,9 @@ from weakref import WeakKeyDictionary
 from bokeh.application.application import SessionContext
 from bokeh.document.document import Document
 from bokeh.document.events import (
+    ColumnDataChangedEvent, ColumnsPatchedEvent, ColumnsStreamedEvent,
     DocumentChangedEvent, DocumentPatchedEvent, MessageSentEvent,
-    SessionCallbackAdded, SessionCallbackRemoved,
+    ModelChangedEvent, SessionCallbackAdded, SessionCallbackRemoved,
 )
 from bokeh.model.util import visit_immediate_value_references
 from bokeh.models import CustomJS
@@ -58,6 +59,7 @@ _WRITE_FUTURES: WeakKeyDictionary[Document, list[Future]] = WeakKeyDictionary()
 _WRITE_EVENTS: WeakKeyDictionary[Document, list[EventBatch]] = WeakKeyDictionary()
 _WRITE_BLOCK: WeakKeyDictionary[Document, bool] = WeakKeyDictionary()
 _UNCONNECTED_EVENTS: WeakKeyDictionary[Document, list[DocumentChangedEvent]] = WeakKeyDictionary()
+_MODEL_CHANGE_EVENTS = (ModelChangedEvent, ColumnDataChangedEvent, ColumnsStreamedEvent, ColumnsPatchedEvent)
 
 _panel_last_cleanup = None
 _write_tasks: WeakKeyDictionary[Document, list[asyncio.Task]] = WeakKeyDictionary()
@@ -627,6 +629,26 @@ def dispatch_django(
         ])
     return futures
 
+def _drop_unsent_model_changes(
+    doc: Document, events: list[DocumentChangedEvent]
+) -> list[DocumentChangedEvent]:
+    """
+    Drops changes to models the client has not been sent yet, since the
+    message that first defines a model serializes its current state.
+
+    Under the 'combine' hold policy a later change is merged into the
+    slot of an earlier one, e.g. when a pane re-renders twice, which can
+    discard the only definition preceding a change to a new model and
+    leave the client dereferencing a model it does not know.
+    """
+    unsent = getattr(doc.models, '_new_models', None)
+    if not unsent:
+        return events
+    return [
+        event for event in events
+        if not (isinstance(event, _MODEL_CHANGE_EVENTS) and event.model in unsent)
+    ]
+
 def _suppress_property_callbacks(
     events: list[DocumentChangedEvent]
 ) -> list[DocumentChangedEvent]:
@@ -671,7 +693,7 @@ def _flush_events(curdoc: Document, session: ServerSession) -> None:
             locked = True
             break
 
-    events = list(curdoc.callbacks._held_events or [])
+    events = _drop_unsent_model_changes(curdoc, list(curdoc.callbacks._held_events or []))
     curdoc.callbacks._held_events = []
     monkeypatch_events(events)
 
@@ -854,6 +876,7 @@ def hold(
                     else:
                         def _unhold(lock=hold_lock, doc=doc):
                             with lock:
+                                doc.callbacks._held_events = _drop_unsent_model_changes(doc, doc.callbacks._held_events)
                                 _suppress_property_callbacks(doc.callbacks._held_events)
                                 doc.unhold()
                         with hold_lock:
