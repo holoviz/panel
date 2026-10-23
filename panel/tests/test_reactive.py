@@ -808,6 +808,26 @@ def test_reactive_html_scripts_linked_properties_assignment_operator():
 
             assert TestScripts()._linked_properties == ('clicks',)
 
+def test_reactive_html_scripts_update_before_init_does_not_change_shared_scripts():
+
+    class TestScripts(ReactiveHTML):
+
+        _template = '<div id="test"></div>'
+
+        _scripts = {'render': 'data.clicks += 1'}
+
+        def __init__(self, **params):
+            self._scripts.update({'render': 'data.clicks += 2'})
+            super().__init__(**params)
+
+    with pytest.raises(AttributeError):
+        TestScripts()
+
+    with pytest.raises(TypeError):
+        TestScripts._scripts['render'] = 'data.clicks += 2'
+
+    assert TestScripts._scripts['render'] == 'data.clicks += 1'
+
 def test_reactive_html_templated_literal_add_loop_id_and_for_loop_var():
 
     class TestTemplatedChildren(ReactiveHTML):

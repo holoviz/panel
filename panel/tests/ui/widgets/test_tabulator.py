@@ -205,10 +205,10 @@ def test_tabulator_default(page, df_mixed, df_mixed_as_string):
     assert page.locator('text="index"').is_visible()
     assert cols.nth(1).is_visible()
 
-    # Check that the columns are sortable by default
-    assert page.locator(".tabulator-sortable").count() == expected_ncols
+    # Check that the columns except the empty one are sortable by default
+    assert page.locator(".tabulator-sortable").count() == expected_ncols - 1
     # And that none of them is sorted on start
-    for i in range(expected_ncols):
+    for i in range(expected_ncols - 1):
         assert cols.nth(i).get_attribute('aria-sort') == 'none'
 
 
@@ -645,6 +645,57 @@ def test_tabulator_editor_stays_open_during_resize_redraw(page, df_mixed):
 
     # A resize-triggered redraw should not close an active editor.
     expect(editor).to_have_count(1)
+
+
+_ENLARGE_HEADERS = """() => {
+  const view = Object.values(Bokeh.index)[0]
+  const style = document.createElement('style')
+  style.textContent = '.tabulator-col-title { font-size: 40px !important; }'
+  view.shadow_el.appendChild(style)
+}"""
+
+_STR_COLUMN_WIDTH = """() => {
+  const view = Object.values(Bokeh.index)[0]
+  return view.shadow_el.querySelector('.tabulator-col[tabulator-field="str"]').offsetWidth
+}"""
+
+
+def test_tabulator_redraws_after_web_font_loads(page, df_mixed):
+    widget = Tabulator(df_mixed)
+
+    serve_component(page, widget)
+    expect(page.locator('.tabulator-row')).to_have_count(len(df_mixed))
+
+    width = page.evaluate(_STR_COLUMN_WIDTH)
+    page.evaluate(_ENLARGE_HEADERS)
+    page.evaluate("() => document.fonts.dispatchEvent(new FontFaceSetLoadEvent('loadingdone'))")
+
+    wait_until(lambda: page.evaluate(_STR_COLUMN_WIDTH) > width, page)
+
+
+def test_tabulator_resize_redraw_not_blocked_by_pending_root_ready(page, df_mixed):
+    widget = Tabulator(df_mixed)
+
+    serve_component(page, widget)
+    expect(page.locator('.tabulator-row')).to_have_count(len(df_mixed))
+
+    width = page.evaluate(_STR_COLUMN_WIDTH)
+    # Simulates a removed view whose pending work never settles.
+    page.evaluate("() => { Object.values(Bokeh.index)[0]._ready = new Promise(() => {}) }")
+    page.evaluate(_ENLARGE_HEADERS)
+    page.evaluate("() => document.fonts.dispatchEvent(new FontFaceSetLoadEvent('loadingdone'))")
+
+    wait_until(lambda: page.evaluate(_STR_COLUMN_WIDTH) > width, page)
+
+
+def test_tabulator_empty_column_has_no_sorter(page, df_mixed):
+    widget = Tabulator(df_mixed)
+
+    serve_component(page, widget)
+    expect(page.locator('.tabulator-row')).to_have_count(len(df_mixed))
+
+    expect(page.locator('.tabulator-col.empty')).to_have_count(1)
+    expect(page.locator('.tabulator-col.empty .tabulator-col-sorter')).to_have_count(0)
 
 
 def test_tabulator_editor_jscode(page, df_mixed):
@@ -2728,7 +2779,7 @@ def test_tabulator_download(page, df_mixed, df_mixed_as_string):
     # Some transformations required to reform the dataframe as the original one.
     saved_df['date'] = pd.to_datetime(saved_df['date'], unit='ms')
     saved_df['date'] = [d.to_pydatetime().date() for d in saved_df['date']]
-    saved_df['datetime'] = pd.to_datetime(saved_df['datetime'], unit='ms')
+    saved_df['datetime'] = pd.to_datetime(saved_df['datetime'], unit='ms').astype(df_mixed['datetime'].dtype)
     saved_df.index.name = None
 
     pd.testing.assert_frame_equal(df_mixed, saved_df)

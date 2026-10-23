@@ -78,7 +78,7 @@ Click [this link](../../reference/index.md#panes) to the [Panes Section](../../r
 
 ### Display Alerts
 
-The [`Alert`](../../reference/classic/panes/Alert.md) pane can format and display [*markdown*](https://en.wikipedia.org/wiki/Markdown) strings inside a nicely styled *Alert* pane.
+The [`Alert`](../../reference/layouts/Alert.md) component can format and display [*markdown*](https://en.wikipedia.org/wiki/Markdown) strings inside a nicely styled *Alert* box.
 
 Run the code:
 
@@ -91,7 +91,7 @@ pn.ui.Alert("""
 ## Markdown Sample
 
 This sample text is from [The Markdown Guide](https://www.markdownguide.org)!
-""", alert_type="info").servable()
+""", severity="info").servable()
 ```
 
 ## Display Plots
@@ -362,7 +362,7 @@ In this guide, we have learned to display Python objects with *Panes*:
 
 - *Panes* are available in the `pn.ui` namespace
 - *Panes* take an `object` argument as well as other arguments
-- Display strings with the [`Str`](../../reference/panes/Str.md), [`Markdown`](../../reference/panes/Markdown.md) and [`Alert`](../../reference/classic/panes/Alert.md) panes
+- Display strings with the [`Str`](../../reference/panes/Str.md), [`Markdown`](../../reference/panes/Markdown.md) panes and the [`Alert`](../../reference/layouts/Alert.md) component
 - Display plot figures like [Altair](https://altair-viz.github.io/), [ECharts](https://echarts.apache.org/en/index.html), [hvPlot](https://hvplot.holoviz.org), [Matplotlib](https://matplotlib.org/), [Plotly](https://plotly.com/python/) and [Vizzu](https://vizzuhq.com/) with the [`Vega`](../../reference/panes/Vega.md), [`ECharts`](../../reference/panes/ECharts.md), [`HoloViews`](../../reference/panes/HoloViews.md), [`Matplotlib`](../../reference/panes/Matplotlib.md), [`Plotly`](../../reference/panes/Plotly.md) and [`Vizzu`](../../reference/panes/Vizzu.md) *panes*, respectively.
 - Display *DataFrames* with the [`DataFrame`](../../reference/panes/DataFrame.md) and [`Perspective`](../../reference/panes/Perspective.md) *panes*.
 - Add JavaScript dependencies via `pn.extension`. For example `pn.extension("vega")` or `pn.extension("plotly")`

@@ -71,11 +71,9 @@ class MarioButton(AnyWidgetComponent):
     size = param.Integer(100, bounds=(10, 1000), step=10)
     animate = param.Boolean(True)
 
-    margin = param.Integer(10)
-
 if pn.state.served:
-    button = MarioButton()
-    parameters = pn.Param(
+    button = MarioButton(margin=10)
+    parameters = pn.ui.Param(
         button, parameters=["gain", "duration", "size", "animate"]
     )
     settings=pn.ui.Column(parameters, "Credits: Trevor Manz")
@@ -88,7 +86,8 @@ if pn.state.served:
 - **`_stylesheets`**: Specifies the path to the CSS file for styling the component.
 - **`_box`**: A parameter representing the pixel data for the Mario icon.
 - **`gain`, `duration`, `size`, `animate`**: Parameters for customizing the button's behavior.
-- **`pn.Param`**: Creates a Panel widget to control the parameters.
+- **`pn.ui.Param`**: Creates a Panel widget to control the parameters.
+- **`margin=10`**: Every component inherits Panel's layout parameters such as `margin`, so we set the spacing when constructing the button instead of redeclaring the parameter on the class.
 
 ## Step 2: Define the JavaScript for the `MarioButton`
 
@@ -216,7 +215,7 @@ The result should look like this:
 
 You'll have to turn on the sound to hear the chime.
 
-## Step 4: Develop the Application with Autoreload
+## Step 5: Develop the Application with Autoreload
 
 When you save your `.py`, `.js` or `.css` file, the Panel server will automatically reload the changes. This feature is called *auto reload* or *hot reload*.
 

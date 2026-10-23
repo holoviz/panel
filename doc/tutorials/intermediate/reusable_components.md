@@ -38,14 +38,14 @@ df = pn.cache(pd.read_csv)(data_url)
 explorer = DataExplorer(data=df, page_size=5)
 ```
 
-This explorer doesn't do anything yet, so let's learn how we can turn the UI-agnostic parameter declarations into a UI. For that purpose, we will learn about `pn.Param`.
+This explorer doesn't do anything yet, so let's learn how we can turn the UI-agnostic parameter declarations into a UI. For that purpose, we will learn about `pn.ui.Param`.
 
-`pn.Param` allows mapping parameter declarations to widgets that allow editing the parameter value. There is a default mapping from `Parameter` type to the appropriate type, but as long as the input matches, this can be overridden.
+`pn.ui.Param` allows mapping parameter declarations to widgets that allow editing the parameter value. There is a default mapping from `Parameter` type to the appropriate type, but as long as the input matches, this can be overridden.
 
 Let's start with the simplest case:
 
 ```{pyodide}
-pn.Param(explorer.param, widgets={"page_size": pn.ui.IntInput}).servable()
+pn.ui.Param(explorer.param, widgets={"page_size": pn.ui.IntInput}).servable()
 ```
 
 Notice that each parameter was mapped to a widget appropriate for editing its value, i.e., the `data` was mapped to a `Tabulator` widget, and the `page_size` was mapped to an `IntInput` widget.
@@ -155,8 +155,6 @@ import param
 
 import panel as pn
 
-from panel.widgets import IntSlider, Tabulator
-
 pn.extension("tabulator")
 
 class DataExplorer(pn.viewable.Viewer):
@@ -166,7 +164,7 @@ class DataExplorer(pn.viewable.Viewer):
     )
     theme = param.Selector(
         default="simple",
-        objects=["simple", "default", "site", "midnight"],
+        objects=["simple", "default", "site", "midnight", "materialize"],
     )
     show_index = param.Boolean(
         default=True, doc="Whether or not to display the index of the data"
@@ -174,10 +172,10 @@ class DataExplorer(pn.viewable.Viewer):
 
     def __panel__(self):
         return pn.ui.Column(
-            IntSlider.from_param(self.param.page_size, start=5, end=25, step=5),
-            self.param.theme,
-            self.param.show_index,
-            Tabulator.from_param(
+            pn.ui.IntSlider.from_param(self.param.page_size, start=5, end=25, step=5),
+            pn.ui.Select.from_param(self.param.theme),
+            pn.ui.Checkbox.from_param(self.param.show_index),
+            pn.ui.Tabulator.from_param(
                 self.param.data,
                 page_size=self.param.page_size,
                 sizing_mode="stretch_width",
