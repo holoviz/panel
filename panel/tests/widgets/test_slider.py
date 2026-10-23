@@ -409,6 +409,41 @@ def test_datetime_range_slider(document, comm):
         assert widget.value == (1613088000000, 1620777600000)
 
 
+def test_date_range_slider_value_none():
+    date_slider = DateRangeSlider(
+        start=date(2020, 1, 1),
+        end=date(2020, 1, 5),
+    )
+    assert date_slider.value == (date(2020, 1, 1), date(2020, 1, 5))
+    assert date_slider.value_start == date(2020, 1, 1)
+    assert date_slider.value_end == date(2020, 1, 5)
+
+    date_slider.value = None
+    assert date_slider.value is None
+    assert date_slider.value_start is None
+    assert date_slider.value_end is None
+
+    date_slider.value = (date(2020, 1, 2), date(2020, 1, 4))
+    assert date_slider.value == (date(2020, 1, 2), date(2020, 1, 4))
+    assert date_slider.value_start == date(2020, 1, 2)
+    assert date_slider.value_end == date(2020, 1, 4)
+
+
+def test_datetime_range_slider_value_none():
+    dt_slider = DatetimeRangeSlider(
+        start=datetime(2020, 1, 1),
+        end=datetime(2020, 1, 5),
+    )
+    assert dt_slider.value == (datetime(2020, 1, 1), datetime(2020, 1, 5))
+    assert dt_slider.value_start == datetime(2020, 1, 1)
+    assert dt_slider.value_end == datetime(2020, 1, 5)
+
+    dt_slider.value = None
+    assert dt_slider.value is None
+    assert dt_slider.value_start is None
+    assert dt_slider.value_end is None
+
+
 def test_discrete_slider(document, comm):
     discrete_slider = DiscreteSlider(label='DiscreteSlider', value=1,
                                      options=[0.1, 1, 10, 100])
