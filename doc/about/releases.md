@@ -10,7 +10,7 @@ The release also contains significant performance improvements: rendering of `JS
 
 This release requires Bokeh 3.10 and drops support for Python 3.10 and 3.11, while adding support for Python 3.15. It also deprecates the REST providers, `pn.state.publish` and `pn.widgets.DataFrame`, and removes the long-deprecated LangChain callback handler.
 
-Many thanks to the contributors to this release: @philippjfr, @hoxbro, @chiruu12, @MohammadHijjawi97, @ebarkhordar, @Kayvan-Zahiri, @ghostiee-11, @Azaya89, @rimsha152007-dotcom, @EltonChang1, @Bortlesboat, @ATL2001, @ZainnQureshii, @vignesh-chaturvedi, @IDavinciCode, @mvanhorn, @SatvikMishra08, @YashAnand69, @Cherith1222, @anshurajbisoyi98-ctrl and @Coderambling.
+Many thanks to the contributors to this release: @philippjfr, @hoxbro, @chiruu12, @MohammadHijjawi97, @ebarkhordar, @Kayvan-Zahiri, @ghostiee-11, @Azaya89, @rimsha152007-dotcom, @EltonChang1, @Bortlesboat, @ATL2001, @ZainnQureshii, @vignesh-chaturvedi, @IDavinciCode, @mvanhorn, @SatvikMishra08, @YashAnand69, @Cherith1222, @anshurajbisoyi98-ctrl, @Coderambling, @Jojoussef and @wolfgang-aura.
 
 ### 🚀 Features
 
@@ -69,6 +69,7 @@ Many thanks to the contributors to this release: @philippjfr, @hoxbro, @chiruu12
 * Fix the `Tabulator` keywords header filter raising an error when `header_filters=True` ([#8726](https://github.com/holoviz/panel/pull/8726))
 * Honor `matchAll` in `Tabulator` keywords header filters when pagination is not remote ([#8842](https://github.com/holoviz/panel/pull/8842))
 * Show the `Tabulator` loading spinner when the table has no columns ([#8807](https://github.com/holoviz/panel/pull/8807))
+* Re-measure `Tabulator` columns once web fonts have loaded, so headers are no longer truncated in apps with a custom font, and stop the `container_popup` spacer column from showing a sort arrow ([#8896](https://github.com/holoviz/panel/pull/8896))
 * Fix component libraries (Tabulator, ECharts, Vega, KaTeX, DeckGL, JSONEditor) failing to load in notebooks with RequireJS, i.e. classic Jupyter notebook and VS Code, including on networks that block the public CDNs, where the bundled copies of the libraries are now loaded instead ([#8762](https://github.com/holoviz/panel/pull/8762), [#8848](https://github.com/holoviz/panel/pull/8848))
 * Stop busy state from echoing between server and client and from leaking across threads, which left busy indicators such as the `Page` progress bar visible while the server was idle ([#8780](https://github.com/holoviz/panel/pull/8780))
 * Make busy state cleanup robust to state resets, missing event loops and failed submits ([#8838](https://github.com/holoviz/panel/pull/8838))
@@ -79,16 +80,21 @@ Many thanks to the contributors to this release: @philippjfr, @hoxbro, @chiruu12
 * Scope reactive stylesheets to their document ([#8769](https://github.com/holoviz/panel/pull/8769))
 * Keep notebook stylesheets inline after updates ([#8787](https://github.com/holoviz/panel/pull/8787))
 * Stop shared ESM watchers when they are no longer used ([#8775](https://github.com/holoviz/panel/pull/8775))
+* Stop the reset of a `param.Event` on a `ReactiveESM` component from re-triggering watchers, which made functions bound to a `pn.ui.Button` run a second time with `False` ([#8890](https://github.com/holoviz/panel/pull/8890))
+* Freeze `ReactiveHTML` `_scripts` at class creation so instances no longer share and overwrite each other's scripts ([#8861](https://github.com/holoviz/panel/pull/8861))
 * Skip JS callbacks on properties the rendered model does not have ([#8825](https://github.com/holoviz/panel/pull/8825))
 * Ignore click events on disabled buttons ([#8823](https://github.com/holoviz/panel/pull/8823))
 * Notify `MenuButton` callbacks when the same item is selected repeatedly ([#8810](https://github.com/holoviz/panel/pull/8810))
 * Keep `TextInput` `value_input` in sync when `value` is set from Python, so pressing Enter no longer reverts the value ([#8782](https://github.com/holoviz/panel/pull/8782))
 * Fix `DatetimeSlider` when `start` and `end` fall on the same day ([#8743](https://github.com/holoviz/panel/pull/8743))
+* Allow setting `DateRangeSlider` and `DatetimeRangeSlider` `value` to `None` ([#8901](https://github.com/holoviz/panel/pull/8901))
+* Serialize string values of `LiteralInput` as JSON when `serializer='json'` ([#8894](https://github.com/holoviz/panel/pull/8894))
 * Restore rejected boundary values on repeated throttled `Param` slider changes ([#8851](https://github.com/holoviz/panel/pull/8851))
 * Fix nested Plotly arrays being lost when syncing across clients ([#8758](https://github.com/holoviz/panel/pull/8758))
 * Clean up `GridSpec` children when deleting cells ([#8736](https://github.com/holoviz/panel/pull/8736))
 * Parse negative integers in URL query parameters as integers ([#8790](https://github.com/holoviz/panel/pull/8790))
 * Keep URL query values as strings when syncing `String` parameters ([#8814](https://github.com/holoviz/panel/pull/8814))
+* Raise a `ValueError` when `pn.state.location.sync` is asked to sync a constant parameter such as `value_throttled`, instead of silently ignoring the URL value ([#8902](https://github.com/holoviz/panel/pull/8902))
 * Abbreviate `Parameterized` objects inside lists in reprs ([#8792](https://github.com/holoviz/panel/pull/8792))
 * Reject unparsable `schedule_task` periods instead of looping ([#8812](https://github.com/holoviz/panel/pull/8812))
 * Strip IPython line magics when serving notebooks ([#8781](https://github.com/holoviz/panel/pull/8781))
@@ -108,6 +114,8 @@ Many thanks to the contributors to this release: @philippjfr, @hoxbro, @chiruu12
 ### ⚙️ Compatibility
 
 * Add compatibility with Bokeh 3.10, which is now the minimum supported version, and drop support for Python 3.10 and 3.11 ([#8716](https://github.com/holoviz/panel/pull/8716))
+* Add compatibility with the upcoming Bokeh 3.10.2 ([#8898](https://github.com/holoviz/panel/pull/8898))
+* Require `panel-material-ui` 0.16.6 or later ([#8899](https://github.com/holoviz/panel/pull/8899))
 * Add support for Python 3.15 ([#8767](https://github.com/holoviz/panel/pull/8767), [#8850](https://github.com/holoviz/panel/pull/8850))
 * Upgrade to the latest JupyterLite and Pyodide (v314.0.7) ([#8763](https://github.com/holoviz/panel/pull/8763))
 * Ignore the NumPy 2.5 `ndarray.shape` deprecation warning raised by VTK ([#8729](https://github.com/holoviz/panel/pull/8729))
@@ -129,6 +137,8 @@ Many thanks to the contributors to this release: @philippjfr, @hoxbro, @chiruu12
 * Add a new homepage and versioned documentation ([#8753](https://github.com/holoviz/panel/pull/8753))
 * Use `pn.ui` throughout the docs and gallery, generate the Component Gallery from the `panel-material-ui` reference notebooks and move the classic reference to `reference/classic/` ([#8752](https://github.com/holoviz/panel/pull/8752))
 * Move the narrative docs to `pn.ui.Page` and rewrite the getting started, core concepts and templates guides around it ([#8808](https://github.com/holoviz/panel/pull/8808))
+* Migrate the tutorials to `pn.ui` and fix broken examples ([#8891](https://github.com/holoviz/panel/pull/8891))
+* Add `pn.ui` how-to guides for theming, palettes, typography, dark mode, branding, icons and building Material UI components ([#8892](https://github.com/holoviz/panel/pull/8892))
 * Modernize the gallery examples and add new apps, including a Gaia million star atlas, a model serving monitor and a storm surge studio ([#8798](https://github.com/holoviz/panel/pull/8798))
 * Add a how-to guide for theming server pages with `page_config` ([#8802](https://github.com/holoviz/panel/pull/8802))
 * Document the admin dashboard pages, plugins and access control ([#8805](https://github.com/holoviz/panel/pull/8805))
