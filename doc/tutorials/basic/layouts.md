@@ -6,7 +6,7 @@ Welcome to our guide on layouting Python objects, including Panel components! Le
 
 In this guide, we'll explore the following aspects of layouts:
 
-- **Layouts**: Accessible in the `pn` namespace.
+- **Layouts**: Accessible in the `pn.ui` namespace.
 - **Layout Techniques**: Utilize `pn.ui.Column` and `pn.ui.Row` to structure your content.
 - **Reference Guides**: Explore detailed documentation for each layout in the [Layouts Section](../../reference/index.md#layouts) of the [Component Gallery](../../reference/index.md).
 
@@ -108,17 +108,14 @@ data = pd.DataFrame(
 )
 button = pn.ui.Button(label="Refresh", icon="refresh", color="primary")
 component = pn.ui.Column("# Wind Speed", data, button)
-print(component)
+print([type(obj).__name__ for obj in component])
 component.servable()
 ```
 
 The `print` statement will output something like:
 
 ```bash
-Column
-    [0] Markdown(str)
-    [1] DataFrame(DataFrame)
-    [2] Button(color='primary', icon='refresh', name='Refresh')
+['Markdown', 'DataFrame', 'Button']
 ```
 
 Under the hood, the `Column` layout uses `pn.panel` to determine how to best display Python objects.
@@ -243,7 +240,7 @@ Click [this link](../../reference/index.md#layouts) to explore available layouts
 
 In this guide, we have learned:
 
-- **Layouts**: Available in the `pn` namespace.
+- **Layouts**: Available in the `pn.ui` namespace.
 - **Layout Techniques**: Utilize `pn.ui.Column` and `pn.ui.Row` to structure your content.
 - **Automatic Display**: Layouts use `pn.panel` to determine the optimal display for Python objects.
 - **List-like Behavior**: Layouts like `Column` and `Row` behave like lists, allowing for flexible manipulation.

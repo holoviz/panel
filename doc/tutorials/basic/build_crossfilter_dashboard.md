@@ -28,7 +28,7 @@ from bokeh.models.formatters import NumeralTickFormatter
 
 pn.extension(sizing_mode="stretch_width")
 
-ACCENT = "teal"
+ACCENT = "#008080"  # teal
 
 SHORT_NAMES = {
     "Changzhou Railcar Propulsion Engineering Research and Development Center": "Changzhou",
@@ -36,7 +36,7 @@ SHORT_NAMES = {
 }
 
 
-@pn.cache()
+@pn.cache
 def get_data():
     data = pd.read_csv("https://assets.holoviz.org/panel/tutorials/turbines.csv.gz")
 
@@ -84,11 +84,10 @@ def get_plots():
 
 crossfilter_plots = hv.link_selections(get_plots()).opts(shared_axes=False)
 
-pn.template.FastListTemplate(
+pn.ui.Page(
     title="Windturbine Dashboard with Crossfiltering",
     main=[crossfilter_plots],
-    main_layout=None,
-    accent=ACCENT,
+    theme_config={"palette": {"primary": {"main": ACCENT}}},
 ).servable()
 ```
 
@@ -111,7 +110,7 @@ from bokeh.models.formatters import NumeralTickFormatter
 
 pn.extension(sizing_mode="stretch_width")
 
-ACCENT = "teal"
+ACCENT = "#008080"  # teal
 
 SHORT_NAMES = {
     "Changzhou Railcar Propulsion Engineering Research and Development Center": "Changzhou",
@@ -126,7 +125,7 @@ Here, we import HoloViews (`hv`) for creating interactive plots, NumPy (`np`) an
 The `get_data` function fetches the wind turbine dataset from a URL and preprocesses it by shortening the names of certain manufacturers for clarity in the visualizations.
 
 ```python
-@pn.cache()
+@pn.cache
 def get_data():
     data = pd.read_csv("https://assets.holoviz.org/panel/tutorials/turbines.csv.gz")
 
@@ -136,7 +135,7 @@ def get_data():
     return data
 ```
 
-`@pn.cache()` decorates the function to cache its output, reducing loading times by avoiding repeated data fetching and processing.
+`@pn.cache` decorates the function to cache its output, reducing loading times by avoiding repeated data fetching and processing.
 
 ### Creating the Crossfiltering Plot
 
@@ -221,18 +220,17 @@ Please note we create a `crossfilter_plots` object for every user session becaus
 
 ### Serving the Dashboard
 
-Finally, the plots are incorporated into a Panel template, which is then made servable. This step prepares our dashboard for deployment, allowing users to interact with the visualizations through a web interface.
+Finally, the plots are placed in a Panel `Page`, which is then made servable. This step prepares our dashboard for deployment, allowing users to interact with the visualizations through a web interface.
 
 ```python
-pn.template.FastListTemplate(
+pn.ui.Page(
     title="Windturbine Dashboard with Crossfiltering",
     main=[crossfilter_plots],
-    main_layout=None,
-    accent=ACCENT,
+    theme_config={"palette": {"primary": {"main": ACCENT}}},
 ).servable()
 ```
 
-The [`FastListTemplate`](https://panel.holoviz.org/reference/classic/templates/FastListTemplate.html) is a pre-built Panel template that provides a clean and modern layout for our dashboard. It takes our crossfiltering plot and other configurations as input, creating a cohesive and interactive web application.
+The [`Page`](../../reference/templates/Page.md) provides a header with a light/dark theme toggle and a main area for our crossfiltering plots. The `theme_config` sets the primary color of the theme to our `ACCENT` color, which colors the header.
 
 Now serve the app with `panel serve app.py --dev`. It should look like
 

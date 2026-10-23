@@ -46,6 +46,9 @@ def makeMixedDataFrame():
     return pd.DataFrame(data)
 
 
+# pytest.warns re-emits unmatched warnings without their module, so the
+# module-scoped filter for Bokeh's reset_index(inplace=True) does not apply.
+@pytest.mark.filterwarnings("ignore:The inplace keyword in DataFrame.reset_index is deprecated")
 def test_dataframe_widget_is_deprecated(dataframe):
     from panel.util.warnings import PanelDeprecationWarning
 
