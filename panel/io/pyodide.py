@@ -12,7 +12,6 @@ import uuid
 
 import bokeh
 import js
-import pandas
 import param
 
 import pyodide # isort: split
@@ -100,21 +99,30 @@ def _read_file(*args, **kwargs):
         kwargs['filepath_or_buffer'] = pyodide.http.open_url(kwargs['filepath_or_buffer'])
     return args, kwargs
 
-# Patch pandas.read_csv
-_read_csv_original = pandas.read_csv
-@functools.wraps(pandas.read_csv)
-def _read_csv(*args, **kwargs):
-    args, kwargs = _read_file(*args, **kwargs)
-    return _read_csv_original(*args, **kwargs)
-pandas.read_csv = _read_csv  # type: ignore
+def _patch_pandas_readers():
+    """
+    Patches pandas.read_csv and pandas.read_json to support URLs.
+    """
+    try:
+        import pandas
+    except ImportError:
+        return
 
-# Patch pandas.read_json
-_read_json_original = pandas.read_json
-@functools.wraps(pandas.read_json)
-def _read_json(*args, **kwargs):
-    args, kwargs = _read_file(*args, **kwargs)
-    return _read_json_original(*args, **kwargs)
-pandas.read_json = _read_json  # type: ignore
+    read_csv = pandas.read_csv
+    @functools.wraps(read_csv)
+    def _read_csv(*args, **kwargs):
+        args, kwargs = _read_file(*args, **kwargs)
+        return read_csv(*args, **kwargs)
+    pandas.read_csv = _read_csv  # type: ignore
+
+    read_json = pandas.read_json
+    @functools.wraps(read_json)
+    def _read_json(*args, **kwargs):
+        args, kwargs = _read_file(*args, **kwargs)
+        return read_json(*args, **kwargs)
+    pandas.read_json = _read_json  # type: ignore
+
+_patch_pandas_readers()
 
 _tasks: set = set()
 

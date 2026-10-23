@@ -13,8 +13,15 @@ from functools import partial
 
 import bokeh
 import numpy as np
-import pandas as pd
 import param
+
+try:
+    import pandas as pd
+except ImportError:
+    raise ImportError(
+        'The Panel admin dashboard requires pandas, install it with '
+        '`pip install pandas` or `conda install pandas`.'
+    ) from None
 
 from bokeh.models import HoverTool
 from bokeh.plotting import ColumnDataSource, figure

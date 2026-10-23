@@ -5,6 +5,7 @@ The message module provides a low-level API for rendering chat messages.
 from __future__ import annotations
 
 import datetime
+import importlib
 import typing as t
 
 from contextlib import ExitStack
@@ -122,6 +123,21 @@ DEFAULT_AVATARS = {
     "hvplot": HVPLOT_LOGO,
     "panel": PANEL_LOGO,
 }
+
+
+def _read_csv(contents: bytes) -> t.Any:
+    """
+    Reads CSV contents with the first available DataFrame library,
+    returning None if none is installed.
+    """
+    for module in ('pandas', 'polars', 'pyarrow.csv'):
+        try:
+            lib = importlib.import_module(module)
+        except ImportError:
+            continue
+        with BytesIO(contents) as buf:
+            return lib.read_csv(buf)
+    return None
 
 
 @dataclass
@@ -437,12 +453,8 @@ class ChatMessage(Pane):
         elif mime_type.startswith("image/"):
             contents = self._exit_stack.enter_context(BytesIO(contents))
             renderer = Image
-        elif mime_type.endswith("/csv"):
-            import pandas as pd
-
-            with BytesIO(contents) as buf:
-                contents = pd.read_csv(buf)
-            renderer = DataFrame
+        elif mime_type.endswith("/csv") and (frame := _read_csv(contents)) is not None:
+            contents, renderer = frame, DataFrame
         elif mime_type.startswith("text"):
             if isinstance(contents, bytes):
                 contents = contents.decode("utf-8")
