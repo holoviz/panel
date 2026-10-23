@@ -2779,7 +2779,7 @@ def test_tabulator_download(page, df_mixed, df_mixed_as_string):
     # Some transformations required to reform the dataframe as the original one.
     saved_df['date'] = pd.to_datetime(saved_df['date'], unit='ms')
     saved_df['date'] = [d.to_pydatetime().date() for d in saved_df['date']]
-    saved_df['datetime'] = pd.to_datetime(saved_df['datetime'], unit='ms')
+    saved_df['datetime'] = pd.to_datetime(saved_df['datetime'], unit='ms').astype(df_mixed['datetime'].dtype)
     saved_df.index.name = None
 
     pd.testing.assert_frame_equal(df_mixed, saved_df)
