@@ -16,6 +16,7 @@ import requests
 
 from bokeh.events import ButtonClick
 from packaging.version import Version
+from tornado.ioloop import IOLoop
 
 from panel.config import config
 from panel.io import state
@@ -24,8 +25,8 @@ from panel.io.compile import check_cli_tool
 from panel.io.resources import DIST_DIR, JS_VERSION
 from panel.io.server import (
     _MAX_APP_PATH_CHARS, _MAX_ROUTE_PARAM_VALUE_CHARS, INDEX_HTML, RootHandler,
-    _normalize_app_path, _path_template_to_tornado_route, get_server,
-    set_curdoc,
+    _normalize_app_path, _path_template_to_tornado_route, async_execute,
+    get_server, set_curdoc,
 )
 from panel.layout import Row
 from panel.models import HTML as BkHTML
@@ -631,13 +632,17 @@ def test_server_schedule_at(server_implementation):
         state.cache['at'] = dt.datetime.now()
 
     scheduled = []
+    served = []
 
     def app():
-        scheduled.append(dt.datetime.now() + dt.timedelta(seconds=0.57))
-        state.schedule_task('periodic', periodic_cb, at=scheduled[0])
+        served.append(None)
+        if len(served) > 1:
+            scheduled.append(dt.datetime.now() + dt.timedelta(seconds=0.57))
+            state.schedule_task('periodic', periodic_cb, at=scheduled[0])
         return '# state.schedule test'
 
-    serve_and_request(app)
+    # A cold first request delays the callback on slow runners
+    serve_and_request(app, n=2)
 
     # Check callback was executed within small margin of error
     wait_until(lambda: 'at' in state.cache)
@@ -657,15 +662,20 @@ def test_server_schedule_at_iterator(server_implementation):
     def schedule():
         yield from scheduled
 
+    served = []
+
     def app():
-        scheduled.extend([
-            dt.datetime.now() + dt.timedelta(seconds=0.57),
-            dt.datetime.now() + dt.timedelta(seconds=0.86)
-        ])
-        state.schedule_task('periodic', periodic_cb, at=schedule())
+        served.append(None)
+        if len(served) > 1:
+            scheduled.extend([
+                dt.datetime.now() + dt.timedelta(seconds=0.57),
+                dt.datetime.now() + dt.timedelta(seconds=0.86)
+            ])
+            state.schedule_task('periodic', periodic_cb, at=schedule())
         return '# state.schedule test'
 
-    serve_and_request(app)
+    # A cold first request delays the callback on slow runners
+    serve_and_request(app, n=2)
 
     # Check callbacks were executed within small margin of error
     wait_until(lambda: len(state.cache['at']) == 2)
@@ -684,15 +694,20 @@ def test_server_schedule_at_callable(server_implementation):
     def schedule(siter, utcnow):
         return next(siter)
 
+    served = []
+
     def app():
-        scheduled[:] = [
-            dt.datetime.now(dt.timezone.utc) + dt.timedelta(seconds=s)
-            for s in (0.57, 0.86)
-        ]
-        state.schedule_task('periodic', periodic_cb, at=partial(schedule, iter(scheduled)))
+        served.append(None)
+        if len(served) > 1:
+            scheduled[:] = [
+                dt.datetime.now(dt.timezone.utc) + dt.timedelta(seconds=s)
+                for s in (0.57, 0.86)
+            ]
+            state.schedule_task('periodic', periodic_cb, at=partial(schedule, iter(scheduled)))
         return '# state.schedule test'
 
-    serve_and_request(app)
+    # A cold first request delays the callback on slow runners
+    serve_and_request(app, n=2)
 
     # Check callbacks were executed within small margin of error
     wait_until(lambda: len(state.cache['at']) == 2)
@@ -702,6 +717,31 @@ def test_server_schedule_at_callable(server_implementation):
     assert abs(state.cache['at'][0] - converted[0]) < dt.timedelta(seconds=0.2)
     assert abs(state.cache['at'][1] - converted[1]) < dt.timedelta(seconds=0.2)
     wait_until(lambda: 'periodic' not in {k.split('_', 1)[-1] for k in state._scheduled})
+
+
+def test_server_schedule_from_thread_while_loop_idle(server_implementation):
+    state.cache['at'] = []
+    def periodic_cb():
+        state.cache['at'].append(dt.datetime.now())
+
+    scheduled = []
+
+    def app():
+        doc = state.curdoc
+
+        def schedule():
+            time.sleep(0.5)
+            with set_curdoc(doc):
+                scheduled.append(dt.datetime.now() + dt.timedelta(seconds=0.3))
+                state.schedule_task('periodic', periodic_cb, at=scheduled[0])
+
+        threading.Thread(target=schedule, daemon=True).start()
+        return '# state.schedule test'
+
+    serve_and_request(app)
+
+    wait_until(lambda: len(state.cache['at']) == 1)
+    assert abs(state.cache['at'][0] - scheduled[0]) < dt.timedelta(seconds=0.2)
 
 
 @pytest.mark.xdist_group(name="server")
@@ -1119,6 +1159,25 @@ def test_kill_all_servers(html_server_session, markdown_server_session):
     assert server_2._stopped
 
 
+def test_async_execute_without_running_loop_reuses_thread_loop():
+    loops = []
+
+    async def cb():
+        loops.append(asyncio.get_running_loop())
+
+    def run():
+        async_execute(cb)
+        async_execute(cb)
+
+    thread = threading.Thread(target=run)
+    thread.start()
+    thread.join()
+
+    assert len(loops) == 2
+    assert loops[0] is loops[1]
+    assert loops[0] not in getattr(IOLoop, '_ioloop_for_asyncio', {})
+
+
 def test_threaded_server_stop_does_not_leave_unstarted_tasks(monkeypatch):
     import gc
     import sys
@@ -1144,6 +1203,16 @@ def test_threaded_server_stop_does_not_leave_unstarted_tasks(monkeypatch):
     gc.collect()
 
     assert [u.object for u in unraisable] == []
+
+
+def test_threaded_server_stop_closes_tornado_loop():
+    serve_and_wait(Markdown('# Title'))
+    server_id = next(iter(state._threads))
+    io_loop = state._servers[server_id][0].io_loop
+
+    state.kill_all_servers()
+
+    assert io_loop.closing
 
 
 @pytest.mark.xdist_group(name="server")
@@ -1778,6 +1847,24 @@ def test_server_exception_handler_bokeh_event(threads, handler, request):
     serve_and_request(app)
 
     wait_until(lambda: len(exceptions) == 1)
+
+
+def test_server_busy_cleanup_starts_from_locked_callback():
+    button = Button()
+
+    def app():
+        state.curdoc.add_next_tick_callback(
+            lambda: button._comm_event(state.curdoc, ButtonClick(model=None))
+        )
+        return button
+
+    serve_and_request(app)
+
+    wait_until(lambda: button.clicks == 1)
+    wait_until(lambda: (
+        type(state)._busy_cleanup_scheduled is not None and
+        type(state)._busy_cleanup_scheduled._cb is not None
+    ))
 
 
 @pytest.mark.parametrize(

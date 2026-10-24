@@ -202,6 +202,21 @@ def test_plotly_click_data(page, plotly_2d_plot):
         wait_until(check_click, page)
 
 
+def test_plotly_click_after_resize_without_size_change(page, plotly_2d_plot):
+    serve_component(page, plotly_2d_plot)
+
+    point = page.locator('.js-plotly-plot .plot-container.plotly path.point').nth(0)
+    point.hover(force=True)
+    wait_until(lambda: (plotly_2d_plot.hover_data or {}).get('points', [{}])[0].get('pointNumber') == 0, page)
+
+    model_id = next(iter(plotly_2d_plot._models.values()))[0].id
+    page.evaluate(f"() => Bokeh.index.find_one_by_id('{model_id}').invalidate_layout()")
+    page.wait_for_timeout(60)
+    point.click(force=True)
+
+    wait_until(lambda: (plotly_2d_plot.click_data or {}).get('points', [{}])[0].get('pointNumber') == 0, page)
+
+
 # Can't reliably simulate the clicks so disabling
 def _test_plotly_click_data_figure_widget(page, plotly_2d_figure_widget):
     fig = go.FigureWidget(plotly_2d_figure_widget)

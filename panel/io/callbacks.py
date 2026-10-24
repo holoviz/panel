@@ -189,7 +189,9 @@ class PeriodicCallback(param.Parameterized):
             # thread rather than the server event loop thread.
             self._cb = self._doc.add_periodic_callback(self._periodic_callback, self.period)
         elif not state._on_loop_thread:
-            state.execute(self.start, schedule=True)
+            # Bokeh may run locked document callbacks on an executor thread
+            loop = state._document_loop(state.curdoc)
+            getattr(loop, 'asyncio_loop', loop).call_soon_threadsafe(self.start)
         else:
             try:
                 loop = asyncio.get_running_loop()

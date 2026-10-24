@@ -3,6 +3,8 @@ import logging
 import threading
 import typing as t
 
+from tornado.ioloop import IOLoop
+
 from .state import state
 
 logger = logging.getLogger(__name__)
@@ -49,13 +51,21 @@ class StoppableThread(threading.Thread):
                 except Exception:
                     logger.debug('Could not drain pending tasks', exc_info=True)
                 try:
-                    self.asyncio_loop.close()
+                    self._close_loop()
                 except Exception:
                     logger.debug('Could not close the event loop', exc_info=True)
             if hasattr(self, '_target'):
                 del self._target, self._args, self._kwargs # type: ignore
             else:
                 del self._Thread__target, self._Thread__args, self._Thread__kwargs # type: ignore
+
+    def _close_loop(self) -> None:
+        # Tornado adds a selector thread and socket pair to a Proactor loop
+        io_loop = getattr(IOLoop, '_ioloop_for_asyncio', {}).get(self.asyncio_loop)
+        if io_loop is None:
+            self.asyncio_loop.close()
+        else:
+            io_loop.close()
 
     def _cancel_pending_tasks(self) -> None:
         # Stopping the server can leave tasks pending.
