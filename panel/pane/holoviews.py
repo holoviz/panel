@@ -14,6 +14,7 @@ from functools import partial
 import numpy as np
 import param
 
+from bokeh.model import Model
 from bokeh.models import Range1d, Spacer as _BkSpacer
 from bokeh.themes.theme import Theme
 from packaging.version import Version
@@ -38,7 +39,6 @@ if t.TYPE_CHECKING:
     from collections.abc import Mapping
 
     from bokeh.document import Document
-    from bokeh.model import Model
     from holoviews.plotting.renderer import Renderer
     from pyviz_comms import Comm
 
@@ -56,10 +56,154 @@ if t.TYPE_CHECKING:
         scrubber: DimensionWidgetType
 
 
+# Plot options a HoloViews plot re-applies on every frame, so they may
+# differ between values rendered through the same DynamicMap.
+_DYNAMIC_PLOT_OPTIONS = frozenset({
+    'bgcolor', 'clim', 'gridstyle', 'show_grid', 'title', 'xformatter',
+    'xlabel', 'xlim', 'xrotation', 'xticks', 'yformatter', 'ylabel', 'ylim',
+    'yrotation', 'yticks', 'zlabel', 'zlim'
+})
+
+
 def check_holoviews(version):
     import holoviews as hv
 
     return Version(Version(hv.__version__).base_version) >= Version(version)
+
+
+def _values_equal(a: t.Any, b: t.Any) -> bool:
+    if a is b:
+        return True
+    elif type(a) is not type(b):
+        return False
+    elif isinstance(a, (list, tuple)):
+        return len(a) == len(b) and all(map(_values_equal, a, b))
+    elif isinstance(a, dict):
+        return a.keys() == b.keys() and all(_values_equal(v, b[k]) for k, v in a.items())
+    elif isinstance(a, np.ndarray):
+        return np.array_equal(a, b)
+    elif isinstance(a, Model):
+        # Options such as tools or formatters are often recreated on every call
+        return _values_equal(
+            a.properties_with_values(include_defaults=False),
+            b.properties_with_values(include_defaults=False)
+        )
+    try:
+        return bool(a == b)
+    except Exception:
+        return False
+
+
+def _dtype_kind(dtype: t.Any) -> t.Any:
+    if dtype is None:
+        return None
+    try:
+        return np.dtype(dtype).kind
+    except TypeError:
+        return dtype
+
+
+def _layer_signatures(obj: t.Any, backend: str, path: tuple = ()) -> dict[tuple, tuple]:
+    """
+    Maps the path of each layer in obj to the properties a HoloViews
+    plot fixes when the layer is first drawn and cannot update later.
+    """
+    from holoviews import Store
+    from holoviews.core.overlay import CompositeOverlay
+
+    if isinstance(obj, CompositeOverlay):
+        dims = tuple(d.name for d in obj.kdims)
+    else:
+        dims = tuple((d.name, _dtype_kind(obj.get_dimension_type(d))) for d in obj.dimensions())
+    plot_opts = Store.lookup_options(backend, obj, 'plot').kwargs
+    signatures = {path: (
+        type(obj),
+        dims,
+        {k: v for k, v in plot_opts.items() if k not in _DYNAMIC_PLOT_OPTIONS},
+        frozenset(Store.lookup_options(backend, obj, 'style').kwargs)
+    )}
+    if isinstance(obj, CompositeOverlay):
+        for key, layer in obj.data.items():
+            signatures.update(_layer_signatures(layer, backend, path+(key,)))
+    return signatures
+
+
+def _supports_dynamic(obj: t.Any) -> bool:
+    """
+    Whether obj can be returned from a DynamicMap callback. Objects
+    acting as the source or target of a stream or link are excluded
+    since HoloViews can only resolve those on the original object.
+    """
+    from holoviews.core.element import Element
+    from holoviews.core.overlay import CompositeOverlay
+    from holoviews.plotting.links import Link
+    from holoviews.streams import Stream
+
+    if not isinstance(obj, (Element, CompositeOverlay)):
+        return False
+    targets = {id(link.target) for links in Link.registry.values() for link in links}
+    return not any(
+        o in Stream.registry or o in Link.registry or id(o) in targets
+        for o in obj.traverse(lambda x: x)
+    )
+
+
+def _framewise(element: t.Any, backend: str) -> t.Any:
+    """
+    Enables framewise normalization so the axes follow each new value
+    as a full re-render would, unless the element sets it explicitly.
+    """
+    from holoviews import Store
+
+    custom = Store.custom_options(backend=backend).get(element.id)
+    node = None if custom is None else custom.get(type(element).__name__)
+    if node is not None and 'framewise' in node.groups['norm'].kwargs:
+        return element
+    return element.opts(framewise=True, backend=backend, clone=True)
+
+
+class _ReferenceDynamicMap:
+    """
+    Renders the values of a parameter reference through one DynamicMap
+    so that updates the existing plots can display are patched in place.
+    """
+
+    def __init__(self, obj: t.Any, get_backend: t.Callable[[], str]):
+        from holoviews import DynamicMap
+        from holoviews.streams import Stream
+
+        self.object = obj
+        self.layers: dict[tuple, tuple] | None = None
+        self._get_backend = get_backend
+        self._stream = Stream()
+        self.dmap = DynamicMap(self._callback, streams=[self._stream])
+
+    def _callback(self):
+        from holoviews.core.element import Element
+
+        backend = self._get_backend()
+        if self.layers is None:
+            self.layers = _layer_signatures(self.object, backend)
+        return self.object.map(partial(_framewise, backend=backend), Element)
+
+    def update(self, obj: t.Any) -> bool:
+        """
+        Patches obj into the rendered plots, returning False if the
+        plots cannot display it and have to be re-rendered.
+        """
+        # Without a rendered frame there is nothing to patch
+        if self.layers is None or not _supports_dynamic(obj):
+            return False
+        # Layers may come and go since HoloViews adds or hides subplots
+        # dynamically, but a layer must keep the structure it was drawn with.
+        layers = _layer_signatures(obj, self._get_backend())
+        if any(path in self.layers and not _values_equal(self.layers[path], signature)
+               for path, signature in layers.items()):
+            return False
+        self.layers.update(layers)
+        self.object = obj
+        self._stream.event()
+        return True
 
 
 class HoloViews(Pane):
@@ -194,7 +338,9 @@ class HoloViews(Pane):
         self._height_responsive = None
         self._width_responsive = None
         self._restore_plot = None
+        self._ref_dmap = None
         super().__init__(object, **params)
+        self._update_ref_dmap()
         self.widget_box = self.widget_layout()
         self._widget_container = []
         self._plots = {}
@@ -370,6 +516,30 @@ class HoloViews(Pane):
             (not widgets and self.widget_box in self._widget_container) or
             not self._initialized):
             self._update_layout()
+
+    def _get_backend(self) -> str:
+        from holoviews import Store
+        if self.renderer:
+            return self.renderer.backend
+        return self.backend or Store.current_backend
+
+    def _update_ref_dmap(self):
+        ref = self._param__private.refs.get('object')
+        if ref is None or not _supports_dynamic(self.object):
+            self._ref_dmap = None
+        else:
+            self._ref_dmap = _ReferenceDynamicMap(self.object, self._get_backend)
+
+    def _update_pane(self, *events):
+        if (
+            self._ref_dmap is not None and
+            all(e.name == 'object' for e in events) and
+            'object' in self._param__private.syncing and
+            self._ref_dmap.update(self.object)
+        ):
+            return
+        self._update_ref_dmap()
+        super()._update_pane(*events)
 
     def _update_plot(self, plot, pane):
         from holoviews.core.util import cross_index, wrap_tuple_streams
@@ -588,7 +758,8 @@ class HoloViews(Pane):
             if comm:
                 kwargs['comm'] = comm
 
-        return renderer.get_plot(self.object, **kwargs)
+        obj = self.object if self._ref_dmap is None else self._ref_dmap.dmap
+        return renderer.get_plot(obj, **kwargs)
 
     def _cleanup(self, root: Model | None = None) -> None:
         """

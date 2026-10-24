@@ -2,6 +2,7 @@ import datetime as dt
 import warnings
 
 import numpy as np
+import param
 import pytest
 
 try:
@@ -910,3 +911,281 @@ def test_single_datetime_value():
     assert isinstance(widget, Select)
     assert widget.options == {"2020-01-01 12:15:54": ts}
     assert widget.value == ts
+
+
+def _glyph_renderers(fig):
+    return [r for r in fig.renderers if isinstance(r, GlyphRenderer)]
+
+
+@pytest.mark.usefixtures("hv_bokeh")
+@hv_available
+@pytest.mark.parametrize('ref_type', ['bind', 'rx', 'depends'])
+def test_holoviews_ref_compatible_update_patches_plot(document, comm, ref_type):
+    """A compatible value from a reference updates the existing plot in place."""
+    slider = pn.widgets.IntSlider(value=1, start=0, end=10)
+
+    def curve(n):
+        return hv.Curve([0, n, 2*n])
+
+    class Plotter(param.Parameterized):
+        @param.depends(slider.param.value)
+        def plot(self, n):
+            return curve(n)
+
+    ref = {
+        'bind': bind(curve, slider),
+        'rx': slider.param.value.rx.pipe(curve),
+        'depends': Plotter().plot,
+    }[ref_type]
+    pane = HoloViews(ref)
+    row = pane.get_root(document, comm=comm)
+    fig = row.children[0]
+    cds = _glyph_renderers(fig)[0].data_source
+
+    slider.value = 5
+
+    assert row.children[0] is fig
+    assert pane._models[row.ref['id']][0] is fig
+    assert _glyph_renderers(fig)[0].data_source is cds
+    assert list(cds.data['y']) == [0, 5, 10]
+    assert isinstance(pane.object, hv.Curve)
+    assert list(pane.object.dimension_values('y')) == [0, 5, 10]
+
+
+@pytest.mark.usefixtures("hv_bokeh")
+@hv_available
+def test_holoviews_ref_update_rescales_axes(document, comm):
+    """Patched updates refit the axes as a full re-render would."""
+    slider = pn.widgets.IntSlider(value=1, start=0, end=100)
+    pane = HoloViews(bind(lambda n: hv.Curve([0, n]), slider))
+    row = pane.get_root(document, comm=comm)
+    fig = row.children[0]
+    assert fig.y_range.end < 2
+
+    slider.value = 100
+
+    assert row.children[0] is fig
+    assert fig.y_range.end > 100
+
+
+@pytest.mark.usefixtures("hv_bokeh")
+@hv_available
+def test_holoviews_ref_update_explicit_framewise_false_keeps_axes(document, comm):
+    """An explicit framewise=False keeps the initial axes, e.g. to preserve the zoom level."""
+    slider = pn.widgets.IntSlider(value=1, start=0, end=100)
+    pane = HoloViews(bind(lambda n: hv.Curve([0, n]).opts(framewise=False), slider))
+    row = pane.get_root(document, comm=comm)
+    fig = row.children[0]
+    end = fig.y_range.end
+
+    slider.value = 100
+
+    assert row.children[0] is fig
+    assert fig.y_range.end == end
+
+
+@pytest.mark.usefixtures("hv_bokeh")
+@hv_available
+def test_holoviews_ref_update_dynamic_option_patches_plot(document, comm):
+    """Options re-applied on every frame, such as the title, do not force a re-render."""
+    text = pn.widgets.TextInput(value='A')
+    pane = HoloViews(bind(lambda t: hv.Curve([1, 2]).opts(title=t), text))
+    row = pane.get_root(document, comm=comm)
+    fig = row.children[0]
+
+    text.value = 'B'
+
+    assert row.children[0] is fig
+    assert fig.title.text == 'B'
+
+
+@pytest.mark.usefixtures("hv_bokeh")
+@hv_available
+def test_holoviews_ref_update_equal_model_option_patches_plot(document, comm):
+    """Bokeh models recreated with the same properties on each call count as unchanged."""
+    from bokeh.models import HoverTool
+
+    slider = pn.widgets.IntSlider(value=1, start=0, end=10)
+    pane = HoloViews(bind(
+        lambda n: hv.Curve([0, n]).opts(tools=[HoverTool(tooltips=[('y', '@y')])]), slider
+    ))
+    row = pane.get_root(document, comm=comm)
+    fig = row.children[0]
+
+    slider.value = 5
+
+    assert row.children[0] is fig
+
+
+def _curve_or_scatter(kind):
+    return hv.Curve([1, 2]) if kind == 'a' else hv.Scatter([1, 2])
+
+def _vdim(kind):
+    return hv.Curve([1, 2], vdims=kind)
+
+def _width(kind):
+    return hv.Curve([1, 2]).opts(width=300 if kind == 'a' else 400)
+
+def _xtype(kind):
+    return hv.Curve(([0, 1] if kind == 'a' else ['x', 'y'], [1, 2]))
+
+def _overlay_layer_dims(kind):
+    return hv.Curve([1, 2]) * hv.Curve([1, 2], vdims=kind)
+
+def _style_keys(kind):
+    curve = hv.Curve([1, 2])
+    return curve if kind == 'a' else curve.opts(line_dash='dashed')
+
+
+@pytest.mark.usefixtures("hv_bokeh")
+@hv_available
+@pytest.mark.parametrize('plot_fn', [
+    _curve_or_scatter, _vdim, _width, _xtype, _overlay_layer_dims, _style_keys
+], ids=[
+    'element_type', 'dimension_name', 'sizing_option', 'axis_dtype',
+    'overlay_layer_dimension', 'style_option_added'
+])
+def test_holoviews_ref_incompatible_update_rerenders(document, comm, plot_fn):
+    """Changes a drawn plot cannot apply fall back to a full re-render."""
+    select = pn.widgets.Select(value='a', options=['a', 'b'])
+    pane = HoloViews(bind(plot_fn, select))
+    row = pane.get_root(document, comm=comm)
+    fig = row.children[0]
+
+    select.value = 'b'
+
+    new_fig = row.children[0]
+    assert new_fig is not fig
+    assert pane._models[row.ref['id']][0] is new_fig
+
+    # The re-rendered plot can be patched again
+    select.value = 'a'
+    select.value = 'b'
+    assert row.children[0] is not new_fig
+
+
+@pytest.mark.usefixtures("hv_bokeh")
+@hv_available
+def test_holoviews_ref_overlay_layers_added_and_removed(document, comm):
+    """HoloViews adds and hides overlay layers dynamically, so no re-render is needed."""
+    group = pn.widgets.MultiChoice(value=['a', 'b'], options=['a', 'b', 'c'])
+    pane = HoloViews(bind(
+        lambda keys: hv.NdOverlay({k: hv.Curve([1, i]) for i, k in enumerate(keys)}, 'k'),
+        group
+    ))
+    row = pane.get_root(document, comm=comm)
+    fig = row.children[0]
+
+    group.value = ['a', 'c']
+    assert row.children[0] is fig
+    assert [item.label.value for item in fig.legend[0].items] == ['a', 'c']
+
+    group.value = ['a', 'b', 'c']
+    assert row.children[0] is fig
+    assert [item.label.value for item in fig.legend[0].items] == ['a', 'b', 'c']
+
+
+@pytest.mark.usefixtures("hv_bokeh")
+@hv_available
+def test_holoviews_ref_holomap_renders_widgets(document, comm):
+    """Values a DynamicMap cannot return, such as a HoloMap, keep rendering directly."""
+    slider = pn.widgets.IntSlider(value=2, start=1, end=5)
+    pane = HoloViews(bind(
+        lambda n: hv.HoloMap({i: hv.Curve([0, i]) for i in range(n)}, 'i'), slider
+    ))
+    pane.get_root(document, comm=comm)
+
+    assert pane._ref_dmap is None
+    assert len(pane.widget_box) == 1
+
+    slider.value = 4
+
+    assert pane.widget_box[0].values == [0, 1, 2, 3]
+
+
+@pytest.mark.usefixtures("hv_bokeh")
+@hv_available
+def test_holoviews_ref_stream_source_not_wrapped(document, comm):
+    """Linked streams only resolve on the original element, so it is not wrapped."""
+    slider = pn.widgets.IntSlider(value=1, start=0, end=10)
+    points = {}
+
+    def plot(n):
+        points['obj'] = hv.Points([(0, n)])
+        points['stream'] = hv.streams.Selection1D(source=points['obj'])
+        return points['obj']
+
+    pane = HoloViews(bind(plot, slider))
+    row = pane.get_root(document, comm=comm)
+    fig = row.children[0]
+
+    assert pane._ref_dmap is None
+    assert points['stream'].source is points['obj']
+    plot_obj = pane._plots[row.ref['id']][0]
+    assert any(points['stream'] in cb.streams for cb in plot_obj.callbacks)
+
+    slider.value = 5
+
+    assert row.children[0] is not fig
+
+
+@pytest.mark.usefixtures("hv_bokeh")
+@hv_available
+def test_holoviews_ref_replaced_with_object_rerenders(document, comm):
+    """Assigning a plain object drops the reference and its DynamicMap."""
+    slider = pn.widgets.IntSlider(value=1, start=0, end=10)
+    pane = HoloViews(bind(lambda n: hv.Curve([0, n]), slider))
+    row = pane.get_root(document, comm=comm)
+    fig = row.children[0]
+
+    curve = hv.Curve([3, 2, 1])
+    pane.object = curve
+
+    assert pane._ref_dmap is None
+    assert row.children[0] is not fig
+    assert pane.object is curve
+
+    fig = row.children[0]
+    slider.value = 5
+    assert row.children[0] is fig
+    assert pane.object is curve
+
+
+@pytest.mark.usefixtures("hv_bokeh")
+@hv_available
+def test_holoviews_ref_replaced_with_new_ref_rerenders(document, comm):
+    """Assigning a new reference re-renders and patches updates from that reference only."""
+    s1 = pn.widgets.IntSlider(value=1, start=0, end=10)
+    s2 = pn.widgets.IntSlider(value=1, start=0, end=10)
+    pane = HoloViews(bind(lambda n: hv.Curve([0, n]), s1))
+    row = pane.get_root(document, comm=comm)
+    fig = row.children[0]
+
+    pane.object = bind(lambda n: hv.Curve([0, n * 10]), s2)
+    new_fig = row.children[0]
+    assert new_fig is not fig
+
+    s2.value = 2
+    assert row.children[0] is new_fig
+    cds = _glyph_renderers(new_fig)[0].data_source
+    assert list(cds.data['y']) == [0, 20]
+
+    s1.value = 5
+    assert list(cds.data['y']) == [0, 20]
+
+
+@pytest.mark.usefixtures("hv_mpl")
+@mpl_available
+@hv_available
+def test_holoviews_ref_compatible_update_mpl(document, comm):
+    """Non-bokeh backends receive patched updates through the child pane."""
+    slider = pn.widgets.IntSlider(value=1, start=0, end=10)
+    pane = HoloViews(bind(lambda n: hv.Curve([0, n]), slider), backend='matplotlib')
+    row = pane.get_root(document, comm=comm)
+    model = row.children[0]
+    text = model.text
+
+    slider.value = 5
+
+    assert row.children[0] is model
+    assert model.text != text
