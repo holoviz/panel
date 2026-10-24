@@ -45,6 +45,22 @@ class Convert(Subcommand):
             action  = 'store_true',
             help    = "Whether to use the compiled and faster version of Pyodide."
         )),
+        ('--bundle', Argument(
+            default = False,
+            action  = 'store_true',
+            help    = (
+                "Whether to bundle Pyodide and all Python dependencies alongside the app(s) "
+                "instead of loading them from a CDN and PyPI. Requires node and npm."
+            )
+        )),
+        ('--offline', Argument(
+            default = False,
+            action  = 'store_true',
+            help    = (
+                "Whether to also bundle the JS and CSS assets of Panel and its extensions "
+                "so the app(s) can be served without any network access. Implies --bundle."
+            )
+        )),
         ('--panel-version', Argument(
             type=str,
             default='auto',
@@ -149,6 +165,8 @@ class Convert(Subcommand):
                     max_workers=args.num_procs,
                     panel_version=args.panel_version,
                     compiled=args.compiled,
+                    bundle=args.bundle,
+                    offline=args.offline,
                     verbose=True
                 )
             except KeyboardInterrupt:
