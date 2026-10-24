@@ -23,7 +23,7 @@ variables:
 packages: &pkgs
   - python >=3.12
   - panel >=1.9.0
-  - panel-material-ui >=0.16.2
+  - panel-material-ui >=0.16.6
   - bokeh_sampledata >=2025.0
   - holoviews >=1.21.0
   - nbconvert >=7.16.6

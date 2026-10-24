@@ -134,6 +134,19 @@ def test_location_sync_param_init(location):
     assert location._synced == []
     assert location.search == ""
 
+def test_location_sync_constant_parameter_raises(location):
+    class Constant(param.Parameterized):
+        fixed = param.Integer(default=1, constant=True)
+
+    with pytest.raises(ValueError, match="constant"):
+        location.sync(Constant(), {'fixed': 'fixed'})
+    assert location._synced == []
+
+def test_location_sync_unknown_parameter_keeps_param_error(location):
+    p = SyncParameterized()
+    with pytest.raises(ValueError, match="nope"):
+        location.sync(p, {'nope': 'x'})
+
 def test_location_sync_on_error(location):
     p = SyncParameterized(string='abc')
     changes = []

@@ -43,9 +43,10 @@ from ..util import _descendents
 from .embed import embed_state
 from .model import add_to_doc, diff
 from .resources import (
-    CDN_DIST, DIST_DIR, PANEL_DIR, Resources, _env, bundle_resources,
-    is_cdn_url, jupyter_endpoint_available, patch_model_css,
-    set_default_resource_mode, set_resource_mode,
+    CDN_DIST, DIST_DIR, LOCAL_DIST, PANEL_DIR, Resources, _env,
+    bundle_resources, is_cdn_url, jupyter_endpoint_available,
+    notebook_extension_url, patch_model_css, set_default_resource_mode,
+    set_resource_mode,
 )
 from .state import state
 
@@ -157,7 +158,8 @@ GLOBAL_MODULE_SUFFIX = '__panel_global'
 
 def _autoload_js(
     *, bundle, configs, requirements, exports, error_id, skip_imports, require_skip,
-    check_extension=False, ipywidget, reloading=False, load_timeout=5000
+    check_extension=False, ipywidget, reloading=False, load_timeout=5000,
+    cdn_map=()
 ):
     config = {'packages': {}, 'paths': {}, 'shim': {}}
     for conf in configs:
@@ -180,6 +182,7 @@ def _autoload_js(
         reloading = reloading,
         timeout   = load_timeout,
         cdn_dist  = CDN_DIST,
+        cdn_map   = [list(pair) for pair in cdn_map],
         config    = config,
         requirements = requirements,
         require_stages = stages,
@@ -248,9 +251,13 @@ def render_model(
 
     target = model.ref['id']
 
+    dist_url = None
     if not state._is_pyodide and resources == 'server':
         # ALERT: Replace with better approach before Bokeh 3.x compatible release
         dist_url = '/panel-preview/static/extensions/panel/'
+    elif resources == 'cdn':
+        dist_url = notebook_extension_url(LOCAL_DIST)
+    if dist_url:
         patch_model_css(model, dist_url=dist_url)
         if model.document:
             model.document._template_variables['dist_url'] = dist_url
@@ -695,6 +702,7 @@ def load_notebook(
             skip_imports=skip_imports,
             require_skip=require_skip,
             check_extension=nb_endpoint,
+            cdn_map=resources.jupyter_cdn_map() if nb_endpoint else (),
             ipywidget=ipywidget,
             reloading=reloading,
             load_timeout=load_timeout

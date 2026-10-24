@@ -685,7 +685,7 @@ def _resolve_design_alias(name: str, ref: str) -> type[Design]:
     return resolved
 
 
-def resolve_component(component: T) -> T:
+def resolve_component(component: T, design: type[Design] | None = None) -> T:
     """
     Resolves the component to render in place of the provided component
     type given the currently active design system.
@@ -694,13 +694,15 @@ def resolve_component(component: T) -> T:
     ----------
     component: type
         The component type to find the equivalent for.
+    design: type[Design] | None
+        The design to resolve against, defaults to the active design.
 
     Returns
     -------
     The equivalent component in the active design system, or the
     component itself if there is none.
     """
-    design = config.design
+    design = design or config.design
     if design is None:
         return component
     return design.resolve_component(component)
@@ -715,7 +717,9 @@ def design_template_variables() -> dict[str, t.Any]:
     return dict(design._template_variables) if design else {}
 
 
-def resolve_widget(parameter: param.Parameter) -> type[Viewable] | None:
+def resolve_widget(
+    parameter: param.Parameter, design: type[Design] | None = None
+) -> type[Viewable] | None:
     """
     Resolves the widget type to generate for a Parameter given the
     currently active design system.
@@ -724,13 +728,15 @@ def resolve_widget(parameter: param.Parameter) -> type[Viewable] | None:
     ----------
     parameter: param.Parameter
         The Parameter to resolve a widget for.
+    design: type[Design] | None
+        The design to resolve against, defaults to the active design.
 
     Returns
     -------
     The widget type declared by the active design system, or None if it
     does not override the default resolution.
     """
-    design = config.design
+    design = design or config.design
     if design is None:
         return None
     return design.resolve_widget(parameter)

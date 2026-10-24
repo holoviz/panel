@@ -1,3 +1,4 @@
+import json
 import re
 
 import pytest
@@ -306,6 +307,10 @@ def test_notebook_endpoint_alert_stays_in_notebook_output(monkeypatch, notebook_
     assert 'element.href = resource_url(url)' in bootstrap
     assert 'new URL(resource_url(url), document.baseURI)' in bootstrap
     assert 'require_config.paths[name] = (Array.isArray(path) ? path : [path]).flatMap(require_urls)' in bootstrap
+    cdn_map = json.loads(re.search(r'const CDN_MAP = (.*);', bootstrap).group(1))
+    assert ['static/extensions/panel/', CDN_DIST] in cdn_map
+    assert any(path.startswith('static/js/bokeh') for path, _ in cdn_map)
+    assert 'root.__panel_endpoint_failed__ = true;' in bootstrap
 
 
 def test_notebook_vscode_resources_use_cdn(monkeypatch, notebook_bootstrap):
@@ -326,6 +331,45 @@ def test_notebook_vscode_resources_use_cdn(monkeypatch, notebook_bootstrap):
     js_urls = next(line for line in bootstrap.splitlines() if 'const js_urls' in line)
     assert '/panel-preview/static/extensions/panel/' not in js_urls
     assert 'https://cdn.holoviz.org/panel/' in js_urls
+
+
+@pytest.mark.parametrize('notebook_resources', ['cdn', 'jupyter'])
+def test_notebook_resources_option(monkeypatch, notebook_resources, notebook_bootstrap):
+    """
+    `notebook_resources` overrides whether the server announced the Jupyter
+    extension endpoint, for Panel's own resources and BokehJS alike.
+    """
+    published = []
+
+    def publish_display_data(data, **kwargs):
+        published.append(data)
+
+    monkeypatch.setattr('IPython.display.publish_display_data', publish_display_data)
+    if notebook_resources == 'jupyter':
+        monkeypatch.delenv('PANEL_JUPYTER_ENDPOINT')
+
+    with config.set(notebook_resources=notebook_resources):
+        load_notebook(inline=False)
+
+    bootstrap = next(data[LOAD_MIME] for data in published if LOAD_MIME in data)
+    js_urls = next(line for line in bootstrap.splitlines() if 'const js_urls' in line)
+    if notebook_resources == 'cdn':
+        assert '/panel-preview/' not in js_urls
+        assert 'https://cdn.holoviz.org/panel/' in js_urls
+        assert 'https://cdn.bokeh.org/bokeh/' in js_urls
+    else:
+        assert '/panel-preview/static/extensions/panel/' in js_urls
+        assert '/panel-preview/static/js/bokeh' in js_urls
+        assert 'cdn.bokeh.org' not in js_urls
+
+
+def test_notebook_resources_env_var(monkeypatch, jupyter_endpoint):
+    from panel.io.resources import jupyter_endpoint_available
+
+    assert jupyter_endpoint_available()
+    monkeypatch.setenv('PANEL_NOTEBOOK_RESOURCES', 'CDN')
+    assert config.notebook_resources == 'cdn'
+    assert not jupyter_endpoint_available()
 
 
 def test_notebook_ipywidgets_resources_use_cdn(monkeypatch, notebook_bootstrap):
@@ -502,3 +546,84 @@ def test_replace_inline_css_ignores_version_query():
     assert isinstance(unversioned, InlineStyleSheet)
     assert isinstance(versioned, InlineStyleSheet)
     assert versioned.css == unversioned.css
+
+
+def test_notebook_esm_bundle_uses_jupyter_extension_endpoint(
+    tmp_path, monkeypatch, document, comm, notebook_bootstrap
+):
+    """
+    A compiled bundle in the dist directory of a registered extension is
+    served by the Jupyter extension endpoint rather than inlined.
+    """
+    from bokeh.embed.bundle import extension_dirs
+
+    from panel.custom import JSComponent
+
+    bundle = tmp_path / 'test.bundle.js'
+    bundle.write_text('export function render() {}')
+    (tmp_path / 'test.bundle.css').write_text('div {}')
+    monkeypatch.setitem(extension_dirs, 'panel-test-ext', tmp_path)
+
+    class BundledComponent(JSComponent):
+        _bundle = bundle
+
+    with config.set(inline=False):
+        model = BundledComponent().get_root(document, comm)
+
+    url = '/panel-preview/static/extensions/panel-test-ext/test.bundle'
+    assert model.bundle == 'url'
+    assert model.esm == f'{url}.js'
+    assert model.css_bundle == f'{url}.css'
+
+
+def test_notebook_esm_bundle_respects_render_esm_override(
+    tmp_path, monkeypatch, document, comm, notebook_bootstrap
+):
+    """
+    Extensions override `_render_esm`, typically returning a url only for
+    server sessions, so the notebook has to ask for that same url.
+    """
+    from bokeh.embed.bundle import extension_dirs
+
+    from panel.custom import JSComponent
+
+    bundle = tmp_path / 'test.bundle.js'
+    bundle.write_text('export function render() {}')
+    monkeypatch.setitem(extension_dirs, 'panel-test-ext', tmp_path)
+
+    class ServerUrlComponent(JSComponent):
+        _bundle = bundle
+
+        @classmethod
+        def _render_esm(cls, compiled=True, server=False):
+            if server:
+                return './' + cls._component_resource_path(bundle, compiled) + '?abc'
+            return bundle.read_text()
+
+    class SourceComponent(ServerUrlComponent):
+
+        @classmethod
+        def _render_esm(cls, compiled=True, server=False):
+            return bundle.read_text()
+
+    with config.set(inline=False):
+        url_model = ServerUrlComponent().get_root(document, comm)
+        source_model = SourceComponent().get_root(document, comm)
+
+    assert url_model.bundle == 'url'
+    assert url_model.esm == '/panel-preview/static/extensions/panel-test-ext/test.bundle.js?abc'
+    assert source_model.bundle not in (None, 'url')
+    assert source_model.esm == 'export function render() {}'
+    assert source_model.css_bundle is None
+
+
+def test_notebook_component_css_uses_jupyter_extension_endpoint(nb_loaded, notebook_bootstrap):
+    column = Column(Str('a'))
+    with config.set(inline=False):
+        column._repr_mimebundle_()
+
+    (model, _) = list(column._models.values())[0]
+    urls = [sts.url for sts in model.select({'type': ImportedStyleSheet})]
+
+    assert urls
+    assert all(url.startswith('/panel-preview/static/extensions/panel/') for url in urls)

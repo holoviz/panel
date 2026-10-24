@@ -718,8 +718,7 @@ class DateRangeSlider(_SliderBase):
     ... )
     """
 
-    value = param.DateRange(default=None, allow_None=False,  # type: ignore[call-overload]
-        doc="""
+    value = param.DateRange(default=None, doc="""
         The selected range as a tuple of values. Updated when one of the handles is
         dragged. Supports datetime.datetime, datetime.date, and np.datetime64 ranges.""")
 
@@ -782,7 +781,10 @@ class DateRangeSlider(_SliderBase):
 
     @param.depends('value', watch=True)
     def _sync_values(self):
-        vs, ve = self.value
+        if self.value is None:
+            vs, ve = None, None
+        else:
+            vs, ve = self.value
         with edit_readonly(self):
             self.param.update(value_start=vs, value_end=ve)
 

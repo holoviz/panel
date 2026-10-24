@@ -13,6 +13,9 @@
  * carries a `v` field and must stay minimal and backwards compatible.
  */
 
+import {ImportedStyleSheet} from "@bokehjs/models/dom/stylesheets"
+import * as dom from "@bokehjs/core/dom"
+
 export const REGISTRY_VERSION = 1
 
 export const DEFAULT_TIMEOUT = 15000
@@ -71,30 +74,63 @@ function existing_urls(selector: string, attr: "src" | "href"): Set<string> {
   return urls
 }
 
-const JUPYTER_EXTENSION_PATH = "/panel-preview/static/extensions/panel/"
+const JUPYTER_ENDPOINT = "/panel-preview/"
 
-function resource_url(url: string): string {
+/**
+ * Maps a Jupyter extension endpoint url to its CDN equivalent, using the
+ * map of endpoint paths to CDN urls the notebook bootstrap publishes
+ * (Panel's dist, every extension with a CDN and each BokehJS file). Null
+ * if the url is not served by the endpoint or has no CDN equivalent, e.g.
+ * in server/served-app contexts, where the bootstrap never runs.
+ */
+export function cdn_url(url: string): string | null {
   const global = globalThis as any
-  const index = url.indexOf(JUPYTER_EXTENSION_PATH)
-  return global.__panel_live_notebook__ === false && index !== -1 && typeof global.__panel_cdn_dist__ === "string"
-    ? global.__panel_cdn_dist__ + url.slice(index + JUPYTER_EXTENSION_PATH.length) : url
+  let cdn_map: [string, string][] | null = global.__panel_cdn_map__ ?? null
+  if (cdn_map == null && typeof global.__panel_cdn_dist__ === "string") {
+    cdn_map = [["static/extensions/panel/", global.__panel_cdn_dist__]]
+  }
+  const index = url.indexOf(JUPYTER_ENDPOINT)
+  if (cdn_map == null || index === -1) {
+    return null
+  }
+  const path = url.slice(index + JUPYTER_ENDPOINT.length)
+  for (const [prefix, cdn] of cdn_map) {
+    if (path.startsWith(prefix)) {
+      return cdn + path.slice(prefix.length)
+    }
+  }
+  return null
+}
+
+/**
+ * Loads endpoint urls from the CDN where the endpoint cannot serve them:
+ * in an exported notebook, or once the bootstrap found the endpoint
+ * unreachable.
+ */
+export function resource_url(url: string): string {
+  const global = globalThis as any
+  if (global.__panel_live_notebook__ === false || global.__panel_endpoint_failed__ === true) {
+    return cdn_url(url) ?? url
+  }
+  return url
 }
 
 /**
  * Rewrites a failed Jupyter-extension-endpoint url to its CDN equivalent,
  * mirroring the eager bootstrap's fallback in autoload_panel_js.js. Only
- * tried once per element, and only when the bootstrap has published the
- * CDN base (it hasn't in server/served-app contexts, where this endpoint
- * never appears in the first place).
+ * tried once per element.
  */
 function fallback_to_cdn(el: HTMLScriptElement | HTMLLinkElement, url: string): string | null {
-  const index = url.indexOf(JUPYTER_EXTENSION_PATH)
-  const cdn_dist = (globalThis as any).__panel_cdn_dist__
-  if (index === -1 || typeof cdn_dist !== "string" || el.dataset.panelCdnFallback != null) {
+  const fallback = cdn_url(url)
+  if (fallback == null || el.dataset.panelCdnFallback != null) {
     return null
   }
   el.dataset.panelCdnFallback = ""
-  return cdn_dist + url.slice(index + JUPYTER_EXTENSION_PATH.length)
+  return fallback
+}
+
+function is_endpoint_url(url: string): boolean {
+  return url.includes(`${JUPYTER_ENDPOINT}static/`)
 }
 
 function inject(el: HTMLScriptElement | HTMLLinkElement): Promise<void> {
@@ -115,7 +151,7 @@ function inject(el: HTMLScriptElement | HTMLLinkElement): Promise<void> {
           document.head.appendChild(element)
           return
         }
-        if (url.includes(JUPYTER_EXTENSION_PATH)) {
+        if (is_endpoint_url(url)) {
           const global = globalThis as any
           global.__panel_jupyter_extension_error__?.()
         }
@@ -527,7 +563,11 @@ export class ResourceRegistry {
     }
     let module = this.modules.get(url)
     if (module == null) {
+      const fallback = cdn_url(url)
       module = this.ensure_shim(shim).then(() => (globalThis as any).importShim(url))
+      if (fallback != null && fallback !== url) {
+        module = module.catch(() => (globalThis as any).importShim(fallback))
+      }
       this.modules.set(url, module)
       module.catch(() => this.modules.delete(url))
     }
@@ -715,4 +755,13 @@ export function render_resource_error(view: any, error: Error, base: () => void)
     base.call(view)
     view.shadow_el.appendChild(resource_error_el(error))
   }
+}
+
+// Component stylesheets are Bokeh models whose urls never pass through the
+// registry, so exported notebooks have to rewrite them where Bokeh turns
+// them into a stylesheet.
+const underlying = ImportedStyleSheet.prototype.underlying
+ImportedStyleSheet.prototype.underlying = function(this: ImportedStyleSheet): dom.StyleSheet {
+  const url = resource_url(this.url)
+  return url === this.url ? underlying.call(this) : new dom.ImportedStyleSheet(url)
 }

@@ -34,9 +34,9 @@ power_text = pn.rx(
 pn.ui.Column(power_text).servable()
 ```
 
-You will notice how adding `power_text` to the `Column` displays both the widget and the bound function.
+You will notice how adding `power_text` to the `Column` displays both the widget and the output of the reactive expression.
 
-To separate the widget and bound function we can use the `power_text` as a reference when we construct a `Markdown` pane:
+To separate the widget and the output we can use the `power_text` as a reference when we construct a `Markdown` pane:
 
 ```{pyodide}
 import panel as pn
@@ -145,7 +145,7 @@ power_text = pn.rx(
     "Power Generation: {power:.1f} kW"
 ).format(
     wind_speed=wind_speed.param.value_throttled,
-    efficiency=0.3,
+    efficiency=efficiency,
     power=power
 )
 
@@ -172,15 +172,15 @@ rx_name = is_stopped.rx.where("Start the wind turbine", "Stop the wind turbine")
 
 submit = pn.ui.Button(label=rx_name)
 
-def toggle_wind_turbine(clicked):
+def toggle_wind_turbine(clicks):
     is_stopped.rx.value = not is_stopped.rx.value
 
-submit.rx.watch(toggle_wind_turbine)
+submit.param.clicks.rx.watch(toggle_wind_turbine)
 
 pn.ui.Column(submit).servable()
 ```
 
-Here we store the state of the windturbine in a separate `rx` variable, whenever the submit button is clicked we toggle the state.
+Here we store the state of the windturbine in a separate `rx` variable, whenever the submit button is clicked we toggle the state. We watch the `clicks` parameter because it changes on every click.
 
 :::{tip}
 When building apps using functions we recommend this approach to storing state. Applications are easier to reason about when the application displays according to the state instead of being changed directly.
@@ -204,12 +204,12 @@ submit = pn.ui.Button(
     label=is_stopped.rx.where("Start the wind turbine", "Stop the wind turbine"),
 )
 
-async def start_stop_wind_turbine(clicked):
+async def start_stop_wind_turbine(clicks):
     with submit.param.update(loading=True, disabled=True):
         await asyncio.to_thread(time.sleep, 1)
         is_stopped.rx.value = not is_stopped.rx.value
 
-submit.rx.watch(start_stop_wind_turbine)
+submit.param.clicks.rx.watch(start_stop_wind_turbine)
 
 pn.ui.Column(submit).servable()
 ```
@@ -228,7 +228,7 @@ You've now unlocked the power of interactivity in your Panel applications:
 
 - `some_widget.rx()`: for seamless updates based on widget values.
 - `pn.rx(some_function)(widget_1, widget_2)`: for seamless updates based on widget values.
-- `pn.rx(some_task, some_widget).rx.watch()`: for triggering tasks in response to user actions.
+- `button.param.clicks.rx.watch(some_task)`: for triggering tasks in response to user actions.
 - Throttling ensures smoother performance by limiting update frequency.
 - Utilizing async and threading keeps your UI responsive during long-running tasks.
 

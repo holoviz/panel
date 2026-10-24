@@ -281,9 +281,20 @@ class Location(Syncable):
           fails. The callback is passed a dictionary of parameter
           values, which could not be applied.
         """
+        explicit = bool(parameters)
         parameters = parameters or [p for p in parameterized.param if p != 'name']
         if not isinstance(parameters, dict):
             parameters = dict(zip(parameters, parameters))
+        if explicit:
+            constant = [
+                p for p in parameters
+                if p in parameterized.param and parameterized.param[p].constant
+            ]
+            if constant:
+                raise ValueError(
+                    f"Cannot sync constant parameter(s) {constant} of "
+                    f"{type(parameterized).__name__} with the URL."
+                )
         watcher = parameterized.param.watch(self._update_query, list(parameters))
         self._synced.append((parameterized, parameters, watcher, on_error))
         self._update_synced()

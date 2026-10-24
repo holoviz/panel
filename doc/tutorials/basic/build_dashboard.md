@@ -45,9 +45,9 @@ import hvplot.pandas
 import pandas as pd
 import panel as pn
 
-pn.extension("tabulator")
+pn.extension("tabulator", sizing_mode="stretch_width", throttled=True)
 
-ACCENT = "teal"
+ACCENT = "#008080"  # teal
 
 styles = {
     "box-shadow": "rgba(50, 50, 93, 0.25) 0px 6px 12px -2px, rgba(0, 0, 0, 0.3) 0px 3px 7px -3px",
@@ -57,7 +57,7 @@ styles = {
 
 # Extract Data
 
-@pn.cache()  # only download data once
+@pn.cache  # only download data once
 def get_data():
     return pd.read_csv("https://assets.holoviz.org/panel/tutorials/turbines.csv.gz")
 
@@ -83,7 +83,9 @@ t_manu = pn.ui.Select(
     options=sorted(top_manufacturers),
     description="The name of the manufacturer",
 )
-p_year = pn.ui.IntSlider(label="Year", value=max_year, start=min_year, end=max_year)
+p_year = pn.ui.IntSlider(
+    label="Year", value=max_year, start=min_year, end=max_year, format="0"
+)
 
 # Transform Data 2
 
@@ -104,51 +106,56 @@ fig = (
     xlabel="Year",
     xlim=(min_year, max_year),
     color=ACCENT,
+    responsive=True,
 )
 
 # Display Data
 
-image = pn.ui.JPG("https://assets.holoviz.org/panel/tutorials/wind_turbines_sunset.png")
+image = pn.ui.PNG("https://assets.holoviz.org/panel/tutorials/wind_turbines_sunset.png")
 
 indicators = pn.ui.FlexBox(
-    pn.indicators.Number(
-        value=count, label="Count", format="{value:,.0f}", styles=styles
+    pn.ui.Number(
+        value=count,
+        label="Count",
+        format="{value:,.0f}",
+        font_size="28pt",
+        styles=styles,
     ),
-    pn.indicators.Number(
+    pn.ui.Number(
         value=total_capacity / 1e6,
         label="Total Capacity (GW)",
         format="{value:,.1f}",
+        font_size="28pt",
         styles=styles,
     ),
-    pn.indicators.Number(
+    pn.ui.Number(
         value=avg_capacity/1e3,
         label="Avg. Capacity (MW)",
         format="{value:,.1f}",
+        font_size="28pt",
         styles=styles,
     ),
-    pn.indicators.Number(
+    pn.ui.Number(
         value=avg_rotor_diameter,
         label="Avg. Rotor Diameter (m)",
         format="{value:,.1f}",
+        font_size="28pt",
         styles=styles,
     ),
 )
 
-plot = pn.ui.HoloViews(fig, sizing_mode="stretch_both", name="Plot")
-table = pn.ui.Tabulator(df, sizing_mode="stretch_both", label="Table")
+plot = pn.ui.HoloViews(fig, sizing_mode="stretch_both")
+table = pn.ui.Tabulator(df, sizing_mode="stretch_both")
 
 # Layout Data
 
-tabs = pn.ui.Tabs(
-    plot, table, styles=styles, sizing_mode="stretch_width", height=500, margin=10
-)
+tabs = pn.ui.Tabs(("Plot", plot), ("Table", table), styles=styles, height=500, margin=10)
 
-pn.template.FastListTemplate(
+pn.ui.Page(
     title="Wind Turbine Dashboard",
     sidebar=[image, t_manu, p_year],
-    main=[pn.ui.Column(indicators, tabs, sizing_mode="stretch_both")],
-    main_layout=None,
-    accent=ACCENT,
+    main=[indicators, tabs],
+    theme_config={"palette": {"primary": {"main": ACCENT}}},
 ).servable()
 ```
 
@@ -171,15 +178,15 @@ import panel as pn
 ### Extension
 
 ```{pyodide}
-pn.extension("tabulator")
+pn.extension("tabulator", sizing_mode="stretch_width", throttled=True)
 ```
 
-- `pn.extension("tabulator")`: This line enables the Tabulator widget, which provides a high-performance interactive table widget in Panel.
+- `pn.extension("tabulator", ...)`: This line loads the JavaScript for the Tabulator widget, which provides a high-performance interactive table. `sizing_mode="stretch_width"` makes components fill the available width by default, and `throttled=True` makes the year slider only trigger updates when it is released rather than on every step of a drag.
 
 ### Styles
 
 ```{pyodide}
-ACCENT = "teal"
+ACCENT = "#008080"  # teal
 
 styles = {
     "box-shadow": "rgba(50, 50, 93, 0.25) 0px 6px 12px -2px, rgba(0, 0, 0, 0.3) 0px 3px 7px -3px",
@@ -188,20 +195,20 @@ styles = {
 }
 ```
 
-- `ACCENT`: This variable stores the color teal, which will be used as the accent color throughout the dashboard.
+- `ACCENT`: This variable stores the hex code of the color teal, which will be used as the accent color throughout the dashboard. The theme of the `Page` requires a hex (or `rgb(...)`) color rather than a CSS color name.
 - `styles`: This dictionary contains CSS styles to be applied to various components in the dashboard for consistent styling, including box shadow, border radius, and padding.
 
 ### Data Extraction
 
 ```{pyodide}
-@pn.cache()
+@pn.cache
 def get_data():
     return pd.read_csv("https://assets.holoviz.org/panel/tutorials/turbines.csv.gz")
 
 source_data = get_data()
 ```
 
-- `get_data()`: This function is decorated with `@pn.cache()`, which ensures that the data is only downloaded once, improving performance by caching the result.
+- `get_data()`: This function is decorated with `@pn.cache`, which ensures that the data is only downloaded once, improving performance by caching the result.
 - `source_data`: This variable stores the downloaded CSV data as a Pandas DataFrame.
 
 ### Data Transformation
@@ -231,11 +238,13 @@ t_manu = pn.ui.Select(
     options=sorted(top_manufacturers),
     description="The name of the manufacturer",
 )
-p_year = pn.ui.IntSlider(label="Year", value=max_year, start=min_year, end=max_year)
+p_year = pn.ui.IntSlider(
+    label="Year", value=max_year, start=min_year, end=max_year, format="0"
+)
 ```
 
 - `t_manu`: This widget is a select dropdown for choosing the manufacturer.
-- `p_year`: This widget is an integer slider for selecting the year.
+- `p_year`: This widget is an integer slider for selecting the year. `format="0"` displays the year without a thousands separator.
 
 ### Data Transformation 2
 
@@ -262,49 +271,57 @@ fig = (
     xlabel="Year",
     xlim=(min_year, max_year),
     color=ACCENT,
+    responsive=True,
 )
 ```
 
-- `fig`: This variable stores a bar plot of the total turbine capacity over the years.
+- `fig`: This variable stores a bar plot of the total turbine capacity over the years. `responsive=True` makes the plot fill the space of the tab it is displayed in.
 
 ### Displaying Data
 
 ```{pyodide}
-image = pn.ui.JPG("https://assets.holoviz.org/panel/tutorials/wind_turbines_sunset.png")
+image = pn.ui.PNG("https://assets.holoviz.org/panel/tutorials/wind_turbines_sunset.png")
 
 indicators = pn.ui.FlexBox(
-    pn.indicators.Number(
-        value=count, label="Count", format="{value:,.0f}", styles=styles
-    ),
-    pn.indicators.Number(
-        value=total_capacity / 1e6,
-        label="Total Capacity (TW)",
-        format="{value:,.1f}",
+    pn.ui.Number(
+        value=count,
+        label="Count",
+        format="{value:,.0f}",
+        font_size="28pt",
         styles=styles,
     ),
-    pn.indicators.Number(
+    pn.ui.Number(
+        value=total_capacity / 1e6,
+        label="Total Capacity (GW)",
+        format="{value:,.1f}",
+        font_size="28pt",
+        styles=styles,
+    ),
+    pn.ui.Number(
         value=avg_capacity/1e3,
         label="Avg. Capacity (MW)",
         format="{value:,.1f}",
+        font_size="28pt",
         styles=styles,
     ),
-    pn.indicators.Number(
+    pn.ui.Number(
         value=avg_rotor_diameter,
         label="Avg. Rotor Diameter (m)",
         format="{value:,.1f}",
+        font_size="28pt",
         styles=styles,
     ),
 )
 ```
 
 - `image`: This variable stores an image pane displaying a background image for the dashboard.
-- `indicators`: This variable stores a collection of indicator widgets displaying various statistics.
+- `indicators`: This variable stores a collection of `Number` indicators displaying various statistics. We reduce their `font_size` from the default of 54pt so all four fit side by side.
 
 ### Creating Components
 
 ```{pyodide}
-plot = pn.ui.HoloViews(fig, sizing_mode="stretch_both", name="Plot")
-table = pn.ui.Tabulator(df, sizing_mode="stretch_both", label="Table")
+plot = pn.ui.HoloViews(fig, sizing_mode="stretch_both")
+table = pn.ui.Tabulator(df, sizing_mode="stretch_both")
 ```
 
 - `plot`: This variable stores a HoloViews plot pane displaying the bar plot.
@@ -313,26 +330,23 @@ table = pn.ui.Tabulator(df, sizing_mode="stretch_both", label="Table")
 ### Layout
 
 ```{pyodide}
-tabs = pn.ui.Tabs(
-    plot, table, styles=styles, sizing_mode="stretch_width", height=500, margin=10
-)
+tabs = pn.ui.Tabs(("Plot", plot), ("Table", table), styles=styles, height=500, margin=10)
 ```
 
-- `tabs`: This variable stores a Tabs widget containing the plot and table, allowing users to switch between them.
+- `tabs`: This variable stores a Tabs layout containing the plot and table, allowing users to switch between them. Each `(title, component)` tuple sets the title of a tab.
 
 ### Creating the Dashboard
 
-```python
-pn.template.FastListTemplate(
+```{pyodide}
+pn.ui.Page(
     title="Wind Turbine Dashboard",
     sidebar=[image, t_manu, p_year],
-    main=[pn.ui.Column(indicators, tabs, sizing_mode="stretch_both")],
-    main_layout=None,
-    accent=ACCENT,
+    main=[indicators, tabs],
+    theme_config={"palette": {"primary": {"main": ACCENT}}},
 ).servable()
 ```
 
-- This code creates a `FastListTemplate` dashboard with a sidebar containing the image, manufacturer select dropdown, and year slider, and a main section containing the indicators and tabs.
+- This code creates a [`Page`](../../reference/templates/Page.md) with a sidebar containing the image, manufacturer select dropdown, and year slider, and a main section containing the indicators and tabs. The `theme_config` sets the primary color of the theme to our `ACCENT` color.
 
 ### Conclusion
 

@@ -9,17 +9,14 @@ python -m build --sdist .
 VERSION=$(python -c "import $PACKAGE; print($PACKAGE._version.__version__)")
 export VERSION
 
-# Prereleases depend on prereleases of other HoloViz packages, which are only
-# published to pyviz/label/dev, so the build and test envs need that channel.
+# pyviz/label/dev is needed for prereleases of other HoloViz packages, and
+# temporarily for final releases too: conda-forge's panel-material-ui depends on
+# panel-core, which has no release compatible with Bokeh 3.10 yet.
 CHANNELS=$(python -c "
-import os
-
 import bokeh
 from packaging.version import Version
 
-channels = []
-if Version(os.environ['VERSION']).is_prerelease:
-    channels.append('pyviz/label/dev')
+channels = ['pyviz/label/dev']
 if Version(bokeh.__version__).is_prerelease:
     channels.append('bokeh/label/rc')
 else:

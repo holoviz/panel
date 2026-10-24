@@ -21,6 +21,7 @@ from collections import Counter, defaultdict, namedtuple
 from functools import lru_cache, partial
 from html import escape
 from pprint import pformat
+from types import MappingProxyType
 
 import jinja2
 import numpy as np
@@ -464,7 +465,11 @@ class Syncable(Renderable):
     def _param_change(self, *events: param.parameterized.Event) -> None:
         named_events = {event.name: event for event in events}
         for ref, (model, _) in self._models.copy().items():
-            properties = self._update_properties(*events, doc=model.document)
+            # Resolve the design and config of the session the model was
+            # rendered in, not the session that triggered the change.
+            doc = state._views[ref][2] if ref in state._views else model.document
+            with set_curdoc(doc):
+                properties = self._update_properties(*events, doc=doc)
             if not properties:
                 return
             self._apply_update(named_events, properties, model, ref)
@@ -1523,6 +1528,15 @@ class ReactiveHTMLMetaclass(ReactiveMetaBase):
         ParameterizedMetaclass.__init__(mcs, name, bases, dict(dict_))
         cls_name = mcs.__name__
 
+        # Declarations are resolved while the class is created and then shared.
+        # Freeze that mapping so an instance cannot change scripts for anyone else.
+        scripts: Mapping[str, t.Any] = getattr(mcs, '_scripts', {})
+        if '_scripts' in dict_ or not isinstance(scripts, MappingProxyType):
+            mcs._scripts = MappingProxyType({
+                key: tuple(value) if isinstance(value, list) else value
+                for key, value in scripts.items()
+            })
+
         # Validate _child_config
         for name, child_type in mcs._child_config.items():
             if name not in mcs.param:
@@ -1831,6 +1845,9 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
                 invoking other scripts.
       * <node>: All named DOM nodes in the HTML template, e.g. the
                 `input_el` node in the example above.
+
+    `_scripts` is read-only after class creation; extend a parent with
+    `{**Parent._scripts, ...}`.
     """
 
     _child_config: t.ClassVar[Mapping[str, str]] = {}
@@ -1839,7 +1856,7 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
 
     _template: t.ClassVar[str] = ""
 
-    _scripts: t.ClassVar[Mapping[str, str | list[str]]] = {}
+    _scripts: t.ClassVar[Mapping[str, str | list[str] | tuple[str, ...]]] = {}
 
     _script_assignment: t.ClassVar[str] = (
         r'data\.([^[^\d\W]\w*)[ ]*[\+,\-,\*,\\,%,\*\*,<<,>>,>>>,&,\^,|,\&\&,\|\|,\?\?]*='
@@ -1966,7 +1983,7 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
             'scripts': {}
         })
         for trigger, scripts in self._scripts.items():
-            if not isinstance(scripts, list):
+            if not isinstance(scripts, (list, tuple)):
                 scripts = [scripts]
             params['scripts'][trigger] = [
                 escape(textwrap.dedent(script).strip()) for script in scripts
@@ -2126,7 +2143,7 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
     def _linked_properties(self) -> tuple[str, ...]:
         linked_properties = [p for pss in self._attrs.values() for _, ps, _ in pss for p in ps]
         for scripts in self._scripts.values():
-            if not isinstance(scripts, list):
+            if not isinstance(scripts, (list, tuple)):
                 scripts = [scripts]
             for script in scripts:
                 for p in re.findall(self._script_assignment, script):

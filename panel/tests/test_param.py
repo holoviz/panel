@@ -1287,6 +1287,30 @@ def test_param_function_pane(document, comm):
     assert inner_pane._models == {}
 
 
+def test_param_function_inner_pane_uses_configured_design():
+    from panel.theme import Material
+
+    with config.set(design=Material):
+        pane = ParamFunction(lambda: Div(text='blah'))
+        assert isinstance(pane._pane._design, Material)
+
+
+def test_param_function_inner_pane_inherits_explicit_design():
+    from panel.theme import Material
+
+    pane = ParamFunction(lambda: Div(text='blah'), design=Material)
+    assert isinstance(pane._pane._design, Material)
+
+
+def test_param_function_inner_pane_inherits_design_opt_out():
+    from panel.theme import Material
+    from panel.theme.native import Native
+
+    with config.set(design=Material):
+        pane = ParamFunction(lambda: Div(text='blah'), design=None)
+        assert isinstance(pane._pane._design, Native)
+
+
 def test_resolve_param_function_pane_when_defer_load(document, comm):
     def view():
         return Div(text='blah')

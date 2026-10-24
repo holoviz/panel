@@ -26,17 +26,35 @@ calls it with the rendered model.
   const Bokeh = root.Bokeh;
   const BK_RE = /^https:\/\/cdn\.bokeh\.org\/bokeh\/(release|dev)\/bokeh-/;
   const PN_RE = /^https:\/\/cdn\.holoviz\.org\/panel\/[^/]+\/dist\/panel/i;
-  const JUPYTER_EXTENSION_PATH = "/panel-preview/static/extensions/panel/";
+  const JUPYTER_ENDPOINT = "/panel-preview/";
+  const JUPYTER_EXTENSION_PATH = JUPYTER_ENDPOINT + "static/extensions/panel/";
   const CDN_DIST = {{ cdn_dist|json }};
+  // Endpoint paths and the CDN urls serving the same files: Panel's dist,
+  // each extension with a CDN and each BokehJS file.
+  const CDN_MAP = {{ cdn_map|json }};
   // Executed notebooks retain this bootstrap when published as static pages.
   const live_notebook = root.Jupyter?.notebook != null || document.querySelector('.jp-LabShell') != null;
   root.__panel_live_notebook__ = live_notebook;
   // The lazy-resource registry needs the same export routing and CDN fallback.
   root.__panel_cdn_dist__ = CDN_DIST;
+  root.__panel_cdn_map__ = CDN_MAP;
+
+  function cdn_url(url) {
+    const index = url.indexOf(JUPYTER_ENDPOINT);
+    if (index === -1) {
+      return null;
+    }
+    const path = url.slice(index + JUPYTER_ENDPOINT.length);
+    for (const [prefix, cdn] of CDN_MAP) {
+      if (path.startsWith(prefix)) {
+        return cdn + path.slice(prefix.length);
+      }
+    }
+    return null;
+  }
 
   function resource_url(url) {
-    const index = url.indexOf(JUPYTER_EXTENSION_PATH);
-    return !live_notebook && index !== -1 ? CDN_DIST + url.slice(index + JUPYTER_EXTENSION_PATH.length) : url;
+    return !live_notebook || root.__panel_endpoint_failed__ === true ? (cdn_url(url) ?? url) : url;
   }
 
   // Pending until this bootstrap has loaded everything (or given up), so
@@ -143,11 +161,16 @@ calls it with the rendered model.
   // waiting for some resource's load to fail. A plain HEAD request for the
   // bundle every notebook session needs is enough to tell.
   if (live_notebook) {
+    // Whatever is loaded once the check failed goes straight to the CDN.
+    const endpoint_failed = () => {
+      root.__panel_endpoint_failed__ = true;
+      show_jupyter_extension_error();
+    };
     fetch(JUPYTER_EXTENSION_PATH + "panel.min.js", {method: "HEAD"}).then((response) => {
       if (!response.ok) {
-        show_jupyter_extension_error();
+        endpoint_failed();
       }
-    }).catch(() => show_jupyter_extension_error());
+    }).catch(endpoint_failed);
   }
   {% endif %}
 
@@ -179,19 +202,19 @@ calls it with the rendered model.
 
     function on_error(url) {
       console.error("failed to load " + url);
-      if (url.includes(JUPYTER_EXTENSION_PATH)) {
+      if (url.includes(JUPYTER_ENDPOINT + "static/")) {
         show_jupyter_extension_error();
       }
     }
 
     function fallback_to_cdn(element, url, attribute, parent) {
-      const index = url.indexOf(JUPYTER_EXTENSION_PATH);
-      if (index === -1 || element.dataset.panelCdnFallback != null) {
+      const fallback = cdn_url(url);
+      if (fallback == null || element.dataset.panelCdnFallback != null) {
         return false;
       }
       element.dataset.panelCdnFallback = "";
       element.remove();
-      element[attribute] = CDN_DIST + url.slice(index + JUPYTER_EXTENSION_PATH.length);
+      element[attribute] = fallback;
       parent.appendChild(element);
       return true;
     }
@@ -269,8 +292,8 @@ calls it with the rendered model.
       // extension cannot serve falls back to the CDN, then to the original.
       const require_urls = (url) => {
         url = resource_url(url);
-        const index = url.indexOf(JUPYTER_EXTENSION_PATH);
-        return index === -1 ? [url] : [url, CDN_DIST + url.slice(index + JUPYTER_EXTENSION_PATH.length)];
+        const fallback = cdn_url(url);
+        return fallback == null || fallback === url ? [url] : [url, fallback];
       };
       for (const [name, path] of Object.entries(require_config.paths || {})) {
         require_config.paths[name] = (Array.isArray(path) ? path : [path]).flatMap(require_urls);
