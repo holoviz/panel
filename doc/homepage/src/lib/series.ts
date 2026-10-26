@@ -10,6 +10,10 @@
  */
 
 const N = 400
+// The y axis fits the walk, so a walk that is only sigma times a fixed path would look
+// identical at every sigma. A drift that does not scale with sigma makes volatility
+// change the shape: a steady climb at low sigma, noise that swamps the trend at high sigma.
+const DRIFT = 0.05
 
 /** mulberry32: small, fast, and identical across engines. */
 function rng(seed: number) {
@@ -85,7 +89,7 @@ export function chartGeometry(ticker: string, sigma: number, window: number): Ch
   const walk = new Float64Array(N)
   let acc = 0
   for (let i = 0; i < N; i++) {
-    acc += steps[i]
+    acc += DRIFT + steps[i]
     walk[i] = acc
   }
   const smooth = movingAverage(walk, window)
