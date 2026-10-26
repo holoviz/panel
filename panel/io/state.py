@@ -137,7 +137,8 @@ class _state(param.Parameterized):
        Tracks information and statistics about user sessions.""")
 
     webdriver: t.Any = param.Parameter(default=None, doc="""
-      Selenium webdriver used to export bokeh models to pngs.""")
+      Browser used to export bokeh models to pngs: a Selenium WebDriver,
+      or a Playwright Browser or BrowserContext.""")
 
     _base_url = param.String(default='/', readonly=True, doc="""
        Base URL for all server paths.""")

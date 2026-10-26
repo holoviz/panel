@@ -3,8 +3,12 @@ Defines utilities to save panel objects to files as HTML or PNG.
 """
 from __future__ import annotations
 
+import importlib
+import importlib.util
 import io
 import typing as t
+
+from contextlib import contextmanager
 
 import bokeh
 
@@ -17,6 +21,7 @@ from bokeh.io.export import get_screenshot_as_png
 from bokeh.model import Model
 from bokeh.models import UIElement
 from bokeh.resources import CDN, INLINE, Resources as BkResources
+from bokeh.settings import settings as bk_settings
 from pyviz_comms import Comm
 
 from ..config import config
@@ -31,9 +36,10 @@ from .state import state
 if t.TYPE_CHECKING:
     import os
 
-    from collections.abc import Iterable
+    from collections.abc import Iterable, Iterator
 
     from bokeh.embed.standalone import ThemeLike
+    from bokeh.io.export import ExportBackendType
     from jinja2 import Template
 
     from ..template.base import BaseTemplate
@@ -61,13 +67,48 @@ else
 
 bokeh.io.export._WAIT_SCRIPT = _WAIT_SCRIPT
 
+def _default_export_backend() -> ExportBackendType:
+    # Mirrors Bokeh's own resolution so a cached Selenium driver is only
+    # created when Bokeh would have picked Selenium anyway.
+    configured = bk_settings.export_backend()
+    if configured in ("selenium", "playwright"):
+        return configured
+    return "selenium" if importlib.util.find_spec("selenium") else "playwright"
+
+
+@contextmanager
+def _patch_export_html(get_layout_html: t.Callable[..., str]) -> Iterator[None]:
+    # Bokeh 3.10 moved the screenshot code into per-backend modules that
+    # import these names directly, so patching bokeh.io.export alone no
+    # longer reaches them.
+    import bokeh.io.export
+    modules = [bokeh.io.export]
+    for name in ("bokeh.io.webdriver", "bokeh.io.browser"):
+        try:
+            modules.append(importlib.import_module(name))
+        except ImportError:
+            pass
+    patched = []
+    for module in modules:
+        for attr, value in (("get_layout_html", get_layout_html), ("_WAIT_SCRIPT", _WAIT_SCRIPT)):
+            if hasattr(module, attr):
+                patched.append((module, attr, getattr(module, attr)))
+                setattr(module, attr, value)
+    try:
+        yield
+    finally:
+        for module, attr, value in reversed(patched):
+            setattr(module, attr, value)
+
+
 def save_png(
     model: UIElement | Document,
     filename: str | os.PathLike | t.IO,
     resources: BkResources = CDN,
     template=None,
     template_variables: dict[str, t.Any] | None = None,
-    timeout: int = 5
+    timeout: int = 5,
+    backend: ExportBackendType | None = None,
 ) -> None:
     """
     Saves a bokeh model to png
@@ -86,12 +127,25 @@ def save_png(
       template_variables file dict, as used by bokeh.file_html
     timeout: int
       The maximum amount of time (in seconds) to wait for
+    backend: 'selenium' | 'playwright' | None
+      Browser automation used to take the screenshot. If None, a browser
+      set on ``pn.state.webdriver`` is used, otherwise Bokeh's default
+      (the ``BOKEH_EXPORT_BACKEND`` setting, else Selenium if installed,
+      else Playwright).
     """
-    from bokeh.io.webdriver import webdriver_control
-    if not state.webdriver:
-        state.webdriver = webdriver_control.create()
-
-    webdriver = state.webdriver
+    if backend is None:
+        webdriver = state.webdriver
+        if webdriver is None and _default_export_backend() == "selenium":
+            from bokeh.io.webdriver import webdriver_control
+            webdriver = state.webdriver = webdriver_control.create()
+    elif backend == "selenium":
+        if not state.webdriver:
+            from bokeh.io.webdriver import webdriver_control
+            state.webdriver = webdriver_control.create()
+        webdriver = state.webdriver
+    else:
+        # Bokeh's Playwright backend manages (and reuses) its own browser.
+        webdriver = None
 
     if template is None:
         template = r"""\
@@ -110,27 +164,23 @@ def save_png(
         {% endblock %}
         """
 
-    try:
-        def get_layout_html(obj: UIElement | Document, resources: Resources, width: int | None, height: int | None, **kwargs):
-            resources = Resources.from_bokeh(resources)
-            return file_html(
-                obj, resources, title="", template=template,
-                template_variables=template_variables or {},
-                _always_new=True
-            )
-        old_layout_fn = bokeh.io.export.get_layout_html
-        bokeh.io.export.get_layout_html = get_layout_html    # type: ignore
-        img = get_screenshot_as_png(model, driver=webdriver, timeout=timeout, resources=resources)
+    def get_layout_html(obj: UIElement | Document, resources: Resources, width: int | None, height: int | None, **kwargs):
+        resources = Resources.from_bokeh(resources)
+        return file_html(
+            obj, resources, title="", template=template,
+            template_variables=template_variables or {},
+            _always_new=True
+        )
 
-        if img.width == 0 or img.height == 0:
-            raise ValueError("unable to save an empty image")
+    with _patch_export_html(get_layout_html):
+        img = get_screenshot_as_png(
+            model, driver=webdriver, timeout=timeout, resources=resources, backend=backend
+        )
 
-        img.save(filename, format="png")
-    except Exception:
-        raise
-    finally:
-        if template:
-            bokeh.io.export.get_layout_html = old_layout_fn
+    if img.width == 0 or img.height == 0:
+        raise ValueError("unable to save an empty image")
+
+    img.save(filename, format="png")
 
 def _title_from_models(models: Iterable[Model], title: str) -> str:
     if title is not None:
@@ -240,6 +290,9 @@ def save(
     as_png: boolean (default=None)
         To save as a .png. If None save_png will be true if filename is
         string and ends with png.
+    **kwargs
+        Passed to `save_png` when saving a .png, e.g. ``timeout`` or
+        ``backend='playwright'``.
     """
     from ..pane import PaneBase
     from ..template import BaseTemplate

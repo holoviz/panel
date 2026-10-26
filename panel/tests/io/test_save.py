@@ -1,6 +1,6 @@
 import re
 
-from io import StringIO
+from io import BytesIO, StringIO
 from pathlib import Path
 
 import numpy as np
@@ -14,6 +14,7 @@ from panel.io.convert import (
     script_to_html,
 )
 from panel.io.resources import CDN_DIST
+from panel.io.state import state
 from panel.models.vega import VegaPlot
 from panel.pane import Alert, Vega
 from panel.template import BootstrapTemplate
@@ -166,3 +167,77 @@ def test_save_template():
     for doc in template._documents:
         for root in doc.roots:
             assert f"data-root-id=\"{root.ref['id']}\"" in html
+
+
+@pytest.fixture
+def screenshots(monkeypatch):
+    """Record what save_png hands to bokeh instead of launching a browser."""
+    from PIL import Image
+
+    import panel.io.save as save_mod
+
+    calls = []
+
+    def fake_screenshot(model, **kwargs):
+        import bokeh.io.browser
+        import bokeh.io.webdriver
+        calls.append({
+            **kwargs,
+            "html": {
+                name: module.get_layout_html(model, resources=kwargs["resources"], width=None, height=None)
+                for name, module in (("browser", bokeh.io.browser), ("webdriver", bokeh.io.webdriver))
+            },
+            "wait": {name: module._WAIT_SCRIPT for name, module in
+                     (("browser", bokeh.io.browser), ("webdriver", bokeh.io.webdriver))},
+        })
+        return Image.new("RGB", (10, 10))
+
+    monkeypatch.setattr(save_mod, "get_screenshot_as_png", fake_screenshot)
+    monkeypatch.setattr(state, "webdriver", None)
+    return calls
+
+
+def test_save_png_playwright_backend_does_not_create_selenium_driver(screenshots, monkeypatch):
+    import bokeh.io.webdriver
+    monkeypatch.setattr(bokeh.io.webdriver.webdriver_control, "create", lambda *a, **k: pytest.fail("selenium driver created"))
+
+    Alert('Hello').save(BytesIO(), as_png=True, backend='playwright')
+
+    assert screenshots[0]["driver"] is None
+    assert screenshots[0]["backend"] == 'playwright'
+    assert state.webdriver is None
+
+
+def test_save_png_default_backend_follows_bokeh_setting(screenshots, monkeypatch):
+    import bokeh.io.webdriver
+    monkeypatch.setenv("BOKEH_EXPORT_BACKEND", "playwright")
+    monkeypatch.setattr(bokeh.io.webdriver.webdriver_control, "create", lambda *a, **k: pytest.fail("selenium driver created"))
+
+    Alert('Hello').save(BytesIO(), as_png=True)
+
+    assert screenshots[0]["driver"] is None
+    assert screenshots[0]["backend"] is None
+
+
+def test_save_png_uses_state_webdriver(screenshots, monkeypatch):
+    browser = object()
+    monkeypatch.setattr(state, "webdriver", browser)
+
+    Alert('Hello').save(BytesIO(), as_png=True)
+
+    assert screenshots[0]["driver"] is browser
+
+
+def test_save_png_template_reaches_export_backends(screenshots):
+    import bokeh.io.browser
+    import bokeh.io.webdriver
+
+    import panel.io.save as save_mod
+
+    originals = (bokeh.io.browser.get_layout_html, bokeh.io.webdriver.get_layout_html)
+    Alert('Hello').save(BytesIO(), as_png=True, backend='playwright')
+
+    for name in ("browser", "webdriver"):
+        assert "overflow: hidden" in screenshots[0]["html"][name]
+        assert screenshots[0]["wait"][name] == save_mod._WAIT_SCRIPT
+    assert (bokeh.io.browser.get_layout_html, bokeh.io.webdriver.get_layout_html) == originals
