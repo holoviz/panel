@@ -17,6 +17,7 @@ import ipaddress
 import os
 import pathlib
 import pickle
+import struct
 import sys
 import threading
 import time
@@ -251,7 +252,7 @@ _hash_funcs: dict[str | type[t.Any] | tuple[type, ...] | Callable[[t.Any], bool]
     # b'\x00' would otherwise all hash alike and share a cached result.
     int          : lambda obj: b'int:' + _int_to_bytes(obj),
     str          : lambda obj: b'str:' + obj.encode(),
-    float        : lambda obj: b'float:' + _int_to_bytes(hash(obj)),
+    float        : lambda obj: b'float:' + struct.pack('!d', obj),
     bool         : lambda obj: b'bool:1' if obj is True else b'bool:0',
     type(None)   : lambda obj: b'none',
     slice: _slice_hash,
