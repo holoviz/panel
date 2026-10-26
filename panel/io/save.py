@@ -3,20 +3,18 @@ Defines utilities to save panel objects to files as HTML or PNG.
 """
 from __future__ import annotations
 
-import importlib
 import importlib.util
 import io
 import typing as t
 
 from contextlib import contextmanager
 
-import bokeh
-
 from bokeh.document.document import Document
 from bokeh.embed.elements import html_page_for_render_items
 from bokeh.embed.util import (
     OutputDocumentFor, standalone_docs_json_and_render_items,
 )
+from bokeh.io import browser as bk_browser, webdriver as bk_webdriver
 from bokeh.io.export import get_screenshot_as_png
 from bokeh.model import Model
 from bokeh.models import UIElement
@@ -65,40 +63,21 @@ else
   doc.idle.connect(done);
 """
 
-bokeh.io.export._WAIT_SCRIPT = _WAIT_SCRIPT
-
-def _default_export_backend() -> ExportBackendType:
-    # Mirrors Bokeh's own resolution so a cached Selenium driver is only
-    # created when Bokeh would have picked Selenium anyway.
-    configured = bk_settings.export_backend()
-    if configured in ("selenium", "playwright"):
-        return configured
-    return "selenium" if importlib.util.find_spec("selenium") else "playwright"
-
-
 @contextmanager
 def _patch_export_html(get_layout_html: t.Callable[..., str]) -> Iterator[None]:
-    # Bokeh 3.10 moved the screenshot code into per-backend modules that
-    # import these names directly, so patching bokeh.io.export alone no
-    # longer reaches them.
-    import bokeh.io.export
-    modules = [bokeh.io.export]
-    for name in ("bokeh.io.webdriver", "bokeh.io.browser"):
-        try:
-            modules.append(importlib.import_module(name))
-        except ImportError:
-            pass
-    patched = []
-    for module in modules:
-        for attr, value in (("get_layout_html", get_layout_html), ("_WAIT_SCRIPT", _WAIT_SCRIPT)):
-            if hasattr(module, attr):
-                patched.append((module, attr, getattr(module, attr)))
-                setattr(module, attr, value)
+    # Since Bokeh 3.10 each export backend imports these from bokeh.io.util
+    # into its own namespace, so that is where they have to be replaced.
+    patches = {"get_layout_html": get_layout_html, "_WAIT_SCRIPT": _WAIT_SCRIPT}
+    originals = [(module, {attr: getattr(module, attr) for attr in patches}) for module in (bk_browser, bk_webdriver)]
+    for module, _ in originals:
+        for attr, value in patches.items():
+            setattr(module, attr, value)
     try:
         yield
     finally:
-        for module, attr, value in reversed(patched):
-            setattr(module, attr, value)
+        for module, values in originals:
+            for attr, value in values.items():
+                setattr(module, attr, value)
 
 
 def save_png(
@@ -133,19 +112,21 @@ def save_png(
       (the ``BOKEH_EXPORT_BACKEND`` setting, else Selenium if installed,
       else Playwright).
     """
-    if backend is None:
-        webdriver = state.webdriver
-        if webdriver is None and _default_export_backend() == "selenium":
-            from bokeh.io.webdriver import webdriver_control
-            webdriver = state.webdriver = webdriver_control.create()
-    elif backend == "selenium":
-        if not state.webdriver:
-            from bokeh.io.webdriver import webdriver_control
-            state.webdriver = webdriver_control.create()
-        webdriver = state.webdriver
-    else:
-        # Bokeh's Playwright backend manages (and reuses) its own browser.
+    if backend is None and state.webdriver is None:
+        # Bokeh's own resolution order, so a Selenium driver is only created
+        # (and cached on state) when Bokeh would have picked Selenium anyway.
+        configured = bk_settings.export_backend()
+        if configured in ("selenium", "playwright"):
+            backend = configured
+        else:
+            backend = "selenium" if importlib.util.find_spec("selenium") else "playwright"
+    if backend == "playwright":
+        # Bokeh's Playwright backend launches and reuses its own browser.
         webdriver = None
+    else:
+        if state.webdriver is None:
+            state.webdriver = bk_webdriver.webdriver_control.create()
+        webdriver = state.webdriver
 
     if template is None:
         template = r"""\

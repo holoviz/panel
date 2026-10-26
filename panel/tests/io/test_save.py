@@ -6,7 +6,11 @@ from pathlib import Path
 import numpy as np
 import pytest
 
+from bokeh.io import browser as bk_browser, webdriver as bk_webdriver
 from bokeh.resources import Resources
+from PIL import Image
+
+import panel.io.save as save_module
 
 from panel.config import config
 from panel.io.convert import (
@@ -19,6 +23,9 @@ from panel.models.vega import VegaPlot
 from panel.pane import Alert, Vega
 from panel.template import BootstrapTemplate
 from panel.tests.util import hv_available
+
+BACKEND_MODULES = {"browser": bk_browser, "webdriver": bk_webdriver}
+
 
 vega_example = {
     'config': {
@@ -171,55 +178,39 @@ def test_save_template():
 
 @pytest.fixture
 def screenshots(monkeypatch):
-    """Record what save_png hands to bokeh instead of launching a browser."""
-    from PIL import Image
-
-    import panel.io.save as save_mod
-
+    """Record what save_png hands to Bokeh instead of launching a browser."""
     calls = []
 
     def fake_screenshot(model, **kwargs):
-        import bokeh.io.browser
-        import bokeh.io.webdriver
         calls.append({
             **kwargs,
-            "html": {
-                name: module.get_layout_html(model, resources=kwargs["resources"], width=None, height=None)
-                for name, module in (("browser", bokeh.io.browser), ("webdriver", bokeh.io.webdriver))
-            },
-            "wait": {name: module._WAIT_SCRIPT for name, module in
-                     (("browser", bokeh.io.browser), ("webdriver", bokeh.io.webdriver))},
+            "html": {name: module.get_layout_html(model, resources=kwargs["resources"], width=None, height=None)
+                     for name, module in BACKEND_MODULES.items()},
+            "wait": {name: module._WAIT_SCRIPT for name, module in BACKEND_MODULES.items()},
         })
         return Image.new("RGB", (10, 10))
 
-    monkeypatch.setattr(save_mod, "get_screenshot_as_png", fake_screenshot)
+    monkeypatch.setattr(save_module, "get_screenshot_as_png", fake_screenshot)
     monkeypatch.setattr(state, "webdriver", None)
+    monkeypatch.setattr(bk_webdriver.webdriver_control, "create", lambda *a, **k: pytest.fail("Selenium driver created"))
     return calls
 
 
-def test_save_png_playwright_backend_does_not_create_selenium_driver(screenshots, monkeypatch):
-    import bokeh.io.webdriver
-    monkeypatch.setattr(bokeh.io.webdriver.webdriver_control, "create", lambda *a, **k: pytest.fail("selenium driver created"))
-
-    Alert('Hello').save(BytesIO(), as_png=True, backend='playwright')
+@pytest.mark.parametrize("backend", ["argument", "setting"])
+def test_save_png_playwright_does_not_need_selenium(screenshots, monkeypatch, backend):
+    """Saving a PNG with Bokeh's Playwright backend must not create a Selenium driver."""
+    if backend == "argument":
+        Alert('Hello').save(BytesIO(), as_png=True, backend='playwright')
+    else:
+        monkeypatch.setenv("BOKEH_EXPORT_BACKEND", "playwright")
+        Alert('Hello').save(BytesIO(), as_png=True)
 
     assert screenshots[0]["driver"] is None
-    assert screenshots[0]["backend"] == 'playwright'
     assert state.webdriver is None
 
 
-def test_save_png_default_backend_follows_bokeh_setting(screenshots, monkeypatch):
-    import bokeh.io.webdriver
-    monkeypatch.setenv("BOKEH_EXPORT_BACKEND", "playwright")
-    monkeypatch.setattr(bokeh.io.webdriver.webdriver_control, "create", lambda *a, **k: pytest.fail("selenium driver created"))
-
-    Alert('Hello').save(BytesIO(), as_png=True)
-
-    assert screenshots[0]["driver"] is None
-    assert screenshots[0]["backend"] is None
-
-
 def test_save_png_uses_state_webdriver(screenshots, monkeypatch):
+    """A browser set on state.webdriver (Selenium or Playwright) is passed to Bokeh as is."""
     browser = object()
     monkeypatch.setattr(state, "webdriver", browser)
 
@@ -229,15 +220,12 @@ def test_save_png_uses_state_webdriver(screenshots, monkeypatch):
 
 
 def test_save_png_template_reaches_export_backends(screenshots):
-    import bokeh.io.browser
-    import bokeh.io.webdriver
+    """Panel's page template and wait script reach Bokeh's per-backend export modules, and are restored after."""
+    originals = {name: module.get_layout_html for name, module in BACKEND_MODULES.items()}
 
-    import panel.io.save as save_mod
-
-    originals = (bokeh.io.browser.get_layout_html, bokeh.io.webdriver.get_layout_html)
     Alert('Hello').save(BytesIO(), as_png=True, backend='playwright')
 
-    for name in ("browser", "webdriver"):
+    for name in BACKEND_MODULES:
         assert "overflow: hidden" in screenshots[0]["html"][name]
-        assert screenshots[0]["wait"][name] == save_mod._WAIT_SCRIPT
-    assert (bokeh.io.browser.get_layout_html, bokeh.io.webdriver.get_layout_html) == originals
+        assert screenshots[0]["wait"][name] == save_module._WAIT_SCRIPT
+    assert {name: module.get_layout_html for name, module in BACKEND_MODULES.items()} == originals

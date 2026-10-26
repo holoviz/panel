@@ -6,7 +6,9 @@ pytest.importorskip("playwright")
 
 from PIL import Image
 
-from panel.pane import Markdown, Vega
+from panel.pane import (
+    HoloViews, Markdown, Perspective, Vega,
+)
 from panel.tests.util import hv_available
 
 pytestmark = pytest.mark.ui
@@ -20,9 +22,9 @@ VEGA = {
 }
 
 
-def _png(obj, **kwargs):
+def _png(obj):
     buf = BytesIO()
-    obj.save(buf, as_png=True, backend='playwright', **kwargs)
+    obj.save(buf, as_png=True, backend='playwright')
     buf.seek(0)
     return Image.open(buf)
 
@@ -33,16 +35,23 @@ def _has_ink(img):
 
 
 def test_save_png_playwright_markdown():
+    """Markdown exported blank when Panel's wait script did not reach Bokeh 3.10's backends."""
     assert _has_ink(_png(Markdown('# Hello', width=200)))
 
 
+def test_save_png_playwright_perspective():
+    """Perspective renders asynchronously, so the export has to wait for the document to go idle."""
+    assert _has_ink(_png(Perspective({'a': [1, 2, 3], 'b': [4, 5, 6]}, width=400, height=200)))
+
+
 def test_save_png_playwright_vega():
+    """A pane whose JS loads from an extension bundle renders before the screenshot."""
     assert _has_ink(_png(Vega(VEGA)))
 
 
 @hv_available
 def test_save_png_playwright_holoviews():
+    """A plain Bokeh plot exports through Panel without Selenium."""
     import holoviews as hv
 
-    from panel.pane import HoloViews
     assert _has_ink(_png(HoloViews(hv.Curve([1, 3, 2]), backend='bokeh', width=300, height=200)))
