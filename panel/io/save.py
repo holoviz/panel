@@ -116,10 +116,9 @@ def save_png(
         # Bokeh's own resolution order, so a Selenium driver is only created
         # (and cached on state) when Bokeh would have picked Selenium anyway.
         configured = bk_settings.export_backend()
-        if configured in ("selenium", "playwright"):
-            backend = configured
-        else:
-            backend = "selenium" if importlib.util.find_spec("selenium") else "playwright"
+        if configured not in ("selenium", "playwright"):
+            configured = "selenium" if importlib.util.find_spec("selenium") else "playwright"
+        backend = t.cast("ExportBackendType", configured)
     if backend == "playwright":
         # Bokeh's Playwright backend launches and reuses its own browser.
         webdriver = None
