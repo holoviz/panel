@@ -110,6 +110,35 @@ def test_dict_hash_recursive():
     d['a'] = d
     assert hashes_equal(dict(d), dict(d))
 
+
+@pytest.mark.parametrize('container_type', [list, dict])
+def test_cache_recursive_container(container_type):
+    value = container_type()
+    if container_type is list:
+        value.append(value)
+    else:
+        value['self'] = value
+
+    calls = []
+
+    @cache
+    def size(value):
+        calls.append(None)
+        return len(value)
+
+    assert size(value) == 1
+    assert size(value) == 1
+    assert len(calls) == 1
+
+    if container_type is list:
+        value.append(0)
+    else:
+        value['other'] = 0
+
+    assert size(value) == 2
+    assert len(calls) == 2
+
+
 def test_stringio_hash():
     sio1, sio2 = io.StringIO(), io.StringIO()
     sio1.write('foo')
@@ -702,6 +731,15 @@ def test_hash_memo_not_keyed_on_indeterminate_values():
     compute_hash(f, {}, (DF1,), {})
     compute_hash(f, {}, (object(),), {})
     assert not _HASH_MAP
+
+
+def test_hash_memo_shared_container():
+    _HASH_MAP.clear()
+    shared = [1, 2]
+    value = [shared, shared]
+
+    assert compute_hash(len, {}, (value,), {}) == compute_hash(len, {}, ([[1, 2], [1, 2]],), {})
+    assert len(_HASH_MAP) == 1
 
 @dataclass
 class _Point:
