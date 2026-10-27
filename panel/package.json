@@ -24,7 +24,7 @@
     "@typescript-eslint/parser": "^8.56.1",
     "acorn": "^8.11.3",
     "eslint": "^10.6.0",
-    "flatpickr": "^4.6.9",
+    "flatpickr": "npm:flatpickr-ce@^4.7.0",
     "typescript-eslint": "^8.56.1"
   },
   "files": [
