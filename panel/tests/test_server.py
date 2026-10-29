@@ -1106,8 +1106,8 @@ def test_show_server_info(html_server_session, markdown_server_session):
     *_, html_port = html_server_session
     *_, markdown_port = markdown_server_session
     server_info = repr(state)
-    assert f"localhost:{html_port} - HTML" in server_info
-    assert f"localhost:{markdown_port} - Markdown" in server_info
+    assert f"127.0.0.1:{html_port} - HTML" in server_info
+    assert f"127.0.0.1:{markdown_port} - Markdown" in server_info
 
 
 @pytest.mark.xdist_group(name="server")
