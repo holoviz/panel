@@ -4,6 +4,7 @@ import enum
 import fractions
 import io
 import ipaddress
+import math
 import pathlib
 import sys
 import time
@@ -66,6 +67,17 @@ def test_cache_float_hash_collision(first, second):
 
     assert identity(first) == first
     assert identity(second) == second
+
+
+def test_cache_float_signed_zero():
+    assert not hashes_equal(0.0, -0.0)
+
+    @cache
+    def sign(value):
+        return math.copysign(1, value[0])
+
+    assert sign((0.0,)) == 1
+    assert sign((-0.0,)) == -1
 
 
 def test_bool_hash():
