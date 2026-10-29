@@ -735,8 +735,6 @@ def show_server(panel: t.Any, notebook_url: str, port: int = 0) -> Server:
       The URL of the running Jupyter notebook server
     port: int (optional, default=0)
       Allows specifying a specific port
-    server_id: str
-      Unique ID to identify the server with
 
     Returns
     -------
