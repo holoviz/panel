@@ -23,7 +23,7 @@ from param.reactive import bind
 from ..config import config
 from ..io import state, unlocked
 from ..layout import (
-    Column, HSpacer, Row, WidgetBox,
+    Column, HSpacer, ListLike, Row, WidgetBox,
 )
 from ..viewable import Layoutable, Viewable
 from ..widgets import (
@@ -139,9 +139,9 @@ class HoloViews(Pane):
         The layout of the plot and the widgets. The value refers to the
         position of the widgets relative to the plot.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    widget_layout: t.Any = param.Selector(
-        objects=[WidgetBox, Row, Column], constant=True, default=WidgetBox, doc="""
-        The layout object to display the widgets in.""")  # type: ignore[assignment, ty:invalid-assignment]
+    widget_layout = param.ClassSelector(
+        class_=ListLike, constant=True, is_instance=False, default=WidgetBox, doc="""
+        The layout object to display the widgets in.""")
 
     widget_type: t.Literal['individual', 'scrubber'] = param.Selector(
         default='individual',

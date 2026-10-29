@@ -544,6 +544,23 @@ def test_holoviews_layouts(document, comm):
 
 
 @hv_available
+def test_holoviews_widget_layout_accepts_listlike(document, comm):
+    dmap = hv.DynamicMap(lambda X: hv.Curve([X]), kdims=['X']).redim.values(X=[0, 1, 2])
+    hv_pane = HoloViews(dmap, widget_layout=FlexBox)
+
+    assert isinstance(hv_pane.widget_box, FlexBox)
+    assert isinstance(hv_pane.widget_box[0], DiscreteSlider)
+    hv_pane.get_root(document, comm=comm)
+
+
+@hv_available
+def test_holoviews_widget_layout_rejects_non_layout():
+    dmap = hv.DynamicMap(lambda X: hv.Curve([X]), kdims=['X']).redim.values(X=[0, 1, 2])
+    with pytest.raises(ValueError):
+        HoloViews(dmap, widget_layout=DiscreteSlider)
+
+
+@hv_available
 def test_holoviews_widgets_from_holomap():
     hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['X', 'Y'])
 
