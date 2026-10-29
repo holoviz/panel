@@ -139,6 +139,22 @@ def test_cache_recursive_container(container_type):
     assert len(calls) == 2
 
 
+def test_cache_recursive_container_distinct_ancestors():
+    to_root = [0, [1]]
+    to_root[1].append(to_root)
+    to_inner = [0, [1]]
+    to_inner[1].append(to_inner[1])
+
+    assert not hashes_equal(to_root, to_inner)
+
+    @cache
+    def deref(value):
+        return value[1][1][0]
+
+    assert deref(to_root) == 0
+    assert deref(to_inner) == 1
+
+
 def test_stringio_hash():
     sio1, sio2 = io.StringIO(), io.StringIO()
     sio1.write('foo')

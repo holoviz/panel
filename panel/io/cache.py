@@ -90,7 +90,10 @@ class _Stack:
         self._stack = {}
 
     def push(self, val):
-        self._stack[id(val)] = val
+        self._stack[id(val)] = (len(self._stack), val)
+
+    def distance(self, val):
+        return len(self._stack) - self._stack[id(val)][0]
 
     def pop(self):
         self._stack.popitem()
@@ -344,7 +347,10 @@ def _generate_hash(obj):
     # Break recursive cycles.
     hash_stack = state._current_stack
     if obj in hash_stack:
-        return _CYCLE_PLACEHOLDER
+        # Encodes which ancestor is referenced, otherwise distinct cyclic
+        # structures, e.g. a reference to the root vs. to a nested
+        # container, would hash alike.
+        return _CYCLE_PLACEHOLDER + _int_to_bytes(hash_stack.distance(obj))
     hash_stack.push(obj)
     try:
         hash_value = _generate_hash_inner(obj)
