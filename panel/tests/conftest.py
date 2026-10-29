@@ -419,15 +419,14 @@ def tmpdir(request, tmpdir_factory):
 
 @pytest.fixture
 def html_server_session(asyncio_loop):
-    port = 5050
     html = HTML('<h1>Title</h1>')
-    server = serve(html, port=port, show=False, start=False)
+    server = serve(html, port=0, address='127.0.0.1', show=False, start=False)
     session = pull_session(
         session_id='Test',
-        url=f"http://localhost:{server.port:d}/",
+        url=f"http://127.0.0.1:{server.port:d}/",
         io_loop=server.io_loop
     )
-    yield html, server, session, port
+    yield html, server, session, server.port
     try:
         server.stop()
     except AssertionError:
@@ -435,15 +434,14 @@ def html_server_session(asyncio_loop):
 
 @pytest.fixture()
 def markdown_server_session():
-    port = 5051
     html = Markdown('#Title')
-    server = serve(html, port=port, show=False, start=False)
+    server = serve(html, port=0, address='127.0.0.1', show=False, start=False)
     session = pull_session(
         session_id='Test',
-        url=f"http://localhost:{server.port:d}/",
+        url=f"http://127.0.0.1:{server.port:d}/",
         io_loop=server.io_loop
     )
-    yield html, server, session, port
+    yield html, server, session, server.port
     try:
         server.stop()
     except AssertionError:
