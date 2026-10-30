@@ -5022,3 +5022,14 @@ def test_tabulator_show_index_toggle(page, show_index):
 
     page.locator('.bk-knob').first.click()
     expect(page.locator('text="index"')).to_have_count(int(show_index))
+
+
+def test_tabulator_jscallback_selection_fires_on_row_click(page, df_mixed):
+    widget = Tabulator(df_mixed)
+    widget.jscallback(selection="document.title = 'selected'")
+
+    serve_component(page, widget)
+
+    page.locator('text="idx0"').click()
+
+    wait_until(lambda: page.title() == 'selected', page)
