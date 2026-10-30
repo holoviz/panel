@@ -679,3 +679,33 @@ def test_tabs_pane_update(document, comm):
     new_div = Div()
     tabs[1].object = new_div
     assert model.tabs[1].child is new_div
+
+
+def test_tabs_setitem_rename_same_object(document, comm):
+    div1 = Div()
+    div2 = Div()
+    tabs = Tabs(('A', div1), ('B', div2))
+
+    model = tabs.get_root(document, comm=comm)
+    tab1, tab2 = model.tabs
+    child = tab1.child
+
+    tabs[0] = ('C', tabs[0])
+
+    assert [t.title for t in model.tabs] == ['C', 'B']
+    assert model.tabs[0] is tab1
+    assert model.tabs[0].child is child
+
+
+def test_tabs_set_objects_rename_reordered(document, comm):
+    div1 = Div()
+    div2 = Div()
+    tabs = Tabs(('A', div1), ('B', div2))
+
+    model = tabs.get_root(document, comm=comm)
+    child1, child2 = [t.child for t in model.tabs]
+
+    tabs[:] = [('X', tabs[1]), ('Y', tabs[0])]
+
+    assert [t.title for t in model.tabs] == ['X', 'Y']
+    assert [t.child for t in model.tabs] == [child2, child1]
