@@ -35,3 +35,33 @@ def test_serve_page_with_reactive_html_css_on_nested_route(page):
     msgs, _ = serve_component(page, {"/foo/bar": app})
 
     assert [msg for msg in msgs if msg.type == "error"] == []
+
+
+def test_saved_inline_tabulator_renders_without_network(page, tmp_path):
+    import pandas as pd
+
+    from panel.widgets import Tabulator
+
+    path = tmp_path / 'tabulator.html'
+    Tabulator(pd.DataFrame({'a': [1, 2, 3]})).save(path, resources='inline')
+
+    remote = []
+    def block_remote(route):
+        if route.request.url.startswith('file:'):
+            route.continue_()
+        else:
+            remote.append(route.request.url)
+            route.abort()
+    page.route('**/*', block_remote)
+
+    msgs = []
+    page.on('console', lambda msg: msgs.append(msg))
+    page.goto(path.as_uri())
+
+    expect(page.locator('.tabulator-row')).to_have_count(3)
+    # Padding only comes from the Tabulator stylesheet
+    padding = page.locator('.tabulator-cell').first.evaluate(
+        "el => getComputedStyle(el).paddingLeft"
+    )
+    assert padding != '0px'
+    assert [url for url in remote if not url.endswith(('favicon.ico', 'apple-touch-icon.png'))] == []

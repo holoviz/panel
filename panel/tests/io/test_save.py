@@ -135,6 +135,17 @@ def test_save_inline_resources():
     assert 'alert-primary' in html
 
 
+def test_save_inline_resources_inlines_component_stylesheets():
+    import pandas as pd
+
+    from panel.widgets import Tabulator
+
+    sio = StringIO()
+    Tabulator(pd.DataFrame({'a': [1, 2, 3]})).save(sio, resources='inline')
+    html = sio.getvalue()
+    assert '"name":"ImportedStyleSheet"' not in html
+
+
 def test_save_cdn_resources():
     alert = Alert('# Save test')
 
