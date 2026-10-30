@@ -1938,6 +1938,83 @@ async def test_param_async_generator(document, comm):
     await async_wait_until(lambda: root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n')
 
 
+async def test_param_async_function_loading_until_complete(document, comm):
+    event = asyncio.Event()
+
+    async def function():
+        await event.wait()
+        return Markdown("done")
+
+    pane = ParamFunction(function, loading_indicator=True)
+    pane.get_root(document, comm)
+
+    await asyncio.sleep(0.05)
+    assert pane._inner_layout.loading
+
+    event.set()
+    await async_wait_until(lambda: not pane._inner_layout.loading)
+    assert pane._pane.object == "done"
+
+
+async def test_param_async_function_loading_cleared_on_error(document, comm):
+    event = asyncio.Event()
+
+    async def function():
+        await event.wait()
+        raise ValueError("boom")
+
+    pane = ParamFunction(function, loading_indicator=True)
+    pane.get_root(document, comm)
+
+    await asyncio.sleep(0.05)
+    assert pane._inner_layout.loading
+
+    event.set()
+    await async_wait_until(lambda: not pane._inner_layout.loading)
+
+
+async def test_param_async_generator_loading_until_complete(document, comm):
+    event = asyncio.Event()
+
+    async def function():
+        yield Markdown("first")
+        await event.wait()
+        yield Markdown("second")
+
+    pane = ParamFunction(function, loading_indicator=True)
+    pane.get_root(document, comm)
+
+    await async_wait_until(lambda: pane._pane.object == "first")
+    assert pane._inner_layout.loading
+
+    event.set()
+    await async_wait_until(lambda: not pane._inner_layout.loading)
+    assert pane._pane.object == "second"
+
+
+async def test_param_async_function_replaced_keeps_loading(document, comm):
+    event = asyncio.Event()
+    checkbox = Checkbox(value=False)
+
+    async def function(value):
+        if not value:
+            await asyncio.sleep(10)
+        await event.wait()
+        return Markdown(f"{value}")
+
+    pane = ParamFunction(bind(function, checkbox), loading_indicator=True)
+    pane.get_root(document, comm)
+    await asyncio.sleep(0.05)
+
+    checkbox.value = True
+    await asyncio.sleep(0.05)
+    assert pane._inner_layout.loading
+
+    event.set()
+    await async_wait_until(lambda: not pane._inner_layout.loading)
+    assert pane._pane.object == "True"
+
+
 async def test_param_async_generator_append(document, comm):
     checkbox = Checkbox(value=False)
 
