@@ -139,6 +139,14 @@ def test_server_non_ascii_route():
     assert r.status_code == 200
 
 
+def test_server_non_ascii_route_index_link(port):
+    r = serve_and_request(
+        {'/儀表板': Markdown('# Title'), '/plain': Markdown('# Plain')},
+        port=port, use_index=True, index=INDEX_HTML, redirect_root=False, suffix='/'
+    )
+
+    assert 'href="./%E5%84%80%E8%A1%A8%E6%9D%BF"' in r.content.decode('utf-8')
+
 def test_server_prefix_root_redirect():
     html = Markdown('# Title')
 

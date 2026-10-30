@@ -438,7 +438,9 @@ class Serve(_BkServe):
                     index = index[:-len(ext)]
             if f'/{index}' in applications:
                 applications['/'] = applications[f'/{index}']
-        applications = {_quote_non_ascii(route): app for route, app in applications.items()}
+        if getattr(args, 'server', 'tornado') == 'tornado':
+            # Starlette matches the decoded path, so ASGI routes stay raw
+            applications = {_quote_non_ascii(route): app for route, app in applications.items()}
         return super().customize_applications(args, applications)
 
     def warm_applications(self, applications, reuse_sessions, error=True, initialize_session=True, index=None):

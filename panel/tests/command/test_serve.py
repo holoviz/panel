@@ -368,6 +368,26 @@ def test_serve_non_ascii_filename(server, tmp_path):
         assert "<title>A</title>" in r.content.decode('utf-8')
 
 
+@pytest.mark.parametrize('server,route', [
+    ('tornado', '/%E5%84%80%E8%A1%A8%E6%9D%BF'),
+    ('fastapi', '/儀表板'),
+    ('asgi', '/儀表板'),
+])
+def test_serve_customize_applications_non_ascii(server, route):
+    import argparse
+
+    from panel.command.serve import Serve
+
+    parser = argparse.ArgumentParser()
+    subcommand = Serve(parser=parser)
+    args = parser.parse_args(['--server', server])
+    app = object()
+
+    applications = subcommand.customize_applications(args, {'/儀表板': app})
+
+    assert applications == {route: app}
+
+
 @linux_only
 def test_serve_basic_auth(server, tmp_path, monkeypatch):
     app = (
