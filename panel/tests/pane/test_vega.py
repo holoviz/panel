@@ -323,20 +323,81 @@ def altair_example():
     )
     return chart
 
+COMPILED_VEGA = {
+    '$schema': 'https://vega.github.io/schema/vega/v5.json',
+    'width': 200,
+    'height': 100,
+    'data': [{'name': 'source_0', 'values': [{'x': 'A', 'y': 5}]}],
+    'marks': [{
+        'type': 'rect',
+        'from': {'data': 'source_0'},
+        'encode': {'enter': {
+            'x': {'value': 0}, 'width': {'value': 10},
+            'y': {'value': 0}, 'height': {'value': 10},
+        }},
+    }],
+}
+
+@pytest.fixture
+def vegafusion_transformer(monkeypatch):
+    """
+    Emulates Altair with the vegafusion transformer active without
+    requiring vegafusion: to_dict only succeeds when format='vega' is
+    requested, otherwise it raises like Altair does.
+    """
+    calls = []
+
+    def to_dict(self, *args, **kwargs):
+        calls.append(kwargs.get('format'))
+        if kwargs.get('format') != 'vega':
+            raise ValueError(
+                'When the "vegafusion" data transformer is enabled, the '
+                'to_dict() and to_json() chart methods must be called with '
+                'format="vega"'
+            )
+        return dict(COMPILED_VEGA)
+
+    monkeypatch.setattr(alt.Chart, 'to_dict', to_dict)
+    with alt.data_transformers.enable('vegafusion'):
+        yield calls
+
 @altair_available
-def test_altair_pane_vegafusion_transformer(document, comm, monkeypatch):
+def test_altair_pane_vegafusion_transformer(document, comm, vegafusion_transformer):
     chart = altair_example().add_params(alt.selection_interval(name='brush'))
-    api = sys.modules[type(chart).__module__]
-    compiled = {
-        '$schema': 'https://vega.github.io/schema/vega/v5.json',
-        'data': [{'name': 'source_0', 'values': [{'x': 'A', 'y': 5}]}],
-    }
-    monkeypatch.setattr(api, '_compile_with_vegafusion', lambda spec: compiled, raising=False)
+    pane = Vega(chart)
+    assert pane._selections == {'brush': 'interval'}
+    model = pane.get_root(document, comm=comm)
+    assert model.data['$schema'] == COMPILED_VEGA['$schema']
+    assert model.events == ['brush']
+    assert set(vegafusion_transformer) == {'vega'}
+
+@altair_available
+def test_altair_pane_vegafusion_transformer_update(document, comm, vegafusion_transformer):
+    pane = Vega(altair_example())
+    model = pane.get_root(document, comm=comm)
+    pane.object = altair_example().add_params(alt.selection_interval(name='brush'))
+    assert pane._selections == {'brush': 'interval'}
+    assert model.data['$schema'] == COMPILED_VEGA['$schema']
+    assert model.events == ['brush']
+    assert set(vegafusion_transformer) == {'vega'}
+
+@altair_available
+@pytest.mark.skipif(vlc is None, reason="requires vl_convert")
+def test_altair_pane_vegafusion_transformer_export(vegafusion_transformer):
+    pane = Vega(altair_example())
+    assert '<svg' in pane.export('svg')
+    assert set(vegafusion_transformer) == {'vega'}
+
+@altair_available
+def test_altair_pane_real_vegafusion_transformer(document, comm):
+    pytest.importorskip('vegafusion')
+    chart = altair_example().add_params(alt.selection_interval(name='brush'))
     with alt.data_transformers.enable('vegafusion'):
         pane = Vega(chart)
         assert pane._selections == {'brush': 'interval'}
         model = pane.get_root(document, comm=comm)
-    assert model.data['$schema'] == compiled['$schema']
+    assert 'vega/' in model.data['$schema']
+    assert any(s['name'] == 'brush' for s in model.data['signals'])
 
 @altair_available
 def test_get_vega_pane_type_from_altair():
