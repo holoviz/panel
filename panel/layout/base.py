@@ -14,6 +14,7 @@ from collections.abc import (
 import param
 
 from bokeh.models import Row as BkRow
+from param import bind
 from param.parameterized import iscoroutinefunction, resolve_ref
 
 from ..config import config
@@ -607,9 +608,12 @@ class NamedListLike(param.Parameterized):
                     'as positional arguments or as a keyword, not both.'
                 )
             items = params.pop('objects')
-        params['objects'], names = self._to_objects_and_names(items)
+        if resolve_ref(items):
+            self._names: list[str] = []
+            params['objects'] = bind(self._resolve_items, items)
+        else:
+            params['objects'], self._names = self._to_objects_and_names(items)
         super().__init__(**params)
-        self._names = names
         self._panels: defaultdict[str, dict[int, Viewable]] = defaultdict(dict)
         self.param.watch(self._update_names, 'objects')
         # ALERT: Ensure that name update happens first, should be
@@ -633,6 +637,11 @@ class NamedListLike(param.Parameterized):
             objects.append(pane)
             names.append(name)
         return objects, names
+
+    def _resolve_items(self, items):
+        # Names must be set before the objects change so _update_names is a no-op
+        objects, self._names = self._to_objects_and_names(items)
+        return objects
 
     def _update_names(self, event: param.parameterized.Event) -> None:
         if len(event.new) == len(self._names):

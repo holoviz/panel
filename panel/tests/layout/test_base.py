@@ -9,7 +9,7 @@ from bokeh.models import Column as BkColumn, Div, Row as BkRow
 from panel.chat import ChatInterface
 from panel.config import config
 from panel.layout import (
-    Accordion, Card, Column, FlexBox, Row, Spacer, Tabs, WidgetBox,
+    Accordion, Card, Column, FlexBox, FloatPanel, Row, Spacer, Tabs, WidgetBox,
 )
 from panel.layout.base import ListPanel, NamedListPanel
 from panel.pane import Bokeh, Markdown
@@ -635,6 +635,41 @@ def test_pass_objects_ref(document, comm, layout):
     md3 = col.objects[0]
     assert isinstance(md3, Markdown)
     assert md3.object == 'foo'
+
+@pytest.mark.parametrize('layout', [Accordion, FloatPanel, Tabs])
+def test_pass_objects_param_ref(layout):
+    class Source(param.Parameterized):
+        value = param.List(default=[Markdown('A', name='a'), Markdown('B', name='b')])
+
+    source = Source()
+    obj = layout(objects=source.param.value)
+
+    assert obj.objects == source.value
+
+    extra = Markdown('C', name='c')
+    source.value = source.value + [extra]
+
+    assert len(obj.objects) == 3
+    assert obj.objects[-1] is extra
+    if layout is not FloatPanel:
+        assert obj._names == ['a', 'b', 'c']
+
+@pytest.mark.parametrize('layout', [Accordion, Tabs])
+def test_pass_objects_param_ref_named_tuples(layout, document, comm):
+    class Source(param.Parameterized):
+        value = param.List(default=[('One', Markdown('A')), ('Two', Markdown('B'))])
+
+    source = Source()
+    obj = layout(objects=source.param.value)
+    obj.get_root(document, comm=comm)
+
+    assert obj._names == ['One', 'Two']
+    assert [o.object for o in obj.objects] == ['A', 'B']
+
+    source.value = [('Three', Markdown('C'))] + source.value
+
+    assert obj._names == ['Three', 'One', 'Two']
+    assert [o.object for o in obj.objects] == ['C', 'A', 'B']
 
 @pytest.mark.parametrize('dim', ["width", "height"])
 def test_compute_sizing_mode_stretch_margin_none(dim, document, comm):
