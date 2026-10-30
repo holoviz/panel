@@ -1686,40 +1686,10 @@ class Tabulator(BaseTable):
         if styler is None:
             return {}
 
-        # Compute offsets (not that multi-indexes are reset so don't require an offset)
-        offset = 1 + int(len(self.indexes) == 1)  + int(self.selectable in ('checkbox', 'checkbox-single')) + int(bool(self.row_content))
-
         if self.pagination == 'remote':
             page_size = self.page_size or self.initial_page_size
             start = (self.page - 1) * page_size
             end = start + page_size
-
-        # Map column indexes in the data to indexes after frozen_columns are applied
-        column_mapper = {}
-        frozen_cols = self.frozen_columns
-        column_mapper = {}
-        if isinstance(frozen_cols, list):
-            if len(self.indexes) > 1:
-                nfrozen = len(frozen_cols)
-            else:
-                nfrozen = len([col for col in frozen_cols if col not in self.indexes])
-            non_frozen = [col for col in df.columns if col not in frozen_cols]
-            for i, col in enumerate(df.columns):
-                if col in frozen_cols:
-                    column_mapper[i] = frozen_cols.index(col) - len(self.indexes)
-                else:
-                    column_mapper[i] = nfrozen + non_frozen.index(col)
-        elif isinstance(frozen_cols, dict):
-            left_cols = [col for col, p in frozen_cols.items() if p in 'left']
-            right_cols = [col for col, p in frozen_cols.items() if p in 'right']
-            non_frozen = [col for col in df.columns if col not in frozen_cols]
-            for i, col in enumerate(df.columns):
-                if col in left_cols:
-                    column_mapper[i] = left_cols.index(col) - len(self.indexes)
-                elif col in right_cols:
-                    column_mapper[i] = len(left_cols) + len(non_frozen) + right_cols.index(col)
-                else:
-                    column_mapper[i] = len(left_cols) + non_frozen.index(col)
 
         styles = {}
         for (r, c), s in styler.ctx.items():
@@ -1730,8 +1700,7 @@ class Tabulator(BaseTable):
                     r -= start
             if r not in styles:
                 styles[int(r)] = {}
-            c = column_mapper.get(int(c), int(c))
-            styles[int(r)][offset+c] = s
+            styles[int(r)][str(df.columns[int(c)])] = s
         return {'id': uuid.uuid4().hex, 'data': styles}
 
     def _get_selectable(self):

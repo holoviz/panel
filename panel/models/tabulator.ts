@@ -1487,9 +1487,8 @@ export class DataTabulatorView extends HTMLBoxView {
         continue
       }
       const cells = row._row.cells
-      for (const c of row_style.keys()) {
-        const style = row_style.get(c)
-        const cell = cells[c]
+      for (const [field, style] of Object.entries(row_style)) {
+        const cell = cells.find((cell: any) => cell.column.field === field)
         if (cell == null || !style.length) {
           continue
         }

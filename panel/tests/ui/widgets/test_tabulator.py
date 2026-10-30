@@ -3011,6 +3011,29 @@ def test_tabulator_styling_init(page, df_mixed):
     expect(max_cell).to_have_css('background-color', _color_mapping['yellow'])
     expect(page.locator('text="false"')).to_have_css('color', _color_mapping['red'])
 
+@pytest.mark.parametrize('kwargs', [
+    {'groups': {'G1': ['A', 'C'], 'G2': ['B', 'D']}},
+    {'groups': {'G1': ['A', 'C'], 'G2': ['B', 'D']}, 'hidden_columns': ['A']},
+    {'groups': {'G1': ['A', 'C'], 'G2': ['B', 'D']}, 'frozen_columns': ['D']},
+    {'groups': {'G1': ['A', 'C'], 'G2': ['B', 'D']}, 'selectable': 'checkbox'},
+    {'groups': {'G1': ['A', 'C'], 'G2': ['B', 'D']}, 'row_content': lambda row: 'content'},
+], ids=['groups', 'hidden', 'frozen', 'checkbox', 'row_content'])
+def test_tabulator_styling_with_column_groups(page, kwargs):
+    df = pd.DataFrame({'A': [1, 2], 'B': [3, 4], 'C': [5, 6], 'D': [7, 8]})
+    widget = Tabulator(df, **kwargs)
+    widget.style.map(lambda v: 'color: red', subset='C')
+
+    serve_component(page, widget)
+
+    for field in 'ABCD':
+        cell = page.locator('.tabulator-row').first.locator(f'.tabulator-cell[tabulator-field="{field}"]')
+        if field in kwargs.get('hidden_columns', []):
+            continue
+        if field == 'C':
+            expect(cell).to_have_css('color', _color_mapping['red'])
+        else:
+            expect(cell).not_to_have_css('color', _color_mapping['red'])
+
 def test_tabulator_patching_and_styling(page, df_mixed):
     df_styled = df_mixed.style.apply(highlight_max, subset=['int'])
     widget = Tabulator(df_styled)
