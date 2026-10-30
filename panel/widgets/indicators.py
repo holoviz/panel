@@ -880,7 +880,8 @@ class Dial(ValueIndicator):
             x_range=x_range, y_range=y_range, tools=[],
             outline_line_color=None, toolbar_location=None,
             border_fill_alpha=0, min_border=0,
-            width=width, height=height, **properties
+            width=width, height=height, max_width=self.max_width,
+            max_height=self.max_height, **properties
         )
         model.xaxis.visible = False
         model.yaxis.visible = False
@@ -941,7 +942,10 @@ class Dial(ValueIndicator):
         for event in events:
             if event.name in ('width', 'height', 'max_width', 'max_height'):
                 width, height = self._size()
-                model.update(width=width, height=height)
+                model.update(
+                    width=width, height=height,
+                    max_width=self.max_width, max_height=self.max_height
+                )
                 update_data = True
             if event.name in self._data_params:
                 update_data = True

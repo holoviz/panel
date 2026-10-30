@@ -208,6 +208,26 @@ def test_dial_figure_size_respects_max_dimensions(document, comm, kwargs, size):
     assert (model.width, model.height) == size
 
 
+@pytest.mark.parametrize('sizing_mode', ['stretch_width', 'stretch_height', 'stretch_both'])
+def test_dial_forwards_max_dimensions_to_figure(document, comm, sizing_mode):
+    model = Dial(
+        value=25, sizing_mode=sizing_mode, max_width=150, max_height=200
+    ).get_root(document, comm)
+
+    assert (model.max_width, model.max_height) == (150, 200)
+    assert (model.width, model.height) == (150, 200)
+
+
+def test_dial_max_dimensions_update_forwarded(document, comm):
+    dial = Dial(value=25, sizing_mode='stretch_width')
+    model = dial.get_root(document, comm)
+
+    dial.max_width = 150
+    dial.max_height = 100
+
+    assert (model.max_width, model.max_height) == (150, 100)
+
+
 def test_dial_max_width_update(document, comm):
     dial = Dial(value=25)
     model = dial.get_root(document, comm)

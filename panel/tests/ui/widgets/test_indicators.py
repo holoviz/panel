@@ -194,3 +194,13 @@ def test_dial_canvas_matches_max_dimensions(page, kwargs):
         return [fig.width, fig.height]
     }""")
     assert tuple(figure_size) == expected
+
+
+def test_dial_stretch_width_respects_max_width(page):
+    dial = Dial(value=25, sizing_mode='stretch_width', max_width=150)
+
+    serve_component(page, dial)
+
+    canvas = page.locator('.bk-Canvas canvas').first
+    expect(canvas).to_have_count(1)
+    assert canvas.bounding_box()['width'] <= 151
