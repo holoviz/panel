@@ -5124,3 +5124,24 @@ def test_tabulator_fit_data_fill_keeps_manually_resized_columns(page):
     wait_until(lambda: widget.value.at[0, 'A'] == 'z', page)
     page.wait_for_timeout(300)
     assert _header_width(page, 'A') == resized
+
+
+def test_tabulator_fit_data_fill_refits_other_columns_after_manual_resize(page):
+    widget = Tabulator(pd.DataFrame({'A': ['x', 'y'], 'B': ['1', '2']}), layout='fit_data_fill', width=600)
+
+    serve_component(page, widget)
+
+    box = page.locator('.tabulator-col[tabulator-field="A"]').bounding_box()
+    edge = box['x'] + box['width'] + 1
+    y = box['y'] + box['height'] / 2
+    page.mouse.move(edge, y)
+    page.mouse.down()
+    page.mouse.move(edge + 120, y, steps=5)
+    page.mouse.up()
+    resized = _header_width(page, 'A')
+    initial_b = _header_width(page, 'B')
+
+    widget.value = pd.DataFrame({'A': ['z', 'y'], 'B': ['a much much longer value in column B', '2']})
+
+    wait_until(lambda: _header_width(page, 'B') > initial_b + 50, page)
+    assert _header_width(page, 'A') == resized
