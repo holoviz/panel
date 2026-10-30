@@ -3011,6 +3011,20 @@ def test_tabulator_styling_init(page, df_mixed):
     expect(max_cell).to_have_css('background-color', _color_mapping['yellow'])
     expect(page.locator('text="false"')).to_have_css('color', _color_mapping['red'])
 
+def test_tabulator_styling_multi_index_columns(page):
+    df = pd.DataFrame(
+        [[1, 2], [3, 4]], columns=pd.MultiIndex.from_tuples([('a', 'b'), ('a', 'c')])
+    )
+    widget = Tabulator(df)
+    widget.style.map(lambda v: 'color: red', subset=[('a', 'c')])
+
+    serve_component(page, widget)
+
+    row = page.locator('.tabulator-row').first
+    expect(row.locator('.tabulator-cell[tabulator-field="a_c"]')).to_have_css('color', _color_mapping['red'])
+    expect(row.locator('.tabulator-cell[tabulator-field="a_b"]')).not_to_have_css('color', _color_mapping['red'])
+
+
 @pytest.mark.parametrize('kwargs', [
     {'groups': {'G1': ['A', 'C'], 'G2': ['B', 'D']}},
     {'groups': {'G1': ['A', 'C'], 'G2': ['B', 'D']}, 'hidden_columns': ['A']},
