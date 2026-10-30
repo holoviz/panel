@@ -4,6 +4,7 @@ import logging
 import os
 import pathlib
 import socket
+import sys
 import threading
 import time
 import weakref
@@ -145,6 +146,32 @@ def test_server_prefix_root_redirect():
 
     assert response.status_code == 200
     assert response.url.endswith('/foo/')
+
+@pytest.mark.parametrize('prefix', ['', '/sub'])
+def test_server_wsgi_app_mounted_on_subpath(prefix, monkeypatch):
+    import types
+
+    # Flask is not a test dependency so a minimal WSGI app stands in for it
+    class Flask:
+        def __call__(self, environ, start_response):
+            body = f"{environ['SCRIPT_NAME']}|{environ['PATH_INFO']}".encode()
+            start_response('200 OK', [('Content-Type', 'text/plain')])
+            return [body]
+
+    monkeypatch.setitem(sys.modules, 'flask', types.SimpleNamespace(Flask=Flask))
+
+    port = serve_and_wait({'/flask': Flask(), 'app': Markdown('# Title')}, prefix=prefix)
+    base = f'http://127.0.0.1:{port}{prefix}'
+
+    r = requests.get(f'{base}/flask/app', timeout=30)
+    assert r.status_code == 200
+    assert r.text == f'{prefix}/flask|/app'
+
+    r = requests.get(f'{base}/flask/a/b?x=1', timeout=30)
+    assert r.text == f'{prefix}/flask|/a/b'
+
+    r = requests.get(f'{base}/flask/', timeout=30)
+    assert r.text == f'{prefix}/flask|/'
 
 def test_server_doc_page_is_not_cached():
     # The document page embeds a short-lived Bokeh session token, so it must

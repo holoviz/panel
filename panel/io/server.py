@@ -1420,9 +1420,19 @@ class ProxyFallbackHandler(RequestHandler):
         self.proxy = proxy
 
     def prepare(self):
+        fallback = self.fallback
         if self.proxy:
-            self.request.path = self.request.path.replace(self.proxy, '')
-        self.fallback(self.request)
+            # Mount the WSGI app at prefix + slug so PATH_INFO keeps its
+            # leading slash and SCRIPT_NAME makes url_for generate full URLs.
+            mount = self.application.prefix + self.proxy.rstrip('/')
+
+            def mounted(environ, start_response, app=self.fallback.wsgi_application):
+                environ['SCRIPT_NAME'] = mount
+                environ['PATH_INFO'] = environ['PATH_INFO'][len(mount):] or '/'
+                return app(environ, start_response)
+
+            fallback = WSGIContainer(mounted)
+        fallback(self.request)
         self._finished = True
         self.on_finish()
 
@@ -1628,7 +1638,7 @@ def get_server(
         if not slug.endswith('/'):
             slug += '/'
         extra_patterns.append((
-            f'^{slug}.*', ProxyFallbackHandler, dict(fallback=wsgi, proxy=slug)
+            f'{slug}.*', ProxyFallbackHandler, dict(fallback=wsgi, proxy=slug)
         ))
         return True
 
