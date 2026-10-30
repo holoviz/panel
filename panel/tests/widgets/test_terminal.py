@@ -75,6 +75,78 @@ async def test_run_list_args():
     assert subprocess.running
     subprocess.kill()
 
+_SCRIPT = """
+import atexit, os, sys, time
+import panel as pn
+
+marker = sys.argv[1]
+atexit.register(lambda: open(marker, 'a').write(f'{os.getpid()}\\n'))
+
+terminal = pn.widgets.Terminal()
+sub = terminal.subprocess
+sub.run(*eval(sys.argv[2]), **eval(sys.argv[3]))
+for _ in range(100):
+    sub._forward_subprocess_output_to_terminal()
+    if not sub.running:
+        break
+    time.sleep(0.05)
+print('RUNNING' if sub.running else 'DONE', repr(terminal.output))
+"""
+
+
+def _run_script(tmp_path, args, kwargs=None):
+    import os
+    import subprocess
+
+    marker = tmp_path / 'marker'
+    env = {**os.environ, 'PYTHONPATH': os.pathsep.join(sys.path)}
+    proc = subprocess.run(
+        [sys.executable, '-c', _SCRIPT, str(marker), repr(args), repr(kwargs or {})],
+        capture_output=True, text=True, timeout=60, env=env
+    )
+    assert proc.returncode == 0, proc.stderr
+    pids = marker.read_text().split() if marker.exists() else []
+    return proc.stdout.strip(), pids
+
+
+@not_windows
+@pytest.mark.subprocess
+def test_subprocess_child_does_not_run_parent_atexit_handlers(tmp_path):
+    out, pids = _run_script(tmp_path, [sys.executable, '-c', 'print("hello")'])
+    assert out.startswith('DONE')
+    assert 'hello' in out
+    assert len(pids) == 1
+
+
+@not_windows
+@pytest.mark.subprocess
+def test_subprocess_failed_exec_does_not_run_parent_code(tmp_path):
+    out, pids = _run_script(tmp_path, ['this-command-does-not-exist'])
+    assert out.startswith('DONE')
+    assert 'this-command-does-not-exist' in out or 'No such file' in out
+    assert len(pids) == 1
+
+
+@not_windows
+@pytest.mark.subprocess
+def test_subprocess_cwd_env_and_shell(tmp_path):
+    out, pids = _run_script(
+        tmp_path, ['echo $PWD-$FOO'],
+        {'shell': True, 'cwd': str(tmp_path), 'env': {'FOO': 'bar', 'PATH': '/bin:/usr/bin'}}
+    )
+    assert out.startswith('DONE')
+    assert f'{tmp_path.resolve()}-bar' in out.replace('\\r', '').replace(str(tmp_path), str(tmp_path.resolve()))
+    assert len(pids) == 1
+
+
+@not_windows
+def test_subprocess_unsupported_kwargs():
+    terminal = pn.widgets.Terminal()
+    with pytest.raises(ValueError, match="timeout"):
+        terminal.subprocess.run('ls', timeout=1)
+    assert not terminal.subprocess.running
+
+
 def test_cannot_assign_string_args_with_spaces():
     terminal = pn.widgets.Terminal()
     subprocess = terminal.subprocess

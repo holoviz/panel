@@ -10,7 +10,6 @@ import os
 import select
 import shlex
 import signal
-import subprocess
 import sys
 import typing as t
 
@@ -54,6 +53,8 @@ class TerminalSubprocess(param.Parameterized):
     _child_pid = param.Integer(default=0, doc="Child process id")
 
     _fd = param.Integer(default=0, doc="Child file descriptor.")
+
+    _exec_kwargs = frozenset({'cwd', 'env', 'executable', 'shell'})
 
     _max_read_bytes = param.Integer(default=1024 * 20)
 
@@ -106,21 +107,40 @@ class TerminalSubprocess(param.Parameterized):
         if self.kwargs:
             kwargs = {**self.kwargs, **kwargs}
 
+        unsupported = set(kwargs) - self._exec_kwargs
+        if unsupported:
+            raise ValueError(
+                f"The subprocess kwargs {sorted(unsupported)} are not supported, "
+                f"only {sorted(self._exec_kwargs)} can be used."
+            )
+
+        argv = [args] if isinstance(args, str) else list(args)
+        if kwargs.get('shell'):
+            argv = ['/bin/sh', '-c', *argv]
+        executable = kwargs.get('executable') or argv[0]
+
         # A fork is an operation whereby a process creates a copy of itself
         # The two processes will continue from here as a PARENT and a CHILD process
         (child_pid, fd) = pty.fork()
 
         if child_pid == 0:
-            # This is the CHILD process fork.
-            # Anything printed here will show up in the pty, including the output
-            # of this subprocess
-            # The process will end by printing 'CompletedProcess(...)' to signal to the parent
-            # that it finished.
+            # This is the CHILD process fork. The command replaces this process
+            # so that none of the parent's atexit handlers or finalizers can run.
+            # Anything printed here will show up in the pty.
             try:
-                result = subprocess.run(args, **kwargs)
-                print(str(result))  # noqa: T201
-            except FileNotFoundError as e:
-                print(str(e) + "\nCompletedProcess('FileNotFoundError')")  # noqa: T201
+                signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+                if kwargs.get('cwd') is not None:
+                    os.chdir(kwargs['cwd'])
+                if kwargs.get('env') is None:
+                    os.execvp(executable, argv)
+                else:
+                    os.execvpe(executable, argv, kwargs['env'])
+            except BaseException as e:
+                try:
+                    print(str(e))  # noqa: T201
+                    sys.stdout.flush()
+                finally:
+                    os._exit(127)
         else:
             # this is the PARENT process fork.
             self._child_pid = child_pid
@@ -176,10 +196,6 @@ class TerminalSubprocess(param.Parameterized):
         with param.edit_constant(self):
             self.running = False
 
-    @staticmethod
-    def _remove_last_line_from_string(value):
-        return value[: value.rfind("CompletedProcess")]
-
     def _decode_utf8_on_boundary(self, fd, max_read_bytes, max_extra_bytes=2):
         "UTF-8 characters can be multi-byte so need to decode on correct boundary"
         data = os.read(fd, max_read_bytes)
@@ -194,16 +210,26 @@ class TerminalSubprocess(param.Parameterized):
         if not self._fd:
             return
         (data_ready, _, _) = select.select([self._fd], [], [], self._timeout_sec)
-        if not data_ready:
+        if data_ready:
+            try:
+                output = self._decode_utf8_on_boundary(self._fd, self._max_read_bytes)
+            except OSError:
+                # Linux raises EIO on the pty master once the child has closed it
+                output = ''
+            if output:
+                self._terminal.write(output)
+                return
+            self._child_has_exited()
+        elif not self._child_has_exited():
             return
+        self._reset()
 
-        output = self._decode_utf8_on_boundary(self._fd, self._max_read_bytes)
-
-        # If Child Process finished it will signal this by appending "CompletedProcess(...)"
-        if "CompletedProcess" in output:
-            self._reset()
-            output = self._remove_last_line_from_string(output)
-        self._terminal.write(output)
+    def _child_has_exited(self):
+        try:
+            pid, _ = os.waitpid(self._child_pid, os.WNOHANG)
+        except ChildProcessError:
+            return True
+        return pid != 0
 
     def _forward_terminal_input_to_subprocess(self, *events):
         if self._fd:
