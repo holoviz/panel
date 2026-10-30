@@ -234,6 +234,15 @@ class Plotly(ModelPane):
         if relayout_data:
             msg['relayout'] = relayout_data
         if restyle_data:
+            # Datetimes must be sent as strings like in the initial render,
+            # otherwise they are serialized as epoch numbers and plotly.js
+            # turns the date axis into a linear one (#4850).
+            restyle_data = {
+                key: [
+                    self._convert_trace({'value': v})['value'] for v in values
+                ] if isinstance(values, list) else values
+                for key, values in restyle_data.items()
+            }
             msg['restyle'] = {'data': restyle_data, 'traces': trace_indexes}
         for ref, (m, _) in self._models.copy().items():
             self._apply_update([], msg, m, ref)
