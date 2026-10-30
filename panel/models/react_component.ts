@@ -754,6 +754,18 @@ function css_class_name(class_name: string): string {
   return class_name.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase()
 }
 
+// A repeated model shares one view, whose element can only be mounted once.
+function unique_models(models: any[]): any[] {
+  const seen = new Set<string>()
+  return models.filter((model: any) => {
+    if (seen.has(model.id)) {
+      return false
+    }
+    seen.add(model.id)
+    return true
+  })
+}
+
 function react_model_proxy(view: ReactComponentView, libs: ReactLibs, Child: any): any {
   const {React} = libs
   const react_proxy: any = new Proxy(view, {
@@ -811,14 +823,14 @@ function react_model_proxy(view: ReactComponentView, libs: ReactLibs, Child: any
           if (!isArray(value)) {
             return React.createElement(Child, {parent: target, name: child})
           }
-          const [children_state, set_children] = React.useState(() => value.map((model: any) =>
+          const [children_state, set_children] = React.useState(() => unique_models(value).map((model: any) =>
             React.createElement(Child, {parent: target, name: child, key: model.id, id: model.id, model}),
           ))
           React.useEffect(() => {
             // Compares against the latest state, not the closure's initial
             // one, and catches lists that only shrank.
             const cb = () => {
-              const current_models = data_model.attributes[child]
+              const current_models = unique_models(data_model.attributes[child])
               set_children((previous: any[]) => {
                 if (previous.length === current_models.length &&
                     current_models.every((model: any, i: number) => model.id === previous[i].props.id)) {
