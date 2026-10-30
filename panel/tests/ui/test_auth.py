@@ -189,6 +189,8 @@ def test_auth0_oauth_via_proxy(py_file, page):
     app = "import panel as pn; pn.pane.Markdown(pn.state.user).servable(title='A')"
     write_file(app, py_file.file)
 
+    app_name = os.path.basename(py_file.name)[:-3]
+
     proxy = os.environ.get('AUTH0_PORT', '5701')
     cookie_secret = os.environ['OAUTH_COOKIE_SECRET']
     encryption_key = os.environ['OAUTH_ENCRYPTION_KEY']
@@ -207,8 +209,8 @@ def test_auth0_oauth_via_proxy(py_file, page):
             py_file.name
         ]
         with run_panel_serve(cmd) as p:
-            port = wait_for_port(p.stdout)
-            page.goto(f"http://localhost:{port}")
+            wait_for_port(p.stdout)
+            page.goto(f"http://localhost:{proxy}/proxy/{app_name}")
 
             _auth0_login(page, auth0_user, auth0_password)
 
