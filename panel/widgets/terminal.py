@@ -19,6 +19,7 @@ from pyviz_comms import JupyterComm
 
 from ..io.callbacks import PeriodicCallback
 from ..util import edit_readonly, lazy_load
+from ..util.warnings import deprecated
 from .base import Widget
 
 if t.TYPE_CHECKING:
@@ -38,14 +39,16 @@ class TerminalSubprocess(param.Parameterized):
 
     args = param.ClassSelector(class_=(str, list), doc="""
         The arguments used to run the subprocess. This may be a string
-        or a list. The string cannot contain spaces. See subprocess.run
-        docs for more details.""")
+        or a list. The string cannot contain spaces.""")
 
     kill = param.Action(doc="Kills the running process", constant=True)
 
     kwargs = param.Dict(doc="""
-        Any other arguments to run the subprocess. See subprocess.run
-        docs for more details.""" )
+        Additional options for running the subprocess. The command is
+        executed in a pseudo terminal with os.execvp(e), so only
+        'cwd', 'env', 'executable' and 'shell' are supported, with the
+        same meaning as in subprocess.run. Other keys emit a
+        deprecation warning and are ignored.""" )
 
     running = param.Boolean(default=False, constant=True, doc="""
         Whether or not the subprocess is running.""")
@@ -107,12 +110,15 @@ class TerminalSubprocess(param.Parameterized):
         if self.kwargs:
             kwargs = {**self.kwargs, **kwargs}
 
-        unsupported = set(kwargs) - self._exec_kwargs
-        if unsupported:
-            raise ValueError(
-                f"The subprocess kwargs {sorted(unsupported)} are not supported, "
-                f"only {sorted(self._exec_kwargs)} can be used."
+        for key in sorted(set(kwargs) - self._exec_kwargs):
+            deprecated(
+                '2.0', f'TerminalSubprocess kwarg {key}',
+                extra=(
+                    f"The command is now executed directly, so {key!r} is ignored. "
+                    f"Only {sorted(self._exec_kwargs)} are supported."
+                )
             )
+            del kwargs[key]
 
         argv = [args] if isinstance(args, str) else list(args)
         if kwargs.get('shell'):
