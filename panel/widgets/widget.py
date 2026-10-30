@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing as t
 
 from collections.abc import Iterable, Mapping
+from decimal import Decimal
 from inspect import Parameter
 from numbers import Integral, Real
 
@@ -70,8 +71,17 @@ def _get_min_max_value(
         max_val = vrange[1] if maximum is None else maximum
     if step is not None:
         # ensure value is on a step
-        tick = int((value - min_val) / step)
-        value = min_val + tick * step
+        tick = round((value - min_val) / step)
+        if isinstance(min_val, Integral) and isinstance(step, Integral):
+            snapped = min_val + tick * step
+            if snapped > max_val:
+                snapped -= step
+        else:
+            # Decimal arithmetic avoids float residue such as 2.2000000000000011
+            snapped = float(Decimal(str(min_val)) + tick * Decimal(str(step)))
+            if snapped > max_val:
+                snapped = float(Decimal(str(snapped)) - Decimal(str(step)))
+        value = snapped
     if not (min_val <= value <= max_val):
         raise ValueError(f'value must be between min and max (min={min_val}, value={value}, max={max_val})')
     return min_val, max_val, value
