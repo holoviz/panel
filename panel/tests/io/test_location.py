@@ -248,3 +248,12 @@ def test_location_sync_to_dataframe_with_initial_value(location, dataframe):
 def test_get_location_params(protocol, host, uri, expected):
     params = _get_location_params(protocol, host, uri)
     assert params==expected
+
+
+@pytest.mark.parametrize('query,expected', [('02', '02'), ('007', '007'), ('2', 2)])
+def test_location_sync_select_numeric_looking_option(location, query, expected):
+    from panel.widgets import Select
+    select = Select(options=['01', '02', '007', 2, 3])
+    location.update_query(sel=query)
+    location.sync(select, {'value': 'sel'})
+    assert select.value == expected
