@@ -429,3 +429,28 @@ def test_plotly_update_traces_keeps_date_axis(page):
 
     wait_until(lambda: plotly_plot.evaluate('el => el.data[0].x.length') == 5, page)
     assert plotly_plot.evaluate('el => el._fullLayout.xaxis.type') == 'date'
+
+
+def test_plotly_reset_axes_after_object_update(page):
+    plot = Plotly({'data': [], 'layout': {'width': 400, 'height': 300}})
+    serve_component(page, plot)
+
+    expect(page.locator('.js-plotly-plot')).to_have_count(1)
+
+    plot.object = go.Figure(
+        data=[go.Scatter(x=[0, 1, 2], y=[0, 50, 100])],
+        layout=go.Layout(width=400, height=300, yaxis=dict(range=[2, 8])),
+    )
+
+    def yrange():
+        return page.locator('.js-plotly-plot').evaluate(
+            "el => el._fullLayout.yaxis.range"
+        )
+
+    wait_until(lambda: yrange() == [2, 8], page)
+
+    page.locator('.js-plotly-plot').hover()
+    page.locator('.modebar-btn[data-attr="zoom"][data-val="reset"]').click()
+    page.wait_for_timeout(300)
+
+    assert yrange() == [2, 8]
