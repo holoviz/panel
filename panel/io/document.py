@@ -677,16 +677,17 @@ def _write_from_worker_thread(
     the write is scheduled on the event loop ahead of bokeh's, so the
     client always receives models before they are referenced.
     """
-    if state._on_loop_thread or not events:
-        return False
-    if not all(isinstance(e, DocumentPatchedEvent) for e in events):
+    patches = [e for e in events if isinstance(e, DocumentPatchedEvent)]
+    if state._on_loop_thread or not patches or len(patches) != len(events):
         return False
     loop = state._document_loop(doc)
-    asyncio_loop = getattr(loop, 'asyncio_loop', loop)
+    asyncio_loop = t.cast(
+        'asyncio.AbstractEventLoop | None', getattr(loop, 'asyncio_loop', loop)
+    )
     connections = list(connections)
     if asyncio_loop is None or asyncio_loop.is_closed() or not connections:
         return False
-    message = connections[0].protocol.create('PATCH-DOC', events)
+    message = connections[0].protocol.create('PATCH-DOC', patches)
     asyncio_loop.call_soon_threadsafe(
         _dispatch_write_task, doc, _write_message, doc, connections, message
     )
