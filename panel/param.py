@@ -518,6 +518,10 @@ class Param(Pane):
                     if isinstance(widget_class, FunctionType):
                         widget_class = widget_class(p_obj)
                     widget_class = resolve_component(t.cast('type', widget_class), design)
+            if (value is None and isinstance(widget_class, type)
+                and issubclass(widget_class, DateRangeSlider)
+                and start is not None and end is not None):
+                kw.pop('value', None)
             if hasattr(widget_class, 'step') and getattr(p_obj, 'step', None):
                 kw['step'] = p_obj.step
             pbounds = getattr(p_obj, 'bounds', None)
