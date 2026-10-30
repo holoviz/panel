@@ -378,6 +378,37 @@ def test_plotly_reset_axes_after_object_update(page):
 
     page.locator('.js-plotly-plot').hover()
     page.locator('.modebar-btn[data-attr="zoom"][data-val="reset"]').click()
-    page.wait_for_timeout(300)
 
-    assert yrange() == [2, 8]
+    wait_until(lambda: yrange() == [2, 8], page)
+
+
+def test_plotly_reset_axes_after_zoom_and_update(page):
+    fig = go.Figure(
+        data=[go.Scatter(x=[0, 1, 2], y=[0, 50, 100])],
+        layout=go.Layout(width=400, height=300),
+    )
+    plot = Plotly(fig)
+    serve_component(page, plot)
+
+    el = page.locator('.js-plotly-plot')
+    expect(el).to_have_count(1)
+
+    def yrange():
+        return el.evaluate("el => el._fullLayout.yaxis.range")
+
+    autorange = yrange()
+
+    el.evaluate("el => Plotly.relayout(el, {'yaxis.range': [10, 20]})")
+    wait_until(lambda: yrange() == [10, 20], page)
+    wait_until(lambda: plot._figure.layout.yaxis.range == (10, 20), page)
+
+    fig.data[0].y = [0, 60, 100]
+    plot.param.trigger('object')
+
+    wait_until(lambda: el.evaluate("el => el.data[0].y[1]") == 60, page)
+    assert yrange() == [10, 20]
+
+    el.hover()
+    page.locator('.modebar-btn[data-attr="zoom"][data-val="reset"]').click()
+
+    wait_until(lambda: yrange() == autorange, page)
