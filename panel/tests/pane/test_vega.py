@@ -324,6 +324,21 @@ def altair_example():
     return chart
 
 @altair_available
+def test_altair_pane_vegafusion_transformer(document, comm, monkeypatch):
+    chart = altair_example().add_params(alt.selection_interval(name='brush'))
+    api = sys.modules[type(chart).__module__]
+    compiled = {
+        '$schema': 'https://vega.github.io/schema/vega/v5.json',
+        'data': [{'name': 'source_0', 'values': [{'x': 'A', 'y': 5}]}],
+    }
+    monkeypatch.setattr(api, '_compile_with_vegafusion', lambda spec: compiled, raising=False)
+    with alt.data_transformers.enable('vegafusion'):
+        pane = Vega(chart)
+        assert pane._selections == {'brush': 'interval'}
+        model = pane.get_root(document, comm=comm)
+    assert model.data['$schema'] == compiled['$schema']
+
+@altair_available
 def test_get_vega_pane_type_from_altair():
     assert PaneBase.get_pane_type(altair_example()) is Vega
 
