@@ -17,6 +17,8 @@ from ..util.checks import datetime_types, isdatetime
 from ..viewable import Layoutable
 from .base import ModelPane
 
+UNDEFINED = '_undefined_'
+
 if t.TYPE_CHECKING:
     from collections.abc import Mapping
 
@@ -224,6 +226,21 @@ class Plotly(ModelPane):
             key: val for key, val in relayout_data.items() if not key.endswith("._derived")
         }
 
+    @classmethod
+    def _encode_undefined(cls, obj):
+        # Plotly marks "leave this trace unchanged" slots in batched restyle
+        # payloads with a bare object() that Bokeh cannot serialize. Use the
+        # same string plotly's own widget uses; the frontend maps it back to
+        # undefined, since null would reset the property instead.
+        from plotly.basedatatypes import Undefined
+        if obj is Undefined:
+            return UNDEFINED
+        elif isinstance(obj, dict):
+            return {k: cls._encode_undefined(v) for k, v in obj.items()}
+        elif isinstance(obj, (list, tuple)):
+            return [cls._encode_undefined(v) for v in obj]
+        return obj
+
     def _send_update_msg(
         self, restyle_data, relayout_data, trace_indexes=None, source_view_id=None
     ):
@@ -234,7 +251,9 @@ class Plotly(ModelPane):
         if relayout_data:
             msg['relayout'] = relayout_data
         if restyle_data:
-            msg['restyle'] = {'data': restyle_data, 'traces': trace_indexes}
+            msg['restyle'] = {
+                'data': self._encode_undefined(restyle_data), 'traces': trace_indexes
+            }
         for ref, (m, _) in self._models.copy().items():
             self._apply_update([], msg, m, ref)
 
