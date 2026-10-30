@@ -197,6 +197,8 @@ class Tabs(NamedListPanel):
             # dynamic then reuse the panel
             if (pane in old_objects and pref in panels and
                 (not (hidden ^ prev_hidden) or not (self.dynamic or prev_hidden))):
+                if panel.title != name:
+                    panel.title = name
                 new_models.append(panel)
                 continue
 
