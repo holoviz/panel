@@ -42,6 +42,7 @@ export class FileDownloadView extends InputWidgetView {
   declare input_el: HTMLInputElement  // HACK: So this.input_el.id = "input" can be set in Bokeh 3.4
   _downloadable: boolean = false
   _click_listener: any
+  _awaiting_transfer: boolean = false
   _prev_href: string | null = ""
   _prev_download: string | null = ""
 
@@ -150,28 +151,35 @@ export class FileDownloadView extends InputWidgetView {
     return [...super.stylesheets(), buttons_css]
   }
 
-  _increment_clicks(): void {
+  _increment_clicks(event: MouseEvent): void {
+    // The link holds the data of the previous transfer so the download
+    // is deferred until the data for this click has arrived.
+    if (!this.model.auto && !this.model.embed && this._downloadable) {
+      event.preventDefault()
+      this._awaiting_transfer = true
+    }
     this.model.clicks = this.model.clicks + 1
   }
 
   _handle_click(): void {
-    // When auto=False the button becomes a link which no longer
-    // requires being updated.
-    if ((!this.model.auto && this._downloadable) || this.anchor_el.hasAttribute("disabled")) {
+    if (this.anchor_el.hasAttribute("disabled")) {
       return
     }
 
     this._make_link_downloadable()
 
-    if (!this.model.embed && this.model.auto) {
+    if (!this.model.embed && (this.model.auto || this._awaiting_transfer)) {
       // Temporarily removing the event listener to emulate a click
       // event on the anchor link which will trigger a download.
       this.anchor_el.removeEventListener("click", this._click_listener)
       this.anchor_el.click()
+      this._awaiting_transfer = false
 
-      // In this case #3 the widget is not a link so these attributes are removed.
-      this.anchor_el.removeAttribute("href")
-      this.anchor_el.removeAttribute("download")
+      if (this.model.auto) {
+        // In this case #3 the widget is not a link so these attributes are removed.
+        this.anchor_el.removeAttribute("href")
+        this.anchor_el.removeAttribute("download")
+      }
 
       this.anchor_el.addEventListener("click", this._click_listener)
     }

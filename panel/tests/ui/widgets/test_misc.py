@@ -1,4 +1,5 @@
 import io
+import re
 import sys
 import tempfile
 
@@ -81,3 +82,35 @@ def test_file_download_updates_when_navigating_between_dynamic_tabs(page):
         assert tmp.file.read().decode('utf-8') == 'abcdef'
     finally:
         tmp.close()
+
+
+@not_windows
+def test_file_download_auto_false_serves_fresh_data_on_each_click(page):
+    text_input = TextInput(value='abc')
+
+    @param.depends(text_input.param.value)
+    def create_file(value):
+        return io.StringIO(value)
+
+    download = FileDownload(callback=create_file, filename='f.txt', auto=False)
+
+    serve_component(page, Column(text_input, download))
+
+    link = page.locator('.bk-btn > a')
+    expect(link).to_have_text('Transfer f.txt')
+
+    # The first click only prepares the file and turns the button into a link
+    link.click()
+    expect(link).to_have_text('Download f.txt')
+    expect(link).to_have_attribute('href', re.compile('^blob:'))
+
+    for expected in ('abc', 'def'):
+        text_input.value = expected
+        with page.expect_download() as download_info:
+            link.click()
+        tmp = tempfile.NamedTemporaryFile(suffix='.txt')
+        download_info.value.save_as(tmp.name)
+        try:
+            assert tmp.file.read().decode('utf-8') == expected
+        finally:
+            tmp.close()
