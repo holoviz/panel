@@ -379,10 +379,15 @@ export class ReactiveHTMLView extends HTMLBoxView {
       const ${method} = (event) => {
         const targets = ${JSON.stringify(method_targets)}
         let [elname, cb] = targets[0]
-        for (const p of event.composedPath()) {
-          const match = targets.find(([name]) => {
+        // currentTarget is the node the listener is attached to, which
+        // differs from the innermost path element for nested nodes.
+        const candidates = [event.currentTarget, ...event.composedPath()]
+        const typed = targets.filter(([, c]) => c === "on" + event.type)
+        const options = typed.length ? typed : targets
+        for (const p of candidates) {
+          const match = p == null ? null : options.find(([name]) => {
             const pattern = name.replace(/\\{\\{(.+?)\\}\\}/g, String.fromCharCode(92) + "d+")
-            return RegExp("^" + pattern + "-[^-]+$").test(p.id)
+            return RegExp("^" + pattern + "(-[0-9]+)*-[^-]+$").test(p.id)
           })
           if (match != null) {
             elname = p.id.split("-").slice(null, -1).join("-")
