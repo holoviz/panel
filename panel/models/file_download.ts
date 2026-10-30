@@ -154,9 +154,9 @@ export class FileDownloadView extends InputWidgetView {
   _increment_clicks(event: MouseEvent): void {
     // The link holds the data of the previous transfer so the download
     // is deferred until the data for this click has arrived.
-    if (!this.model.auto && !this.model.embed && this._downloadable) {
+    this._awaiting_transfer = !this.model.auto && !this.model.embed && this._downloadable
+    if (this._awaiting_transfer) {
       event.preventDefault()
-      this._awaiting_transfer = true
     }
     this.model.clicks = this.model.clicks + 1
   }
