@@ -133,6 +133,25 @@ def test_server_static_dirs():
     with open(__file__, encoding='utf-8') as f:
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
+def test_server_static_dirs_etag_updates_when_file_changes(tmp_path):
+    target = tmp_path / 'app.js'
+    target.write_text('console.log(1)\n')
+
+    port = serve_and_wait(Markdown('# Title'), static_dirs={'assets': str(tmp_path)})
+    url = f'http://127.0.0.1:{port}/assets/app.js'
+
+    r1 = requests.get(url, timeout=30)
+    assert r1.status_code == 200
+    etag = r1.headers['Etag']
+    assert requests.get(url, headers={'If-None-Match': etag}, timeout=30).status_code == 304
+
+    target.write_text('console.log(2)\n')
+
+    r2 = requests.get(url, headers={'If-None-Match': etag}, timeout=30)
+    assert r2.status_code == 200
+    assert r2.text == 'console.log(2)\n'
+    assert r2.headers['Etag'] != etag
+
 def test_server_prefix_root_redirect():
     html = Markdown('# Title')
 
