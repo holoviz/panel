@@ -22,6 +22,18 @@ def test_notification_instantiate_on_config(document):
         assert state.notifications is tmpl.notifications
 
 
+def test_notification_js_events_from_config_outside_session():
+    with config.set(
+        notifications=True, ready_notification='Ready', disconnect_notification='Lost'
+    ):
+        tmpl = VanillaTemplate()
+
+    assert tmpl.notifications.js_events == {
+        'document_ready': {'type': 'success', 'message': 'Ready', 'duration': 3000},
+        'connection_lost': {'type': 'error', 'message': 'Lost'},
+    }
+
+
 def test_notification_explicit(document):
     tmpl = VanillaTemplate(notifications=NotificationArea())
 

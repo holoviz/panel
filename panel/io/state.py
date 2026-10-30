@@ -1421,6 +1421,16 @@ class _state(param.Parameterized):
         from .admin import log_terminal
         return log_terminal
 
+    @staticmethod
+    def _notification_js_events() -> dict[str, dict[str, t.Any]]:
+        from panel.config import config
+        js_events = {}
+        if config.ready_notification:
+            js_events['document_ready'] = {'type': 'success', 'message': config.ready_notification, 'duration': 3000}
+        if config.disconnect_notification:
+            js_events['connection_lost'] = {'type': 'error', 'message': config.disconnect_notification}
+        return js_events
+
     @property
     def notifications(self) -> NotificationAreaBase | None:
         if self.curdoc is None:
@@ -1434,11 +1444,7 @@ class _state(param.Parameterized):
         if not (config.notifications and is_session):
             return None if is_session else self._notification
 
-        js_events = {}
-        if config.ready_notification:
-            js_events['document_ready'] = {'type': 'success', 'message': config.ready_notification, 'duration': 3000}
-        if config.disconnect_notification:
-            js_events['connection_lost'] = {'type': 'error', 'message': config.disconnect_notification}
+        js_events = self._notification_js_events()
 
         if _state._notification_type is None:
             from panel.io.notifications import NotificationArea
