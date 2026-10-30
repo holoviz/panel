@@ -4,6 +4,7 @@ import enum
 import fractions
 import io
 import ipaddress
+import math
 import pathlib
 import sys
 import time
@@ -53,6 +54,31 @@ def test_int_hash():
 def test_float_hash():
     assert hashes_equal(3.14, 3.14)
     assert not hashes_equal(1.2, 3.14)
+
+
+@pytest.mark.parametrize('first, second', [(-1.0, -2.0), (1.0, float(2**61))])
+def test_cache_float_hash_collision(first, second):
+    assert hash(first) == hash(second)
+    assert not hashes_equal(first, second)
+
+    @cache
+    def identity(value):
+        return value
+
+    assert identity(first) == first
+    assert identity(second) == second
+
+
+def test_cache_float_signed_zero():
+    assert not hashes_equal(0.0, -0.0)
+
+    @cache
+    def sign(value):
+        return math.copysign(1, value[0])
+
+    assert sign((0.0,)) == 1
+    assert sign((-0.0,)) == -1
+
 
 def test_bool_hash():
     assert hashes_equal(True, True)

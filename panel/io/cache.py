@@ -17,6 +17,7 @@ import ipaddress
 import os
 import pathlib
 import pickle
+import struct
 import sys
 import threading
 import time
@@ -111,6 +112,11 @@ def _get_fqn(obj):
 def _int_to_bytes(i: int) -> bytes:
     num_bytes = (i.bit_length() + 8) // 8
     return i.to_bytes(num_bytes, "little", signed=True)
+
+def _float_to_bytes(f: float) -> bytes:
+    # Hashes the bits, since hash() collides (e.g. -1.0 and -2.0) and
+    # 0.0 == -0.0 even though functions can tell them apart.
+    return struct.pack('!d', f)
 
 def _is_native(obj: t.Any) -> bool:
     return isinstance(obj, _NATIVE_TYPES)
@@ -254,7 +260,7 @@ _hash_funcs: dict[str | type[t.Any] | tuple[type, ...] | Callable[[t.Any], bool]
     # b'\x00' would otherwise all hash alike and share a cached result.
     int          : lambda obj: b'int:' + _int_to_bytes(obj),
     str          : lambda obj: b'str:' + obj.encode(),
-    float        : lambda obj: b'float:' + _int_to_bytes(hash(obj)),
+    float        : lambda obj: b'float:' + _float_to_bytes(obj),
     bool         : lambda obj: b'bool:1' if obj is True else b'bool:0',
     type(None)   : lambda obj: b'none',
     slice: _slice_hash,
@@ -374,6 +380,8 @@ def _key(obj, _seen=None):
         return None
     elif isinstance(obj, bytearray):
         return ('bytearray', bytes(obj))
+    elif isinstance(obj, float):
+        return (type(obj).__name__, _float_to_bytes(obj))
     elif _is_native(obj):
         return (type(obj).__name__, obj)
     elif isinstance(obj, (list, tuple, dict)):
