@@ -439,7 +439,7 @@ export class DataTabulatorView extends HTMLBoxView {
   _building: boolean = false
   _pending_data: boolean = false
   _redrawing: boolean = false
-  _columns_resized: boolean = false
+  _resized_columns: Map<string, number> = new Map()
   /** Coalesced resize redraw; waits for `this.root.ready` (Bokeh view async chain) before redrawing. */
   _resize_pending: boolean = false
   _resize_flush: Promise<void> | null = null
@@ -594,16 +594,27 @@ export class DataTabulatorView extends HTMLBoxView {
   override invalidate_render(): void {
     this.tabulator?.destroy()
     this.tabulator = null
-    this._columns_resized = false
+    this._resized_columns.clear()
     this.rerender_()
   }
 
-  refitColumns(): void {
-    // Re-fitting resets the widths of columns the user has dragged.
-    if (this._building || this.tabulator == null || this._columns_resized || !this.model.layout.startsWith("fit_data")) {
+  refitColumns(field?: string): void {
+    if (this._building || this.tabulator == null || !this.model.layout.startsWith("fit_data")) {
+      return
+    }
+    if (field != null && this.model.layout !== "fit_data_stretch") {
+      // Measuring a single column costs a fraction of re-measuring them all.
+      const column = this.tabulator.getColumn(field)
+      if (column != null && !this._resized_columns.has(field) && column.getDefinition().width == null) {
+        column.setWidth(true)
+      }
       return
     }
     this.tabulator.columnManager.layoutRefresh(true)
+    // The refit discards the widths of columns the user has dragged.
+    for (const [name, width] of this._resized_columns) {
+      this.tabulator.getColumn(name)?.setWidth(width)
+    }
   }
 
   redraw(columns: boolean = true, rows: boolean = true): void {
@@ -864,7 +875,7 @@ export class DataTabulatorView extends HTMLBoxView {
     })
     this.tabulator.on("rowClick", (e: any, row: any) => this.rowClicked(e, row))
     this.tabulator.on("cellEdited", (cell: any) => this.cellEdited(cell))
-    this.tabulator.on("columnResized", () => { this._columns_resized = true })
+    this.tabulator.on("columnResized", (column: any) => this._resized_columns.set(column.getField(), column.getWidth()))
     this.tabulator.on("dataFiltering", (filters: any) => {
       this.record_scroll()
       this.model.filters = filters
@@ -1775,7 +1786,7 @@ export class DataTabulatorView extends HTMLBoxView {
       comm_settings.debounce = true
       this._tabulator_cell_updating = false
     }
-    this.refitColumns()
+    this.refitColumns(field)
     this.tabulator.scrollToRow(index, "top", false)
   }
 }
