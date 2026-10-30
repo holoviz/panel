@@ -124,3 +124,34 @@ def test_reactive_literal_backtick(page):
     serve_component(page, component)
 
     expect(page.locator(".reactive")).to_have_text('Backtick: `')
+
+
+class SharedCallback(ReactiveHTML):
+
+    _template = """
+    <button id="btn1" onclick=${_click}>One</button>
+    <button id="btn2" onclick=${_click}>Two</button>
+    <button id="solo" onclick=${_solo}>Solo</button>
+    """
+
+    def __init__(self, **params):
+        super().__init__(**params)
+        self.nodes = []
+
+    def _click(self, event):
+        self.nodes.append(event.node)
+
+    def _solo(self, event):
+        self.nodes.append(event.node)
+
+
+def test_reactive_html_shared_callback_reports_clicked_node(page):
+    component = SharedCallback()
+
+    serve_component(page, component)
+
+    page.get_by_text("One").click()
+    page.get_by_text("Two").click()
+    page.get_by_text("Solo").click()
+
+    wait_until(lambda: component.nodes == ['btn1', 'btn2', 'solo'], page)
