@@ -90,7 +90,10 @@ class _Stack:
         self._stack = {}
 
     def push(self, val):
-        self._stack[id(val)] = val
+        self._stack[id(val)] = (len(self._stack), val)
+
+    def distance(self, val):
+        return len(self._stack) - self._stack[id(val)][0]
 
     def pop(self):
         self._stack.popitem()
@@ -344,7 +347,10 @@ def _generate_hash(obj):
     # Break recursive cycles.
     hash_stack = state._current_stack
     if obj in hash_stack:
-        return _CYCLE_PLACEHOLDER
+        # Encodes which ancestor is referenced, otherwise distinct cyclic
+        # structures, e.g. a reference to the root vs. to a nested
+        # container, would hash alike.
+        return _CYCLE_PLACEHOLDER + _int_to_bytes(hash_stack.distance(obj))
     hash_stack.push(obj)
     try:
         hash_value = _generate_hash_inner(obj)
@@ -352,7 +358,7 @@ def _generate_hash(obj):
         hash_stack.pop()
     return hash_value
 
-def _key(obj):
+def _key(obj, _seen=None):
     """
     Returns a hashable key uniquely describing an object, or
     _INDETERMINATE if no such key can cheaply be derived.
@@ -370,21 +376,28 @@ def _key(obj):
         return ('bytearray', bytes(obj))
     elif _is_native(obj):
         return (type(obj).__name__, obj)
-    elif isinstance(obj, (list, tuple)):
-        keys = tuple(_key(item) for item in obj)
-        if any(key is _INDETERMINATE for key in keys):
+    elif isinstance(obj, (list, tuple, dict)):
+        if _seen is None:
+            _seen = set()
+        if id(obj) in _seen:
             return _INDETERMINATE
-        # Tagged by type to match _container_hash, so that e.g. a
-        # namedtuple does not key the same as a plain tuple
-        return (f'__{type(obj).__name__}', keys)
-    elif isinstance(obj, dict):
-        items = []
-        for k, v in obj.items():
-            kkey, vkey = _key(k), _key(v)
-            if kkey is _INDETERMINATE or vkey is _INDETERMINATE:
+        _seen.add(id(obj))
+        try:
+            if isinstance(obj, dict):
+                items = []
+                for k, v in obj.items():
+                    kkey, vkey = _key(k, _seen), _key(v, _seen)
+                    if kkey is _INDETERMINATE or vkey is _INDETERMINATE:
+                        return _INDETERMINATE
+                    items.append((kkey, vkey))
+                keys = tuple(items)
+            else:
+                keys = tuple(_key(item, _seen) for item in obj)
+            if any(key is _INDETERMINATE for key in keys):
                 return _INDETERMINATE
-            items.append((kkey, vkey))
-        return (f'__{type(obj).__name__}', tuple(items))
+            return (f'__{type(obj).__name__}', keys)
+        finally:
+            _seen.remove(id(obj))
     return _INDETERMINATE
 
 def _memoize_hash(key, hash_value):
