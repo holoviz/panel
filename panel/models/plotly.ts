@@ -68,6 +68,17 @@ interface PlotlyHTMLElement extends HTMLDivElement {
   on(event: "plotly_unhover", callback: () => void): void
 }
 
+const decodeUndefined = (obj: any): any => {
+  if (obj === "_undefined_") {
+    return undefined
+  } else if (Array.isArray(obj)) {
+    return obj.map(decodeUndefined)
+  } else if (isPlainObject(obj)) {
+    return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, decodeUndefined(v)]))
+  }
+  return obj
+}
+
 const filterEventData = (gd: any, eventData: any, event: string) => {
   // Ported from dash-core-components/src/components/Graph.react.js
   const filteredEventData: {[k: string]: any} = Array.isArray(eventData)? []: {}
@@ -236,7 +247,8 @@ export class PlotlyPlotView extends HTMLBoxView {
       if (this.model.restyle == null) {
         return
       }
-      (window as any).Plotly.restyle(this.container, this.model.restyle.data, this.model.restyle.traces)
+      const data = decodeUndefined(this.model.restyle.data)
+      ;(window as any).Plotly.restyle(this.container, data, this.model.restyle.traces)
       this.model.restyle = null
     })
 
