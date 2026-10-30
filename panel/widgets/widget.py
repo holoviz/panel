@@ -72,14 +72,16 @@ def _get_min_max_value(
     if step is not None:
         # ensure value is on a step
         tick = round((value - min_val) / step)
+        # Only step back when rounding overshot max; out-of-range values must still raise below
+        in_range = value <= max_val
         if isinstance(min_val, Integral) and isinstance(step, Integral):
             snapped = min_val + tick * step
-            if snapped > max_val:
+            if in_range and snapped > max_val:
                 snapped -= step
         else:
             # Decimal arithmetic avoids float residue such as 2.2000000000000011
             snapped = float(Decimal(str(min_val)) + tick * Decimal(str(step)))
-            if snapped > max_val:
+            if in_range and snapped > max_val:
                 snapped = float(Decimal(str(snapped)) - Decimal(str(step)))
         value = snapped
     if not (min_val <= value <= max_val):

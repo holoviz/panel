@@ -1,12 +1,14 @@
 from datetime import date
 
+import pytest
+
 from bokeh.models import Column as BkColumn, Div as BkDiv
 
 from panel import widgets
 from panel.interact import interactive
 from panel.models import HTML as BkHTML
 from panel.pane import HTML
-from panel.widgets.widget import fixed
+from panel.widgets.widget import _get_min_max_value, fixed
 
 
 def test_fixed_widget_preserves_parameter_reference():
@@ -169,6 +171,15 @@ def test_tuple_int_range_interact_with_value_off_step():
     widget = interact_pane._widgets['a']
     assert isinstance(widget, widgets.IntSlider)
     assert widget.value == 3
+
+@pytest.mark.parametrize('args', [(0, 10, 11, 1), (0, 10, 10.5, 0.5), (0, 10, 11, 0.5)])
+def test_get_min_max_value_rejects_value_above_max(args):
+    with pytest.raises(ValueError, match='value must be between'):
+        _get_min_max_value(*args)
+
+def test_get_min_max_value_snaps_near_max():
+    assert _get_min_max_value(0, 10, 9.9, 3) == (0, 10, 9)
+    assert _get_min_max_value(0, 10, 10, 1) == (0, 10, 10)
 
 def test_tuple_range_interact_with_no_step_and_value():
     def test(a):
