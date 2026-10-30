@@ -439,6 +439,7 @@ export class DataTabulatorView extends HTMLBoxView {
   _building: boolean = false
   _pending_data: boolean = false
   _redrawing: boolean = false
+  _columns_resized: boolean = false
   /** Coalesced resize redraw; waits for `this.root.ready` (Bokeh view async chain) before redrawing. */
   _resize_pending: boolean = false
   _resize_flush: Promise<void> | null = null
@@ -544,6 +545,7 @@ export class DataTabulatorView extends HTMLBoxView {
       this._updating_scroll = true
       void this.setData().then(() => {
         this._selection_updating = false
+        this.refitColumns()
         this.postUpdate()
         this.restore_scroll()
       })
@@ -592,7 +594,16 @@ export class DataTabulatorView extends HTMLBoxView {
   override invalidate_render(): void {
     this.tabulator?.destroy()
     this.tabulator = null
+    this._columns_resized = false
     this.rerender_()
+  }
+
+  refitColumns(): void {
+    // Re-fitting resets the widths of columns the user has dragged.
+    if (this._building || this.tabulator == null || this._columns_resized || !this.model.layout.startsWith("fit_data")) {
+      return
+    }
+    this.tabulator.columnManager.layoutRefresh(true)
   }
 
   redraw(columns: boolean = true, rows: boolean = true): void {
@@ -853,6 +864,7 @@ export class DataTabulatorView extends HTMLBoxView {
     })
     this.tabulator.on("rowClick", (e: any, row: any) => this.rowClicked(e, row))
     this.tabulator.on("cellEdited", (cell: any) => this.cellEdited(cell))
+    this.tabulator.on("columnResized", () => { this._columns_resized = true })
     this.tabulator.on("dataFiltering", (filters: any) => {
       this.record_scroll()
       this.model.filters = filters
@@ -1763,6 +1775,7 @@ export class DataTabulatorView extends HTMLBoxView {
       comm_settings.debounce = true
       this._tabulator_cell_updating = false
     }
+    this.refitColumns()
     this.tabulator.scrollToRow(index, "top", false)
   }
 }
