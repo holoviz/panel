@@ -35,7 +35,7 @@ class Location(Model):
     hash = String(default="", help="""
       hash in window.location e.g. '#interact'""")
 
-    reload = Bool(default=True, help="""
+    reload = Bool(default=False, help="""
       Reload the page when the location is updated. For multipage apps
       this should be set to True, For single page apps this should be
       set to False""")
