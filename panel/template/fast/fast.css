@@ -153,6 +153,10 @@ img.app-logo {
   padding: 15px 10px 5px 5px;
 }
 
+#sidebar > ul {
+  height: 100%;
+}
+
 #sidebar.hidden {
   border: 0px;
   margin: 0px;
