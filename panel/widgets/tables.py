@@ -226,8 +226,14 @@ class BaseTable(ReactiveData, Widget):
             self._renamed_cols.clear()
             return
         self._renamed_cols = {
-            ('_'.join(col) if isinstance(col, tuple) else str(col)) if str(col) != col else col: col for col in self._get_fields()
+            self._field_name(col): col for col in self._get_fields()
         }
+
+    @staticmethod
+    def _field_name(col):
+        if str(col) == col:
+            return col
+        return '_'.join(col) if isinstance(col, tuple) else str(col)
 
     def _reset_selection(self, event):
         if 'selectable' in self.param and not self.selectable:
@@ -1700,7 +1706,7 @@ class Tabulator(BaseTable):
                     r -= start
             if r not in styles:
                 styles[int(r)] = {}
-            styles[int(r)][str(df.columns[int(c)])] = s
+            styles[int(r)][self._field_name(df.columns[int(c)])] = s
         return {'id': uuid.uuid4().hex, 'data': styles}
 
     def _get_selectable(self):

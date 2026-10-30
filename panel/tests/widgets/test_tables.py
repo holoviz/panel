@@ -3046,6 +3046,33 @@ def test_tabulator_style_multi_index_dataframe(document, comm):
     }
 
 
+def test_tabulator_style_multi_index_columns_keyed_by_field(document, comm):
+    df = pd.DataFrame(
+        np.ones((2, 2)), columns=pd.MultiIndex.from_tuples([('a', 'b'), ('a', 'c')])
+    )
+    table = Tabulator(df)
+    table.style.map(lambda v: 'color: red', subset=[('a', 'b')])
+
+    model = table.get_root(document, comm)
+
+    assert 'a_b' in [col.field for col in model.columns]
+    assert model.cell_styles['data'] == {
+        0: {'a_b': [('color', 'red')]},
+        1: {'a_b': [('color', 'red')]},
+    }
+
+
+def test_tabulator_style_non_string_column_names_keyed_by_field(document, comm):
+    df = pd.DataFrame(np.ones((2, 2)), columns=[1, 2])
+    table = Tabulator(df)
+    table.style.map(lambda v: 'color: red', subset=[2])
+
+    model = table.get_root(document, comm)
+
+    assert '2' in [col.field for col in model.columns]
+    assert set(model.cell_styles['data'][0]) == {'2'}
+
+
 @mpl_available
 def test_tabulator_style_background_gradient_with_frozen_columns(document, comm):
     df = pd.DataFrame(np.random.rand(3, 5), columns=list("ABCDE"))
