@@ -121,6 +121,10 @@ img.app-logo {
   margin-right: 0.25em;
 }
 
+#sidebar > ul {
+  height: 100%;
+}
+
 #sidebar.hidden {
   border: 0px;
   margin: 0px;

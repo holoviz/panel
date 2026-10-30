@@ -143,6 +143,10 @@ img.app-logo {
   padding: 15px 10px 15px 5px;
 }
 
+#sidebar > ul {
+  height: 100%;
+}
+
 #sidebar.collapsing {
   display: block;
   width: 0;
