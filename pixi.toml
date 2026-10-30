@@ -271,6 +271,7 @@ test-subprocess = { cmd = 'pytest panel/tests --subprocess', description = "Run 
 [feature.test-example.tasks]
 test-docs = { cmd = 'pytest panel/tests --docs', description = "Run the documentation tests" }
 test-example = { cmd = 'pytest -n logical --dist loadscope --nbval-lax examples', description = "Run the example notebooks" }
+test-apps = { cmd = 'panel check examples/apps/uv/app.py', description = "Check the example apps run" }
 
 [feature.test-example.dependencies]
 nbval = "*"
