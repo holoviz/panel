@@ -688,7 +688,8 @@ class Dial(ValueIndicator):
         'annulus_width', 'format', 'background', 'needle_width',
         'tick_size', 'title_size', 'value_size', 'colors',
         'default_color', 'unfilled_color', 'height',
-        'width', 'nan_format', 'needle_color', 'label_color'
+        'width', 'max_width', 'max_height', 'nan_format',
+        'needle_color', 'label_color'
     ]
 
     _data_params: t.ClassVar[list[str]] = _manual_params
@@ -722,10 +723,15 @@ class Dial(ValueIndicator):
 
     def _size(self) -> tuple[int, int]:
         height = self.height or self.width or 250
-        return self.width or height, height
+        width = self.width or height
+        if self.max_width:
+            width = min(width, self.max_width)
+        if self.max_height:
+            height = min(height, self.max_height)
+        return width, height
 
     def _font_sizes(self) -> tuple[str, str, str]:
-        scale = (self._size()[1]/400)
+        scale = min(self._size())/400
         title_size = self.title_size if self.title_size else '%spt' % (scale*32)
         value_size = self.value_size if self.value_size else '%spt' % (scale*48)
         tick_size = self.tick_size if self.tick_size else '%spt' % (scale*18)
@@ -869,11 +875,12 @@ class Dial(ValueIndicator):
         from bokeh.plotting import figure
         properties = self._get_properties(doc)
         x_range, y_range = self._get_ranges()
+        width, height = self._size()
         model = figure(
             x_range=x_range, y_range=y_range, tools=[],
             outline_line_color=None, toolbar_location=None,
             border_fill_alpha=0, min_border=0,
-            width=self.width, height=self.height, **properties
+            width=width, height=height, **properties
         )
         model.xaxis.visible = False
         model.yaxis.visible = False
@@ -932,8 +939,10 @@ class Dial(ValueIndicator):
     def _manual_update(self, events, model, doc, root, parent, comm):
         update_data = False
         for event in events:
-            if event.name in ('width', 'height'):
-                model.update(**{event.name: event.new})
+            if event.name in ('width', 'height', 'max_width', 'max_height'):
+                width, height = self._size()
+                model.update(width=width, height=height)
+                update_data = True
             if event.name in self._data_params:
                 update_data = True
             if event.name == 'needle_color':
