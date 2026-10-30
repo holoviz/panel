@@ -356,3 +356,28 @@ def test_plotly_img_plot(page, plotly_img_plot):
             'points': [{'curveNumber': 0, 'x': 15, 'y': 3, 'colormodel': 'rgb'}]
         }
     wait_until(check_hover, page)
+
+
+def test_plotly_reset_axes_after_object_update(page):
+    plot = Plotly({'data': [], 'layout': {'width': 400, 'height': 300}})
+    serve_component(page, plot)
+
+    expect(page.locator('.js-plotly-plot')).to_have_count(1)
+
+    plot.object = go.Figure(
+        data=[go.Scatter(x=[0, 1, 2], y=[0, 50, 100])],
+        layout=go.Layout(width=400, height=300, yaxis=dict(range=[2, 8])),
+    )
+
+    def yrange():
+        return page.locator('.js-plotly-plot').evaluate(
+            "el => el._fullLayout.yaxis.range"
+        )
+
+    wait_until(lambda: yrange() == [2, 8], page)
+
+    page.locator('.js-plotly-plot').hover()
+    page.locator('.modebar-btn[data-attr="zoom"][data-val="reset"]').click()
+    page.wait_for_timeout(300)
+
+    assert yrange() == [2, 8]

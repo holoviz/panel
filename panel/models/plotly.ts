@@ -195,6 +195,7 @@ export class PlotlyPlotView extends HTMLBoxView {
   _plotInitialized: boolean = false
   _rendered: boolean = false
   _reacting: boolean = false
+  _axis_ranges: string | null = null
   _relayouting: boolean = false
   _hoverdata: any = null
   container: PlotlyHTMLElement
@@ -428,7 +429,14 @@ export class PlotlyPlotView extends HTMLBoxView {
     const data = this._trace_data()
     const newLayout = this._layout_data()
     this._reacting = true
-    if (new_plot) {
+    // Plotly.react does not refresh the ranges captured by newPlot, which
+    // the Reset axes button restores, so changed axis ranges need a newPlot.
+    const axis_ranges = JSON.stringify(
+      Object.entries(newLayout).filter(([key]) => /^[xy]axis\d*$/.test(key)).map(([key, axis]: [string, any]) => [key, axis?.range])
+    )
+    const ranges_changed = this._axis_ranges != null && axis_ranges !== this._axis_ranges
+    this._axis_ranges = axis_ranges
+    if (new_plot || ranges_changed) {
       const obj = {data, layout: newLayout, config: this.model.config, frames: this.model.frames}
       await (window as any).Plotly.newPlot(this.container, obj)
     } else {
