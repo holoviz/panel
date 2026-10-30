@@ -38,6 +38,43 @@ if t.TYPE_CHECKING:
 # links, definition lists) or which breaks line offsets (\r).
 _NON_LOCAL_SYNTAX = re.compile(r'\[\^|\]:|^ {0,3}[:~][ \t]|\r', re.MULTILINE)
 
+def _math_plugin(md: MarkdownIt) -> None:
+    """
+    Keeps math delimited by $ or $$ verbatim, since the client-side
+    MathJax pass runs on the rendered HTML and would otherwise see
+    markup generated from characters such as '*' inside the math.
+    """
+    from mdit_py_plugins.dollarmath import dollarmath_plugin
+
+    dollarmath_plugin(md, allow_labels=False, double_inline=True)
+
+    def raw(delimiter, block=False):
+        def render(self, tokens, idx, options, env):
+            math = escape(tokens[idx].content, quote=False)
+            return f'{delimiter}{math}{delimiter}\n' if block else f'{delimiter}{math}{delimiter}'
+        return render
+
+    md.add_render_rule('math_inline', raw('$'))
+    md.add_render_rule('math_inline_double', raw('$$'))
+    md.add_render_rule('math_block', raw('$$', block=True))
+
+
+def _MathExtension():
+    from markdown.extensions import Extension
+    from markdown.inlinepatterns import InlineProcessor
+
+    class MathProcessor(InlineProcessor):
+        def handleMatch(self, m, data):
+            return m.group(0), m.start(0), m.end(0)
+
+    class MathExtension(Extension):
+        def extendMarkdown(self, md):
+            # Priority above backticks and escapes so nothing inside is touched
+            md.inlinePatterns.register(MathProcessor(r'\$\$.+?\$\$', md), 'math', 200)
+
+    return MathExtension()
+
+
 _HEADING_ID = re.compile(r'<h[1-6][^>]*?\sid="([^"]*)"')
 
 
@@ -654,7 +691,7 @@ class Markdown(HTMLBasePane):
 
     @classmethod
     @functools.cache
-    def _get_parser(cls, renderer, plugins, hard_line_break=False, disable_anchors=True, **renderer_options):
+    def _get_parser(cls, renderer, plugins, hard_line_break=False, disable_anchors=True, disable_math=True, **renderer_options):
         if renderer == 'markdown':
             return None
         from markdown_it import MarkdownIt
@@ -696,6 +733,8 @@ class Markdown(HTMLBasePane):
         )
         if not disable_anchors:
             parser = parser.use(anchors_plugin, permalink=True)
+        if not disable_math:
+            parser = parser.use(_math_plugin)
         for plugin in plugins:
             parser = parser.use(plugin)
         try:
@@ -725,7 +764,11 @@ class Markdown(HTMLBasePane):
         if self.renderer == 'markdown':
             import markdown
             self._block_cache = None
-            extensions = self.extensions + ['nl2br'] if self.hard_line_break else self.extensions
+            extensions = list(self.extensions)
+            if self.hard_line_break:
+                extensions.append('nl2br')
+            if not self.disable_math:
+                extensions.append(_MathExtension())
             return markdown.markdown(
                 obj,
                 extensions=extensions,
@@ -733,7 +776,8 @@ class Markdown(HTMLBasePane):
                 **self.renderer_options
             )
         parser = self._get_parser(
-            self.renderer, tuple(self.plugins), self.hard_line_break, self.disable_anchors, **self.renderer_options
+            self.renderer, tuple(self.plugins), self.hard_line_break,
+            self.disable_anchors, self.disable_math, **self.renderer_options
         )
         if self.renderer == 'markdown-it' and not self.plugins and not _NON_LOCAL_SYNTAX.search(obj):
             try:
