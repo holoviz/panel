@@ -133,6 +133,20 @@ def test_server_static_dirs():
     with open(__file__, encoding='utf-8') as f:
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
+def test_server_non_ascii_route():
+    r = serve_and_request({'/儀表板': Markdown('# Title')}, suffix='/%E5%84%80%E8%A1%A8%E6%9D%BF')
+
+    assert r.status_code == 200
+
+
+def test_server_non_ascii_route_index_link(port):
+    r = serve_and_request(
+        {'/儀表板': Markdown('# Title'), '/plain': Markdown('# Plain')},
+        port=port, use_index=True, index=INDEX_HTML, redirect_root=False, suffix='/'
+    )
+
+    assert 'href="./%E5%84%80%E8%A1%A8%E6%9D%BF"' in r.content.decode('utf-8')
+
 def test_server_prefix_root_redirect():
     html = Markdown('# Title')
 

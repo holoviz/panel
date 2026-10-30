@@ -46,7 +46,7 @@ from ..io.reload import record_modules, watch
 from ..io.resources import DIST_DIR
 from ..io.rest import REST_PROVIDERS
 from ..io.server import (
-    INDEX_HTML, admin_auth_patterns, get_session_info_routes,
+    INDEX_HTML, _quote_non_ascii, admin_auth_patterns, get_session_info_routes,
     get_static_routes, set_curdoc,
 )
 from ..io.state import state
@@ -438,6 +438,9 @@ class Serve(_BkServe):
                     index = index[:-len(ext)]
             if f'/{index}' in applications:
                 applications['/'] = applications[f'/{index}']
+        if getattr(args, 'server', 'tornado') == 'tornado':
+            # Starlette matches the decoded path, so ASGI routes stay raw
+            applications = {_quote_non_ascii(route): app for route, app in applications.items()}
         return super().customize_applications(args, applications)
 
     def warm_applications(self, applications, reuse_sessions, error=True, initialize_session=True, index=None):
