@@ -593,8 +593,8 @@ class Serve(_BkServe):
         if args.admin:
             from ..io.admin import admin_panel
 
-            # If `--admin-endpoint` is not set, then we default to the `/admin` path.
-            admin_path = "/admin"
+            # `--admin-endpoint` takes precedence over the config/environment, which default to `/admin`.
+            admin_path = config._admin_path
             if args.admin_endpoint:
                 admin_path = args.admin_endpoint
                 admin_path = admin_path if admin_path.startswith('/') else f'/{admin_path}'

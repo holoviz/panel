@@ -631,6 +631,13 @@ class _config(_base_config):
         return os.environ.get('PANEL_ADMIN_ENDPOINT', self._admin_endpoint)
 
     @property
+    def _admin_path(self):
+        endpoint = self.admin_endpoint
+        if not endpoint:
+            return '/admin'
+        return endpoint if endpoint.startswith('/') else f'/{endpoint}'
+
+    @property
     def admin_password(self):
         return os.environ.get('PANEL_ADMIN_PASSWORD', self._admin_password) or None
 
