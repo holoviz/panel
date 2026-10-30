@@ -1,5 +1,8 @@
 import os
 import pathlib
+import shutil
+import socket
+import subprocess
 
 import pytest
 
@@ -17,6 +20,28 @@ from panel.tests.util import (
 
 pytestmark = pytest.mark.ui
 auth_check = pytest.mark.skipif('PANEL_TEST_AUTH' not in os.environ, reason='PANEL_TEST_AUTH environment variable is required to run this test')
+
+
+def _port_is_free(port):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            s.bind(('', int(port)))
+        except OSError:
+            return False
+    return True
+
+
+def _wait_for_free_port(port, timeout=30):
+    # The Auth0 callback URL pins the port, so it cannot be swapped for an ephemeral one
+    try:
+        wait_until(lambda: _port_is_free(port), timeout=timeout * 1000, interval=500)
+    except Exception:
+        ss = shutil.which('ss')
+        holder = subprocess.run(
+            [ss, '-ltnp'], capture_output=True, text=True
+        ).stdout if ss else 'ss is not available'
+        pytest.fail(f'Port {port} is still in use after {timeout}s, listeners:\n{holder}')
 
 
 def _auth0_login(page, user, password):
@@ -172,6 +197,7 @@ def test_auth0_oauth(py_file, page):
         "--oauth-encryption-key", encryption_key, "--oauth-extra-params", extra_params,
         py_file.name
     ]
+    _wait_for_free_port(port)
     with run_panel_serve(cmd) as p:
         port = wait_for_port(p.stdout)
         page.goto(f"http://localhost:{port}")
@@ -197,6 +223,7 @@ def test_auth0_oauth_via_proxy(py_file, page):
     extra_params = os.environ['AUTH0_OAUTH_EXTRA_PARAMS']
     auth0_user = os.environ['AUTH0_OAUTH_USER']
     auth0_password = os.environ['AUTH0_OAUTH_PASSWORD']
+    _wait_for_free_port(proxy)
     with reverse_proxy(proxy_port=proxy) as (port, _):
         cmd = [
             "--port", port, "--oauth-provider", "auth0", "--oauth-key", oauth_key,
