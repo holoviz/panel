@@ -180,7 +180,7 @@ class DataTabulator(HTMLBox):
 
     source = Instance(ColumnDataSource)
 
-    cell_styles = Dict(String, Either(String, Dict(Int, Dict(Int, List(Either(String, Tuple(String, String)))))))
+    cell_styles = Dict(String, Either(String, Dict(Int, Dict(String, List(Either(String, Tuple(String, String)))))))
 
     pagination = Nullable(String)
 
