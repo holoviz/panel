@@ -99,6 +99,33 @@ def test_widgetbox_disables_widgets(page, panel_ui):
     expect(page.locator('input')).to_be_enabled()
 
 
+COUNT_DEFERRED_TASKS = """
+window.deferred_tasks = 0
+const post = MessagePort.prototype.postMessage
+MessagePort.prototype.postMessage = function(...args) {
+  window.deferred_tasks++
+  return post.apply(this, args)
+}
+"""
+
+
+def test_tabulator_in_inactive_tab_does_not_spin(page, panel_ui):
+    df = pd.DataFrame({'a': range(5)})
+    tabs = panel_ui.Tabs(('A', 'first'), ('B', panel_ui.Tabulator(df)))
+
+    page.add_init_script(COUNT_DEFERRED_TASKS)
+    serve_component(page, tabs)
+    expect(page.get_by_role('tab', name='A')).to_be_visible()
+    page.wait_for_timeout(500)
+
+    page.evaluate("() => { window.deferred_tasks = 0 }")
+    page.wait_for_timeout(500)
+    assert page.evaluate("() => window.deferred_tasks") < 100
+
+    page.get_by_role('tab', name='B').click()
+    expect(page.locator('.tabulator-row')).to_have_count(len(df))
+
+
 def test_tabulator_in_unmanaged_host_matches_served_app(page, panel_ui):
     from panel_material_ui.layout import MaterialWrapper
 

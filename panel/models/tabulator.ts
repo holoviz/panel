@@ -1,6 +1,6 @@
 import {display, undisplay} from "@bokehjs/core/dom"
 import {sum} from "@bokehjs/core/util/arrayable"
-import {defer} from "@bokehjs/core/util/defer"
+import {delay, paint} from "@bokehjs/core/util/defer"
 import {isArray, isBoolean, isFunction, isString, isNumber} from "@bokehjs/core/util/types"
 import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import type {StyleSheetLike} from "@bokehjs/core/dom"
@@ -415,6 +415,7 @@ const EL_CLIENT_RESIZE_EPSILON_PX = 3
  * ready chain pending forever, which would otherwise block every later redraw.
  */
 const ROOT_READY_TIMEOUT_MS = 250
+const RESIZE_BLOCKED_FRAMES = 10
 
 export class DataTabulatorView extends HTMLBoxView {
   declare model: DataTabulator
@@ -431,7 +432,7 @@ export class DataTabulatorView extends HTMLBoxView {
   _selection_updating: boolean = false
   _selection_pending: boolean = true
   _last_selected_row: any = null
-  _initializing: boolean
+  _initializing: boolean = true
   _lastVerticalScrollbarTopPosition: number = 0
   _lastHorizontalScrollbarLeftPosition: number = 0
   _applied_styles: boolean = false
@@ -665,6 +666,7 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   private async _flush_resize_when_root_ready(): Promise<void> {
+    let blocked = 0
     while (true) {
       if (!this._resize_pending) {
         return
@@ -686,7 +688,9 @@ export class DataTabulatorView extends HTMLBoxView {
         this._has_active_editor() ||
         !this.stylesheets_settled
       ) {
-        await defer()
+        // `root.ready` is usually already resolved, so a blocking condition that persists
+        // would otherwise spin this loop; back off once it outlasts a few frames.
+        await (blocked++ < RESIZE_BLOCKED_FRAMES ? paint() : delay(ROOT_READY_TIMEOUT_MS))
         continue
       }
       this._resize_pending = false
