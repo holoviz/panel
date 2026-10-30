@@ -290,7 +290,7 @@ def _write_bundled_files(name, files, explicit_dir=None, ext=None):
         filename = str(filename)
         if ext and not str(filename).endswith(ext):
             filename += f'.{ext}'
-        if filename.endswith(('.ttf', '.wasm', '.png', '.gif')):
+        if filename.endswith(('.ttf', '.eot', '.woff', '.woff2', '.wasm', '.png', '.gif')):
             with open(filename, 'wb') as f:
                 f.write(response.content)
         else:
