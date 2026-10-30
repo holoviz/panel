@@ -325,3 +325,37 @@ def test_plotly_datetime_converted_2d_array(document, comm):
             ['2023-01-01 00:02:00']
         ])
     )
+
+
+@plotly_available
+@pytest.mark.parametrize('values', [
+    np.array([dt.datetime(2020, 1, i) for i in range(1, 4)]),
+    [dt.datetime(2020, 1, i) for i in range(1, 4)],
+    np.array([dt.datetime(2020, 1, i) for i in range(1, 4)], dtype='M8[ns]'),
+], ids=['object-array', 'list', 'datetime64'])
+def test_plotly_update_traces_datetime_converted(document, comm, values):
+    index = [dt.datetime(2019, 1, i) for i in range(1, 11)]
+    fig = go.Figure([go.Scatter(x=index, y=np.arange(10))])
+    pane = Plotly(fig)
+    model = pane.get_root(document, comm)
+
+    fig.update_traces(x=values)
+
+    x = model.restyle['data']['x'][0]
+    assert all(isinstance(v, str) for v in x)
+    assert len(x) == 3
+
+
+@plotly_available
+def test_plotly_batch_update_datetime_converted(document, comm):
+    index = [dt.datetime(2019, 1, i) for i in range(1, 11)]
+    fig = go.Figure([go.Scatter(x=index, y=np.arange(10))])
+    pane = Plotly(fig)
+    model = pane.get_root(document, comm)
+
+    with fig.batch_update():
+        fig.data[0].x = [dt.datetime(2020, 1, i) for i in range(1, 4)]
+        fig.data[0].y = [1, 2, 3]
+
+    assert all(isinstance(v, str) for v in model.restyle['data']['x'][0])
+    assert list(model.restyle['data']['y'][0]) == [1, 2, 3]

@@ -1,3 +1,4 @@
+import datetime as dt
 import time
 
 import pytest
@@ -356,3 +357,20 @@ def test_plotly_img_plot(page, plotly_img_plot):
             'points': [{'curveNumber': 0, 'x': 15, 'y': 3, 'colormodel': 'rgb'}]
         }
     wait_until(check_hover, page)
+
+
+def test_plotly_update_traces_keeps_date_axis(page):
+    index = [dt.datetime(2019, 1, i) for i in range(1, 11)]
+    fig = go.Figure([go.Scatter(x=index, y=np.arange(10))])
+    plot = Plotly(fig, width=400, height=300)
+
+    serve_component(page, plot)
+
+    plotly_plot = page.locator('.js-plotly-plot')
+    expect(plotly_plot).to_have_count(1)
+    wait_until(lambda: plotly_plot.evaluate('el => el._fullLayout.xaxis.type') == 'date', page)
+
+    fig.update_traces(x=np.array(index[:5]), y=np.arange(5))
+
+    wait_until(lambda: plotly_plot.evaluate('el => el.data[0].x.length') == 5, page)
+    assert plotly_plot.evaluate('el => el._fullLayout.xaxis.type') == 'date'
