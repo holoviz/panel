@@ -5022,3 +5022,57 @@ def test_tabulator_show_index_toggle(page, show_index):
 
     page.locator('.bk-knob').first.click()
     expect(page.locator('text="index"')).to_have_count(int(show_index))
+
+
+def _header_width(page, field):
+    return page.locator(f'.tabulator-col[tabulator-field="{field}"]').evaluate('el => el.getBoundingClientRect().width')
+
+
+def test_tabulator_fit_data_fill_refits_on_cell_edit(page):
+    widget = Tabulator(pd.DataFrame({'A': ['x', 'y'], 'B': ['1', '2']}), layout='fit_data_fill', width=600)
+
+    serve_component(page, widget)
+
+    initial = _header_width(page, 'A')
+    cell = page.locator('.tabulator-cell[tabulator-field="A"]').first
+    cell.dblclick()
+    editor = page.locator('input[type="text"]')
+    editor.fill('a much much longer value in column A')
+    editor.press('Enter')
+
+    wait_until(lambda: widget.value.at[0, 'A'] == 'a much much longer value in column A', page)
+    wait_until(lambda: _header_width(page, 'A') > initial + 50, page)
+
+
+def test_tabulator_fit_data_fill_refits_on_value_replacement(page):
+    df = pd.DataFrame({'A': ['x', 'y'], 'B': ['1', '2']})
+    widget = Tabulator(df, layout='fit_data_fill', width=600)
+
+    serve_component(page, widget)
+
+    initial = _header_width(page, 'A')
+    widget.value = pd.DataFrame({'A': ['a much much longer value in column A', 'y'], 'B': ['1', '2']})
+
+    wait_until(lambda: _header_width(page, 'A') > initial + 50, page)
+
+
+def test_tabulator_fit_data_fill_keeps_manually_resized_columns(page):
+    widget = Tabulator(pd.DataFrame({'A': ['x', 'y'], 'B': ['1', '2']}), layout='fit_data_fill', width=600)
+
+    serve_component(page, widget)
+
+    box = page.locator('.tabulator-col[tabulator-field="A"]').bounding_box()
+    edge = box['x'] + box['width'] + 1
+    y = box['y'] + box['height'] / 2
+    page.mouse.move(edge, y)
+    page.mouse.down()
+    page.mouse.move(edge + 120, y, steps=5)
+    page.mouse.up()
+    resized = _header_width(page, 'A')
+    assert resized > 100
+
+    widget.value = pd.DataFrame({'A': ['z', 'y'], 'B': ['1', '2']})
+
+    wait_until(lambda: widget.value.at[0, 'A'] == 'z', page)
+    page.wait_for_timeout(300)
+    assert _header_width(page, 'A') == resized
