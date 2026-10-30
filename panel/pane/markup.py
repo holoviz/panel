@@ -40,13 +40,25 @@ _NON_LOCAL_SYNTAX = re.compile(r'\[\^|\]:|^ {0,3}[:~][ \t]|\r', re.MULTILINE)
 
 def _math_plugin(md: MarkdownIt) -> None:
     """
-    Keeps math delimited by $ or $$ verbatim, since the client-side
+    Keeps math delimited by $$ verbatim, since the client-side
     MathJax pass runs on the rendered HTML and would otherwise see
     markup generated from characters such as '*' inside the math.
     """
     from mdit_py_plugins.dollarmath import dollarmath_plugin
+    from mdit_py_plugins.dollarmath.index import math_inline_dollar
 
     dollarmath_plugin(md, allow_labels=False, double_inline=True)
+
+    # The client only typesets $$, so single $ must stay ordinary text
+    # (e.g. currency) and keep its surrounding emphasis.
+    inline_rule = math_inline_dollar(True, True, True)
+
+    def double_only(state, silent):
+        if state.src[state.pos:state.pos + 2] != '$$':
+            return False
+        return inline_rule(state, silent)
+
+    md.inline.ruler.at('math_inline', double_only)
 
     def raw(delimiter, block=False):
         def render(self, tokens, idx, options, env):
@@ -54,7 +66,6 @@ def _math_plugin(md: MarkdownIt) -> None:
             return f'{delimiter}{math}{delimiter}\n' if block else f'{delimiter}{math}{delimiter}'
         return render
 
-    md.add_render_rule('math_inline', raw('$'))
     md.add_render_rule('math_inline_double', raw('$$'))
     md.add_render_rule('math_block', raw('$$', block=True))
 
@@ -69,8 +80,8 @@ def _MathExtension():
 
     class MathExtension(Extension):
         def extendMarkdown(self, md):
-            # Priority above backticks and escapes so nothing inside is touched
-            md.inlinePatterns.register(MathProcessor(r'\$\$.+?\$\$', md), 'math', 200)
+            # Below backticks so code spans are left alone, above escapes so the math is not touched
+            md.inlinePatterns.register(MathProcessor(r'\$\$.+?\$\$', md), 'math', 185)
 
     return MathExtension()
 

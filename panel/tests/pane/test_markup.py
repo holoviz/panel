@@ -527,6 +527,18 @@ def test_markdown_dollar_amounts_are_not_math(renderer):
     html = Markdown(src, renderer=renderer)._render_markdown(src)
     assert html.startswith("<p>costs $5 and $10 for <em>x</em> and <em>y</em></p>")
 
+@pytest.mark.parametrize('renderer', ['markdown-it', 'markdown'])
+def test_markdown_emphasis_between_dollar_amounts(renderer):
+    src = "costs $5 for *basic* and $10 for *pro*"
+    html = Markdown(src, renderer=renderer)._render_markdown(src)
+    assert html.strip() == "<p>costs $5 for <em>basic</em> and $10 for <em>pro</em></p>"
+
+@pytest.mark.parametrize('renderer', ['markdown-it', 'markdown'])
+def test_markdown_double_dollar_in_code_span_is_code(renderer):
+    src = "use `$$` and `$$` then *a* *b*"
+    html = Markdown(src, renderer=renderer)._render_markdown(src)
+    assert html.strip() == "<p>use <code>$$</code> and <code>$$</code> then <em>a</em> <em>b</em></p>"
+
 STREAM_DOCS = [
     "# Title\n\nSome *text* with `code`.\n\n- a\n- b\n\n  - nested\n\n```python\nx = 1\n```\n\n| a | b |\n|---|---|\n| 1 | 2 |\n",
     "para\n- list interrupts\n\n> quote\nlazy\n\n    indented\n\n    code\n\nsetext\n===\n\n<div>\n\n*html*\n\n</div>\n\n```\nunclosed",
