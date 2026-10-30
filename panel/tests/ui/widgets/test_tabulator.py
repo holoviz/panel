@@ -1529,6 +1529,29 @@ def test_tabulator_patch_no_horizontal_rescroll(page, df_mixed):
     wait_until(kept_position, page)
 
 
+def test_tabulator_scroll_during_resize_redraw_kept(page, df_mixed):
+    widths = 100
+    width = int(((df_mixed.shape[1] + 1) * widths) / 2)
+    widget = Tabulator(df_mixed, width=width, widths=widths)
+
+    serve_component(page, widget)
+
+    table_holder = page.locator('.pnx-tabulator .tabulator-tableholder')
+    wait_until(lambda: table_holder.evaluate("el => el.scrollWidth > el.clientWidth"), page)
+    page.evaluate("""() => {
+      const view = Object.values(Bokeh.index)[0]
+      view._resize_redraw()
+      const el = view.shadow_el.querySelector('.tabulator-tableholder')
+      el.scrollLeft = el.scrollWidth
+    }""")
+    page.evaluate("""async () => {
+      for (let i = 0; i < 20; i++) {
+        await new Promise((resolve) => requestAnimationFrame(resolve))
+      }
+    }""")
+    assert table_holder.evaluate("el => el.scrollLeft") > 0
+
+
 def test_tabulator_patch_no_vertical_rescroll(page):
     size = 10
     arr = np.random.choice(list('abcd'), size=size)

@@ -74,7 +74,10 @@ def test_texteditor_regression_copy_paste(page, browser):
     page.evaluate("navigator.clipboard.writeText('test')")
 
     ctrl_key = 'Meta' if sys.platform == 'darwin' else 'Control'
-    page.locator('.ql-editor').press(f'{ctrl_key}+KeyV')
+    editor = page.locator('.ql-editor')
+    # press() does not wait for visibility
+    expect(editor).to_be_visible()
+    editor.press(f'{ctrl_key}+KeyV')
 
     expect(page.locator('.ql-container')).to_have_text('test')
 
@@ -126,6 +129,8 @@ def test_texteditor_regression_click_toolbar_cursor_stays_in_place(page):
     serve_component(page, widget)
 
     editor = page.locator('.ql-editor')
+    # press() does not wait for visibility
+    expect(editor).to_be_visible()
     editor.press('A')
     editor.press('Enter')
     page.locator('.ql-bold').click()

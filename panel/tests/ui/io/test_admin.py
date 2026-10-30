@@ -5,7 +5,6 @@ pytest.importorskip("playwright")
 from playwright.sync_api import expect
 
 from panel.config import config
-from panel.io.state import state
 from panel.tests.util import serve_and_wait
 
 # The admin panel renders panel.ui components, whose registration cannot be
@@ -22,7 +21,6 @@ def admin_config_cleanup():
         yield
     finally:
         config.param.update(**values)
-        state.session_info = {'total': 0, 'live': 0, 'sessions': {}}
 
 
 def _serve_admin(page, prefix=''):
