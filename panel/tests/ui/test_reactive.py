@@ -124,3 +124,114 @@ def test_reactive_literal_backtick(page):
     serve_component(page, component)
 
     expect(page.locator(".reactive")).to_have_text('Backtick: `')
+
+
+class SharedCallback(ReactiveHTML):
+
+    _template = """
+    <button id="btn1" onclick=${_click}>One</button>
+    <button id="btn2" onclick=${_click}>Two</button>
+    <button id="solo" onclick=${_solo}>Solo</button>
+    """
+
+    def __init__(self, **params):
+        super().__init__(**params)
+        self.nodes = []
+
+    def _click(self, event):
+        self.nodes.append(event.node)
+
+    def _solo(self, event):
+        self.nodes.append(event.node)
+
+
+def test_reactive_html_shared_callback_reports_clicked_node(page):
+    component = SharedCallback()
+
+    serve_component(page, component)
+
+    page.get_by_text("One").click()
+    page.get_by_text("Two").click()
+    page.get_by_text("Solo").click()
+
+    wait_until(lambda: component.nodes == ['btn1', 'btn2', 'solo'], page)
+
+
+class Recorder(ReactiveHTML):
+
+    def __init__(self, **params):
+        super().__init__(**params)
+        self.events = []
+
+    def _record(self, event):
+        self.events.append((event.node, event.data['type']))
+
+
+class MultiEvent(Recorder):
+
+    _template = """
+    <input id="i1" onclick=${_record} onchange=${_record}></input>
+    <input id="i2" onclick=${_record} onchange=${_record}></input>
+    """
+
+
+class Nested(Recorder):
+
+    _template = """
+    <div id="outer" onclick=${_record}><span id="inner" onclick=${_record}>Inner</span><b id="pad">Pad</b></div>
+    """
+
+
+class Looped(Recorder):
+
+    items = param.List(default=['a', 'b', 'c'])
+
+    _template = """
+    <div id="wrap">
+    {% for item in items %}
+    <button id="btn{{ loop.index0 }}" onclick=${_record}>{{ item }}</button>
+    {% endfor %}
+    </div>
+    """
+
+
+def test_reactive_html_shared_callback_reports_event_name(page):
+    component = MultiEvent()
+
+    serve_component(page, component)
+
+    page.locator("[id^=i2-]").click()
+    page.locator("[id^=i2-]").fill("x")
+    page.locator("[id^=i1-]").click()
+    page.locator("[id^=i1-]").fill("y")
+    page.locator("[id^=i2-]").click()
+
+    wait_until(lambda: ('i2', 'onchange') in component.events, page)
+    assert ('i2', 'onclick') in component.events
+    assert ('i1', 'onclick') in component.events
+    assert ('i1', 'onchange') in component.events
+
+
+def test_reactive_html_shared_callback_nested_nodes(page):
+    component = Nested()
+
+    serve_component(page, component)
+
+    page.get_by_text("Inner").click()
+    wait_until(lambda: len(component.events) == 2, page)
+    assert sorted(n for n, _ in component.events) == ['inner', 'outer']
+    component.events.clear()
+
+    page.get_by_text("Pad").click()
+    wait_until(lambda: component.events == [('outer', 'onclick')], page)
+
+
+def test_reactive_html_shared_callback_in_for_loop(page):
+    component = Looped()
+
+    serve_component(page, component)
+
+    page.get_by_text("b", exact=True).click()
+    page.get_by_text("c", exact=True).click()
+
+    wait_until(lambda: [n for n, _ in component.events] == ['btn1-1', 'btn2-2'], page)
