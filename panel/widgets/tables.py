@@ -1425,6 +1425,8 @@ class Tabulator(BaseTable):
         'title_formatters': None, 'sortable': None, 'initial_page_size': None
     }
 
+    _js_events: t.ClassVar[Mapping[str, str]] = {'selection': 'selection-change'}
+
     # Determines the maximum size limits beyond which (local, remote)
     # pagination is enabled
     _MAX_ROW_LIMITS: t.ClassVar[tuple[int, int]] = (200, 10000)

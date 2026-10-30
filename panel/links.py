@@ -615,7 +615,16 @@ class JSCallbackGenerator(CallbackGenerator):
             else:
                 src_prop = src_specs[0]
                 if isinstance(source, Reactive):
+                    event = getattr(source, '_js_events', {}).get(src_prop)
                     src_prop = source._rename.get(src_prop, src_prop)
+                    if event:
+                        src_prop = f'event:{event}'
+                    elif src_prop is None:
+                        raise ValueError(
+                            f"Cannot register a JS callback on parameter {spec!r} of "
+                            f"{type(source).__name__} because it is only available "
+                            "in Python and has no corresponding client-side property."
+                        )
                 src_spec = (None, t.cast("str", src_prop))
         return [(src_spec, (None, None), link.code[spec])]
 

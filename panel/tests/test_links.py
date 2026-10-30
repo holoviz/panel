@@ -494,3 +494,21 @@ def test_tabulator_jslink_skips_missing_value(dataframe, document, comm):
     table_model = table._models[root.ref['id']][0]
     assert 'change:value' not in table_model.js_property_callbacks
     assert 'value' not in table_model.js_property_callbacks
+
+
+def test_tabulator_jscallback_selection_registers_selection_event(dataframe, document, comm):
+    table = Tabulator(value=dataframe)
+    table.jscallback(selection="console.log('selected')")
+
+    root = table.get_root(document, comm)
+
+    model = table._models[root.ref['id']][0]
+    assert 'selection-change' in model.js_event_callbacks
+
+
+def test_jscallback_python_only_parameter_raises(dataframe, document, comm):
+    table = Tabulator(value=dataframe)
+    table.jscallback(row_height="console.log('height')")
+
+    with pytest.raises(ValueError, match="only available in Python"):
+        table.get_root(document, comm)
