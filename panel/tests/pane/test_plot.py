@@ -1,4 +1,6 @@
 from bokeh.models import Div, Row as BkRow
+from bokeh.plotting import figure
+from bokeh.themes import Theme
 
 import panel as pn
 
@@ -33,6 +35,27 @@ def test_bokeh_pane(document, comm):
     # Cleanup
     pane._cleanup(row)
     assert pane._models == {}
+
+
+def test_bokeh_pane_theme_survives_attach(document, comm):
+    fig = figure()
+    pane = pn.pane.Bokeh(fig, theme='dark_minimal')
+
+    root = pane.get_root(document, comm=comm)
+    document.add_root(root)
+
+    assert fig.background_fill_color == '#2b3035'
+
+
+def test_bokeh_pane_theme_update_after_render(document, comm):
+    fig = figure()
+    pane = pn.pane.Bokeh(fig, theme='dark_minimal')
+    root = pane.get_root(document, comm=comm)
+    document.add_root(root)
+
+    pane.theme = Theme(json={'attrs': {'Plot': {'background_fill_color': 'red'}}})
+
+    assert fig.background_fill_color == 'red'
 
 
 @mpl_available
