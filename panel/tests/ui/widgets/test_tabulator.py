@@ -1926,6 +1926,17 @@ def test_tabulator_selection_selectable_disabled(page, df_mixed):
         assert 'tabulator-selected' not in rows.nth(i).get_attribute('class')
 
 
+def test_tabulator_selectable_disabled_rows_not_marked_selectable(page, df_mixed):
+    widget = Tabulator(df_mixed, selectable=False)
+
+    serve_component(page, widget)
+
+    rows = page.locator('.tabulator-row')
+    expect(rows.first).to_be_visible()
+    for i in range(rows.count()):
+        assert 'tabulator-selectable' not in rows.nth(i).get_attribute('class')
+
+
 def test_tabulator_selection_default_selection(page, df_mixed):
     selection = [0, 2]
     widget = Tabulator(df_mixed, selection=[0, 2])

@@ -1025,7 +1025,8 @@ export class DataTabulatorView extends HTMLBoxView {
 
   getConfiguration(): any {
     // Only use selectable mode if explicitly requested otherwise manually handle selections
-    const selectableRows = this.model.select_mode === "toggle" ? true : NaN
+    // Tabulator only skips marking rows as selectable (class and hover styling) for exactly false
+    const selectableRows = this.model.select_mode === "toggle" ? true : (this.model.select_mode === false ? false : NaN)
     const configuration = {
       ...transformJsPlaceholders(this.model.configuration),
       index: "_index",
