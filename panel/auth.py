@@ -122,14 +122,20 @@ def _validate_next_url(next_url: None) -> None: ...
 def _validate_next_url(next_url: str | None) -> str | None:
     """
     Validate that next_url is a same-origin path. Raises HTTPError(400)
-    if it carries a scheme, netloc, or backslash (which some browsers
-    treat as '/'). Returns the (possibly base_url-prefixed) value, or
-    None when the input is empty.
+    if it carries a scheme, netloc, backslash (which some browsers
+    treat as '/'), control characters, or starts with two or more
+    slashes. Returns the (possibly base_url-prefixed) value, or None
+    when the input is empty.
     """
     if not next_url:
         return None
     urlinfo = urlparse.urlparse(next_url)
-    if urlinfo.scheme or urlinfo.netloc or '\\' in next_url:
+    # urlparse only finds a netloc after exactly two slashes, while browsers
+    # skip any run of slashes, resolving '///evil.com' to https://evil.com.
+    if (
+        urlinfo.scheme or urlinfo.netloc or '\\' in next_url
+        or not next_url.isprintable() or next_url.lstrip(' ').startswith('//')
+    ):
         log.warning("Rejecting tampered next_url: %r", next_url)
         raise HTTPError(400, "Invalid next url")
     if state.base_url and not next_url.startswith(state.base_url):
