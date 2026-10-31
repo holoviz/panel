@@ -21,7 +21,7 @@ import uuid
 
 from functools import partial, wraps
 from html import escape
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
 
 import bokeh
 import param
@@ -226,6 +226,18 @@ def _path_template_to_tornado_route(route: str) -> str:
         return route
     pattern, params = compile_route_template(route)
     return pattern if params else route
+
+
+_ASCII = ''.join(map(chr, range(128)))
+
+def _quote_non_ascii(route: str) -> str:
+    """
+    Percent-encode non-ASCII characters in an application route.
+
+    Tornado matches routes against the raw, still percent-encoded
+    request path, which is what browsers send for non-ASCII URLs.
+    """
+    return quote(route, safe=_ASCII)
 
 _tasks: set = set()
 
@@ -1639,7 +1651,7 @@ def get_server(
     normalized_apps: dict[str, BkApplication] = {}
     normalized_sources: dict[str, str] = {}
     for endpoint, app in apps.items():
-        normalized_endpoint = _path_template_to_tornado_route(endpoint)
+        normalized_endpoint = _quote_non_ascii(_path_template_to_tornado_route(endpoint))
         if normalized_endpoint in normalized_apps:
             raise ValueError(
                 f"Application routes {endpoint!r} and {normalized_sources[normalized_endpoint]!r} "
