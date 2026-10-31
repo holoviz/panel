@@ -1,5 +1,6 @@
 import os
 import pathlib
+import re
 import shutil
 import subprocess
 import threading
@@ -65,13 +66,28 @@ def _wait_for_free_port(port, timeout=30):
         pytest.fail(f'Port {port} is still in use after {timeout}s, listeners:\n{_describe_listeners(port)}')
 
 
+def _describe_owner(pid):
+    # The environment is inherited from the pytest worker that spawned the process
+    try:
+        raw = pathlib.Path(f'/proc/{pid}/environ').read_bytes().split(b'\0')
+        env = dict(item.decode(errors='replace').split('=', 1) for item in raw if b'=' in item)
+        cmdline = pathlib.Path(f'/proc/{pid}/cmdline').read_bytes().replace(b'\0', b' ').decode(errors='replace')
+        ppid = pathlib.Path(f'/proc/{pid}/stat').read_text().rsplit(')', 1)[1].split()[1]
+    except OSError as e:
+        return f'  pid {pid}: unreadable ({e})'
+    return (
+        f'  pid {pid}: ppid={ppid} cmd={cmdline[:120]!r} '
+        f'worker={env.get("PYTEST_XDIST_WORKER")} test={env.get("PYTEST_CURRENT_TEST")}'
+    )
+
+
 def _sample_port_sockets(port, stop, samples):
     # Sockets in any state (including TIME_WAIT and outgoing connections) that
     # use the port as local port; they block a bind without being listeners.
     ss = shutil.which('ss')
     if ss is None:
         return
-    last = None
+    last, seen = None, set()
     while not stop.is_set():
         res = subprocess.run(
             [ss, '-tanpH', f'sport = :{port}'], capture_output=True, text=True
@@ -79,6 +95,9 @@ def _sample_port_sockets(port, stop, samples):
         current = res.stdout.strip()
         if current and current != last:
             samples.append(f'{time.strftime("%H:%M:%S")}\n{current}')
+            for pid in set(re.findall(r'pid=(\d+)', current)) - seen:
+                seen.add(pid)
+                samples.append(_describe_owner(pid))
         last = current
         stop.wait(0.05)
 
