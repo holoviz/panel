@@ -1,3 +1,4 @@
+import datetime as dt
 import time
 
 import pytest
@@ -202,6 +203,54 @@ def test_plotly_click_data(page, plotly_2d_plot):
         wait_until(check_click, page)
 
 
+def test_plotly_click_data_multicategory(page):
+    # Regression test for https://github.com/holoviz/panel/issues/7010
+    fig = go.Figure(
+        data=[go.Scatter(x=[['A', 'A', 'B', 'B'], [0, 1, 2, 3]], y=[0, 2, -1, 1], mode='markers')],
+        layout={'xaxis_type': 'multicategory'}
+    )
+    pane = Plotly(fig)
+    serve_component(page, pane)
+
+    points = page.locator('.js-plotly-plot .plot-container.plotly path.point')
+    expect(points).to_have_count(4)
+    points.nth(2).click(force=True)
+
+    def check_click():
+        assert pane.click_data is not None
+        point = pane.click_data['points'][0]
+        assert point['x'] == ['B', 2]
+        assert point['y'] == -1
+        assert point['pointNumber'] == 2
+        assert 'data' not in point and 'fullData' not in point
+        assert 'xaxis' not in point and 'yaxis' not in point
+    wait_until(check_click, page)
+
+
+def test_plotly_click_data_heatmap(page):
+    # Regression test for https://github.com/holoviz/panel/issues/7010
+    fig = go.Figure(data=[go.Heatmap(z=[[1, 2], [3, 4]], x=['A', 'B'], y=['C', 'D'])])
+    pane = Plotly(fig)
+    serve_component(page, pane)
+
+    drag = page.locator('.js-plotly-plot .nsewdrag').first
+    expect(drag).to_be_visible()
+    box = drag.bounding_box()
+    page.mouse.click(box['x'] + box['width'] * 0.75, box['y'] + box['height'] * 0.25)
+
+    def check_click():
+        assert pane.click_data is not None
+        point = pane.click_data['points'][0]
+        assert point['x'] == 'B'
+        assert point['y'] == 'D'
+        assert point['z'] == 4
+        assert point['pointNumber'] == [1, 1]
+        assert point['pointIndex'] == [1, 1]
+        assert 'data' not in point and 'fullData' not in point
+        assert 'xaxis' not in point and 'yaxis' not in point
+    wait_until(check_click, page)
+
+
 def test_plotly_click_after_resize_without_size_change(page, plotly_2d_plot):
     serve_component(page, plotly_2d_plot)
 
@@ -343,16 +392,40 @@ def test_plotly_img_plot(page, plotly_img_plot):
     point.hover(force=True)
 
     def check_hover():
-        assert plotly_img_plot.hover_data == {
-            'selector': None,
-            'device_state': {
-                'alt': False,
-                'button': 0,
-                'buttons': 0,
-                'ctrl': False,
-                'meta': False,
-                'shift': False,
-            },
-            'points': [{'curveNumber': 0, 'x': 15, 'y': 3, 'colormodel': 'rgb'}]
+        assert plotly_img_plot.hover_data is not None
+        assert plotly_img_plot.hover_data['device_state'] == {
+            'alt': False,
+            'button': 0,
+            'buttons': 0,
+            'ctrl': False,
+            'meta': False,
+            'shift': False,
         }
+        point = plotly_img_plot.hover_data['points'][0]
+        assert {k: point[k] for k in ('curveNumber', 'pointNumber', 'pointIndex', 'x', 'y', 'colormodel')} == {
+            'curveNumber': 0,
+            'pointNumber': [3, 15],
+            'pointIndex': [3, 15],
+            'x': 15,
+            'y': 3,
+            'colormodel': 'rgb',
+        }
+        assert point['z'] == point['color']
     wait_until(check_hover, page)
+
+
+def test_plotly_update_traces_keeps_date_axis(page):
+    index = [dt.datetime(2019, 1, i) for i in range(1, 11)]
+    fig = go.Figure([go.Scatter(x=index, y=np.arange(10))])
+    plot = Plotly(fig, width=400, height=300)
+
+    serve_component(page, plot)
+
+    plotly_plot = page.locator('.js-plotly-plot')
+    expect(plotly_plot).to_have_count(1)
+    wait_until(lambda: plotly_plot.evaluate('el => el._fullLayout.xaxis.type') == 'date', page)
+
+    fig.update_traces(x=np.array(index[:5]), y=np.arange(5))
+
+    wait_until(lambda: plotly_plot.evaluate('el => el.data[0].x.length') == 5, page)
+    assert plotly_plot.evaluate('el => el._fullLayout.xaxis.type') == 'date'

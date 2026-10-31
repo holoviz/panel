@@ -21,7 +21,7 @@ import uuid
 
 from functools import partial, wraps
 from html import escape
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
 
 import bokeh
 import param
@@ -228,6 +228,18 @@ def _path_template_to_tornado_route(route: str) -> str:
     pattern, params = compile_route_template(route)
     return pattern if params else route
 
+
+_ASCII = ''.join(map(chr, range(128)))
+
+def _quote_non_ascii(route: str) -> str:
+    """
+    Percent-encode non-ASCII characters in an application route.
+
+    Tornado matches routes against the raw, still percent-encoded
+    request path, which is what browsers send for non-ASCII URLs.
+    """
+    return quote(route, safe=_ASCII)
+
 _tasks: set = set()
 
 
@@ -301,16 +313,17 @@ param.parameterized.async_executor = async_execute
 def _initialize_session_info(session_context: SessionContext):
     from ..config import config
     session_id = session_context.id
-    sessions = state.session_info['sessions']
+    info = state.session_info
+    sessions = info['sessions']
     history = -1 if config._admin else config.session_history
     if not config._admin and (history == 0 or session_id in sessions):
         return
 
-    state.session_info['total'] += 1
     if history > 0 and len(sessions) >= history:
         old_history = list(sessions.items())
         sessions = dict(old_history[-(history-1):])
-        state.session_info['sessions'] = sessions
+    else:
+        sessions = dict(sessions)
     request = session_context.request
     user_agent = request.headers.get('User-Agent') if request else None
     sessions[session_id] = {
@@ -320,7 +333,7 @@ def _initialize_session_info(session_context: SessionContext):
         'ended': None,
         'user_agent': user_agent
     }
-    state.param.trigger('session_info')
+    state.session_info = {**info, 'total': info['total'] + 1, 'sessions': sessions}
 
 state._on_session_created_internal.append(_initialize_session_info)
 
@@ -1421,9 +1434,19 @@ class ProxyFallbackHandler(RequestHandler):
         self.proxy = proxy
 
     def prepare(self):
+        fallback = self.fallback
         if self.proxy:
-            self.request.path = self.request.path.replace(self.proxy, '')
-        self.fallback(self.request)
+            # Mount the WSGI app at prefix + slug so PATH_INFO keeps its
+            # leading slash and SCRIPT_NAME makes url_for generate full URLs.
+            mount = self.application.prefix + self.proxy.rstrip('/')
+
+            def mounted(environ, start_response, app=self.fallback.wsgi_application):
+                environ['SCRIPT_NAME'] = mount
+                environ['PATH_INFO'] = environ['PATH_INFO'][len(mount):] or '/'
+                return app(environ, start_response)
+
+            fallback = WSGIContainer(mounted)
+        fallback(self.request)
         self._finished = True
         self.on_finish()
 
@@ -1629,7 +1652,7 @@ def get_server(
         if not slug.endswith('/'):
             slug += '/'
         extra_patterns.append((
-            f'^{slug}.*', ProxyFallbackHandler, dict(fallback=wsgi, proxy=slug)
+            f'{slug}.*', ProxyFallbackHandler, dict(fallback=wsgi, proxy=slug)
         ))
         return True
 
@@ -1639,7 +1662,7 @@ def get_server(
     normalized_apps: dict[str, BkApplication] = {}
     normalized_sources: dict[str, str] = {}
     for endpoint, app in apps.items():
-        normalized_endpoint = _path_template_to_tornado_route(endpoint)
+        normalized_endpoint = _quote_non_ascii(_path_template_to_tornado_route(endpoint))
         if normalized_endpoint in normalized_apps:
             raise ValueError(
                 f"Application routes {endpoint!r} and {normalized_sources[normalized_endpoint]!r} "
@@ -1651,7 +1674,7 @@ def get_server(
 
     if warm or config.autoreload:
         for endpoint, app in apps.items():
-            if endpoint == '/admin':
+            if endpoint == config._admin_path:
                 continue
             if config.autoreload:
                 with record_modules(list(apps.values())):
@@ -1674,7 +1697,7 @@ def get_server(
         extra_patterns += [(rf"/{liveness_endpoint}", LivenessHandler, dict(applications=apps))]
 
     if admin:
-        extra_patterns += admin_auth_patterns('/admin')
+        extra_patterns += admin_auth_patterns(config._admin_path)
 
     opts = dict(kwargs)
     if loop:

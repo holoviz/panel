@@ -885,7 +885,7 @@ def warm_applications(apps: Mapping[str, BkApplication]) -> None:
     Runs each application once to warm up imports and caches.
     """
     for endpoint, app in apps.items():
-        if endpoint == '/admin':
+        if endpoint == config._admin_path:
             continue
         if config.autoreload:
             with record_modules(list(apps.values())):

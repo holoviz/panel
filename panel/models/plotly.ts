@@ -133,8 +133,12 @@ const filterEventData = (gd: any, eventData: any, event: string) => {
       const pointData: {[k: string]: any} = {}
       for (const property in fullPoint) {
         const val = fullPoint[property]
+        // Arrays of primitives (e.g. multicategory x, heatmap pointNumber)
+        // are safe; arrays holding objects may be circular or huge.
+        const isPrimitiveArray = Array.isArray(val) &&
+          val.every((v: any) => v === null || typeof v !== "object")
         if (fullPoint.hasOwnProperty(property) &&
-            !Array.isArray(val) && !isPlainObject(val) &&
+            (isPrimitiveArray || (!Array.isArray(val) && !isPlainObject(val))) &&
             val !== undefined)  {
           pointData[property] = val
         }

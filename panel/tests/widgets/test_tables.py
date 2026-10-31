@@ -1444,11 +1444,11 @@ def test_tabulator_styling(document, comm):
     model = table.get_root(document, comm)
 
     assert model.cell_styles['data'] == {
-        0: {2: [('color', 'black')]},
-        1: {2: [('color', 'black')]},
-        2: {2: [('color', 'black')]},
-        3: {2: [('color', 'red')]},
-        4: {2: [('color', 'red')]}
+        0: {'A': [('color', 'black')]},
+        1: {'A': [('color', 'black')]},
+        2: {'A': [('color', 'black')]},
+        3: {'A': [('color', 'red')]},
+        4: {'A': [('color', 'red')]}
     }
 
 def test_tabulator_empty_table(document, comm):
@@ -3013,9 +3013,9 @@ def test_tabulator_styling_empty_dataframe(document, comm):
 
     assert model.cell_styles['data'] == {
         0: {
-            2: [('border-color', '#dc3545'), ('border-style', 'solid')],
-            3: [('border-color', '#dc3545'), ('border-style', 'solid')],
-            4: [('border-color', '#dc3545'), ('border-style', 'solid')]
+            'A': [('border-color', '#dc3545'), ('border-style', 'solid')],
+            'B': [('border-color', '#dc3545'), ('border-style', 'solid')],
+            'C': [('border-color', '#dc3545'), ('border-style', 'solid')]
         }
     }
 
@@ -3039,11 +3039,38 @@ def test_tabulator_style_multi_index_dataframe(document, comm):
     model = tabulator.get_root(document, comm)
 
     assert model.cell_styles['data'] == {
-        0: {4: [('background-color', '#ff0000')]},
-        1: {4: [('background-color', '#ff0000')]},
-        2: {4: [('background-color', '#ff0000')]},
-        3: {4: [('background-color', '#ff0000')]}
+        0: {'X': [('background-color', '#ff0000')]},
+        1: {'X': [('background-color', '#ff0000')]},
+        2: {'X': [('background-color', '#ff0000')]},
+        3: {'X': [('background-color', '#ff0000')]}
     }
+
+
+def test_tabulator_style_multi_index_columns_keyed_by_field(document, comm):
+    df = pd.DataFrame(
+        np.ones((2, 2)), columns=pd.MultiIndex.from_tuples([('a', 'b'), ('a', 'c')])
+    )
+    table = Tabulator(df)
+    table.style.map(lambda v: 'color: red', subset=[('a', 'b')])
+
+    model = table.get_root(document, comm)
+
+    assert 'a_b' in [col.field for col in model.columns]
+    assert model.cell_styles['data'] == {
+        0: {'a_b': [('color', 'red')]},
+        1: {'a_b': [('color', 'red')]},
+    }
+
+
+def test_tabulator_style_non_string_column_names_keyed_by_field(document, comm):
+    df = pd.DataFrame(np.ones((2, 2)), columns=[1, 2])
+    table = Tabulator(df)
+    table.style.map(lambda v: 'color: red', subset=[2])
+
+    model = table.get_root(document, comm)
+
+    assert '2' in [col.field for col in model.columns]
+    assert set(model.cell_styles['data'][0]) == {'2'}
 
 
 @mpl_available
@@ -3056,7 +3083,7 @@ def test_tabulator_style_background_gradient_with_frozen_columns(document, comm)
 
     model = table.get_root(document, comm)
 
-    assert list(model.cell_styles['data'][0]) == [1, 4, 5]
+    assert list(model.cell_styles['data'][0]) == ['A', 'C', 'D']
 
 @mpl_available
 def test_tabulator_style_background_gradient_with_frozen_columns_left_and_right(document, comm):
@@ -3068,7 +3095,7 @@ def test_tabulator_style_background_gradient_with_frozen_columns_left_and_right(
 
     model = table.get_root(document, comm)
 
-    assert list(model.cell_styles['data'][0]) == [1, 6, 4]
+    assert list(model.cell_styles['data'][0]) == ['A', 'C', 'D']
 
 @mpl_available
 def test_tabulator_style_background_with_frozen_index(document, comm):
@@ -3078,7 +3105,7 @@ def test_tabulator_style_background_with_frozen_index(document, comm):
 
     model = table.get_root(document, comm)
 
-    assert list(model.cell_styles['data'][0]) == [3]
+    assert list(model.cell_styles['data'][0]) == ['c']
 
 
 @mpl_available
@@ -3089,7 +3116,7 @@ def test_tabulator_style_background_with_frozen_indexes(document, comm):
 
     model = table.get_root(document, comm)
 
-    assert list(model.cell_styles['data'][0]) == [3]
+    assert list(model.cell_styles['data'][0]) == ['c']
 
 
 @mpl_available
@@ -3100,7 +3127,7 @@ def test_tabulator_style_background_with_frozen_index_and_column(document, comm)
 
     model = table.get_root(document, comm)
 
-    assert list(model.cell_styles['data'][0]) == [4]
+    assert list(model.cell_styles['data'][0]) == ['c']
 
 
 @mpl_available
@@ -3113,7 +3140,7 @@ def test_tabulator_style_background_gradient(document, comm):
 
     model = table.get_root(document, comm)
 
-    assert list(model.cell_styles['data'][0]) == [2, 4, 5]
+    assert list(model.cell_styles['data'][0]) == ['A', 'C', 'D']
 
 @mpl_available
 def test_tabulator_styled_df_with_background_gradient(document, comm):
@@ -3124,7 +3151,7 @@ def test_tabulator_styled_df_with_background_gradient(document, comm):
 
     model = table.get_root(document, comm)
 
-    assert list(model.cell_styles['data'][0]) == [2, 4, 5]
+    assert list(model.cell_styles['data'][0]) == ['A', 'C', 'D']
 
 def test_tabulator_editor_property_change(dataframe, document, comm):
     editor = SelectEditor(options=['A', 'B', 'C'])

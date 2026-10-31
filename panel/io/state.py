@@ -488,25 +488,36 @@ class _state(param.Parameterized):
             return
         from .server import logger
         session_id = self.curdoc.session_context.id
-        session_info = self.session_info['sessions'].get(session_id, {})
-        if session_info.get('rendered') is not None:
+        info = self.session_info
+        session = info['sessions'].get(session_id, {})
+        if session.get('rendered') is not None:
             return
         logger.info(LOG_SESSION_RENDERED, id(self.curdoc))
-        self.session_info['live'] += 1
-        session_info.update({
-            'rendered': dt.datetime.now().timestamp()
-        })
-        self.param.trigger('session_info')
+        # Copy on write so watchers receive distinct old and new values;
+        # only the changed session entry is copied to keep this cheap.
+        self.session_info = {
+            **info,
+            'live': info['live'] + 1,
+            'sessions': {
+                **info['sessions'],
+                session_id: {**session, 'rendered': dt.datetime.now().timestamp()}
+            }
+        }
 
     def _destroy_session(self, session_context):
         session_id = session_context.id
-        sessions = self.session_info['sessions']
+        info = self.session_info
+        sessions = info['sessions']
         if session_id in sessions and sessions[session_id]['ended'] is None:
             session = sessions[session_id]
-            if session['rendered'] is not None:
-                self.session_info['live'] -= 1
-            session['ended'] = dt.datetime.now().timestamp()
-            self.param.trigger('session_info')
+            self.session_info = {
+                **info,
+                'live': info['live'] - (session['rendered'] is not None),
+                'sessions': {
+                    **sessions,
+                    session_id: {**session, 'ended': dt.datetime.now().timestamp()}
+                }
+            }
         doc = session_context._document
 
         if doc in self._periodic:
