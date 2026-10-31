@@ -353,13 +353,14 @@ def build_applications(
             apps[slug] = Application(handler, admin=admin)
 
     if admin:
-        if '/admin' in apps:
+        admin_path = config._admin_path
+        if admin_path in apps:
             raise ValueError(
                 'Cannot enable admin panel because another app is being served '
-                'on the /admin endpoint'
+                f'on the {admin_path} endpoint'
             )
         from .admin import admin_panel
         admin_handler = FunctionHandler(admin_panel)
-        apps['/admin'] = mark_admin_application(Application(admin_handler))
+        apps[admin_path] = mark_admin_application(Application(admin_handler))
 
     return apps

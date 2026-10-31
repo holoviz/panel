@@ -374,3 +374,33 @@ def test_tornado_admin_password_login(admin_password):
     session.get(f'{base}/admin/logout', timeout=30)
     r = session.get(f'{base}/admin', allow_redirects=False, timeout=30)
     assert r.status_code == 302
+
+
+def test_build_applications_uses_admin_endpoint():
+    import panel as pn
+
+    from panel.io.application import build_applications
+
+    with config.set(_admin_endpoint='custom'):
+        apps = build_applications({'/': pn.panel('Hi')}, admin=True)
+    assert '/custom' in apps
+    assert '/admin' not in apps
+
+
+def test_build_applications_admin_endpoint_conflict():
+    import panel as pn
+
+    from panel.io.application import build_applications
+
+    with config.set(_admin_endpoint='custom'):
+        with pytest.raises(ValueError, match='/custom endpoint'):
+            build_applications({'/custom': pn.panel('Hi')}, admin=True)
+
+
+def test_build_applications_admin_endpoint_default():
+    import panel as pn
+
+    from panel.io.application import build_applications
+
+    assert '/admin' in build_applications({'/': pn.panel('Hi')}, admin=True)
+    assert '/admin' not in build_applications({'/': pn.panel('Hi')})

@@ -1663,7 +1663,7 @@ def get_server(
 
     if warm or config.autoreload:
         for endpoint, app in apps.items():
-            if endpoint == '/admin':
+            if endpoint == config._admin_path:
                 continue
             if config.autoreload:
                 with record_modules(list(apps.values())):
@@ -1686,7 +1686,7 @@ def get_server(
         extra_patterns += [(rf"/{liveness_endpoint}", LivenessHandler, dict(applications=apps))]
 
     if admin:
-        extra_patterns += admin_auth_patterns('/admin')
+        extra_patterns += admin_auth_patterns(config._admin_path)
 
     opts = dict(kwargs)
     if loop:
