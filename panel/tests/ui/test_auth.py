@@ -2,6 +2,8 @@ import os
 import pathlib
 import shutil
 import subprocess
+import threading
+import time
 
 from contextlib import contextmanager
 
@@ -55,12 +57,47 @@ def _wait_for_free_port(port, timeout=30):
         pytest.fail(f'Port {port} is still in use after {timeout}s, listeners:\n{_describe_listeners(port)}')
 
 
+def _sample_port_sockets(port, stop, samples):
+    # Sockets in any state (including TIME_WAIT and outgoing connections) that
+    # use the port as local port; they block a bind without being listeners.
+    ss = shutil.which('ss')
+    if ss is None:
+        return
+    last = None
+    while not stop.is_set():
+        res = subprocess.run(
+            [ss, '-tanpH', f'sport = :{port}'], capture_output=True, text=True
+        )
+        current = res.stdout.strip()
+        if current and current != last:
+            samples.append(f'{time.strftime("%H:%M:%S")}\n{current}')
+        last = current
+        stop.wait(0.05)
+
+
 @contextmanager
 def _report_listeners_on_failure(port):
+    stop, samples = threading.Event(), []
+    sampler = threading.Thread(target=_sample_port_sockets, args=(port, stop, samples), daemon=True)
+    sampler.start()
     try:
         yield
     except pytest.fail.Exception as e:
-        pytest.fail(f'{e}\n\nListeners on port {port} after the failure:\n{_describe_listeners(port)}', pytrace=False)
+        stop.set()
+        sampler.join()
+        try:
+            port_range = pathlib.Path('/proc/sys/net/ipv4/ip_local_port_range').read_text().strip()
+        except OSError:
+            port_range = 'unknown'
+        observed = '\n'.join(samples) or 'none observed'
+        pytest.fail(
+            f'{e}\n\nSockets with local port {port} observed during startup:\n{observed}\n\n'
+            f'ip_local_port_range: {port_range}\n\n'
+            f'Listeners on port {port} after the failure:\n{_describe_listeners(port)}',
+            pytrace=False
+        )
+    finally:
+        stop.set()
 
 
 def _auth0_login(page, user, password):
