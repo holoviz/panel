@@ -173,3 +173,34 @@ def test_dial_frame_is_transparent_on_dark_background(page):
     # background there means the figure border is painted.
     for xy in [(1, 1), (image.width-2, 1), (1, image.height-2), (image.width-2, image.height-2)]:
         assert image.getpixel(xy) == (0, 0, 0)
+
+
+@pytest.mark.parametrize('kwargs', [{'max_width': 150}, {'max_height': 150}])
+def test_dial_canvas_matches_max_dimensions(page, kwargs):
+    dial = Dial(value=25, **kwargs)
+
+    serve_component(page, dial)
+
+    expected = (min(250, kwargs.get('max_width', 250)), min(250, kwargs.get('max_height', 250)))
+    canvas = page.locator('.bk-Canvas canvas').first
+    expect(canvas).to_have_count(1)
+    box = canvas.bounding_box()
+    assert (box['width'], box['height']) == pytest.approx(expected, abs=1)
+
+    # The drawing is scaled to the figure's own size, which must match the canvas
+    # or the glyphs are stretched.
+    figure_size = page.evaluate("""() => {
+        const fig = Bokeh.documents[0].roots().find(m => m.type === 'Figure')
+        return [fig.width, fig.height]
+    }""")
+    assert tuple(figure_size) == expected
+
+
+def test_dial_stretch_width_respects_max_width(page):
+    dial = Dial(value=25, sizing_mode='stretch_width', max_width=150)
+
+    serve_component(page, dial)
+
+    canvas = page.locator('.bk-Canvas canvas').first
+    expect(canvas).to_have_count(1)
+    assert canvas.bounding_box()['width'] <= 151

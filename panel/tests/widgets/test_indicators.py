@@ -197,6 +197,48 @@ def test_dial_explicit_colors_override_theme(document, comm):
     assert model.select_one({'name': 'needle_renderer'}).glyph.fill_color == 'blue'
 
 
+@pytest.mark.parametrize(('kwargs', 'size'), [
+    ({'max_width': 150}, (150, 250)),
+    ({'max_height': 100}, (250, 100)),
+    ({'width': 100, 'max_width': 150}, (100, 250)),
+])
+def test_dial_figure_size_respects_max_dimensions(document, comm, kwargs, size):
+    model = Dial(value=25, **kwargs).get_root(document, comm)
+
+    assert (model.width, model.height) == size
+
+
+@pytest.mark.parametrize('sizing_mode', ['stretch_width', 'stretch_height', 'stretch_both'])
+def test_dial_forwards_max_dimensions_to_figure(document, comm, sizing_mode):
+    model = Dial(
+        value=25, sizing_mode=sizing_mode, max_width=150, max_height=200
+    ).get_root(document, comm)
+
+    assert (model.max_width, model.max_height) == (150, 200)
+    assert (model.width, model.height) == (150, 200)
+
+
+def test_dial_max_dimensions_update_forwarded(document, comm):
+    dial = Dial(value=25, sizing_mode='stretch_width')
+    model = dial.get_root(document, comm)
+
+    dial.max_width = 150
+    dial.max_height = 100
+
+    assert (model.max_width, model.max_height) == (150, 100)
+
+
+def test_dial_max_width_update(document, comm):
+    dial = Dial(value=25)
+    model = dial.get_root(document, comm)
+
+    dial.max_width = 150
+
+    assert model.width == 150
+    x_range = model.x_range
+    assert (x_range.end-x_range.start)/(model.y_range.end-model.y_range.start) == pytest.approx(150/250)
+
+
 def test_dial_needle_color_update(document, comm):
     dial = Dial(value=25)
     model = dial.get_root(document, comm)
