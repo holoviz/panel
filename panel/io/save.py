@@ -351,6 +351,14 @@ def save(
 
     save_resources = Resources.from_bokeh(resources, absolute=True)
 
+    if save_resources.mode == 'inline':
+        from .notebook import patch_inline_stylesheets
+
+        # Component stylesheets resolve to CDN urls even in inline mode,
+        # which a self-contained file must not depend on.
+        for submodel in doc.select({'type': UIElement}):
+            patch_inline_stylesheets(submodel, doc)
+
     # Set resource mode
     with set_resource_mode(save_resources.mode):
         html = file_html(doc, save_resources, title, **kwargs)
