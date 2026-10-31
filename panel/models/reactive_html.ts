@@ -339,6 +339,7 @@ export class ReactiveHTMLView extends HTMLBoxView {
     let htm = literal.replace(/[`]/g, "\\$&")
     let collected_callbacks = ""
     const methods: string[] = []
+    const targets: {[method: string]: [string, string][]} = {}
     for (const [el_name, callbacks] of entries(this.model.callbacks)) {
       for (const [cb, method] of callbacks) {
         let definition: string
@@ -360,21 +361,9 @@ export class ReactiveHTMLView extends HTMLBoxView {
           }
           `
         } else {
-          definition = `
-          const ${method} = (event) => {
-            let elname = "${el_name}"
-            if (RegExp("\{\{.*loop\.index.*\}\}").test(elname)) {
-              const pattern = RegExp(elname.replace(/\{\{(.+?)\}\}/g, String.fromCharCode(92) + "d+"))
-              for (const p of event.path) {
-                if (pattern.exec(p.id) != null) {
-                  elname = p.id.split("-").slice(null, -1).join("-")
-                  break
-                }
-              }
-            }
-            view._send_event(elname, "${cb}", event)
-          }
-          `
+          targets[method] = targets[method] ?? []
+          targets[method].push([el_name, cb])
+          continue
         }
         if (methods.indexOf(method) > -1) {
           continue
@@ -382,6 +371,33 @@ export class ReactiveHTMLView extends HTMLBoxView {
         methods.push(method)
         collected_callbacks += definition
       }
+    }
+    for (const [method, method_targets] of entries(targets)) {
+      // Nodes sharing a callback must resolve the node from the event
+      // path, since only a single function is defined per method name.
+      collected_callbacks += `
+      const ${method} = (event) => {
+        const targets = ${JSON.stringify(method_targets)}
+        let [elname, cb] = targets[0]
+        // currentTarget is the node the listener is attached to, which
+        // differs from the innermost path element for nested nodes.
+        const candidates = [event.currentTarget, ...event.composedPath()]
+        const typed = targets.filter(([, c]) => c === "on" + event.type)
+        const options = typed.length ? typed : targets
+        for (const p of candidates) {
+          const match = p == null ? null : options.find(([name]) => {
+            const pattern = name.replace(/\\{\\{(.+?)\\}\\}/g, String.fromCharCode(92) + "d+")
+            return RegExp("^" + pattern + "(-[0-9]+)*-[^-]+$").test(p.id)
+          })
+          if (match != null) {
+            elname = p.id.split("-").slice(null, -1).join("-")
+            cb = match[1]
+            break
+          }
+        }
+        view._send_event(elname, cb, event)
+      }
+      `
     }
     htm = htm
       .replaceAll("${model.", "$-{model.")
