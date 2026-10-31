@@ -1,14 +1,16 @@
 import os
 import pathlib
 import shutil
-import socket
 import subprocess
+
+from contextlib import contextmanager
 
 import pytest
 
 pytest.importorskip("playwright")
 
 from playwright.sync_api import expect
+from tornado.netutil import bind_sockets
 
 from panel.config import config
 from panel.io.state import state
@@ -23,13 +25,26 @@ auth_check = pytest.mark.skipif('PANEL_TEST_AUTH' not in os.environ, reason='PAN
 
 
 def _port_is_free(port):
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        try:
-            s.bind(('', int(port)))
-        except OSError:
-            return False
+    # Bind like the server does (every IPv4 and IPv6 interface), so a listener on
+    # [::]:port is detected as well.
+    try:
+        sockets = bind_sockets(int(port))
+    except OSError:
+        return False
+    for sock in sockets:
+        sock.close()
     return True
+
+
+def _describe_listeners(port):
+    out = []
+    for cmd in (['ss', '-ltnp'], ['ss', '-ltn6p'], ['lsof', '-nP', '-i', f':{port}']):
+        if shutil.which(cmd[0]) is None:
+            out.append(f'$ {" ".join(cmd)}\n{cmd[0]} is not available')
+            continue
+        res = subprocess.run(cmd, capture_output=True, text=True)
+        out.append(f'$ {" ".join(cmd)}\n{res.stdout}{res.stderr}')
+    return '\n'.join(out)
 
 
 def _wait_for_free_port(port, timeout=30):
@@ -37,11 +52,15 @@ def _wait_for_free_port(port, timeout=30):
     try:
         wait_until(lambda: _port_is_free(port), timeout=timeout * 1000, interval=500)
     except Exception:
-        ss = shutil.which('ss')
-        holder = subprocess.run(
-            [ss, '-ltnp'], capture_output=True, text=True
-        ).stdout if ss else 'ss is not available'
-        pytest.fail(f'Port {port} is still in use after {timeout}s, listeners:\n{holder}')
+        pytest.fail(f'Port {port} is still in use after {timeout}s, listeners:\n{_describe_listeners(port)}')
+
+
+@contextmanager
+def _report_listeners_on_failure(port):
+    try:
+        yield
+    except pytest.fail.Exception as e:
+        pytest.fail(f'{e}\n\nListeners on port {port} after the failure:\n{_describe_listeners(port)}', pytrace=False)
 
 
 def _auth0_login(page, user, password):
@@ -199,8 +218,9 @@ def test_auth0_oauth(py_file, page):
     ]
     _wait_for_free_port(port)
     with run_panel_serve(cmd) as p:
-        port = wait_for_port(p.stdout)
-        page.goto(f"http://localhost:{port}")
+        with _report_listeners_on_failure(port):
+            served_port = wait_for_port(p.stdout)
+        page.goto(f"http://localhost:{served_port}")
 
         _auth0_login(page, auth0_user, auth0_password)
 
