@@ -56,6 +56,7 @@ from bokeh.util.token import (
 )
 # Tornado imports
 from tornado.ioloop import IOLoop
+from tornado.process import task_id
 from tornado.web import (
     HTTPError, RequestHandler, StaticFileHandler, authenticated,
 )
@@ -1758,7 +1759,8 @@ def get_server(
     state._servers[server_id] = (server, panel, [])
     state._server_config[server._tornado] = server_config
 
-    if show:
+    # Bokeh forks the workers inside Server.__init__; only one should open a tab
+    if show and task_id() in (None, 0):
         login_endpoint = login_endpoint or '/login'
         def show_callback():
             server.show(login_endpoint if config.oauth_provider or basic_auth else '/')

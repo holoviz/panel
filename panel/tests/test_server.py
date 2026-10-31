@@ -4,6 +4,7 @@ import logging
 import os
 import pathlib
 import socket
+import subprocess
 import sys
 import threading
 import time
@@ -39,7 +40,7 @@ from panel.template import BootstrapTemplate
 from panel.tests import util as test_util
 from panel.tests.util import (
     get_open_ports, reverse_proxy as reverse_proxy_ctx, serve_and_request,
-    serve_and_wait, wait_until,
+    serve_and_wait, unix_only, wait_until,
 )
 from panel.widgets import (
     Button, Tabulator, Terminal, TextInput,
@@ -2090,3 +2091,23 @@ def test_reverse_proxy_picks_another_port_when_taken(monkeypatch):
             socket.create_connection(('127.0.0.1', proxy_port), timeout=5).close()
     finally:
         taken.close()
+
+
+@unix_only
+@pytest.mark.parametrize('num_procs', [1, 3])
+def test_serve_show_opens_single_tab(num_procs):
+    script = (
+        "import os\n"
+        "import panel as pn\n"
+        "from bokeh.server.server import Server\n"
+        "Server.show = lambda self, *a, **k: print(f'SHOW {os.getpid()}', flush=True)\n"
+        f"server = pn.serve(lambda: pn.panel('x'), num_procs={num_procs}, show=True,\n"
+        "                  port=0, start=False, verbose=False)\n"
+        "server.io_loop.call_later(1, server.io_loop.stop)\n"
+        "server.io_loop.start()\n"
+        "os._exit(0)\n"
+    )
+    out = subprocess.run(
+        [sys.executable, "-c", script], capture_output=True, text=True, timeout=60
+    ).stdout
+    assert out.count('SHOW') == 1
