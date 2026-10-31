@@ -12,7 +12,7 @@ if t.TYPE_CHECKING:
 
 
 def should_inherit(parameterized: param.Parameterized, p: str, v: t.Any) -> t.Any:
-    pobj = parameterized.param[p]
+    pobj = type(parameterized).param[p]
     return v is not pobj.default and not pobj.readonly and (v is not None or pobj.allow_None)
 
 
