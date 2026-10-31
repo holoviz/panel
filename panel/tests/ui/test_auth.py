@@ -49,6 +49,14 @@ def _describe_listeners(port):
     return '\n'.join(out)
 
 
+def _describe_processes():
+    res = subprocess.run(['ps', '-eo', 'pid,ppid,etimes,args'], capture_output=True, text=True)
+    lines = res.stdout.splitlines()
+    return '\n'.join(
+        l[:200] for l in lines[:1] + [l for l in lines[1:] if any(k in l for k in ('caddy', 'pytest', 'xdist', 'panel'))]
+    )
+
+
 def _wait_for_free_port(port, timeout=30):
     # The Auth0 callback URL pins the port, so it cannot be swapped for an ephemeral one
     try:
@@ -93,6 +101,8 @@ def _report_listeners_on_failure(port):
         pytest.fail(
             f'{e}\n\nSockets with local port {port} observed during startup:\n{observed}\n\n'
             f'ip_local_port_range: {port_range}\n\n'
+            f'This process: pid={os.getpid()} worker={os.environ.get("PYTEST_XDIST_WORKER")}\n'
+            f'Processes:\n{_describe_processes()}\n\n'
             f'Listeners on port {port} after the failure:\n{_describe_listeners(port)}',
             pytrace=False
         )
