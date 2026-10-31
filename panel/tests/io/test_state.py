@@ -123,6 +123,37 @@ def test_reset_clears_session_info():
     assert state.session_info == {'total': 0, 'live': 0, 'sessions': {}}
 
 
+def test_session_info_watchers_see_old_and_new(document):
+    class SessionContext:
+        id = 'abc'
+        _document = document
+
+    document._session_context = lambda: SessionContext()
+    state.session_info['sessions']['abc'] = {
+        'launched': 0.0, 'started': None, 'rendered': None, 'ended': None,
+        'user_agent': None,
+    }
+    events = []
+    watcher = state.param.watch(events.append, 'session_info')
+    try:
+        with set_curdoc(document):
+            state._init_session(None)
+        state._destroy_session(SessionContext())
+    finally:
+        state.param.unwatch(watcher)
+
+    rendered, ended = events
+    assert rendered.old is not rendered.new
+    assert rendered.old['live'] == 0
+    assert rendered.new['live'] == 1
+    assert rendered.old['sessions']['abc']['rendered'] is None
+    assert rendered.new['sessions']['abc']['rendered'] is not None
+    assert ended.old['live'] == 1
+    assert ended.new['live'] == 0
+    assert ended.old['sessions']['abc']['ended'] is None
+    assert ended.new['sessions']['abc']['ended'] is not None
+
+
 async def test_periodic_callback_failed_thread_submit_does_not_leak_busy_event():
     class _ShutdownPool:
         def submit(self, *args, **kwargs):
