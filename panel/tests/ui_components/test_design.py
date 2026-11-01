@@ -173,3 +173,44 @@ def test_ui_holoviews_widgets_are_material_without_design(panel_ui):
     assert [type(w).__module__.split('.')[0] for w in classic] == ['panel', 'panel']
     assert type(pane[0]) is panel_ui.HoloViews
     assert PaneBase.get_pane_type(hmap) is HoloViews
+
+
+def test_ui_holoviews_pane_widgets_are_material_without_design(panel_ui):
+    import holoviews as hv
+
+    dmap = hv.DynamicMap(
+        lambda wave, frequency: hv.Curve([]), kdims=['wave', 'frequency']
+    ).redim.values(wave=['sin', 'cos']).redim.range(frequency=(0.5, 5))
+    with config.set(design=None):
+        pane = panel_ui.HoloViews(dmap)
+
+    assert [type(w) for w in pane.widget_box] == [
+        panel_ui.Select, panel_ui.EditableFloatSlider
+    ]
+
+
+def test_holoviews_pane_widgets_are_material(material):
+    import holoviews as hv
+
+    from panel.pane import HoloViews
+
+    hmap = hv.HoloMap(
+        {(i, c): hv.Curve([i]) for i in range(3) for c in 'ab'},
+        kdims=['X', 'C']
+    )
+    pane = HoloViews(hmap)
+
+    assert [type(w) for w in pane.widget_box] == [
+        material.DiscreteSlider, material.Select
+    ]
+
+
+def test_ui_holoviews_pane_keeps_overridden_default_widgets(panel_ui):
+    import holoviews as hv
+
+    from panel.widgets import RadioButtonGroup
+
+    hmap = hv.HoloMap({c: hv.Curve([]) for c in 'ab'}, kdims=['C'])
+    pane = panel_ui.HoloViews(hmap, default_widgets={'discrete': RadioButtonGroup})
+
+    assert type(pane.widget_box[0]) is RadioButtonGroup
