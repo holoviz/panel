@@ -303,6 +303,10 @@ class Link(Callback):
         A dictionary mapping between source specification to target
         specification.""")
 
+    # Whether a missing property on the target model raises or warns;
+    # Panel-generated links (e.g. Reactive.controls) opt out of raising
+    _strict = True
+
     # Whether the link requires a target
     _requires_target = True
 
@@ -540,10 +544,10 @@ class CallbackGenerator:
         for ch in changes:
             if ch not in properties:
                 msg = f"Could not link non-existent property '{ch}' on {tgt_model} model"
-                if self.error:
+                if self.error and getattr(link, '_strict', True):
                     raise ValueError(msg)
-                else:
-                    warn(msg)
+                warn(msg, PanelUserWarning)
+                continue
             tgt_model.js_on_change(ch, tgt_cb)
         for ev in events:
             tgt_model.js_on_event(ev, tgt_cb)
