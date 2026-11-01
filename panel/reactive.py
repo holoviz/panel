@@ -1454,7 +1454,25 @@ class ReactiveData(SyncableData):
             if isinstance(values, dict):
                 sorted_values = sorted(values.items(), key=lambda it: int(it[0]))
                 values = [v for _, v in sorted_values]
-            converted = self._convert_column(np.asarray(values), old_raw[col])
+            values = np.asarray(values)
+            old_col = old_raw[col]
+            if (
+                hasattr(old_raw, 'columns') and values.dtype.kind == 'f' and
+                getattr(old_col.dtype, 'kind', None) in ('i', 'u') and
+                not isinstance(old_col.dtype, np.dtype) and len(old_col) == len(values)
+            ):
+                # The client holds nullable integers as float64, which loses
+                # precision above 2**53, so only entries that changed are
+                # taken from the client and the rest keep their exact value.
+                old_float = old_col.to_numpy(dtype='float64', na_value=np.nan)
+                changed = ~((old_float == values) | (np.isnan(old_float) & np.isnan(values)))
+                if not changed.any():
+                    continue
+                converted = old_col.copy()
+                converted[changed] = self._convert_column(values[changed], old_col[changed])
+                converted = converted.values
+            else:
+                converted = self._convert_column(values, old_col)
 
             isequal = None
             if hasattr(old_raw, 'columns') and isinstance(converted, np.ndarray):
@@ -1465,6 +1483,10 @@ class ReactiveData(SyncableData):
             if isequal is None:
                 try:
                     isequal = (old_raw[col] == converted).all() # type: ignore
+                    if isequal and hasattr(old_raw, 'columns'):
+                        # Comparisons involving NA are skipped by .all()
+                        import pandas as pd
+                        isequal = bool((pd.isna(old_raw[col]) == pd.isna(converted)).all())
                 except Exception:
                     isequal = False
             if not isequal:
