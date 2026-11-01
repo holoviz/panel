@@ -51,3 +51,18 @@ def test_float_panel_resize(page):
     wait_until(lambda: int(page.locator('.red').bounding_box()['width']) == 200, page)
     wait_until(lambda: int(page.locator('.green').bounding_box()['width']) == 200, page)
     wait_until(lambda: int(page.locator('.blue').bounding_box()['width']) == 200, page)
+
+
+def test_float_panel_stretch_both_fills_content(page):
+    float_panel = FloatPanel(
+        Spacer(styles=dict(background='red'), css_classes=['stretch'], sizing_mode='stretch_both'),
+        width=400, height=300, contained=False,
+    )
+
+    serve_component(page, float_panel)
+
+    content = page.locator('.jsPanel-content')
+    child = page.locator('.stretch')
+    wait_until(lambda: content.bounding_box()['height'] > 200, page)
+    wait_until(lambda: child.bounding_box()['height'] >= content.bounding_box()['height'] - 20, page)
+    assert child.bounding_box()['width'] >= content.bounding_box()['width'] - 40
