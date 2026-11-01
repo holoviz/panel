@@ -9,12 +9,14 @@ import typing as t
 import param
 import pytest
 
+from bokeh.models import Div
 from bokeh.plotting import figure
 
 from panel.custom import JSComponent
 from panel.layout import Row
 from panel.links import Callback, Link
 from panel.pane import Bokeh, HoloViews
+from panel.reactive import Reactive
 from panel.tests.util import hv_available
 from panel.util.warnings import PanelUserWarning
 from panel.widgets import (
@@ -494,3 +496,33 @@ def test_tabulator_jslink_skips_missing_value(dataframe, document, comm):
     table_model = table._models[root.ref['id']][0]
     assert 'change:value' not in table_model.js_property_callbacks
     assert 'value' not in table_model.js_property_callbacks
+
+
+class RenamedPane(Reactive):
+
+    selection = param.List(default=[])
+
+    _rename = {'selection': 'indices'}
+
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        model = Div()
+        root = root or model
+        self._models[root.ref['id']] = (model, parent)
+        return model
+
+
+def test_controls_jslink_tolerates_missing_renamed_property():
+    pane = RenamedPane()
+    controls = pane.controls(['selection'])
+
+    with pytest.warns(PanelUserWarning, match="non-existent property 'indices'"):
+        Row(controls, pane).get_root()
+
+
+def test_user_jslink_raises_on_missing_renamed_property():
+    pane = RenamedPane()
+    widget = TextInput()
+    widget.jslink(pane, value='selection', bidirectional=True)
+
+    with pytest.raises(ValueError, match="non-existent property 'indices'"):
+        Row(widget, pane).get_root()
