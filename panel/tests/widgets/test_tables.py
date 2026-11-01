@@ -3153,6 +3153,20 @@ def test_tabulator_styled_df_with_background_gradient(document, comm):
 
     assert list(model.cell_styles['data'][0]) == ['A', 'C', 'D']
 
+def test_tabulator_style_bar_drops_width(document, comm):
+    df = pd.DataFrame({'A': [1., 2., 3.], 'B': [1, 2, 3]})
+    table = Tabulator(df)
+    table.style.bar(subset=['A'], color='#d65f5f').set_properties(
+        subset=['B'], width='5em', color='red'
+    )
+
+    model = table.get_root(document, comm)
+
+    for row in model.cell_styles['data'].values():
+        assert all(prop != 'width' for prop, _ in row['A'])
+        assert any(prop == 'background' for prop, _ in row['A'])
+        assert ('color', 'red') in row['B']
+
 def test_tabulator_editor_property_change(dataframe, document, comm):
     editor = SelectEditor(options=['A', 'B', 'C'])
     table = Tabulator(dataframe, editors={'str': editor})
