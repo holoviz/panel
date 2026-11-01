@@ -11,18 +11,22 @@ import param
 import pytest
 import tornado.locks
 
+from bokeh.core.serialization import DeserializationError, Deserializer
 from bokeh.document import Document
 from bokeh.document.events import MessageSentEvent, ModelChangedEvent
+from bokeh.models import Column, Range1d
+from bokeh.plotting import figure
 from bokeh.protocol import Protocol
 
 import panel as pn
 
 from panel.io.document import (
     _UNCONNECTED_EVENTS, _WRITE_BLOCK, MockSessionContext, _cleanup_doc,
-    _client_has_document, _destroy_document, _is_write_blocked,
-    _keep_unsent_models_new, _socket_dispatcher, _suppress_property_callbacks,
-    _write_tasks, dispatch_django, dispatch_tornado, extra_socket_handlers,
-    hold, init_doc, schedule_write_events, unlocked, write_events,
+    _client_has_document, _destroy_document, _drop_unsent_model_changes,
+    _is_write_blocked, _keep_unsent_models_new, _socket_dispatcher,
+    _suppress_property_callbacks, _write_tasks, dispatch_django,
+    dispatch_tornado, extra_socket_handlers, hold, init_doc,
+    schedule_write_events, unlocked, write_events,
 )
 from panel.io.state import _state, set_curdoc, state
 from panel.tests.util import serve_and_request, wait_until
@@ -433,6 +437,45 @@ def test_suppress_property_callbacks_keeps_frontend_changes():
 
     assert python_event.callback_invoker is None
     assert frontend_event.callback_invoker is invoker
+
+
+def _combined_patch_with_linked_range():
+    holder = Column(children=[figure()])
+    other = figure()
+    doc = Document()
+    doc.add_root(Column(children=[holder, other]))
+    doc.models.flush_synced()
+    client_models = list(doc.models)
+
+    doc.hold('combine')
+    shared = Range1d(0, 1)
+    holder.children = [figure(x_range=shared)]
+    shared.start = 5
+    other.x_range = shared
+    # Combined into the first children event, discarding its definition of the range
+    holder.children = [figure()]
+    return doc, list(doc.callbacks._held_events), client_models, holder, other
+
+
+def _decode_patch(events, client_models):
+    msg = Protocol().create('PATCH-DOC', events)
+    Deserializer(references=client_models).decode(msg.content)
+
+
+def test_combined_patch_references_unsent_model():
+    _, events, client_models, _, _ = _combined_patch_with_linked_range()
+
+    with pytest.raises(DeserializationError):
+        _decode_patch(events, client_models)
+
+
+def test_drop_unsent_model_changes_keeps_combined_patch_decodable():
+    doc, events, client_models, holder, other = _combined_patch_with_linked_range()
+
+    filtered = _drop_unsent_model_changes(doc, events)
+
+    assert [(event.model, event.attr) for event in filtered] == [(holder, 'children'), (other, 'x_range')]
+    _decode_patch(filtered, client_models)
 
 
 def test_write_events_shares_one_message_across_connections():
