@@ -5,6 +5,7 @@ pytest.importorskip("playwright")
 from playwright.sync_api import expect
 
 from panel.layout import Tabs
+from panel.pane import Markdown
 from panel.pane.image import PNG
 from panel.tests.util import serve_component, wait_until
 
@@ -56,3 +57,19 @@ def test_tabs_toggle_clickable(page):
     page.locator(f'a[href="{url}"]').click()
 
     wait_until(lambda: page.url == url, page)
+
+
+def test_tabs_rename_updates_header(page):
+    tabs = Tabs(("a", Markdown("x")), ("b", Markdown("y")))
+
+    serve_component(page, tabs)
+
+    headers = page.locator('.bk-tab')
+    expect(headers).to_have_text(["a", "b"])
+
+    tabs[0] = ("c", tabs[0])
+
+    expect(headers).to_have_text(["c", "b"])
+    content = page.locator('.bk-panel-models-markup-HTML').first
+    expect(content).to_have_text("x")
+    expect(content).to_be_visible()
