@@ -1135,6 +1135,39 @@ def test_tabulator_masked_int_column_clear_cell(document, comm, with_na):
     assert table.value['A'].iloc[0] == 1
 
 
+@pytest.mark.parametrize('with_na', [False, True])
+def test_tabulator_masked_int_column_large_values_survive_other_edit(document, comm, with_na):
+    big = 2**60 + 1
+    df = pd.DataFrame({
+        'A': pd.array([big, pd.NA if with_na else 2, 3], dtype='Int64'),
+        'B': [1, 2, 3],
+    })
+    table = Tabulator(df)
+    model = table.get_root(document, comm)
+
+    table._process_events({'data': {
+        'A': np.array(model.source.data['A'], dtype='float64'),
+        'B': np.array([1, 5, 3]),
+    }})
+
+    assert table.value['B'].tolist() == [1, 5, 3]
+    assert table.value['A'].iloc[0] == big
+    assert table.value['A'].dtype == pd.Int64Dtype()
+
+
+def test_tabulator_masked_int_column_edit_keeps_large_values(document, comm):
+    big = 2**60 + 1
+    df = pd.DataFrame({'A': pd.array([big, 2, 3], dtype='Int64')})
+    table = Tabulator(df)
+    model = table.get_root(document, comm)
+
+    new = np.array(model.source.data['A'], dtype='float64')
+    new[1] = 7
+    table._process_events({'data': {'A': new}})
+
+    assert table.value['A'].tolist() == [big, 7, 3]
+
+
 def test_tabulator_editors_default(document, comm):
     df = pd.DataFrame({
         'int': [1, 2],
