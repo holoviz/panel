@@ -264,10 +264,12 @@ class Pipeline(Viewer):
     def _init_stage(self):
         stage, stage_kwargs = self._stages[self._stage]
 
-        previous = []
-        for src, tgts in self._graph.items():
-            if self._stage in tgts:
-                previous.append(src)
+        # Only stages on the current route feed this stage, so that states
+        # left over from other branches cannot override the branch taken.
+        previous = [
+            src for src in self._route
+            if self._stage in self._graph.get(src, ())
+        ]
         prev_states = [self._states[prev] for prev in previous if prev in self._states]
 
         outputs = []
