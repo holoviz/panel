@@ -1117,6 +1117,24 @@ def test_tabulator_keywords_match_all_filter_config(document, comm):
     ]
 
 
+@pytest.mark.parametrize('with_na', [False, True])
+def test_tabulator_masked_int_column_clear_cell(document, comm, with_na):
+    values = [1, pd.NA, 3, 4] if with_na else [1, 2, 3, 4]
+    df = pd.DataFrame({'A': pd.array(values, dtype='Int64')})
+    table = Tabulator(df)
+    model = table.get_root(document, comm)
+
+    assert model.source.data['A'].dtype.kind == 'f'
+
+    new = np.array(model.source.data['A'], dtype='float64')
+    new[2] = np.nan
+    table._process_events({'data': {'A': new}})
+
+    assert table.value['A'].dtype == pd.Int64Dtype()
+    assert table.value['A'].iloc[2] is pd.NA
+    assert table.value['A'].iloc[0] == 1
+
+
 def test_tabulator_editors_default(document, comm):
     df = pd.DataFrame({
         'int': [1, 2],

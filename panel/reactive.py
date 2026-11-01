@@ -1465,6 +1465,10 @@ class ReactiveData(SyncableData):
             if isequal is None:
                 try:
                     isequal = (old_raw[col] == converted).all() # type: ignore
+                    if isequal and hasattr(old_raw, 'columns'):
+                        # Comparisons involving NA are skipped by .all()
+                        import pandas as pd
+                        isequal = bool((pd.isna(old_raw[col]) == pd.isna(converted)).all())
                 except Exception:
                     isequal = False
             if not isequal:
