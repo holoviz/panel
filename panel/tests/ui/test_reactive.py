@@ -43,14 +43,14 @@ class ReactiveLiteralChild(ReactiveHTML):
     _child_config = {'_icon_html': 'literal'}
 
     _template = """
-    <div class="reactive">${_icon_html}</div>
+    <div id="icon" class="reactive">${_icon_html}</div>
     """
 
 
 def test_reactive_html_literal_child_config_renders(page):
     serve_component(page, ReactiveLiteralChild())
 
-    expect(page.locator(".reactive")).to_contain_text('icon')
+    expect(page.locator(".reactive span")).to_have_text('icon')
 
 
 def test_reactive_html_click_js_event(page):
