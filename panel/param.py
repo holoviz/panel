@@ -613,6 +613,8 @@ class Param(Pane):
             watcher = widget.param.watch(link_widget, 'value')
         watchers.append(watcher)
 
+        hidden_by_precedence = []
+
         def link(change, watchers=[watcher]):
             updates = {}
             if is_instance and p_name not in self_or_cls._widgets:
@@ -632,11 +634,15 @@ class Param(Pane):
                 elif (change.new is not None and
                       change.new < self_or_cls.display_threshold):
                     # The widget may be unpacked from the pane's layout
-                    widget.visible = False
+                    if widget.visible:
+                        hidden_by_precedence[:] = [True]
+                        widget.visible = False
                     if widget in self_or_cls._widget_box.objects:
                         self_or_cls._widget_box.remove(widget)
                 else:
-                    widget.visible = not (self_or_cls.hide_constant and p_obj.constant)
+                    if hidden_by_precedence:
+                        hidden_by_precedence.clear()
+                        widget.visible = not (self_or_cls.hide_constant and p_obj.constant)
                     self_or_cls._rerender()
                 return
             elif change.what == 'objects':

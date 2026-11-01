@@ -590,6 +590,28 @@ def test_param_precedence_unpacked_widget():
     assert widget.visible
 
 
+def test_param_precedence_preserves_user_visible():
+    class Test(param.Parameterized):
+        a = param.Number(default=1.2)
+
+    test = Test()
+    widget = panel(test.param.a)
+    widget.visible = False
+
+    test.param.a.precedence = 2
+    assert not widget.visible
+
+    test.param.a.precedence = -1
+    test.param.a.precedence = 1
+    assert not widget.visible
+
+    widget.visible = True
+    test.param.a.precedence = -1
+    assert not widget.visible
+    test.param.a.precedence = 1
+    assert widget.visible
+
+
 def test_hide_constant(document, comm):
     class Test(param.Parameterized):
         a = param.Number(default=1.2, bounds=(0, 5), constant=True)
