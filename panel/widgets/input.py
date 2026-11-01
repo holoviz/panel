@@ -1399,11 +1399,17 @@ class DatetimeInput(LiteralInput):
         if new is not None and ((self.start is not None and self.start > new) or
                                 (self.end is not None and self.end < new)):
             value = datetime.strftime(new, self.format)
-            start = datetime.strftime(self.start, self.format)
-            end = datetime.strftime(self.end, self.format)
+            start = None if self.start is None else datetime.strftime(self.start, self.format)
+            end = None if self.end is None else datetime.strftime(self.end, self.format)
+            if start is None:
+                bounds = f'on or before {end}'
+            elif end is None:
+                bounds = f'on or after {start}'
+            else:
+                bounds = f'between {start} and {end}'
             if event:
                 self.value = event.old
-            raise ValueError(f'DatetimeInput value must be between {start} and {end}, '
+            raise ValueError(f'DatetimeInput value must be {bounds}, '
                              f'supplied value is {value}')
 
     def _process_property_change(self, props: dict[str, t.Any]) -> dict[str, t.Any]:
