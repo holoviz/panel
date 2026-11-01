@@ -503,7 +503,8 @@ class Param(Pane):
                 end -= 1
             if end is not None:
                 kw['end'] = end
-            if (('start' not in kw or 'end' not in kw) and
+            if (('start' not in kw or 'end' not in kw or
+                 (isinstance(p_obj, param.Number) and value is None)) and
                 not isinstance(p_obj, (param.Date, param.CalendarDate))):
                 # Do not change widget class if mapping was overridden
                 if not widget_class_overridden:
