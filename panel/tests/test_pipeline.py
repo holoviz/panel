@@ -484,3 +484,53 @@ def test_previous_sets_lower_stage():
 
     assert pipeline._stage == "Stage 1"
     assert pipeline._route == ["Stage 1"]
+
+
+def test_pipeline_branch_does_not_inherit_from_other_branch():
+    class Base(param.Parameterized):
+        def panel(self):
+            return Column()
+
+    class Input(Base):
+        value = param.Integer(default=2)
+
+    class Multiply(Base):
+        value = param.Integer()
+        operator = param.String('*')
+
+        @param.output('result')
+        def output(self):
+            return self.value * 3
+
+    class Add(Base):
+        value = param.Integer()
+        operator = param.String('+')
+
+        @param.output('result')
+        def output(self):
+            return self.value + 3
+
+    class Result(Base):
+        value = param.Integer()
+        operator = param.String('')
+        result = param.Integer()
+
+    pipeline = Pipeline(inherit_params=True)
+    pipeline.add_stage('Input', Input)
+    pipeline.add_stage('Multiply', Multiply)
+    pipeline.add_stage('Add', Add)
+    pipeline.add_stage('Result', Result)
+    pipeline.define_graph({
+        'Input': ('Multiply', 'Add'),
+        'Multiply': 'Result',
+        'Add': 'Result',
+    })
+
+    for branch, operator, result in [('Multiply', '*', 6), ('Add', '+', 5), ('Multiply', '*', 6)]:
+        pipeline.next_selector.value = branch
+        pipeline.param.trigger('next')
+        pipeline.param.trigger('next')
+        assert pipeline._state.operator == operator
+        assert pipeline._state.result == result
+        pipeline.param.trigger('previous')
+        pipeline.param.trigger('previous')
