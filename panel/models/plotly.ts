@@ -199,6 +199,7 @@ export class PlotlyPlotView extends HTMLBoxView {
   _plotInitialized: boolean = false
   _rendered: boolean = false
   _reacting: boolean = false
+  _axisRanges: {[key: string]: any} | null = null
   _relayouting: boolean = false
   _hoverdata: any = null
   container: PlotlyHTMLElement
@@ -339,6 +340,7 @@ export class PlotlyPlotView extends HTMLBoxView {
     //  - plotly_relayout
     this.container.on("plotly_relayout", (eventData: any) => {
       if (eventData._update_from_property !== true) {
+        this._syncAxisRanges(eventData)
         this.model.relayout_data = filterEventData(
           this.container, eventData, "relayout")
 
@@ -425,6 +427,43 @@ export class PlotlyPlotView extends HTMLBoxView {
     })
   }
 
+  _axis_ranges_of(layout: any): {[key: string]: any} {
+    const ranges: {[key: string]: any} = {}
+    for (const [key, axis] of Object.entries<any>(layout)) {
+      if (/^[xy]axis\d*$/.test(key)) {
+        ranges[key] = axis?.range
+      }
+    }
+    return ranges
+  }
+
+  _same_ranges(a: {[key: string]: any}, b: {[key: string]: any}): boolean {
+    const keys = new Set([...Object.keys(a), ...Object.keys(b)])
+    return [...keys].every((key) => JSON.stringify(a[key]) === JSON.stringify(b[key]))
+  }
+
+  // User zooms are synced back to the Python figure, so the ranges Python
+  // sends with its next update must not count as a change made by Python.
+  _syncAxisRanges(eventData: any): void {
+    if (this._axisRanges == null) {
+      return
+    }
+    for (const [key, value] of Object.entries<any>(eventData)) {
+      const match = /^([xy]axis\d*)\.range(?:\[([01])\])?$/.exec(key)
+      if (match == null) {
+        continue
+      }
+      const [, axis, index] = match
+      if (index == null) {
+        this._axisRanges[axis] = value
+      } else {
+        const range = [...(this._axisRanges[axis] ?? [])]
+        range[Number(index)] = value
+        this._axisRanges[axis] = range
+      }
+    }
+  }
+
   async plot(new_plot: boolean=false): Promise<void> {
     if (!(window as any).Plotly || !this.container) {
       return
@@ -432,7 +471,12 @@ export class PlotlyPlotView extends HTMLBoxView {
     const data = this._trace_data()
     const newLayout = this._layout_data()
     this._reacting = true
-    if (new_plot) {
+    // Plotly.react does not refresh the ranges captured by newPlot, which
+    // the Reset axes button restores, so changed axis ranges need a newPlot.
+    const axisRanges = this._axis_ranges_of(newLayout)
+    const ranges_changed = this._axisRanges != null && !this._same_ranges(axisRanges, this._axisRanges)
+    this._axisRanges = axisRanges
+    if (new_plot || ranges_changed) {
       const obj = {data, layout: newLayout, config: this.model.config, frames: this.model.frames}
       await (window as any).Plotly.newPlot(this.container, obj)
     } else {

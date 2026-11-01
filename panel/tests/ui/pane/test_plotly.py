@@ -429,3 +429,59 @@ def test_plotly_update_traces_keeps_date_axis(page):
 
     wait_until(lambda: plotly_plot.evaluate('el => el.data[0].x.length') == 5, page)
     assert plotly_plot.evaluate('el => el._fullLayout.xaxis.type') == 'date'
+
+
+def test_plotly_reset_axes_after_object_update(page):
+    plot = Plotly({'data': [], 'layout': {'width': 400, 'height': 300}})
+    serve_component(page, plot)
+
+    expect(page.locator('.js-plotly-plot')).to_have_count(1)
+
+    plot.object = go.Figure(
+        data=[go.Scatter(x=[0, 1, 2], y=[0, 50, 100])],
+        layout=go.Layout(width=400, height=300, yaxis=dict(range=[2, 8])),
+    )
+
+    def yrange():
+        return page.locator('.js-plotly-plot').evaluate(
+            "el => el._fullLayout.yaxis.range"
+        )
+
+    wait_until(lambda: yrange() == [2, 8], page)
+
+    page.locator('.js-plotly-plot').hover()
+    page.locator('.modebar-btn[data-attr="zoom"][data-val="reset"]').click()
+
+    wait_until(lambda: yrange() == [2, 8], page)
+
+
+def test_plotly_reset_axes_after_zoom_and_update(page):
+    fig = go.Figure(
+        data=[go.Scatter(x=[0, 1, 2], y=[0, 50, 100])],
+        layout=go.Layout(width=400, height=300),
+    )
+    plot = Plotly(fig)
+    serve_component(page, plot)
+
+    el = page.locator('.js-plotly-plot')
+    expect(el).to_have_count(1)
+
+    def yrange():
+        return el.evaluate("el => el._fullLayout.yaxis.range")
+
+    autorange = yrange()
+
+    el.evaluate("el => Plotly.relayout(el, {'yaxis.range': [10, 20]})")
+    wait_until(lambda: yrange() == [10, 20], page)
+    wait_until(lambda: plot._figure.layout.yaxis.range == (10, 20), page)
+
+    fig.data[0].y = [0, 60, 100]
+    plot.param.trigger('object')
+
+    wait_until(lambda: el.evaluate("el => el.data[0].y[1]") == 60, page)
+    assert yrange() == [10, 20]
+
+    el.hover()
+    page.locator('.modebar-btn[data-attr="zoom"][data-val="reset"]').click()
+
+    wait_until(lambda: yrange() == autorange, page)
