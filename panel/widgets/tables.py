@@ -1270,6 +1270,14 @@ class Tabulator(BaseTable):
         Dictionary mapping from column name to a HTML element
         to use as the button icon.""")
 
+    column_order = param.List(default=None, allow_None=True, doc="""
+        An ordered list of columns to display. If None (default), all
+        columns are displayed in the order inherited from the underlying
+        data structure. If a list is provided, only the listed columns
+        will be displayed in the order they appear within the list.
+        Columns may be omitted to hide them. Index columns cannot be
+        reordered or hidden using this parameter.""")
+
     container_popup = param.Boolean(default=True, doc="""
         If True, popups will appear within the table container, otherwise
         popups will be appended to the body element of the DOM.""")
@@ -1320,8 +1328,8 @@ class Tabulator(BaseTable):
     hidden_columns = param.List(default=[], item_type=str, nested_refs=True, doc="""
         List of columns to hide.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    movable_columns = param.Boolean(default=False, doc="""
-        Whether columns can be reordered by dragging their headers.""")
+    initial_page_size = param.Integer(default=20, bounds=(1, None), doc="""
+        Initial page size if page_size is None and therefore automatically set.""")
 
     layout: t.Literal[
         'fit_data', 'fit_data_fill', 'fit_data_stretch', 'fit_data_table',
@@ -1333,8 +1341,8 @@ class Tabulator(BaseTable):
         'fit_columns', 'fit_data', 'fit_data_stretch', 'fit_data_fill',
         'fit_data_table'.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    initial_page_size = param.Integer(default=20, bounds=(1, None), doc="""
-        Initial page size if page_size is None and therefore automatically set.""")
+    movable_columns = param.Boolean(default=False, doc="""
+        Whether columns can be reordered by dragging their headers.""")
 
     pagination: t.Literal['local', 'remote'] | None = param.Selector(
         default=None, allow_None=True,
@@ -1426,7 +1434,7 @@ class Tabulator(BaseTable):
 
     _content_params: t.ClassVar[list[str]] = _data_params + ['expanded', 'row_content', 'embed_content']
 
-    _manual_params: t.ClassVar[list[str]] = BaseTable._manual_params + _config_params
+    _manual_params: t.ClassVar[list[str]] = BaseTable._manual_params + _config_params + ['column_order']
 
     _priority_changes: t.ClassVar[list[str]] = ['data', 'filters']
 
@@ -1434,7 +1442,8 @@ class Tabulator(BaseTable):
         'selection': None, 'row_content': None, 'row_height': None,
         'text_align': None, 'header_align': None, 'header_filters': None,
         'header_tooltips': None, 'styles': 'cell_styles',
-        'title_formatters': None, 'sortable': None, 'initial_page_size': None
+        'title_formatters': None, 'sortable': None, 'initial_page_size': None,
+        'column_order': None,
     }
 
     # Determines the maximum size limits beyond which (local, remote)
@@ -1473,6 +1482,23 @@ class Tabulator(BaseTable):
         if style is not None:
             self.style._todo = style._todo
         self.param.selection.callable = self._get_selectable
+
+    def _get_columns(self) -> list:
+        if self.value is None:
+            return []
+        indexes = self.indexes
+        all_fields = self._get_fields()
+
+        if self.column_order is not None:
+            ordered_fields = indexes + [
+                col for col in self.column_order
+                if col in all_fields and col not in indexes
+            ]
+        else:
+            ordered_fields = all_fields
+
+        df = self.value.reset_index() if len(indexes) > 1 else self.value
+        return self._get_column_definitions(ordered_fields, df)
 
     @param.depends('value', watch=True, on_init=True)
     def _apply_max_size(self):
