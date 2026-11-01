@@ -73,7 +73,7 @@ class FastStyle(param.Parameterized):
             Dict: A Bokeh Theme
         """
 
-        return {
+        theme = {
             "attrs": {
                 "figure": {
                     "background_fill_color": self.background_color,
@@ -131,6 +131,11 @@ class FastStyle(param.Parameterized):
                 },
             }
         }
+        if self.luminance < 0.5:
+            # Segments (e.g. box plot whiskers) default to black, which is
+            # invisible on a dark background; the light theme keeps the default.
+            theme["attrs"]["Segment"] = {"line_color": self.neutral_foreground_rest}
+        return theme
 
 
 class FastWrapper(ReactiveHTML):
