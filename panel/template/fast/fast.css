@@ -343,7 +343,9 @@ h6 {
 }
 
 .main .card-margin.stretch_both,
-.main .card-margin.stretch_height {
+.main .card-margin.scale_both,
+.main .card-margin.stretch_height,
+.main .card-margin.scale_height {
   height: calc(100% - 2em);
 }
 
