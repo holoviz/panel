@@ -188,6 +188,20 @@ def test_pdf_url_embed_false_stays_html(document, comm):
     model = PDF(url, embed=False).get_root(document, comm)
     assert not model.embed
 
+def test_pdf_switch_between_url_and_local_data(document, comm):
+    path = Path(__file__).parent.parent / "test_data" / "sample.pdf"
+    url = 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
+    pdf_pane = PDF(url, embed=False)
+    model = pdf_pane.get_root(document, comm)
+
+    pdf_pane.object = path.read_bytes()
+    assert model.embed
+    assert not pdf_pane.embed
+
+    pdf_pane.object = url
+    assert not model.embed
+    assert model.text.startswith("&lt;embed")
+
 def test_png_native_size(document, comm):
     png = PNG(PNG_FILE, embed=False)
     model = png.get_root(document, comm)

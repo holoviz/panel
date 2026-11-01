@@ -522,6 +522,11 @@ class PDF(FileBase):
         assert data.startswith(b'%PDF-')
         return 0, 0
 
+    def _process_property_change(self, props: dict[str, t.Any]) -> dict[str, t.Any]:
+        # The model flag is derived from the object and must not overwrite the parameter.
+        props.pop('embed', None)
+        return super()._process_property_change(props)
+
     def _transform_object(self, obj: t.Any) -> dict[str, t.Any]:
         if obj is None:
             return dict(object='<embed></embed>')
@@ -537,7 +542,7 @@ class PDF(FileBase):
         w, h = self.width or '100%', self.height or '100%'
         page = f'#page={self.start_page}' if getattr(self, 'start_page', None) else ''
         html = f'<embed src="{obj}{page}" width={w!r} height={h!r} type="application/pdf">'
-        return dict(text=escape(html))
+        return dict(text=escape(html), embed=False)
 
 class WebP(ImageBase):
     """
