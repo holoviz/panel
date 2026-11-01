@@ -1041,7 +1041,11 @@ class BaseTable(ReactiveData, Widget):
                     if value is pd.NaT:
                         value = np.nan
                     elif isinstance(value, dt.datetime):
+                        if value.tzinfo is not None:
+                            value = value.astimezone(dt.timezone.utc)
                         value = datetime_as_utctimestamp(value)
+                    elif isinstance(value, dt.date):
+                        value = datetime_as_utctimestamp(dt.datetime.combine(value, dt.time()))
                     values.append((patch_ind, value))
                 patches[k] = values
             self._patch(patches)
