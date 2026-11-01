@@ -51,3 +51,26 @@ def test_float_panel_resize(page):
     wait_until(lambda: int(page.locator('.red').bounding_box()['width']) == 200, page)
     wait_until(lambda: int(page.locator('.green').bounding_box()['width']) == 200, page)
     wait_until(lambda: int(page.locator('.blue').bounding_box()['width']) == 200, page)
+
+
+@pytest.mark.parametrize('contained', [True, False])
+def test_float_panel_auto_size_fits_content(page, contained):
+    float_panel = FloatPanel(
+        Spacer(styles=dict(background='red'), width=200, height=200),
+        Spacer(styles=dict(background='green'), width=200, height=200),
+        Spacer(styles=dict(background='blue'), width=200, height=200),
+        contained=contained,
+    )
+
+    serve_component(page, float_panel)
+
+    content = page.locator('.jsPanel-content')
+    wait_until(lambda: content.bounding_box()['height'] >= 600, page)
+    wait_until(lambda: content.bounding_box()['width'] >= 200, page)
+
+    if not contained:
+        normal = content.bounding_box()['height']
+        float_panel.status = 'maximized'
+        wait_until(lambda: content.bounding_box()['height'] != normal, page)
+        float_panel.status = 'normalized'
+        wait_until(lambda: content.bounding_box()['height'] == normal, page)
