@@ -100,9 +100,9 @@ class FloatPanel(ListLike, ReactiveHTML):
     _extension_name = 'floatpanel'
 
     _template = """
-    <div id="float" class="bk-root" style="padding:8px;padding-right:30px">
+    <div id="float" class="bk-root" style="padding:8px;padding-right:30px;box-sizing:border-box;height:100%;display:flex;flex-direction:column">
       {% for obj in objects %}
-      <div id="flex-item">${obj}</div>
+      <div id="flex-item" style="flex:1 1 auto">${obj}</div>
       {% endfor %}
     </div>
     """
