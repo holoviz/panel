@@ -530,10 +530,9 @@ class PDF(FileBase):
             data = self._data(obj)
             if not isinstance(data, bytes):
                 data = data.encode('utf-8')
-            b64 = base64.b64encode(data).decode("utf-8")
-            if self.embed:
-                return dict(text=b64)
-            obj = f'data:application/pdf;base64,{b64}'
+            # Chromium does not render PDFs from data: URLs so the client
+            # has to convert local data to a blob: URL regardless of embed.
+            return dict(text=base64.b64encode(data).decode("utf-8"), embed=True)
 
         w, h = self.width or '100%', self.height or '100%'
         page = f'#page={self.start_page}' if getattr(self, 'start_page', None) else ''
