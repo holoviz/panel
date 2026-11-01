@@ -154,7 +154,19 @@ class DeckGL(ModelPane):
         for d in data:
             for col, val in d.items():
                 columns[col].append(val)
-        return {col: np.asarray(vals) for col, vals in columns.items()}
+        return {col: cls._to_array(vals) for col, vals in columns.items()}
+
+    @classmethod
+    def _to_array(cls, vals):
+        # np.asarray merges equal-length nested sequences (e.g. paths) into
+        # one dense array and raises for ragged ones, losing the per-row structure.
+        if any(isinstance(v, (list, tuple, np.ndarray)) and len(v) and
+               isinstance(v[0], (list, tuple, np.ndarray)) for v in vals):
+            array = np.empty(len(vals), dtype=object)
+            for i, v in enumerate(vals):
+                array[i] = v
+            return array
+        return np.asarray(vals)
 
     @classmethod
     def _update_sources(cls, json_data, sources: list[ColumnDataSource]):
