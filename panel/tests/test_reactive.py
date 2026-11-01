@@ -808,6 +808,38 @@ def test_reactive_html_scripts_linked_properties_assignment_operator():
 
             assert TestScripts()._linked_properties == ('clicks',)
 
+@pytest.mark.parametrize('expr', [
+    'data.hb--', 'data.hb++', '--data.hb', '++data.hb', '-- data.hb', 'data.hb --',
+    'x = data.hb-- > 0', 'data.c = 0 < --data.hb ? 1 : 2',
+])
+def test_reactive_html_scripts_linked_properties_increment_decrement(expr):
+
+    class TestScripts(ReactiveHTML):
+
+        hb = param.Integer()
+
+        _template = "<div id='test'></div>"
+
+        _scripts = {'render': f'{expr}'}
+
+    assert 'hb' in TestScripts()._linked_properties
+
+@pytest.mark.parametrize('expr', [
+    'data.hb == 1', 'data.hb === 1', 'data.hb != 1', 'data.hb !== 1',
+    'data.hb <= 1', 'data.hb >= 1', 'data.hb < 1', 'data.hb > 1', 'data.hb + 1',
+])
+def test_reactive_html_scripts_linked_properties_ignores_comparison(expr):
+
+    class TestScripts(ReactiveHTML):
+
+        hb = param.Integer()
+
+        _template = "<div id='test'></div>"
+
+        _scripts = {'render': f'if ({expr}) {{ }}'}
+
+    assert TestScripts()._linked_properties == ()
+
 def test_reactive_html_scripts_update_before_init_does_not_change_shared_scripts():
 
     class TestScripts(ReactiveHTML):

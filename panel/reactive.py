@@ -1859,7 +1859,8 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
     _scripts: t.ClassVar[Mapping[str, str | list[str] | tuple[str, ...]]] = {}
 
     _script_assignment: t.ClassVar[str] = (
-        r'data\.([^[^\d\W]\w*)[ ]*[\+,\-,\*,\\,%,\*\*,<<,>>,>>>,&,\^,|,\&\&,\|\|,\?\?]*='
+        r'(?:\+\+|--)[ ]*data\.([^\d\W]\w*)'
+        r'|data\.([^\d\W]\w*)[ ]*(?:(?:\*\*|<<|>>>|>>|&&|\|\||\?\?|[-+*/\\%&^|])?=(?!=)|\+\+|--)'
     )
 
     __abstract = True
@@ -2146,7 +2147,8 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
             if not isinstance(scripts, (list, tuple)):
                 scripts = [scripts]
             for script in scripts:
-                for p in re.findall(self._script_assignment, script):
+                for match in re.finditer(self._script_assignment, script):
+                    p = next(g for g in match.groups() if g)
                     if p not in linked_properties:
                         linked_properties.append(p)
         for children_param in self._parser.children.values():
