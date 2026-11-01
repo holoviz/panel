@@ -95,3 +95,22 @@ def test_fast_template_modal_paints_bokeh_plot(page, template):
     tmpl.open_modal()
     expect(page.locator('.pn-modal-content')).to_be_visible()
     wait_until(modal_painted, page)
+
+
+@pytest.mark.parametrize('sizing_mode', ['scale_both', 'stretch_both'])
+def test_fast_list_template_both_sizing_modes_fill_height(page, sizing_mode):
+    from bokeh.plotting import figure
+
+    from panel.layout import Column
+    from panel.pane import Bokeh
+
+    fig = figure(sizing_mode=sizing_mode, aspect_ratio=1.5 if sizing_mode == 'scale_both' else None)
+    fig.line([0, 1], [0, 1])
+    tmpl = FastListTemplate()
+    tmpl.main.append(Column(Bokeh(fig), min_height=100))
+
+    serve_component(page, tmpl)
+
+    card = page.locator(f"#main .card-margin.{sizing_mode}")
+    expect(card).to_have_count(1)
+    wait_until(lambda: card.bounding_box()['height'] > 300, page)
