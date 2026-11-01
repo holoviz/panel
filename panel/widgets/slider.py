@@ -888,7 +888,7 @@ class _EditableContinuousSlider(CompositeWidget):
         self._value_edit = self._input_widget(
             margin=0, align='end', css_classes=['slider-edit'],
             stylesheets=[f'{CDN_DIST}css/editable_slider.css'],
-            format=self.format,
+            format=self._input_format,
         )
         self._value_edit.param.watch(self._sync_value, 'value')
         self._value_edit.param.watch(self._sync_value, 'value_throttled')
@@ -941,6 +941,10 @@ class _EditableContinuousSlider(CompositeWidget):
         if "value" not in params and "end" in params:
             params["value"] = params["end"]
 
+    @property
+    def _input_format(self):
+        return self.format
+
     @param.depends('width', 'height', 'sizing_mode', watch=True)
     def _update_layout(self):
         self._value_edit.sizing_mode = self.sizing_mode
@@ -979,7 +983,7 @@ class _EditableContinuousSlider(CompositeWidget):
             show_value=self.show_value,
             tooltips=self.tooltips
         )
-        self._value_edit.step = self.step
+        self._value_edit.param.update(format=self._input_format, step=self.step)
 
     @param.depends('value', watch=True)
     def _update_value(self):
@@ -1045,6 +1049,14 @@ class EditableFloatSlider(_EditableContinuousSlider, FloatSlider):
 
     _slider_widget: t.ClassVar[type[WidgetBase]] = FloatSlider
     _input_widget: t.ClassVar[type[WidgetBase]] = FloatInput
+
+    @property
+    def _input_format(self):
+        if self.format is not None:
+            return self.format
+        # Hide float noise such as 0.10000000001 without truncating the step
+        step_decimals = len(f'{self.step:.10f}'.rstrip('0').partition('.')[2])
+        return '0.0[' + '0' * (max(step_decimals, 5) - 1) + ']'
 
 
 class EditableIntSlider(_EditableContinuousSlider, IntSlider):
