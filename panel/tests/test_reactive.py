@@ -473,6 +473,18 @@ def test_boomerang_value_is_skipped(document, comm):
     assert text_input.value == 'frontend'
     assert 'value' not in text_input._events
 
+def test_reactive_html_child_config_data_model_name():
+
+    class ChildConfigNaming(ReactiveHTML):
+
+        _icon_html = param.String(default='<img>')
+
+        _child_config = {'_icon_html': 'literal'}
+
+        _template = '<div id="div">${_icon_html}</div>'
+
+    assert ChildConfigNaming._data_model.__name__.startswith('ChildConfigNaming')
+
 def test_reactive_html_basic():
 
     class Test(ReactiveHTML):

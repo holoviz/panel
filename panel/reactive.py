@@ -1538,16 +1538,16 @@ class ReactiveHTMLMetaclass(ReactiveMetaBase):
             })
 
         # Validate _child_config
-        for name, child_type in mcs._child_config.items():
-            if name not in mcs.param:
+        for child, child_type in mcs._child_config.items():
+            if child not in mcs.param:
                 raise ValueError(
-                    f"{cls_name}._child_config for {name!r} does not "
+                    f"{cls_name}._child_config for {child!r} does not "
                     "match any parameters. Ensure the name of each "
                     "child config matches one of the parameters."
                 )
             elif child_type not in ('model', 'template', 'literal'):
                 raise ValueError(
-                    f"{cls_name}._child_config for {name!r} child "
+                    f"{cls_name}._child_config for {child!r} child "
                     "parameter declares unknown type {child_type!r}. "
                     f"The '_child_config' mode must be one of 'model', "
                     "'template' or 'literal'."
@@ -1579,11 +1579,11 @@ class ReactiveHTMLMetaclass(ReactiveMetaBase):
                     if p in mcs.param or '.' in p:
                         continue
                     if re.match(mcs._script_regex, p):
-                        name = re.findall(mcs._script_regex, p)[0]
-                        if name not in mcs._scripts:
+                        script = re.findall(mcs._script_regex, p)[0]
+                        if script not in mcs._scripts:
                             raise ValueError(
                                 f"{cls_name}._template inline callback "
-                                f"references unknown script {name!r}, "
+                                f"references unknown script {script!r}, "
                                 "ensure the referenced script is declared"
                                 "in the _scripts dictionary."
                             )
