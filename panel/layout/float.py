@@ -234,7 +234,7 @@ class FloatPanel(ListLike, ReactiveHTML):
         return bundled_files(cls, 'css')
 
     def __init__(self, *objects, name='', **params):
-        super().__init__(objects=list(objects), name=name, **params)
+        super().__init__(*objects, name=name, **params)
 
     def clone(self, *objects: t.Any, **params: t.Any) -> Self:
         return super().clone(*objects, **params)
