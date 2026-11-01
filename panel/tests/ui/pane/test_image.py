@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 from numpy.testing import assert_allclose
@@ -206,3 +208,14 @@ def test_pdf_no_embed_start_page(page):
 
     src = page.locator("embed").get_attribute('src')
     assert src == PDF_FILE + "#page=22"
+
+def test_pdf_local_bytes_no_embed_uses_blob_url(page):
+    path = Path(__file__).parent.parent.parent / "test_data" / "sample.pdf"
+    pdf_pane = PDF(path.read_bytes(), embed=False)
+
+    _, port = serve_component(page, pdf_pane)
+
+    src = page.locator("embed").get_attribute('src')
+
+    assert src.startswith(f"blob:http://127.0.0.1:{port}")
+    assert src.endswith("#page=1")
