@@ -503,7 +503,8 @@ class Param(Pane):
                 end -= 1
             if end is not None:
                 kw['end'] = end
-            if (('start' not in kw or 'end' not in kw) and
+            if (('start' not in kw or 'end' not in kw or
+                 (isinstance(p_obj, param.Number) and value is None)) and
                 not isinstance(p_obj, (param.Date, param.CalendarDate))):
                 # Do not change widget class if mapping was overridden
                 if not widget_class_overridden:
@@ -532,6 +533,7 @@ class Param(Pane):
         # Update kwargs
         onkeyup = kw_widget.pop('onkeyup', False)
         throttled = kw_widget.pop('throttled', False)
+        expand_button = kw_widget.pop('expand_button', self_or_cls.expand_button)
         if 'name' in kw_widget and 'label' not in kw_widget:
             kw_widget['label'] = kw_widget.pop('name')
         kw.update(kw_widget)
@@ -681,11 +683,11 @@ class Param(Pane):
             elif throttled and hasattr(widget, 'value_throttled'):
                 updates['value_throttled'] = change.new
                 updates['value'] = change.new
-            elif isinstance(widget, Row) and len(widget) == 2:
-                updates['value'] = change.new
-                widget = widget[0]
             else:
                 updates['value'] = change.new
+
+            if isinstance(widget, Row) and len(widget) == 2:
+                widget = widget[0]
 
             # Ensure we only de-duplicate value events since only
             # the widget value can be controlled from the frontend
@@ -722,7 +724,7 @@ class Param(Pane):
         if isinstance(options, dict):
             options = options.values()
         if ((is_parameterized(value) or any(is_parameterized(o) for o in options))
-            and (self_or_cls.expand_button or (self_or_cls.expand_button is None and not self_or_cls.expand))):
+            and (expand_button or (expand_button is None and not self_or_cls.expand))):
             toggle = Toggle(
                 align='end',
                 color='primary',

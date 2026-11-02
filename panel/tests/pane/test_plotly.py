@@ -359,3 +359,33 @@ def test_plotly_batch_update_datetime_converted(document, comm):
 
     assert all(isinstance(v, str) for v in model.restyle['data']['x'][0])
     assert list(model.restyle['data']['y'][0]) == [1, 2, 3]
+
+
+@plotly_available
+@pytest.mark.parametrize('per_point', [False, True])
+def test_plotly_batch_update_unchanged_marker_color_serializable(document, comm, per_point):
+    from bokeh.core.serialization import Serializer
+    from plotly.basedatatypes import Undefined
+
+    fig = go.Figure([go.Scatter(x=[0, 1, 2], y=[1, 2, 3]) for _ in range(3)])
+    pane = Plotly(fig)
+    model = pane.get_root(document, comm=comm)
+
+    def colors(last):
+        if per_point:
+            return [['red', 'green', 'blue']] * 2 + [last]
+        return ['red', 'green', last]
+
+    with fig.batch_update():
+        for trace, color in zip(fig.data, colors(['blue'] * 3 if per_point else 'blue')):
+            trace.marker.color = color
+    with fig.batch_update():
+        for trace, color in zip(fig.data, colors(['red'] * 3 if per_point else 'orange')):
+            trace.y = [4, 5, 6]
+            trace.marker.color = color
+
+    data = model.restyle['data']
+    assert not any(v is Undefined for v in data['marker.color'])
+    assert data['marker.color'][:2] == ['_undefined_'] * 2
+    assert data['marker.color'][2] == (['red'] * 3 if per_point else 'orange')
+    Serializer().encode(model.restyle)

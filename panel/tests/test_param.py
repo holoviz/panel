@@ -28,8 +28,8 @@ from panel.param import (
 from panel.tests.util import async_wait_until, mpl_available, mpl_figure
 from panel.widgets import (
     AutocompleteInput, Button, Checkbox, DatePicker, DatetimeInput,
-    EditableFloatSlider, EditableRangeSlider, LiteralInput, NumberInput,
-    RangeSlider,
+    EditableFloatSlider, EditableRangeSlider, FloatInput, IntInput,
+    LiteralInput, NumberInput, RangeSlider,
 )
 
 
@@ -523,6 +523,23 @@ def test_number_input_none_support():
     test_widget = Param(Test())
     assert test_widget[1].value == 0
     assert test_widget[2].value is None
+
+
+def test_bounded_number_none_default_uses_input_widget(document, comm):
+    class Test(param.Parameterized):
+        integer = param.Integer(default=None, bounds=(0, 10))
+        number = param.Number(default=None, bounds=(0, 5))
+
+    test_pane = Param(Test())
+    assert isinstance(test_pane._widgets['integer'], IntInput)
+    assert isinstance(test_pane._widgets['number'], FloatInput)
+    assert test_pane._widgets['integer'].value is None
+    assert test_pane._widgets['integer'].start == 0
+    assert test_pane._widgets['integer'].end == 10
+
+    model = test_pane.get_root(document, comm=comm)
+    document.add_root(model)
+    document.to_json()
 
 
 def test_explicit_params(document, comm):
@@ -2251,3 +2268,21 @@ def test_throttled_range_param_repeated_exclusive_boundary(document, comm, value
     assert obj.a == (0.5, 1.5)
     widget._process_events({'value_throttled': (0.7, 1.3)})
     assert obj.a == (0.7, 1.3)
+
+
+def test_param_selector_objects_update_with_parameterized_options():
+    class Option(param.Parameterized):
+        pass
+
+    class Test(param.Parameterized):
+        sel = param.Selector(objects={'a': Option()}, check_on_set=False)
+
+    test = Test()
+    pane = Param(test)
+    row = pane._widgets['sel']
+    assert isinstance(row, Row)
+
+    new = {'a': Option(), 'b': Option()}
+    test.param.sel.objects = new
+
+    assert row[0].options == new

@@ -2009,6 +2009,61 @@ def test_tabulator_patch_with_timestamp(document, comm):
         if col != 'index':
             np.testing.assert_array_equal(table.value[col].values, expected[col])
 
+@pytest.mark.parametrize('patch_value', [
+    dt.datetime(2021, 1, 1),
+    pd.Timestamp('2021-01-01'),
+    np.datetime64('2021-01-01T00:00:00'),
+], ids=['datetime', 'Timestamp', 'datetime64'])
+@pytest.mark.parametrize('form', ['dict', 'dataframe', 'series'])
+def test_tabulator_patch_datetime_column(document, comm, patch_value, form):
+    # https://github.com/holoviz/panel/issues/4144
+    df = pd.DataFrame(dict(A=pd.to_datetime(['1980-01-01', '1980-01-02'])))
+    table = Tabulator(df)
+
+    model = table.get_root(document, comm)
+
+    if form == 'dict':
+        table.patch({'A': [(0, patch_value)]})
+    elif form == 'dataframe':
+        table.patch(pd.DataFrame({'A': [patch_value]}, index=[0]))
+    else:
+        table.patch(pd.Series([patch_value], index=[0], name='A', dtype=object))
+
+    expected = np.array(['2021-01-01T00:00:00', '1980-01-02T00:00:00'], dtype='datetime64[ns]')
+    np.testing.assert_array_equal(table.value['A'].values, expected)
+    np.testing.assert_array_equal(model.source.data['A'], expected.astype(np.int64) / 10e5)
+
+@pytest.mark.parametrize('form', ['dict', 'series'])
+def test_tabulator_patch_tz_aware_datetime_column(document, comm, form):
+    index = pd.to_datetime(['2021-01-01', '2022-01-01']).tz_localize('US/Eastern')
+    table = Tabulator(pd.DataFrame(dict(A=index)))
+
+    model = table.get_root(document, comm)
+
+    new = pd.Timestamp('2016-02-01', tz='US/Eastern')
+    if form == 'dict':
+        table.patch({'A': [(0, new)]})
+    else:
+        table.patch(pd.Series([new], index=[0], name='A'))
+
+    assert model.source.data['A'][0] == new.value / 1e6
+    assert model.source.data['A'][1] == index[1].value / 1e6
+
+@pytest.mark.parametrize('form', ['dict', 'series'])
+def test_tabulator_patch_date_column(document, comm, form):
+    df = pd.DataFrame(dict(A=[dt.date(2021, 1, 1), dt.date(2022, 1, 1)]))
+    table = Tabulator(df)
+
+    model = table.get_root(document, comm)
+
+    if form == 'dict':
+        table.patch({'A': [(0, dt.date(2016, 2, 1))]})
+    else:
+        table.patch(pd.Series([dt.date(2016, 2, 1)], index=[0], name='A'))
+
+    assert table.value['A'].iloc[0] == dt.date(2016, 2, 1)
+    assert model.source.data['A'][0] == pd.Timestamp('2016-02-01').value / 1e6
+
 def test_tabulator_patch_with_NaT(document, comm):
     df = pd.DataFrame(dict(A=pd.to_datetime(['1980-01-01', np.nan])))
     assert df.loc[1, 'A'] is pd.NaT

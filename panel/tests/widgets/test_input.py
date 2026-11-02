@@ -12,7 +12,8 @@ from panel.models.widgets import EnterEvent
 from panel.widgets import (
     ArrayInput, Checkbox, DatePicker, DateRangePicker, DatetimeInput,
     DatetimePicker, DatetimeRangeInput, DatetimeRangePicker, FileInput,
-    FloatInput, IntInput, LiteralInput, StaticText, TextInput, TimePicker,
+    FloatInput, IntInput, LiteralInput, PasswordInput, StaticText,
+    TextAreaInput, TextInput, TimePicker,
 )
 
 
@@ -327,6 +328,18 @@ def test_text_input(document, comm):
 
     text.value = 'A'
     assert widget.value == 'A'
+
+@pytest.mark.parametrize('widget_type', [TextInput, TextAreaInput, PasswordInput])
+def test_text_input_set_value_none(widget_type, document, comm):
+    text = widget_type(value='ABC')
+
+    widget = text.get_root(document, comm=comm)
+
+    text.value = None
+    assert text.value is None
+    assert text.value_input is None
+    assert widget.value == ''
+    assert widget.value_input == ''
 
 def test_text_input_value_input_synced_with_value(document, comm):
     text = TextInput(value='ABC')
