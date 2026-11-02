@@ -613,7 +613,7 @@ class Param(Pane):
             watcher = widget.param.watch(link_widget, 'value')
         watchers.append(watcher)
 
-        hidden_by_precedence = []
+        hidden_by_precedence: list[bool] = []
 
         def link(change, watchers=[watcher]):
             updates = {}
