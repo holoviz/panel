@@ -171,6 +171,15 @@ def test_resource_spec_server_mode_is_relative():
     ]
 
 
+def test_resource_spec_server_mode_carries_cdn_map():
+    spec = resource_spec(PlotlyPlot, 'server')
+    assert ['static/extensions/panel/', CDN_DIST] in spec['cdn']
+
+
+def test_resource_spec_cdn_mode_has_no_cdn_map():
+    assert 'cdn' not in resource_spec(PlotlyPlot, 'cdn')
+
+
 def test_resource_spec_inline_falls_back_to_cdn():
     """
     There is nothing left to inline once the page has been rendered, so an

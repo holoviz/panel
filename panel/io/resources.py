@@ -273,6 +273,20 @@ def set_default_resource_mode(mode: MODES, *, notebook: bool = False):
 def use_cdn() -> bool:
     return _settings.resources(default="server") != 'server' or state._is_pyodide
 
+def extension_cdn_map() -> list[tuple[str, str]]:
+    """
+    Pairs of server extension paths (``static/extensions/<name>/``) and
+    the CDN urls serving the same files, for Panel and every extension
+    with a CDN.
+    """
+    cdn_map = [(LOCAL_DIST, CDN_DIST)]
+    extension_cdns = {Path(path).resolve(): cdn for path, cdn in EXTENSION_CDN.items()}
+    for name, dist in extension_dirs.items():
+        cdn = extension_cdns.get(Path(dist).resolve())
+        if name != 'panel' and cdn:
+            cdn_map.append((f'static/extensions/{name}/', f"{cdn.rstrip('/')}/"))
+    return cdn_map
+
 def get_dist_path(cdn: bool | t.Literal['auto'] = 'auto') -> str:
     cdn = use_cdn() if cdn == 'auto' else cdn
     if cdn:
@@ -894,12 +908,7 @@ class Resources(BkResources):
         Lets the notebook bootstrap load the files from the CDN when the
         endpoint cannot serve them, e.g. in an exported notebook.
         """
-        cdn_map = [(LOCAL_DIST, CDN_DIST)]
-        extension_cdns = {Path(path).resolve(): cdn for path, cdn in EXTENSION_CDN.items()}
-        for name, dist in extension_dirs.items():
-            cdn = extension_cdns.get(Path(dist).resolve())
-            if name != 'panel' and cdn:
-                cdn_map.append((f'static/extensions/{name}/', f"{cdn.rstrip('/')}/"))
+        cdn_map = extension_cdn_map()
         minified = False if self.dev else self.minified
         components = list(self.components)
         cdn_urls = super()._cdn_urls().urls(components, 'js')

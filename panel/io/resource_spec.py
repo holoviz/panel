@@ -30,7 +30,7 @@ from bokeh.model import Model
 from ..config import config
 from ..util import isurl
 from .resources import (
-    Resources, component_resource_path, extension_declared,
+    Resources, component_resource_path, extension_cdn_map, extension_declared,
     get_notebook_resources, get_resource_mode, resolve_resource_cdn,
     set_resource_mode,
 )
@@ -310,6 +310,11 @@ def _build_spec(cls: type, mode: str) -> dict[str, t.Any] | None:
             shim = _shim_url(resources)
             if shim:
                 spec['shim'] = shim
+        if mode == 'server':
+            # Server urls only resolve where something serves Panel's
+            # extension routes, which a host embedding the output itself
+            # (e.g. Shiny via jupyter_bokeh) may not do.
+            spec['cdn'] = [list(pair) for pair in extension_cdn_map()]
         return spec
 
 
