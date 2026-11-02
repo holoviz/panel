@@ -150,6 +150,19 @@ def test_server_non_ascii_route_index_link(port):
 
     assert 'href="./%E5%84%80%E8%A1%A8%E6%9D%BF"' in r.content.decode('utf-8')
 
+def test_server_non_ascii_route_index_display(port):
+    r = serve_and_request(
+        {'/naïve': Markdown('# Title'), '/plain': Markdown('# Plain')},
+        port=port, use_index=True, index=INDEX_HTML, redirect_root=False, suffix='/'
+    )
+
+    content = r.content.decode('utf-8')
+    assert 'href="./na%C3%AFve"' in content
+    assert 'data-search="naïve /naïve"' in content
+    assert '<h2 class="pn-card-title">naïve</h2>' in content
+    assert '<span class="pn-card-path">/naïve</span>' in content
+    assert 'na%c3%afve /na%c3%afve' not in content
+
 def test_server_prefix_root_redirect():
     html = Markdown('# Title')
 
