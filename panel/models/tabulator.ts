@@ -121,7 +121,7 @@ function summarize(grouped: any[], columns: any[], aggregators: any[], depth: nu
             summary[column.field] = [old_val, val]
           }
         }
-      } else {
+      } else if (agg) {
         summary[column.field] = val
       }
     }
@@ -167,7 +167,7 @@ function group_data(records: any[], columns: any[], indexes: string[], aggregato
         aggs.push(aggregators[index])
       }
     } else {
-      aggs.push("sum")
+      aggs.push("")
     }
   }
   summarize(grouped, columns, aggs)

@@ -159,6 +159,22 @@ def test_fast_progress_indicator_explicit_height(page):
     expect(progress_el).to_have_css("height", "32px")
 
 
+@pytest.mark.parametrize("height", [10, 20, 30, 50, 80])
+def test_progress_active_stripes_fill_bar(page, height):
+    progress = Progress(active=True, height=height)
+
+    serve_component(page, progress)
+
+    progress_el = page.locator("progress")
+    expect(progress_el).to_have_count(1)
+    expect(progress_el).to_have_css("height", f"{height}px")
+    stripes = progress_el.evaluate(
+        "el => { const s = getComputedStyle(el, '::before'); return [s.height, s.backgroundSize] }"
+    )
+    assert stripes[0] == f"{height}px"
+    assert stripes[1].endswith(" 100%")
+
+
 def test_dial_frame_is_transparent_on_dark_background(page):
     dial = Dial(value=25, width=200, height=200)
     row = pn.Row(dial, styles={'background': 'rgb(0, 0, 0)'})

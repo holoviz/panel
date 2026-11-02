@@ -356,3 +356,22 @@ def test_slider_color_preserved_in_accordion(page, widget_cls):
         f"Slider color changed after accordion collapse/expand: "
         f"before={initial_color!r}, after={restored_color!r}"
     )
+
+
+def test_editable_float_slider_default_format_hides_float_noise(page):
+    slider = EditableFloatSlider(start=0, end=1, value=0.10000000001)
+
+    serve_component(page, slider)
+
+    text_input = _editable_text_input(page)
+    wait_until(lambda: text_input.value == '0.1', page)
+    assert slider.value == 0.10000000001
+
+
+def test_editable_float_slider_default_format_keeps_small_step(page):
+    slider = EditableFloatSlider(start=0, end=1, value=0.000123, step=0.000001)
+
+    serve_component(page, slider)
+
+    text_input = _editable_text_input(page)
+    wait_until(lambda: text_input.value == '0.000123', page)
