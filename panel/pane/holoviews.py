@@ -647,7 +647,8 @@ class HoloViews(Pane):
         from ..theme.base import resolve_component
         if default_widgets is None:
             default_widgets = {}
-        overridden = key in default_widgets
+        # Instances pass a copy of the class defaults unless the user set them
+        overridden = key in default_widgets and default_widgets != cls.default_widgets
         widget_type = default_widgets.get(key, cls.default_widgets.get(key, None))
         if widget_type is None:
             raise ValueError("No valid {key} widget type found.")
@@ -752,6 +753,8 @@ class HoloViews(Pane):
                 if len(vals) > 1 and all(isnumeric(v) or isinstance(v, datetime_types) for v in vals):
                     vals = sorted(vals)
                     labels = [str(dim.pprint_value(v)) for v in vals]
+                    if len(set(labels)) < len(labels):
+                        labels = [str(v) for v in vals]
                     options = dict(zip(labels, vals))
                     widget_type = widget_type or cls._resolve_widget('discrete_numeric', dynamic, default_widgets)
                 elif len(vals) == 1:

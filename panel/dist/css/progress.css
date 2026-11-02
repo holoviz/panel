@@ -45,14 +45,16 @@ progress[value]::-moz-progress-bar {
 
 progress:not([value])::-moz-progress-bar {
   border-radius: 3px;
-  background: linear-gradient(
+  background: repeating-linear-gradient(
       -45deg,
-      transparent 33%,
-      rgba(0, 0, 0, 0.2) 33%,
-      rgba(0, 0, 0, 0.2) 66%,
-      transparent 66%
+      transparent 0,
+      transparent 0.583em,
+      rgba(0, 0, 0, 0.2) 0.583em,
+      rgba(0, 0, 0, 0.2) 1.167em,
+      transparent 1.167em,
+      transparent 1.768em
     )
-    left/2.5em 1.5em;
+    left/2.5em 100% repeat-x;
 }
 
 progress.active:not([value])::-moz-progress-bar {
@@ -177,32 +179,35 @@ progress.dark::-moz-progress-bar {
 
 progress:not([value])::-webkit-progress-bar {
   border-radius: 3px;
-  background: linear-gradient(
+  background: repeating-linear-gradient(
       -45deg,
-      transparent 33%,
-      rgba(0, 0, 0, 0.2) 33%,
-      rgba(0, 0, 0, 0.2) 66%,
-      transparent 66%
+      transparent 0,
+      transparent 0.583em,
+      rgba(0, 0, 0, 0.2) 0.583em,
+      rgba(0, 0, 0, 0.2) 1.167em,
+      transparent 1.167em,
+      transparent 1.768em
     )
-    left/2.5em 1.5em;
+    left/2.5em 100% repeat-x;
 }
 progress:not([value])::before {
   content: ' ';
   position: absolute;
-  height: 20px;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   border-radius: 3px;
-  background: linear-gradient(
+  background: repeating-linear-gradient(
       -45deg,
-      transparent 33%,
-      rgba(0, 0, 0, 0.2) 33%,
-      rgba(0, 0, 0, 0.2) 66%,
-      transparent 66%
+      transparent 0,
+      transparent 0.583em,
+      rgba(0, 0, 0, 0.2) 0.583em,
+      rgba(0, 0, 0, 0.2) 1.167em,
+      transparent 1.167em,
+      transparent 1.768em
     )
-    left/2.5em 1.5em;
+    left/2.5em 100% repeat-x;
 }
 
 @keyframes stripes {

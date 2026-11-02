@@ -1144,3 +1144,23 @@ def test_editable_slider_value_throttled_not_updated_while_dragging_edit(
 
     edit._process_events({'value_throttled': released_value})
     assert w.value_throttled == updated_value
+
+
+def test_editable_float_slider_default_input_format(document, comm):
+    slider = EditableFloatSlider(start=0, end=1, value=0.10000000001)
+
+    assert slider._value_edit.format == '0.0[0000]'
+    assert slider.format is None
+    assert slider.value == 0.10000000001
+
+    slider.step = 0.0000001
+    assert slider._value_edit.format == '0.0[000000]'
+
+    slider.format = '0.00'
+    assert slider._value_edit.format == '0.00'
+
+
+def test_editable_float_slider_explicit_input_format():
+    slider = EditableFloatSlider(start=0, end=1, format='1[.]000')
+
+    assert slider._value_edit.format == '1[.]000'
