@@ -72,24 +72,6 @@ img {
   border-radius: calc(var(--corner-radius) * 1px);
 }
 
-/* Toolbar */
-
-.bk-toolbar.bk-above .bk-toolbar-button.bk-active {
-  border-bottom-color: var(--accent-foreground-active);
-}
-
-.bk-toolbar.bk-below .bk-toolbar-button.bk-active {
-  border-top-color: var(--accent-foreground-active);
-}
-
-.bk-toolbar.bk-right .bk-toolbar-button.bk-active {
-  border-left-color: var(--accent-foreground-active);
-}
-
-.bk-toolbar.bk-left .bk-toolbar-button.bk-active {
-  border-right-color: var(--accent-foreground-active);
-}
-
 /* Tooltips */
 
 .bk-tooltip {

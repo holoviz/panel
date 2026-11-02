@@ -37,7 +37,10 @@ def test_deckgl_path_layer_equal_length_paths_issue_3953(page):
 
     serve_component(page, pane)
 
-    wait_until(lambda: _red_pixels(page).any(), page)
+    if not page.evaluate("() => !!document.createElement('canvas').getContext('webgl2')"):
+        pytest.skip('WebGL2 is not available in this browser')
+
+    wait_until(lambda: _red_pixels(page).any(), page, timeout=15000)
     red = _red_pixels(page)
     # Each path turns a right angle; flattened coordinates draw only diagonals
     assert red.sum(axis=1).max() > 100

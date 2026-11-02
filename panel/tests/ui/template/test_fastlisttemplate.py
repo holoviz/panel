@@ -95,3 +95,64 @@ def test_fast_template_modal_paints_bokeh_plot(page, template):
     tmpl.open_modal()
     expect(page.locator('.pn-modal-content')).to_be_visible()
     wait_until(modal_painted, page)
+
+
+@pytest.mark.parametrize('sizing_mode', ['scale_both', 'stretch_both'])
+def test_fast_list_template_both_sizing_modes_fill_height(page, sizing_mode):
+    from bokeh.plotting import figure
+
+    from panel.layout import Column
+    from panel.pane import Bokeh
+
+    fig = figure(sizing_mode=sizing_mode, aspect_ratio=1.5 if sizing_mode == 'scale_both' else None)
+    fig.line([0, 1], [0, 1])
+    tmpl = FastListTemplate()
+    tmpl.main.append(Column(Bokeh(fig), min_height=100))
+
+    serve_component(page, tmpl)
+
+    card = page.locator(f"#main .card-margin.{sizing_mode}")
+    expect(card).to_have_count(1)
+    wait_until(lambda: card.bounding_box()['height'] > 300, page)
+    
+
+ACTIVE_TOOL_COLORS = """
+() => {
+    const find = (root) => {
+        for (const el of root.querySelectorAll('*')) {
+            if (el.classList.contains('bk-OnOffButton') && el.classList.contains('bk-active')) return el;
+            if (el.shadowRoot) {
+                const found = find(el.shadowRoot);
+                if (found) return found;
+            }
+        }
+        return null;
+    };
+    const button = find(document);
+    if (!button) return null;
+    const probe = document.createElement('div');
+    probe.style.color = 'var(--accent-foreground-active)';
+    button.parentNode.append(probe);
+    const accent = getComputedStyle(probe).color;
+    probe.remove();
+    const style = getComputedStyle(button);
+    const sides = ['Top', 'Right', 'Bottom', 'Left'];
+    return {accent, borders: sides.map(side => style[`border${side}Color`])};
+}
+"""
+
+
+def test_fast_template_bokeh_toolbar_active_tool_uses_accent(page):
+    from bokeh.plotting import figure
+
+    from panel.pane import Bokeh
+
+    fig = figure(width=400, height=300, tools='pan,box_zoom,reset')
+    fig.line([1, 2, 3], [3, 1, 2])
+
+    serve_component(page, FastListTemplate(main=[Bokeh(fig)], accent='#800080'))
+
+    wait_until(lambda: page.evaluate(ACTIVE_TOOL_COLORS) is not None, page)
+    colors = page.evaluate(ACTIVE_TOOL_COLORS)
+    assert colors['accent'] != 'rgb(101, 162, 203)'
+    assert colors['accent'] in colors['borders']
