@@ -114,7 +114,7 @@ def test_fast_list_template_both_sizing_modes_fill_height(page, sizing_mode):
     card = page.locator(f"#main .card-margin.{sizing_mode}")
     expect(card).to_have_count(1)
     wait_until(lambda: card.bounding_box()['height'] > 300, page)
-    
+
 
 ACTIVE_TOOL_COLORS = """
 () => {
