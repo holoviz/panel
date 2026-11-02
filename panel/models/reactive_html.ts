@@ -277,7 +277,7 @@ export class ReactiveHTMLView extends HTMLBoxView {
 
   private _render_child(child: string | UIElement, el: Element): void {
     if (isString(child)) {
-      el.innerHTML = html_decode(child) ?? child
+      el.innerHTML = child
     } else {
       const view = this._child_views.get(child)
       if (view == null) {

@@ -752,6 +752,8 @@ class HoloViews(Pane):
                 if len(vals) > 1 and all(isnumeric(v) or isinstance(v, datetime_types) for v in vals):
                     vals = sorted(vals)
                     labels = [str(dim.pprint_value(v)) for v in vals]
+                    if len(set(labels)) < len(labels):
+                        labels = [str(v) for v in vals]
                     options = dict(zip(labels, vals))
                     widget_type = widget_type or cls._resolve_widget('discrete_numeric', dynamic, default_widgets)
                 elif len(vals) == 1:

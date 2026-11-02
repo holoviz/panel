@@ -299,8 +299,8 @@ Learn about why and how Panel utilizes the Bokeh library.
 develop_seamlessly
 apis
 components
-architecture
-styling
+architecture/index
+styling/index
 dependencies
 comparisons
 ```

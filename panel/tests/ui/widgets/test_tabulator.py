@@ -4922,6 +4922,29 @@ def test_tabulator_hierarchical_data_grouping(page, df, request):
     expect(employees.nth(1)).to_contain_text("Eve")
 
 
+def test_tabulator_hierarchical_no_aggregators_leaves_groups_blank(page):
+    df = pd.DataFrame(
+        {"v": [1, 2, 3, 4], "label": ["x", "y", "z", "w"]},
+        index=pd.MultiIndex.from_tuples(
+            [("A", 1), ("A", 2), ("B", 1), ("B", 2)], names=["grp", "sub"]
+        ),
+    )
+    widget = Tabulator(df, hierarchical=True)
+    serve_component(page, widget)
+
+    rows = page.locator(".tabulator-row.tabulator-tree-level-0")
+    expect(rows).to_have_count(2)
+    for i in range(2):
+        expect(rows.nth(i).locator(".tabulator-cell[tabulator-field='v']")).to_have_text("-")
+        expect(rows.nth(i).locator(".tabulator-cell[tabulator-field='label']")).to_have_text("")
+
+    rows.nth(0).locator(".tabulator-data-tree-control").click()
+    children = page.locator(".tabulator-row.tabulator-tree-level-1")
+    expect(children).to_have_count(2)
+    expect(children.nth(0).locator(".tabulator-cell[tabulator-field='v']")).to_have_text("1")
+    expect(children.nth(1).locator(".tabulator-cell[tabulator-field='label']")).to_have_text("y")
+
+
 @pytest.mark.internet
 @pytest.mark.parametrize("aggs", [
     {"region": "min", "gender": "max"},
@@ -4960,11 +4983,11 @@ def test_tabulator_aggregators_data_aggregation(page, df_agg, aggs):
     rows = page.locator('.tabulator-row')
     expect(rows).to_have_count(2)
     agged = {
-        "region1": rows.nth(0).inner_text().split("\n"),
-        "region2": rows.nth(1).inner_text().split("\n"),
+        "region1": rows.nth(0).locator(".tabulator-cell").all_inner_texts(),
+        "region2": rows.nth(1).locator(".tabulator-cell").all_inner_texts(),
     }
     region_agged = {
-        region: {col: agged[region][col_mapping[col] - 1] for col in col_mapping} for region in agged
+        region: {col: agged[region][col_mapping[col]] for col in col_mapping} for region in agged
     }
     assert region_agged == expected_results["region"]
 
@@ -4976,15 +4999,15 @@ def test_tabulator_aggregators_data_aggregation(page, df_agg, aggs):
     expect(rows).to_have_count(3)
     # gender level
     agged = {
-        "region1": {"Male": rows.nth(0).inner_text().split("\n")},
+        "region1": {"Male": rows.nth(0).locator(".tabulator-cell").all_inner_texts()},
         "region2": {
-            "Male": rows.nth(1).inner_text().split("\n"),
-            "Female": rows.nth(2).inner_text().split("\n"),
+            "Male": rows.nth(1).locator(".tabulator-cell").all_inner_texts(),
+            "Female": rows.nth(2).locator(".tabulator-cell").all_inner_texts(),
         },
     }
     gender_agged = {
         region: {
-            gender: {col: agged[region][gender][col_mapping[col] - 1] for col in col_mapping} for gender in agged[region]} for region in agged
+            gender: {col: agged[region][gender][col_mapping[col]] for col in col_mapping} for gender in agged[region]} for region in agged
     }
     assert gender_agged == expected_results["gender"]
 
@@ -5027,11 +5050,11 @@ def test_tabulator_aggregators_data_aggregation_numeric_column_names(page, df_ag
     rows = page.locator('.tabulator-row')
     expect(rows).to_have_count(2)
     agged = {
-        "region1": rows.nth(0).inner_text().split("\n"),
-        "region2": rows.nth(1).inner_text().split("\n"),
+        "region1": rows.nth(0).locator(".tabulator-cell").all_inner_texts(),
+        "region2": rows.nth(1).locator(".tabulator-cell").all_inner_texts(),
     }
     region_agged = {
-        region: {col: agged[region][col_mapping[col] - 1] for col in col_mapping} for region in agged
+        region: {col: agged[region][col_mapping[col]] for col in col_mapping} for region in agged
     }
     assert region_agged == expected_results["region"]
 
@@ -5043,15 +5066,15 @@ def test_tabulator_aggregators_data_aggregation_numeric_column_names(page, df_ag
     expect(rows).to_have_count(3)
     # gender level
     agged = {
-        "region1": {"Male": rows.nth(0).inner_text().split("\n")},
+        "region1": {"Male": rows.nth(0).locator(".tabulator-cell").all_inner_texts()},
         "region2": {
-            "Male": rows.nth(1).inner_text().split("\n"),
-            "Female": rows.nth(2).inner_text().split("\n"),
+            "Male": rows.nth(1).locator(".tabulator-cell").all_inner_texts(),
+            "Female": rows.nth(2).locator(".tabulator-cell").all_inner_texts(),
         },
     }
     gender_agged = {
         region: {
-            gender: {col: agged[region][gender][col_mapping[col] - 1] for col in col_mapping} for gender in agged[region]} for region in agged
+            gender: {col: agged[region][gender][col_mapping[col]] for col in col_mapping} for gender in agged[region]} for region in agged
     }
     assert gender_agged == expected_results["gender"]
 
