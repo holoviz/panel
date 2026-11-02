@@ -503,7 +503,8 @@ class Param(Pane):
                 end -= 1
             if end is not None:
                 kw['end'] = end
-            if (('start' not in kw or 'end' not in kw) and
+            if (('start' not in kw or 'end' not in kw or
+                 (isinstance(p_obj, param.Number) and value is None)) and
                 not isinstance(p_obj, (param.Date, param.CalendarDate))):
                 # Do not change widget class if mapping was overridden
                 if not widget_class_overridden:
@@ -532,6 +533,7 @@ class Param(Pane):
         # Update kwargs
         onkeyup = kw_widget.pop('onkeyup', False)
         throttled = kw_widget.pop('throttled', False)
+        expand_button = kw_widget.pop('expand_button', self_or_cls.expand_button)
         if 'name' in kw_widget and 'label' not in kw_widget:
             kw_widget['label'] = kw_widget.pop('name')
         kw.update(kw_widget)
@@ -613,6 +615,8 @@ class Param(Pane):
             watcher = widget.param.watch(link_widget, 'value')
         watchers.append(watcher)
 
+        hidden_by_precedence: list[bool] = []
+
         def link(change, watchers=[watcher]):
             updates = {}
             if is_instance and p_name not in self_or_cls._widgets:
@@ -629,12 +633,18 @@ class Param(Pane):
             elif change.what == 'precedence':
                 if change.new is change.old or not is_instance:
                     return
-                elif change.new is None:
-                    self_or_cls._rerender()
-                elif (change.new < self_or_cls.display_threshold and
-                      widget in self_or_cls._widget_box.objects):
-                    self_or_cls._widget_box.remove(widget)
-                elif change.new >= self_or_cls.display_threshold:
+                elif (change.new is not None and
+                      change.new < self_or_cls.display_threshold):
+                    # The widget may be unpacked from the pane's layout
+                    if widget.visible:
+                        hidden_by_precedence[:] = [True]
+                        widget.visible = False
+                    if widget in self_or_cls._widget_box.objects:
+                        self_or_cls._widget_box.remove(widget)
+                else:
+                    if hidden_by_precedence:
+                        hidden_by_precedence.clear()
+                        widget.visible = not (self_or_cls.hide_constant and p_obj.constant)
                     self_or_cls._rerender()
                 return
             elif change.what == 'objects':
@@ -673,11 +683,11 @@ class Param(Pane):
             elif throttled and hasattr(widget, 'value_throttled'):
                 updates['value_throttled'] = change.new
                 updates['value'] = change.new
-            elif isinstance(widget, Row) and len(widget) == 2:
-                updates['value'] = change.new
-                widget = widget[0]
             else:
                 updates['value'] = change.new
+
+            if isinstance(widget, Row) and len(widget) == 2:
+                widget = widget[0]
 
             # Ensure we only de-duplicate value events since only
             # the widget value can be controlled from the frontend
@@ -714,7 +724,7 @@ class Param(Pane):
         if isinstance(options, dict):
             options = options.values()
         if ((is_parameterized(value) or any(is_parameterized(o) for o in options))
-            and (self_or_cls.expand_button or (self_or_cls.expand_button is None and not self_or_cls.expand))):
+            and (expand_button or (expand_button is None and not self_or_cls.expand))):
             toggle = Toggle(
                 align='end',
                 color='primary',
@@ -961,8 +971,9 @@ class ParamRef(ReplacementPane):
             if not curdoc or (has_context and curdoc.session_context):
                 raise e
         finally:
-            self._async_task = None
-            self._inner_layout.loading = False
+            if self._async_task is task:
+                self._async_task = None
+                self._inner_layout.loading = False
 
     def _replace_pane(self, *args, force=False):
         deferred = self.defer_load and not state.loaded
@@ -971,6 +982,7 @@ class ParamRef(ReplacementPane):
         self._evaled |= force or not (self.lazy or deferred)
         if not self._evaled:
             return
+        scheduled = False
         try:
             if self.object is None:
                 new_object = Spacer()
@@ -989,11 +1001,14 @@ class ParamRef(ReplacementPane):
                 new_object = to_async_gen(new_object)
             if inspect.isawaitable(new_object) or isinstance(new_object, types.AsyncGeneratorType):
                 param.parameterized.async_executor(partial(self._eval_async, new_object))
+                scheduled = True
                 return
             else:
                 self._update_inner(new_object)
         finally:
-            self._inner_layout.loading = False
+            # _eval_async clears the loading state once the awaitable completes
+            if not scheduled:
+                self._inner_layout.loading = False
 
     def _update_pane(self, *events):
         callbacks = []

@@ -9,7 +9,8 @@ import param
 
 from .._param import Margin
 from ..io.resources import CDN_DIST
-from ..layout import Column, Panel
+from ..layout import Column, ListLike, Panel
+from ..layout.base import NamedListLike
 from ..reactive import ReactiveHTML
 from ..widgets.base import CompositeWidget
 from ..widgets.icon import ToggleIcon
@@ -55,7 +56,7 @@ class ChatReactionIcons(CompositeWidget):
     value = param.List(default=[], doc="The active reactions.")
 
     default_layout = param.ClassSelector(
-        default=Column, class_=Panel, is_instance=False, doc="""
+        default=Column, class_=(Panel, ListLike, NamedListLike), is_instance=False, doc="""
         The layout to use for the icons. Defaults to Column, which stacks the icons vertically.""")
 
     _stylesheets: t.ClassVar[list[str]] = [f"{CDN_DIST}css/chat_reaction_icons.css"]

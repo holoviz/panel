@@ -19,6 +19,7 @@ if t.TYPE_CHECKING:
     from collections.abc import Mapping
 
     from bokeh.model import Model
+    from typing_extensions import Self
 
 
 class Tabs(NamedListPanel):
@@ -79,6 +80,12 @@ class Tabs(NamedListPanel):
         self._rendered = defaultdict(dict)
         self.param.active.bounds = (-1, len(self)-1)
         self.param.watch(self._update_active, ['dynamic', 'active'])
+
+    def clone(self, *objects: t.Any, **params: t.Any) -> Self:
+        if 'active' not in params:
+            n = len(objects) if objects else len(params['objects']) if 'objects' in params else len(self)
+            params['active'] = min(self.active, max(n - 1, 0))
+        return super().clone(*objects, **params)
 
     def _update_names(self, event):
         # No active tabs will have a value of -1
@@ -197,6 +204,8 @@ class Tabs(NamedListPanel):
             # dynamic then reuse the panel
             if (pane in old_objects and pref in panels and
                 (not (hidden ^ prev_hidden) or not (self.dynamic or prev_hidden))):
+                if panel.title != name:
+                    panel.title = name
                 new_models.append(panel)
                 continue
 

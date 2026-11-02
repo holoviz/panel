@@ -28,8 +28,8 @@ from panel.param import (
 from panel.tests.util import async_wait_until, mpl_available, mpl_figure
 from panel.widgets import (
     AutocompleteInput, Button, Checkbox, DatePicker, DatetimeInput,
-    EditableFloatSlider, EditableRangeSlider, LiteralInput, NumberInput,
-    RangeSlider,
+    EditableFloatSlider, EditableRangeSlider, FloatInput, IntInput,
+    LiteralInput, NumberInput, RangeSlider,
 )
 
 
@@ -525,6 +525,23 @@ def test_number_input_none_support():
     assert test_widget[2].value is None
 
 
+def test_bounded_number_none_default_uses_input_widget(document, comm):
+    class Test(param.Parameterized):
+        integer = param.Integer(default=None, bounds=(0, 10))
+        number = param.Number(default=None, bounds=(0, 5))
+
+    test_pane = Param(Test())
+    assert isinstance(test_pane._widgets['integer'], IntInput)
+    assert isinstance(test_pane._widgets['number'], FloatInput)
+    assert test_pane._widgets['integer'].value is None
+    assert test_pane._widgets['integer'].start == 0
+    assert test_pane._widgets['integer'].end == 10
+
+    model = test_pane.get_root(document, comm=comm)
+    document.add_root(model)
+    document.to_json()
+
+
 def test_explicit_params(document, comm):
     class Test(param.Parameterized):
         a = param.Boolean(default=False)
@@ -569,6 +586,47 @@ def test_param_precedence(document, comm):
 
     a_param.precedence = None
     assert test_pane._widgets['a'] in test_pane._widget_box.objects
+
+
+def test_param_precedence_unpacked_widget():
+    class Test(param.Parameterized):
+        a = param.Number(default=1.2, bounds=(0, 5))
+
+    test = Test()
+    widget = panel(test.param.a)
+    assert widget.visible
+
+    test.param.a.precedence = -1
+    assert not widget.visible
+
+    test.param.a.precedence = 1
+    assert widget.visible
+
+    test.param.a.precedence = -1
+    test.param.a.precedence = None
+    assert widget.visible
+
+
+def test_param_precedence_preserves_user_visible():
+    class Test(param.Parameterized):
+        a = param.Number(default=1.2)
+
+    test = Test()
+    widget = panel(test.param.a)
+    widget.visible = False
+
+    test.param.a.precedence = 2
+    assert not widget.visible
+
+    test.param.a.precedence = -1
+    test.param.a.precedence = 1
+    assert not widget.visible
+
+    widget.visible = True
+    test.param.a.precedence = -1
+    assert not widget.visible
+    test.param.a.precedence = 1
+    assert widget.visible
 
 
 def test_hide_constant(document, comm):
@@ -1938,6 +1996,83 @@ async def test_param_async_generator(document, comm):
     await async_wait_until(lambda: root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n')
 
 
+async def test_param_async_function_loading_until_complete(document, comm):
+    event = asyncio.Event()
+
+    async def function():
+        await event.wait()
+        return Markdown("done")
+
+    pane = ParamFunction(function, loading_indicator=True)
+    pane.get_root(document, comm)
+
+    await asyncio.sleep(0.05)
+    assert pane._inner_layout.loading
+
+    event.set()
+    await async_wait_until(lambda: not pane._inner_layout.loading)
+    assert pane._pane.object == "done"
+
+
+async def test_param_async_function_loading_cleared_on_error(document, comm):
+    event = asyncio.Event()
+
+    async def function():
+        await event.wait()
+        raise ValueError("boom")
+
+    pane = ParamFunction(function, loading_indicator=True)
+    pane.get_root(document, comm)
+
+    await asyncio.sleep(0.05)
+    assert pane._inner_layout.loading
+
+    event.set()
+    await async_wait_until(lambda: not pane._inner_layout.loading)
+
+
+async def test_param_async_generator_loading_until_complete(document, comm):
+    event = asyncio.Event()
+
+    async def function():
+        yield Markdown("first")
+        await event.wait()
+        yield Markdown("second")
+
+    pane = ParamFunction(function, loading_indicator=True)
+    pane.get_root(document, comm)
+
+    await async_wait_until(lambda: pane._pane.object == "first")
+    assert pane._inner_layout.loading
+
+    event.set()
+    await async_wait_until(lambda: not pane._inner_layout.loading)
+    assert pane._pane.object == "second"
+
+
+async def test_param_async_function_replaced_keeps_loading(document, comm):
+    event = asyncio.Event()
+    checkbox = Checkbox(value=False)
+
+    async def function(value):
+        if not value:
+            await asyncio.sleep(10)
+        await event.wait()
+        return Markdown(f"{value}")
+
+    pane = ParamFunction(bind(function, checkbox), loading_indicator=True)
+    pane.get_root(document, comm)
+    await asyncio.sleep(0.05)
+
+    checkbox.value = True
+    await asyncio.sleep(0.05)
+    assert pane._inner_layout.loading
+
+    event.set()
+    await async_wait_until(lambda: not pane._inner_layout.loading)
+    assert pane._pane.object == "True"
+
+
 async def test_param_async_generator_append(document, comm):
     checkbox = Checkbox(value=False)
 
@@ -2133,3 +2268,21 @@ def test_throttled_range_param_repeated_exclusive_boundary(document, comm, value
     assert obj.a == (0.5, 1.5)
     widget._process_events({'value_throttled': (0.7, 1.3)})
     assert obj.a == (0.7, 1.3)
+
+
+def test_param_selector_objects_update_with_parameterized_options():
+    class Option(param.Parameterized):
+        pass
+
+    class Test(param.Parameterized):
+        sel = param.Selector(objects={'a': Option()}, check_on_set=False)
+
+    test = Test()
+    pane = Param(test)
+    row = pane._widgets['sel']
+    assert isinstance(row, Row)
+
+    new = {'a': Option(), 'b': Option()}
+    test.param.sel.objects = new
+
+    assert row[0].options == new

@@ -274,3 +274,16 @@ def test_markdown_pane_visible_after_stylesheet_url_patched(page):
     }""")
 
     expect(page.locator(".markdown").locator("div")).to_be_visible()
+
+
+@pytest.mark.parametrize('renderer', ['markdown-it', 'markdown'])
+def test_markdown_pane_math_with_asterisks(page, renderer):
+    md = Markdown(
+        "$${(100+10)*2=220}$$ **NOT** $${100+10*2=120}$$ done", renderer=renderer
+    )
+
+    serve_component(page, md)
+
+    expect(page.locator(".markdown mjx-container")).to_have_count(2)
+    # 0x3C is the "<" of a stray <em> tag typeset as math
+    expect(page.locator(".markdown mjx-container [data-c='3C']")).to_have_count(0)

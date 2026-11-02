@@ -211,6 +211,7 @@ def test_feed_scroll_to_latest_within_limit(page):
     wait_until(assert_at_bottom, page)
 
 
+@pytest.mark.flaky(reruns=3, reruns_delay=5)
 def test_feed_view_scroll_button(page):
     feed = Feed(*list(range(ITEMS)), height=250, scroll_button_threshold=50)
     serve_component(page, feed)

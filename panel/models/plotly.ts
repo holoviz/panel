@@ -68,6 +68,17 @@ interface PlotlyHTMLElement extends HTMLDivElement {
   on(event: "plotly_unhover", callback: () => void): void
 }
 
+const decodeUndefined = (obj: any): any => {
+  if (obj === "_undefined_") {
+    return undefined
+  } else if (Array.isArray(obj)) {
+    return obj.map(decodeUndefined)
+  } else if (isPlainObject(obj)) {
+    return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, decodeUndefined(v)]))
+  }
+  return obj
+}
+
 const filterEventData = (gd: any, eventData: any, event: string) => {
   // Ported from dash-core-components/src/components/Graph.react.js
   const filteredEventData: {[k: string]: any} = Array.isArray(eventData)? []: {}
@@ -133,8 +144,12 @@ const filterEventData = (gd: any, eventData: any, event: string) => {
       const pointData: {[k: string]: any} = {}
       for (const property in fullPoint) {
         const val = fullPoint[property]
+        // Arrays of primitives (e.g. multicategory x, heatmap pointNumber)
+        // are safe; arrays holding objects may be circular or huge.
+        const isPrimitiveArray = Array.isArray(val) &&
+          val.every((v: any) => v === null || typeof v !== "object")
         if (fullPoint.hasOwnProperty(property) &&
-            !Array.isArray(val) && !isPlainObject(val) &&
+            (isPrimitiveArray || (!Array.isArray(val) && !isPlainObject(val))) &&
             val !== undefined)  {
           pointData[property] = val
         }
@@ -196,6 +211,7 @@ export class PlotlyPlotView extends HTMLBoxView {
   _rendered: boolean = false
   _reacting: boolean = false
   _relayouting: boolean = false
+  _model_restyles: number = 0
   _hoverdata: any = null
   container: PlotlyHTMLElement
   _watched_sources: string[]
@@ -236,7 +252,11 @@ export class PlotlyPlotView extends HTMLBoxView {
       if (this.model.restyle == null) {
         return
       }
-      (window as any).Plotly.restyle(this.container, this.model.restyle.data, this.model.restyle.traces)
+      const data = decodeUndefined(this.model.restyle.data)
+      this._model_restyles += 1
+      ;(window as any).Plotly.restyle(this.container, data, this.model.restyle.traces).finally(() => {
+        this._model_restyles -= 1
+      })
       this.model.restyle = null
     })
 
@@ -293,7 +313,12 @@ export class PlotlyPlotView extends HTMLBoxView {
       return
     }
     const width: number = Math.min(this.model.width || this.el.clientWidth, this.model.max_width || Infinity)
-    const height: number = Math.min(this.model.height || this.el.clientHeight, this.model.max_height || Infinity);
+    const height: number = Math.min(this.model.height || this.el.clientHeight, this.model.max_height || Infinity)
+    // A relayout resets the hover state, dropping clicks right after it
+    const {layout} = this.container
+    if (layout != null && layout.width === width && layout.height === height) {
+      return
+    }
     (window as any).Plotly.relayout(this.container, {width, height})
   }
 
@@ -349,6 +374,10 @@ export class PlotlyPlotView extends HTMLBoxView {
 
     //  - plotly_restyle
     this.container.on("plotly_restyle", (eventData: any) => {
+      // Echoing a restyle sent by Python could arrive after a newer update and revert it
+      if (this._model_restyles > 0) {
+        return
+      }
       this.model.restyle_data = filterEventData(
         this.container, eventData, "restyle")
 

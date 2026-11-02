@@ -1,4 +1,5 @@
 import sys
+import threading
 import time
 import uuid
 
@@ -113,6 +114,47 @@ async def test_reset_stops_busy_cleanup_and_allows_rescheduling():
     assert _state._busy_cleanup_scheduled not in (None, cleanup)
 
 
+def test_reset_clears_session_info():
+    state.session_info['total'] = 3
+    state.session_info['live'] = 1
+    state.session_info['sessions']['abc'] = {}
+
+    state.reset()
+
+    assert state.session_info == {'total': 0, 'live': 0, 'sessions': {}}
+
+
+def test_session_info_watchers_see_old_and_new(document):
+    class SessionContext:
+        id = 'abc'
+        _document = document
+
+    document._session_context = lambda: SessionContext()
+    state.session_info['sessions']['abc'] = {
+        'launched': 0.0, 'started': None, 'rendered': None, 'ended': None,
+        'user_agent': None,
+    }
+    events = []
+    watcher = state.param.watch(events.append, 'session_info')
+    try:
+        with set_curdoc(document):
+            state._init_session(None)
+        state._destroy_session(SessionContext())
+    finally:
+        state.param.unwatch(watcher)
+
+    rendered, ended = events
+    assert rendered.old is not rendered.new
+    assert rendered.old['live'] == 0
+    assert rendered.new['live'] == 1
+    assert rendered.old['sessions']['abc']['rendered'] is None
+    assert rendered.new['sessions']['abc']['rendered'] is not None
+    assert ended.old['live'] == 1
+    assert ended.new['live'] == 0
+    assert ended.old['sessions']['abc']['ended'] is None
+    assert ended.new['sessions']['abc']['ended'] is not None
+
+
 async def test_periodic_callback_failed_thread_submit_does_not_leak_busy_event():
     class _ShutdownPool:
         def submit(self, *args, **kwargs):
@@ -160,3 +202,68 @@ def test_served_in_converted_pyodide_app(document, monkeypatch):
     document._session_context = lambda: MockSessionContext(document=document)
     with set_curdoc(document):
         assert state.served
+
+
+class _SlowSession(dict):
+    """Widens the window between reading and assigning session_info."""
+
+    def __getitem__(self, key):
+        time.sleep(0.05)
+        return super().__getitem__(key)
+
+
+def _run_concurrently(fn, args):
+    barrier = threading.Barrier(len(args))
+
+    def run(arg):
+        barrier.wait()
+        fn(arg)
+
+    with ThreadPoolExecutor(max_workers=len(args)) as executor:
+        for future in [executor.submit(run, arg) for arg in args]:
+            future.result()
+
+
+def test_session_info_concurrent_session_creation_is_not_lost():
+    from panel.config import config
+    from panel.io.server import _initialize_session_info
+
+    class SessionContext:
+        def __init__(self, id):
+            self.id = id
+
+        @property
+        def request(self):
+            time.sleep(0.05)
+
+    contexts = [SessionContext(f'session-{i}') for i in range(8)]
+
+    with config.set(session_history=-1):
+        _run_concurrently(_initialize_session_info, contexts)
+
+    assert state.session_info['total'] == len(contexts)
+    assert set(state.session_info['sessions']) == {ctx.id for ctx in contexts}
+
+
+def test_session_info_concurrent_session_destruction_is_not_lost():
+    class SessionContext:
+        _document = None
+
+        def __init__(self, id):
+            self.id = id
+
+    contexts = [SessionContext(f'session-{i}') for i in range(8)]
+    state.session_info = {
+        'total': len(contexts),
+        'live': len(contexts),
+        'sessions': {
+            ctx.id: _SlowSession(
+                launched=0.0, started=None, rendered=1.0, ended=None, user_agent=None
+            ) for ctx in contexts
+        },
+    }
+
+    _run_concurrently(state._destroy_session, contexts)
+
+    assert state.session_info['live'] == 0
+    assert all(s['ended'] is not None for s in state.session_info['sessions'].values())

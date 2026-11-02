@@ -325,3 +325,67 @@ def test_plotly_datetime_converted_2d_array(document, comm):
             ['2023-01-01 00:02:00']
         ])
     )
+
+
+@plotly_available
+@pytest.mark.parametrize('values', [
+    np.array([dt.datetime(2020, 1, i) for i in range(1, 4)]),
+    [dt.datetime(2020, 1, i) for i in range(1, 4)],
+    np.array([dt.datetime(2020, 1, i) for i in range(1, 4)], dtype='M8[ns]'),
+], ids=['object-array', 'list', 'datetime64'])
+def test_plotly_update_traces_datetime_converted(document, comm, values):
+    index = [dt.datetime(2019, 1, i) for i in range(1, 11)]
+    fig = go.Figure([go.Scatter(x=index, y=np.arange(10))])
+    pane = Plotly(fig)
+    model = pane.get_root(document, comm)
+
+    fig.update_traces(x=values)
+
+    x = model.restyle['data']['x'][0]
+    assert all(isinstance(v, str) for v in x)
+    assert len(x) == 3
+
+
+@plotly_available
+def test_plotly_batch_update_datetime_converted(document, comm):
+    index = [dt.datetime(2019, 1, i) for i in range(1, 11)]
+    fig = go.Figure([go.Scatter(x=index, y=np.arange(10))])
+    pane = Plotly(fig)
+    model = pane.get_root(document, comm)
+
+    with fig.batch_update():
+        fig.data[0].x = [dt.datetime(2020, 1, i) for i in range(1, 4)]
+        fig.data[0].y = [1, 2, 3]
+
+    assert all(isinstance(v, str) for v in model.restyle['data']['x'][0])
+    assert list(model.restyle['data']['y'][0]) == [1, 2, 3]
+
+
+@plotly_available
+@pytest.mark.parametrize('per_point', [False, True])
+def test_plotly_batch_update_unchanged_marker_color_serializable(document, comm, per_point):
+    from bokeh.core.serialization import Serializer
+    from plotly.basedatatypes import Undefined
+
+    fig = go.Figure([go.Scatter(x=[0, 1, 2], y=[1, 2, 3]) for _ in range(3)])
+    pane = Plotly(fig)
+    model = pane.get_root(document, comm=comm)
+
+    def colors(last):
+        if per_point:
+            return [['red', 'green', 'blue']] * 2 + [last]
+        return ['red', 'green', last]
+
+    with fig.batch_update():
+        for trace, color in zip(fig.data, colors(['blue'] * 3 if per_point else 'blue')):
+            trace.marker.color = color
+    with fig.batch_update():
+        for trace, color in zip(fig.data, colors(['red'] * 3 if per_point else 'orange')):
+            trace.y = [4, 5, 6]
+            trace.marker.color = color
+
+    data = model.restyle['data']
+    assert not any(v is Undefined for v in data['marker.color'])
+    assert data['marker.color'][:2] == ['_undefined_'] * 2
+    assert data['marker.color'][2] == (['red'] * 3 if per_point else 'orange')
+    Serializer().encode(model.restyle)

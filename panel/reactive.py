@@ -884,12 +884,12 @@ class Reactive(Syncable, Viewable):
         if jslink:
             for p in params:
                 widget = controls._widgets[p]
-                widget.jslink(self, value=p, bidirectional=True)
+                widget.jslink(self, value=p, bidirectional=True)._strict = False
                 if isinstance(widget, LiteralInput):
                     widget.serializer = 'json'
             for p in layout_params:
                 widget = style._widgets[p]
-                widget.jslink(self, value=p, bidirectional=p != 'loading')
+                widget.jslink(self, value=p, bidirectional=p != 'loading')._strict = False
                 if isinstance(widget, LiteralInput):
                     widget.serializer = 'json'
 
@@ -1538,16 +1538,16 @@ class ReactiveHTMLMetaclass(ReactiveMetaBase):
             })
 
         # Validate _child_config
-        for name, child_type in mcs._child_config.items():
-            if name not in mcs.param:
+        for child, child_type in mcs._child_config.items():
+            if child not in mcs.param:
                 raise ValueError(
-                    f"{cls_name}._child_config for {name!r} does not "
+                    f"{cls_name}._child_config for {child!r} does not "
                     "match any parameters. Ensure the name of each "
                     "child config matches one of the parameters."
                 )
             elif child_type not in ('model', 'template', 'literal'):
                 raise ValueError(
-                    f"{cls_name}._child_config for {name!r} child "
+                    f"{cls_name}._child_config for {child!r} child "
                     "parameter declares unknown type {child_type!r}. "
                     f"The '_child_config' mode must be one of 'model', "
                     "'template' or 'literal'."
@@ -1579,11 +1579,11 @@ class ReactiveHTMLMetaclass(ReactiveMetaBase):
                     if p in mcs.param or '.' in p:
                         continue
                     if re.match(mcs._script_regex, p):
-                        name = re.findall(mcs._script_regex, p)[0]
-                        if name not in mcs._scripts:
+                        script = re.findall(mcs._script_regex, p)[0]
+                        if script not in mcs._scripts:
                             raise ValueError(
                                 f"{cls_name}._template inline callback "
-                                f"references unknown script {name!r}, "
+                                f"references unknown script {script!r}, "
                                 "ensure the referenced script is declared"
                                 "in the _scripts dictionary."
                             )
@@ -1859,7 +1859,8 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
     _scripts: t.ClassVar[Mapping[str, str | list[str] | tuple[str, ...]]] = {}
 
     _script_assignment: t.ClassVar[str] = (
-        r'data\.([^[^\d\W]\w*)[ ]*[\+,\-,\*,\\,%,\*\*,<<,>>,>>>,&,\^,|,\&\&,\|\|,\?\?]*='
+        r'(?:\+\+|--)[ ]*data\.([^\d\W]\w*)'
+        r'|data\.([^\d\W]\w*)[ ]*(?:(?:\*\*|<<|>>>|>>|&&|\|\||\?\?|[-+*/\\%&^|])?=(?!=)|\+\+|--)'
     )
 
     __abstract = True
@@ -2146,7 +2147,8 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
             if not isinstance(scripts, (list, tuple)):
                 scripts = [scripts]
             for script in scripts:
-                for p in re.findall(self._script_assignment, script):
+                for match in re.finditer(self._script_assignment, script):
+                    p = next(g for g in match.groups() if g)
                     if p not in linked_properties:
                         linked_properties.append(p)
         for children_param in self._parser.children.values():

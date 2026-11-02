@@ -1,5 +1,6 @@
 import asyncio
 import threading
+import time
 
 import pytest
 
@@ -17,6 +18,7 @@ from panel.io.state import state
 from panel.layout import Column
 from panel.pane import Markdown
 from panel.tests.util import serve_component, wait_until
+from panel.widgets import Button
 
 pytestmark = pytest.mark.ui
 
@@ -144,3 +146,27 @@ def test_immediate_dispatch_reaches_client_while_document_held(page):
     assert not info['queued']
     # The events the hold collected were restored, not dispatched
     assert info['held_after'] == info['held_before']
+
+
+def test_sync_callback_updates_are_sent_before_it_returns(page):
+    """
+    Bokeh runs a synchronous event callback on a worker thread and only
+    writes its own pending patches once it returns, so updates made
+    while it is still running must be written by Panel directly.
+    """
+    button = Button(label='Click')
+    md = Markdown('Idle')
+
+    def cb(event):
+        md.object = 'Running'
+        time.sleep(2)
+        md.object = 'Done'
+
+    button.on_click(cb)
+
+    serve_component(page, Column(button, md))
+
+    page.locator('.bk-btn').click()
+
+    expect(page.locator('.markdown')).to_have_text('Running', timeout=1500)
+    expect(page.locator('.markdown')).to_have_text('Done')

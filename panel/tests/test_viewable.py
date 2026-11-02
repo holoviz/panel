@@ -119,6 +119,30 @@ def test_clone_with_non_defaults():
     assert ([(k, v) for k, v in sorted(v.param.values().items()) if k not in ('name')] ==
             [(k, v) for k, v in sorted(clone.param.values().items()) if k not in ('name')])
 
+def test_clone_skips_class_level_readonly_after_edit_constant():
+    from panel.widgets import Terminal
+
+    terminal = Terminal()
+    with param.edit_constant(terminal):
+        terminal.param.ncols.readonly = False
+        terminal.ncols = 10
+
+    clone = terminal.clone()
+
+    assert clone.ncols != 10
+    assert clone.param.ncols.readonly
+
+def test_clone_skips_readonly_subclass_parameter():
+    class ReadOnlyViewable(Viewable):
+        value = param.Integer(default=1, readonly=True)
+
+    v = ReadOnlyViewable()
+    with param.edit_constant(v):
+        v.param.value.readonly = False
+        v.value = 5
+
+    assert v.clone().value == 1
+
 def test_is_viewable_parameter():
     class Example(param.Parameterized):
         p_dict = param.Dict()

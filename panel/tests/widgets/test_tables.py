@@ -1444,11 +1444,11 @@ def test_tabulator_styling(document, comm):
     model = table.get_root(document, comm)
 
     assert model.cell_styles['data'] == {
-        0: {2: [('color', 'black')]},
-        1: {2: [('color', 'black')]},
-        2: {2: [('color', 'black')]},
-        3: {2: [('color', 'red')]},
-        4: {2: [('color', 'red')]}
+        0: {'A': [('color', 'black')]},
+        1: {'A': [('color', 'black')]},
+        2: {'A': [('color', 'black')]},
+        3: {'A': [('color', 'red')]},
+        4: {'A': [('color', 'red')]}
     }
 
 def test_tabulator_empty_table(document, comm):
@@ -2008,6 +2008,61 @@ def test_tabulator_patch_with_timestamp(document, comm):
         np.testing.assert_array_equal(values, expected_array)
         if col != 'index':
             np.testing.assert_array_equal(table.value[col].values, expected[col])
+
+@pytest.mark.parametrize('patch_value', [
+    dt.datetime(2021, 1, 1),
+    pd.Timestamp('2021-01-01'),
+    np.datetime64('2021-01-01T00:00:00'),
+], ids=['datetime', 'Timestamp', 'datetime64'])
+@pytest.mark.parametrize('form', ['dict', 'dataframe', 'series'])
+def test_tabulator_patch_datetime_column(document, comm, patch_value, form):
+    # https://github.com/holoviz/panel/issues/4144
+    df = pd.DataFrame(dict(A=pd.to_datetime(['1980-01-01', '1980-01-02'])))
+    table = Tabulator(df)
+
+    model = table.get_root(document, comm)
+
+    if form == 'dict':
+        table.patch({'A': [(0, patch_value)]})
+    elif form == 'dataframe':
+        table.patch(pd.DataFrame({'A': [patch_value]}, index=[0]))
+    else:
+        table.patch(pd.Series([patch_value], index=[0], name='A', dtype=object))
+
+    expected = np.array(['2021-01-01T00:00:00', '1980-01-02T00:00:00'], dtype='datetime64[ns]')
+    np.testing.assert_array_equal(table.value['A'].values, expected)
+    np.testing.assert_array_equal(model.source.data['A'], expected.astype(np.int64) / 10e5)
+
+@pytest.mark.parametrize('form', ['dict', 'series'])
+def test_tabulator_patch_tz_aware_datetime_column(document, comm, form):
+    index = pd.to_datetime(['2021-01-01', '2022-01-01']).tz_localize('US/Eastern')
+    table = Tabulator(pd.DataFrame(dict(A=index)))
+
+    model = table.get_root(document, comm)
+
+    new = pd.Timestamp('2016-02-01', tz='US/Eastern')
+    if form == 'dict':
+        table.patch({'A': [(0, new)]})
+    else:
+        table.patch(pd.Series([new], index=[0], name='A'))
+
+    assert model.source.data['A'][0] == new.value / 1e6
+    assert model.source.data['A'][1] == index[1].value / 1e6
+
+@pytest.mark.parametrize('form', ['dict', 'series'])
+def test_tabulator_patch_date_column(document, comm, form):
+    df = pd.DataFrame(dict(A=[dt.date(2021, 1, 1), dt.date(2022, 1, 1)]))
+    table = Tabulator(df)
+
+    model = table.get_root(document, comm)
+
+    if form == 'dict':
+        table.patch({'A': [(0, dt.date(2016, 2, 1))]})
+    else:
+        table.patch(pd.Series([dt.date(2016, 2, 1)], index=[0], name='A'))
+
+    assert table.value['A'].iloc[0] == dt.date(2016, 2, 1)
+    assert model.source.data['A'][0] == pd.Timestamp('2016-02-01').value / 1e6
 
 def test_tabulator_patch_with_NaT(document, comm):
     df = pd.DataFrame(dict(A=pd.to_datetime(['1980-01-01', np.nan])))
@@ -3013,9 +3068,9 @@ def test_tabulator_styling_empty_dataframe(document, comm):
 
     assert model.cell_styles['data'] == {
         0: {
-            2: [('border-color', '#dc3545'), ('border-style', 'solid')],
-            3: [('border-color', '#dc3545'), ('border-style', 'solid')],
-            4: [('border-color', '#dc3545'), ('border-style', 'solid')]
+            'A': [('border-color', '#dc3545'), ('border-style', 'solid')],
+            'B': [('border-color', '#dc3545'), ('border-style', 'solid')],
+            'C': [('border-color', '#dc3545'), ('border-style', 'solid')]
         }
     }
 
@@ -3039,11 +3094,38 @@ def test_tabulator_style_multi_index_dataframe(document, comm):
     model = tabulator.get_root(document, comm)
 
     assert model.cell_styles['data'] == {
-        0: {4: [('background-color', '#ff0000')]},
-        1: {4: [('background-color', '#ff0000')]},
-        2: {4: [('background-color', '#ff0000')]},
-        3: {4: [('background-color', '#ff0000')]}
+        0: {'X': [('background-color', '#ff0000')]},
+        1: {'X': [('background-color', '#ff0000')]},
+        2: {'X': [('background-color', '#ff0000')]},
+        3: {'X': [('background-color', '#ff0000')]}
     }
+
+
+def test_tabulator_style_multi_index_columns_keyed_by_field(document, comm):
+    df = pd.DataFrame(
+        np.ones((2, 2)), columns=pd.MultiIndex.from_tuples([('a', 'b'), ('a', 'c')])
+    )
+    table = Tabulator(df)
+    table.style.map(lambda v: 'color: red', subset=[('a', 'b')])
+
+    model = table.get_root(document, comm)
+
+    assert 'a_b' in [col.field for col in model.columns]
+    assert model.cell_styles['data'] == {
+        0: {'a_b': [('color', 'red')]},
+        1: {'a_b': [('color', 'red')]},
+    }
+
+
+def test_tabulator_style_non_string_column_names_keyed_by_field(document, comm):
+    df = pd.DataFrame(np.ones((2, 2)), columns=[1, 2])
+    table = Tabulator(df)
+    table.style.map(lambda v: 'color: red', subset=[2])
+
+    model = table.get_root(document, comm)
+
+    assert '2' in [col.field for col in model.columns]
+    assert set(model.cell_styles['data'][0]) == {'2'}
 
 
 @mpl_available
@@ -3056,7 +3138,7 @@ def test_tabulator_style_background_gradient_with_frozen_columns(document, comm)
 
     model = table.get_root(document, comm)
 
-    assert list(model.cell_styles['data'][0]) == [1, 4, 5]
+    assert list(model.cell_styles['data'][0]) == ['A', 'C', 'D']
 
 @mpl_available
 def test_tabulator_style_background_gradient_with_frozen_columns_left_and_right(document, comm):
@@ -3068,7 +3150,7 @@ def test_tabulator_style_background_gradient_with_frozen_columns_left_and_right(
 
     model = table.get_root(document, comm)
 
-    assert list(model.cell_styles['data'][0]) == [1, 6, 4]
+    assert list(model.cell_styles['data'][0]) == ['A', 'C', 'D']
 
 @mpl_available
 def test_tabulator_style_background_with_frozen_index(document, comm):
@@ -3078,7 +3160,7 @@ def test_tabulator_style_background_with_frozen_index(document, comm):
 
     model = table.get_root(document, comm)
 
-    assert list(model.cell_styles['data'][0]) == [3]
+    assert list(model.cell_styles['data'][0]) == ['c']
 
 
 @mpl_available
@@ -3089,7 +3171,7 @@ def test_tabulator_style_background_with_frozen_indexes(document, comm):
 
     model = table.get_root(document, comm)
 
-    assert list(model.cell_styles['data'][0]) == [3]
+    assert list(model.cell_styles['data'][0]) == ['c']
 
 
 @mpl_available
@@ -3100,7 +3182,7 @@ def test_tabulator_style_background_with_frozen_index_and_column(document, comm)
 
     model = table.get_root(document, comm)
 
-    assert list(model.cell_styles['data'][0]) == [4]
+    assert list(model.cell_styles['data'][0]) == ['c']
 
 
 @mpl_available
@@ -3113,7 +3195,7 @@ def test_tabulator_style_background_gradient(document, comm):
 
     model = table.get_root(document, comm)
 
-    assert list(model.cell_styles['data'][0]) == [2, 4, 5]
+    assert list(model.cell_styles['data'][0]) == ['A', 'C', 'D']
 
 @mpl_available
 def test_tabulator_styled_df_with_background_gradient(document, comm):
@@ -3124,7 +3206,7 @@ def test_tabulator_styled_df_with_background_gradient(document, comm):
 
     model = table.get_root(document, comm)
 
-    assert list(model.cell_styles['data'][0]) == [2, 4, 5]
+    assert list(model.cell_styles['data'][0]) == ['A', 'C', 'D']
 
 def test_tabulator_editor_property_change(dataframe, document, comm):
     editor = SelectEditor(options=['A', 'B', 'C'])

@@ -501,6 +501,44 @@ def test_json_theme():
         assert JSON({"x": 1}, theme="light").theme == "light"
 
 
+@pytest.mark.parametrize('renderer', ['markdown-it', 'markdown'])
+def test_markdown_math_not_parsed_as_emphasis(renderer):
+    src = "$${(100+10)*2=220}$$ **NOT** $${100+10*2=120}$$ done"
+    html = Markdown(src, renderer=renderer)._render_markdown(src)
+    assert html.strip() == "<p>$${(100+10)*2=220}$$ <strong>NOT</strong> $${100+10*2=120}$$ done</p>"
+
+def test_markdown_math_block_not_parsed_as_emphasis():
+    src = "$$\na*b*c\n$$\n\n*hi*"
+    assert Markdown(src)._render_markdown(src) == "$$\na*b*c\n$$\n<p><em>hi</em></p>\n"
+
+def test_markdown_math_escapes_html():
+    src = "$$a<b & c$$"
+    assert Markdown(src)._render_markdown(src) == "$$a&lt;b &amp; c$$\n"
+
+@pytest.mark.parametrize('renderer', ['markdown-it', 'markdown'])
+def test_markdown_disable_math_keeps_emphasis(renderer):
+    src = "$$a*b$$ and $$c*d$$"
+    html = Markdown(src, renderer=renderer, disable_math=True)._render_markdown(src)
+    assert "<em>" in html
+
+@pytest.mark.parametrize('renderer', ['markdown-it', 'markdown'])
+def test_markdown_dollar_amounts_are_not_math(renderer):
+    src = "costs $5 and $10 for *x* and *y*"
+    html = Markdown(src, renderer=renderer)._render_markdown(src)
+    assert html.startswith("<p>costs $5 and $10 for <em>x</em> and <em>y</em></p>")
+
+@pytest.mark.parametrize('renderer', ['markdown-it', 'markdown'])
+def test_markdown_emphasis_between_dollar_amounts(renderer):
+    src = "costs $5 for *basic* and $10 for *pro*"
+    html = Markdown(src, renderer=renderer)._render_markdown(src)
+    assert html.strip() == "<p>costs $5 for <em>basic</em> and $10 for <em>pro</em></p>"
+
+@pytest.mark.parametrize('renderer', ['markdown-it', 'markdown'])
+def test_markdown_double_dollar_in_code_span_is_code(renderer):
+    src = "use `$$` and `$$` then *a* *b*"
+    html = Markdown(src, renderer=renderer)._render_markdown(src)
+    assert html.strip() == "<p>use <code>$$</code> and <code>$$</code> then <em>a</em> <em>b</em></p>"
+
 STREAM_DOCS = [
     "# Title\n\nSome *text* with `code`.\n\n- a\n- b\n\n  - nested\n\n```python\nx = 1\n```\n\n| a | b |\n|---|---|\n| 1 | 2 |\n",
     "para\n- list interrupts\n\n> quote\nlazy\n\n    indented\n\n    code\n\nsetext\n===\n\n<div>\n\n*html*\n\n</div>\n\n```\nunclosed",
@@ -515,6 +553,31 @@ def test_markdown_incremental_render_matches_full_render(src, disable_anchors):
     for i in range(1, len(src)+1, 3):
         assert pane._render_markdown(src[:i]) == parser.render(src[:i])
     assert pane._render_markdown(src) == parser.render(src)
+
+MATH_STREAM_DOCS = [
+    "intro\n\n$$\na*b*c\n\nd*e*f\n$$\n\ntail\n",
+    "$$\na*b*c\n\n\nd*e*f\n$$\nafter *x*\n\n$$\ng*h*i\n\nj*k*l\n$$\n",
+    "> $$\n> a*b*c\n>\n> d*e*f\n> $$\n\ntail *t*\n",
+    "`$$` and *a*\n\n```\n$$\n*x*\n\n*y*\n```\n\nend *e*\n",
+]
+
+@pytest.mark.parametrize('src', MATH_STREAM_DOCS)
+@pytest.mark.parametrize('disable_math', [False, True])
+def test_markdown_incremental_render_matches_full_render_with_math(src, disable_math):
+    pane = Markdown(disable_math=disable_math, dedent=False)
+    fresh = lambda s: Markdown(disable_math=disable_math, dedent=False)._transform_object(s)
+    for i in range(1, len(src)+1):
+        assert pane._transform_object(src[:i]) == fresh(src[:i])
+    out = ''
+    pane = Markdown(disable_math=disable_math, dedent=False)
+    for line in src.splitlines(True):
+        out += line
+        assert pane._transform_object(out) == fresh(out)
+
+def test_markdown_incremental_render_caches_blocks_around_math():
+    pane = Markdown(disable_math=False, dedent=False)
+    pane._render_markdown("a\n\n$$\nx*y*z\n\nw\n$$\n\nb\n\nc")
+    assert pane._block_cache[1] == "a\n\n$$\nx*y*z\n\nw\n$$\n\nb\n\n"
 
 def test_markdown_incremental_render_caches_leading_blocks():
     pane = Markdown(dedent=False)
