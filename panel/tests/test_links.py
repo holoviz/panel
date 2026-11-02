@@ -14,7 +14,7 @@ from bokeh.plotting import figure
 
 from panel.custom import JSComponent
 from panel.layout import Row
-from panel.links import Callback, Link
+from panel.links import Callback, CallbackGenerator, Link
 from panel.pane import Bokeh, HoloViews
 from panel.reactive import Reactive
 from panel.tests.util import hv_available
@@ -519,7 +519,8 @@ def test_controls_jslink_tolerates_missing_renamed_property():
         Row(controls, pane).get_root()
 
 
-def test_user_jslink_raises_on_missing_renamed_property():
+def test_user_jslink_raises_on_missing_renamed_property(monkeypatch):
+    monkeypatch.setattr(CallbackGenerator, 'error', True)
     pane = RenamedPane()
     widget = TextInput()
     widget.jslink(pane, value='selection', bidirectional=True)
