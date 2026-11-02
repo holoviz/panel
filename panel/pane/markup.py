@@ -829,12 +829,12 @@ class Markdown(HTMLBasePane):
         if split and not self.disable_math:
             # An unclosed $$ block parses as plain paragraphs, which must
             # not be committed before the closing delimiter arrives.
-            block = 0
+            block, block_line = 0, 0
             for i, token in enumerate(tokens[:split]):
                 if token.level == 0 and token.map is not None:
-                    block = i
+                    block, block_line = i, token.map[0]
                 if token.type == 'inline' and _MATH_FENCE.search(token.content):
-                    split, line = block, tokens[block].map[0]
+                    split, line = block, block_line
                     break
         render = parser.renderer.render
         stable_html = render(tokens[:split], parser.options, env) if split else ''
