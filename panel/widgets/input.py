@@ -75,6 +75,14 @@ class _TextInputBase(Widget):
             self.param.watch(self._sync_value_input, 'value')
         )
 
+    def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
+        params = super()._process_param_change(params)
+        # The bokeh model only accepts str, None renders as an empty input
+        for key in ('value', 'value_input'):
+            if key in params and params[key] is None:
+                params[key] = ''
+        return params
+
     def _sync_value_input(self, event):
         # A `value` assigned from Python must also update `value_input`,
         # otherwise pressing Enter in the browser submits the stale
