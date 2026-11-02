@@ -532,6 +532,7 @@ class Param(Pane):
         # Update kwargs
         onkeyup = kw_widget.pop('onkeyup', False)
         throttled = kw_widget.pop('throttled', False)
+        expand_button = kw_widget.pop('expand_button', self_or_cls.expand_button)
         if 'name' in kw_widget and 'label' not in kw_widget:
             kw_widget['label'] = kw_widget.pop('name')
         kw.update(kw_widget)
@@ -714,7 +715,7 @@ class Param(Pane):
         if isinstance(options, dict):
             options = options.values()
         if ((is_parameterized(value) or any(is_parameterized(o) for o in options))
-            and (self_or_cls.expand_button or (self_or_cls.expand_button is None and not self_or_cls.expand))):
+            and (expand_button or (expand_button is None and not self_or_cls.expand))):
             toggle = Toggle(
                 align='end',
                 color='primary',

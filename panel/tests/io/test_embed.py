@@ -662,3 +662,24 @@ def test_embed_widget_from_param_instance(document, comm):
     # Returns None when there are no widgets with state to embed
     result = embed_state(panel, model, document)
     assert result is None  # No embeddable state for simple widgets without links
+
+
+def test_embed_widgets_same_name_different_options(document, comm):
+    w1 = Select(options=["A", "B", "C"], label="test")
+    t1 = StaticText()
+    w1.param.watch(lambda event: setattr(t1, "value", event.new), "value")
+
+    w2 = Select(options=["1", "2"], label="test")
+    t2 = StaticText()
+    w2.param.watch(lambda event: setattr(t2, "value", event.new), "value")
+
+    panel = Row(w1, w2, t1, t2)
+    with config.set(embed=True):
+        model = panel.get_root(document, comm)
+    state_model = embed_state(panel, model, document)
+
+    assert len(state_model.values) == 2
+    assert state_model.values == ["A", "1"]
+    assert set(state_model.state.keys()) == {"A", "B", "C"}
+    for key in ("A", "B", "C"):
+        assert set(state_model.state[key].keys()) == {"1", "2"}
