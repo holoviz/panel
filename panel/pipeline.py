@@ -454,6 +454,13 @@ class Pipeline(Viewer):
             self._error = None
             self._update_button()
             self._route.pop()
+            if self._stage in self._route:
+                del self._route[self._route.index(self._stage)+1:]
+            else:
+                # A predecessor off the current route was selected, so the
+                # abandoned branch must not stay on the route.
+                path = find_route(self._graph, self._route[0], self._stage)
+                self._route[1:] = path or [self._stage]
         finally:
             self._update_progress()
 

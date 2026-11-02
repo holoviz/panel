@@ -534,3 +534,117 @@ def test_pipeline_branch_does_not_inherit_from_other_branch():
         assert pipeline._state.result == result
         pipeline.param.trigger('previous')
         pipeline.param.trigger('previous')
+
+
+def test_pipeline_previous_selecting_other_predecessor_updates_route():
+    class Base(param.Parameterized):
+        def panel(self):
+            return Column()
+
+    class Input(Base):
+        value = param.Integer(default=2)
+
+    class Multiply(Base):
+        value = param.Integer()
+        operator = param.String('*')
+
+        @param.output('result')
+        def output(self):
+            return self.value * 3
+
+    class Add(Base):
+        value = param.Integer()
+        operator = param.String('+')
+
+        @param.output('result')
+        def output(self):
+            return self.value + 3
+
+    class Result(Base):
+        value = param.Integer()
+        operator = param.String('')
+        result = param.Integer()
+
+    pipeline = Pipeline(inherit_params=True)
+    pipeline.add_stage('Input', Input)
+    pipeline.add_stage('Multiply', Multiply)
+    pipeline.add_stage('Add', Add)
+    pipeline.add_stage('Result', Result)
+    pipeline.define_graph({
+        'Input': ('Multiply', 'Add'),
+        'Multiply': 'Result',
+        'Add': 'Result',
+    })
+
+    pipeline.next_selector.value = 'Multiply'
+    pipeline.param.trigger('next')
+    pipeline.param.trigger('next')
+    assert pipeline._route == ['Input', 'Multiply', 'Result']
+
+    pipeline.prev_selector.value = 'Add'
+    pipeline.param.trigger('previous')
+    assert pipeline._stage == 'Add'
+    assert pipeline._route == ['Input', 'Add']
+
+    pipeline.param.trigger('next')
+    assert pipeline._route == ['Input', 'Add', 'Result']
+    assert pipeline._state.operator == '+'
+    assert pipeline._state.result == 5
+
+
+def _multi_input_pipeline():
+    class Base(param.Parameterized):
+        def panel(self):
+            return Column()
+
+    class A(Base):
+        x = param.Integer(default=1)
+
+    class B(Base):
+        x = param.Integer()
+        bout = param.Integer(default=8)
+
+        @param.output('bout')
+        def output(self):
+            return self.bout
+
+    class C(Base):
+        x = param.Integer()
+        bout = param.Integer()
+
+    pipeline = Pipeline(inherit_params=True)
+    pipeline.add_stage('A', A)
+    pipeline.add_stage('B', B)
+    pipeline.add_stage('C', C)
+    pipeline.define_graph({'A': ('B', 'C'), 'B': 'C'})
+    return pipeline
+
+
+def test_pipeline_multi_input_stage_merges_all_stages_on_route():
+    pipeline = _multi_input_pipeline()
+
+    pipeline.next_selector.value = 'B'
+    pipeline.param.trigger('next')
+    pipeline.param.trigger('next')
+
+    assert pipeline._route == ['A', 'B', 'C']
+    assert pipeline._state.x == 1
+    assert pipeline._state.bout == 8
+
+
+def test_pipeline_multi_input_stage_ignores_abandoned_branch():
+    pipeline = _multi_input_pipeline()
+
+    pipeline.next_selector.value = 'B'
+    pipeline.param.trigger('next')
+    pipeline.param.trigger('next')
+    pipeline.param.trigger('previous')
+    pipeline.param.trigger('previous')
+    assert pipeline._route == ['A']
+
+    pipeline.next_selector.value = 'C'
+    pipeline.param.trigger('next')
+
+    assert pipeline._route == ['A', 'C']
+    assert pipeline._state.x == 1
+    assert pipeline._state.bout == 0
