@@ -154,7 +154,8 @@ class BaseTable(ReactiveData, Widget):
         be used for hierarchical multi-indexes (valid aggregators
         include 'min', 'max', 'mean' and 'sum'). If separate
         aggregators for different columns are required the dictionary
-        may be nested as `{index_name: {column_name: aggregator}}`""")
+        may be nested as `{index_name: {column_name: aggregator}}`. Group
+        rows of index levels without an aggregator are left blank.""")
 
     editables = param.Dict(default={}, nested_refs=True, doc="""
         Allows to edit table's contents for a particular column.""")
