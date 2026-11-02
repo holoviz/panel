@@ -134,7 +134,9 @@ class FloatPanel(ListLike, ReactiveHTML):
         }
         config = {...config, ...data.config}
         state.panel = jsPanel.create(config);
-        if (model.height == null) {
+        const size = config.panelSize
+        const sets_height = typeof size === 'object' ? (size != null && size.height != null) : size != null
+        if (model.height == null && !sets_height) {
           state.panel.style.height = ''
           state.panel.currentData.height = 'auto'
         }

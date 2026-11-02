@@ -90,3 +90,25 @@ def test_float_panel_stretch_both_fills_content(page):
     wait_until(lambda: content.bounding_box()['height'] > 200, page)
     wait_until(lambda: child.bounding_box()['height'] >= content.bounding_box()['height'] - 20, page)
     assert child.bounding_box()['width'] >= content.bounding_box()['width'] - 40
+
+
+@pytest.mark.parametrize('panel_size', ['400 300', {'width': 400, 'height': 300}])
+def test_float_panel_config_panel_size_respected(page, panel_size):
+    float_panel = FloatPanel(
+        'short', contained=False, config={'panelSize': panel_size},
+    )
+
+    serve_component(page, float_panel)
+
+    panel = page.locator('.jsPanel')
+    wait_until(lambda: int(panel.bounding_box()['height']) == 300, page)
+    assert int(panel.bounding_box()['width']) == 400
+
+
+def test_float_panel_plain_sizes_to_content(page):
+    float_panel = FloatPanel('short', contained=False)
+
+    serve_component(page, float_panel)
+
+    panel = page.locator('.jsPanel')
+    wait_until(lambda: panel.bounding_box()['height'] < 150, page)
