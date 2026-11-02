@@ -457,3 +457,22 @@ def test_plotly_update_traces_keeps_date_axis(page):
 
     wait_until(lambda: plotly_plot.evaluate('el => el.data[0].x.length') == 5, page)
     assert plotly_plot.evaluate('el => el._fullLayout.xaxis.type') == 'date'
+
+
+def test_plotly_python_restyle_is_not_echoed(page):
+    fig = go.Figure([go.Scatter(x=[0, 1, 2], y=[1, 2, 3])])
+    pane = Plotly(fig)
+    serve_component(page, pane)
+
+    plot = page.locator('.js-plotly-plot .plot-container.plotly')
+    expect(plot).to_have_count(1)
+
+    echoes = []
+    pane.param.watch(lambda e: echoes.append(e.new), 'restyle_data')
+
+    fig.data[0].marker.color = 'red'
+    gd = page.locator('.js-plotly-plot')
+    wait_until(lambda: gd.evaluate("gd => gd.data[0].marker.color") == 'red', page)
+
+    page.wait_for_timeout(500)
+    assert echoes == []

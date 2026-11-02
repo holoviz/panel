@@ -211,6 +211,7 @@ export class PlotlyPlotView extends HTMLBoxView {
   _rendered: boolean = false
   _reacting: boolean = false
   _relayouting: boolean = false
+  _model_restyles: number = 0
   _hoverdata: any = null
   container: PlotlyHTMLElement
   _watched_sources: string[]
@@ -252,7 +253,10 @@ export class PlotlyPlotView extends HTMLBoxView {
         return
       }
       const data = decodeUndefined(this.model.restyle.data)
-      ;(window as any).Plotly.restyle(this.container, data, this.model.restyle.traces)
+      this._model_restyles += 1
+      ;(window as any).Plotly.restyle(this.container, data, this.model.restyle.traces).finally(() => {
+        this._model_restyles -= 1
+      })
       this.model.restyle = null
     })
 
@@ -370,6 +374,10 @@ export class PlotlyPlotView extends HTMLBoxView {
 
     //  - plotly_restyle
     this.container.on("plotly_restyle", (eventData: any) => {
+      // Echoing a restyle sent by Python could arrive after a newer update and revert it
+      if (this._model_restyles > 0) {
+        return
+      }
       this.model.restyle_data = filterEventData(
         this.container, eventData, "restyle")
 
