@@ -869,6 +869,14 @@ def _editable_slider_bounds(widget, lo, hi, widen=False):
     return start, end
 
 
+def _clamp_to_fixed(widget, value):
+    if widget.fixed_start is not None and value < widget.fixed_start:
+        return type(value)(widget.fixed_start)
+    if widget.fixed_end is not None and value > widget.fixed_end:
+        return type(value)(widget.fixed_end)
+    return value
+
+
 class _EditableContinuousSlider(CompositeWidget):
     """
     The EditableFloatSlider extends the FloatSlider by adding a text
@@ -1029,12 +1037,7 @@ class _EditableContinuousSlider(CompositeWidget):
         self.param.value_throttled.bounds = (self.fixed_start, self.fixed_end)
 
         if self.value is not None:
-            value = self.value
-            if self.fixed_start is not None:
-                value = max(value, self.fixed_start)
-            if self.fixed_end is not None:
-                value = min(value, self.fixed_end)
-            self.value = value
+            self.value = _clamp_to_fixed(self, self.value)
 
         # First changing _slider and then _value_edit,
         # because else _value_edit will change the _slider
@@ -1347,12 +1350,7 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
         self.param.value.bounds = (self.fixed_start, self.fixed_end)
         self.param.value_throttled.bounds = (self.fixed_start, self.fixed_end)
 
-        v0, v1 = self.value
-        if self.fixed_start is not None:
-            v0, v1 = max(v0, self.fixed_start), max(v1, self.fixed_start)
-        if self.fixed_end is not None:
-            v0, v1 = min(v0, self.fixed_end), min(v1, self.fixed_end)
-        self.value = (v0, v1)
+        self.value = tuple(_clamp_to_fixed(self, v) for v in self.value)
 
         # First changing _slider and then _value_edit,
         # because else _value_edit will change the _slider
