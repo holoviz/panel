@@ -541,6 +541,24 @@ def test_tabs_clone_kwargs():
     assert clone.sizing_mode == 'stretch_height'
 
 
+def test_tabs_clone_retains_params():
+    tabs = Tabs(('A', Div()), ('B', Div()), closable=True, tabs_location='left', active=1)
+    clone = tabs.clone()
+
+    assert clone.closable
+    assert clone.tabs_location == 'left'
+    assert clone.active == 1
+    assert clone._names == ['A', 'B']
+
+
+def test_tabs_clone_kwargs_override_params():
+    tabs = Tabs(('A', Div()), closable=True, tabs_location='left')
+    clone = tabs.clone(tabs_location='right')
+
+    assert clone.closable
+    assert clone.tabs_location == 'right'
+
+
 def test_tabs_setitem_out_of_bounds(document, comm):
     div1 = Div()
     div2 = Div()
@@ -709,3 +727,19 @@ def test_tabs_set_objects_rename_reordered(document, comm):
 
     assert [t.title for t in model.tabs] == ['X', 'Y']
     assert [t.child for t in model.tabs] == [child2, child1]
+
+
+def test_tabs_clone_clamps_active():
+    tabs = Tabs(('a', 1), ('b', 2), ('c', 3), active=2)
+    clone = tabs.clone('x')
+    assert clone.active == 0
+    assert clone.param.active.bounds == (-1, 0)
+    assert clone.get_root().active == 0
+    assert tabs.clone(('x', 1), ('y', 2)).active == 1
+    assert tabs.clone().active == 2
+
+
+def test_tabs_clone_explicit_active():
+    tabs = Tabs(('a', 1), ('b', 2), ('c', 3), active=2)
+    assert tabs.clone('x', 'y', active=1).active == 1
+    assert tabs.clone(objects=['x', 'y']).active == 1

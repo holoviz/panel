@@ -14,6 +14,7 @@ if t.TYPE_CHECKING:
     from collections.abc import Callable, Mapping
 
     from bokeh.model import Model
+    from typing_extensions import Self
 
     from ..viewable import Viewable
 
@@ -83,6 +84,12 @@ class Accordion(NamedListPanel):
         self._updating_active = False
         self.param.watch(self._update_active, ['active'])
         self.param.watch(self._update_cards, self._synced_properties)
+
+    def clone(self, *objects: t.Any, **params: t.Any) -> Self:
+        if 'active' not in params:
+            n = len(objects) if objects else len(params['objects']) if 'objects' in params else len(self)
+            params['active'] = [i for i in self.active if i < n]
+        return super().clone(*objects, **params)
 
     def _process_property_change(self, props):
         props.pop('children', None)

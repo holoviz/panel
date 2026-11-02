@@ -266,6 +266,34 @@ def test_plotly_click_after_resize_without_size_change(page, plotly_2d_plot):
     wait_until(lambda: (plotly_2d_plot.click_data or {}).get('points', [{}])[0].get('pointNumber') == 0, page)
 
 
+@pytest.mark.parametrize('per_point', [False, True])
+def test_plotly_batch_update_leaves_unchanged_trace_properties(page, per_point):
+    fig = go.Figure([go.Scatter(x=[0, 1, 2], y=[1, 2, 3]) for _ in range(3)])
+    serve_component(page, Plotly(fig))
+
+    plot = page.locator('.js-plotly-plot .plot-container.plotly')
+    expect(plot).to_have_count(1)
+
+    def color(last):
+        return [last] * 3 if per_point else last
+
+    with fig.batch_update():
+        for trace, c in zip(fig.data, ['red', 'green', 'blue']):
+            trace.marker.color = color(c)
+    gd = page.locator('.js-plotly-plot')
+    get_colors = "gd => gd.data.map(t => t.marker && t.marker.color)"
+    wait_until(lambda: gd.evaluate(get_colors) == [color(c) for c in ['red', 'green', 'blue']], page)
+
+    with fig.batch_update():
+        for trace, c in zip(fig.data, ['red', 'green', 'orange']):
+            trace.y = [4, 5, 6]
+            trace.marker.color = color(c)
+
+    wait_until(lambda: gd.evaluate("gd => gd.data[2].marker.color") == color('orange'), page)
+    assert gd.evaluate(get_colors) == [color(c) for c in ['red', 'green', 'orange']]
+    assert gd.evaluate("gd => gd.data.map(t => t.y)") == [[4, 5, 6]] * 3
+
+
 # Can't reliably simulate the clicks so disabling
 def _test_plotly_click_data_figure_widget(page, plotly_2d_figure_widget):
     fig = go.FigureWidget(plotly_2d_figure_widget)
@@ -429,3 +457,22 @@ def test_plotly_update_traces_keeps_date_axis(page):
 
     wait_until(lambda: plotly_plot.evaluate('el => el.data[0].x.length') == 5, page)
     assert plotly_plot.evaluate('el => el._fullLayout.xaxis.type') == 'date'
+
+
+def test_plotly_python_restyle_is_not_echoed(page):
+    fig = go.Figure([go.Scatter(x=[0, 1, 2], y=[1, 2, 3])])
+    pane = Plotly(fig)
+    serve_component(page, pane)
+
+    plot = page.locator('.js-plotly-plot .plot-container.plotly')
+    expect(plot).to_have_count(1)
+
+    echoes = []
+    pane.param.watch(lambda e: echoes.append(e.new), 'restyle_data')
+
+    fig.data[0].marker.color = 'red'
+    gd = page.locator('.js-plotly-plot')
+    wait_until(lambda: gd.evaluate("gd => gd.data[0].marker.color") == 'red', page)
+
+    page.wait_for_timeout(500)
+    assert echoes == []

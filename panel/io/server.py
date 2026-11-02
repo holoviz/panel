@@ -38,6 +38,9 @@ from bokeh.embed.util import RenderItem
 from bokeh.embed.wrappers import wrap_in_script_tag
 from bokeh.server.contexts import _RequestProxy as BkRequestProxy
 from bokeh.server.server import Server as BokehServer
+from bokeh.server.session import (
+    ServerSession, _needs_document_lock, _needs_document_lock_on_loop,
+)
 from bokeh.server.urls import per_app_patterns, toplevel_patterns
 from bokeh.server.views.autoload_js_handler import (
     AutoloadJsHandler as BkAutoloadJsHandler,
@@ -104,7 +107,6 @@ if t.TYPE_CHECKING:
     from bokeh.core.types import ID
     from bokeh.document.document import DocJson
     from bokeh.embed.bundle import Bundle
-    from bokeh.server.session import ServerSession
     from jinja2 import Template
 
     from .application import TViewableFuncOrPath
@@ -313,27 +315,28 @@ param.parameterized.async_executor = async_execute
 def _initialize_session_info(session_context: SessionContext):
     from ..config import config
     session_id = session_context.id
-    info = state.session_info
-    sessions = info['sessions']
     history = -1 if config._admin else config.session_history
-    if not config._admin and (history == 0 or session_id in sessions):
-        return
+    with state._session_info_lock:
+        info = state.session_info
+        sessions = info['sessions']
+        if not config._admin and (history == 0 or session_id in sessions):
+            return
 
-    if history > 0 and len(sessions) >= history:
-        old_history = list(sessions.items())
-        sessions = dict(old_history[-(history-1):])
-    else:
-        sessions = dict(sessions)
-    request = session_context.request
-    user_agent = request.headers.get('User-Agent') if request else None
-    sessions[session_id] = {
-        'launched': dt.datetime.now().timestamp(),
-        'started': None,
-        'rendered': None,
-        'ended': None,
-        'user_agent': user_agent
-    }
-    state.session_info = {**info, 'total': info['total'] + 1, 'sessions': sessions}
+        if history > 0 and len(sessions) >= history:
+            old_history = list(sessions.items())
+            sessions = dict(old_history[-(history-1):])
+        else:
+            sessions = dict(sessions)
+        request = session_context.request
+        user_agent = request.headers.get('User-Agent') if request else None
+        sessions[session_id] = {
+            'launched': dt.datetime.now().timestamp(),
+            'started': None,
+            'rendered': None,
+            'ended': None,
+            'user_agent': user_agent
+        }
+        state.session_info = {**info, 'total': info['total'] + 1, 'sessions': sessions}
 
 state._on_session_created_internal.append(_initialize_session_info)
 
@@ -732,6 +735,33 @@ def validate_static_dirs(static_dirs: Mapping[str, str]) -> dict[str, str]:
             raise ValueError(f"Cannot serve non-existent path {path}")
         static[slug] = path
     return static
+
+
+def _track_document_lock(func):
+    if inspect.iscoroutinefunction(func):
+        @wraps(func)
+        async def wrapper(self, *args, **kwargs):
+            with state._own_document_lock(self):
+                return await func(self, *args, **kwargs)
+    else:
+        @wraps(func)
+        def wrapper(self, *args, **kwargs):
+            with state._own_document_lock(self):
+                return func(self, *args, **kwargs)
+    wrapper._panel_tracks_lock = True  # type: ignore[attr-defined]
+    return wrapper
+
+# Record which context holds the document lock so state._unblocked can
+# tell the holder apart from other threads while the lock is taken.
+if not getattr(ServerSession.with_document_locked.__wrapped__, '_panel_tracks_lock', False):  # type: ignore[attr-defined]
+    ServerSession.with_document_locked = _needs_document_lock(  # type: ignore[method-assign]
+        _track_document_lock(ServerSession.with_document_locked.__wrapped__)  # type: ignore[attr-defined]
+    )
+    for _method in ('_handle_push', '_handle_patch'):
+        setattr(ServerSession, _method, _needs_document_lock_on_loop(
+            _track_document_lock(getattr(ServerSession, _method).__wrapped__)
+        ))
+    del _method
 
 
 # Patch Server to attach task factory to asyncio loop and handle Admin server context
@@ -1772,12 +1802,11 @@ def get_server(
     def do_stop(*args, **kwargs):
         server.io_loop.stop()
 
-    try:
-        signal.signal(signal.SIGINT, sig_exit)
-    except ValueError:
-        pass # Can't use signal on a thread
-
     if start:
+        try:
+            signal.signal(signal.SIGINT, sig_exit)
+        except ValueError:
+            pass # Can't use signal on a thread
         server.start()
         # starting an already running loop raises AssertionError on
         # ProactorEventLoop and RuntimeError on SelectorEventLoop

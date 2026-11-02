@@ -100,9 +100,9 @@ class FloatPanel(ListLike, ReactiveHTML):
     _extension_name = 'floatpanel'
 
     _template = """
-    <div id="float" class="bk-root" style="padding:8px;padding-right:30px">
+    <div id="float" class="bk-root" style="padding:8px;padding-right:30px;box-sizing:border-box;height:100%;display:flex;flex-direction:column">
       {% for obj in objects %}
-      <div id="flex-item">${obj}</div>
+      <div id="flex-item" style="flex:1 1 auto">${obj}</div>
       {% endfor %}
     </div>
     """
@@ -134,6 +134,12 @@ class FloatPanel(ListLike, ReactiveHTML):
         }
         config = {...config, ...data.config}
         state.panel = jsPanel.create(config);
+        const size = config.panelSize
+        const sets_height = typeof size === 'object' ? (size != null && size.height != null) : size != null
+        if (model.height == null && !sets_height) {
+          state.panel.style.height = ''
+          state.panel.currentData.height = 'auto'
+        }
         if (data.status !== 'normalized') {
           view.run_script('status')
         }

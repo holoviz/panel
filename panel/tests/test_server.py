@@ -3,6 +3,7 @@ import datetime as dt
 import logging
 import os
 import pathlib
+import signal
 import socket
 import subprocess
 import sys
@@ -148,6 +149,19 @@ def test_server_non_ascii_route_index_link(port):
     )
 
     assert 'href="./%E5%84%80%E8%A1%A8%E6%9D%BF"' in r.content.decode('utf-8')
+
+def test_server_non_ascii_route_index_display(port):
+    r = serve_and_request(
+        {'/naïve': Markdown('# Title'), '/plain': Markdown('# Plain')},
+        port=port, use_index=True, index=INDEX_HTML, redirect_root=False, suffix='/'
+    )
+
+    content = r.content.decode('utf-8')
+    assert 'href="./na%C3%AFve"' in content
+    assert 'data-search="naïve /naïve"' in content
+    assert '<h2 class="pn-card-title">naïve</h2>' in content
+    assert '<span class="pn-card-path">/naïve</span>' in content
+    assert 'na%c3%afve /na%c3%afve' not in content
 
 def test_server_prefix_root_redirect():
     html = Markdown('# Title')
@@ -1199,6 +1213,19 @@ def test_kill_all_servers(html_server_session, markdown_server_session):
     state.kill_all_servers()
     assert server_1._stopped
     assert server_2._stopped
+
+
+def test_serve_start_false_preserves_sigint_handler(asyncio_loop):
+    handler = lambda *args: None
+    previous = signal.signal(signal.SIGINT, handler)
+    try:
+        server = get_server(Markdown('foo'), port=0, address='127.0.0.1', show=False, start=False)
+        try:
+            assert signal.getsignal(signal.SIGINT) is handler
+        finally:
+            server.stop()
+    finally:
+        signal.signal(signal.SIGINT, previous)
 
 
 def test_async_execute_without_running_loop_reuses_thread_loop():

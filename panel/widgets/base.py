@@ -73,7 +73,7 @@ class WidgetBase(param.Parameterized):
         from ..param import Param
         if not isinstance(parameter, param.Parameter):
             raise ValueError(f"{cls.__name__}.from_param only accepts Parameter types, provided value is of type {type(parameter)}.")
-        return Param.widget(parameter.name, parameter.owner, dict(type=cls, **params))
+        return Param.widget(parameter.name, parameter.owner, {'expand_button': False, 'type': cls, **params})
 
     @classmethod
     def _infer_params(cls, values, **params):
