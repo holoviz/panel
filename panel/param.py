@@ -961,8 +961,9 @@ class ParamRef(ReplacementPane):
             if not curdoc or (has_context and curdoc.session_context):
                 raise e
         finally:
-            self._async_task = None
-            self._inner_layout.loading = False
+            if self._async_task is task:
+                self._async_task = None
+                self._inner_layout.loading = False
 
     def _replace_pane(self, *args, force=False):
         deferred = self.defer_load and not state.loaded
@@ -971,6 +972,7 @@ class ParamRef(ReplacementPane):
         self._evaled |= force or not (self.lazy or deferred)
         if not self._evaled:
             return
+        scheduled = False
         try:
             if self.object is None:
                 new_object = Spacer()
@@ -989,11 +991,14 @@ class ParamRef(ReplacementPane):
                 new_object = to_async_gen(new_object)
             if inspect.isawaitable(new_object) or isinstance(new_object, types.AsyncGeneratorType):
                 param.parameterized.async_executor(partial(self._eval_async, new_object))
+                scheduled = True
                 return
             else:
                 self._update_inner(new_object)
         finally:
-            self._inner_layout.loading = False
+            # _eval_async clears the loading state once the awaitable completes
+            if not scheduled:
+                self._inner_layout.loading = False
 
     def _update_pane(self, *events):
         callbacks = []

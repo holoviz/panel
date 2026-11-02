@@ -100,6 +100,40 @@ def test_serve_admin_custom_endpoint(server, py_file):
         assert r2.status_code == 404
 
 @linux_only
+def test_serve_admin_endpoint_env(server, py_file, monkeypatch):
+    app = "import panel as pn; pn.Row('# Example').servable(title='A')"
+    write_file(app, py_file.file)
+    monkeypatch.setenv('PANEL_ADMIN_ENDPOINT', 'foo')
+
+    with run_panel_serve(["--port", "0", "--server", server, '--admin', py_file.name]) as p:
+        port = wait_for_port(p.stdout)
+        r = requests.get(f"http://localhost:{port}/foo")
+        assert r.status_code == 200
+        assert "Admin" in r.content.decode('utf-8')
+        assert requests.get(f"http://localhost:{port}/admin").status_code == 404
+
+@linux_only
+def test_serve_admin_endpoint_cli_overrides_env(server, py_file, monkeypatch):
+    app = "import panel as pn; pn.Row('# Example').servable(title='A')"
+    write_file(app, py_file.file)
+    monkeypatch.setenv('PANEL_ADMIN_ENDPOINT', 'foo')
+
+    with run_panel_serve(["--port", "0", "--server", server, '--admin', '--admin-endpoint', 'bar', py_file.name]) as p:
+        port = wait_for_port(p.stdout)
+        assert requests.get(f"http://localhost:{port}/bar").status_code == 200
+        assert requests.get(f"http://localhost:{port}/foo").status_code == 404
+
+@linux_only
+def test_serve_admin_endpoint_env_without_admin(server, py_file, monkeypatch):
+    app = "import panel as pn; pn.Row('# Example').servable(title='A')"
+    write_file(app, py_file.file)
+    monkeypatch.setenv('PANEL_ADMIN_ENDPOINT', 'foo')
+
+    with run_panel_serve(["--port", "0", "--server", server, py_file.name]) as p:
+        port = wait_for_port(p.stdout)
+        assert requests.get(f"http://localhost:{port}/foo").status_code == 404
+
+@linux_only
 @pytest.mark.parametrize('relative', [True, False])
 def test_custom_html_index(relative, server, html_file):
     index = '<html><body>Foo</body></html>'
@@ -353,6 +387,39 @@ def test_serve_prefix(server, tmp_path):
         assert r.status_code == 200
         assert "<title>A</title>" in r.content.decode('utf-8')
         assert requests.get(f"http://localhost:{port}/app").status_code == 404
+
+
+@linux_only
+def test_serve_non_ascii_filename(server, tmp_path):
+    py = tmp_path / "9_儀表板.py"
+    py.write_text("import panel as pn; pn.Row('# Example').servable(title='A')")
+
+    args = ["--port", "0", "--server", server, py, "--prefix", "sub"]
+    with run_panel_serve(args, cwd=tmp_path) as p:
+        port = wait_for_port(p.stdout)
+        r = requests.get(f"http://localhost:{port}/sub/9_%E5%84%80%E8%A1%A8%E6%9D%BF")
+        assert r.status_code == 200
+        assert "<title>A</title>" in r.content.decode('utf-8')
+
+
+@pytest.mark.parametrize('server,route', [
+    ('tornado', '/%E5%84%80%E8%A1%A8%E6%9D%BF'),
+    ('fastapi', '/儀表板'),
+    ('asgi', '/儀表板'),
+])
+def test_serve_customize_applications_non_ascii(server, route):
+    import argparse
+
+    from panel.command.serve import Serve
+
+    parser = argparse.ArgumentParser()
+    subcommand = Serve(parser=parser)
+    args = parser.parse_args(['--server', server])
+    app = object()
+
+    applications = subcommand.customize_applications(args, {'/儀表板': app})
+
+    assert applications == {route: app}
 
 
 @linux_only

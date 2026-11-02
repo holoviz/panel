@@ -246,20 +246,22 @@ def test_serve_asgi_basic_auth_installs_auth_policy(invoke_asgi):
     assert config.basic_auth == 'my_password'
 
 
-def test_serve_asgi_admin(invoke_asgi):
+@pytest.fixture
+def admin_access_cleanup():
+    admin = {name: getattr(config, name) for name in ('_admin', '_admin_password', '_admin_users', '_admin_log_level')}
+    try:
+        yield
+    finally:
+        config.param.update(**admin)
+        state._admin_context = None
+
+
+def test_serve_asgi_admin(invoke_asgi, admin_access_cleanup):
     asgi = _panel_asgi(invoke_asgi('--admin'))
     assert '/admin' in asgi.core.applications
     # The admin dashboard depends on the periodic cleanup callback its own
     # ApplicationContext adds, so the context must not be the generic one.
     assert asgi.core._applications['/admin'] is state._admin_context
-
-
-@pytest.fixture
-def admin_access_cleanup():
-    try:
-        yield
-    finally:
-        config.param.update(_admin_password=None, _admin_users=[])
 
 
 def test_serve_asgi_admin_password(invoke_asgi, admin_access_cleanup):

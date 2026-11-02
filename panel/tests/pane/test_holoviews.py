@@ -544,6 +544,23 @@ def test_holoviews_layouts(document, comm):
 
 
 @hv_available
+def test_holoviews_widget_layout_accepts_listlike(document, comm):
+    dmap = hv.DynamicMap(lambda X: hv.Curve([X]), kdims=['X']).redim.values(X=[0, 1, 2])
+    hv_pane = HoloViews(dmap, widget_layout=FlexBox)
+
+    assert isinstance(hv_pane.widget_box, FlexBox)
+    assert isinstance(hv_pane.widget_box[0], DiscreteSlider)
+    hv_pane.get_root(document, comm=comm)
+
+
+@hv_available
+def test_holoviews_widget_layout_rejects_non_layout():
+    dmap = hv.DynamicMap(lambda X: hv.Curve([X]), kdims=['X']).redim.values(X=[0, 1, 2])
+    with pytest.raises(ValueError):
+        HoloViews(dmap, widget_layout=DiscreteSlider)
+
+
+@hv_available
 def test_holoviews_widgets_from_holomap():
     hmap = hv.HoloMap({(i, chr(65+i)): hv.Curve([i]) for i in range(3)}, kdims=['X', 'Y'])
 
@@ -558,6 +575,30 @@ def test_holoviews_widgets_from_holomap():
     assert widgets[1].label == 'Y'
     assert widgets[1].options == ['A', 'B', 'C']
     assert widgets[1].value == 'A'
+
+
+@hv_available
+def test_holoviews_widgets_from_holomap_non_unique_labels():
+    kdim = hv.Dimension('X', value_format=lambda x: f'{x:.2f}')
+    keys = np.linspace(0, 0.15, 50)
+    hmap = hv.HoloMap({k: hv.Curve([k]) for k in keys}, kdims=[kdim])
+
+    widgets, _ = HoloViews.widgets_from_dimensions(hmap)
+
+    assert isinstance(widgets[0], DiscreteSlider)
+    assert len(widgets[0].options) == len(keys)
+    assert list(widgets[0].options.values()) == list(keys)
+    assert widgets[0].value == keys[0]
+
+
+@hv_available
+def test_holoviews_widgets_from_holomap_unique_labels_are_formatted():
+    kdim = hv.Dimension('X', value_format=lambda x: f'{x:.1f}')
+    hmap = hv.HoloMap({k: hv.Curve([k]) for k in (0.1, 0.2, 0.3)}, kdims=[kdim])
+
+    widgets, _ = HoloViews.widgets_from_dimensions(hmap)
+
+    assert widgets[0].options == {'0.1': 0.1, '0.2': 0.2, '0.3': 0.3}
 
 
 @hv_available

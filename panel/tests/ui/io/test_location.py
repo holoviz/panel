@@ -133,3 +133,50 @@ def test_set_nested_pathname_then_load_markdown_no_console_errors(page):
         msg for msg in msgs
         if msg.type == 'error' and 'favicon' not in msg.location['url']
     ] == []
+
+
+def test_reload_set_at_build_time_navigates_on_pathname_change(page):
+    def app():
+        pn.state.location.reload = True
+        button = pn.widgets.Button(label='Navigate')
+        button.on_click(lambda e: setattr(pn.state.location, 'pathname', '/other'))
+        return button
+
+    serve_component(page, app)
+
+    page.evaluate("() => { window.__marker = true }")
+    page.locator('.bk-btn').click()
+
+    wait_until(lambda: page.evaluate("() => window.__marker === undefined"), page)
+    assert page.evaluate("() => document.location.pathname") == '/other'
+
+
+def test_default_location_pathname_change_does_not_reload(page):
+    def app():
+        button = pn.widgets.Button(label='Navigate')
+        button.on_click(lambda e: setattr(pn.state.location, 'pathname', '/other'))
+        return button
+
+    serve_component(page, app)
+
+    page.evaluate("() => { window.__marker = true }")
+    page.locator('.bk-btn').click()
+
+    wait_until(lambda: page.evaluate("() => document.location.pathname") == '/other', page)
+    assert page.evaluate("() => window.__marker") is True
+
+
+def test_disabling_reload_does_not_reload_page(page):
+    def app():
+        pn.state.location.reload = True
+        button = pn.widgets.Button(label='Disable')
+        button.on_click(lambda e: setattr(pn.state.location, 'reload', False))
+        return button
+
+    serve_component(page, app)
+
+    page.evaluate("() => { window.__marker = true }")
+    page.locator('.bk-btn').click()
+
+    time.sleep(1)
+    assert page.evaluate("() => window.__marker") is True

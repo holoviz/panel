@@ -1529,6 +1529,29 @@ def test_tabulator_patch_no_horizontal_rescroll(page, df_mixed):
     wait_until(kept_position, page)
 
 
+def test_tabulator_scroll_during_resize_redraw_kept(page, df_mixed):
+    widths = 100
+    width = int(((df_mixed.shape[1] + 1) * widths) / 2)
+    widget = Tabulator(df_mixed, width=width, widths=widths)
+
+    serve_component(page, widget)
+
+    table_holder = page.locator('.pnx-tabulator .tabulator-tableholder')
+    wait_until(lambda: table_holder.evaluate("el => el.scrollWidth > el.clientWidth"), page)
+    page.evaluate("""() => {
+      const view = Object.values(Bokeh.index)[0]
+      view._resize_redraw()
+      const el = view.shadow_el.querySelector('.tabulator-tableholder')
+      el.scrollLeft = el.scrollWidth
+    }""")
+    page.evaluate("""async () => {
+      for (let i = 0; i < 20; i++) {
+        await new Promise((resolve) => requestAnimationFrame(resolve))
+      }
+    }""")
+    assert table_holder.evaluate("el => el.scrollLeft") > 0
+
+
 def test_tabulator_patch_no_vertical_rescroll(page):
     size = 10
     arr = np.random.choice(list('abcd'), size=size)
@@ -1901,6 +1924,17 @@ def test_tabulator_selection_selectable_disabled(page, df_mixed):
     assert widget.selected_dataframe.empty
     for i in range(rows.count()):
         assert 'tabulator-selected' not in rows.nth(i).get_attribute('class')
+
+
+def test_tabulator_selectable_disabled_rows_not_marked_selectable(page, df_mixed):
+    widget = Tabulator(df_mixed, selectable=False)
+
+    serve_component(page, widget)
+
+    rows = page.locator('.tabulator-row')
+    expect(rows.first).to_be_visible()
+    for i in range(rows.count()):
+        assert 'tabulator-selectable' not in rows.nth(i).get_attribute('class')
 
 
 def test_tabulator_selection_default_selection(page, df_mixed):
@@ -2987,6 +3021,43 @@ def test_tabulator_styling_init(page, df_mixed):
     expect(max_cell).to_have_count(1)
     expect(max_cell).to_have_css('background-color', _color_mapping['yellow'])
     expect(page.locator('text="false"')).to_have_css('color', _color_mapping['red'])
+
+def test_tabulator_styling_multi_index_columns(page):
+    df = pd.DataFrame(
+        [[1, 2], [3, 4]], columns=pd.MultiIndex.from_tuples([('a', 'b'), ('a', 'c')])
+    )
+    widget = Tabulator(df)
+    widget.style.map(lambda v: 'color: red', subset=[('a', 'c')])
+
+    serve_component(page, widget)
+
+    row = page.locator('.tabulator-row').first
+    expect(row.locator('.tabulator-cell[tabulator-field="a_c"]')).to_have_css('color', _color_mapping['red'])
+    expect(row.locator('.tabulator-cell[tabulator-field="a_b"]')).not_to_have_css('color', _color_mapping['red'])
+
+
+@pytest.mark.parametrize('kwargs', [
+    {'groups': {'G1': ['A', 'C'], 'G2': ['B', 'D']}},
+    {'groups': {'G1': ['A', 'C'], 'G2': ['B', 'D']}, 'hidden_columns': ['A']},
+    {'groups': {'G1': ['A', 'C'], 'G2': ['B', 'D']}, 'frozen_columns': ['D']},
+    {'groups': {'G1': ['A', 'C'], 'G2': ['B', 'D']}, 'selectable': 'checkbox'},
+    {'groups': {'G1': ['A', 'C'], 'G2': ['B', 'D']}, 'row_content': lambda row: 'content'},
+], ids=['groups', 'hidden', 'frozen', 'checkbox', 'row_content'])
+def test_tabulator_styling_with_column_groups(page, kwargs):
+    df = pd.DataFrame({'A': [1, 2], 'B': [3, 4], 'C': [5, 6], 'D': [7, 8]})
+    widget = Tabulator(df, **kwargs)
+    widget.style.map(lambda v: 'color: red', subset='C')
+
+    serve_component(page, widget)
+
+    for field in 'ABCD':
+        cell = page.locator('.tabulator-row').first.locator(f'.tabulator-cell[tabulator-field="{field}"]')
+        if field in kwargs.get('hidden_columns', []):
+            continue
+        if field == 'C':
+            expect(cell).to_have_css('color', _color_mapping['red'])
+        else:
+            expect(cell).not_to_have_css('color', _color_mapping['red'])
 
 def test_tabulator_patching_and_styling(page, df_mixed):
     df_styled = df_mixed.style.apply(highlight_max, subset=['int'])

@@ -1782,6 +1782,23 @@ def test_react_children_shrink_from_end(page):
     expect(page.locator('.inner')).to_have_text('child-0')
 
 
+@pytest.mark.internet
+def test_react_children_swap(page):
+    example = ReactChildrenList(objects=[Markdown('A'), Markdown('B')])
+
+    serve_component(page, example)
+
+    expect(page.locator('.markdown')).to_have_text(['A', 'B'])
+
+    # Swapping item by item sends an intermediate list holding one child twice.
+    a, b = example
+    example[0] = b
+    expect(page.locator('.markdown')).to_have_text(['B'])
+    example[1] = a
+
+    expect(page.locator('.markdown')).to_have_text(['B', 'A'])
+
+
 class ReactChildrenWatcher(ListLike, ReactComponent):
 
     objects = Children()

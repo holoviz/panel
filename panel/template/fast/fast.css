@@ -373,6 +373,7 @@ fast-card {
 
 .pn-modal-content {
   display: block;
+  position: relative;
   overflow-x: auto;
 }
 

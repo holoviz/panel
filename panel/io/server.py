@@ -21,7 +21,7 @@ import uuid
 
 from functools import partial, wraps
 from html import escape
-from urllib.parse import urlparse
+from urllib.parse import quote, urlparse
 
 import bokeh
 import param
@@ -56,6 +56,7 @@ from bokeh.util.token import (
 )
 # Tornado imports
 from tornado.ioloop import IOLoop
+from tornado.process import task_id
 from tornado.web import (
     HTTPError, RequestHandler, StaticFileHandler, authenticated,
 )
@@ -227,7 +228,35 @@ def _path_template_to_tornado_route(route: str) -> str:
     pattern, params = compile_route_template(route)
     return pattern if params else route
 
+
+_ASCII = ''.join(map(chr, range(128)))
+
+def _quote_non_ascii(route: str) -> str:
+    """
+    Percent-encode non-ASCII characters in an application route.
+
+    Tornado matches routes against the raw, still percent-encoded
+    request path, which is what browsers send for non-ASCII URLs.
+    """
+    return quote(route, safe=_ASCII)
+
 _tasks: set = set()
+
+
+class _ThreadLoop:
+    """
+    Event loop owned by a thread, closed once the thread exits.
+    """
+
+    def __init__(self) -> None:
+        self.loop = asyncio.new_event_loop()
+
+    def __del__(self) -> None:
+        if not self.loop.is_running() and not self.loop.is_closed():
+            self.loop.close()
+
+
+_thread_loops = threading.local()
 
 def async_execute(func: Callable[..., None]) -> None:
     """
@@ -235,11 +264,18 @@ def async_execute(func: Callable[..., None]) -> None:
     is propagated from function to partial wrapping it.
     """
     if not state.curdoc or not state.curdoc.session_context:
+        wrapper = state._handle_exception_wrapper(func)
         try:
             loop = asyncio.get_running_loop()
         except RuntimeError:
-            loop = asyncio.new_event_loop()
+            # Reuse the thread's loop, each new loop holds sockets until it is closed
+            owner = getattr(_thread_loops, 'owner', None)
+            if owner is None or owner.loop.is_closed():
+                owner = _thread_loops.owner = _ThreadLoop()
+            loop = owner.loop
             asyncio.set_event_loop(loop)
+            loop.run_until_complete(wrapper())
+            return
         # Avoid creating IOLoop if one is not already associated
         # with the asyncio loop or we're on a child thread
         if hasattr(IOLoop, '_ioloop_for_asyncio') and loop in IOLoop._ioloop_for_asyncio:
@@ -248,16 +284,12 @@ def async_execute(func: Callable[..., None]) -> None:
             ioloop = IOLoop.current()
         else:
             ioloop = None
-        wrapper = state._handle_exception_wrapper(func)
-        if loop.is_running():
-            if ioloop is None:
-                task = asyncio.ensure_future(wrapper())
-                _tasks.add(task)
-                task.add_done_callback(_tasks.discard)
-            else:
-                ioloop.add_callback(wrapper)
+        if ioloop is None:
+            task = asyncio.ensure_future(wrapper())
+            _tasks.add(task)
+            task.add_done_callback(_tasks.discard)
         else:
-            loop.run_until_complete(wrapper())
+            ioloop.add_callback(wrapper)
         return
 
     if isinstance(func, partial) and hasattr(func.func, 'lock'):
@@ -281,16 +313,17 @@ param.parameterized.async_executor = async_execute
 def _initialize_session_info(session_context: SessionContext):
     from ..config import config
     session_id = session_context.id
-    sessions = state.session_info['sessions']
+    info = state.session_info
+    sessions = info['sessions']
     history = -1 if config._admin else config.session_history
     if not config._admin and (history == 0 or session_id in sessions):
         return
 
-    state.session_info['total'] += 1
     if history > 0 and len(sessions) >= history:
         old_history = list(sessions.items())
         sessions = dict(old_history[-(history-1):])
-        state.session_info['sessions'] = sessions
+    else:
+        sessions = dict(sessions)
     request = session_context.request
     user_agent = request.headers.get('User-Agent') if request else None
     sessions[session_id] = {
@@ -300,7 +333,7 @@ def _initialize_session_info(session_context: SessionContext):
         'ended': None,
         'user_agent': user_agent
     }
-    state.param.trigger('session_info')
+    state.session_info = {**info, 'total': info['total'] + 1, 'sessions': sessions}
 
 state._on_session_created_internal.append(_initialize_session_info)
 
@@ -1401,9 +1434,19 @@ class ProxyFallbackHandler(RequestHandler):
         self.proxy = proxy
 
     def prepare(self):
+        fallback = self.fallback
         if self.proxy:
-            self.request.path = self.request.path.replace(self.proxy, '')
-        self.fallback(self.request)
+            # Mount the WSGI app at prefix + slug so PATH_INFO keeps its
+            # leading slash and SCRIPT_NAME makes url_for generate full URLs.
+            mount = self.application.prefix + self.proxy.rstrip('/')
+
+            def mounted(environ, start_response, app=self.fallback.wsgi_application):
+                environ['SCRIPT_NAME'] = mount
+                environ['PATH_INFO'] = environ['PATH_INFO'][len(mount):] or '/'
+                return app(environ, start_response)
+
+            fallback = WSGIContainer(mounted)
+        fallback(self.request)
         self._finished = True
         self.on_finish()
 
@@ -1609,7 +1652,7 @@ def get_server(
         if not slug.endswith('/'):
             slug += '/'
         extra_patterns.append((
-            f'^{slug}.*', ProxyFallbackHandler, dict(fallback=wsgi, proxy=slug)
+            f'{slug}.*', ProxyFallbackHandler, dict(fallback=wsgi, proxy=slug)
         ))
         return True
 
@@ -1619,7 +1662,7 @@ def get_server(
     normalized_apps: dict[str, BkApplication] = {}
     normalized_sources: dict[str, str] = {}
     for endpoint, app in apps.items():
-        normalized_endpoint = _path_template_to_tornado_route(endpoint)
+        normalized_endpoint = _quote_non_ascii(_path_template_to_tornado_route(endpoint))
         if normalized_endpoint in normalized_apps:
             raise ValueError(
                 f"Application routes {endpoint!r} and {normalized_sources[normalized_endpoint]!r} "
@@ -1631,7 +1674,7 @@ def get_server(
 
     if warm or config.autoreload:
         for endpoint, app in apps.items():
-            if endpoint == '/admin':
+            if endpoint == config._admin_path:
                 continue
             if config.autoreload:
                 with record_modules(list(apps.values())):
@@ -1654,7 +1697,7 @@ def get_server(
         extra_patterns += [(rf"/{liveness_endpoint}", LivenessHandler, dict(applications=apps))]
 
     if admin:
-        extra_patterns += admin_auth_patterns('/admin')
+        extra_patterns += admin_auth_patterns(config._admin_path)
 
     opts = dict(kwargs)
     if loop:
@@ -1716,7 +1759,8 @@ def get_server(
     state._servers[server_id] = (server, panel, [])
     state._server_config[server._tornado] = server_config
 
-    if show:
+    # Bokeh forks the workers inside Server.__init__; only one should open a tab
+    if show and task_id() in (None, 0):
         login_endpoint = login_endpoint or '/login'
         def show_callback():
             server.show(login_endpoint if config.oauth_provider or basic_auth else '/')
@@ -1728,12 +1772,11 @@ def get_server(
     def do_stop(*args, **kwargs):
         server.io_loop.stop()
 
-    try:
-        signal.signal(signal.SIGINT, sig_exit)
-    except ValueError:
-        pass # Can't use signal on a thread
-
     if start:
+        try:
+            signal.signal(signal.SIGINT, sig_exit)
+        except ValueError:
+            pass # Can't use signal on a thread
         server.start()
         # starting an already running loop raises AssertionError on
         # ProactorEventLoop and RuntimeError on SelectorEventLoop

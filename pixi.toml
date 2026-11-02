@@ -276,6 +276,8 @@ test-example = { cmd = 'pytest -n logical --dist loadscope --nbval-lax examples'
 nbval = "*"
 
 [feature.test-ui.dependencies]
+# TODO: Remove once the UI test failures with 3.10.2rc1 are resolved
+bokeh = ">=3.10.0,<3.11.0a0,!=3.10.2rc1"
 playwright = ">=1.61.0"
 playwright-python = ">=1.61.0"
 pytest-playwright = "*"

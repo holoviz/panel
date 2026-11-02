@@ -302,3 +302,36 @@ def test_design_cdn_resources_are_not_refetched(no_download):
     ]
     assert urls
     compiler.write_bundled_files('Bootstrap', urls)
+
+
+def test_write_bundled_files_writes_binary_fonts(monkeypatch, tmp_path):
+    font = b'wOF2\x00\x01\x00\x00\xac\xff\xfe'
+
+    class Response:
+        ok = True
+        status_code = 200
+        content = font
+
+    monkeypatch.setattr(compiler, '_download', lambda url: (Response(), None))
+    monkeypatch.setattr(compiler, 'BUNDLE_DIR', tmp_path)
+    for ext in ('woff', 'woff2'):
+        compiler.write_bundled_files(
+            'KaTeX', [f'{NPM_CDN}/katex@0.16.22/dist/fonts/KaTeX_Main-Regular.{ext}']
+        )
+        written = tmp_path / 'katex' / 'katex@0.16.22' / 'dist' / 'fonts' / f'KaTeX_Main-Regular.{ext}'
+        assert written.read_bytes() == font
+
+
+def test_katex_resources_are_bundled_fonts():
+    from panel.models.katex import KATEX_VERSION, KaTeX
+    assert KaTeX.__resources__
+    assert all(url.endswith('.woff2') for url in KaTeX.__resources__)
+    assert all(f'katex@{KATEX_VERSION}/dist/fonts/' in url for url in KaTeX.__resources__)
+
+
+def test_latex_pane_stylesheet_matches_katex_version():
+    from panel.models.katex import KATEX_VERSION
+    from panel.pane import LaTeX
+    assert LaTeX._stylesheets == [
+        f'{CDN_DIST}bundled/katex/katex@{KATEX_VERSION}/dist/katex.min.css'
+    ]
