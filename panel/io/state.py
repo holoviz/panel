@@ -157,6 +157,12 @@ class _state(param.Parameterized):
     # Holds temporary curdoc overrides per thread
     _curdoc: ContextVar[Document | None] = ContextVar('curdoc', default=None)
 
+    # A token identifying the document lock acquisition the current
+    # context runs under, matched against the token of the acquisition
+    # each session is currently held by
+    _document_lock: ContextVar[object | None] = ContextVar('document_lock', default=None)
+    _document_lock_owners: t.ClassVar[WeakKeyDictionary[ServerSession, object]] = WeakKeyDictionary()
+
     # Whether to hold comm events
     _hold: bool = False
 
@@ -341,10 +347,30 @@ class _state(param.Parameterized):
         is held for the duration. Mutating Bokeh models is safe in that
         case since no other code can be touching them concurrently, but
         raw socket writes are NOT (see `_on_loop_thread`).
+
+        Only the context the lock was acquired for counts. Another
+        callback holding the lock does not make writes from this
+        thread safe, so ownership is tracked by `_own_document_lock`.
         """
         session = getattr(getattr(self.curdoc, 'session_context', None), 'session', None)
-        session_lock = getattr(session, '_lock', None)
-        return bool(session_lock is not None and session_lock.locked())
+        owner = self._document_lock.get()
+        return owner is not None and session is not None and self._document_lock_owners.get(session) is owner
+
+    @contextmanager
+    def _own_document_lock(self, session: ServerSession) -> Iterator[None]:
+        """
+        Marks the current context as running under the session's
+        document lock. Must only be entered while the lock is held.
+        """
+        owner = object()
+        self._document_lock_owners[session] = owner
+        token = self._document_lock.set(owner)
+        try:
+            yield
+        finally:
+            self._document_lock.reset(token)
+            if self._document_lock_owners.get(session) is owner:
+                del self._document_lock_owners[session]
 
     def _install_thread_pool(self, loop: asyncio.AbstractEventLoop | None = None) -> None:
         """

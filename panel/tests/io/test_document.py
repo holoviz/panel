@@ -381,6 +381,57 @@ def test_unlocked_dispatches_from_worker_thread():
 
 
 @pytest.mark.xdist_group(name="server")
+def test_unblocked_only_for_document_lock_holder():
+    """
+    While a locked callback holds the document lock on a worker thread,
+    only that thread may write to the Document directly. Any other
+    thread has to schedule its changes, otherwise Bokeh raises because
+    the writes race with the holder releasing the lock.
+    """
+    slider = IntSlider()
+
+    serve_and_request(slider)
+    wait_until(lambda: bool(slider._documents))
+
+    doc = list(slider._documents)[0]
+    session = doc.session_context.session
+    asyncio_loop = doc.session_context.server_context.application_context.io_loop.asyncio_loop
+    state._connected[doc] = True
+
+    entered, release = threading.Event(), threading.Event()
+    seen = {}
+
+    def holder():
+        with set_curdoc(doc):
+            seen['holder'] = state._unblocked(doc)
+        entered.set()
+        release.wait(timeout=5)
+
+    def other():
+        with set_curdoc(doc):
+            seen['other'] = state._unblocked(doc)
+
+    async def trigger():
+        await session.with_document_locked(holder)
+
+    future = asyncio.run_coroutine_threadsafe(trigger(), asyncio_loop)
+    try:
+        assert entered.wait(timeout=5)
+        thread = threading.Thread(target=other)
+        thread.start()
+        thread.join()
+    finally:
+        release.set()
+    future.result(timeout=5)
+
+    assert seen == {'holder': True, 'other': False}
+
+    # Once released the holder's context no longer counts as owning the lock
+    with set_curdoc(doc):
+        assert not state._document_lock_held
+
+
+@pytest.mark.xdist_group(name="server")
 def test_threaded_hold_does_not_boomerang_python_changes():
     """
     A Python-side change made inside a hold on a worker thread is
