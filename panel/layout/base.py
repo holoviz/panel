@@ -608,12 +608,13 @@ class NamedListLike(param.Parameterized):
                     'as positional arguments or as a keyword, not both.'
                 )
             items = params.pop('objects')
+        self._init_names: list[str] = []
         if resolve_ref(items):
-            self._names: list[str] = []
             params['objects'] = bind(self._resolve_items, items)
         else:
-            params['objects'], self._names = self._to_objects_and_names(items)
+            params['objects'], self._init_names = self._to_objects_and_names(items)
         super().__init__(**params)
+        self._names = self._init_names
         self._panels: defaultdict[str, dict[int, Viewable]] = defaultdict(dict)
         self.param.watch(self._update_names, 'objects')
         # ALERT: Ensure that name update happens first, should be
@@ -639,8 +640,14 @@ class NamedListLike(param.Parameterized):
         return objects, names
 
     def _resolve_items(self, items):
-        # Names must be set before the objects change so _update_names is a no-op
-        objects, self._names = self._to_objects_and_names(items)
+        # Names must be set before the objects change so _update_names is a no-op,
+        # but subclasses may declare _names as a Parameter, which cannot be set
+        # until __init__ has completed
+        objects, names = self._to_objects_and_names(items)
+        if self._param__private.initialized:
+            self._names = names
+        else:
+            self._init_names = names
         return objects
 
     def _update_names(self, event: param.parameterized.Event) -> None:

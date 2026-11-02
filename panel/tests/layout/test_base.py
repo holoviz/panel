@@ -671,6 +671,23 @@ def test_pass_objects_param_ref_named_tuples(layout, document, comm):
     assert obj._names == ['Three', 'One', 'Two']
     assert [o.object for o in obj.objects] == ['C', 'A', 'B']
 
+def test_named_list_with_names_parameter():
+    class ParameterizedNames(Tabs):
+        _names = param.List(default=[])
+
+    class Source(param.Parameterized):
+        value = param.List(default=[('One', Markdown('A'))])
+
+    source = Source()
+
+    assert ParameterizedNames(('One', Markdown('A')))._names == ['One']
+
+    obj = ParameterizedNames(objects=source.param.value)
+    assert obj._names == ['One']
+
+    source.value = [('Two', Markdown('B')), ('Three', Markdown('C'))]
+    assert obj._names == ['Two', 'Three']
+
 @pytest.mark.parametrize('dim', ["width", "height"])
 def test_compute_sizing_mode_stretch_margin_none(dim, document, comm):
     md = Markdown(**{dim: 100})
