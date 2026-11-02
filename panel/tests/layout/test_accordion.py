@@ -198,3 +198,10 @@ def test_accordion_clone_retains_params():
     assert clone._names == ['A', 'B']
 
     assert accordion.clone(width=400).width == 400
+
+
+def test_accordion_clone_drops_out_of_range_active():
+    accordion = Accordion(('A', 1), ('B', 2), ('C', 3), active=[0, 2])
+    assert accordion.clone(('A', 1), ('B', 2)).active == [0]
+    assert accordion.clone().active == [0, 2]
+    assert accordion.clone(('A', 1), active=[0]).active == [0]
