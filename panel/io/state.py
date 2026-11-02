@@ -292,6 +292,10 @@ class _state(param.Parameterized):
     _busy_cleanup_scheduled: t.ClassVar[PeriodicCallback | None] = None
     # Reentrant since the _busy_counter watcher prunes the counter again
     _busy_lock: t.ClassVar[threading.RLock] = threading.RLock()
+    # Held across read, assignment and watcher notification so concurrent
+    # session events neither lose updates nor notify out of order; reentrant
+    # since watchers run synchronously and may update session_info again
+    _session_info_lock: t.ClassVar[threading.RLock] = threading.RLock()
 
     # Types
     _notification_type: t.ClassVar[type[NotificationAreaBase] | None] = None
@@ -532,36 +536,38 @@ class _state(param.Parameterized):
             return
         from .server import logger
         session_id = self.curdoc.session_context.id
-        info = self.session_info
-        session = info['sessions'].get(session_id, {})
-        if session.get('rendered') is not None:
-            return
-        logger.info(LOG_SESSION_RENDERED, id(self.curdoc))
-        # Copy on write so watchers receive distinct old and new values;
-        # only the changed session entry is copied to keep this cheap.
-        self.session_info = {
-            **info,
-            'live': info['live'] + 1,
-            'sessions': {
-                **info['sessions'],
-                session_id: {**session, 'rendered': dt.datetime.now().timestamp()}
+        with self._session_info_lock:
+            info = self.session_info
+            session = info['sessions'].get(session_id, {})
+            if session.get('rendered') is not None:
+                return
+            logger.info(LOG_SESSION_RENDERED, id(self.curdoc))
+            # Copy on write so watchers receive distinct old and new values;
+            # only the changed session entry is copied to keep this cheap.
+            self.session_info = {
+                **info,
+                'live': info['live'] + 1,
+                'sessions': {
+                    **info['sessions'],
+                    session_id: {**session, 'rendered': dt.datetime.now().timestamp()}
+                }
             }
-        }
 
     def _destroy_session(self, session_context):
         session_id = session_context.id
-        info = self.session_info
-        sessions = info['sessions']
-        if session_id in sessions and sessions[session_id]['ended'] is None:
-            session = sessions[session_id]
-            self.session_info = {
-                **info,
-                'live': info['live'] - (session['rendered'] is not None),
-                'sessions': {
-                    **sessions,
-                    session_id: {**session, 'ended': dt.datetime.now().timestamp()}
+        with self._session_info_lock:
+            info = self.session_info
+            sessions = info['sessions']
+            if session_id in sessions and sessions[session_id]['ended'] is None:
+                session = sessions[session_id]
+                self.session_info = {
+                    **info,
+                    'live': info['live'] - (session['rendered'] is not None),
+                    'sessions': {
+                        **sessions,
+                        session_id: {**session, 'ended': dt.datetime.now().timestamp()}
+                    }
                 }
-            }
         doc = session_context._document
 
         if doc in self._periodic:

@@ -315,27 +315,28 @@ param.parameterized.async_executor = async_execute
 def _initialize_session_info(session_context: SessionContext):
     from ..config import config
     session_id = session_context.id
-    info = state.session_info
-    sessions = info['sessions']
     history = -1 if config._admin else config.session_history
-    if not config._admin and (history == 0 or session_id in sessions):
-        return
+    with state._session_info_lock:
+        info = state.session_info
+        sessions = info['sessions']
+        if not config._admin and (history == 0 or session_id in sessions):
+            return
 
-    if history > 0 and len(sessions) >= history:
-        old_history = list(sessions.items())
-        sessions = dict(old_history[-(history-1):])
-    else:
-        sessions = dict(sessions)
-    request = session_context.request
-    user_agent = request.headers.get('User-Agent') if request else None
-    sessions[session_id] = {
-        'launched': dt.datetime.now().timestamp(),
-        'started': None,
-        'rendered': None,
-        'ended': None,
-        'user_agent': user_agent
-    }
-    state.session_info = {**info, 'total': info['total'] + 1, 'sessions': sessions}
+        if history > 0 and len(sessions) >= history:
+            old_history = list(sessions.items())
+            sessions = dict(old_history[-(history-1):])
+        else:
+            sessions = dict(sessions)
+        request = session_context.request
+        user_agent = request.headers.get('User-Agent') if request else None
+        sessions[session_id] = {
+            'launched': dt.datetime.now().timestamp(),
+            'started': None,
+            'rendered': None,
+            'ended': None,
+            'user_agent': user_agent
+        }
+        state.session_info = {**info, 'total': info['total'] + 1, 'sessions': sessions}
 
 state._on_session_created_internal.append(_initialize_session_info)
 
