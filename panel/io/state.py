@@ -94,6 +94,17 @@ class _Undefined: pass
 _tasks: set[asyncio.Task] = set()
 
 
+def _run_without_document_lock(fn, /, *args, **kwargs):
+    # Workers may inherit the submitter's context when they are spawned
+    # (sys.flags.thread_inherit_context), which must not make them count
+    # as holding the document lock.
+    token = _state._document_lock.set(None)
+    try:
+        return fn(*args, **kwargs)
+    finally:
+        _state._document_lock.reset(token)
+
+
 class _SharedThreadPoolExecutor(ThreadPoolExecutor):
     """
     Thread pool used both by Panel's ``state.execute(schedule='thread')`` and,
@@ -105,6 +116,9 @@ class _SharedThreadPoolExecutor(ThreadPoolExecutor):
     explicitly via ``config._set_thread_pool`` / ``state.reset`` by passing
     ``_shared=False``.
     """
+
+    def submit(self, fn, /, *args, **kwargs):
+        return super().submit(_run_without_document_lock, fn, *args, **kwargs)
 
     def shutdown(self, wait=True, *, cancel_futures=False, _shared=True):
         if _shared:
@@ -342,7 +356,7 @@ class _state(param.Parameterized):
         Whether the calling thread is executing inside a locked Bokeh
         session callback even though it is not the server event loop
         thread itself. Bokeh dispatches such callbacks (e.g.
-        next-tick callbacks) via `loop.run_in_executor`, so the callback
+        next-tick callbacks) via `asyncio.to_thread`, so the callback
         body runs on a worker thread while the session's document lock
         is held for the duration. Mutating Bokeh models is safe in that
         case since no other code can be touching them concurrently, but
@@ -363,6 +377,7 @@ class _state(param.Parameterized):
         document lock. Must only be entered while the lock is held.
         """
         owner = object()
+        previous = self._document_lock_owners.get(session)
         self._document_lock_owners[session] = owner
         token = self._document_lock.set(owner)
         try:
@@ -370,7 +385,10 @@ class _state(param.Parameterized):
         finally:
             self._document_lock.reset(token)
             if self._document_lock_owners.get(session) is owner:
-                del self._document_lock_owners[session]
+                if previous is None:
+                    del self._document_lock_owners[session]
+                else:
+                    self._document_lock_owners[session] = previous
 
     def _install_thread_pool(self, loop: asyncio.AbstractEventLoop | None = None) -> None:
         """

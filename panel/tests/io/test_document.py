@@ -432,6 +432,72 @@ def test_unblocked_only_for_document_lock_holder():
 
 
 @pytest.mark.xdist_group(name="server")
+def test_unblocked_only_for_patch_holder(threads):
+    """
+    While a client patch is applied on a worker thread only that thread
+    may write to the Document directly, other pool threads must schedule.
+    """
+    slider = IntSlider()
+
+    serve_and_request(slider)
+    wait_until(lambda: bool(slider._documents))
+
+    doc = list(slider._documents)[0]
+    session = doc.session_context.session
+    asyncio_loop = doc.session_context.server_context.application_context.io_loop.asyncio_loop
+    state._connected[doc] = True
+
+    seen = {}
+
+    def other():
+        with set_curdoc(doc):
+            seen['other'] = state._unblocked(doc)
+
+    class Patch:
+        def apply_to_document(self, document, setter):
+            with set_curdoc(document):
+                seen['holder'] = state._unblocked(document)
+            state._thread_pool.submit(other).result(timeout=5)
+
+    class Connection:
+        def ok(self, message):
+            return None
+
+    future = asyncio.run_coroutine_threadsafe(
+        session._handle_patch(Patch(), Connection()), asyncio_loop
+    )
+    future.result(timeout=5)
+
+    assert seen == {'holder': True, 'other': False}
+
+
+def test_own_document_lock_restores_outer_owner():
+    class Session:
+        pass
+
+    session = Session()
+    with state._own_document_lock(session):
+        outer = state._document_lock_owners[session]
+        with state._own_document_lock(session):
+            assert state._document_lock_owners[session] is not outer
+        assert state._document_lock_owners[session] is outer
+    assert session not in state._document_lock_owners
+
+
+def test_thread_pool_tasks_do_not_inherit_document_lock():
+    from panel.io.state import _run_without_document_lock
+
+    seen = []
+    token = state._document_lock.set(object())
+    try:
+        _run_without_document_lock(lambda: seen.append(state._document_lock.get()))
+    finally:
+        state._document_lock.reset(token)
+
+    assert seen == [None]
+
+
+@pytest.mark.xdist_group(name="server")
 def test_threaded_hold_does_not_boomerang_python_changes():
     """
     A Python-side change made inside a hold on a worker thread is
