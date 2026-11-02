@@ -747,17 +747,20 @@ def _track_document_lock(func):
         def wrapper(self, *args, **kwargs):
             with state._own_document_lock(self):
                 return func(self, *args, **kwargs)
+    wrapper._panel_tracks_lock = True  # type: ignore[attr-defined]
     return wrapper
 
 # Record which context holds the document lock so state._unblocked can
 # tell the holder apart from other threads while the lock is taken.
-ServerSession.with_document_locked = _needs_document_lock(  # type: ignore[method-assign]
-    _track_document_lock(ServerSession.with_document_locked.__wrapped__)  # type: ignore[attr-defined]
-)
-for _method in ('_handle_push', '_handle_patch'):
-    setattr(ServerSession, _method, _needs_document_lock_on_loop(
-        _track_document_lock(getattr(ServerSession, _method).__wrapped__)
-    ))
+if not getattr(ServerSession.with_document_locked.__wrapped__, '_panel_tracks_lock', False):  # type: ignore[attr-defined]
+    ServerSession.with_document_locked = _needs_document_lock(  # type: ignore[method-assign]
+        _track_document_lock(ServerSession.with_document_locked.__wrapped__)  # type: ignore[attr-defined]
+    )
+    for _method in ('_handle_push', '_handle_patch'):
+        setattr(ServerSession, _method, _needs_document_lock_on_loop(
+            _track_document_lock(getattr(ServerSession, _method).__wrapped__)
+        ))
+    del _method
 
 
 # Patch Server to attach task factory to asyncio loop and handle Admin server context
