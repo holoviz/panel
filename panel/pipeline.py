@@ -264,10 +264,12 @@ class Pipeline(Viewer):
     def _init_stage(self):
         stage, stage_kwargs = self._stages[self._stage]
 
-        previous = []
-        for src, tgts in self._graph.items():
-            if self._stage in tgts:
-                previous.append(src)
+        # Only stages on the current route feed this stage, so that states
+        # left over from other branches cannot override the branch taken.
+        previous = [
+            src for src in self._route
+            if self._stage in self._graph.get(src, ())
+        ]
         prev_states = [self._states[prev] for prev in previous if prev in self._states]
 
         outputs = []
@@ -452,6 +454,13 @@ class Pipeline(Viewer):
             self._error = None
             self._update_button()
             self._route.pop()
+            if self._stage in self._route:
+                del self._route[self._route.index(self._stage)+1:]
+            else:
+                # A predecessor off the current route was selected, so the
+                # abandoned branch must not stay on the route.
+                path = find_route(self._graph, self._route[0], self._stage)
+                self._route[1:] = path or [self._stage]
         finally:
             self._update_progress()
 

@@ -11,7 +11,7 @@ import param
 
 from ..models.location import Location as _BkLocation
 from ..reactive import Syncable
-from ..util import edit_readonly, parse_query
+from ..util import edit_readonly, isIn as is_in, parse_query
 from .cache import is_equal
 from .document import create_doc_if_none_exists
 from .state import state
@@ -205,6 +205,14 @@ class Location(Syncable):
                     # parse_query converts numeric, boolean and JSON-like
                     # strings, but a String parameter takes the raw value
                     v = raw_params[k]
+                elif pname == 'value' and k in raw_params:
+                    # Selectors hold their options as given, so an option
+                    # such as '02' must not be coerced to the int 2
+                    try:
+                        if is_in(raw_params[k], list(p.values)):
+                            v = raw_params[k]
+                    except Exception:
+                        pass
                 try:
                     v = p.param[pname].deserialize(v)
                 except Exception:

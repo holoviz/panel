@@ -256,7 +256,8 @@ setup-dev = { depends-on = ["install", "lint-install"], description = "Set up th
 # =============================================
 [feature.test-core.dependencies]
 psutil = "*"
-pytest = "*"
+# 9.2 stops xdist_group applying with pytest-xdist 3.8, see pytest-dev/pytest-xdist#1407
+pytest = "<9.2"
 pytest-asyncio = "*"
 pytest-cov = "*"
 pytest-github-actions-annotate-failures = "*"

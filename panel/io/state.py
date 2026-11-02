@@ -94,6 +94,17 @@ class _Undefined: pass
 _tasks: set[asyncio.Task] = set()
 
 
+def _run_without_document_lock(fn, /, *args, **kwargs):
+    # Workers may inherit the submitter's context when they are spawned
+    # (sys.flags.thread_inherit_context), which must not make them count
+    # as holding the document lock.
+    token = _state._document_lock.set(None)
+    try:
+        return fn(*args, **kwargs)
+    finally:
+        _state._document_lock.reset(token)
+
+
 class _SharedThreadPoolExecutor(ThreadPoolExecutor):
     """
     Thread pool used both by Panel's ``state.execute(schedule='thread')`` and,
@@ -105,6 +116,9 @@ class _SharedThreadPoolExecutor(ThreadPoolExecutor):
     explicitly via ``config._set_thread_pool`` / ``state.reset`` by passing
     ``_shared=False``.
     """
+
+    def submit(self, fn, /, *args, **kwargs):
+        return super().submit(_run_without_document_lock, fn, *args, **kwargs)
 
     def shutdown(self, wait=True, *, cancel_futures=False, _shared=True):
         if _shared:
@@ -137,7 +151,8 @@ class _state(param.Parameterized):
        Tracks information and statistics about user sessions.""")
 
     webdriver: t.Any = param.Parameter(default=None, doc="""
-      Selenium webdriver used to export bokeh models to pngs.""")
+      Browser used to export bokeh models to pngs: a Selenium WebDriver,
+      or a Playwright Browser or BrowserContext.""")
 
     _base_url = param.String(default='/', readonly=True, doc="""
        Base URL for all server paths.""")
@@ -155,6 +170,12 @@ class _state(param.Parameterized):
 
     # Holds temporary curdoc overrides per thread
     _curdoc: ContextVar[Document | None] = ContextVar('curdoc', default=None)
+
+    # A token identifying the document lock acquisition the current
+    # context runs under, matched against the token of the acquisition
+    # each session is currently held by
+    _document_lock: ContextVar[object | None] = ContextVar('document_lock', default=None)
+    _document_lock_owners: t.ClassVar[WeakKeyDictionary[ServerSession, object]] = WeakKeyDictionary()
 
     # Whether to hold comm events
     _hold: bool = False
@@ -335,15 +356,39 @@ class _state(param.Parameterized):
         Whether the calling thread is executing inside a locked Bokeh
         session callback even though it is not the server event loop
         thread itself. Bokeh dispatches such callbacks (e.g.
-        next-tick callbacks) via `loop.run_in_executor`, so the callback
+        next-tick callbacks) via `asyncio.to_thread`, so the callback
         body runs on a worker thread while the session's document lock
         is held for the duration. Mutating Bokeh models is safe in that
         case since no other code can be touching them concurrently, but
         raw socket writes are NOT (see `_on_loop_thread`).
+
+        Only the context the lock was acquired for counts. Another
+        callback holding the lock does not make writes from this
+        thread safe, so ownership is tracked by `_own_document_lock`.
         """
         session = getattr(getattr(self.curdoc, 'session_context', None), 'session', None)
-        session_lock = getattr(session, '_lock', None)
-        return bool(session_lock is not None and session_lock.locked())
+        owner = self._document_lock.get()
+        return owner is not None and session is not None and self._document_lock_owners.get(session) is owner
+
+    @contextmanager
+    def _own_document_lock(self, session: ServerSession) -> Iterator[None]:
+        """
+        Marks the current context as running under the session's
+        document lock. Must only be entered while the lock is held.
+        """
+        owner = object()
+        previous = self._document_lock_owners.get(session)
+        self._document_lock_owners[session] = owner
+        token = self._document_lock.set(owner)
+        try:
+            yield
+        finally:
+            self._document_lock.reset(token)
+            if self._document_lock_owners.get(session) is owner:
+                if previous is None:
+                    del self._document_lock_owners[session]
+                else:
+                    self._document_lock_owners[session] = previous
 
     def _install_thread_pool(self, loop: asyncio.AbstractEventLoop | None = None) -> None:
         """
@@ -487,25 +532,36 @@ class _state(param.Parameterized):
             return
         from .server import logger
         session_id = self.curdoc.session_context.id
-        session_info = self.session_info['sessions'].get(session_id, {})
-        if session_info.get('rendered') is not None:
+        info = self.session_info
+        session = info['sessions'].get(session_id, {})
+        if session.get('rendered') is not None:
             return
         logger.info(LOG_SESSION_RENDERED, id(self.curdoc))
-        self.session_info['live'] += 1
-        session_info.update({
-            'rendered': dt.datetime.now().timestamp()
-        })
-        self.param.trigger('session_info')
+        # Copy on write so watchers receive distinct old and new values;
+        # only the changed session entry is copied to keep this cheap.
+        self.session_info = {
+            **info,
+            'live': info['live'] + 1,
+            'sessions': {
+                **info['sessions'],
+                session_id: {**session, 'rendered': dt.datetime.now().timestamp()}
+            }
+        }
 
     def _destroy_session(self, session_context):
         session_id = session_context.id
-        sessions = self.session_info['sessions']
+        info = self.session_info
+        sessions = info['sessions']
         if session_id in sessions and sessions[session_id]['ended'] is None:
             session = sessions[session_id]
-            if session['rendered'] is not None:
-                self.session_info['live'] -= 1
-            session['ended'] = dt.datetime.now().timestamp()
-            self.param.trigger('session_info')
+            self.session_info = {
+                **info,
+                'live': info['live'] - (session['rendered'] is not None),
+                'sessions': {
+                    **sessions,
+                    session_id: {**session, 'ended': dt.datetime.now().timestamp()}
+                }
+            }
         doc = session_context._document
 
         if doc in self._periodic:
@@ -626,8 +682,16 @@ class _state(param.Parameterized):
         be scheduled on from a worker thread.
         """
         loop = self._ioloop
+        try:
+            running = asyncio.get_running_loop()
+        except RuntimeError:
+            running = None
+        deadline = loop.time() + delay
         if not isinstance(loop, asyncio.AbstractEventLoop):
-            loop.call_later(delay=delay, callback=callback)
+            if running is getattr(loop, 'asyncio_loop', None):
+                loop.call_at(deadline, callback)
+            else:
+                loop.add_callback(loop.call_at, deadline, callback)
             return
 
         def _run() -> None:
@@ -635,14 +699,10 @@ class _state(param.Parameterized):
             _tasks.add(task)
             task.add_done_callback(_tasks.discard)
 
-        try:
-            on_loop = asyncio.get_running_loop() is loop
-        except RuntimeError:
-            on_loop = False
-        if on_loop:
-            loop.call_later(delay, _run)
+        if running is loop:
+            loop.call_at(deadline, _run)
         else:
-            loop.call_soon_threadsafe(loop.call_later, delay, _run)
+            loop.call_soon_threadsafe(loop.call_at, deadline, _run)
 
     async def _scheduled_cb(self, name: str, threaded: bool = False) -> None:
         if name not in self._scheduled:
@@ -1096,6 +1156,7 @@ class _state(param.Parameterized):
         self._inline_stylesheets.clear()
         self._scheduled.clear()
         self._periodic.clear()
+        self.session_info = {'total': 0, 'live': 0, 'sessions': {}}
 
     def schedule_task(
         self,

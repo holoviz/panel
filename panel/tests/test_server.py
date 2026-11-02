@@ -3,7 +3,10 @@ import datetime as dt
 import logging
 import os
 import pathlib
+import signal
 import socket
+import subprocess
+import sys
 import threading
 import time
 import weakref
@@ -16,6 +19,7 @@ import requests
 
 from bokeh.events import ButtonClick
 from packaging.version import Version
+from tornado.ioloop import IOLoop
 
 from panel.config import config
 from panel.io import state
@@ -24,8 +28,8 @@ from panel.io.compile import check_cli_tool
 from panel.io.resources import DIST_DIR, JS_VERSION
 from panel.io.server import (
     _MAX_APP_PATH_CHARS, _MAX_ROUTE_PARAM_VALUE_CHARS, INDEX_HTML, RootHandler,
-    _normalize_app_path, _path_template_to_tornado_route, get_server,
-    set_curdoc,
+    _normalize_app_path, _path_template_to_tornado_route, async_execute,
+    get_server, set_curdoc,
 )
 from panel.layout import Row
 from panel.models import HTML as BkHTML
@@ -37,7 +41,7 @@ from panel.template import BootstrapTemplate
 from panel.tests import util as test_util
 from panel.tests.util import (
     get_open_ports, reverse_proxy as reverse_proxy_ctx, serve_and_request,
-    serve_and_wait, wait_until,
+    serve_and_wait, unix_only, wait_until,
 )
 from panel.widgets import (
     Button, Tabulator, Terminal, TextInput,
@@ -132,6 +136,20 @@ def test_server_static_dirs():
     with open(__file__, encoding='utf-8') as f:
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
+def test_server_non_ascii_route():
+    r = serve_and_request({'/儀表板': Markdown('# Title')}, suffix='/%E5%84%80%E8%A1%A8%E6%9D%BF')
+
+    assert r.status_code == 200
+
+
+def test_server_non_ascii_route_index_link(port):
+    r = serve_and_request(
+        {'/儀表板': Markdown('# Title'), '/plain': Markdown('# Plain')},
+        port=port, use_index=True, index=INDEX_HTML, redirect_root=False, suffix='/'
+    )
+
+    assert 'href="./%E5%84%80%E8%A1%A8%E6%9D%BF"' in r.content.decode('utf-8')
+
 def test_server_prefix_root_redirect():
     html = Markdown('# Title')
 
@@ -144,6 +162,32 @@ def test_server_prefix_root_redirect():
 
     assert response.status_code == 200
     assert response.url.endswith('/foo/')
+
+@pytest.mark.parametrize('prefix', ['', '/sub'])
+def test_server_wsgi_app_mounted_on_subpath(prefix, monkeypatch):
+    import types
+
+    # Flask is not a test dependency so a minimal WSGI app stands in for it
+    class Flask:
+        def __call__(self, environ, start_response):
+            body = f"{environ['SCRIPT_NAME']}|{environ['PATH_INFO']}".encode()
+            start_response('200 OK', [('Content-Type', 'text/plain')])
+            return [body]
+
+    monkeypatch.setitem(sys.modules, 'flask', types.SimpleNamespace(Flask=Flask))
+
+    port = serve_and_wait({'/flask': Flask(), 'app': Markdown('# Title')}, prefix=prefix)
+    base = f'http://127.0.0.1:{port}{prefix}'
+
+    r = requests.get(f'{base}/flask/app', timeout=30)
+    assert r.status_code == 200
+    assert r.text == f'{prefix}/flask|/app'
+
+    r = requests.get(f'{base}/flask/a/b?x=1', timeout=30)
+    assert r.text == f'{prefix}/flask|/a/b'
+
+    r = requests.get(f'{base}/flask/', timeout=30)
+    assert r.text == f'{prefix}/flask|/'
 
 def test_server_doc_page_is_not_cached():
     # The document page embeds a short-lived Bokeh session token, so it must
@@ -631,13 +675,17 @@ def test_server_schedule_at(server_implementation):
         state.cache['at'] = dt.datetime.now()
 
     scheduled = []
+    served = []
 
     def app():
-        scheduled.append(dt.datetime.now() + dt.timedelta(seconds=0.57))
-        state.schedule_task('periodic', periodic_cb, at=scheduled[0])
+        served.append(None)
+        if len(served) > 1:
+            scheduled.append(dt.datetime.now() + dt.timedelta(seconds=0.57))
+            state.schedule_task('periodic', periodic_cb, at=scheduled[0])
         return '# state.schedule test'
 
-    serve_and_request(app)
+    # A cold first request delays the callback on slow runners
+    serve_and_request(app, n=2)
 
     # Check callback was executed within small margin of error
     wait_until(lambda: 'at' in state.cache)
@@ -657,15 +705,20 @@ def test_server_schedule_at_iterator(server_implementation):
     def schedule():
         yield from scheduled
 
+    served = []
+
     def app():
-        scheduled.extend([
-            dt.datetime.now() + dt.timedelta(seconds=0.57),
-            dt.datetime.now() + dt.timedelta(seconds=0.86)
-        ])
-        state.schedule_task('periodic', periodic_cb, at=schedule())
+        served.append(None)
+        if len(served) > 1:
+            scheduled.extend([
+                dt.datetime.now() + dt.timedelta(seconds=0.57),
+                dt.datetime.now() + dt.timedelta(seconds=0.86)
+            ])
+            state.schedule_task('periodic', periodic_cb, at=schedule())
         return '# state.schedule test'
 
-    serve_and_request(app)
+    # A cold first request delays the callback on slow runners
+    serve_and_request(app, n=2)
 
     # Check callbacks were executed within small margin of error
     wait_until(lambda: len(state.cache['at']) == 2)
@@ -684,15 +737,20 @@ def test_server_schedule_at_callable(server_implementation):
     def schedule(siter, utcnow):
         return next(siter)
 
+    served = []
+
     def app():
-        scheduled[:] = [
-            dt.datetime.now(dt.timezone.utc) + dt.timedelta(seconds=s)
-            for s in (0.57, 0.86)
-        ]
-        state.schedule_task('periodic', periodic_cb, at=partial(schedule, iter(scheduled)))
+        served.append(None)
+        if len(served) > 1:
+            scheduled[:] = [
+                dt.datetime.now(dt.timezone.utc) + dt.timedelta(seconds=s)
+                for s in (0.57, 0.86)
+            ]
+            state.schedule_task('periodic', periodic_cb, at=partial(schedule, iter(scheduled)))
         return '# state.schedule test'
 
-    serve_and_request(app)
+    # A cold first request delays the callback on slow runners
+    serve_and_request(app, n=2)
 
     # Check callbacks were executed within small margin of error
     wait_until(lambda: len(state.cache['at']) == 2)
@@ -702,6 +760,31 @@ def test_server_schedule_at_callable(server_implementation):
     assert abs(state.cache['at'][0] - converted[0]) < dt.timedelta(seconds=0.2)
     assert abs(state.cache['at'][1] - converted[1]) < dt.timedelta(seconds=0.2)
     wait_until(lambda: 'periodic' not in {k.split('_', 1)[-1] for k in state._scheduled})
+
+
+def test_server_schedule_from_thread_while_loop_idle(server_implementation):
+    state.cache['at'] = []
+    def periodic_cb():
+        state.cache['at'].append(dt.datetime.now())
+
+    scheduled = []
+
+    def app():
+        doc = state.curdoc
+
+        def schedule():
+            time.sleep(0.5)
+            with set_curdoc(doc):
+                scheduled.append(dt.datetime.now() + dt.timedelta(seconds=0.3))
+                state.schedule_task('periodic', periodic_cb, at=scheduled[0])
+
+        threading.Thread(target=schedule, daemon=True).start()
+        return '# state.schedule test'
+
+    serve_and_request(app)
+
+    wait_until(lambda: len(state.cache['at']) == 1)
+    assert abs(state.cache['at'][0] - scheduled[0]) < dt.timedelta(seconds=0.2)
 
 
 @pytest.mark.xdist_group(name="server")
@@ -1106,8 +1189,8 @@ def test_show_server_info(html_server_session, markdown_server_session):
     *_, html_port = html_server_session
     *_, markdown_port = markdown_server_session
     server_info = repr(state)
-    assert f"localhost:{html_port} - HTML" in server_info
-    assert f"localhost:{markdown_port} - Markdown" in server_info
+    assert f"127.0.0.1:{html_port} - HTML" in server_info
+    assert f"127.0.0.1:{markdown_port} - Markdown" in server_info
 
 
 @pytest.mark.xdist_group(name="server")
@@ -1117,6 +1200,38 @@ def test_kill_all_servers(html_server_session, markdown_server_session):
     state.kill_all_servers()
     assert server_1._stopped
     assert server_2._stopped
+
+
+def test_serve_start_false_preserves_sigint_handler(asyncio_loop):
+    handler = lambda *args: None
+    previous = signal.signal(signal.SIGINT, handler)
+    try:
+        server = get_server(Markdown('foo'), port=0, address='127.0.0.1', show=False, start=False)
+        try:
+            assert signal.getsignal(signal.SIGINT) is handler
+        finally:
+            server.stop()
+    finally:
+        signal.signal(signal.SIGINT, previous)
+
+
+def test_async_execute_without_running_loop_reuses_thread_loop():
+    loops = []
+
+    async def cb():
+        loops.append(asyncio.get_running_loop())
+
+    def run():
+        async_execute(cb)
+        async_execute(cb)
+
+    thread = threading.Thread(target=run)
+    thread.start()
+    thread.join()
+
+    assert len(loops) == 2
+    assert loops[0] is loops[1]
+    assert loops[0] not in getattr(IOLoop, '_ioloop_for_asyncio', {})
 
 
 def test_threaded_server_stop_does_not_leave_unstarted_tasks(monkeypatch):
@@ -1144,6 +1259,16 @@ def test_threaded_server_stop_does_not_leave_unstarted_tasks(monkeypatch):
     gc.collect()
 
     assert [u.object for u in unraisable] == []
+
+
+def test_threaded_server_stop_closes_tornado_loop():
+    serve_and_wait(Markdown('# Title'))
+    server_id = next(iter(state._threads))
+    io_loop = state._servers[server_id][0].io_loop
+
+    state.kill_all_servers()
+
+    assert io_loop.closing
 
 
 @pytest.mark.xdist_group(name="server")
@@ -1780,6 +1905,24 @@ def test_server_exception_handler_bokeh_event(threads, handler, request):
     wait_until(lambda: len(exceptions) == 1)
 
 
+def test_server_busy_cleanup_starts_from_locked_callback():
+    button = Button()
+
+    def app():
+        state.curdoc.add_next_tick_callback(
+            lambda: button._comm_event(state.curdoc, ButtonClick(model=None))
+        )
+        return button
+
+    serve_and_request(app)
+
+    wait_until(lambda: button.clicks == 1)
+    wait_until(lambda: (
+        type(state)._busy_cleanup_scheduled is not None and
+        type(state)._busy_cleanup_scheduled._cb is not None
+    ))
+
+
 @pytest.mark.parametrize(
     'threads, handler', [
         ('threads', synchronous_handler),
@@ -1962,3 +2105,23 @@ def test_reverse_proxy_picks_another_port_when_taken(monkeypatch):
             socket.create_connection(('127.0.0.1', proxy_port), timeout=5).close()
     finally:
         taken.close()
+
+
+@unix_only
+@pytest.mark.parametrize('num_procs', [1, 3])
+def test_serve_show_opens_single_tab(num_procs):
+    script = (
+        "import os\n"
+        "import panel as pn\n"
+        "from bokeh.server.server import Server\n"
+        "Server.show = lambda self, *a, **k: print(f'SHOW {os.getpid()}', flush=True)\n"
+        f"server = pn.serve(lambda: pn.panel('x'), num_procs={num_procs}, show=True,\n"
+        "                  port=0, start=False, verbose=False)\n"
+        "server.io_loop.call_later(1, server.io_loop.stop)\n"
+        "server.io_loop.start()\n"
+        "os._exit(0)\n"
+    )
+    out = subprocess.run(
+        [sys.executable, "-c", script], capture_output=True, text=True, timeout=60
+    ).stdout
+    assert out.count('SHOW') == 1

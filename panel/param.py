@@ -532,6 +532,7 @@ class Param(Pane):
         # Update kwargs
         onkeyup = kw_widget.pop('onkeyup', False)
         throttled = kw_widget.pop('throttled', False)
+        expand_button = kw_widget.pop('expand_button', self_or_cls.expand_button)
         if 'name' in kw_widget and 'label' not in kw_widget:
             kw_widget['label'] = kw_widget.pop('name')
         kw.update(kw_widget)
@@ -714,7 +715,7 @@ class Param(Pane):
         if isinstance(options, dict):
             options = options.values()
         if ((is_parameterized(value) or any(is_parameterized(o) for o in options))
-            and (self_or_cls.expand_button or (self_or_cls.expand_button is None and not self_or_cls.expand))):
+            and (expand_button or (expand_button is None and not self_or_cls.expand))):
             toggle = Toggle(
                 align='end',
                 color='primary',
@@ -961,8 +962,9 @@ class ParamRef(ReplacementPane):
             if not curdoc or (has_context and curdoc.session_context):
                 raise e
         finally:
-            self._async_task = None
-            self._inner_layout.loading = False
+            if self._async_task is task:
+                self._async_task = None
+                self._inner_layout.loading = False
 
     def _replace_pane(self, *args, force=False):
         deferred = self.defer_load and not state.loaded
@@ -971,6 +973,7 @@ class ParamRef(ReplacementPane):
         self._evaled |= force or not (self.lazy or deferred)
         if not self._evaled:
             return
+        scheduled = False
         try:
             if self.object is None:
                 new_object = Spacer()
@@ -989,11 +992,14 @@ class ParamRef(ReplacementPane):
                 new_object = to_async_gen(new_object)
             if inspect.isawaitable(new_object) or isinstance(new_object, types.AsyncGeneratorType):
                 param.parameterized.async_executor(partial(self._eval_async, new_object))
+                scheduled = True
                 return
             else:
                 self._update_inner(new_object)
         finally:
-            self._inner_layout.loading = False
+            # _eval_async clears the loading state once the awaitable completes
+            if not scheduled:
+                self._inner_layout.loading = False
 
     def _update_pane(self, *events):
         callbacks = []

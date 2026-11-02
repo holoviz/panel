@@ -93,7 +93,7 @@ dev = [
 ]
 tests = [
     'psutil' ,
-    'pytest',
+    'pytest <9.2',
     'pytest-asyncio',
     'pytest-rerunfailures <16.0',
     'pytest-xdist',

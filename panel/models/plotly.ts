@@ -133,8 +133,12 @@ const filterEventData = (gd: any, eventData: any, event: string) => {
       const pointData: {[k: string]: any} = {}
       for (const property in fullPoint) {
         const val = fullPoint[property]
+        // Arrays of primitives (e.g. multicategory x, heatmap pointNumber)
+        // are safe; arrays holding objects may be circular or huge.
+        const isPrimitiveArray = Array.isArray(val) &&
+          val.every((v: any) => v === null || typeof v !== "object")
         if (fullPoint.hasOwnProperty(property) &&
-            !Array.isArray(val) && !isPlainObject(val) &&
+            (isPrimitiveArray || (!Array.isArray(val) && !isPlainObject(val))) &&
             val !== undefined)  {
           pointData[property] = val
         }
@@ -293,7 +297,12 @@ export class PlotlyPlotView extends HTMLBoxView {
       return
     }
     const width: number = Math.min(this.model.width || this.el.clientWidth, this.model.max_width || Infinity)
-    const height: number = Math.min(this.model.height || this.el.clientHeight, this.model.max_height || Infinity);
+    const height: number = Math.min(this.model.height || this.el.clientHeight, this.model.max_height || Infinity)
+    // A relayout resets the hover state, dropping clicks right after it
+    const {layout} = this.container
+    if (layout != null && layout.width === width && layout.height === height) {
+      return
+    }
     (window as any).Plotly.relayout(this.container, {width, height})
   }
 

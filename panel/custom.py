@@ -709,8 +709,6 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
 
         Parameters
         ----------
-        event: str
-          Name of the DOM event to add an event listener to.
         callback: callable
           A callable which will be given the msg data.
         """

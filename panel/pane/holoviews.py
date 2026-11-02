@@ -23,7 +23,7 @@ from param.reactive import bind
 from ..config import config
 from ..io import state, unlocked
 from ..layout import (
-    Column, HSpacer, Row, WidgetBox,
+    Column, HSpacer, ListLike, Row, WidgetBox,
 )
 from ..viewable import Layoutable, Viewable
 from ..widgets import (
@@ -139,9 +139,9 @@ class HoloViews(Pane):
         The layout of the plot and the widgets. The value refers to the
         position of the widgets relative to the plot.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    widget_layout: t.Any = param.Selector(
-        objects=[WidgetBox, Row, Column], constant=True, default=WidgetBox, doc="""
-        The layout object to display the widgets in.""")  # type: ignore[assignment, ty:invalid-assignment]
+    widget_layout = param.ClassSelector(
+        class_=ListLike, constant=True, is_instance=False, default=WidgetBox, doc="""
+        The layout object to display the widgets in.""")
 
     widget_type: t.Literal['individual', 'scrubber'] = param.Selector(
         default='individual',
@@ -647,7 +647,8 @@ class HoloViews(Pane):
         from ..theme.base import resolve_component
         if default_widgets is None:
             default_widgets = {}
-        overridden = key in default_widgets
+        # Instances pass a copy of the class defaults unless the user set them
+        overridden = key in default_widgets and default_widgets != cls.default_widgets
         widget_type = default_widgets.get(key, cls.default_widgets.get(key, None))
         if widget_type is None:
             raise ValueError("No valid {key} widget type found.")
@@ -752,6 +753,8 @@ class HoloViews(Pane):
                 if len(vals) > 1 and all(isnumeric(v) or isinstance(v, datetime_types) for v in vals):
                     vals = sorted(vals)
                     labels = [str(dim.pprint_value(v)) for v in vals]
+                    if len(set(labels)) < len(labels):
+                        labels = [str(v) for v in vals]
                     options = dict(zip(labels, vals))
                     widget_type = widget_type or cls._resolve_widget('discrete_numeric', dynamic, default_widgets)
                 elif len(vals) == 1:

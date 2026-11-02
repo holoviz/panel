@@ -84,6 +84,9 @@ export class LocationView extends View {
     const url = `${this.model.pathname}${this.model.search}${this.model.hash}`
 
     if (change === "reload") {
+      if (!this.model.reload) {
+        return
+      }
       window.history.pushState({}, "", url)
       this.model.href = window.location.href
       window.location.reload()
