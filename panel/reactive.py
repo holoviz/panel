@@ -1455,7 +1455,7 @@ class ReactiveData(SyncableData):
                 sorted_values = sorted(values.items(), key=lambda it: int(it[0]))
                 values = [v for _, v in sorted_values]
             values = np.asarray(values)
-            old_col = old_raw[col]
+            old_col: t.Any = old_raw[col]
             if (
                 hasattr(old_raw, 'columns') and values.dtype.kind == 'f' and
                 getattr(old_col.dtype, 'kind', None) in ('i', 'u') and
@@ -1468,7 +1468,7 @@ class ReactiveData(SyncableData):
                 changed = ~((old_float == values) | (np.isnan(old_float) & np.isnan(values)))
                 if not changed.any():
                     continue
-                converted = old_col.copy()
+                converted: t.Any = old_col.copy()
                 converted[changed] = self._convert_column(values[changed], old_col[changed])
                 converted = converted.values
             else:
