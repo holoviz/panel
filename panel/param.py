@@ -673,11 +673,11 @@ class Param(Pane):
             elif throttled and hasattr(widget, 'value_throttled'):
                 updates['value_throttled'] = change.new
                 updates['value'] = change.new
-            elif isinstance(widget, Row) and len(widget) == 2:
-                updates['value'] = change.new
-                widget = widget[0]
             else:
                 updates['value'] = change.new
+
+            if isinstance(widget, Row) and len(widget) == 2:
+                widget = widget[0]
 
             # Ensure we only de-duplicate value events since only
             # the widget value can be controlled from the frontend

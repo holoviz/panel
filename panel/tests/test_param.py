@@ -2210,3 +2210,21 @@ def test_throttled_range_param_repeated_exclusive_boundary(document, comm, value
     assert obj.a == (0.5, 1.5)
     widget._process_events({'value_throttled': (0.7, 1.3)})
     assert obj.a == (0.7, 1.3)
+
+
+def test_param_selector_objects_update_with_parameterized_options():
+    class Option(param.Parameterized):
+        pass
+
+    class Test(param.Parameterized):
+        sel = param.Selector(objects={'a': Option()}, check_on_set=False)
+
+    test = Test()
+    pane = Param(test)
+    row = pane._widgets['sel']
+    assert isinstance(row, Row)
+
+    new = {'a': Option(), 'b': Option()}
+    test.param.sel.objects = new
+
+    assert row[0].options == new
