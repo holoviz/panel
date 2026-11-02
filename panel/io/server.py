@@ -1772,12 +1772,11 @@ def get_server(
     def do_stop(*args, **kwargs):
         server.io_loop.stop()
 
-    try:
-        signal.signal(signal.SIGINT, sig_exit)
-    except ValueError:
-        pass # Can't use signal on a thread
-
     if start:
+        try:
+            signal.signal(signal.SIGINT, sig_exit)
+        except ValueError:
+            pass # Can't use signal on a thread
         server.start()
         # starting an already running loop raises AssertionError on
         # ProactorEventLoop and RuntimeError on SelectorEventLoop

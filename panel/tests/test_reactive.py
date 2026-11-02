@@ -473,6 +473,18 @@ def test_boomerang_value_is_skipped(document, comm):
     assert text_input.value == 'frontend'
     assert 'value' not in text_input._events
 
+def test_reactive_html_child_config_data_model_name():
+
+    class ChildConfigNaming(ReactiveHTML):
+
+        _icon_html = param.String(default='<img>')
+
+        _child_config = {'_icon_html': 'literal'}
+
+        _template = '<div id="div">${_icon_html}</div>'
+
+    assert ChildConfigNaming._data_model.__name__.startswith('ChildConfigNaming')
+
 def test_reactive_html_basic():
 
     class Test(ReactiveHTML):
@@ -807,6 +819,38 @@ def test_reactive_html_scripts_linked_properties_assignment_operator():
                 _scripts = {'render': f'test.onclick = () => {{ data.clicks{sep}{operator}= 1 }}'}
 
             assert TestScripts()._linked_properties == ('clicks',)
+
+@pytest.mark.parametrize('expr', [
+    'data.hb--', 'data.hb++', '--data.hb', '++data.hb', '-- data.hb', 'data.hb --',
+    'x = data.hb-- > 0', 'data.c = 0 < --data.hb ? 1 : 2',
+])
+def test_reactive_html_scripts_linked_properties_increment_decrement(expr):
+
+    class TestScripts(ReactiveHTML):
+
+        hb = param.Integer()
+
+        _template = "<div id='test'></div>"
+
+        _scripts = {'render': f'{expr}'}
+
+    assert 'hb' in TestScripts()._linked_properties
+
+@pytest.mark.parametrize('expr', [
+    'data.hb == 1', 'data.hb === 1', 'data.hb != 1', 'data.hb !== 1',
+    'data.hb <= 1', 'data.hb >= 1', 'data.hb < 1', 'data.hb > 1', 'data.hb + 1',
+])
+def test_reactive_html_scripts_linked_properties_ignores_comparison(expr):
+
+    class TestScripts(ReactiveHTML):
+
+        hb = param.Integer()
+
+        _template = "<div id='test'></div>"
+
+        _scripts = {'render': f'if ({expr}) {{ }}'}
+
+    assert TestScripts()._linked_properties == ()
 
 def test_reactive_html_scripts_update_before_init_does_not_change_shared_scripts():
 
