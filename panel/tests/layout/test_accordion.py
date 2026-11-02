@@ -186,3 +186,15 @@ def test_accordion_active_on_init(document, comm):
         accordion = Accordion("1", "2", active=combination)
         accordion.get_root(document, comm=comm)
         assert accordion.active == combination
+
+
+def test_accordion_clone_retains_params():
+    accordion = Accordion(('A', "1"), ('B', "2"), active=[1], toggle=True, width=300)
+    clone = accordion.clone()
+
+    assert clone.active == [1]
+    assert clone.toggle
+    assert clone.width == 300
+    assert clone._names == ['A', 'B']
+
+    assert accordion.clone(width=400).width == 400

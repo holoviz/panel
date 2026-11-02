@@ -541,6 +541,24 @@ def test_tabs_clone_kwargs():
     assert clone.sizing_mode == 'stretch_height'
 
 
+def test_tabs_clone_retains_params():
+    tabs = Tabs(('A', Div()), ('B', Div()), closable=True, tabs_location='left', active=1)
+    clone = tabs.clone()
+
+    assert clone.closable
+    assert clone.tabs_location == 'left'
+    assert clone.active == 1
+    assert clone._names == ['A', 'B']
+
+
+def test_tabs_clone_kwargs_override_params():
+    tabs = Tabs(('A', Div()), closable=True, tabs_location='left')
+    clone = tabs.clone(tabs_location='right')
+
+    assert clone.closable
+    assert clone.tabs_location == 'right'
+
+
 def test_tabs_setitem_out_of_bounds(document, comm):
     div1 = Div()
     div2 = Div()
