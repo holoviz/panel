@@ -1,4 +1,5 @@
 from datetime import date
+from fractions import Fraction
 
 import pytest
 
@@ -180,6 +181,17 @@ def test_get_min_max_value_rejects_value_above_max(args):
 def test_get_min_max_value_snaps_near_max():
     assert _get_min_max_value(0, 10, 9.9, 3) == (0, 10, 9)
     assert _get_min_max_value(0, 10, 10, 1) == (0, 10, 10)
+
+def test_get_min_max_value_non_float_real():
+    assert _get_min_max_value(0, 1, Fraction(1, 3), Fraction(1, 4)) == (0, 1, Fraction(1, 4))
+    assert _get_min_max_value(Fraction(0), Fraction(1), Fraction(4, 5), Fraction(1, 3)) == (0, 1, Fraction(2, 3))
+
+def test_get_min_max_value_non_float_real_out_of_range():
+    with pytest.raises(ValueError, match='value must be between'):
+        _get_min_max_value(0, 1, Fraction(3, 2), Fraction(1, 4))
+
+def test_get_min_max_value_float_step_has_no_residue():
+    assert _get_min_max_value(0, 5, 2.2, 0.1)[2] == 2.2
 
 def test_tuple_range_interact_with_no_step_and_value():
     def test(a):
