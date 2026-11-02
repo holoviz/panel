@@ -175,6 +175,7 @@ def test_ui_holoviews_widgets_are_material_without_design(panel_ui):
     assert PaneBase.get_pane_type(hmap) is HoloViews
 
 
+@hv_available
 def test_ui_holoviews_pane_widgets_are_material_without_design(panel_ui):
     import holoviews as hv
 
@@ -189,6 +190,7 @@ def test_ui_holoviews_pane_widgets_are_material_without_design(panel_ui):
     ]
 
 
+@hv_available
 def test_holoviews_pane_widgets_are_material(material):
     import holoviews as hv
 
@@ -205,6 +207,7 @@ def test_holoviews_pane_widgets_are_material(material):
     ]
 
 
+@hv_available
 def test_ui_holoviews_pane_keeps_overridden_default_widgets(panel_ui):
     import holoviews as hv
 

@@ -647,11 +647,9 @@ class HoloViews(Pane):
         from ..theme.base import resolve_component
         if default_widgets is None:
             default_widgets = {}
-        default = cls.default_widgets.get(key, None)
-        widget_type = default_widgets.get(key, default)
-        # Instances pass their full default_widgets, so only a widget that
-        # differs from the class default is a user override.
-        overridden = widget_type is not default
+        # Instances pass a copy of the class defaults unless the user set them
+        overridden = key in default_widgets and default_widgets != cls.default_widgets
+        widget_type = default_widgets.get(key, cls.default_widgets.get(key, None))
         if widget_type is None:
             raise ValueError("No valid {key} widget type found.")
         elif isinstance(widget_type, tuple):
