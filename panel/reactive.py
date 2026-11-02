@@ -1486,7 +1486,7 @@ class ReactiveData(SyncableData):
                     if isequal and hasattr(old_raw, 'columns'):
                         # Comparisons involving NA are skipped by .all()
                         import pandas as pd
-                        isequal = bool((pd.isna(old_raw[col]) == pd.isna(converted)).all())
+                        isequal = bool((pd.isna(old_col) == pd.isna(converted)).all())
                 except Exception:
                     isequal = False
             if not isequal:
