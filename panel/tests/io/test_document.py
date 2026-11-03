@@ -432,6 +432,82 @@ def test_unblocked_only_for_document_lock_holder():
 
 
 @pytest.mark.xdist_group(name="server")
+def test_unlocked_writes_immediately_only_for_document_lock_holder(monkeypatch):
+    """
+    Only the context holding the document lock may serialize and write
+    its events right away. Another thread using unlocked() while the
+    lock is held must leave its events to the holder's pending writes.
+    """
+    import panel.io.document as document
+
+    slider = IntSlider()
+
+    serve_and_request(slider)
+    wait_until(lambda: bool(slider._documents))
+
+    doc, model = list(slider._documents.items())[0]
+    session = doc.session_context.session
+    asyncio_loop = doc.session_context.server_context.application_context.io_loop.asyncio_loop
+    monkeypatch.setitem(state._loaded, doc, True)
+
+    socket_writes, bokeh_writes = [], []
+
+    async def send_message(message):
+        bokeh_writes.append(message)
+
+    conn = _FakeConn(lock_held=False)
+    conn.protocol = Protocol()
+    conn.send_message = send_message
+    monkeypatch.setattr(session, '_subscribed_connections', {conn})
+    monkeypatch.setitem(
+        extra_socket_handlers, _FakeSocket,
+        lambda conn, msg=None: socket_writes.append(msg) or []
+    )
+
+    written = []
+    write_from_worker_thread = document._write_from_worker_thread
+
+    def spy(doc, connections, events):
+        result = write_from_worker_thread(doc, connections, events)
+        written.append(result)
+        return result
+
+    monkeypatch.setattr(document, '_write_from_worker_thread', spy)
+
+    entered, release = threading.Event(), threading.Event()
+    pending = {}
+
+    def holder():
+        with set_curdoc(doc), unlocked():
+            model.value = 1
+        pending['holder'] = len(session._pending_writes)
+        entered.set()
+        release.wait(timeout=5)
+
+    def other():
+        with set_curdoc(doc), unlocked():
+            model.value = 2
+        pending['other'] = len(session._pending_writes)
+
+    async def trigger():
+        await session.with_document_locked(holder)
+
+    future = asyncio.run_coroutine_threadsafe(trigger(), asyncio_loop)
+    try:
+        assert entered.wait(timeout=5)
+        thread = threading.Thread(target=other)
+        thread.start()
+        thread.join()
+    finally:
+        release.set()
+    future.result(timeout=5)
+
+    assert written == [True, False]
+    assert pending == {'holder': 0, 'other': 1}
+    wait_until(lambda: len(socket_writes) == 1 and len(bokeh_writes) == 1)
+
+
+@pytest.mark.xdist_group(name="server")
 def test_unblocked_only_for_patch_holder(threads):
     """
     While a client patch is applied on a worker thread only that thread
