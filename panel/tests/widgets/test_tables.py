@@ -2178,6 +2178,19 @@ def test_tabulator_paginated_sorted_selection(document, comm):
     assert table.selection == [1]
 
 
+def test_tabulator_stream_datetime_index():
+    # https://github.com/holoviz/panel/issues/4504
+    index = pd.date_range('2023-01-01', periods=6, freq='8h')
+    df = pd.DataFrame({'j': range(6)}, index=index)
+    table = Tabulator(df)
+
+    table.stream(df.copy(), follow=True)
+
+    assert len(table.value) == 12
+    assert list(table.value['j']) == [*range(6), *range(6)]
+    assert list(table.value.index[:6]) == list(index)
+
+
 def test_tabulator_stream_dataframe(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df)
