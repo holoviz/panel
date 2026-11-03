@@ -299,6 +299,7 @@ class _ClickButton(Widget):
         """
         for k, v in list(callbacks.items()):
             if k == 'clicks':
+                del callbacks[k]
                 k = 'event:'+self._event
             val = self._rename.get(v, v)
             if val is not None:
