@@ -37,3 +37,24 @@ def test_existing_kernel_singleton_preserved():
         "assert Kernel.instance() is kernel\n"
     )
     assert result.returncode == 0, result.stderr
+
+
+def test_existing_kernel_singleton_proxied_in_session():
+    # Serving from a notebook must still resolve the per-document
+    # PanelKernel inside a session.
+    result = _run(
+        "from ipykernel.kernelbase import Kernel\n"
+        "kernel = Kernel.instance()\n"
+        "import panel as pn\n"
+        "pn.extension('ipywidgets')\n"
+        "from bokeh.document import Document\n"
+        "from panel.io.ipywidget import PanelKernel\n"
+        "from panel.io.state import set_curdoc\n"
+        "doc = Document()\n"
+        "with set_curdoc(doc):\n"
+        "    session_kernel = Kernel.instance()\n"
+        "    assert isinstance(session_kernel, PanelKernel)\n"
+        "    assert session_kernel.session._document is doc\n"
+        "assert Kernel.instance() is kernel\n"
+    )
+    assert result.returncode == 0, result.stderr
