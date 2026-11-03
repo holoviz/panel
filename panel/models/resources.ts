@@ -199,12 +199,18 @@ function is_endpoint_url(url: string): boolean {
   return url.includes(`${JUPYTER_ENDPOINT}static/`)
 }
 
-function inject(el: HTMLScriptElement | HTMLLinkElement): Promise<void> {
+/**
+ * A script whose src wraps the url it loads, e.g. the blob that assigns a
+ * module's export, so a fallback has to produce a new wrapper.
+ */
+type Wrapped = {url: string, src: (url: string) => string}
+
+function inject(el: HTMLScriptElement | HTMLLinkElement, wrapped?: Wrapped): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     const attempt = (element: HTMLScriptElement | HTMLLinkElement) => {
       element.addEventListener("load", () => resolve(), {once: true})
       element.addEventListener("error", () => {
-        const url = (element as HTMLScriptElement).src || (element as HTMLLinkElement).href
+        const url = wrapped?.url ?? ((element as HTMLScriptElement).src || (element as HTMLLinkElement).href)
         const fallback = fallback_to_cdn(element, url)
         if (fallback != null) {
           element.remove()
@@ -218,7 +224,7 @@ function inject(el: HTMLScriptElement | HTMLLinkElement): Promise<void> {
             retry.href = fallback
           } else {
             retry.async = (element as HTMLScriptElement).async
-            retry.src = fallback
+            retry.src = wrapped != null ? wrapped.src(fallback) : fallback
           }
           attempt(retry)
           document.head.appendChild(retry)
@@ -336,10 +342,19 @@ function inject_module(url: string, name?: string): Promise<void> {
     el.src = resource_url(url)
     return inject(el)
   }
+  const blobs: string[] = []
+  const src = (target: string) => {
+    const code = `import * as ns from ${JSON.stringify(target)}\nglobalThis[${JSON.stringify(name)}] = ns.default ?? ns\n`
+    const blob = URL.createObjectURL(new Blob([code], {type: "text/javascript"}))
+    blobs.push(blob)
+    return blob
+  }
   url = module_url(url)
-  const code = `import * as ns from ${JSON.stringify(url)}\nglobalThis[${JSON.stringify(name)}] = ns.default ?? ns\n`
-  el.src = URL.createObjectURL(new Blob([code], {type: "text/javascript"}))
-  return inject(el).finally(() => URL.revokeObjectURL(el.src))
+  el.src = src(url)
+  return inject(el, {url, src: (fallback) => {
+    hide_amd_module(fallback)
+    return src(fallback)
+  }}).finally(() => blobs.forEach((blob) => URL.revokeObjectURL(blob)))
 }
 
 function inject_link(url: string): Promise<void> {

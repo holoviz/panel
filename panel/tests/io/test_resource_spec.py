@@ -209,6 +209,18 @@ def test_resource_spec_esm_component():
     assert spec['css'] == ['https://example.com/lib.css']
 
 
+def test_resource_spec_esm_component_without_resources_carries_shim():
+    class Custom(JSComponent):
+        _extension_name = 'test-lazy-resources'
+        _esm = "export function render() {}"
+
+    with set_resource_mode('cdn'):
+        expected = Resources(mode='cdn').adjust_paths(ReactiveESM.__javascript__)[0]
+    spec = resource_spec(Custom, 'cdn')
+    assert 'libs' not in spec
+    assert spec['shim'] == expected
+
+
 def test_resource_spec_reactive_html_component():
     class Custom(ReactiveHTML):
         _extension_name = 'test-lazy-resources'

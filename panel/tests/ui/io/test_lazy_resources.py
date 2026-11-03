@@ -556,6 +556,25 @@ def test_server_url_falls_back_to_spec_cdn(page):
     assert any(url.endswith('/cdn-host-test/lib.js') for url in requests)
 
 
+def test_exported_module_falls_back_to_spec_cdn(page):
+    serve_component(page, lambda: pn.pane.Markdown('host'))
+    page.route('**/static/extensions/panel-host-test/**', lambda route: route.fulfill(status=404))
+    page.route('**/cdn-host-test/**', lambda route: route.fulfill(
+        status=200, content_type='text/javascript', body='export default 42',
+    ))
+    exported = page.evaluate("""async () => {
+        await window.__panel_resources__.ensure({
+            v: 1,
+            libs: [{name: 'host-module-test', modules: [
+                {url: 'static/extensions/panel-host-test/lib.js', export: 'HostModuleTest'},
+            ]}],
+            cdn: [['static/extensions/panel-host-test/', location.origin + '/cdn-host-test/']],
+        })
+        return window.HostModuleTest
+    }""")
+    assert exported == 42
+
+
 def test_library_not_loaded_until_module_exports_assigned(page):
     def app():
         extension()
