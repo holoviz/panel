@@ -1,5 +1,106 @@
 # Releases
 
+## Version 1.10.1
+
+Panel 1.10.1 is a patch release with a large number of bug fixes, many of them for long-standing issues. It restores live updates from long running synchronous callbacks, fixes races on the document lock in threaded apps, and contains fixes for `Tabulator`, `Plotly`, `FloatPanel`, `Tabs`, `ReactiveHTML`, the `Param` pane, the classic templates and serving apps with non-ASCII names. It also adds compatibility with Bokeh 3.10.2 and closes an open redirect in the login flow.
+
+A few fixes change behaviour you may notice after upgrading. Hierarchical `Tabulator` group rows for index levels without an entry in `aggregators` are now left blank instead of showing a sum, which was previously documented as the default; pass `aggregators` explicitly (e.g. `aggregators={'col': 'sum'}`) to keep the sums. `ReactiveHTML` children declared as `'literal'` in `_child_config` are now rendered as (sanitized) HTML markup, where previously the markup was parsed and only its text content was shown. `pn.serve(..., start=False)` and `get_server(start=False)` no longer install Panel's SIGINT handler, so applications that start the event loop themselves should handle SIGINT. Smaller changes are marked in the entries below.
+
+Many thanks to the contributors to this release: @philippjfr, @hoxbro, @ahuang11, @chiruu12, @Cherith1222, @YashAnand69, @AaryanRS, @JoeyTan21, @Web4everyone32, @Jojoussef, @mmporong and @ryandesign.
+
+### ✨ Enhancements
+
+* Let `save` export PNGs with Bokeh's Playwright backend, selected with the new `backend` argument (e.g. `.save('x.png', backend='playwright')`) or `BOKEH_EXPORT_BACKEND`, and apply Panel's page template and idle wait to screenshots again on Bokeh 3.10 ([#8918](https://github.com/holoviz/panel/pull/8918))
+
+### 🔒 Security
+
+* Reject `next_url` values such as `///evil.com` or ones containing control characters, which browsers resolve to another site, in the basic auth and OAuth login redirects ([#8938](https://github.com/holoviz/panel/pull/8938))
+
+### 🐛 Bug Fixes
+
+* Send updates made inside a long running synchronous callback to the browser while it runs instead of only once it returns, so e.g. a loading spinner toggled in the callback shows again ([#8937](https://github.com/holoviz/panel/pull/8937))
+* Only treat the document lock as held by the thread that acquired it, fixing `RuntimeError: _pending_writes should be non-None` and concurrent document writes in threaded apps (`--num-threads`), including on free-threaded Python 3.14 ([#9008](https://github.com/holoviz/panel/pull/9008), [#9009](https://github.com/holoviz/panel/pull/9009))
+* Fix several timing issues: Plotly clicks and hovers right after render being dropped, quick `Tabs` switches leaving broken views, timers scheduled from worker threads firing late, a `Tabulator` scroll right after render being reset, `PeriodicCallback.start()` busy looping, and threaded servers leaking sockets on Windows ([#8869](https://github.com/holoviz/panel/pull/8869))
+* **Behaviour change:** Leave hierarchical `Tabulator` group rows blank for index levels without an aggregator instead of summing every column (and concatenating strings). Pass `aggregators` explicitly, e.g. `aggregators={'grp': 'sum'}`, to keep the previous sums ([#9004](https://github.com/holoviz/panel/pull/9004), [#9011](https://github.com/holoviz/panel/pull/9011))
+* Fix `Tabulator.stream` on a table whose index is a `DatetimeIndex` ([#8858](https://github.com/holoviz/panel/pull/8858))
+* Convert `datetime`, `pd.Timestamp` and `np.datetime64` values in `Tabulator.patch`, which previously raised or wrote the wrong value ([#9000](https://github.com/holoviz/panel/pull/9000))
+* Apply `Tabulator.style` cell styles to the right column when `groups` are set ([#8966](https://github.com/holoviz/panel/pull/8966))
+* Stop highlighting rows on hover when `Tabulator` has `selectable=False` ([#8955](https://github.com/holoviz/panel/pull/8955))
+* Support `Tabulator.jscallback(selection=...)` and raise a clear error when a `jscallback` targets a parameter that only exists in Python ([#8953](https://github.com/holoviz/panel/pull/8953))
+* Stop a `Tabulator` in an inactive tab from keeping the browser's main thread busy ([#8936](https://github.com/holoviz/panel/pull/8936))
+* Keep datetime axes of a `Plotly` pane as dates after `update_traces` or `batch_update` ([#8952](https://github.com/holoviz/panel/pull/8952))
+* Fix the serialization error that dropped `Plotly` updates made inside `fig.batch_update()` ([#8943](https://github.com/holoviz/panel/pull/8943))
+* Include multicategory `x` values and heatmap and image `pointNumber`/`pointIndex` in `Plotly` click, hover and selection data ([#8954](https://github.com/holoviz/panel/pull/8954))
+* Load the full KaTeX stylesheet and bundle its fonts for the `LaTeX` pane, so constructs such as `\hline` render correctly ([#8965](https://github.com/holoviz/panel/pull/8965))
+* Stop the `Markdown` pane from parsing `*` inside `$$...$$` math as emphasis, including while streaming ([#8970](https://github.com/holoviz/panel/pull/8970), [#9014](https://github.com/holoviz/panel/pull/9014))
+* Support Altair's `vegafusion` data transformer in the `Vega` pane ([#8939](https://github.com/holoviz/panel/pull/8939))
+* Render local PDF data in the `PDF` pane with `embed=False` in Chromium ([#8995](https://github.com/holoviz/panel/pull/8995))
+* Keep the per-row structure of nested columns, such as `PathLayer` paths, in `DeckGL` data ([#8982](https://github.com/holoviz/panel/pull/8982))
+* Generate Material UI widgets in `pn.ui.HoloViews`, and design-specific widgets in `pn.pane.HoloViews`, as intended ([#8976](https://github.com/holoviz/panel/pull/8976))
+* Keep one `HoloViews` slider option per `HoloMap` key when formatted labels collide, so every frame can be selected ([#8984](https://github.com/holoviz/panel/pull/8984))
+* Accept `pn.ui` layouts for `HoloViews.widget_layout` and `ChatReactionIcons.default_layout` ([#8932](https://github.com/holoviz/panel/pull/8932))
+* Allow non-string values in `AutocompleteInput` with `restrict=False` ([#8909](https://github.com/holoviz/panel/pull/8909))
+* Allow setting the `value` of `TextInput`, `TextAreaInput` and `PasswordInput` to `None` ([#8917](https://github.com/holoviz/panel/pull/8917))
+* Fix validation of `DatetimeInput` when only `start` or `end` is set ([#8910](https://github.com/holoviz/panel/pull/8910))
+* Show a rounded value (e.g. `0.1` instead of `0.10000000001`) in the `EditableFloatSlider` textbox when no `format` is given, and apply later `format` and `step` changes to it ([#8990](https://github.com/holoviz/panel/pull/8990))
+* **Behaviour change:** Round `interact` slider defaults that fall between steps to the nearest step instead of flooring them, so `(0, 4, 0.5, 1.3)` now starts at `1.5` ([#8947](https://github.com/holoviz/panel/pull/8947), [#9013](https://github.com/holoviz/panel/pull/9013))
+* Size the animated stripes of an active `Progress` bar to its height ([#8981](https://github.com/holoviz/panel/pull/8981))
+* Respect `max_width` and `max_height` when sizing the `Dial` ([#8958](https://github.com/holoviz/panel/pull/8958))
+* Select the right option when a `Select` synced to the URL has numeric-looking options such as `'02'` ([#8960](https://github.com/holoviz/panel/pull/8960))
+* Render bounded `param.DateRange` and `param.CalendarDateRange` parameters without a default in `Param` instead of failing to load the page ([#8859](https://github.com/holoviz/panel/pull/8859))
+* Use an input widget for bounded `param.Number` and `param.Integer` parameters whose value is `None`, which previously failed to render ([#8983](https://github.com/holoviz/panel/pull/8983))
+* Fix updating the `objects` of a `param.Selector` holding `Parameterized` instances in `Param` ([#8985](https://github.com/holoviz/panel/pull/8985))
+* **Behaviour change:** `Widget.from_param` no longer wraps selectors of `Parameterized` objects in a `Row` with an expand toggle; pass `expand_button=True` to opt back in ([#8991](https://github.com/holoviz/panel/pull/8991))
+* Hide a single unpacked `Param` widget when its parameter's `precedence` drops below the display threshold ([#8992](https://github.com/holoviz/panel/pull/8992))
+* Update the tab title when a `Tabs` entry is renamed but keeps the same pane ([#8944](https://github.com/holoviz/panel/pull/8944))
+* Support param references for `objects` in `Tabs`, `Accordion` and `FloatPanel` ([#8997](https://github.com/holoviz/panel/pull/8997))
+* Retain parameters such as `closable` and `tabs_location` when cloning `Tabs` and `Accordion`, clamping `active` to the new objects ([#8999](https://github.com/holoviz/panel/pull/8999), [#9012](https://github.com/holoviz/panel/pull/9012))
+* Fix `clone` for components whose read-only parameters were edited with `param.edit_constant` ([#8948](https://github.com/holoviz/panel/pull/8948))
+* Stop a child from disappearing from `pn.ui` layouts when children are swapped in `ReactComponent` ([#8935](https://github.com/holoviz/panel/pull/8935))
+* Size a `FloatPanel` with `contained=False` to its content, while respecting a height set through `config={'panelSize': ...}` ([#8987](https://github.com/holoviz/panel/pull/8987), [#9015](https://github.com/holoviz/panel/pull/9015))
+* Make `FloatPanel` children with stretching sizing modes fill the panel height ([#9001](https://github.com/holoviz/panel/pull/9001))
+* Let `VSpacer` fill the sidebar height in the Fast, Vanilla, React and Bootstrap templates ([#8971](https://github.com/holoviz/panel/pull/8971))
+* Paint plots placed in the modal of the Fast templates in Chromium ([#8972](https://github.com/holoviz/panel/pull/8972))
+* Size `scale_both` and `scale_height` content, such as responsive HoloViews plots with an `aspect`, in the Fast template ([#8993](https://github.com/holoviz/panel/pull/8993))
+* Use the accent colour for the active Bokeh toolbar tool in the Fast templates ([#9002](https://github.com/holoviz/panel/pull/9002))
+* Show the slides when `SlidesTemplate` has `main_max_width` set ([#8978](https://github.com/holoviz/panel/pull/8978))
+* Show the configured disconnect and ready notifications for templates built outside a session, e.g. before `template.show()` ([#8942](https://github.com/holoviz/panel/pull/8942))
+* **Behaviour change:** Fix `ReactiveHTML` components with `'literal'` children failing to render the page, and render literal children as (sanitized) HTML markup rather than only their text content ([#8989](https://github.com/holoviz/panel/pull/8989))
+* Detect `++` and `--` assignments to `data.*` in `ReactiveHTML` scripts and no longer mistake comparisons for assignments ([#8998](https://github.com/holoviz/panel/pull/8998))
+* Report the correct `event.node` for `ReactiveHTML` callbacks shared between several nodes ([#8962](https://github.com/holoviz/panel/pull/8962))
+* Warn instead of raising when `.controls()` cannot link a parameter to a missing model property ([#8979](https://github.com/holoviz/panel/pull/8979))
+* **Behaviour change:** Keep the loading indicator of an async `ParamFunction` or `ParamMethod` on until the function completes ([#8946](https://github.com/holoviz/panel/pull/8946))
+* **Behaviour change:** Only inherit `Pipeline` stage values from stages on the current route, so values from abandoned branches no longer leak into a stage ([#8986](https://github.com/holoviz/panel/pull/8986))
+* Serve applications whose name or route contains non-ASCII characters, and show their decoded names on the index page ([#8950](https://github.com/holoviz/panel/pull/8950), [#9017](https://github.com/holoviz/panel/pull/9017))
+* Honor `pn.config.admin_endpoint` and `PANEL_ADMIN_ENDPOINT` ([#8945](https://github.com/holoviz/panel/pull/8945))
+* Open a single browser tab when serving with `num_procs > 1` and `show=True` ([#8963](https://github.com/holoviz/panel/pull/8963))
+* Mount WSGI apps such as Flask at their route and `prefix` so their routes resolve ([#8967](https://github.com/holoviz/panel/pull/8967))
+* **Behaviour change:** Only install Panel's SIGINT handler in `get_server` and `pn.serve` when `start=True`; applications that start the event loop themselves should handle SIGINT ([#9003](https://github.com/holoviz/panel/pull/9003))
+* Reload the page when `pn.state.location.reload = True` is set while building the app, and no longer reload when it is set to `False` ([#8964](https://github.com/holoviz/panel/pull/8964))
+* Give `pn.state.session_info` watchers distinct old and new values and make concurrent updates safe ([#8957](https://github.com/holoviz/panel/pull/8957), [#9016](https://github.com/holoviz/panel/pull/9016))
+* Fix `MultipleInstanceError` from `Kernel.instance()` (e.g. in ipyleaflet) after loading the `ipywidgets` extension ([#8949](https://github.com/holoviz/panel/pull/8949))
+* Run `Terminal` subprocesses with `exec` so the server's exit handlers no longer run in the forked child ([#8940](https://github.com/holoviz/panel/pull/8940))
+* Inline component stylesheets, e.g. for `Tabulator`, when saving with `resources='inline'` ([#8969](https://github.com/holoviz/panel/pull/8969))
+* Only merge embedded widgets that share a label when their type and options also match ([#8974](https://github.com/holoviz/panel/pull/8974))
+* Fix `pn.cache` returning the result for a different float with the same hash, such as `-1.0` for `-2.0` ([#8922](https://github.com/holoviz/panel/pull/8922))
+* Avoid a `RecursionError` when passing self-referential containers to a `pn.cache` function ([#8923](https://github.com/holoviz/panel/pull/8923))
+* Fix typos in `panel compile` messages ([#8880](https://github.com/holoviz/panel/pull/8880))
+
+### ⚙️ Compatibility
+
+* Add compatibility with Bokeh 3.10.2, which clamps slider values to their range; editable sliders now widen their range in Python, and changing `fixed_start` or `fixed_end` clamps the value into the new bounds ([#8927](https://github.com/holoviz/panel/pull/8927))
+* Bump `dompurify` to 3.4.17 ([#8908](https://github.com/holoviz/panel/pull/8908))
+
+### ⚠️ Deprecations and Removals
+
+* `TerminalSubprocess.run` keyword arguments other than `shell`, `cwd`, `env` and `executable` (e.g. `timeout` or `check`) are now ignored with a deprecation warning and will be removed in Panel 2.0 ([#8940](https://github.com/holoviz/panel/pull/8940))
+
+### 📚 Documentation
+
+* Correct the `Tabulator` reference, which stated that hierarchical index levels default to the `sum` aggregator ([#9011](https://github.com/holoviz/panel/pull/9011))
+* Restore the Architecture and Styling sections in the Explanation navigation ([#8977](https://github.com/holoviz/panel/pull/8977))
+* Remove nonexistent parameters from the `on_msg` and `show_server` docstrings ([#8926](https://github.com/holoviz/panel/pull/8926))
+
 ## Version 1.10.0
 
 Panel 1.10.0 is a major step towards Panel 2.0. The headline is `panel.ui`, a single namespace that combines the Material UI components from `panel-material-ui` with the classic Panel components that have no Material equivalent, together with a `panel migrate` codemod that rewrites existing apps to use it. Panel now also ships its own native ASGI server, replacing `bokeh-fastapi` and `bokeh-django`, so `panel serve --server fastapi|asgi` works out of the box and OAuth behaves identically across transports.
