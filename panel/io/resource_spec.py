@@ -270,8 +270,17 @@ def _shim_url(resources: Resources) -> str | None:
     return urls[0] if urls else None
 
 
+def _is_esm(cls: type) -> bool:
+    from ..custom import ReactiveESM
+    return isinstance(cls, type) and issubclass(cls, ReactiveESM)
+
+
 @lru_cache(maxsize=None)
 def _has_resources(cls: type) -> bool:
+    # Every ESM component imports through es-module-shims, which a host
+    # that renders the output itself may not have loaded.
+    if _is_esm(cls):
+        return True
     mro = getattr(cls, '__mro__', (cls,))
     return any(
         attr in supcls.__dict__
@@ -301,7 +310,8 @@ def _build_spec(cls: type, mode: str) -> dict[str, t.Any] | None:
             for i, (raw, url) in enumerate(modules)
         ]
 
-        if not entries and not css:
+        esm = _is_esm(cls)
+        if not entries and not css and not esm:
             return None
 
         spec: dict[str, t.Any] = {'v': SPEC_VERSION}
@@ -309,7 +319,7 @@ def _build_spec(cls: type, mode: str) -> dict[str, t.Any] | None:
             spec['libs'] = _build_libs(cls, entries, skip)
         if css:
             spec['css'] = css
-        if modules:
+        if modules or esm:
             shim = _shim_url(resources)
             if shim:
                 spec['shim'] = shim
