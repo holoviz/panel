@@ -516,6 +516,8 @@ class _config(_base_config):
             new = {p: getattr(self, p) for p in self.param}
             restore = {k: v for k, v in values if v is not new.get(k)}
             self.param.update(**restore)
+            # Restoring a non-empty notification message re-enables notifications
+            self.notifications = dict(values)['notifications']
             for k, v in overrides:
                 setattr(self, k+'_', v)
 

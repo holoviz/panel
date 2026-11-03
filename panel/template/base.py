@@ -741,7 +741,7 @@ class BasicTemplate(BaseTemplate):
         if 'favicon' in params and isinstance(params['favicon'], PurePath):
             params['favicon'] = str(params['favicon'])
         if 'notifications' not in params and config.notifications:
-            params['notifications'] = state.notifications if state.curdoc else NotificationArea()
+            params['notifications'] = state.notifications if state.curdoc else NotificationArea(js_events=state._notification_js_events())
 
         super().__init__(template=template, **params)
         self._js_area = HTML(margin=0, width=0, height=0)
