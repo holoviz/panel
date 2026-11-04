@@ -35,11 +35,23 @@ class Modal(Dialog):
     _rename = {'background_close': None}
 
     def __init__(self, *objects, **params):
+        params.setdefault('width_option', False)
         if 'background_close' in params:
             params.setdefault('close_on_click', params['background_close'])
         elif 'close_on_click' in params:
             params['background_close'] = params['close_on_click']
         super().__init__(*objects, **params)
+
+    def _process_param_change(self, params):
+        if 'width' in params or 'sx' in params:
+            width = params.get('width', self.width)
+            sx = dict(params.get('sx', self.sx) or {})
+            if width is not None:
+                paper_sx = dict(sx.get('& .MuiDialog-paper', {}))
+                paper_sx.setdefault('width', f'{width}px')
+                sx['& .MuiDialog-paper'] = paper_sx
+            params['sx'] = sx
+        return super()._process_param_change(params)
 
     @param.depends('background_close', watch=True)
     def _sync_close_on_click(self):
