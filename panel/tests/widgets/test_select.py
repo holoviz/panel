@@ -108,6 +108,24 @@ def test_autocomplete(document, comm):
     select.value = opts['A']
     assert widget.value == 'A'
 
+
+@pytest.mark.parametrize('limit', [None, 1, 3])
+def test_autocomplete_max_completions(document, comm, limit):
+    select = AutocompleteInput(options=['Alpha', 'Alpine', 'Alps'], max_completions=limit)
+    widget = select.get_root(document, comm=comm)
+
+    assert widget.max_completions == limit
+    select.max_completions = 2
+    assert widget.max_completions == 2
+    select.max_completions = None
+    assert widget.max_completions is None
+
+
+@pytest.mark.parametrize('limit', [0, -1])
+def test_autocomplete_max_completions_invalid(limit):
+    with pytest.raises(ValueError, match='max_completions'):
+        AutocompleteInput(max_completions=limit)
+
 def test_autocomplete_unrestricted(document, comm):
     opts = {'A': 'a', '1': 1}
     select = AutocompleteInput(options=opts, value=opts['1'], label='Autocomplete', restrict=False)
