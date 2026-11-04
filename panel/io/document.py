@@ -672,13 +672,17 @@ def _write_from_worker_thread(
     only writes them once the callback returns, so that a long running
     callback can still report progress.
 
-    Only safe while bokeh has no pending writes of its own: the message
-    is serialized here, while the callback holds the Document lock, and
+    Only safe while bokeh has no pending writes of its own and the
+    calling context owns the Document lock: the message is serialized
+    here, while the callback holds the Document lock, and
     the write is scheduled on the event loop ahead of bokeh's, so the
     client always receives models before they are referenced.
     """
     patches = [e for e in events if isinstance(e, DocumentPatchedEvent)]
-    if state._on_loop_thread or not patches or len(patches) != len(events):
+    if (
+        state._on_loop_thread or not state._document_lock_held or
+        not patches or len(patches) != len(events)
+    ):
         return False
     loop = state._document_loop(doc)
     asyncio_loop = t.cast(
