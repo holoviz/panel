@@ -233,10 +233,11 @@ class PanelKernel(Kernel):
         return wrapper
 
 # Patch kernel and widget objects
-if _ORIG_KERNEL is None or isinstance(_ORIG_KERNEL, (BokehKernel, str)):
-    if not isinstance(_ORIG_KERNEL, BokehKernel):
-        _ORIG_KERNEL = BokehKernel()
-    ipykernel.kernelbase.Kernel._instance = classproperty(_get_kernel)  # type: ignore
-else:
-    ipykernel.kernelbase.Kernel._instance = _ORIG_KERNEL  # type: ignore
+# The proxy is installed even when a real kernel already exists (e.g. when
+# serving from a notebook) so that Kernel.instance() resolves to the
+# per-document PanelKernel inside a session and to the original kernel
+# everywhere else.
+if not isinstance(_ORIG_KERNEL, Kernel):
+    _ORIG_KERNEL = BokehKernel()
+ipykernel.kernelbase.Kernel._instance = classproperty(_get_kernel)  # type: ignore
 Widget.on_widget_constructed(_on_widget_constructed)
