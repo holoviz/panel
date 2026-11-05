@@ -58,3 +58,11 @@ panel serve app.py admin.py ... --oauth-guest-endpoints /app
 ```
 
 This will allow users to access the `/app` endpoint as a guest but force them through the login flow if they attempt to access the `/admin` endpoint.
+
+A guest endpoint also covers every path below it, so `/app` above additionally allows `/app/ws`. That matters for any asset a custom login or logout template references, because those pages are served before the user has authenticated. If your template loads something from a directory served with `--static-dirs`, list its slug:
+
+```bash
+panel serve app.py ... --oauth-guest-endpoints /assets --static-dirs assets=./assets
+```
+
+With that in place an `<img src="assets/logo.png">` in `--basic-login-template` is served to anonymous visitors instead of being redirected to the login page. Match is on path segments, so listing `/assets` does not make `/assets-private` public.
