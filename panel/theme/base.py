@@ -62,7 +62,10 @@ class Theme(param.Parameterized):
     modifiers: t.ClassVar[dict[type[Viewable], dict[str, t.Any]]] = {}
 
 
-BOKEH_DARK = dict(_dark_minimal.json)
+BOKEH_DARK = {
+    **_dark_minimal.json,
+    'attrs': {**_dark_minimal.json['attrs'], 'Segment': {'line_color': '#E0E0E0'}}
+}
 BOKEH_DARK['attrs']['Plot'].update({
     "background_fill_color": "#2b3035",
     "border_fill_color": "#212529",
