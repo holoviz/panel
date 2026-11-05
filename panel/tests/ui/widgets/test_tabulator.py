@@ -2492,6 +2492,23 @@ def test_tabulator_edit_event_empty_to_nan(page, df_mixed):
     assert page.query_selector('text="-"') is not None
 
 
+def test_tabulator_edit_masked_int_clear_cell_to_na(page):
+    df = pd.DataFrame({'A': pd.array([1, 2, 3], dtype='Int64')})
+    widget = Tabulator(df)
+
+    serve_component(page, widget)
+
+    cell = page.locator('.tabulator-cell[tabulator-field="A"]').nth(1)
+    cell.click()
+    editable_cell = page.locator('input[type="number"]')
+    editable_cell.fill('')
+    editable_cell.press('Enter')
+
+    wait_until(lambda: widget.value['A'].isna().tolist() == [False, True, False], page)
+    assert widget.value['A'].dtype == pd.Int64Dtype()
+    assert widget.value['A'].iloc[1] is pd.NA
+
+
 @pytest.mark.parametrize('pagination', ['remote', 'local'])
 def test_tabulator_pagination(page, df_mixed, pagination):
     page_size = 2

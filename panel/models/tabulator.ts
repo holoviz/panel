@@ -1740,7 +1740,9 @@ export class DataTabulatorView extends HTMLBoxView {
     const index = cell.getData()._index
     const value = cell._cell.value
     const key = `${field}:${index}`
-    if (column_def.validator === "numeric" && value === "") {
+    const column = this.model.source.get_column(field)
+    const nullable = Array.isArray(column) || column instanceof Float64Array || column instanceof Float32Array
+    if (nullable && (column_def.validator === "numeric" || column_def.validator === "integer") && value === "") {
       // setValue below re-triggers cellEdited recursively for the actual
       // (NaN) edit. By then cell._cell.oldValue has already been overwritten
       // with this now-discarded "" attempt, so the true pre-edit value is
