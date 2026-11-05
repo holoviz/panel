@@ -351,3 +351,29 @@ def test_pyodide_test_convert_resources_app(http_serve, page, runtime):
     expect(page.locator('.markdown')).to_have_text(resource_path.read_text().replace('```', '').replace('{pyodide}', ''))
 
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
+
+
+@pytest.mark.skipif(shutil.which('node') is None or shutil.which('npm') is None, reason='Bundling requires node and npm')
+@pytest.mark.parametrize('runtime', ['pyodide', 'pyodide-worker'])
+def test_pyodide_test_convert_offline_tabulator_app(http_serve, page, runtime):
+    external = []
+
+    def block_external(route):
+        if route.request.url.startswith(HTTP_URL):
+            route.continue_()
+        else:
+            external.append(route.request.url)
+            route.abort()
+
+    page.route('**/*', block_external)
+
+    msgs = wait_for_app(http_serve, tabulator_app, page, runtime, offline=True)
+
+    expect(page.locator('.tabulator-cell[tabulator-field="a"]')).to_have_count(3)
+
+    # Changing the theme loads a stylesheet that is only referenced at runtime
+    with page.expect_response(lambda r: 'tabulator_fast.min.css' in r.url and r.ok):
+        page.click('.bk-btn')
+
+    assert external == []
+    assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url'] and 'theme/.css' not in msg.text] == []

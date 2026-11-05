@@ -14,6 +14,8 @@ The ``panel convert`` command has the following options:
     -h, --help            show this help message and exit
     --to TO               The format to convert to, one of 'pyodide' (default), 'pyodide-worker', 'pyscript' or 'pyscript-worker'
     --compiled            Whether to use the compiled and faster version of Pyodide.
+    --bundle              Whether to bundle Pyodide and all Python dependencies alongside the app(s) instead of loading them from a CDN and PyPI. Requires node and npm.
+    --offline             Whether to also bundle the JS and CSS assets of Panel and its extensions so the app(s) can be served without any network access. Implies --bundle.
     --out OUT             The directory to write the file to.
     --title TITLE         A custom title for the application(s).
     --skip-embed          Whether to skip embedding pre-rendered content in the converted file to display content while app is loading.
@@ -134,6 +136,36 @@ PANEL_PYODIDE_CDN_ROOT="https://intranet.example.com/pyodide/" panel convert scr
 ```
 
 The self-hosted copy has to mirror the layout of the jsDelivr CDN, i.e. Pyodide is loaded from `<root>/<version>/full/` (or `<root>/<version>/pyc/` for `--compiled` builds), where the version is the one in `panel.io.convert.PYODIDE_VERSION`. The Panel and Bokeh wheels are loaded from the Panel CDN, which can be configured in the same way with `PANEL_CDN_ROOT`.
+
+Alternatively, build the application with `--offline` on a machine with network access and copy the output into the air-gapped environment, see [Offline applications](#offline-applications).
+
+## Bundling dependencies
+
+By default a converted application installs its Python dependencies with `micropip` when it loads, fetching packages from the Pyodide CDN and PyPI. Passing `--bundle` instead resolves the dependencies at build time and writes the Pyodide runtime and every wheel the application needs into a `pyodide/` directory next to the converted files:
+
+```bash
+panel convert script.py --to pyodide-worker --out pyodide --bundle
+```
+
+Each application gets its own lockfile (e.g. `pyodide/script-lock.json`) pinning the exact versions it was built against, so bundled applications load reproducibly and skip resolving their environment in the browser. Applications converted together share the same `pyodide/` directory.
+
+Dependencies are resolved by running `micropip` inside Pyodide under Node.js, so `node` and `npm` must be available when converting. The matching version of the `pyodide` npm package is installed into the user cache directory the first time. Resolving requires access to the Pyodide CDN (or `PANEL_PYODIDE_CDN_ROOT`) and PyPI, but only at build time.
+
+Bundling is supported for the `pyodide` and `pyodide-worker` targets.
+
+### Offline applications
+
+A bundled application still loads the Bokeh and Panel JavaScript and CSS from the CDN. To serve an application without any network access, pass `--offline`, which implies `--bundle`:
+
+```bash
+panel convert script.py --to pyodide-worker --out pyodide --offline
+```
+
+In addition to bundling the Python dependencies this inlines the Bokeh and Panel JavaScript into the HTML and copies the stylesheets, fonts and JavaScript of Panel and any Bokeh extensions the application uses into a `static/` directory next to it.
+
+:::note
+Assets are collected from what the converted page references. Libraries an application loads itself at runtime, e.g. ESM components importing modules from a CDN in their `_importmap`, still require network access.
+:::
 
 ## Index
 

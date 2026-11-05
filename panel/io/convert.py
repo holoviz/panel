@@ -100,6 +100,15 @@ from panel.io.pyodide import init_doc, write_doc
 init_doc()
 """
 
+PRE_OFFLINE = """
+import os
+from urllib.parse import urljoin
+
+import js
+
+os.environ['PANEL_CDN_ROOT'] = urljoin(js.location.href, {root!r})
+"""
+
 POST = """
 await write_doc()"""
 
@@ -110,7 +119,7 @@ PYODIDE_SCRIPT = """
 <script type="text/javascript">
 async function main() {
   window.panelLoader?.status('Loading pyodide');
-  let pyodide = await loadPyodide();
+  let pyodide = await loadPyodide({{ pyodide_options }});
   for (const archive of [{{ data_archives }}]) {
     window.panelLoader?.status(`Unpacking ${archive}`);
     let zipResponse = await fetch(archive);
@@ -118,11 +127,15 @@ async function main() {
     await pyodide.unpackArchive(zipBinary, "zip");
   }
   window.panelLoader?.status('Installing environment');
+  {% if bundle %}
+  await pyodide.loadPackage([{{ env_spec }}]);
+  {% else %}
   await pyodide.loadPackage("micropip");
   await pyodide.runPythonAsync(`
     import micropip
     await micropip.install([{{ env_spec }}]);
   `);
+  {% endif %}
   window.panelLoader?.status('Executing code');
   code = `{{ code }}`
   await pyodide.runPythonAsync(code);
@@ -313,7 +326,9 @@ def script_to_html(
     local_prefix: str = LOCAL_PREFIX,
     manifest: str | None = None,
     inline: bool = False,
-    compiled: bool = True
+    compiled: bool = True,
+    bundle: str | None = None,
+    offline: bool = False,
 ) -> tuple[str, str | None]:
     """
     Converts a Panel or Bokeh script to a standalone WASM Python
@@ -343,6 +358,13 @@ def script_to_html(
         Whether to inline resources.
     compiled: bool
         Whether to use pre-compiled pyodide bundles.
+    bundle: str | None
+        Path of a lockfile, relative to the output directory, that
+        references a bundled Pyodide runtime and packages. If provided
+        the requirements must be the names of packages in the lockfile.
+    offline: bool
+        Whether Panel should load its assets from the bundled copy
+        rather than the CDN when running in the browser.
     """
     # Run script
     if hasattr(filename, 'read'):
@@ -372,6 +394,9 @@ def script_to_html(
     # Escape javascript-style format strings.
     source = source.replace('${', '&#36;{')
     code = '\n'.join([PRE, source, post_code])
+    if offline:
+        from .bundle import PANEL_ROOT
+        code = PRE_OFFLINE.format(root=f'{LOCAL_PREFIX}{PANEL_ROOT}') + code
     web_worker = None
     if css_resources is None:
         css_resources = []
@@ -398,13 +423,28 @@ def script_to_html(
             css_resources = []
         data_archives = f'{repr(app_resources)}' if app_resources else ''
         env_spec = ', '.join([repr(req) for req in requirements])
+        if bundle:
+            bundle_root = f'{LOCAL_PREFIX}{pathlib.PurePosixPath(bundle).parent}/'
+            pyodide_url = f'{bundle_root}pyodide.mjs'
+            pyodide_script = f'{bundle_root}pyodide.js'
+            # Pyodide requires absolute URLs to resolve packages against
+            pyodide_options = (
+                f'{{lockFileURL: new URL({json.dumps(LOCAL_PREFIX + bundle)}, location.href).href, '
+                f'packageBaseUrl: new URL({json.dumps(bundle_root)}, location.href).href}}'
+            )
+        else:
+            pyodide_url = _pyodide_url(compiled=compiled, module=True)
+            pyodide_script = _pyodide_url(compiled=compiled)
+            pyodide_options = ''
         code = code.encode('unicode_escape').decode('utf-8').replace('`', r'\`')
         if runtime == 'pyodide-worker':
             if js_resources == 'auto':
                 js_resources = []
             worker_handler = WORKER_HANDLER_TEMPLATE.render({'name': app_name})
             web_worker = WEB_WORKER_TEMPLATE.render({
-                'PYODIDE_URL': _pyodide_url(compiled=compiled, module=True),
+                'PYODIDE_URL': pyodide_url,
+                'pyodide_options': pyodide_options,
+                'bundle': bool(bundle),
                 'data_archives': data_archives,
                 'env_spec': env_spec,
                 'code': code
@@ -412,9 +452,11 @@ def script_to_html(
             plot_script = wrap_in_script_tag(worker_handler)
         else:
             if js_resources == 'auto':
-                js_resources = [f'<script src="{_pyodide_url(compiled=compiled)}" defer></script>']
+                js_resources = [f'<script src="{pyodide_script}" defer></script>']
             script_template = _pn_env.from_string(PYODIDE_SCRIPT)
             plot_script = script_template.render({
+                'pyodide_options': pyodide_options,
+                'bundle': bool(bundle),
                 'data_archives': data_archives,
                 'env_spec': env_spec,
                 'code': code
@@ -494,11 +536,16 @@ def convert_app(
     inline: bool = False,
     compiled: bool = False,
     verbose: bool = True,
+    bundle: bool = False,
+    offline: bool = False,
 ):
     if dest_path is None:
         dest_path = pathlib.Path('./')
     elif not isinstance(dest_path, pathlib.PurePath):
         dest_path = pathlib.Path(dest_path)
+    bundle = bundle or offline
+    if bundle and runtime.startswith('pyscript'):
+        raise ValueError('Bundling is only supported for the pyodide and pyodide-worker runtimes.')
 
     app_folder = os.path.dirname(app)
     app_name = '.'.join(os.path.basename(app).split('.')[:-1])
@@ -507,23 +554,35 @@ def convert_app(
     parsed_requirements = collect_python_requirements(
         app, requirements, panel_version=panel_version
     )
-    # prepare wheels to be available via emscripten MEMFS
     parsed_requirements_rewritten = []
     wheels2pack: dict[str | os.PathLike, str] = {}
-
-    for req in parsed_requirements:
+    lock_file = None
+    if bundle:
+        from .bundle import BUNDLE_DIR, bundle_requirements
+        lock_name = f'{app_name}-lock.json'
         try:
-            req_as_url = urlparse(req)
-            if req_as_url.scheme == 'file':
-                wheel_name = os.path.basename(req_as_url.path)
-                emfs_wheel_path = 'packed_wheels' + '/' + wheel_name
-                parsed_requirements_rewritten.append(f'emfs:{emfs_wheel_path}')
-                wheels2pack[req_as_url.path] = emfs_wheel_path
-            else:
+            parsed_requirements_rewritten = bundle_requirements(
+                parsed_requirements, dest_path, lock_name, compiled=compiled
+            )
+        except Exception as e:
+            print(f'Failed to bundle requirements of {app}: {e}')
+            return
+        lock_file = f'{BUNDLE_DIR}/{lock_name}'
+    else:
+        # prepare wheels to be available via emscripten MEMFS
+        for req in parsed_requirements:
+            try:
+                req_as_url = urlparse(req)
+                if req_as_url.scheme == 'file':
+                    wheel_name = os.path.basename(req_as_url.path)
+                    emfs_wheel_path = 'packed_wheels' + '/' + wheel_name
+                    parsed_requirements_rewritten.append(f'emfs:{emfs_wheel_path}')
+                    wheels2pack[req_as_url.path] = emfs_wheel_path
+                else:
+                    parsed_requirements_rewritten.append(req)
+            except ValueError:
+                # no url, so must be a properly formatted requirement
                 parsed_requirements_rewritten.append(req)
-        except ValueError:
-            # no url, so must be a properly formatted requirement
-            parsed_requirements_rewritten.append(req)
 
     # make a zip out of resources
     resources_validated: dict[str | os.PathLike, str] = {}
@@ -548,6 +607,9 @@ def convert_app(
     else:
         app_resources_packfile = None
 
+    if offline:
+        inline = True
+
     # try to convert the app to a standalone package
     try:
         with set_resource_mode('inline' if inline else 'cdn'):
@@ -561,13 +623,19 @@ def convert_app(
                 panel_version=panel_version,
                 inline=inline,
                 compiled=compiled,
-                local_prefix=local_prefix
+                local_prefix=local_prefix,
+                bundle=lock_file,
+                offline=offline,
             )
     except KeyboardInterrupt:
         return
     except Exception as e:
         print(f'Failed to convert {app} to {runtime} target: {e}')
         return
+
+    if offline:
+        from .bundle import bundle_assets
+        html = bundle_assets(html, dest_path)
 
     # write out the app
     filename = f'{app_name}.html'
@@ -635,6 +703,8 @@ def convert_apps(
     inline: bool = False,
     compiled: bool = False,
     verbose: bool = True,
+    bundle: bool = False,
+    offline: bool = False,
 ):
     """
     Parameters
@@ -676,6 +746,15 @@ def convert_apps(
         Whether to inline resources.
     compiled: bool
         Whether to use the compiled and faster version of Pyodide.
+    bundle: bool
+        Whether to bundle Pyodide and all Python dependencies next to
+        the application(s) instead of loading them from a CDN and PyPI.
+        Requires node and npm to resolve the dependencies.
+    offline: bool
+        Whether to additionally bundle the JS and CSS assets of Panel
+        and its extensions and inline all other resources, so the
+        application(s) can be served without any network access.
+        Implies bundle.
     """
     if isinstance(apps, (str, os.PathLike)):
         apps = [apps]
@@ -686,6 +765,15 @@ def convert_apps(
     dest_path.mkdir(parents=True, exist_ok=True)
 
     manifest = 'site.webmanifest' if build_pwa else None
+
+    bundle = bundle or offline
+    if bundle:
+        if runtime.startswith('pyscript'):
+            raise ValueError('Bundling is only supported for the pyodide and pyodide-worker runtimes.')
+        from .bundle import bundle_pyodide
+
+        # Set up the runtime once, before apps are bundled in parallel
+        bundle_pyodide(dest_path, compiled=compiled)
 
     if isinstance(requirements, dict):
         app_requirements = {}
@@ -709,6 +797,8 @@ def convert_apps(
         'verbose': verbose,
         'compiled': compiled,
         'local_prefix': local_prefix,
+        'bundle': bundle,
+        'offline': offline,
     }
 
     if state._is_pyodide:
@@ -723,6 +813,9 @@ def convert_apps(
 
     if build_index and len(files) >= 1:
         index = make_index(files, manifest=build_pwa, title=title)
+        if offline:
+            from .bundle import bundle_assets
+            index = bundle_assets(index, dest_path)
         with open(dest_path / 'index.html', 'w') as f:
             f.write(index)
         if verbose:
@@ -750,10 +843,14 @@ def convert_apps(
         print('Successfully wrote site.manifest.')
 
     # Write service worker
+    pre_cache = list(img_rel)
+    if bundle:
+        from .bundle import bundle_files
+        pre_cache += bundle_files(dest_path)
     worker = SERVICE_WORKER_TEMPLATE.render(
         uuid=uuid.uuid4().hex,
         name=title or 'Panel Pyodide App',
-        pre_cache=', '.join([repr(p) for p in img_rel])
+        pre_cache=', '.join([repr(p) for p in pre_cache])
     )
     with open(dest_path / 'serviceWorker.js', 'w', encoding='utf-8') as f:
         f.write(worker)
