@@ -174,7 +174,7 @@ class FileDownload(IconMixin):
         '_clicks': 'clicks',
         'button_style': None,
         'callback': None,
-        'color': None,
+        'color': 'button_type',
         'file': None,
         'label': 'label',
         'variant': None,
@@ -201,9 +201,9 @@ class FileDownload(IconMixin):
     def _process_param_change(self, params):
         params = dict(params)
         _merge_button_appearance_aliases_in_param_change(params)
-        if 'button_style' in params or 'css_classes' in params:
+        if 'variant' in params or 'css_classes' in params:
             params['css_classes'] = [
-                params.pop('button_style', self.button_style)
+                params.pop('variant', self.variant)
             ] + params.get('css_classes', self.css_classes)
         return super()._process_param_change(params)
 
