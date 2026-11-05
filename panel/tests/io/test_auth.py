@@ -356,6 +356,29 @@ def test_guest_endpoints_allow_unauthenticated_access(basic_auth_client):
     assert users == ['guest']
 
 
+def test_guest_endpoint_matches_query_string(basic_auth_client):
+    apps = {'/app': lambda: Markdown('# Test app')}
+    with basic_auth_client(apps, oauth_guest_endpoints=['/app']) as client:
+        assert client.get('/app?foo=1').status_code == 200
+
+
+def test_guest_endpoint_matches_static_sub_path(basic_auth_client, tmp_path):
+    (tmp_path / 'logo.png').write_bytes(b'\x89PNG\r\n\x1a\n')
+    apps = {'/app': lambda: Markdown('# Test app')}
+    with basic_auth_client(
+        apps, oauth_guest_endpoints=['/assets'], static_dirs={'assets': str(tmp_path)}
+    ) as client:
+        r = client.get('/assets/logo.png')
+        assert r.status_code == 200
+        assert r.content.startswith(b'\x89PNG')
+
+
+def test_guest_endpoint_requires_segment_boundary(basic_auth_client):
+    apps = {'/app': lambda: Markdown('# Test app'), '/app-private': lambda: Markdown('# Private')}
+    with basic_auth_client(apps, oauth_guest_endpoints=['/app']) as client:
+        assert client.get('/app-private', follow_redirects=False).status_code == 302
+
+
 def test_oauth_optional_allows_unauthenticated_access(basic_auth_client):
     with basic_auth_client(oauth_optional=True) as client:
         assert client.get('/app').status_code == 200

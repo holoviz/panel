@@ -1027,8 +1027,10 @@ class BasicAuthProvider(AuthProvider):
     def _allow_guest(self, uri):
         if config.oauth_optional and not (uri == self._login_endpoint or '?code=' in uri):
             return True
+        path = uri.split('?', 1)[0]
         for gep in self._guest_endpoints:
-            if uri == gep or uri == gep.rstrip('/') + '/ws':
+            gep = gep.split('?', 1)[0].rstrip('/') or '/'
+            if path == gep or path.startswith(gep + '/'):
                 return True
         return False
 

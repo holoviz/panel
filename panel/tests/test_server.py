@@ -212,6 +212,20 @@ def test_server_doc_page_is_not_cached():
     assert r.status_code == 200
     assert r.headers.get('Cache-Control') == 'no-store'
 
+
+def test_guest_endpoint_serves_static_asset_before_login(port):
+    # A login template may reference assets from a --static-dirs directory, so
+    # that directory has to be reachable before the user is authenticated.
+    static = {'tests': os.path.dirname(INDEX_HTML)}
+    serve_and_wait(
+        Markdown('# Title'), port=port, basic_auth="secret-password",
+        cookie_secret="cookie-secret", oauth_guest_endpoints=['/tests'],
+        static_dirs=static,
+    )
+    r = requests.get(f"http://127.0.0.1:{port}/tests/index.html", allow_redirects=False)
+    assert r.status_code == 200
+
+
 def test_unauthenticated_websocket_returns_403(port):
     # An unauthenticated WebSocket upgrade cannot be redirected to a login page,
     # so it must be rejected with a clean 403 rather than raising server-side.
