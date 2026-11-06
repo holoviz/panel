@@ -67,11 +67,13 @@ function module_url(url: string): string {
 const EXTENSION_PATH = "static/extensions/"
 
 /**
- * The part of a server extension url (`static/extensions/<name>/<path>`)
- * that identifies the file wherever it is served from.
+ * The part of a bundled server extension url
+ * (`static/extensions/<name>/bundled/<path>`) that identifies the file
+ * wherever it is served from. Other extension files, e.g. an `index.js`,
+ * are too generic to match on.
  */
 function extension_tail(url: string): string | null {
-  const match = /static\/extensions\/[^/]+\/(.+)$/.exec(url.split(/[?#]/)[0])
+  const match = /static\/extensions\/[^/]+\/(bundled\/.+)$/.exec(url.split(/[?#]/)[0])
   return match == null ? null : `/${match[1]}`
 }
 

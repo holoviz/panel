@@ -532,6 +532,34 @@ def test_library_loaded_by_host_under_rewritten_url(page):
     assert not [url for url in requests if 'static/extensions/panel/bundled/echarts/host-test' in url]
 
 
+def test_unbundled_extension_file_not_matched_by_name(page):
+    """
+    Only bundled paths carry a package and version, so an extension's
+    own `index.js` must not be mistaken for a host file of the same name.
+    """
+    serve_component(page, lambda: pn.pane.Markdown('host'))
+    page.route('**/host-lib/index.js', lambda route: route.fulfill(
+        status=200, content_type='text/javascript', body='',
+    ))
+    page.route('**/static/extensions/panel-host-test/index.js', lambda route: route.fulfill(
+        status=200, content_type='text/javascript', body='window.hostExtLoaded = true',
+    ))
+    loaded = page.evaluate("""async () => {
+        await new Promise((resolve, reject) => {
+            const el = document.createElement('script')
+            el.src = '/host-lib/index.js'
+            el.onload = resolve
+            el.onerror = reject
+            document.head.appendChild(el)
+        })
+        await window.__panel_resources__.ensure({
+            v: 1, libs: [{name: 'host-ext-test', js: ['static/extensions/panel-host-test/index.js']}],
+        })
+        return window.hostExtLoaded
+    }""")
+    assert loaded
+
+
 def test_server_url_falls_back_to_spec_cdn(page):
     """
     A host that does not serve Panel's extension routes at all gets the
