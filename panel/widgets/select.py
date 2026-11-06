@@ -969,6 +969,10 @@ class AutocompleteInput(SingleSelectBase):
     case_sensitive = param.Boolean(default=True, doc="""
         Enable or disable case sensitivity.""")
 
+    max_completions = param.Integer(default=None, bounds=(1, None), allow_None=True, doc="""
+        Maximum number of completions to display. If None, all matching
+        options are displayed.""")
+
     min_characters = param.Integer(default=2, doc="""
         The number of characters a user must type before
         completions are presented.""")
