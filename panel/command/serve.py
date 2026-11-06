@@ -564,7 +564,7 @@ class Serve(_BkServe):
 
             def setup_file():
                 setup_path = state._setup_module.__dict__['__file__']
-                with open(setup_path) as f:
+                with open(setup_path, encoding='utf-8') as f:
                     setup_source = f.read()
                 nodes = ast.parse(setup_source, os.fspath(setup_path))
                 code = compile(nodes, filename=setup_path, mode='exec', dont_inherit=True)

@@ -986,17 +986,17 @@ class BasicAuthProvider(AuthProvider):
         if error_template is None:
             self._error_template = ERROR_TEMPLATE
         else:
-            with open(error_template) as f:
+            with open(error_template, encoding='utf-8') as f:
                 self._error_template = _env.from_string(f.read())
         if logout_template is None:
             self._logout_template = LOGOUT_TEMPLATE
         else:
-            with open(logout_template) as f:
+            with open(logout_template, encoding='utf-8') as f:
                 self._logout_template = _env.from_string(f.read())
         if login_template is None:
             self._login_template = BASIC_LOGIN_TEMPLATE
         else:
-            with open(login_template) as f:
+            with open(login_template, encoding='utf-8') as f:
                 self._login_template = _env.from_string(f.read())
         self._login_endpoint = login_endpoint or '/login'
         self._logout_endpoint = logout_endpoint or '/logout'
