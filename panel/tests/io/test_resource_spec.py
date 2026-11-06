@@ -7,7 +7,8 @@ from panel.config import config, panel_extension as extension
 from panel.custom import JSComponent
 from panel.io import resources as resources_module
 from panel.io.resource_spec import (
-    SPEC_VERSION, declared_specs, lazy_load_available, resource_spec,
+    SPEC_VERSION, _build_spec, declared_specs, lazy_load_available,
+    resource_spec,
 )
 from panel.io.resources import (
     CDN_DIST, JS_VERSION, Resources, set_resource_mode,
@@ -176,6 +177,19 @@ def test_resource_spec_server_mode_carries_cdn_map():
     assert ['static/extensions/panel/', CDN_DIST] in spec['cdn']
 
 
+def test_resource_spec_cdn_map_limited_to_spec_urls(monkeypatch):
+    """
+    The spec is serialized with every model instance, so it only carries
+    the CDN of the extensions its own urls point at.
+    """
+    monkeypatch.setattr('panel.io.resource_spec.extension_cdn_map', lambda: [
+        ('static/extensions/panel/', CDN_DIST),
+        ('static/extensions/unrelated/', 'https://cdn.example.com/unrelated/'),
+    ])
+    spec = _build_spec(PlotlyPlot, 'server')
+    assert spec['cdn'] == [['static/extensions/panel/', CDN_DIST]]
+
+
 def test_resource_spec_cdn_mode_has_no_cdn_map():
     assert 'cdn' not in resource_spec(PlotlyPlot, 'cdn')
 
@@ -219,6 +233,18 @@ def test_resource_spec_esm_component_without_resources_carries_shim():
     spec = resource_spec(Custom, 'cdn')
     assert 'libs' not in spec
     assert spec['shim'] == expected
+
+
+def test_declared_specs_skips_esm_component_without_resources(monkeypatch):
+    class Custom(JSComponent):
+        _extension_name = 'test-lazy-resources'
+        _esm = "export function render() {}"
+
+    built = []
+    monkeypatch.setattr('panel.io.resource_spec._resource_classes', lambda: [Custom])
+    monkeypatch.setattr('panel.io.resource_spec._build_spec', lambda cls, mode: built.append(cls))
+    assert declared_specs('server') == {}
+    assert built == []
 
 
 def test_resource_spec_reactive_html_component():
