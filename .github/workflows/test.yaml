@@ -52,6 +52,7 @@ jobs:
 
   optimize_png:
     name: optimize-png
+    if: github.event_name == 'pull_request'
     runs-on: "ubuntu-latest"
     permissions:
       contents: write
