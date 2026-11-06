@@ -30,7 +30,7 @@ from bokeh.model import Model
 from ..config import config
 from ..util import isurl
 from .resources import (
-    Resources, component_resource_path, extension_declared,
+    Resources, component_resource_path, extension_cdn_map, extension_declared,
     get_notebook_resources, get_resource_mode, resolve_resource_cdn,
     set_resource_mode,
 )
@@ -268,13 +268,43 @@ def _shim_url(resources: Resources) -> str | None:
     return urls[0] if urls else None
 
 
-def _has_resources(cls: type) -> bool:
+def _is_esm(cls: type) -> bool:
+    from ..custom import ReactiveESM
+    return isinstance(cls, type) and issubclass(cls, ReactiveESM)
+
+
+def _declares_resources(cls: type) -> bool:
+    # ReactiveCustomBase declares every attribute as None.
     mro = getattr(cls, '__mro__', (cls,))
     return any(
-        attr in supcls.__dict__
+        supcls.__dict__.get(attr) is not None
         for attr in _RESOURCE_ATTRS
         for supcls in mro
     )
+
+
+def _has_resources(cls: type) -> bool:
+    # Every ESM component imports through es-module-shims, which a host
+    # that renders the output itself may not have loaded.
+    return _is_esm(cls) or _declares_resources(cls)
+
+
+def _spec_cdn_map(spec: dict[str, t.Any]) -> list[list[str]]:
+    """
+    The entries of the extension CDN map the urls of a spec fall under,
+    since the spec is serialized with every model instance.
+    """
+    urls = [
+        url for lib in spec.get('libs', [])
+        for url in (*lib.get('js', []), *(module['url'] for module in lib.get('modules', [])))
+    ]
+    urls += spec.get('css', [])
+    if 'shim' in spec:
+        urls.append(spec['shim'])
+    return [
+        [prefix, cdn] for prefix, cdn in extension_cdn_map()
+        if any(prefix in url for url in urls)
+    ]
 
 
 def _build_spec(cls: type, mode: str) -> dict[str, t.Any] | None:
@@ -298,7 +328,8 @@ def _build_spec(cls: type, mode: str) -> dict[str, t.Any] | None:
             for i, (raw, url) in enumerate(modules)
         ]
 
-        if not entries and not css:
+        esm = _is_esm(cls)
+        if not entries and not css and not esm:
             return None
 
         spec: dict[str, t.Any] = {'v': SPEC_VERSION}
@@ -306,10 +337,15 @@ def _build_spec(cls: type, mode: str) -> dict[str, t.Any] | None:
             spec['libs'] = _build_libs(cls, entries, skip)
         if css:
             spec['css'] = css
-        if modules:
+        if modules or esm:
             shim = _shim_url(resources)
             if shim:
                 spec['shim'] = shim
+        if mode == 'server' and (cdn_map := _spec_cdn_map(spec)):
+            # Server urls only resolve where something serves Panel's
+            # extension routes, which a host embedding the output itself
+            # (e.g. Shiny via jupyter_bokeh) may not do.
+            spec['cdn'] = cdn_map
         return spec
 
 
@@ -410,7 +446,8 @@ def declared_specs(mode: MODES | None = None) -> dict[str, t.Any]:
     libs: dict[str, dict[str, t.Any]] = {}
     css: list[str] = []
     for cls in _resource_classes():
-        if not _has_resources(cls):
+        # A spec with nothing but the shim has no libs or css to declare.
+        if not _declares_resources(cls):
             continue
         try:
             spec = _build_spec(cls, resolved_mode)

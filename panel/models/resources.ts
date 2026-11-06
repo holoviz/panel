@@ -38,6 +38,7 @@ export type ResourceSpec = {
   shim?: string
   timeout?: number
   inline_fallback?: boolean
+  cdn?: [string, string][]
 }
 
 function url_key(url: string): string {
@@ -63,6 +64,43 @@ function module_url(url: string): string {
   return /^[a-z][a-z0-9+.-]*:/i.test(url) ? url : url_key(url)
 }
 
+const EXTENSION_PATH = "static/extensions/"
+
+/**
+ * The part of a bundled server extension url
+ * (`static/extensions/<name>/bundled/<path>`) that identifies the file
+ * wherever it is served from. Other extension files, e.g. an `index.js`,
+ * are too generic to match on.
+ */
+function extension_tail(url: string): string | null {
+  const match = /static\/extensions\/[^/]+\/(bundled\/.+)$/.exec(url.split(/[?#]/)[0])
+  return match == null ? null : `/${match[1]}`
+}
+
+/**
+ * Whether a url is already on the page.
+ *
+ * A host that embeds Panel output itself (Shiny, through jupyter_bokeh)
+ * serves the extension files under its own routes, rewriting the urls the
+ * eager path rendered. The bundled paths carry the package and version,
+ * so a page url ending in the same path is the same file.
+ */
+function on_page(urls: Set<string>, url: string): boolean {
+  if (urls.has(url_key(url))) {
+    return true
+  }
+  const tail = extension_tail(url)
+  if (tail == null) {
+    return false
+  }
+  for (const existing of urls) {
+    if (existing.split(/[?#]/)[0].endsWith(tail)) {
+      return true
+    }
+  }
+  return false
+}
+
 function existing_urls(selector: string, attr: "src" | "href"): Set<string> {
   const urls = new Set<string>()
   for (const el of document.querySelectorAll(selector)) {
@@ -76,12 +114,42 @@ function existing_urls(selector: string, attr: "src" | "href"): Set<string> {
 
 const JUPYTER_ENDPOINT = "/panel-preview/"
 
+/** Server extension paths and their CDN urls, from the specs seen so far. */
+const extension_cdn_map: [string, string][] = []
+
+function register_cdn_map(cdn_map: [string, string][] | undefined): void {
+  for (const [prefix, cdn] of cdn_map ?? []) {
+    if (!extension_cdn_map.some(([known]) => known === prefix)) {
+      extension_cdn_map.push([prefix, cdn])
+    }
+  }
+}
+
+/**
+ * Maps a server extension url to its CDN equivalent, using the map the
+ * resource specs carry in `server` mode, for hosts that serve the page
+ * without Panel's extension routes.
+ */
+function extension_cdn_url(url: string): string | null {
+  const index = url.indexOf(EXTENSION_PATH)
+  if (index === -1) {
+    return null
+  }
+  const path = url.slice(index)
+  for (const [prefix, cdn] of extension_cdn_map) {
+    if (path.startsWith(prefix)) {
+      return cdn + path.slice(prefix.length)
+    }
+  }
+  return null
+}
+
 /**
  * Maps a Jupyter extension endpoint url to its CDN equivalent, using the
  * map of endpoint paths to CDN urls the notebook bootstrap publishes
- * (Panel's dist, every extension with a CDN and each BokehJS file). Null
- * if the url is not served by the endpoint or has no CDN equivalent, e.g.
- * in server/served-app contexts, where the bootstrap never runs.
+ * (Panel's dist, every extension with a CDN and each BokehJS file). Any
+ * other server extension url goes through the map the specs carry. Null
+ * if the url has no CDN equivalent.
  */
 export function cdn_url(url: string): string | null {
   const global = globalThis as any
@@ -91,7 +159,7 @@ export function cdn_url(url: string): string | null {
   }
   const index = url.indexOf(JUPYTER_ENDPOINT)
   if (cdn_map == null || index === -1) {
-    return null
+    return extension_cdn_url(url)
   }
   const path = url.slice(index + JUPYTER_ENDPOINT.length)
   for (const [prefix, cdn] of cdn_map) {
@@ -99,7 +167,7 @@ export function cdn_url(url: string): string | null {
       return cdn + path.slice(prefix.length)
     }
   }
-  return null
+  return extension_cdn_url(url)
 }
 
 /**
@@ -133,22 +201,35 @@ function is_endpoint_url(url: string): boolean {
   return url.includes(`${JUPYTER_ENDPOINT}static/`)
 }
 
-function inject(el: HTMLScriptElement | HTMLLinkElement): Promise<void> {
+/**
+ * A script whose src wraps the url it loads, e.g. the blob that assigns a
+ * module's export, so a fallback has to produce a new wrapper.
+ */
+type Wrapped = {url: string, src: (url: string) => string}
+
+function inject(el: HTMLScriptElement | HTMLLinkElement, wrapped?: Wrapped): Promise<void> {
   return new Promise<void>((resolve, reject) => {
     const attempt = (element: HTMLScriptElement | HTMLLinkElement) => {
       element.addEventListener("load", () => resolve(), {once: true})
       element.addEventListener("error", () => {
-        const url = (element as HTMLScriptElement).src || (element as HTMLLinkElement).href
+        const url = wrapped?.url ?? ((element as HTMLScriptElement).src || (element as HTMLLinkElement).href)
         const fallback = fallback_to_cdn(element, url)
         if (fallback != null) {
           element.remove()
-          if (element instanceof HTMLLinkElement) {
-            element.href = fallback
-          } else {
-            element.src = fallback
+          // A script element only ever runs once, so changing its src and
+          // reinserting it never fetches again.
+          const retry = document.createElement(element.tagName.toLowerCase()) as HTMLScriptElement | HTMLLinkElement
+          for (const {name, value} of Array.from(element.attributes)) {
+            retry.setAttribute(name, value)
           }
-          attempt(element)
-          document.head.appendChild(element)
+          if (retry instanceof HTMLLinkElement) {
+            retry.href = fallback
+          } else {
+            retry.async = (element as HTMLScriptElement).async
+            retry.src = wrapped != null ? wrapped.src(fallback) : fallback
+          }
+          attempt(retry)
+          document.head.appendChild(retry)
           return
         }
         if (is_endpoint_url(url)) {
@@ -263,10 +344,19 @@ function inject_module(url: string, name?: string): Promise<void> {
     el.src = resource_url(url)
     return inject(el)
   }
+  const blobs: string[] = []
+  const src = (target: string) => {
+    const code = `import * as ns from ${JSON.stringify(target)}\nglobalThis[${JSON.stringify(name)}] = ns.default ?? ns\n`
+    const blob = URL.createObjectURL(new Blob([code], {type: "text/javascript"}))
+    blobs.push(blob)
+    return blob
+  }
   url = module_url(url)
-  const code = `import * as ns from ${JSON.stringify(url)}\nglobalThis[${JSON.stringify(name)}] = ns.default ?? ns\n`
-  el.src = URL.createObjectURL(new Blob([code], {type: "text/javascript"}))
-  return inject(el).finally(() => URL.revokeObjectURL(el.src))
+  el.src = src(url)
+  return inject(el, {url, src: (fallback) => {
+    hide_amd_module(fallback)
+    return src(fallback)
+  }}).finally(() => blobs.forEach((blob) => URL.revokeObjectURL(blob)))
 }
 
 function inject_link(url: string): Promise<void> {
@@ -424,10 +514,7 @@ export class ResourceRegistry {
     if (urls.length === 0) {
       return true
     }
-    return urls.every((url) => {
-      const key = url_key(url)
-      return this.urls.has(key) || (scripts != null && scripts.has(key))
-    })
+    return urls.every((url) => this.urls.has(url_key(url)) || (scripts != null && on_page(scripts, url)))
   }
 
   /**
@@ -437,6 +524,7 @@ export class ResourceRegistry {
     if (spec == null) {
       return
     }
+    register_cdn_map(spec.cdn)
     const scripts = existing_urls("script[src]", "src")
     const waits: Promise<unknown>[] = []
     const js: string[] = []
@@ -506,7 +594,7 @@ export class ResourceRegistry {
       const key = url_key(url)
       let promise = this.urls.get(key)
       if (promise == null) {
-        promise = links.has(key) ? Promise.resolve() : inject_link(url)
+        promise = on_page(links, url) ? Promise.resolve() : inject_link(url)
         this.urls.set(key, promise)
       }
       return promise.catch((error: Error) => {
@@ -605,7 +693,7 @@ export class ResourceRegistry {
       const key = url_key(url)
       let promise = this.urls.get(key)
       if (promise == null) {
-        promise = scripts.has(key) ? Promise.resolve() : inject_script(url)
+        promise = on_page(scripts, url) ? Promise.resolve() : inject_script(url)
         this.urls.set(key, promise)
         promise.catch(() => this.urls.delete(key))
       }
@@ -620,7 +708,7 @@ export class ResourceRegistry {
       const key = url_key(url)
       let promise = this.urls.get(key)
       if (promise == null) {
-        promise = scripts.has(key) ? Promise.resolve() : inject_module(url, name)
+        promise = on_page(scripts, url) ? Promise.resolve() : inject_module(url, name)
         this.urls.set(key, promise)
         promise.catch(() => this.urls.delete(key))
       }
