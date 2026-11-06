@@ -15,7 +15,9 @@ import requests
 from starlette.testclient import TestClient
 from tornado.web import create_signed_value, decode_signed_value
 
-from panel.auth import AUTH_PROVIDERS, OAuthLoginHandler, OAuthProvider
+from panel.auth import (
+    AUTH_PROVIDERS, BasicAuthProvider, OAuthLoginHandler, OAuthProvider,
+)
 from panel.config import config
 from panel.io.asgi import build_asgi_app
 from panel.io.state import state
@@ -377,6 +379,15 @@ def test_guest_endpoint_requires_segment_boundary(basic_auth_client):
     apps = {'/app': lambda: Markdown('# Test app'), '/app-private': lambda: Markdown('# Private')}
     with basic_auth_client(apps, oauth_guest_endpoints=['/app']) as client:
         assert client.get('/app-private', follow_redirects=False).status_code == 302
+
+
+def test_guest_endpoint_root_allows_websocket_only():
+    provider = BasicAuthProvider(guest_endpoints=['/'])
+    assert provider._allow_guest('/')
+    assert provider._allow_guest('/ws')
+    assert provider._allow_guest('/?foo=1')
+    assert not provider._allow_guest('/app')
+    assert not provider._allow_guest('//app')
 
 
 def test_oauth_optional_allows_unauthenticated_access(basic_auth_client):
