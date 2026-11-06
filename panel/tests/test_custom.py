@@ -369,3 +369,22 @@ def test_esm_event_reset_does_not_retrigger_watchers(document, comm):
 
     assert values == [True]
     assert model.data.value is False
+
+
+def test_reactive_esm_children_preprocess_jslink(document, comm):
+    from panel.widgets import IntSlider
+
+    container = ESMWithChildren()
+    container.get_root(document, comm)
+
+    w1 = IntSlider(value=1)
+    w2 = IntSlider(value=2)
+    w1.jslink(w2, value='value', bidirectional=True)
+    with set_curdoc(document):
+        container.children = [w1, w2]
+
+    ref = list(container._models.keys())[0]
+    m1 = w1._models[ref][0]
+    m2 = w2._models[ref][0]
+    assert 'change:value' in m1.js_property_callbacks
+    assert 'change:value' in m2.js_property_callbacks

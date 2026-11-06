@@ -658,7 +658,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
                         changing += self._set_on_model(model_msg, root, model)
                     if data_msg:
                         changing += self._set_on_model(data_msg, root, model.data)
-                    if update and update_children and ref in state._views:
+                    if not update and update_children and ref in state._views:
                         state._views[ref][0]._preprocess(root, self, old_children)
                 self._changing[ref] = changing
         finally:
