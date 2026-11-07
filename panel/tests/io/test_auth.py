@@ -368,7 +368,7 @@ def test_guest_endpoint_matches_static_sub_path(basic_auth_client, tmp_path):
     (tmp_path / 'logo.png').write_bytes(b'\x89PNG\r\n\x1a\n')
     apps = {'/app': lambda: Markdown('# Test app')}
     with basic_auth_client(
-        apps, oauth_guest_endpoints=['/assets'], static_dirs={'assets': str(tmp_path)}
+        apps, oauth_guest_endpoints=['/assets/*'], static_dirs={'assets': str(tmp_path)}
     ) as client:
         r = client.get('/assets/logo.png')
         assert r.status_code == 200
@@ -377,8 +377,17 @@ def test_guest_endpoint_matches_static_sub_path(basic_auth_client, tmp_path):
 
 def test_guest_endpoint_requires_segment_boundary(basic_auth_client):
     apps = {'/app': lambda: Markdown('# Test app'), '/app-private': lambda: Markdown('# Private')}
-    with basic_auth_client(apps, oauth_guest_endpoints=['/app']) as client:
+    with basic_auth_client(apps, oauth_guest_endpoints=['/app/*']) as client:
         assert client.get('/app-private', follow_redirects=False).status_code == 302
+
+
+def test_guest_endpoint_plain_entry_covers_no_sub_path(basic_auth_client, tmp_path):
+    (tmp_path / 'logo.png').write_bytes(b'\x89PNG\r\n\x1a\n')
+    apps = {'/app': lambda: Markdown('# Test app')}
+    with basic_auth_client(
+        apps, oauth_guest_endpoints=['/assets'], static_dirs={'assets': str(tmp_path)}
+    ) as client:
+        assert client.get('/assets/logo.png', follow_redirects=False).status_code == 302
 
 
 def test_guest_endpoint_root_allows_websocket_only():
@@ -388,6 +397,24 @@ def test_guest_endpoint_root_allows_websocket_only():
     assert provider._allow_guest('/?foo=1')
     assert not provider._allow_guest('/app')
     assert not provider._allow_guest('//app')
+
+
+def test_guest_endpoint_sub_path_opt_in_forms():
+    for entry in ('/assets/*', '/assets/'):
+        provider = BasicAuthProvider(guest_endpoints=[entry])
+        assert provider._allow_guest('/assets'), entry
+        assert provider._allow_guest('/assets/logo.png'), entry
+        assert provider._allow_guest('/assets?version=1'), entry
+        assert not provider._allow_guest('/assets-private'), entry
+        assert not provider._allow_guest('/'), entry
+
+
+def test_guest_endpoint_plain_entry_is_exact():
+    provider = BasicAuthProvider(guest_endpoints=['/assets'])
+    assert provider._allow_guest('/assets')
+    assert provider._allow_guest('/assets/ws')
+    assert not provider._allow_guest('/assets/logo.png')
+    assert not provider._allow_guest('/assets-private')
 
 
 def test_oauth_optional_allows_unauthenticated_access(basic_auth_client):

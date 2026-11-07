@@ -1629,7 +1629,8 @@ def get_server(
       Whether to automatically refresh OAuth access tokens when they expire.
     oauth_guest_endpoints: list (optional, default=None)
       List of endpoints that can be accessed as a guest without
-      authenticating. An endpoint also covers every path below it.
+      authenticating. End an endpoint with `/*` or `/` to also cover the
+      paths below it.
     oauth_optional: bool (optional, default=None)
       Whether the user will be forced to go through login flow or if
       they can access all applications as a guest.

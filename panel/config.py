@@ -385,7 +385,8 @@ class _config(_base_config):
 
     _oauth_guest_endpoints = param.List(default=None, item_type=str, doc="""
         List of endpoints that can be accessed as a guest without
-        authenticating. An endpoint also covers every path below it.""")
+        authenticating. End an endpoint with `/*` or `/` to also cover the
+        paths below it.""")
 
     _oauth_optional = param.Boolean(default=False, doc="""
         Whether the user will be forced to go through login flow or if

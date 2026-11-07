@@ -238,9 +238,9 @@ class Serve(_BkServe):
             nargs   = '*',
             help    = (
                 "List of endpoints that can be accessed as a guest without authenticating "
-                "(also applies to --basic-auth). An endpoint also covers everything below "
-                "it, so a directory served with --static-dirs can be listed by its slug to "
-                "make login page assets reachable before signing in."
+                "(also applies to --basic-auth). End an endpoint with /* or / to also cover "
+                "the paths below it, so a directory served with --static-dirs can be listed "
+                "by its slug to make login page assets reachable before signing in."
             ),
         )),
         ('--oauth-optional', Argument(
