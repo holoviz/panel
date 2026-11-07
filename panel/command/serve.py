@@ -236,7 +236,12 @@ class Serve(_BkServe):
         ('--oauth-guest-endpoints', Argument(
             action  = 'store',
             nargs   = '*',
-            help    = "List of endpoints that can be accessed as a guest without authenticating.",
+            help    = (
+                "List of endpoints that can be accessed as a guest without authenticating "
+                "(also applies to --basic-auth). End an endpoint with /* or / to also cover "
+                "the paths below it, so a directory served with --static-dirs can be listed "
+                "by its slug to make login page assets reachable before signing in."
+            ),
         )),
         ('--oauth-optional', Argument(
             action  = 'store_true',
