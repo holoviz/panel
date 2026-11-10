@@ -961,6 +961,13 @@ class ColorPicker(Widget):
 
     _rename: t.ClassVar[Mapping[str, str | None]] = {'value': 'color'}
 
+    def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
+        params = super()._process_param_change(params)
+        # The bokeh model needs a color, None shows its default like on creation
+        if 'color' in params and params['color'] is None:
+            params['color'] = '#000000'
+        return params
+
 
 class _NumericInputBase(Widget):
 

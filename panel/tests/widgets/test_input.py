@@ -10,9 +10,9 @@ from bokeh.models.widgets import FileInput as BkFileInput
 from panel import config
 from panel.models.widgets import EnterEvent
 from panel.widgets import (
-    ArrayInput, Checkbox, DatePicker, DateRangePicker, DatetimeInput,
-    DatetimePicker, DatetimeRangeInput, DatetimeRangePicker, FileInput,
-    FloatInput, IntInput, LiteralInput, PasswordInput, StaticText,
+    ArrayInput, Checkbox, ColorPicker, DatePicker, DateRangePicker,
+    DatetimeInput, DatetimePicker, DatetimeRangeInput, DatetimeRangePicker,
+    FileInput, FloatInput, IntInput, LiteralInput, PasswordInput, StaticText,
     TextAreaInput, TextInput, TimePicker,
 )
 
@@ -354,6 +354,15 @@ def test_text_input_value_syncs_value_input_in_one_update(document, comm):
     finally:
         text._param__private.syncing.discard('value')
 
+def test_color_picker_set_value_none(document, comm):
+    picker = ColorPicker(value='#ff0000')
+
+    widget = picker.get_root(document, comm=comm)
+    assert widget.color == '#ff0000'
+
+    picker.value = None
+    assert picker.value is None
+    assert widget.color == '#000000'
 
 def test_text_input_value_input_synced_with_value(document, comm):
     text = TextInput(value='ABC')
