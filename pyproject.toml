@@ -48,6 +48,7 @@ classifiers = [
 
 dependencies = [
     'bokeh >=3.10.0,<3.11.0',
+    'tornado >=6.2',
     'param >=2.1.0,<3.0',
     'pyviz_comms >=2.0.0',
     'panel-material-ui >=0.16.6,<0.17',
