@@ -533,7 +533,7 @@ class HoloViews(Pane):
             del kwargs['width']
         if self.sizing_mode and (self.sizing_mode.endswith('height') or self.sizing_mode.endswith('both')):
             del kwargs['height']
-        child_pane = self._get_pane(backend, state, **kwargs)
+        child_pane = self._get_pane(backend, state, plot.renderer, **kwargs)
         self._update_plot(plot, child_pane)
         model = child_pane._get_model(doc, root, parent, comm)
         if ref in self._plots:
@@ -544,12 +544,13 @@ class HoloViews(Pane):
         self._models[ref] = (model, parent)
         return model
 
-    def _get_pane(self, backend, state, **kwargs):
+    def _get_pane(self, backend, state, renderer, **kwargs):
         pane_type = self._panes.get(backend, panel)
         if isinstance(pane_type, type):
             if issubclass(pane_type, Matplotlib):
                 kwargs['tight'] = True
                 kwargs['format'] = self.format
+                kwargs['dpi'] = renderer.dpi
             if issubclass(pane_type, Bokeh):
                 kwargs['autodispatch'] = False
         return pane_type(state, **kwargs)
