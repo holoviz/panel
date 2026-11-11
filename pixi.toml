@@ -82,7 +82,6 @@ pip = "*"
 # Required
 nh3 = "*"
 bokeh = ">=3.10.0,<3.11.0a0"
-tornado = ">=6.2"
 panel-material-ui = ">=0.16.6,<0.17"
 linkify-it-py = "*"
 markdown = "*"
