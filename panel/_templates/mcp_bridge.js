@@ -328,8 +328,7 @@
 
   bridge.ready = request("ui/initialize", {
     protocolVersion: PROTOCOL_VERSION,
-    capabilities: {},
-    clientInfo: {name: "panel", version: window.__panelMCPVersion__ || "unknown"},
+    appInfo: {name: "panel", version: window.__panelMCPVersion__ || "unknown"},
     appCapabilities: {
       tools: {listChanged: true},
       availableDisplayModes: ["inline", "fullscreen"]
