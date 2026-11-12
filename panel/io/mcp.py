@@ -322,18 +322,26 @@ class MCPApp(Syncable):
         result = await self._request('ui/request-display-mode', {'mode': mode}, timeout)
         return (result or {}).get('mode', mode)
 
-    async def open_link(self, url: str, timeout: float = DEFAULT_TIMEOUT) -> None:
+    async def open_link(self, url: str, timeout: float = DEFAULT_TIMEOUT) -> bool:
         """
         Asks the host to open a URL in the user's browser.
+
+        Hosts usually ask the user to confirm first.
+
+        Returns
+        -------
+        Whether the link was opened, i.e. False if the user declined.
         """
-        await self._request('ui/open-link', {'url': url}, timeout)
+        result = await self._request('ui/open-link', {'url': url}, timeout)
+        return not (result or {}).get('isError', False)
 
     async def send_message(self, text: str, timeout: float = DEFAULT_TIMEOUT) -> None:
         """
-        Sends a message to the host's chat interface as if the user typed it.
+        Proposes a user message to the host's chat interface.
 
-        The host may ask the user to confirm before adding it to the
-        conversation.
+        Hosts differ in what they do with it: some send it, others ask the
+        user to confirm and only pre-fill the chat input (e.g. Claude), so
+        the user always stays in control of what is sent.
         """
         await self._request(
             'ui/message',
@@ -349,8 +357,10 @@ class MCPApp(Syncable):
         """
         Tells the model what the user is currently looking at.
 
-        Each call overwrites the context set by the previous one, and the host
-        supplies it to the model on future turns without adding a chat message.
+        Each call overwrites the context set by the previous one. Hosts differ
+        in how the model receives it: some add it to future turns, others
+        (e.g. Claude) store it and let the model read it on demand, so keep it
+        a compact, self-contained summary.
 
         Parameters
         ----------
@@ -363,6 +373,13 @@ class MCPApp(Syncable):
         if content is not None:
             params['content'] = content
         if structured_content is not None:
+            supported = (self.host_capabilities or {}).get('updateModelContext')
+            if supported is not None and 'structuredContent' not in supported:
+                self.param.warning(
+                    'The host does not advertise structured content support '
+                    'for update_model_context, so it may be dropped; include '
+                    'the information in the text content as well.'
+                )
             params['structuredContent'] = structured_content
         await self._request('ui/update-model-context', params, timeout)
 
