@@ -164,6 +164,9 @@
     if (msg.method === "ui/notifications/host-context-changed") {
       mergeHostContext(msg.params);
       applyHostStyles();
+      if (msg.params && "containerDimensions" in msg.params && document.body) {
+        applyContainerDimensions();
+      }
     }
     dispatchNotification(msg.method, msg.params);
   });
@@ -229,6 +232,12 @@
     var root = document.documentElement;
     var fixedHeight = false;
     var fixedWidth = false;
+    // Hosts switch between fixed and flexible boxes (e.g. fullscreen and back
+    // to inline), so clear whatever the previous context imposed.
+    root.style.height = "";
+    root.style.maxHeight = "";
+    root.style.width = "";
+    root.style.maxWidth = "";
     if (dims) {
       if ("height" in dims && dims.height != null) {
         root.style.height = "100vh";
@@ -246,7 +255,10 @@
     // Only report our own size when the host lets the View drive at least one
     // dimension; otherwise the host already controls the box.
     if (!(fixedHeight && fixedWidth)) {
+      lastWidth = -1;
+      lastHeight = -1;
       startSizeReporting();
+      reportSize();
     }
   }
 

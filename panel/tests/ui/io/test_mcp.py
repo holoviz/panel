@@ -229,6 +229,25 @@ def test_mcp_size_changed(page):
     wait_until(lambda: page.evaluate("() => document.getElementById('view').style.height") == f'{height}px', page)
 
 
+def test_mcp_container_dimensions_follow_display_mode(page):
+    _, frame = serve_in_host(page, lambda: pn.pane.Markdown('Resizable'))
+
+    def root_style():
+        return frame.locator('html').evaluate("el => [el.style.height, el.style.maxHeight]")
+
+    page.evaluate(
+        "() => window.host.setHostContext({displayMode: 'fullscreen', "
+        "containerDimensions: {width: 1200, height: 800}})"
+    )
+    wait_until(lambda: root_style() == ['100vh', ''], page)
+
+    page.evaluate(
+        "() => window.host.setHostContext({displayMode: 'inline', "
+        "containerDimensions: {width: 736, maxHeight: 5000}})"
+    )
+    wait_until(lambda: root_style() == ['', '5000px'], page)
+
+
 def test_mcp_view_opened_top_level(page):
     sessions = []
 

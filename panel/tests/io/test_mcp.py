@@ -13,6 +13,7 @@ from panel.io.mcp import (
 from panel.io.state import state
 from panel.models.mcp import MCPMessageEvent, MCPReplyEvent
 from panel.tests.util import serve_and_request
+from panel.util import edit_readonly
 
 
 @pytest.fixture
@@ -360,6 +361,36 @@ async def test_mcp_request_display_mode_unavailable(mcp_app):
     connect(mcp, model, host_context={'availableDisplayModes': ['inline']})
     with pytest.raises(ValueError):
         await mcp.request_display_mode('pip')
+
+
+async def test_mcp_update_model_context_warns_without_structured_support(mcp_app, caplog):
+    mcp, model, sent = mcp_app
+    with edit_readonly(mcp):
+        mcp.host_capabilities = {'updateModelContext': {'text': {}, 'image': {}}}
+    await _await_request(
+        mcp, model, sent, mcp.update_model_context(structured_content={'year': 2024}), result={}
+    )
+    assert any('structured content' in r.message for r in caplog.records if r.levelname == 'WARNING')
+
+
+async def test_mcp_update_model_context_no_warning_with_structured_support(mcp_app, caplog):
+    mcp, model, sent = mcp_app
+    with edit_readonly(mcp):
+        mcp.host_capabilities = {'updateModelContext': {'text': {}, 'structuredContent': {}}}
+    await _await_request(
+        mcp, model, sent, mcp.update_model_context(structured_content={'year': 2024}), result={}
+    )
+    assert not [r for r in caplog.records if r.levelname == 'WARNING']
+
+
+@pytest.mark.parametrize('result,opened', [({}, True), ({'isError': True}, False)])
+async def test_mcp_open_link_reports_whether_opened(mcp_app, result, opened):
+    mcp, model, sent = mcp_app
+    request, value = await _await_request(
+        mcp, model, sent, mcp.open_link('https://holoviz.org'), result=result
+    )
+    assert request['params'] == {'url': 'https://holoviz.org'}
+    assert value is opened
 
 
 async def test_mcp_request_error_raises_mcp_error(mcp_app):
