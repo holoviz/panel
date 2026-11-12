@@ -11,7 +11,7 @@ function sendPatch(patch, buffers, msg_id) {
 async function startApplication() {
   console.log("Loading pyodide...");
   self.postMessage({type: 'status', msg: 'Loading pyodide'})
-  self.pyodide = await loadPyodide();
+  self.pyodide = await loadPyodide({{ pyodide_options }});
   self.pyodide.globals.set("sendPatch", sendPatch);
   console.log("Loaded pyodide!");
   const data_archives = [{{ data_archives }}];
@@ -21,13 +21,17 @@ async function startApplication() {
     self.postMessage({type: 'status', msg: `Unpacking ${archive}`})
     self.pyodide.unpackArchive(zipBinary, "zip");
   }
-  await self.pyodide.loadPackage("micropip");
   self.postMessage({type: 'status', msg: `Installing environment`})
   try {
+    {% if bundle %}
+    await self.pyodide.loadPackage([{{ env_spec }}]);
+    {% else %}
+    await self.pyodide.loadPackage("micropip");
     await self.pyodide.runPythonAsync(`
       import micropip
       await micropip.install([{{ env_spec }}]);
     `);
+    {% endif %}
   } catch(e) {
     console.log(e)
     self.postMessage({
