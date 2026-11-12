@@ -1521,10 +1521,14 @@ class _state(param.Parameterized):
         mcp = self._mcp_apps[curdoc] = MCPApp()
         return mcp
 
-    @staticmethod
-    def _mcp_requested(doc: Document) -> bool:
-        from ..config import config
+    @classmethod
+    def _mcp_requested(cls, doc: Document) -> bool:
         request = doc.session_context.request if doc.session_context else None
+        return cls._mcp_request(request)
+
+    @staticmethod
+    def _mcp_request(request: t.Any) -> bool:
+        from ..config import config
         values = request.arguments.get('mcp') if request is not None else None
         if not values:
             return bool(config.mcp)

@@ -810,12 +810,26 @@ def test_server_reuse_sessions(reuse_sessions):
     r1, r2 = serve_and_request(app, n=2)
 
     assert len(state._sessions) == 1
-    assert ('/', 'default') in state._sessions
+    assert ('/', 'default', False) in state._sessions
 
-    session = state._sessions[('/', 'default')]
+    session = state._sessions[('/', 'default', False)]
 
     assert session.token in r1.content.decode('utf-8')
     assert session.token not in r2.content.decode('utf-8')
+
+@pytest.mark.xdist_group(name="server")
+def test_server_reuse_sessions_separates_mcp_views(port, reuse_sessions):
+    def app(counts=[0]):
+        content = f'# Count {counts[0]}'
+        counts[0] += 1
+        return content
+
+    serve_and_wait(app, port=port)
+
+    for suffix in ('', '?mcp=1', '', '?mcp=1'):
+        requests.get(f"http://127.0.0.1:{port}/{suffix}", timeout=30)
+
+    assert set(state._sessions) == {('/', 'default', False), ('/', 'default', True)}
 
 def test_server_session_args(port, server_implementation):
     session_args = []

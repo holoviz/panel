@@ -625,7 +625,7 @@ async def resolve_session(
         session = await create_session()
         with set_curdoc(session.document):
             if config.reuse_sessions:
-                key_func = config.session_key_func or (lambda r: (r.path, r.arguments.get('theme', [b'default'])[0].decode('utf-8')))
+                key_func = config.session_key_func or (lambda r: (r.path, r.arguments.get('theme', [b'default'])[0].decode('utf-8'), state._mcp_request(r)))
                 state._session_key_funcs[app_path] = key_func
                 key = key_func(request)
                 state._sessions[key] = session
