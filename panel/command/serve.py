@@ -386,6 +386,14 @@ class Serve(_BkServe):
             action  = 'store_true',
             help    = "Whether to add a global loading spinner to the application(s).",
         )),
+        ('--mcp', Argument(
+            action  = 'store_true',
+            help    = (
+                "Whether to render the application(s) as MCP Apps (SEP-1865) "
+                "Views by default. Without it a View is requested per "
+                "request with the ?mcp=1 query parameter."
+            ),
+        )),
         ('--server', Argument(
             action  = 'store',
             type    = str,
@@ -536,6 +544,7 @@ class Serve(_BkServe):
             config.page_config = args.page_config
 
         config.global_loading_spinner = args.global_loading_spinner
+        config.mcp = args.mcp
         config.reuse_sessions = args.reuse_sessions
 
         if args.root_path:
