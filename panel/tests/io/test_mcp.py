@@ -343,7 +343,7 @@ async def test_mcp_send_message_request(mcp_app):
     mcp, model, sent = mcp_app
     request, _ = await _await_request(mcp, model, sent, mcp.send_message('Hello'), result={})
     assert request['method'] == 'ui/message'
-    assert request['params'] == {'role': 'user', 'content': {'type': 'text', 'text': 'Hello'}}
+    assert request['params'] == {'role': 'user', 'content': [{'type': 'text', 'text': 'Hello'}]}
 
 
 async def test_mcp_request_display_mode_returns_applied_mode(mcp_app):

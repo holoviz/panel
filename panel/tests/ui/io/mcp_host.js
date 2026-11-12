@@ -17,6 +17,7 @@
 
   var METHOD_NOT_FOUND = -32601;
   var INTERNAL_ERROR = -32603;
+  var INVALID_PARAMS = -32602;
 
   function MCPAppHost(iframe, options) {
     options = options || {};
@@ -47,7 +48,7 @@
 
     this.onRequest("ui/initialize", function(params) {
       params = params || {};
-      self.appInfo = params.clientInfo || params.appInfo || null;
+      self.appInfo = params.appInfo;
       self.appCapabilities = params.appCapabilities || null;
       return {
         protocolVersion: self.protocolVersion,
@@ -244,6 +245,14 @@
 
     _handleRequest: function(msg) {
       var self = this;
+      var invalid = validateParams(msg.method, msg.params || {});
+      if (invalid) {
+        this._post({
+          jsonrpc: "2.0", id: msg.id,
+          error: {code: INVALID_PARAMS, message: "Invalid params for " + msg.method + ": " + invalid}
+        });
+        return;
+      }
       var handler = this._requestHandlers[msg.method];
       if (!handler) {
         this._post({
@@ -272,6 +281,56 @@
       }
     }
   };
+
+  function isObject(value) {
+    return value !== null && typeof value === "object" && !Array.isArray(value);
+  }
+
+  // Mirrors the required fields of the View -> Host requests in the ext-apps
+  // spec types, which real hosts validate strictly.
+  function validateParams(method, params) {
+    switch (method) {
+    case "ui/initialize":
+      if (!isObject(params.appInfo) || typeof params.appInfo.name !== "string" ||
+          typeof params.appInfo.version !== "string") {
+        return "appInfo with name and version is required";
+      }
+      if (!isObject(params.appCapabilities)) {
+        return "appCapabilities is required";
+      }
+      if (typeof params.protocolVersion !== "string") {
+        return "protocolVersion is required";
+      }
+      break;
+    case "ui/message":
+      if (params.role !== "user") {
+        return "role must be 'user'";
+      }
+      if (!Array.isArray(params.content)) {
+        return "content must be an array of content blocks";
+      }
+      break;
+    case "ui/update-model-context":
+      if (params.content !== undefined && !Array.isArray(params.content)) {
+        return "content must be an array of content blocks";
+      }
+      if (params.structuredContent !== undefined && !isObject(params.structuredContent)) {
+        return "structuredContent must be an object";
+      }
+      break;
+    case "ui/open-link":
+      if (typeof params.url !== "string") {
+        return "url is required";
+      }
+      break;
+    case "ui/request-display-mode":
+      if (["inline", "fullscreen", "pip"].indexOf(params.mode) < 0) {
+        return "mode must be inline, fullscreen or pip";
+      }
+      break;
+    }
+    return null;
+  }
 
   function toError(error) {
     if (error && typeof error === "object" && typeof error.code === "number" && error.message) {

@@ -73,7 +73,7 @@ def test_mcp_handshake(page):
     methods = [msg.get('method') for msg in host_messages(page)]
     assert methods[:2] == ['ui/initialize', 'ui/notifications/initialized']
     initialize = host_messages(page)[0]
-    assert initialize['params']['clientInfo']['name'] == 'panel'
+    assert initialize['params']['appInfo']['name'] == 'panel'
     assert initialize['params']['appCapabilities']['tools'] == {'listChanged': True}
 
 
@@ -123,6 +123,27 @@ def test_mcp_update_model_context_from_callback(page):
         'structuredContent': {'year': 2024}
     }, page)
     expect(frame.locator('button')).to_have_text('Updated')
+
+
+def test_mcp_send_message_from_callback(page):
+    def app():
+        async def send(event):
+            await state.mcp.send_message('Why are these different?')
+            button.label = 'Sent'
+        button = pn.widgets.Button(label='Send')
+        button.on_click(send)
+        return button
+
+    _, frame = serve_in_host(page, app)
+
+    frame.locator('button').click()
+    expect(frame.locator('button')).to_have_text('Sent')
+    request = next(
+        msg for msg in host_messages(page) if msg.get('method') == 'ui/message'
+    )
+    assert request['params'] == {
+        'role': 'user', 'content': [{'type': 'text', 'text': 'Why are these different?'}]
+    }
 
 
 def test_mcp_call_server_tool(page):

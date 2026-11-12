@@ -337,7 +337,7 @@ class MCPApp(Syncable):
         """
         await self._request(
             'ui/message',
-            {'role': 'user', 'content': {'type': 'text', 'text': text}},
+            {'role': 'user', 'content': [{'type': 'text', 'text': text}]},
             timeout
         )
 
