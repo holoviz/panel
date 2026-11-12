@@ -60,6 +60,7 @@ if t.TYPE_CHECKING:
     from .cache import _Stack
     from .callbacks import PeriodicCallback
     from .location import Location
+    from .mcp import MCPApp
     from .notifications import NotificationAreaBase
     from .server import StoppableThread
 
@@ -203,6 +204,9 @@ class _state(param.Parameterized):
     # Locations
     _location: t.ClassVar[Location | None] = None # Global location, e.g. for notebook context
     _locations: t.ClassVar[WeakKeyDictionary[Document, Location]] = WeakKeyDictionary() # Server locations indexed by document
+
+    # MCP Apps
+    _mcp_apps: t.ClassVar[WeakKeyDictionary[Document, MCPApp]] = WeakKeyDictionary() # MCP App bridges indexed by document
 
     # Notifications
     _notification: t.ClassVar[NotificationAreaBase | None] = None # Global location, e.g. for notebook context
@@ -587,6 +591,10 @@ class _state(param.Parameterized):
             notification = self._notifications[doc]
             notification._server_destroy(session_context)
             del state._notifications[doc]
+
+        if doc in self._mcp_apps:
+            self._mcp_apps[doc]._server_destroy(session_context)
+            del self._mcp_apps[doc]
 
         if doc in self._templates:
             del self._templates[doc]
@@ -1140,6 +1148,7 @@ class _state(param.Parameterized):
         self._indicators.clear()
         self._location = None
         self._locations.clear()
+        self._mcp_apps.clear()
         self._templates.clear()
         self._views.clear()
         self._connected.clear()
@@ -1491,6 +1500,38 @@ class _state(param.Parameterized):
         if config.disconnect_notification:
             js_events['connection_lost'] = {'type': 'error', 'message': config.disconnect_notification}
         return js_events
+
+    @property
+    def mcp(self) -> MCPApp | None:
+        """
+        The MCP Apps (SEP-1865) host connection of the current session.
+
+        Only available when the session was requested as an MCP App View,
+        i.e. served with ``panel serve --mcp`` or requested with the
+        ``?mcp=1`` query parameter, and ``None`` otherwise.
+        """
+        curdoc = self.curdoc
+        if curdoc is None or curdoc.session_context is None:
+            return None
+        if curdoc in self._mcp_apps:
+            return self._mcp_apps[curdoc]
+        if not self._mcp_requested(curdoc):
+            return None
+        from .mcp import MCPApp
+        mcp = self._mcp_apps[curdoc] = MCPApp()
+        return mcp
+
+    @staticmethod
+    def _mcp_requested(doc: Document) -> bool:
+        from ..config import config
+        request = doc.session_context.request if doc.session_context else None
+        values = request.arguments.get('mcp') if request is not None else None
+        if not values:
+            return bool(config.mcp)
+        value = values[-1]
+        if isinstance(value, bytes):
+            value = value.decode('utf-8', errors='ignore')
+        return value.strip().lower() not in ('0', 'false', 'no', 'off')
 
     @property
     def notifications(self) -> NotificationAreaBase | None:

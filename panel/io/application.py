@@ -177,6 +177,9 @@ class Application(BkApplication):
             template = state._templates[doc]
             with set_curdoc(doc):
                 template.server_doc(title=template.title, location=True, doc=doc)
+        if doc.session_context and doc.roots:
+            from .mcp import init_mcp_doc
+            init_mcp_doc(doc)
         def _log_session_destroyed(session_context):
             logger.info(LOG_SESSION_DESTROYED, id(doc))
         doc.destroy = partial(_destroy_document, doc) # type: ignore

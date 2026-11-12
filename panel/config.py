@@ -186,6 +186,11 @@ class _config(_base_config):
     loading_max_height = param.Integer(default=300, doc="""
         Maximum height of the loading indicator.""")
 
+    mcp = param.Boolean(default=False, doc="""
+        Whether to serve applications as MCP Apps (SEP-1865) Views by
+        default, making the host available as ``pn.state.mcp``. Individual
+        requests can override this with the ``mcp`` query parameter.""")
+
     notifications = param.Boolean(default=False, doc="""
         Whether to enable notifications functionality.""")
 
