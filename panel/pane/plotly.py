@@ -4,6 +4,7 @@ bokeh model.
 """
 from __future__ import annotations
 
+import json
 import typing as t
 
 import numpy as np
@@ -123,16 +124,18 @@ class Plotly(ModelPane):
 
     def _to_figure(self, obj):
         import plotly.graph_objs as go
+        frames = None
         if isinstance(obj, (go.Figure, go.FigureWidget)):
             return obj
         elif isinstance(obj, dict):
             data, layout = obj['data'], obj['layout']
+            frames = obj.get('frames')
         elif isinstance(obj, tuple):
             data, layout = obj
         else:
             data, layout = obj, {}
         data = data if isinstance(data, list) else [data]
-        return go.Figure(data=data, layout=layout)
+        return go.Figure(data=data, layout=layout, frames=frames)
 
     @staticmethod
     def _get_sources(json):
@@ -332,7 +335,9 @@ class Plotly(ModelPane):
             layout['shapes'] = [
                 cls._convert_trace(shape) for shape in layout['shapes']
             ]
-        return {'data': data, 'layout': layout}
+        # Frames bypass the ColumnDataSource conversions for arrays and dates.
+        frames = [json.loads(frame.to_json()) for frame in fig.frames]
+        return {'data': data, 'layout': layout, 'frames': frames}
 
     def _init_params(self):
         viewport_params = [p for p in self.param if 'viewport' in p]
