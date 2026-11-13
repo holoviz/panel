@@ -1491,6 +1491,24 @@ def test_tabulator_sorters_int_name_column(document, comm):
     assert df.columns.dtype == np.int64
 
 
+@pytest.mark.parametrize('columns', [
+    ['2027', '2028'],
+    [2027, 2028],
+    pd.MultiIndex.from_tuples([('a', '2027'), ('a', '2028')]),
+], ids=['str', 'int', 'multi_index'])
+def test_tabulator_edit_does_not_rebuild_columns(document, comm, columns):
+    df = pd.DataFrame([[1.0, 3.0], [2.0, 4.0]], columns=columns)
+    table = Tabulator(df)
+    model = table.get_root(document, comm)
+    column_ids = [c.id for c in model.columns]
+    field = model.columns[1].field
+
+    table._process_events({'data': {field: [5.0, 2.0]}})
+
+    assert table.value.iloc[:, 0].tolist() == [5.0, 2.0]
+    assert [c.id for c in model.columns] == column_ids
+
+
 def test_tabulator_stream_series(document, comm):
     df = makeMixedDataFrame()
     table = Tabulator(df)
