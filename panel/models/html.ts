@@ -257,7 +257,9 @@ export class HTMLView extends PanelMarkupView {
       this.set_html(html)
     })
     this.on_change(visible, () => {
-      if (this.model.visible) {
+      // Parents may build child views without rendering them, e.g. collapsed
+      // containers; render() then sets the visibility.
+      if (this.model.visible && this.container != null) {
         this.container.style.visibility = "visible"
       }
     })
@@ -411,7 +413,7 @@ export class HTMLView extends PanelMarkupView {
   }
 
   override style_redraw(): void {
-    if (this.model.visible) {
+    if (this.model.visible && this.container != null) {
       this.container.style.visibility = "visible"
     }
   }
