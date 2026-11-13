@@ -921,6 +921,9 @@ def hold(
                 doc.callbacks._hold = held
             elif comm is not None:
                 from .notebook import push
+
+                # Release the hold so events bokeh is still dispatching are not collected
+                doc.callbacks._hold = None
                 push(doc, comm)
             elif not _client_has_document(doc):
                 _dispatch_events(doc, _drain_unconnected_events(doc, hold_lock))
