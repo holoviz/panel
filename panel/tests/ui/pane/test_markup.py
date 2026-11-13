@@ -6,6 +6,7 @@ pytest.importorskip("playwright")
 
 from playwright.sync_api import expect
 
+from panel.custom import Child, JSComponent
 from panel.layout import Column, Row
 from panel.models import HTML
 from panel.models.markup import HTMLStreamEvent
@@ -91,6 +92,34 @@ def test_markdown_pane_visible_toggle(page):
     md.visible = True
 
     expect(page.locator(".markdown").locator("div")).to_be_visible()
+
+
+class UnrenderedChild(JSComponent):
+
+    child = Child()
+
+    _esm = """
+    export function render() {
+      const div = document.createElement("div")
+      div.className = "unrendered-parent"
+      return div
+    }
+    """
+
+
+def test_markdown_pane_visible_toggle_before_render(page):
+    md = Markdown('Initial', visible=False)
+    errors = []
+    page.on("pageerror", lambda error: errors.append(error))
+
+    serve_component(page, UnrenderedChild(child=md))
+
+    expect(page.locator(".unrendered-parent")).to_be_attached()
+
+    md.visible = True
+
+    page.wait_for_timeout(500)
+    assert errors == []
 
 
 def test_markdown_pane_stream(page):
