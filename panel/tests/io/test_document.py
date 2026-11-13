@@ -17,6 +17,7 @@ from bokeh.protocol import Protocol
 
 import panel as pn
 
+from panel.io.browser import BrowserInfo
 from panel.io.document import (
     _UNCONNECTED_EVENTS, _WRITE_BLOCK, MockSessionContext, _cleanup_doc,
     _client_has_document, _destroy_document, _is_write_blocked,
@@ -886,3 +887,68 @@ def test_init_doc_keeps_unsent_models_new_once():
 
     init_doc(doc)
     assert doc.apply_json_patch is wrapper
+
+
+def test_comm_patch_with_multiple_changes_syncs_all_properties():
+    doc = Document()
+    comm = state._comm_manager.get_server_comm()
+    info = BrowserInfo()
+    model = info._render_model(doc, comm)
+    doc.unhold()
+
+    doc.hold()
+    for attr, value in [
+        ('dark_mode', False), ('device_pixel_ratio', 2.0),
+        ('language', 'en'), ('timezone', 'Europe/Berlin'),
+    ]:
+        model.set_from_json(attr, value, setter=comm.id)
+    doc.unhold()
+
+    assert info.dark_mode is False
+    assert info.device_pixel_ratio == 2.0
+    assert info.language == 'en'
+    assert info.timezone == 'Europe/Berlin'
+    assert doc.callbacks._held_events == []
+
+
+def test_comm_patch_syncs_changes_across_models():
+    doc = Document()
+    comm = state._comm_manager.get_server_comm()
+    info = BrowserInfo()
+    info_model = info._render_model(doc, comm)
+    slider = IntSlider(start=0, end=10, value=0)
+    slider_model = slider._render_model(doc, comm)
+    doc.unhold()
+
+    doc.hold()
+    info_model.set_from_json('dark_mode', True, setter=comm.id)
+    slider_model.set_from_json('value', 5, setter=comm.id)
+    doc.unhold()
+
+    assert info.dark_mode is True
+    assert slider.value == 5
+
+
+def test_hold_with_comm_restores_unheld_state(monkeypatch):
+    pushed = []
+    monkeypatch.setattr('panel.io.notebook.push', lambda doc, comm: pushed.append(comm))
+    doc = Document()
+    comm = state._comm_manager.get_server_comm()
+
+    with hold(doc, comm=comm):
+        pass
+
+    assert doc.callbacks.hold_value is None
+    assert pushed == [comm]
+
+
+def test_hold_with_comm_keeps_persistent_hold(monkeypatch):
+    monkeypatch.setattr('panel.io.notebook.push', lambda doc, comm: None)
+    doc = Document()
+    comm = state._comm_manager.get_server_comm()
+    doc.hold('combine')
+
+    with hold(doc, comm=comm):
+        pass
+
+    assert doc.callbacks.hold_value == 'combine'
