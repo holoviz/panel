@@ -90,6 +90,11 @@ def test_is_dataframe(frame):
     assert is_dataframe(pd.DataFrame(DATA))
 
 
+def test_tabulator_lazy_frame_errors():
+    with pytest.raises(TypeError, match='Lazy frames such as LazyFrame are not supported'):
+        Tabulator(pl.LazyFrame(DATA))
+
+
 def test_sort_frame_matches_pandas_sort(backend):
     data = {
         'str': ['b', 'A', None, 'a', 'B', 'c', 'a'],

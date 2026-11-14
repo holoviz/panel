@@ -1861,7 +1861,7 @@ class Tabulator(BaseTable):
         Equivalent of the header filtering in _process_data for
         DataFrames without an index.
         """
-        if self.pagination != 'remote' or not self.filters:
+        if self.pagination != 'remote' or not any(f['field'] in data for f in self.filters):
             return data
         data = {
             col: [v for _, v in sorted(values.items(), key=lambda it: int(it[0]))]
