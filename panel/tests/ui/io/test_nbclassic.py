@@ -319,17 +319,12 @@ def test_nbclassic_shared_view_comm(page, nbclassic_server):
     expect(counters).to_have_count(2)
     buttons = page.get_by_role('button', name='Increment')
 
-    buttons.last.click()
-    expect(counters.first).to_have_text('1')
-    expect(counters.last).to_have_text('1')
-
-    buttons.first.click()
-    expect(counters.first).to_have_text('2')
-    expect(counters.last).to_have_text('2')
-
-    buttons.last.click()
-    expect(counters.first).to_have_text('3')
-    expect(counters.last).to_have_text('3')
+    # Without the fix the second view only recovers after the comm timeout,
+    # so its second click is the one that stalls
+    for count, button in enumerate([buttons.last, buttons.last, buttons.first], start=1):
+        button.click()
+        expect(counters.first).to_have_text(str(count))
+        expect(counters.last).to_have_text(str(count))
 
 
 def test_nbclassic_warns_when_extension_missing(page, nbclassic_server):

@@ -60,7 +60,11 @@ export class CommManager extends Model {
       this.ns.comm_manager.register_target(this.plot_id, this.comm_id, (msg: any) => {
         for (const view of this.ns.shared_views.get(this.plot_id) ?? []) {
           if (view !== this) {
-            view.msg_handler(msg)
+            try {
+              view.msg_handler(msg)
+            } catch (e) {
+              console.error(e)
+            }
           }
         }
         try {
@@ -74,20 +78,46 @@ export class CommManager extends Model {
         // that opened it receives the acknowledgements
         for (const view of this.ns.shared_views.get(this.plot_id) ?? []) {
           if (view !== this) {
-            view._unblock()
+            try {
+              view._unblock()
+            } catch (e) {
+              console.error(e)
+            }
           }
         }
         this.on_ack(msg)
       })
       this._reconnect = !this._client_comm?.active || false
-      if (this.ns.shared_views == null) {
-        this.ns.shared_views = new Map()
-      }
-      if (this.ns.shared_views.has(this.plot_id)) {
-        this.ns.shared_views.get(this.plot_id).push(this)
-      } else {
-        this.ns.shared_views.set(this.plot_id, [this])
-      }
+      this._register_view()
+    }
+  }
+
+  protected _register_view(): void {
+    if (this.ns == null) {
+      return
+    }
+    if (this.ns.shared_views == null) {
+      this.ns.shared_views = new Map()
+    }
+    const views = this.ns.shared_views.get(this.plot_id)
+    if (views == null) {
+      this.ns.shared_views.set(this.plot_id, [this])
+    } else if (!views.includes(this)) {
+      views.push(this)
+    }
+  }
+
+  protected _unregister_view(): void {
+    this.document?.remove_on_change(this._document_listener)
+    const views = this.ns?.shared_views?.get(this.plot_id)
+    if (views == null) {
+      return
+    }
+    const remaining = views.filter((view: CommManager) => view !== this)
+    if (remaining.length) {
+      this.ns.shared_views.set(this.plot_id, remaining)
+    } else {
+      this.ns.shared_views.delete(this.plot_id)
     }
   }
 
@@ -98,6 +128,14 @@ export class CommManager extends Model {
     if (this.document != null) {
       this.document.on_change(this._document_listener)
     }
+    this._register_view()
+  }
+
+  // Notebook outputs are cleared rather than destroyed, so a disposed view
+  // is only ever detached from its document
+  protected override _doc_detached(): void {
+    this._unregister_view()
+    super._doc_detached()
   }
 
   protected _document_changed(event: DocumentChangedEvent): void {
@@ -170,16 +208,7 @@ export class CommManager extends Model {
 
   override disconnect_signals(): void {
     super.disconnect_signals()
-    const views = this.ns?.shared_views?.get(this.plot_id)
-    if (views == null) {
-      return
-    }
-    const remaining = views.filter((view: CommManager) => view !== this)
-    if (remaining.length) {
-      this.ns.shared_views.set(this.plot_id, remaining)
-    } else {
-      this.ns.shared_views.delete(this.plot_id)
-    }
+    this._unregister_view()
   }
 
   protected _unblock(): void {
