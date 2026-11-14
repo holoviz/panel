@@ -635,6 +635,19 @@ def test_suppress_property_callbacks_keeps_frontend_changes():
     assert frontend_event.callback_invoker is invoker
 
 
+def _rerender_with_linked_range(holder, other):
+    """
+    Re-renders ``holder`` twice, linking ``other`` to a range that only
+    the first render defined, like two HoloViews plots with a shared axis.
+    """
+    shared = Range1d(0, 1)
+    holder.children = [figure(x_range=shared)]
+    shared.start = 5
+    other.x_range = shared
+    # Combined into the first children event, discarding its definition of the range
+    holder.children = [figure()]
+
+
 def _combined_patch_with_linked_range():
     holder = Column(children=[figure()])
     other = figure()
@@ -644,12 +657,7 @@ def _combined_patch_with_linked_range():
     client_models = list(doc.models)
 
     doc.hold('combine')
-    shared = Range1d(0, 1)
-    holder.children = [figure(x_range=shared)]
-    shared.start = 5
-    other.x_range = shared
-    # Combined into the first children event, discarding its definition of the range
-    holder.children = [figure()]
+    _rerender_with_linked_range(holder, other)
     return doc, list(doc.callbacks._held_events), client_models, holder, other
 
 
@@ -659,6 +667,7 @@ def _decode_patch(events, client_models):
 
 
 def test_combined_patch_references_unsent_model():
+    # Guards the premise of the fix; Bokeh fixing combine ordering would make it fail
     _, events, client_models, _, _ = _combined_patch_with_linked_range()
 
     with pytest.raises(DeserializationError):
@@ -672,6 +681,82 @@ def test_drop_unsent_model_changes_keeps_combined_patch_decodable():
 
     assert [(event.model, event.attr) for event in filtered] == [(holder, 'children'), (other, 'x_range')]
     _decode_patch(filtered, client_models)
+
+
+@pytest.mark.parametrize('threaded', [False, True])
+def test_hold_writes_decodable_patch_for_linked_range(threaded, monkeypatch):
+    models = {}
+
+    def app():
+        holder, other = Column(children=[figure()]), figure()
+        models.update(holder=holder, other=other)
+        return pn.pane.Bokeh(Column(children=[holder, other]))
+
+    serve_and_request(app)
+    wait_until(lambda: bool(models) and models['holder'].document is not None)
+
+    holder, other = models['holder'], models['other']
+    doc = holder.document
+    session = doc.session_context.session
+    asyncio_loop = doc.session_context.server_context.application_context.io_loop.asyncio_loop
+    monkeypatch.setitem(state._connected, doc, True)
+    monkeypatch.setitem(state._loaded, doc, True)
+    # The fake connection never pulled the Document, which marks its models sent
+    doc.models.flush_synced()
+    client_models = list(doc.models)
+
+    messages = []
+
+    async def send_message(message):
+        messages.append(message)
+
+    conn = _FakeConn(lock_held=False)
+    conn.protocol = Protocol()
+    conn.send_message = send_message
+    monkeypatch.setattr(session, '_subscribed_connections', {conn})
+    monkeypatch.setitem(
+        extra_socket_handlers, _FakeSocket,
+        lambda conn, msg=None: messages.append(msg) or []
+    )
+
+    def rerender():
+        with set_curdoc(doc), hold(doc):
+            _rerender_with_linked_range(holder, other)
+
+    if threaded:
+        thread = threading.Thread(target=rerender)
+        thread.start()
+        thread.join()
+    else:
+        async def run():
+            rerender()
+        asyncio.run_coroutine_threadsafe(run(), asyncio_loop).result(timeout=5)
+
+    wait_until(lambda: any(
+        event.get('attr') == 'x_range'
+        for msg in messages for event in msg.content['events']
+    ))
+    deserializer = Deserializer(references=client_models)
+    for msg in messages:
+        deserializer.decode(msg.content)
+
+
+def test_hold_with_comm_pushes_decodable_patch_for_linked_range(monkeypatch):
+    sent = []
+    monkeypatch.setattr('panel.io.notebook.send', lambda comm, msg: sent.append(msg))
+    holder, other = Column(children=[figure()]), figure()
+    doc = Document()
+    doc.add_root(Column(children=[holder, other]))
+    doc.models.flush_synced()
+    client_models = list(doc.models)
+    comm = state._comm_manager.get_server_comm()
+    comm._comm = object()
+
+    with hold(doc, comm=comm):
+        _rerender_with_linked_range(holder, other)
+
+    [msg] = sent
+    Deserializer(references=client_models).decode(msg.content)
 
 
 def test_write_events_shares_one_message_across_connections():

@@ -20,9 +20,8 @@ from weakref import WeakKeyDictionary
 from bokeh.application.application import SessionContext
 from bokeh.document.document import Document
 from bokeh.document.events import (
-    ColumnDataChangedEvent, ColumnsPatchedEvent, ColumnsStreamedEvent,
     DocumentChangedEvent, DocumentPatchedEvent, MessageSentEvent,
-    ModelChangedEvent, SessionCallbackAdded, SessionCallbackRemoved,
+    SessionCallbackAdded, SessionCallbackRemoved,
 )
 from bokeh.model import Model
 from bokeh.model.util import (
@@ -32,7 +31,9 @@ from bokeh.models import CustomJS
 
 from ..config import config
 from .loading import _loading_css_classes
-from .model import monkeypatch_events  # noqa: F401 API import
+from .model import (  # noqa: F401 API import
+    _drop_unsent_model_changes, monkeypatch_events,
+)
 from .state import state
 
 if t.TYPE_CHECKING:
@@ -62,7 +63,6 @@ _WRITE_FUTURES: WeakKeyDictionary[Document, list[Future]] = WeakKeyDictionary()
 _WRITE_EVENTS: WeakKeyDictionary[Document, list[EventBatch]] = WeakKeyDictionary()
 _WRITE_BLOCK: WeakKeyDictionary[Document, bool] = WeakKeyDictionary()
 _UNCONNECTED_EVENTS: WeakKeyDictionary[Document, list[DocumentChangedEvent]] = WeakKeyDictionary()
-_MODEL_CHANGE_EVENTS = (ModelChangedEvent, ColumnDataChangedEvent, ColumnsStreamedEvent, ColumnsPatchedEvent)
 
 _panel_last_cleanup = None
 _write_tasks: WeakKeyDictionary[Document, list[asyncio.Task]] = WeakKeyDictionary()
@@ -659,26 +659,6 @@ def dispatch_django(
             socket.send(binary_data=payload)
         ])
     return futures
-
-def _drop_unsent_model_changes(
-    doc: Document, events: list[DocumentChangedEvent]
-) -> list[DocumentChangedEvent]:
-    """
-    Drops changes to models the client has not been sent yet, since the
-    message that first defines a model serializes its current state.
-
-    Under the 'combine' hold policy a later change is merged into the
-    slot of an earlier one, e.g. when a pane re-renders twice, which can
-    discard the only definition preceding a change to a new model and
-    leave the client dereferencing a model it does not know.
-    """
-    unsent = getattr(doc.models, '_new_models', None)
-    if not unsent:
-        return events
-    return [
-        event for event in events
-        if not (isinstance(event, _MODEL_CHANGE_EVENTS) and event.model in unsent)
-    ]
 
 def _suppress_property_callbacks(
     events: list[DocumentChangedEvent]
