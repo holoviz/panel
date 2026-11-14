@@ -178,6 +178,17 @@ def test_perspective_pandas_stream_does_not_duplicate(document, comm):
     assert list(model.source.data['a']) == [1, 2, 3]
 
 
+@pytest.mark.parametrize('backend', [_pandas_frame, _polars_frame, _pyarrow_frame])
+def test_perspective_stream_new_view(backend, document, comm):
+    psp = Perspective(backend({'a': [1, 2]}))
+    psp.get_root(document, comm)
+
+    psp.stream({'a': [3]})
+
+    model = psp.get_root(document, comm)
+    assert list(model.source.data['a']) == [1, 2, 3]
+
+
 def test_perspective_indexless_patch(indexless_backend, document, comm):
     df = indexless_backend({'a': [1, 2, 3], 'b': ['x', 'y', 'z']})
     psp = Perspective(df)

@@ -1094,10 +1094,14 @@ class SyncableData(Reactive):
             elif hasattr(self, '_update_' + event.name):
                 getattr(self, '_update_' + event.name)(model)
 
-    def _update_cds(self, *events: param.parameterized.Event) -> None:
+    def _sent_by_stream(self, events: tuple[param.parameterized.Event, ...]) -> bool:
         # stream and patch trigger the data parameter after they have
         # sent the changes to the frontend themselves
-        if self._updating and events and all(e.type == 'triggered' for e in events):
+        return bool(self._updating and events and all(e.type == 'triggered' for e in events))
+
+    def _update_cds(self, *events: param.parameterized.Event) -> None:
+        if self._sent_by_stream(events):
+            self._processed, self._data = self._get_data()
             return
         self._sync_cds(*events)
 

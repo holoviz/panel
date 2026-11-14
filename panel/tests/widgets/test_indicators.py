@@ -2,7 +2,7 @@ import pytest
 
 from panel.config import config
 from panel.widgets.indicators import (
-    Dial, Gauge, LinearGauge, Number, Tqdm,
+    Dial, Gauge, LinearGauge, Number, Tqdm, Trend,
 )
 
 
@@ -267,3 +267,14 @@ def test_linear_gauge_is_transparent(document, comm):
 
 def test_gauge_background_is_transparent():
     assert Gauge(value=25)._process_param_change({})['data']['backgroundColor'] == 'transparent'
+
+
+def test_trend_stream_updates_auto_values(document, comm):
+    pd = pytest.importorskip('pandas')
+    trend = Trend(data=pd.DataFrame({'x': [0, 1], 'y': [1., 2.]}))
+    model = trend.get_root(document, comm)
+
+    trend.stream(pd.DataFrame({'x': [2], 'y': [5.]}))
+
+    assert model.value == 5.0
+    assert model.value_change == 1.5
