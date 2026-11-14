@@ -223,10 +223,8 @@ def test_reactive_html_shared_callback_reports_event_name(page):
     page.locator("[id^=i1-]").fill("y")
     page.locator("[id^=i2-]").click()
 
-    wait_until(lambda: ('i2', 'onchange') in component.events, page)
-    assert ('i2', 'onclick') in component.events
-    assert ('i1', 'onclick') in component.events
-    assert ('i1', 'onchange') in component.events
+    expected = {('i2', 'onclick'), ('i2', 'onchange'), ('i1', 'onclick'), ('i1', 'onchange')}
+    wait_until(lambda: expected <= set(component.events), page)
 
 
 def test_reactive_html_shared_callback_nested_nodes(page):

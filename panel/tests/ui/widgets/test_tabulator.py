@@ -1602,12 +1602,12 @@ def test_tabulator_patch_with_filter_no_vertical_rescroll(page):
     tableholder = page.locator(".tabulator-tableholder")
     expect(tableholder).to_be_attached()
 
-    # Scroll down inside the tableholder
-    tableholder.evaluate("el => el.scrollTop = 10000")
-    page.wait_for_timeout(400)
+    # Scrolling is a no-op until the rows have been laid out, so retry it
+    wait_until(lambda: tableholder.evaluate(
+        "el => { el.scrollTop = 10000; return el.scrollTop > 0 }"
+    ), page)
 
     scroll_top_before = tableholder.evaluate("el => el.scrollTop")
-    assert scroll_top_before > 0
 
     # Patch a visible (non-filtered) row
     widget.patch({"value": [(0, 999.0)]})
@@ -1691,11 +1691,11 @@ def test_tabulator_header_filter_no_horizontal_rescroll(page, df_mixed, paginati
 
     table_holder = page.locator('.pnx-tabulator .tabulator-tableholder')
     expect(table_holder).to_have_count(1)
-    # Wait for the table to be laid out and overflowing before scrolling it,
-    # otherwise scrollLeft may be a no-op if it's set before layout settles.
-    wait_until(lambda: table_holder.evaluate("el => el.scrollWidth > el.clientWidth"), page)
-    table_holder.evaluate("el => { el.scrollLeft = el.scrollWidth; }")
-    wait_until(lambda: table_holder.evaluate("el => el.scrollLeft > 0"), page)
+    # Setting scrollLeft is a no-op before the layout settles and a redraw
+    # can reset it, so retry it.
+    wait_until(lambda: table_holder.evaluate(
+        "el => { el.scrollLeft = el.scrollWidth; return el.scrollLeft > 0 }"
+    ), page)
 
     header = page.locator(
         f'.tabulator-col[tabulator-field="{col_name}"] '
@@ -4996,14 +4996,19 @@ def test_tabulator_aggregators_data_aggregation(page, df_agg, aggs):
     # region level
     rows = page.locator('.tabulator-row')
     expect(rows).to_have_count(2)
-    agged = {
-        "region1": rows.nth(0).locator(".tabulator-cell").all_inner_texts(),
-        "region2": rows.nth(1).locator(".tabulator-cell").all_inner_texts(),
-    }
-    region_agged = {
-        region: {col: agged[region][col_mapping[col]] for col in col_mapping} for region in agged
-    }
-    assert region_agged == expected_results["region"]
+
+    # The aggregated cells are filled in after the rows are rendered
+    def check_region_agged():
+        agged = {
+            "region1": rows.nth(0).locator(".tabulator-cell").all_inner_texts(),
+            "region2": rows.nth(1).locator(".tabulator-cell").all_inner_texts(),
+        }
+        region_agged = {
+            region: {col: agged[region][col_mapping[col]] for col in col_mapping} for region in agged
+        }
+        assert region_agged == expected_results["region"]
+
+    wait_until(check_region_agged, page)
 
     regions = page.locator('.tabulator-tree-level-0 .tabulator-data-tree-control-expand')
     # expand all region groups and see the data there
@@ -5011,19 +5016,22 @@ def test_tabulator_aggregators_data_aggregation(page, df_agg, aggs):
     regions.nth(0).click()
     rows = page.locator(".tabulator-row.tabulator-tree-level-1")
     expect(rows).to_have_count(3)
-    # gender level
-    agged = {
-        "region1": {"Male": rows.nth(0).locator(".tabulator-cell").all_inner_texts()},
-        "region2": {
-            "Male": rows.nth(1).locator(".tabulator-cell").all_inner_texts(),
-            "Female": rows.nth(2).locator(".tabulator-cell").all_inner_texts(),
-        },
-    }
-    gender_agged = {
-        region: {
-            gender: {col: agged[region][gender][col_mapping[col]] for col in col_mapping} for gender in agged[region]} for region in agged
-    }
-    assert gender_agged == expected_results["gender"]
+
+    def check_gender_agged():
+        agged = {
+            "region1": {"Male": rows.nth(0).locator(".tabulator-cell").all_inner_texts()},
+            "region2": {
+                "Male": rows.nth(1).locator(".tabulator-cell").all_inner_texts(),
+                "Female": rows.nth(2).locator(".tabulator-cell").all_inner_texts(),
+            },
+        }
+        gender_agged = {
+            region: {
+                gender: {col: agged[region][gender][col_mapping[col]] for col in col_mapping} for gender in agged[region]} for region in agged
+        }
+        assert gender_agged == expected_results["gender"]
+
+    wait_until(check_gender_agged, page)
 
 
 @pytest.mark.parametrize("aggs", [
@@ -5063,14 +5071,19 @@ def test_tabulator_aggregators_data_aggregation_numeric_column_names(page, df_ag
     # region level
     rows = page.locator('.tabulator-row')
     expect(rows).to_have_count(2)
-    agged = {
-        "region1": rows.nth(0).locator(".tabulator-cell").all_inner_texts(),
-        "region2": rows.nth(1).locator(".tabulator-cell").all_inner_texts(),
-    }
-    region_agged = {
-        region: {col: agged[region][col_mapping[col]] for col in col_mapping} for region in agged
-    }
-    assert region_agged == expected_results["region"]
+
+    # The aggregated cells are filled in after the rows are rendered
+    def check_region_agged():
+        agged = {
+            "region1": rows.nth(0).locator(".tabulator-cell").all_inner_texts(),
+            "region2": rows.nth(1).locator(".tabulator-cell").all_inner_texts(),
+        }
+        region_agged = {
+            region: {col: agged[region][col_mapping[col]] for col in col_mapping} for region in agged
+        }
+        assert region_agged == expected_results["region"]
+
+    wait_until(check_region_agged, page)
 
     regions = page.locator('.tabulator-tree-level-0 .tabulator-data-tree-control-expand')
     # expand all region groups and see the data there
@@ -5078,19 +5091,22 @@ def test_tabulator_aggregators_data_aggregation_numeric_column_names(page, df_ag
     regions.nth(0).click()
     rows = page.locator(".tabulator-row.tabulator-tree-level-1")
     expect(rows).to_have_count(3)
-    # gender level
-    agged = {
-        "region1": {"Male": rows.nth(0).locator(".tabulator-cell").all_inner_texts()},
-        "region2": {
-            "Male": rows.nth(1).locator(".tabulator-cell").all_inner_texts(),
-            "Female": rows.nth(2).locator(".tabulator-cell").all_inner_texts(),
-        },
-    }
-    gender_agged = {
-        region: {
-            gender: {col: agged[region][gender][col_mapping[col]] for col in col_mapping} for gender in agged[region]} for region in agged
-    }
-    assert gender_agged == expected_results["gender"]
+
+    def check_gender_agged():
+        agged = {
+            "region1": {"Male": rows.nth(0).locator(".tabulator-cell").all_inner_texts()},
+            "region2": {
+                "Male": rows.nth(1).locator(".tabulator-cell").all_inner_texts(),
+                "Female": rows.nth(2).locator(".tabulator-cell").all_inner_texts(),
+            },
+        }
+        gender_agged = {
+            region: {
+                gender: {col: agged[region][gender][col_mapping[col]] for col in col_mapping} for gender in agged[region]} for region in agged
+        }
+        assert gender_agged == expected_results["gender"]
+
+    wait_until(check_gender_agged, page)
 
 
 @pytest.mark.parametrize('show_index', [True, False])

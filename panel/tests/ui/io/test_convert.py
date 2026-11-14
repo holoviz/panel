@@ -163,37 +163,36 @@ row.servable()
 
 @pytest.fixture(scope="module")
 def http_serve():
-    temp_dir = tempfile.TemporaryDirectory()
-    temp_path = pathlib.Path(temp_dir.name)
+    with tempfile.TemporaryDirectory() as temp_name:
+        temp_path = pathlib.Path(temp_name)
 
-    test_file = (temp_path / 'test.html')
-    test_file.write_text('<html><body>Test</body></html>')
+        test_file = (temp_path / 'test.html')
+        test_file.write_text('<html><body>Test</body></html>')
 
-    try:
-        shutil.copy(PANEL_LOCAL_WHL, temp_path / PANEL_LOCAL_WHL.name)
-    except shutil.SameFileError:
-        pass
-    try:
-        shutil.copy(BOKEH_LOCAL_WHL, temp_path / BOKEH_LOCAL_WHL.name)
-    except shutil.SameFileError:
-        pass
+        try:
+            shutil.copy(PANEL_LOCAL_WHL, temp_path / PANEL_LOCAL_WHL.name)
+        except shutil.SameFileError:
+            pass
+        try:
+            shutil.copy(BOKEH_LOCAL_WHL, temp_path / BOKEH_LOCAL_WHL.name)
+        except shutil.SameFileError:
+            pass
 
-    # A fixed port can fall into a range Windows has reserved for Hyper-V.
-    httpd, _ = http_serve_directory(str(temp_path))
+        # A fixed port can fall into a range Windows has reserved for Hyper-V.
+        httpd, _ = http_serve_directory(str(temp_path))
 
-    def write(app):
-        app_name = uuid.uuid4().hex
-        app_path = temp_path / f'{app_name}.py'
-        with open(app_path, 'w') as f:
-            f.write(app)
-        return app_path
+        def write(app):
+            app_name = uuid.uuid4().hex
+            app_path = temp_path / f'{app_name}.py'
+            with open(app_path, 'w') as f:
+                f.write(app)
+            return app_path
 
-    write.url = f"http://localhost:{httpd.server_port}/"
-    try:
-        yield write
-    finally:
-        httpd.shutdown()
-        temp_dir.cleanup()
+        write.url = f"http://localhost:{httpd.server_port}/"
+        try:
+            yield write
+        finally:
+            httpd.shutdown()
 
 
 def wait_for_app(http_serve, app, page, runtime, wait=True, resources=None, **kwargs):

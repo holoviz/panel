@@ -18,7 +18,9 @@ def test_browser_sync(page):
 
     serve_component(page, app)
 
-    wait_until(lambda: bool(info), page)
+    # The browser reports each property in a separate message
+    expected = {'dark_mode', 'device_pixel_ratio', 'language', 'webdriver', 'timezone', 'timezone_offset'}
+    wait_until(lambda: expected <= set(info), page)
 
     assert info['dark_mode'] == page.evaluate("() => window.matchMedia('(prefers-color-scheme: dark)').matches")
     assert info['device_pixel_ratio'] == page.evaluate('() => window.devicePixelRatio')
