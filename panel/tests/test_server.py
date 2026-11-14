@@ -155,7 +155,7 @@ def test_server_non_ascii_route_index_link(port):
 
 def test_server_static_dirs_etag_updates_when_file_changes(tmp_path):
     target = tmp_path / 'app.js'
-    target.write_text('console.log(1)\n')
+    target.write_bytes(b'console.log(1)\n')
 
     port = serve_and_wait(Markdown('# Title'), static_dirs={'assets': str(tmp_path)})
     url = f'http://127.0.0.1:{port}/assets/app.js'
@@ -166,7 +166,7 @@ def test_server_static_dirs_etag_updates_when_file_changes(tmp_path):
     assert requests.get(url, headers={'If-None-Match': etag}, timeout=30).status_code == 304
 
     # A different size changes the ETag even where mtimes are coarse
-    target.write_text('console.log("changed")\n')
+    target.write_bytes(b'console.log("changed")\n')
 
     r2 = requests.get(url, headers={'If-None-Match': etag}, timeout=30)
     assert r2.status_code == 200
