@@ -21,7 +21,8 @@ from bokeh.application.application import SessionContext
 from bokeh.document.document import Document
 from bokeh.document.events import (
     DocumentChangedEvent, DocumentPatchedEvent, MessageSentEvent,
-    SessionCallbackAdded, SessionCallbackRemoved,
+    ModelChangedEvent, SessionCallbackAdded, SessionCallbackRemoved,
+    TitleChangedEvent,
 )
 from bokeh.model import Model
 from bokeh.model.util import (
@@ -57,6 +58,9 @@ logger = logging.getLogger(__name__)
 
 GC_DEBOUNCE = 5
 _HOLD_LOCK: WeakKeyDictionary[Document, threading.Lock] = WeakKeyDictionary()
+# The policy requested for a hold Panel established; the Document itself
+# always collects, see _hold_doc.
+_HOLD_POLICY: WeakKeyDictionary[Document, HoldPolicyType] = WeakKeyDictionary()
 _WRITE_FUTURES: WeakKeyDictionary[Document, list[Future]] = WeakKeyDictionary()
 _WRITE_EVENTS: WeakKeyDictionary[Document, list[EventBatch]] = WeakKeyDictionary()
 _WRITE_BLOCK: WeakKeyDictionary[Document, bool] = WeakKeyDictionary()
@@ -103,6 +107,59 @@ def _cleanup_task(doc: Document, task: asyncio.Task) -> None:
     tasks = _write_tasks.get(doc)
     if tasks and task in tasks:
         tasks.remove(task)
+
+def _hold_doc(doc: Document, policy: HoldPolicyType = 'combine') -> None:
+    """
+    Puts the Document on hold. Bokeh's 'combine' policy scans all held
+    events for every new one, which is quadratic in the number of
+    distinct changes, so the Document always collects and the events are
+    combined when they are released, see ``_combine_events``.
+    """
+    _HOLD_POLICY[doc] = policy
+    doc.hold('collect')
+
+def _combine_events(events: Iterable[DocumentChangedEvent]) -> list[DocumentChangedEvent]:
+    """
+    Merges events that set the same model property, or the title, into
+    the first such event, which ends up carrying the last value and
+    callback invoker, exactly as bokeh's 'combine' hold policy does, but
+    in linear time.
+    """
+    combined: list[DocumentChangedEvent] = []
+    index: dict[tuple[t.Any, ...], int] = {}
+    for event in events:
+        if isinstance(event, ModelChangedEvent) and getattr(event, 'hint', None) is None:
+            key: tuple[t.Any, ...] = (
+                ModelChangedEvent, event.model.id, event.attr, id(event.setter), id(event.document)
+            )
+        elif isinstance(event, TitleChangedEvent):
+            key = (TitleChangedEvent, id(event.setter), id(event.document))
+        else:
+            combined.append(event)
+            continue
+        position = index.get(key)
+        if position is None:
+            index[key] = len(combined)
+            combined.append(event)
+            continue
+        first = combined[position]
+        if isinstance(event, ModelChangedEvent):
+            first.new = event.new  # type: ignore[attr-defined]
+        else:
+            first.title = event.title  # type: ignore[attr-defined]
+        first.callback_invoker = event.callback_invoker
+    return combined
+
+def _take_held_events(doc: Document) -> list[DocumentChangedEvent]:
+    """
+    Removes the events held on the Document and returns them, combined
+    unless the hold was requested with the 'collect' policy.
+    """
+    events = list(doc.callbacks._held_events or [])
+    doc.callbacks._held_events = []
+    if _HOLD_POLICY.pop(doc, 'combine') == 'combine':
+        events = _combine_events(events)
+    return events
 
 def _client_has_document(doc: Document) -> bool:
     """
@@ -452,6 +509,7 @@ def _destroy_document(self, session):
     _WRITE_EVENTS.pop(self, None)
     _WRITE_BLOCK.pop(self, None)
     _UNCONNECTED_EVENTS.pop(self, None)
+    _HOLD_POLICY.pop(self, None)
     for future in _WRITE_FUTURES.pop(self, []):
         future.cancel()
     for task in _write_tasks.pop(self, []):
@@ -658,6 +716,14 @@ def dispatch_django(
         ])
     return futures
 
+def _release_held_events(doc: Document) -> None:
+    """
+    Releases a hold established by ``hold`` on a worker thread, letting
+    bokeh dispatch the (combined) events it collected.
+    """
+    doc.callbacks._held_events = _suppress_property_callbacks(_take_held_events(doc))
+    doc.unhold()
+
 def _suppress_property_callbacks(
     events: list[DocumentChangedEvent]
 ) -> list[DocumentChangedEvent]:
@@ -746,8 +812,7 @@ def _flush_events(curdoc: Document, session: ServerSession) -> None:
             locked = True
             break
 
-    events = list(curdoc.callbacks._held_events or [])
-    curdoc.callbacks._held_events = []
+    events = _take_held_events(curdoc)
     monkeypatch_events(events)
 
     if (
@@ -839,7 +904,7 @@ def unlocked(policy: HoldPolicyType = 'combine') -> Iterator:
         monkeypatch_events(curdoc.callbacks._held_events)
         return
 
-    curdoc.hold(policy=policy)
+    _hold_doc(curdoc, policy)
     try:
         yield
     finally:
@@ -912,13 +977,13 @@ def hold(
                 with hold_lock:
                     held = doc.callbacks.hold_value
                     if not held:
-                        doc.hold(policy)
+                        _hold_doc(doc, policy)
                         we_held = True
                 yield
             else:
                 with unlocked(policy=policy):
                     if not doc.callbacks.hold_value:
-                        doc.hold(policy)
+                        _hold_doc(doc, policy)
                     yield
         finally:
             if policy is None:
@@ -931,13 +996,11 @@ def hold(
                         # Without a server loop a next tick callback never
                         # runs, so the hold has to be released right away.
                         with hold_lock:
-                            _suppress_property_callbacks(doc.callbacks._held_events)
-                            doc.unhold()
+                            _release_held_events(doc)
                     else:
                         def _unhold(lock=hold_lock, doc=doc):
                             with lock:
-                                _suppress_property_callbacks(doc.callbacks._held_events)
-                                doc.unhold()
+                                _release_held_events(doc)
                         with hold_lock:
                             # Clear the hold around scheduling the callback
                             # so the SessionCallbackAdded event it emits is
@@ -953,10 +1016,12 @@ def hold(
 
                 # Release the hold so events bokeh is still dispatching are not collected
                 doc.callbacks._hold = None
+                doc.callbacks._held_events = _take_held_events(doc)
                 push(doc, comm)
             elif not _client_has_document(doc):
                 _dispatch_events(doc, _drain_unconnected_events(doc, hold_lock))
             else:
+                doc.callbacks._held_events = _take_held_events(doc)
                 doc.unhold()
 
 @contextmanager
@@ -980,12 +1045,15 @@ def immediate_dispatch(doc: Document | None = None):
 
     old_events = doc.callbacks._held_events
     held = doc.callbacks._hold
+    policy = _HOLD_POLICY.pop(doc, None)
     doc.callbacks._held_events = []
     doc.callbacks.unhold()
     with unlocked():
         yield
     doc.callbacks._hold = held
     doc.callbacks._held_events = old_events
+    if policy is not None:
+        _HOLD_POLICY[doc] = policy
 
 def _immediate_references(value: t.Any) -> list[Model]:
     # Layout children are flat lists of models, which bokeh's generic

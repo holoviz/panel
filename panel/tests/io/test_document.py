@@ -1169,3 +1169,76 @@ def test_freeze_doc_unchanged_properties_do_not_freeze(recompute_count):
         root.width = 100
 
     assert not recompute_count
+
+
+def test_combine_events_matches_bokeh_combine_policy():
+    """
+    Holding with 'collect' and combining on release must produce the
+    same events as bokeh's quadratic 'combine' policy.
+    """
+    import copy
+    import random
+
+    from bokeh.document.callbacks import _combine_document_events
+    from bokeh.document.events import RootAddedEvent, TitleChangedEvent
+    from bokeh.models import Div
+
+    from panel.io.document import _combine_events
+
+    rng = random.Random(1)
+    doc = Document()
+    models = [Div() for _ in range(5)]
+    setters = [None, object()]
+    events = []
+    for _ in range(500):
+        r = rng.random()
+        if r < 0.85:
+            events.append(ModelChangedEvent(
+                doc, rng.choice(models), rng.choice(['text', 'visible']),
+                rng.random(), setter=rng.choice(setters), callback_invoker=object()
+            ))
+        elif r < 0.95:
+            events.append(TitleChangedEvent(doc, str(rng.random()), setter=rng.choice(setters)))
+        else:
+            events.append(RootAddedEvent(doc, rng.choice(models)))
+
+    expected = []
+    for event in events:
+        _combine_document_events(copy.copy(event), expected)
+    combined = _combine_events(events)
+
+    def signature(event):
+        return (
+            type(event), getattr(event, 'model', None), getattr(event, 'attr', None),
+            getattr(event, 'new', None), getattr(event, 'title', None),
+            event.setter, event.callback_invoker,
+        )
+
+    assert len(combined) < len(events)
+    assert [signature(e) for e in combined] == [signature(e) for e in expected]
+
+
+def test_hold_collects_and_combines_on_release():
+    """
+    Panel holds the Document with the 'collect' policy and combines the
+    events when it releases the hold, so only the last value of a
+    property set repeatedly inside the hold is dispatched.
+    """
+    doc = Document()
+    doc.callbacks._change_callbacks[None] = lambda e: e
+    model = IntSlider().get_root(doc)
+    doc.add_root(model)
+    state._connected[doc] = True
+
+    dispatched = []
+    doc.on_change(dispatched.append)
+
+    with set_curdoc(doc):
+        with hold(doc):
+            assert doc.callbacks.hold_value == 'collect'
+            for i in range(1, 11):
+                model.value = i
+            assert len(doc.callbacks._held_events) == 10
+
+    assert doc.callbacks.hold_value is None
+    assert [(e.attr, e.new) for e in dispatched] == [('value', 10)]
