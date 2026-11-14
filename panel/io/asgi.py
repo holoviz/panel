@@ -100,15 +100,33 @@ _APP_SUFFIXES: tuple[str, ...] = (
 )
 
 
+async def _write_unlocked(socket: _ASGIWebSocketTransport, msg: Message) -> None:
+    try:
+        await socket.write_message(msg.header_json, locked=False)
+        await socket.write_message(msg.metadata_json, locked=False)
+        await socket.write_message(msg.content_json, locked=False)
+        for buffer in msg._buffers:
+            await socket.write_message(json.dumps(buffer.ref), locked=False)
+            await socket.write_message(buffer.to_bytes(), binary=True, locked=False)
+    except OSError:
+        # ASGI servers raise OSError when the peer has disconnected
+        socket.closed = True
+
+
 def dispatch_asgi(
     conn, events: list[DocumentPatchedEvent] | None = None, msg: Message | None = None
 ):
     """
     Dispatches a message or set of events to an ASGI websocket transport.
+
+    Like ``dispatch_tornado`` the frames are written without acquiring the
+    socket's write lock, which callers that serialize writes already hold.
+    ``Message.send`` acquires the lock itself and since the lock wraps a
+    non reentrant ``asyncio.Lock`` it would wait forever.
     """
     if msg is None:
         msg = conn.protocol.create("PATCH-DOC", events)
-    return [conn._socket.send_message(msg)]
+    return [_write_unlocked(conn._socket, msg)]
 
 extra_socket_handlers[_ASGIWebSocketTransport] = dispatch_asgi
 
