@@ -1,4 +1,4 @@
-﻿import asyncio
+import asyncio
 import datetime as dt
 import logging
 import os
@@ -137,14 +137,14 @@ def test_server_static_dirs():
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
 def test_server_non_ascii_route():
-    r = serve_and_request({'/鍎€琛ㄦ澘': Markdown('# Title')}, suffix='/%E5%84%80%E8%A1%A8%E6%9D%BF')
+    r = serve_and_request({'/儀表板': Markdown('# Title')}, suffix='/%E5%84%80%E8%A1%A8%E6%9D%BF')
 
     assert r.status_code == 200
 
 
 def test_server_non_ascii_route_index_link(port):
     r = serve_and_request(
-        {'/鍎€琛ㄦ澘': Markdown('# Title'), '/plain': Markdown('# Plain')},
+        {'/儀表板': Markdown('# Title'), '/plain': Markdown('# Plain')},
         port=port, use_index=True, index=INDEX_HTML, redirect_root=False, suffix='/'
     )
 
@@ -152,15 +152,15 @@ def test_server_non_ascii_route_index_link(port):
 
 def test_server_non_ascii_route_index_display(port):
     r = serve_and_request(
-        {'/na茂ve': Markdown('# Title'), '/plain': Markdown('# Plain')},
+        {'/naïve': Markdown('# Title'), '/plain': Markdown('# Plain')},
         port=port, use_index=True, index=INDEX_HTML, redirect_root=False, suffix='/'
     )
 
     content = r.content.decode('utf-8')
     assert 'href="./na%C3%AFve"' in content
-    assert 'data-search="na茂ve /na茂ve"' in content
-    assert '<h2 class="pn-card-title">na茂ve</h2>' in content
-    assert '<span class="pn-card-path">/na茂ve</span>' in content
+    assert 'data-search="naïve /naïve"' in content
+    assert '<h2 class="pn-card-title">naïve</h2>' in content
+    assert '<span class="pn-card-path">/naïve</span>' in content
     assert 'na%c3%afve /na%c3%afve' not in content
 
 def test_server_prefix_root_redirect():
@@ -211,7 +211,6 @@ def test_server_doc_page_is_not_cached():
 
     assert r.status_code == 200
     assert r.headers.get('Cache-Control') == 'no-store'
-
 
 def test_guest_endpoint_serves_static_asset_before_login(port):
     # A login template may reference assets from a --static-dirs directory, so

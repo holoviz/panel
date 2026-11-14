@@ -59,10 +59,10 @@ panel serve app.py admin.py ... --oauth-guest-endpoints /app
 
 This will allow users to access the `/app` endpoint as a guest, including its `/app/ws` websocket, but force them through the login flow if they attempt to access the `/admin` endpoint.
 
-An endpoint can also cover every path below it, which you opt into by ending the entry with `/*` or `/`. That matters for any asset a custom login or logout template references, because those pages are served before the user has authenticated. If your template loads something from a directory served with `--static-dirs`, list its slug:
+An endpoint can also cover every path below it, which you opt into by ending the entry with `/*`. That matters for any asset a custom login or logout template references, because those pages are served before the user has authenticated. If your template loads something from a directory served with `--static-dirs`, list its slug:
 
 ```bash
 panel serve app.py ... --oauth-guest-endpoints '/assets/*' --static-dirs assets=./assets
 ```
 
-With that in place an `<img src="assets/logo.png">` in `--basic-login-template` is served to anonymous visitors instead of being redirected to the login page. The match is on path segments, so `/assets/*` does not make `/assets-private` public, and a plain `/assets` entry covers neither the directory's files nor `/assets-private`: each entry of a guest endpoint list is an entry on an authentication bypass list, so wide matching has to be asked for.
+With that in place an `<img src="assets/logo.png">` in `--basic-login-template` is served to anonymous visitors instead of being redirected to the login page. The match is on path segments, so `/assets/*` does not make `/assets-private` public, and a plain `/assets` or `/assets/` entry covers neither the directory's files nor `/assets-private`: each entry of a guest endpoint list is an entry on an authentication bypass list, so wide matching has to be asked for.

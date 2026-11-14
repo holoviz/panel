@@ -316,7 +316,7 @@ Default: {} | Type: Dict
 
 ### `oauth_guest_endpoints` (`PANEL_OAUTH_GUEST_ENDPOINTS`)
 
-List of endpoints that can be accessed as a guest without authenticating. End an endpoint with `/*` or `/` to also cover the paths below it.
+List of endpoints that can be accessed as a guest without authenticating. End an endpoint with `/*` to also cover the paths below it.
 
 Default: None | Type: List
 

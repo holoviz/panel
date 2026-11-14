@@ -1032,10 +1032,10 @@ class BasicAuthProvider(AuthProvider):
 
     @staticmethod
     def _guest_endpoint_covers(gep, path):
-        # Only a trailing `/*` or `/` opts the endpoint into covering the paths below it,
+        # Only a trailing `/*` opts the endpoint into covering the paths below it,
         # because a guest endpoint is an entry on an auth bypass list.
         gep = gep.split('?', 1)[0]
-        subtree = gep.endswith('/*') or (gep.endswith('/') and gep != '/')
+        subtree = gep.endswith('/*')
         gep = gep.rstrip('*').rstrip('/')
         if not gep:
             # The root endpoint covers the root app and its websocket only
