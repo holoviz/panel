@@ -214,18 +214,18 @@ def _to_series(name: str, values: t.Any, dtype: t.Any, backend: t.Any) -> nw.Ser
         return nw.new_series(name, values, backend=backend).cast(dtype)
 
 
-def set_values(obj: t.Any, column: str, rows: Sequence[int], values: t.Any) -> t.Any:
+def set_values(obj: t.Any, column: str, rows: Sequence[int] | np.ndarray, values: t.Any) -> t.Any:
     """
     Returns a new frame with the values of the column at the supplied
     row positions replaced.
     """
     df = to_narwhals(obj)
     series = df[column]
-    rows = np.asarray(rows, dtype=np.int64)
-    if len(rows) == len(df) and np.array_equal(rows, np.arange(len(df))):
+    positions = np.asarray(rows, dtype=np.int64)
+    if len(positions) == len(df) and np.array_equal(positions, np.arange(len(df))):
         new = _to_series(column, values, series.dtype, df.implementation)
     else:
-        new = series.scatter(rows, _to_series(column, values, series.dtype, df.implementation))
+        new = series.scatter(positions, _to_series(column, values, series.dtype, df.implementation))
     return df.with_columns(new).to_native()
 
 

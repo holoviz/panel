@@ -2306,7 +2306,6 @@ class Tabulator(BaseTable):
             self._fire_pending_edits(column, positions)
             return
 
-        import pandas as pd
         if remote:
             nrows = self.page_size or self.initial_page_size
             start = (self.page - 1) * nrows
