@@ -40,9 +40,10 @@ from ..util import (
 from ..util.dataframe import (
     ROW_INDEX, add_row_index, all_of, coerce_frame, column_names,
     column_to_numpy, concat_rows, drop_row_index, dtype_kind, evaluate_mask,
-    filter_expr, frame_from_columns, has_index, header_filter_exprs, is_date,
-    is_indexless, patch_rows, row_dict, row_position_array, row_positions,
-    set_values, sort_frame, take_rows, to_column_data, to_narwhals,
+    filter_expr, frame_from_columns, has_index, header_filter_exprs,
+    indexed_column_data, is_date, is_indexless, patch_rows, row_dict,
+    row_position_array, row_positions, set_values, sort_frame, take_rows,
+    to_column_data, to_narwhals,
 )
 from ..util.warnings import deprecated, warn
 from .base import Widget
@@ -95,47 +96,6 @@ def _convert_datetime_array_ignore_list(v):
     if isinstance(v, np.ndarray):
         return convert_datetime_array(v)
     return v
-
-def _df_to_cds_data(df: pd.DataFrame) -> dict[str, np.ndarray]:
-    """
-    Converts a DataFrame into a ColumnDataSource data dict, producing
-    the same columns as ``ColumnDataSource.from_df`` without the
-    intermediate frame copy and reset_index.
-    """
-    import pandas as pd
-    columns = df.columns
-    if isinstance(columns, pd.MultiIndex):
-        try:
-            names = ['_'.join(col) for col in columns.values]
-        except TypeError:
-            raise TypeError('Could not flatten MultiIndex columns. '
-                            'use string column names or flatten manually') from None
-    else:
-        names = columns.tolist()
-    index = df.index
-    if isinstance(index.name, str):
-        index_name = index.name
-    else:
-        try:
-            index_name = '_'.join(t.cast('list[str]', index.names))
-        except TypeError:
-            index_name = 'index'
-    if index_name == 'index' and 'index' in names:
-        index_name = 'level_0'
-    # Copies keep the ColumnDataSource arrays independent of the frame's
-    # storage, which is otherwise mutated in place by edits and patches.
-    # tz-aware datetimes are sent as naive UTC datetime64 like bokeh does
-    if isinstance(index, pd.DatetimeIndex) and index.tz is not None:
-        index_values = index.tz_convert(None).to_numpy(copy=True)
-    else:
-        index_values = np.array(pd.Index(index.values))
-    data = {index_name: index_values}
-    for name, (_, col) in zip(names, df.items()):
-        if isinstance(col.dtype, pd.DatetimeTZDtype):
-            data[name] = col.dt.tz_convert(None).to_numpy(copy=True)
-        else:
-            data[name] = col.to_numpy(copy=True)
-    return data
 
 def _get_value_from_keys(d:dict, key1, key2, default=None):
     if key1 in d:
@@ -600,12 +560,14 @@ class BaseTable(ReactiveData, Widget):
             if field in df.columns:
                 col = df[field]
             elif field in indexes:
-                col = pd.Series(df.index.get_level_values(indexes.index(field)))
+                col = df.index.get_level_values(indexes.index(field))
             elif field in df.index.names:
-                col = pd.Series(df.index.get_level_values(field))
+                col = df.index.get_level_values(field)
             else:
                 raise KeyError(field)
-            keys[str(i)] = tabulator_sorter(col).array
+            key = tabulator_sorter(col)
+            # Other pandas-like frames, e.g. cuDF, are sorted on the host
+            keys[str(i)] = key.array if isinstance(key, (pd.Series, pd.Index)) else key.to_numpy()
             ascending.append(sorter['dir'] == 'asc')
 
         # Sorting only the sort keys avoids copying the full frame; the
@@ -940,7 +902,7 @@ class BaseTable(ReactiveData, Widget):
             indexes = [df.index.name or default_index]
         if df.columns.nlevels > 1 and len(indexes) > 1:
             indexes = [i + "_" * (df.columns.nlevels - 1) for i in indexes]
-        data = _df_to_cds_data(df.reset_index() if len(indexes) > 1 else df)
+        data = indexed_column_data(df.reset_index() if len(indexes) > 1 else df)
         if not self.show_index and len(indexes) > 1:
             data = {k: v for k, v in data.items() if k not in indexes}
         return df, {k if isinstance(k, str) else str(k): self._process_column(v, k, df) for k, v in data.items()}
@@ -1993,7 +1955,7 @@ class Tabulator(BaseTable):
             indexes = [df.index.name or default_index]
         if len(indexes) > 1:
             page_df = page_df.reset_index()
-        data = _df_to_cds_data(page_df).items()
+        data = indexed_column_data(page_df).items()
         return df, {k if isinstance(k, str) else str(k): self._process_column(v, k, page_df) for k, v in data}
 
     def _get_style_data(self, recompute=True):

@@ -99,6 +99,17 @@ def test_tabulator_lazy_frame_errors():
         Tabulator(pl.LazyFrame(DATA))
 
 
+@pytest.mark.parametrize('ascending', [True, False])
+def test_sort_frame_ties_keep_row_order(backend, ascending):
+    data = {'key': [1, 0] * 6, 'int': list(range(12))}
+    table = Tabulator(pd.DataFrame(data), sorters=[
+        {'field': 'key', 'dir': 'asc' if ascending else 'desc'}
+    ])
+    result = to_dict(sort_frame(backend(data), ['key'], [ascending]))
+    assert result['int'] == table.current_view['int'].tolist()
+    assert result['int'][:6] == ([1, 3, 5, 7, 9, 11] if ascending else [0, 2, 4, 6, 8, 10])
+
+
 def test_sort_frame_matches_pandas_sort(backend):
     data = {
         'str': ['b', 'A', None, 'a', 'B', 'c', 'a'],
@@ -770,6 +781,61 @@ def test_tabulator_patch_negative_index(frame, document, comm):
 
     assert to_dict(table.value)['int'] == [1, 2, 30]
     np.testing.assert_array_equal(model.source.data['int'], [1, 2, 30])
+
+
+def test_tabulator_patch_remote_pagination_off_first_page(backend, document, comm):
+    table = Tabulator(backend({'a': np.arange(100, dtype=float)}), pagination='remote', page_size=50, page=2)
+    model = table.get_root(document, comm)
+
+    table.patch({'a': [(60, -1.0)]})
+
+    assert model.source.data['a'][10] == -1.0
+    assert len(model.source.data['a']) == 50
+    assert to_dict(table.value)['a'][60] == -1.0
+
+
+def test_tabulator_patch_remote_pagination_drops_rows_off_page(backend, document, comm):
+    table = Tabulator(backend({'a': np.arange(100, dtype=float)}), pagination='remote', page_size=50, page=2)
+    model = table.get_root(document, comm)
+
+    table.patch({'a': [(5, -1.0), (99, -2.0)]})
+
+    np.testing.assert_array_equal(model.source.data['a'], list(range(50, 99)) + [-2.0])
+    assert to_dict(table.value)['a'][5] == -1.0
+
+
+def test_tabulator_patch_remote_pagination_slice(backend, document, comm):
+    table = Tabulator(backend({'a': np.arange(100, dtype=float)}), pagination='remote', page_size=50, page=2)
+    model = table.get_root(document, comm)
+
+    table.patch({'a': [(slice(48, 52), [-1.0, -2.0, -3.0, -4.0])]})
+
+    np.testing.assert_array_equal(model.source.data['a'][:3], [-3.0, -4.0, 52.0])
+    assert to_dict(table.value)['a'][48:52] == [-1.0, -2.0, -3.0, -4.0]
+
+
+def test_tabulator_patch_remote_pagination_with_sorter(backend, document, comm):
+    table = Tabulator(
+        backend({'a': np.arange(100, dtype=float)}), pagination='remote',
+        page_size=10, sorters=[{'field': 'a', 'dir': 'desc'}]
+    )
+    model = table.get_root(document, comm)
+
+    table.patch({'a': [(3, 1000.0)]})
+
+    assert model.source.data['a'][0] == 1000.0
+    np.testing.assert_array_equal(model.source.data['a'][1:], np.arange(99, 90, -1))
+
+
+def test_tabulator_patch_remote_pagination_with_python_filter(backend, document, comm):
+    table = Tabulator(backend({'a': np.arange(100, dtype=float)}), pagination='remote', page_size=10, page=2)
+    model = table.get_root(document, comm)
+    table.add_filter(lambda df: to_narwhals(df)['a'].to_numpy() % 2 == 0)
+    np.testing.assert_array_equal(model.source.data['a'], np.arange(20, 40, 2))
+
+    table.patch({'a': [(22, -2.0)]})
+
+    assert model.source.data['a'][1] == -2.0
 
 
 def test_tabulator_patch_with_frame_errors(frame):

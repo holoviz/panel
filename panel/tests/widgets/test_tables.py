@@ -3585,25 +3585,25 @@ def _cds_frames():
 
 @pytest.mark.filterwarnings("ignore:The inplace keyword in DataFrame.reset_index is deprecated")
 @pytest.mark.parametrize('name', list(_cds_frames()))
-def test_df_to_cds_data_matches_bokeh_from_df(name):
+def test_indexed_column_data_matches_bokeh_from_df(name):
     from bokeh.models import ColumnDataSource
 
-    from panel.widgets.tables import _df_to_cds_data
+    from panel.util.dataframe import indexed_column_data
 
     df = _cds_frames()[name]
     # bokeh's from_df uses DatetimeIndex.values, deprecated for tz-aware indexes in pandas 3.1
     with warnings.catch_warnings():
         warnings.filterwarnings('ignore', message='DatetimeIndex.values returning an ndarray')
         expected = ColumnDataSource.from_df(df)
-    _assert_cds_data_equal(_df_to_cds_data(df), expected)
+    _assert_cds_data_equal(indexed_column_data(df), expected)
 
 
-def test_df_to_cds_data_multiindex_columns_non_string_raises():
-    from panel.widgets.tables import _df_to_cds_data
+def test_indexed_column_data_multiindex_columns_non_string_raises():
+    from panel.util.dataframe import indexed_column_data
 
     df = pd.DataFrame(np.arange(4).reshape(2, 2), columns=pd.MultiIndex.from_tuples([(1, 'x'), (1, 'y')]))
     with pytest.raises(TypeError, match='flatten'):
-        _df_to_cds_data(df)
+        indexed_column_data(df)
 
 
 def test_tabulator_string_dtype_na_does_not_mutate_value(document, comm):
