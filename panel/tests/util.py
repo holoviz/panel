@@ -18,7 +18,7 @@ import uuid
 from functools import partial
 from queue import Empty, Queue
 from threading import Event, Thread
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlparse
 
 import numpy as np
 import param
@@ -430,6 +430,59 @@ def serve_component(page, app, suffix='', wait=True, **kwargs):
         ), page, interval=10)
         page.wait_for_function(_STYLESHEETS_SETTLED, timeout=15000)
     return msgs, port
+
+
+def is_remote(url):
+    return urlparse(url).hostname not in (None, 'localhost', '127.0.0.1')
+
+
+class RemoteRequests:
+    """
+    Records the requests a browser context makes to remote hosts, so a
+    test failing because a CDN such as esm.sh is slow or down says so
+    instead of looking like a render that never finished.
+    """
+
+    def __init__(self, context):
+        self._pending = {}
+        self._failed = []
+        self._fetch_errors = {}
+        context.on("request", self._on_request)
+        context.on("response", self._on_response)
+        context.on("requestfinished", self._on_finished)
+        context.on("requestfailed", self._on_failed)
+
+    def fetch_failed(self, request, error):
+        """
+        Records why a route handler that fetches on the browser's behalf
+        failed, since the request it aborts only reports a generic error.
+        """
+        self._fetch_errors[request] = str(error).splitlines()[0]
+
+    def _on_request(self, request):
+        if is_remote(request.url):
+            self._pending[request] = time.monotonic()
+
+    def _on_response(self, response):
+        if response.status >= 400 and response.request in self._pending:
+            self._failed.append(f"{response.url} (HTTP {response.status})")
+
+    def _on_finished(self, request):
+        self._pending.pop(request, None)
+
+    def _on_failed(self, request):
+        if self._pending.pop(request, None) is not None:
+            failure = self._fetch_errors.pop(request, request.failure)
+            self._failed.append(f"{request.url} ({failure})")
+
+    def report(self):
+        now = time.monotonic()
+        lines = [f"failed: {failure}" for failure in self._failed]
+        lines += [
+            f"pending for {now - start:.1f}s: {request.url}"
+            for request, start in self._pending.items()
+        ]
+        return "\n".join(lines)
 
 
 # Chromium also gives a stylesheet that failed to load an empty sheet, so

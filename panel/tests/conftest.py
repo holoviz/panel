@@ -18,7 +18,6 @@ import unittest
 from contextlib import contextmanager, suppress
 from functools import cache
 from subprocess import PIPE, Popen
-from urllib.parse import urlparse
 
 import pandas as pd
 import pytest
@@ -42,8 +41,9 @@ from panel.io.resources import (
 from panel.io.state import set_curdoc, state
 from panel.pane import HTML, Markdown
 from panel.tests.util import (
-    get_open_ports, global_design, import_panel_ui, restore_classic_globals,
-    reverse_proxy as reverse_proxy_ctx, serve_and_wait, set_global_design,
+    RemoteRequests, get_open_ports, global_design, import_panel_ui, is_remote,
+    restore_classic_globals, reverse_proxy as reverse_proxy_ctx,
+    serve_and_wait, set_global_design,
 )
 from panel.theme import Design
 
@@ -257,11 +257,7 @@ _REMOTE_RESPONSES: dict[str, tuple[int, dict[str, str], bytes]] = {}
 _DROPPED_HEADERS = ('content-encoding', 'content-length', 'transfer-encoding')
 
 
-def _is_remote(url):
-    return urlparse(url).hostname not in (None, 'localhost', '127.0.0.1')
-
-
-def _serve_cached(route):
+def _serve_cached(route, remote_requests):
     request = route.request
     if request.method != 'GET':
         route.fallback()
@@ -270,7 +266,8 @@ def _serve_cached(route):
     if url not in _REMOTE_RESPONSES:
         try:
             response = route.fetch()
-        except Exception:
+        except Exception as e:
+            remote_requests.fetch_failed(request, e)
             # Fail the request as the browser would on a network error
             with suppress(Exception):
                 route.abort()
@@ -288,6 +285,7 @@ def _serve_cached(route):
 def context(context, request):
     # Set the default timeout to 20 secs
     context.set_default_timeout(20_000)
+    request.node._remote_requests = RemoteRequests(context)
     if ON_WINDOWS:
         # A script or websocket that fails to load surfaces only as a timeout
         errors = request.node._windows_socket_errors = []
@@ -307,7 +305,7 @@ def context(context, request):
 
 
 @pytest.fixture
-def cache_remote_requests(context):
+def cache_remote_requests(context, request):
     """
     Serves remote GET requests from a cache shared by the tests of a worker.
 
@@ -316,7 +314,8 @@ def cache_remote_requests(context):
     are only answered while the test is in a Playwright call, so tests that
     block in time.sleep while the page loads must not use it.
     """
-    context.route(_is_remote, _serve_cached)
+    remote_requests = request.node._remote_requests
+    context.route(is_remote, lambda route: _serve_cached(route, remote_requests))
     yield
     # A fetch still in flight would fail the next test's context
     context.unroute_all(behavior='ignoreErrors')
@@ -327,6 +326,10 @@ def pytest_runtest_call(item):
     try:
         return (yield)
     except Exception as e:
+        remote = getattr(item, '_remote_requests', None)
+        if remote is not None and (report := remote.report()):
+            # A note also reaches the CI annotations of failures that pass on rerun
+            e.add_note(f"Remote requests:\n{report}")
         errors = getattr(item, '_windows_socket_errors', None)
         if errors and not re.search('|'.join(WINDOWS_SOCKET_ERRORS), str(e)):
             raise RuntimeError(f"The browser hit {errors[0]!r}, then: {e}") from e
