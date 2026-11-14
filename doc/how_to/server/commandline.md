@@ -174,7 +174,7 @@ pip install uvicorn fastapi
 
 The ASGI implementations support the same options as the Tornado server, with the exception of a few options that are implemented as Tornado request handlers or rely on Tornado specific functionality, and will error out if you supply them:
 
-- `--rest-provider`, which is deprecated, see [Add custom endpoints](endpoints) for the replacement
+- `--rest-provider`, which is deprecated, see [Add custom endpoints](endpoints) for the replacement and [Serve a REST API](rest_api) for what the providers still do
 - `--enable-xsrf-cookies`
 - `--num-procs` (run multiple uvicorn processes behind a load balancer instead)
 - `--plugins` on `--server asgi`. On `--server fastapi` the plugin module must declare a FastAPI `APIRouter` instead of Tornado request handlers, see [Add custom endpoints](endpoints).

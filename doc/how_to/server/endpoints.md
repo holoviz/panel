@@ -168,7 +168,7 @@ curl -X PUT -d '{"threshold": 0.8}' http://localhost:5006/api/settings
 
 Every open session updates to the new threshold. With `--server fastapi` the FastAPI route takes `threshold` as a query parameter, i.e. `curl -X PUT "http://localhost:5006/api/settings?threshold=0.8"`.
 
-This replaces `pn.state.publish` and `--rest-provider`, which are deprecated and will be removed in Panel 2.0. Unlike those, the endpoint decides which parameters are exposed, which HTTP methods modify them and how the response looks.
+This replaces `pn.state.publish` and `--rest-provider`, which are deprecated and will be removed in Panel 2.0. Unlike those, the endpoint decides which parameters are exposed, which HTTP methods modify them and how the response looks. [Serve a REST API](rest_api) walks through a session-scoped dataframe, a function argument and the OpenAPI page.
 
 Custom endpoints are not covered by Panel's authentication. On Tornado, subclass `bokeh.server.views.auth_request_handler.AuthRequestHandler` instead of `RequestHandler` and decorate the methods with `tornado.web.authenticated`, which rejects requests that Panel's configured authentication does not resolve to a user. On FastAPI, protect the routes with a [dependency](https://fastapi.tiangolo.com/tutorial/security/).
 

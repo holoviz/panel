@@ -14,7 +14,9 @@ The `panel.auth` group should be used to register new authentication providers. 
 
 ### Rest plugins
 
-The `panel.io.rest` entrypoint group can be used to register rest providers that will be served along the panel app. The entrypoint should resolve to a callable with the following signature:
+The `panel.io.rest` entry point is deprecated and will be removed in Panel 2.0, together with `--rest-provider` and `pn.state.publish`. New HTTP endpoints belong in a [`--plugins`](../how_to/server/endpoints.md) module. [Serve a REST API](../how_to/server/rest_api.md) shows a session-scoped endpoint, function arguments and the OpenAPI page.
+
+Until the entry point is removed it loads a callable with the following signature:
 
 ```python
 from typing import List, Tuple, Type
