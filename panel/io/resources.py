@@ -510,7 +510,10 @@ def patch_model_css(root: Model, dist_url: str):
         held = doc.callbacks.hold_value
         events = list(doc.callbacks._held_events)
         doc.hold()
-    for stylesheet in root.select({'type': ImportedStyleSheet}):
+        stylesheets = [m for m in _document_models(doc) if isinstance(m, ImportedStyleSheet)]
+    else:
+        stylesheets = root.select({'type': ImportedStyleSheet})
+    for stylesheet in stylesheets:
         patch_stylesheet(stylesheet, dist_url)
     if doc:
         doc.callbacks._held_events = events
@@ -653,6 +656,41 @@ def _panel_use_mathjax(roots) -> bool:
     return _any(roots, lambda obj: isinstance(obj, PanelHTML))
 
 
+def _document_models(doc) -> t.Iterable[Model]:
+    """
+    All models of a Document, from its model index when that is current.
+
+    The index is only recomputed once a ``freeze`` block exits, so while
+    frozen the roots have to be walked.
+    """
+    manager = doc.models
+    if getattr(manager, '_freeze_count', 0):
+        models: set[Model] = set()
+        for root in doc.roots:
+            models |= root.references()
+        return models
+    return list(manager)
+
+
+def _reachable_models(roots) -> t.Iterable[Model]:
+    """
+    All models reachable from roots, read off the Document's model index
+    instead of walking the references when the roots are attached to one.
+    """
+    doc = None
+    for root in roots:
+        if root.document is None or (doc is not None and root.document is not doc):
+            break
+        doc = root.document
+    else:
+        if doc is not None:
+            return _document_models(doc)
+    models: set[Model] = set()
+    for root in roots:
+        models |= root.references()
+    return models
+
+
 def _panel_use_tables(roots) -> bool:
     """
     Whether any model reachable from roots requires the bokeh-tables bundle.
@@ -661,9 +699,7 @@ def _panel_use_tables(roots) -> bool:
     and so do extensions defining custom cell editors or formatters.
     """
     from bokeh.models.widgets.tables import CellEditor, CellFormatter
-    models = set()
-    for root in roots:
-        models |= root.references()
+    models = _reachable_models(roots)
     return _use_tables(models) or _query_extensions(
         models, lambda cls: issubclass(cls, (CellEditor, CellFormatter))
     )
