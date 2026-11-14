@@ -1,4 +1,5 @@
 from panel.chat.icon import ChatReactionIcons
+from panel.layout import FlexBox
 
 
 class TestChatReactionIcons:
@@ -9,6 +10,10 @@ class TestChatReactionIcons:
         assert icons._rendered_icons["favorite"].icon == "heart"
         assert icons._rendered_icons["favorite"].active_icon == ""
         assert len(icons._composite) == 1
+
+    def test_default_layout_listlike(self):
+        icons = ChatReactionIcons(default_layout=FlexBox)
+        assert isinstance(icons._composite[0], FlexBox)
 
     def test_options(self):
         icons = ChatReactionIcons(options={"like": "thumb-up", "dislike": "thumb-down"})

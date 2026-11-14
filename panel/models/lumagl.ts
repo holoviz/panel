@@ -2,8 +2,6 @@
 // SPDX-License-Identifier: MIT
 // Copyright (c) vis.gl contributors
 
-/* eslint-disable key-spacing, max-len, no-inline-comments, camelcase */
-
 /**
  * Standard WebGL, WebGL2 and extension constants (OpenGL constants)
  * @note (Most) of these constants are also defined on the WebGLRenderingContext interface.

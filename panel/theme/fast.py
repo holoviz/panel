@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import pathlib
-
-from collections.abc import Callable
+import typing as t
 
 import param
 
@@ -19,6 +18,9 @@ from .base import (
     DarkTheme, DefaultTheme, Design, Inherit,
 )
 
+if t.TYPE_CHECKING:
+    from collections.abc import Callable
+
 COLLAPSED_SVG_ICON = """
 <svg style="stroke: var(--accent-fill-rest);" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" slot="collapsed-icon">
   <path d="M15.2222 1H2.77778C1.79594 1 1 1.79594 1 2.77778V15.2222C1 16.2041 1.79594 17 2.77778 17H15.2222C16.2041 17 17 16.2041 17 15.2222V2.77778C17 1.79594 16.2041 1 15.2222 1Z" stroke-linecap="round" stroke-linejoin="round"></path>
@@ -33,6 +35,13 @@ EXPANDED_SVG_ICON = """
   <path d="M5.44446 9H12.5556" stroke-linecap="round" stroke-linejoin="round"></path>
 </svg>
 """ # noqa
+
+TOOLBAR_CSS = """
+.bk-OnOffButton.bk-active.bk-above { border-bottom-color: var(--accent-foreground-active); }
+.bk-OnOffButton.bk-active.bk-below { border-top-color: var(--accent-foreground-active); }
+.bk-OnOffButton.bk-active.bk-right { border-left-color: var(--accent-foreground-active); }
+.bk-OnOffButton.bk-active.bk-left { border-right-color: var(--accent-foreground-active); }
+"""
 
 FONT_URL = "//fonts.googleapis.com/css?family=Open+Sans"
 
@@ -127,6 +136,7 @@ class FastStyle(param.Parameterized):
                     "text_font": self.font,
                     "text_font_size": "1.15em",
                 },
+                "Toolbar": {"stylesheets": [TOOLBAR_CSS]},
             }
         }
 
@@ -249,7 +259,7 @@ class Fast(Design):
             'opensans': f'https:{FONT_URL}',
         },
         'js_modules': {
-            'fast': f'{config.npm_cdn}/@microsoft/fast-components@2.30.6/dist/fast-components.js',
+            'fast': f'{config.npm_cdn}/@microsoft/fast-components@2.30.6/dist/fast-components.min.js',
             'fast-design': 'js/fast_design.js'
         },
         'bundle': True,

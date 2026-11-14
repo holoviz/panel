@@ -3,8 +3,7 @@ Defines a WYSIWYG TextEditor widget based on quill.js.
 """
 from __future__ import annotations
 
-from collections.abc import Mapping
-from typing import TYPE_CHECKING, ClassVar
+import typing as t
 
 import param
 
@@ -13,7 +12,9 @@ from pyviz_comms import JupyterComm
 from ..util import lazy_load
 from .base import Widget
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
@@ -36,8 +37,12 @@ class TextEditor(Widget):
     disabled = param.Boolean(default=False, doc="""
         Whether the editor is disabled.""")
 
-    mode = param.Selector(default='toolbar', objects=['bubble', 'toolbar'], doc="""
-        Whether to display a toolbar or a bubble menu on highlight.""")
+    mode: t.Literal['bubble', 'toolbar'] = param.Selector(
+        default='toolbar', objects=['bubble', 'toolbar'], doc="""
+        Whether to display a toolbar or a bubble menu on highlight.""")  # type: ignore[assignment, ty:invalid-assignment]
+
+    on_keyup = param.Boolean(default=True, doc="""
+        Whether to update the value on every key press or only upon loss of focus / hotkeys.""")
 
     toolbar = param.ClassSelector(default=True, class_=(list, bool), doc="""
         Toolbar configuration either as a boolean toggle or a configuration
@@ -45,10 +50,20 @@ class TextEditor(Widget):
 
     placeholder = param.String(doc="Placeholder output when the editor is empty.")
 
-    value = param.String(default="", doc="State of the current text in the editor")
+    selection = param.Dict(default={}, doc="""
+        The current text selection in the editor, as ``{"text": "..."}`` when
+        the user has a non-empty selection, else ``{}``. Updates live as the
+        selection changes.""")
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
-        'name': 'name', 'value': 'text'
+    value = param.String(default="", doc="""
+        State of the current text in the editor if `on_keyup`. Otherwise, only upon loss of focus,
+        i.e. clicking outside the editor, or pressing <Ctrl+Enter> or <Cmd+Enter>.""")
+
+    value_input = param.String(default="", doc="""
+        State of the current text updated on every key press. Identical to `value` if `on_keyup`.""")
+
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
+        'label': 'name', 'value': 'text', 'value_input': 'text_input',
     }
 
     def _get_model(

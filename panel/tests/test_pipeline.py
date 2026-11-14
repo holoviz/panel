@@ -50,7 +50,7 @@ class Stage2b(param.Parameterized):
 
     c = param.Number(default=5, precedence=-1, bounds=(0, None))
 
-    root = param.Parameter(default=0.1)
+    root: float = param.Parameter(default=0.1)  # type: ignore[assignment, ty:invalid-assignment]
 
     @param.depends('c', 'root')
     def view(self):
@@ -63,6 +63,23 @@ class Stage2b(param.Parameterized):
 class DummyStage(param.Parameterized):
 
     def panel(self):
+        return 'foo'
+
+
+class DummyReadyParameterStage(param.Parameterized):
+
+    ready = param.Boolean(default=False)
+
+    def panel(self):
+        return 'foo'
+
+
+class DummyResetReadyParameterStage(param.Parameterized):
+
+    ready = param.Boolean(default=False)
+
+    def panel(self):
+        self.ready = False
         return 'foo'
 
 
@@ -411,3 +428,223 @@ def test_pipeline_repr():
 
     pipeline.add_stage('Stage 2', Stage2)
     assert repr(pipeline) == 'Pipeline:\n    [0] Stage 1: Stage1()\n    [1] Stage 2: Stage2()'
+
+
+@pytest.mark.parametrize("stage1", [DummyReadyParameterStage(), DummyResetReadyParameterStage()])
+@pytest.mark.parametrize("auto_advance", [True, False])
+def test_pipeline_ready_parameter_preserved_on_back_navigation(stage1, auto_advance):
+    """
+    Regression test for https://github.com/holoviz/panel/issues/8378 and https://github.com/holoviz/panel/issues/8631
+
+    On back navigation, ensure the ready parameter is preserved and the next button is
+    enabled when ready parameter is True.
+    """
+    pipeline = Pipeline(ready_parameter='ready')
+    pipeline.add_stage('Stage 1', stage1, auto_advance=auto_advance)
+    pipeline.add_stage('Stage 2', DummyStage)
+
+    pipeline._state.ready = True
+    if not auto_advance:
+        pipeline._next()
+    assert pipeline._stage == 'Stage 2'
+    pipeline._previous()
+    assert pipeline._stage == 'Stage 1'
+    assert pipeline._state.ready == isinstance(stage1, DummyReadyParameterStage)
+    assert not pipeline.next_button.disabled == pipeline._state.ready
+    pipeline._state.ready = True
+    if not auto_advance:
+        assert not pipeline.next_button.disabled
+        pipeline._next()
+    assert pipeline._stage == 'Stage 2'
+
+
+def test_previous_sets_lower_stage():
+    """
+    Non regression test for https://github.com/holoviz/panel/issues/5687
+
+    When navigating back from stage N to stage N-1, and then hitting previous once
+    again, make sure current state is stage N-2 and not stage N.
+    """
+    pipeline = Pipeline()
+
+    pipeline.add_stage("Stage 1", DummyStage())
+    pipeline.add_stage("Stage 2", DummyStage())
+    pipeline.add_stage("Stage 3", DummyStage())
+
+    pipeline._next()
+    pipeline._next()
+
+    assert pipeline._stage == "Stage 3"
+    assert pipeline._route == ["Stage 1", "Stage 2", "Stage 3"]
+
+    pipeline._previous()
+    assert pipeline._stage == "Stage 2"
+    assert pipeline._route == ["Stage 1", "Stage 2"]
+    pipeline._previous()
+
+    assert pipeline._stage == "Stage 1"
+    assert pipeline._route == ["Stage 1"]
+
+
+def test_pipeline_branch_does_not_inherit_from_other_branch():
+    class Base(param.Parameterized):
+        def panel(self):
+            return Column()
+
+    class Input(Base):
+        value = param.Integer(default=2)
+
+    class Multiply(Base):
+        value = param.Integer()
+        operator = param.String('*')
+
+        @param.output('result')
+        def output(self):
+            return self.value * 3
+
+    class Add(Base):
+        value = param.Integer()
+        operator = param.String('+')
+
+        @param.output('result')
+        def output(self):
+            return self.value + 3
+
+    class Result(Base):
+        value = param.Integer()
+        operator = param.String('')
+        result = param.Integer()
+
+    pipeline = Pipeline(inherit_params=True)
+    pipeline.add_stage('Input', Input)
+    pipeline.add_stage('Multiply', Multiply)
+    pipeline.add_stage('Add', Add)
+    pipeline.add_stage('Result', Result)
+    pipeline.define_graph({
+        'Input': ('Multiply', 'Add'),
+        'Multiply': 'Result',
+        'Add': 'Result',
+    })
+
+    for branch, operator, result in [('Multiply', '*', 6), ('Add', '+', 5), ('Multiply', '*', 6)]:
+        pipeline.next_selector.value = branch
+        pipeline.param.trigger('next')
+        pipeline.param.trigger('next')
+        assert pipeline._state.operator == operator
+        assert pipeline._state.result == result
+        pipeline.param.trigger('previous')
+        pipeline.param.trigger('previous')
+
+
+def test_pipeline_previous_selecting_other_predecessor_updates_route():
+    class Base(param.Parameterized):
+        def panel(self):
+            return Column()
+
+    class Input(Base):
+        value = param.Integer(default=2)
+
+    class Multiply(Base):
+        value = param.Integer()
+        operator = param.String('*')
+
+        @param.output('result')
+        def output(self):
+            return self.value * 3
+
+    class Add(Base):
+        value = param.Integer()
+        operator = param.String('+')
+
+        @param.output('result')
+        def output(self):
+            return self.value + 3
+
+    class Result(Base):
+        value = param.Integer()
+        operator = param.String('')
+        result = param.Integer()
+
+    pipeline = Pipeline(inherit_params=True)
+    pipeline.add_stage('Input', Input)
+    pipeline.add_stage('Multiply', Multiply)
+    pipeline.add_stage('Add', Add)
+    pipeline.add_stage('Result', Result)
+    pipeline.define_graph({
+        'Input': ('Multiply', 'Add'),
+        'Multiply': 'Result',
+        'Add': 'Result',
+    })
+
+    pipeline.next_selector.value = 'Multiply'
+    pipeline.param.trigger('next')
+    pipeline.param.trigger('next')
+    assert pipeline._route == ['Input', 'Multiply', 'Result']
+
+    pipeline.prev_selector.value = 'Add'
+    pipeline.param.trigger('previous')
+    assert pipeline._stage == 'Add'
+    assert pipeline._route == ['Input', 'Add']
+
+    pipeline.param.trigger('next')
+    assert pipeline._route == ['Input', 'Add', 'Result']
+    assert pipeline._state.operator == '+'
+    assert pipeline._state.result == 5
+
+
+def _multi_input_pipeline():
+    class Base(param.Parameterized):
+        def panel(self):
+            return Column()
+
+    class A(Base):
+        x = param.Integer(default=1)
+
+    class B(Base):
+        x = param.Integer()
+        bout = param.Integer(default=8)
+
+        @param.output('bout')
+        def output(self):
+            return self.bout
+
+    class C(Base):
+        x = param.Integer()
+        bout = param.Integer()
+
+    pipeline = Pipeline(inherit_params=True)
+    pipeline.add_stage('A', A)
+    pipeline.add_stage('B', B)
+    pipeline.add_stage('C', C)
+    pipeline.define_graph({'A': ('B', 'C'), 'B': 'C'})
+    return pipeline
+
+
+def test_pipeline_multi_input_stage_merges_all_stages_on_route():
+    pipeline = _multi_input_pipeline()
+
+    pipeline.next_selector.value = 'B'
+    pipeline.param.trigger('next')
+    pipeline.param.trigger('next')
+
+    assert pipeline._route == ['A', 'B', 'C']
+    assert pipeline._state.x == 1
+    assert pipeline._state.bout == 8
+
+
+def test_pipeline_multi_input_stage_ignores_abandoned_branch():
+    pipeline = _multi_input_pipeline()
+
+    pipeline.next_selector.value = 'B'
+    pipeline.param.trigger('next')
+    pipeline.param.trigger('next')
+    pipeline.param.trigger('previous')
+    pipeline.param.trigger('previous')
+    assert pipeline._route == ['A']
+
+    pipeline.next_selector.value = 'C'
+    pipeline.param.trigger('next')
+
+    assert pipeline._route == ['A', 'C']
+    assert pipeline._state.x == 1
+    assert pipeline._state.bout == 0

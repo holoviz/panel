@@ -20,31 +20,38 @@ case is up to you to evaluate.
 
 from __future__ import annotations
 
-from collections.abc import Mapping
-from typing import TYPE_CHECKING, ClassVar
+import typing as t
 
 import param
 
 from ..models.speech_to_text import SpeechToText as _BkSpeechToText
 from .base import Widget
-from .button import BUTTON_TYPES
+from .button import (
+    BUTTON_TYPES as _BASE_BUTTON_TYPES,
+    _merge_color_button_type_aliases_in_param_change,
+    _normalize_color_button_type_constructor_params,
+    _register_color_button_type_sync_watchers,
+    _sync_color_button_type_alias_post_init,
+)
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from bokeh.model import Model
 
-BUTTON_TYPES = BUTTON_TYPES+['light', 'dark']
+BUTTON_TYPES = _BASE_BUTTON_TYPES+['light', 'dark']
 
 
 class Language(param.Parameterized):
 
     country = param.String(doc="A country like 'United States'")
 
-    name = param.String(constant=False, doc="""
-        The bcp 47 code uniquely identifying the language. For example
-        'en-US'.""")
-
     family = param.String(doc="""
         The overall language family. For example 'English'.""")
+
+    name: str = param.String(constant=False, allow_None=False, doc="""
+        The bcp 47 code uniquely identifying the language. For example
+        'en-US'.""")  # type: ignore[assignment]
 
     def __str__(self):
         return f"{self.family} - {self.country} ({self.name})"
@@ -289,7 +296,7 @@ class SpeechToText(Widget):
 
     :Example:
 
-    >>> SpeechToText(button_type="light")
+    >>> SpeechToText(color="light")
 
     This functionality is **experimental** and only supported by
     Chrome and a few other browsers.  Checkout
@@ -319,12 +326,13 @@ class SpeechToText(Widget):
         incoming audio, and attempts to return a RecognitionResult
         using the audio captured so far.""")
 
-    lang = param.Selector(default="", objects=[""] + LANGUAGE_CODES,
-                                allow_None=True, label="Language", doc="""
+    lang: str = param.Selector(
+        default="", objects=[""] + LANGUAGE_CODES,
+        allow_None=True, label="Language", doc="""
         The language of the current SpeechRecognition in BCP 47
         format. For example 'en-US'. If not specified, this defaults
         to the HTML lang attribute value, or the user agent's language
-        setting if that isn't set either.  """)
+        setting if that isn't set either.  """)  # type: ignore[assignment, ty:invalid-assignment]
 
     continuous = param.Boolean(default=False, doc="""
         Controls whether continuous results are returned for each
@@ -354,8 +362,15 @@ class SpeechToText(Widget):
     button_hide = param.Boolean(default=False, label="Hide the Button", doc="""
         If True no button is shown. If False a toggle Start/ Stop button is shown.""")
 
-    button_type = param.Selector(default="light", objects=BUTTON_TYPES, doc="""
-        The button styling.""")
+    button_type: t.Literal[
+        'default', 'primary', 'success', 'warning', 'danger', 'light', 'dark'
+    ] = param.Selector(default="light", objects=BUTTON_TYPES, doc="""
+        The button styling. The same value is exposed as ``color``.""")  # type: ignore[assignment, ty:invalid-assignment]
+
+    color: t.Literal[
+        'default', 'primary', 'success', 'warning', 'danger', 'light', 'dark'
+    ] = param.Selector(default="light", objects=BUTTON_TYPES, doc="""
+        Semantic color of the button; alias for ``button_type``.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     button_not_started = param.String(label="Button Text when not started", doc="""
         The text to show on the button when the SpeechRecognition
@@ -380,28 +395,37 @@ class SpeechToText(Widget):
     speech_started = param.Boolean(constant=True, doc="""
         Returns True if the the User has started speaking and False otherwise.""")
 
-    results = param.List(constant=True, doc="""
-        The `results` as a list of Dictionaries.""")
+    results: list[dict[str, t.Any]] = param.List(constant=True, item_type=dict, doc="""
+        The `results` as a list of Dictionaries.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     value = param.String(default="", constant=True, label="Last Result", doc="""
         The transcipt of the highest confidence RecognitionAlternative
         of the last RecognitionResult. Please note we strip the
         transcript for leading spaces.""")
 
-    _grammars = param.List(constant=True, doc="""
+    _grammars: list[dict] = param.List(constant=True, item_type=dict, doc="""
         List used to transfer the serialized grammars from server to
-        browser.""")
+        browser.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
-        'grammars': None, '_grammars': 'grammars', 'name': None, 'value': None,
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
+        'grammars': None, '_grammars': 'grammars', 'label': None, 'value': None,
+        'color': None,
     }
 
-    _widget_type: ClassVar[type[Model]] = _BkSpeechToText
+    _widget_type: t.ClassVar[type[Model]] = _BkSpeechToText
 
     def __init__(self, **params):
+        _normalize_color_button_type_constructor_params(params)
         super().__init__(**params)
+        _register_color_button_type_sync_watchers(self)
+        _sync_color_button_type_alias_post_init(self)
         if self.grammars:
             self._update_grammars()
+
+    def _process_param_change(self, params):
+        params = dict(params)
+        _merge_color_button_type_aliases_in_param_change(params)
+        return super()._process_param_change(params)
 
     def __repr__(self, depth=None):
         # Custom repr needed to avoid infinite recursion because this Parameterized class has

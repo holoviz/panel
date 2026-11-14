@@ -36,6 +36,13 @@ Discover how to launch and configure a Panel application programmatically.
 Discover how-to launch and configure multiple applications on the same server.
 :::
 
+:::{grid-item-card} {octicon}`git-branch;2.5em;sd-mr-1 sd-animate-grow50` Wildcard routes
+:link: wildcard_routes
+:link-type: doc
+
+Discover how to serve apps on dynamic URL patterns and access route parameters.
+:::
+
 :::{grid-item-card} {octicon}`stack;2.5em;sd-mr-1 sd-animate-grow50` Configure session re-connect
 :link: reconnect
 :link-type: doc
@@ -64,11 +71,25 @@ Discover how to access a Panel deployment running remotely via SSH.
 Discover how to serve static files alongside your Panel application(s).
 :::
 
+:::{grid-item-card} {octicon}`paintbrush;2.5em;sd-mr-1` Brand the server pages
+:link: page_config
+:link-type: doc
+
+Discover how to apply your theme, logo and title to the index, login and error pages.
+:::
+
 :::{grid-item-card} {octicon}`plus-circle;2.5em;sd-mr-1` Add custom endpoints
 :link: endpoints
 :link-type: doc
 
 Discover how to add custom endpoints to your Panel server.
+:::
+
+:::{grid-item-card} {octicon}`broadcast;2.5em;sd-mr-1` Serve a REST API
+:link: rest_api
+:link-type: doc
+
+Serve session data and functions over HTTP, and read the OpenAPI docs.
 :::
 
 :::{grid-item-card} {octicon}`package;2.5em;sd-mr-1` Configure the Websocket
@@ -88,10 +109,13 @@ Discover how configure the web socket settings to enable larger data transfers
 commandline
 programmatic
 multiple
+wildcard_routes
 ssh
 reconnect
 proxy
 static_files
+page_config
 endpoints
+rest_api
 websockets
 ```

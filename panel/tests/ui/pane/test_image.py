@@ -1,8 +1,10 @@
+from pathlib import Path
+
 import pytest
 
 from numpy.testing import assert_allclose
 
-pytestmark = pytest.mark.ui
+pytestmark = [pytest.mark.ui, pytest.mark.internet]
 
 from panel.layout import Row
 from panel.pane import PDF, PNG, SVG
@@ -20,10 +22,10 @@ def get_bbox(page, obj):
     wait_for_server(port)
 
     if obj.embed:
-        page.goto(f"http://localhost:{port}")
+        page.goto(f"http://127.0.0.1:{port}")
     else:
         with page.expect_response(obj.object):
-            page.goto(f"http://localhost:{port}")
+            page.goto(f"http://127.0.0.1:{port}")
     wait_until(lambda: page.locator("img") is not None, page)
     for _ in range(5):
         bbox = page.locator("img").bounding_box()
@@ -184,7 +186,7 @@ def test_pdf_embed(page):
 
     src = page.locator("embed").get_attribute('src')
 
-    assert src.startswith(f"blob:http://localhost:{port}")
+    assert src.startswith(f"blob:http://127.0.0.1:{port}")
     assert src.endswith("#page=1")
 
 def test_pdf_embed_start_page(page):
@@ -195,7 +197,7 @@ def test_pdf_embed_start_page(page):
 
     src = page.locator("embed").get_attribute('src')
 
-    assert src.startswith(f"blob:http://localhost:{port}")
+    assert src.startswith(f"blob:http://127.0.0.1:{port}")
     assert src.endswith("#page=22")
 
 def test_pdf_no_embed_start_page(page):
@@ -206,3 +208,14 @@ def test_pdf_no_embed_start_page(page):
 
     src = page.locator("embed").get_attribute('src')
     assert src == PDF_FILE + "#page=22"
+
+def test_pdf_local_bytes_no_embed_uses_blob_url(page):
+    path = Path(__file__).parent.parent.parent / "test_data" / "sample.pdf"
+    pdf_pane = PDF(path.read_bytes(), embed=False)
+
+    _, port = serve_component(page, pdf_pane)
+
+    src = page.locator("embed").get_attribute('src')
+
+    assert src.startswith(f"blob:http://127.0.0.1:{port}")
+    assert src.endswith("#page=1")

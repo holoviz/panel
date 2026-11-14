@@ -5,6 +5,7 @@ pytest.importorskip("playwright")
 from playwright.sync_api import expect
 
 from panel.layout import Tabs
+from panel.pane import Markdown
 from panel.pane.image import PNG
 from panel.tests.util import serve_component, wait_until
 
@@ -20,17 +21,16 @@ def test_tabs_toggle_visible(page):
     expect(tabs_root).to_have_count(1)
 
     tab_panels = tabs_root.locator(".bk-panel-models-markup-HTML")
-    expect(tab_panels).to_have_count(2)
+    expect(tab_panels).to_have_count(1)
 
-    expect(tab_panels.first).to_be_visible()
-    expect(tab_panels.last).not_to_be_visible()
+    expect(tab_panels.first).to_have_text("Foo")
 
-    tabs_root.locator('.bk-tab').last.click()
+    tabs_root.locator('.bk-tab').last.click(force=True)
 
-    expect(tab_panels.first).not_to_be_visible()
-    expect(tab_panels.last).to_be_visible()
+    expect(tab_panels.last).to_have_text("Bar")
 
 
+@pytest.mark.internet
 def test_tabs_toggle_clickable(page):
     url = "https://assets.holoviz.org/panel/samples/png_sample.png"
     png_pane = PNG(url, link_url=url, target="_self")
@@ -43,17 +43,33 @@ def test_tabs_toggle_clickable(page):
     expect(tabs_root).to_have_count(1)
 
     tab_panels = tabs_root.locator(".bk-panel-models-markup-HTML")
-    expect(tab_panels).to_have_count(2)
-
-    expect(tab_panels.first).not_to_be_visible()
+    expect(tab_panels).to_have_count(1)
     expect(tab_panels.last).to_be_visible()
 
     page.mouse.click(200, 200)
 
-    assert page.url.startswith('http://localhost')
+    assert page.url.startswith('http://127.0.0.1')
 
-    tabs_root.locator('.bk-tab').first.click()
+    tabs_root.locator('.bk-tab').first.click(force=True)
 
-    page.mouse.click(200, 200)
+    expect(tab_panels.first).to_be_visible()
+
+    page.locator(f'a[href="{url}"]').click()
 
     wait_until(lambda: page.url == url, page)
+
+
+def test_tabs_rename_updates_header(page):
+    tabs = Tabs(("a", Markdown("x")), ("b", Markdown("y")))
+
+    serve_component(page, tabs)
+
+    headers = page.locator('.bk-tab')
+    expect(headers).to_have_text(["a", "b"])
+
+    tabs[0] = ("c", tabs[0])
+
+    expect(headers).to_have_text(["c", "b"])
+    content = page.locator('.bk-panel-models-markup-HTML').first
+    expect(content).to_have_text("x")
+    expect(content).to_be_visible()

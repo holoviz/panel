@@ -21,6 +21,20 @@ How to effectively develop apps in a notebook environment.
 How to effectively develop apps in a Python or Markdown file.
 :::
 
+:::{grid-item-card} {octicon}`file-code;2.5em;sd-mr-1 sd-animate-grow50` Type check your code
+:link: typing/index
+:link-type: doc
+
+How to configure static type checkers like mypy to work with Param and Panel.
+:::
+
+:::{grid-item-card} {octicon}`hubot;2.5em;sd-mr-1 sd-animate-grow50` Use an AI assistant
+:link: use_llms
+:link-type: doc
+
+How to give AI coding assistants current Panel guidance with HoloViz skills and llms.txt.
+:::
+
 ::::
 
 ## Build apps
@@ -228,7 +242,7 @@ How to distribute your Panel applications
 :link: integrations/index
 :link-type: doc
 
-How to integrate Panel in other application based on Flask, FastAPI or Django.
+How to integrate Panel in other applications based on Flask, FastAPI or Django.
 :::
 
 :::{grid-item-card} {octicon}`share;2.5em;sd-mr-1 sd-animate-grow50` Deploy applications
@@ -301,6 +315,7 @@ How to convert AnyWidget widgets to Panel widgets.
 
 prepare_to_develop
 build_apps
+use_llms
 use_specialized_uis
 manage_session_tasks
 extending_panel

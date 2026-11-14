@@ -9,7 +9,7 @@ Since Panel is built on top of Bokeh, all Panel objects can easily be converted 
 ```{pyodide}
 import panel as pn
 
-model = pn.Column('# Some markdown').get_root()
+model = pn.ui.Column('# Some markdown').get_root()
 model
 ```
 

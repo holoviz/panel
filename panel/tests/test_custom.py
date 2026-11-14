@@ -1,12 +1,18 @@
+import os
+
 import numpy as np
 import pandas as pd
 import param
 
+from bokeh.document import Document
+from bokeh.models import ImportedStyleSheet
 from bokeh.plotting import figure
 
-from panel.custom import PyComponent, ReactiveESM
+from panel.custom import PyComponent, ReactComponent, ReactiveESM
+from panel.io.state import set_curdoc, state
 from panel.layout import Row
 from panel.pane import Bokeh, Markdown
+from panel.util import edit_readonly
 from panel.viewable import Child, Children
 
 
@@ -67,11 +73,97 @@ def test_reactive_esm_sync_dataframe(document, comm):
         np.testing.assert_array_equal(values, expected.get(col))
 
 
+def test_reactive_esm_stylesheet_updates_across_documents(document, comm):
+    """A reused ESM component does not attach stylesheets to another document."""
+    other_doc = Document()
+    component = ReactiveESM(stylesheets=['https://example.com/first.css'])
+
+    with set_curdoc(document):
+        model1 = component.get_root(document, comm)
+        document.add_root(model1)
+        model2 = component.get_root(other_doc, comm)
+        other_doc.add_root(model2)
+        shared = ImportedStyleSheet(url='https://example.com/shared.css')
+        process = component._process_param_change
+
+        def add_shared(params):
+            props = process(params)
+            if 'stylesheets' in props:
+                props['stylesheets'].append(shared)
+            return props
+
+        component._process_param_change = add_shared
+        component.stylesheets = ['https://example.com/second.css']
+
+    for model, doc in ((model1, document), (model2, other_doc)):
+        assert all(sts.document is doc for sts in model.stylesheets if isinstance(sts, ImportedStyleSheet))
+        assert any(
+            isinstance(sts, ImportedStyleSheet) and sts.url == 'https://example.com/shared.css'
+            for sts in model.stylesheets
+        )
+        doc.to_json()
+
+
+class ESMBundle(ReactiveESM):
+
+    _bundle_path = "esm.js"  # type: ignore[assignment]
+
+
+def test_esm_bundle_resource_path():
+    assert ESMBundle._render_esm(compiled=True, server=True) == "./components/panel.tests.test_custom/ESMBundle/_bundle_path/esm.js"
+
+
+def test_esm_bundle_resource_rel_path():
+    with edit_readonly(state):
+        state.rel_path = ".."
+    try:
+        assert ESMBundle._render_esm(compiled=True, server=True) == "../components/panel.tests.test_custom/ESMBundle/_bundle_path/esm.js"
+    finally:
+        with edit_readonly(state):
+            state.rel_path = None
+
+
+def test_react_bundle_url_omits_importmap(tmp_path, monkeypatch, server_document):
+    from bokeh.embed.bundle import extension_dirs
+
+    bundle = tmp_path / 'mui.bundle.js'
+    bundle.write_text('export default {}')
+    # Served as an extension, since a url relative to the module cannot be
+    # computed across drives, e.g. for tmp_path on Windows.
+    monkeypatch.setitem(extension_dirs, 'panel-test-ext', tmp_path)
+
+    class MuiBundle(ReactComponent):
+        _bundle = bundle
+        _importmap = {'imports': {'@mui/material': 'https://esm.sh/@mui/material@7.1.0'}}
+
+    model = MuiBundle().get_root(server_document)
+
+    assert model.bundle == 'url'
+    assert model.importmap == {}
+
+
 class ESMWithChildren(ReactiveESM):
 
     child = Child(doc="""A child Viewable to be displayed in the ESM.""")
 
     children = Children(doc="""Child Viewables to be displayed in the ESM.""")
+
+
+class ReactWithChildren(ReactComponent):
+
+    items = Children()
+
+    _esm = "export function render({model}) { return null }"
+
+
+def test_react_component_initial_data_serialization(document, comm):
+    component = ReactWithChildren(items=[Markdown("foo")])
+
+    model = component.get_root(document, comm)
+    document.add_root(model)
+
+    data = document.to_json(deferred=False)["roots"][0]["attributes"]["data"]
+    assert [item["id"] for item in data["attributes"]["items"]] == [model.data.items[0].id]
 
 
 def test_reactive_esm_model_cleanup(document, comm):
@@ -192,7 +284,7 @@ def test_reactive_esm_children_pane_replace(document, comm):
 
 class ESMOverride(ReactiveESM):
 
-    width = param.Integer(default=42)
+    width = param.Integer(default=42, allow_None=True)
 
 def test_esm_parameter_override(document, comm):
     esm = ESMOverride()
@@ -204,3 +296,181 @@ def test_esm_parameter_override(document, comm):
     esm.width = 84
 
     assert model.width == 84
+
+
+class ESMWithValue(ReactiveESM):
+
+    value = param.String(default='A', doc="Test value")
+
+
+def test_esm_python_update_not_suppressed_by_stale_frontend_event(document, comm):
+    esm = ESMWithValue(value='A')
+
+    model = esm.get_root(document, comm)
+
+    # Simulate a frontend event setting value to 'B'
+    with set_curdoc(document):
+        esm._process_events({'value': 'B'})
+
+    assert esm.value == 'B'
+
+    # Now a Python-side update sets a different value
+    esm.value = 'C'
+
+    # The model must reflect the Python update
+    assert model.data.value == 'C'
+
+
+def test_esm_boomerang_suppresses_model_update(document, comm):
+    esm = ESMWithValue(value='A')
+
+    model = esm.get_root(document, comm)
+
+    with set_curdoc(document):
+        esm._process_events({'value': 'B'})
+
+    assert esm.value == 'B'
+    assert model.data.value == 'A'
+
+
+def test_esm_python_update_different_from_frontend_is_applied(document, comm):
+    esm = ESMWithValue(value='A')
+
+    model = esm.get_root(document, comm)
+
+    # Frontend sends 'B'
+    with set_curdoc(document):
+        esm._process_events({'value': 'B'})
+
+    assert esm.value == 'B'
+
+    # Python sets a different value from what the frontend sent
+    esm.value = 'C'
+
+    # The model must reflect the Python update since 'C' != 'B'
+    assert model.data.value == 'C'
+
+
+class ESMWithEvent(ReactiveESM):
+
+    clicks = param.Integer(default=0)
+
+    value = param.Event()
+
+
+def test_esm_event_reset_does_not_retrigger_watchers(document, comm):
+    esm = ESMWithEvent()
+
+    model = esm.get_root(document, comm)
+
+    values = []
+    esm.param.watch(lambda e: values.append(e.new), 'value')
+
+    with set_curdoc(document):
+        esm.param.update(clicks=1, value=True)
+
+    assert values == [True]
+    assert model.data.value is False
+
+
+def test_reactive_esm_children_preprocess_jslink(document, comm):
+    from panel.widgets import IntSlider
+
+    container = ESMWithChildren()
+    container.get_root(document, comm)
+
+    w1 = IntSlider(value=1)
+    w2 = IntSlider(value=2)
+    w1.jslink(w2, value='value', bidirectional=True)
+    with set_curdoc(document):
+        container.children = [w1, w2]
+
+    ref = list(container._models.keys())[0]
+    m1 = w1._models[ref][0]
+    m2 = w2._models[ref][0]
+    assert 'change:value' in m1.js_property_callbacks
+    assert 'change:value' in m2.js_property_callbacks
+
+
+class Inner(param.Parameterized):
+
+    text = param.String(default='a')
+
+
+class ESMWithNested(ReactiveESM):
+
+    child = param.ClassSelector(class_=Inner)
+
+    children = param.List(item_type=Inner)
+
+
+def test_reactive_esm_tags_nested_datamodels(document, comm):
+    esm = ESMWithNested(child=Inner(), children=[Inner()])
+
+    model = esm.get_root(document, comm)
+
+    ref = f"__ref:{model.ref['id']}"
+    assert ref in model.data.tags
+    assert ref in model.data.child.tags
+    assert ref in model.data.children[0].tags
+
+    esm.child = Inner(text='b')
+    esm.children = [Inner(text='c')]
+
+    assert model.data.child.text == 'b'
+    assert ref in model.data.child.tags
+    assert model.data.children[0].text == 'c'
+    assert ref in model.data.children[0].tags
+
+
+def test_reactive_esm_children_append_attaches_without_recompute(document, comm, monkeypatch):
+    from bokeh.document.models import DocumentModelManager
+
+    from panel.config import config
+
+    # Inlining the stylesheets of new children in a notebook replaces
+    # models, which does require a recompute.
+    monkeypatch.setattr(config, 'inline', False)
+    md1 = Markdown('foo')
+    esm = ESMWithChildren(children=[md1])
+
+    model = esm.get_root(document, comm)
+    document.add_root(model)
+
+    recomputes = []
+    recompute = DocumentModelManager.recompute
+    monkeypatch.setattr(
+        DocumentModelManager, 'recompute', lambda self: recomputes.append(1) or recompute(self)
+    )
+
+    md2 = Markdown('bar')
+    esm.children = [md1, md2]
+
+    ref = model.ref['id']
+    assert ref in md1._models and ref in md2._models
+    md2_model, _ = md2._models[ref]
+    assert model.data.children == [md1._models[ref][0], md2_model]
+    assert md2_model.document is document
+    assert md2_model.id in document.models._models
+    assert not recomputes
+
+    monkeypatch.undo()
+    attached = set(document.models._models)
+    document.models.recompute()
+    assert set(document.models._models) == attached
+
+
+def test_render_esm_reflects_file_changes(tmp_path):
+    esm_file = tmp_path / 'component.js'
+    esm_file.write_text('export function render() { return "a" }')
+
+    class ESMFromFile(ReactiveESM):
+        _esm = esm_file
+
+    assert 'return "a"' in ESMFromFile._render_esm()
+
+    esm_file.write_text('export function render() { return "b" }')
+    stat = esm_file.stat()
+    os.utime(esm_file, ns=(stat.st_atime_ns, stat.st_mtime_ns + 10**9))
+
+    assert 'return "b"' in ESMFromFile._render_esm()

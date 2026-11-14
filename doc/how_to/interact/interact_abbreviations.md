@@ -15,7 +15,6 @@ To use `interact`, you need to define a function that you want to explore. Here 
 ```{pyodide}
 import panel as pn
 from panel.interact import interact
-from panel import widgets
 
 pn.extension() # for notebook
 
@@ -32,7 +31,7 @@ interact(f, x=10)
 When you pass an integer-valued keyword argument of `10` (`x=10`) to `interact`, it generates an integer-valued slider control with a range of `[-10,+3*10]`. In this case, `10` is an *abbreviation* for an actual slider widget:
 
 ```{pyodide}
-slider_widget = widgets.IntSlider(start=-10,end=30,step=1,value=10)
+slider_widget = pn.ui.IntSlider(start=-10,end=30,step=1,value=10)
 ```
 
 In fact, we can get the same result if we pass this `IntSlider` as the keyword argument for `x`:

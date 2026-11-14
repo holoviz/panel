@@ -6,7 +6,7 @@ pytest.importorskip("playwright")
 from panel.chat import ChatReactionIcons
 from panel.tests.util import serve_component, wait_until
 
-pytestmark = pytest.mark.ui
+pytestmark = [pytest.mark.ui, pytest.mark.internet]
 
 
 def test_toggle_icon_click(page):

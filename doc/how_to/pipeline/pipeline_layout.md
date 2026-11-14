@@ -32,7 +32,7 @@ class Input(param.Parameterized):
     value2 = param.Integer(default=3, bounds=(0,10))
 
     def panel(self):
-        return pn.Column(self.param.value1, self.param.value2)
+        return pn.ui.Column(self.param.value1, self.param.value2)
 
 class Multiply(Input):
 
@@ -41,7 +41,7 @@ class Multiply(Input):
     operator = param.String(default='*')
 
     def panel(self):
-        return pn.pane.Markdown(f'# {self.value1} * {self.value2}')
+        return pn.ui.Markdown(f'# {self.value1} * {self.value2}')
 
     @param.output('result')
     def output(self):
@@ -54,7 +54,7 @@ class Add(Input):
     operator = param.String(default='+')
 
     def panel(self):
-        return pn.pane.Markdown(f'# {self.value1} + {self.value2}')
+        return pn.ui.Markdown(f'# {self.value1} + {self.value2}')
 
     @param.output('result')
     def output(self):
@@ -68,7 +68,7 @@ class Result(Input):
     result = param.Integer(default=0)
 
     def panel(self):
-        return pn.pane.Markdown(f'# {self.value1} {self.operator} {self.value2} = {self.result}')
+        return pn.ui.Markdown(f'# {self.value1} {self.operator} {self.value2} = {self.result}')
 
 dag = pn.pipeline.Pipeline()
 
@@ -83,9 +83,9 @@ dag.define_graph({'Input': ('Multiply', 'Add'), 'Multiply': 'Result', 'Add': 'Re
 Now we can use any of the layout components to arrange the UI:
 
 ```{pyodide}
-pn.Column(
+pn.ui.Column(
     dag.title,
-    pn.Row(dag.buttons, pn.layout.HSpacer(), dag.stage),
+    pn.ui.Row(dag.buttons, pn.ui.HSpacer(), dag.stage),
     dag.network
 )
 ```

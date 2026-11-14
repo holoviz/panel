@@ -6,11 +6,11 @@ through a frontend input UI.
 
 from __future__ import annotations
 
-from collections.abc import Callable
+import typing as t
+
 from dataclasses import dataclass
 from functools import partial
 from io import BytesIO
-from typing import Any, ClassVar
 
 import param
 
@@ -18,13 +18,17 @@ from ..io.resources import CDN_DIST
 from ..layout import Row, Tabs
 from ..layout.base import ListLike, NamedListLike
 from ..pane.image import ImageBase
-from ..viewable import Viewable
 from ..widgets.base import WidgetBase
 from ..widgets.button import Button
 from ..widgets.input import FileInput, TextInput
 from .feed import CallbackState, ChatFeed
 from .input import ChatAreaInput
 from .message import ChatMessage, _FileInputMessage
+
+if t.TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from ..viewable import Viewable
 
 
 @dataclass
@@ -37,7 +41,7 @@ class _ChatButtonData:
     ----------
     index : int
         The index of the button.
-    name : str
+    label : str
         The name of the button.
     icon : str
         The icon to display.
@@ -52,7 +56,7 @@ class _ChatButtonData:
     """
 
     index: int
-    name: str
+    label: str
     icon: str
     objects: list
     buttons: list
@@ -76,10 +80,10 @@ class ChatInterface(ChatFeed):
     ... )
     """
 
-    auto_send_types = param.List(doc="""
+    auto_send_types: list[type[WidgetBase]] = param.List(item_type=type, doc="""
         The widget types to automatically send when the user presses enter
         or clicks away from the widget. If not provided, defaults to
-        `[TextInput]`.""")
+        `[TextInput]`.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     avatar = param.ClassSelector(class_=(str, BytesIO, bytes, ImageBase), doc="""
         The avatar to use for the user. Can be a single character text, an emoji,
@@ -118,6 +122,10 @@ class ChatInterface(ChatFeed):
     widgets = param.ClassSelector(class_=(WidgetBase, list), allow_refs=False, doc="""
         Widgets to use for the input. If not provided, defaults to
         `[TextInput]`.""")
+
+    widget_placeholder = param.String(default="Send a message", doc="""
+        Placeholder text for the default input widget.
+        Has no effect when custom `widgets` are provided.""")
 
     button_properties = param.Dict(default={}, doc="""
         Allows addition of functionality or customization of buttons
@@ -162,17 +170,23 @@ class ChatInterface(ChatFeed):
     _buttons = param.Dict(default={}, doc="""
         The rendered buttons.""")
 
-    _stylesheets: ClassVar[list[str]] = [f"{CDN_DIST}css/chat_interface.css"]
-    _input_type: ClassVar[type[WidgetBase]] = ChatAreaInput
+    _stylesheets: t.ClassVar[list[str]] = [f"{CDN_DIST}css/chat_interface.css"]
+    _input_type: t.ClassVar[type[WidgetBase]] = ChatAreaInput
 
     def __init__(self, *objects, **params):
         widgets = params.get("widgets")
+        default_widget: WidgetBase | None = None
         if widgets is None:
-            params["widgets"] = [self._input_type(placeholder="Send a message")]
+            placeholder = params.get(
+                "widget_placeholder", type(self).param.widget_placeholder.default
+            )
+            default_widget = self._input_type(placeholder=placeholder)
+            params["widgets"] = [default_widget]
         elif not isinstance(widgets, list):
             params["widgets"] = [widgets]
         active = params.pop("active", None)
         super().__init__(*objects, **params)
+        self._default_input_widget = default_widget
 
         self._input_container = Row(
             css_classes=["chat-interface-input-container"],
@@ -192,7 +206,7 @@ class ChatInterface(ChatFeed):
         Link the disabled and loading attributes of the chat box to the
         given object.
         """
-        mapping: dict[str, Any] = {"disabled": "disabled", "loading": "loading"}
+        mapping: dict[str, t.Any] = {"disabled": "disabled", "loading": "loading"}
         values = {p: getattr(self, p) for p in mapping}
         self.param.update(values)
         self.link(obj, **mapping)
@@ -204,6 +218,25 @@ class ChatInterface(ChatFeed):
         """
         if self.show_button_name is None:
             self.show_button_name = self.width is None or self.width >= 400
+
+    @param.depends("widget_placeholder", watch=True)
+    def _update_widget_placeholder(self):
+        """
+        Update the placeholder on the default input widget.
+
+        Custom widgets are left unchanged.
+        """
+        widget = getattr(self, "_default_input_widget", None)
+        if widget is None or "placeholder" not in widget.param:
+            return
+        widgets = self.widgets
+        if isinstance(widgets, WidgetBase):
+            widgets = [widgets]
+        elif not isinstance(widgets, list):
+            return
+        if not any(widget is item for item in widgets):
+            return
+        widget.placeholder = self.widget_placeholder
 
     def _init_button_data(self):
         default_button_properties = {
@@ -240,7 +273,7 @@ class ChatInterface(ChatFeed):
             icon = properties.get("icon") or default_properties.get("icon")
             self._button_data[name] = _ChatButtonData(
                 index=index,
-                name=name,
+                label=name,
                 icon=icon,
                 objects=[],
                 buttons=[],
@@ -265,9 +298,10 @@ class ChatInterface(ChatFeed):
         self._widgets = {}
         new_widgets = []
         for widget in widgets:
-            key = widget.name or widget.__class__.__name__
             if isinstance(widget, type):  # check if instantiated
                 widget = widget()
+            label = getattr(widget, "label", "") or ""
+            key = label or widget.__class__.__name__
             if self._widgets.get(key) is not widget:
                 self._widgets[key] = widget
                 new_widgets.append(widget)
@@ -306,7 +340,7 @@ class ChatInterface(ChatFeed):
 
             self._buttons = {}
             for button_data in self._button_data.values():
-                action = button_data.name
+                action = button_data.label
                 try:
                     visible = self.param[f'show_{action}'] if action != "stop" else False
                 except KeyError:
@@ -314,8 +348,8 @@ class ChatInterface(ChatFeed):
                 show_name_expr = self.param.show_button_name.rx()
                 show_tooltip_expr = self.param.show_button_tooltips.rx()
                 button = Button(
-                    name=show_name_expr.rx.where(button_data.name.title(), ""),
-                    description=show_tooltip_expr.rx.where(f"Click to {button_data.name.lower()}", None),
+                    label=show_name_expr.rx.where(button_data.label.title(), ""),
+                    description=show_tooltip_expr.rx.where(f"Click to {button_data.label.lower()}", None),
                     icon=button_data.icon,
                     sizing_mode="stretch_width",
                     max_width=show_name_expr.rx.where(90, 45),
@@ -465,14 +499,14 @@ class ChatInterface(ChatFeed):
         for button in button_data.buttons:
             if active and button_data.objects:
                 button_update = {
-                    "button_type": "warning",
-                    "name": "Revert",
+                    "color": "warning",
+                    "label": "Revert",
                     "width": 90,
                 }
             else:
                 button_update = {
-                    "button_type": "default",
-                    "name": button_data.name.title() if self.show_button_name else "",
+                    "color": "default",
+                    "label": button_data.label.title() if self.show_button_name else "",
                     "width": 90 if self.show_button_name else 45,
                 }
             button.param.update(button_update)
@@ -598,9 +632,9 @@ class ChatInterface(ChatFeed):
         messages: list[ChatMessage],
         role_names: dict[str, str | list[str]] | None = None,
         default_role: str = "assistant",
-        custom_serializer: Callable[[ChatMessage], Any] | None = None,
+        custom_serializer: Callable[[ChatMessage], t.Any] | None = None,
         **serialize_kwargs
-    ) -> list[dict[str, Any]]:
+    ) -> list[dict[str, t.Any]]:
         """
         Exports the chat log for use with transformers.
 
@@ -657,7 +691,7 @@ class ChatInterface(ChatFeed):
 
     def send(
         self,
-        value: ChatMessage | dict | Any,
+        value: ChatMessage | dict | t.Any,
         user: str | None = None,
         avatar: str | bytes | BytesIO | None = None,
         respond: bool = True,
@@ -704,7 +738,7 @@ class ChatInterface(ChatFeed):
 
     def stream(
         self,
-        value: str | dict | ChatMessage,
+        value: str | dict | ChatMessage | Viewable,
         user: str | None = None,
         avatar: str | bytes | BytesIO | None = None,
         message: ChatMessage | None = None,

@@ -18,7 +18,7 @@ class MaterialComponent(ReactComponent):
         }
     }
 
-pn.extension(template='material')
+pn.extension(template='page')
 ```
 
 This example demonstrates how to wrap Material UI components using `ReactComponent`.
@@ -101,9 +101,9 @@ button = Button()
 rating = Rating(value=3)
 slider = DiscreteSlider()
 
-pn.Row(
-    pn.Column(button.controls(['disabled', 'label', 'variant']), button),
-    pn.Column(rating.controls(['value']), rating),
-    pn.Column(slider.controls(['value']), slider),
+pn.ui.Row(
+    pn.ui.Column(button.controls(['disabled', 'label', 'variant']), button),
+    pn.ui.Column(rating.controls(['value']), rating),
+    pn.ui.Column(slider.controls(['value']), slider),
 ).servable()
 ```

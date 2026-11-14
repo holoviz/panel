@@ -1,5 +1,7 @@
 import asyncio
+import datetime as dt
 import os
+import typing as t
 
 import pandas as pd
 import param
@@ -27,8 +29,8 @@ from panel.param import (
 from panel.tests.util import async_wait_until, mpl_available, mpl_figure
 from panel.widgets import (
     AutocompleteInput, Button, Checkbox, DatePicker, DatetimeInput,
-    EditableFloatSlider, EditableRangeSlider, LiteralInput, NumberInput,
-    RangeSlider,
+    EditableFloatSlider, EditableRangeSlider, FloatInput, IntInput,
+    LiteralInput, NumberInput, RangeSlider,
 )
 
 
@@ -233,6 +235,130 @@ def test_boolean_param(document, comm):
     assert checkbox.disabled == True
 
 
+@pytest.mark.parametrize('parameter_type,date_type', [
+    (param.DateRange, dt.date),
+    (param.DateRange, dt.datetime),
+    (param.CalendarDateRange, dt.date),
+])
+def test_date_range_param_without_default(parameter_type, date_type, document, comm):
+    start, end = date_type(2020, 1, 1), date_type(2020, 1, 5)
+
+    class Test(param.Parameterized):
+        value = parameter_type(bounds=(start, end))
+
+    obj = Test()
+    pane = Param(obj)
+    pane.get_root(document, comm=comm)
+    slider = pane._widgets['value']
+    assert slider.value == (start, end)
+    assert obj.value is None
+
+    selected = (date_type(2020, 1, 2), date_type(2020, 1, 4))
+    slider.value = selected
+    assert obj.value == selected
+    obj.value = (start, selected[1])
+    assert slider.value == obj.value
+
+
+@pytest.mark.parametrize('bounds', [None, (None, dt.date(2020, 1, 5)), (dt.date(2020, 1, 1), None)])
+def test_date_range_param_without_complete_bounds(bounds):
+    class Test(param.Parameterized):
+        value = param.DateRange(bounds=bounds)
+
+    obj = Test()
+    widget = Param(obj)._widgets['value']
+    assert isinstance(widget, LiteralInput)
+    assert widget.value is None
+    assert obj.value is None
+
+
+@pytest.mark.parametrize('parameter_type', [param.DateRange, param.CalendarDateRange])
+def test_date_range_param_preserves_explicit_default(parameter_type):
+    bounds = (dt.date(2020, 1, 1), dt.date(2020, 1, 5))
+    selected = (dt.date(2020, 1, 2), dt.date(2020, 1, 4))
+
+    class Test(param.Parameterized):
+        value = parameter_type(default=selected, bounds=bounds)
+
+    obj = Test()
+    assert Param(obj)._widgets['value'].value == selected
+    assert obj.value == selected
+
+
+def test_date_range_param_preserves_widget_override():
+    class Test(param.Parameterized):
+        value = param.DateRange(bounds=(dt.date(2020, 1, 1), dt.date(2020, 1, 5)))
+
+    obj = Test()
+    widget = Param(obj, widgets={'value': LiteralInput})._widgets['value']
+    assert isinstance(widget, LiteralInput)
+    assert widget.value is None
+    selected = (dt.date(2020, 1, 2), dt.date(2020, 1, 4))
+    widget = Param(obj, widgets={'value': {'value': selected}})._widgets['value']
+    assert widget.value == selected
+    assert obj.value is None
+
+
+def test_date_range_param_exclusive_bounds_without_default():
+    class Test(param.Parameterized):
+        value = param.DateRange(
+            bounds=(dt.date(2020, 1, 1), dt.date(2020, 1, 5)),
+            inclusive_bounds=(False, False),
+        )
+
+    obj = Test()
+    widget = Param(obj)._widgets['value']
+    assert widget.value == obj.param.value.bounds
+    assert obj.value is None
+    widget.value = (dt.date(2020, 1, 2), dt.date(2020, 1, 4))
+    assert obj.value == widget.value
+
+
+def test_date_range_param_preserves_explicit_none_widget_value():
+    class Test(param.Parameterized):
+        value = param.DateRange(bounds=(dt.date(2020, 1, 1), dt.date(2020, 1, 5)))
+
+    obj = Test()
+    widget = Param(obj, widgets={'value': {'value': None}})._widgets['value']
+    assert widget.value is None
+    assert obj.value is None
+
+
+def test_date_range_class_param_without_default():
+    class Test(param.Parameterized):
+        value = param.DateRange(bounds=(dt.date(2020, 1, 1), dt.date(2020, 1, 5)))
+
+    widget = Param(Test)._widgets['value']
+    assert widget.value == Test.param.value.bounds
+    assert Test.value is None
+
+
+def test_date_range_param_soft_bounds_without_default():
+    bounds = (dt.date(2020, 1, 1), dt.date(2020, 1, 5))
+
+    class Test(param.Parameterized):
+        value = param.DateRange(softbounds=bounds)
+
+    obj = Test()
+    widget = Param(obj)._widgets['value']
+    assert widget.value == bounds
+    assert obj.value is None
+
+
+def test_date_range_param_preserves_widget_instance():
+    from panel.widgets import DateRangeSlider
+
+    class Test(param.Parameterized):
+        value = param.DateRange(bounds=(dt.date(2020, 1, 1), dt.date(2020, 1, 5)))
+
+    obj = Test()
+    custom = DateRangeSlider(value=None)
+    widget = Param(obj, widgets={'value': custom})._widgets['value']
+    assert widget is custom
+    assert widget.value is None
+    assert obj.value is None
+
+
 def test_range_param(document, comm):
     class Test(param.Parameterized):
         a = param.Range(default=(0.1, 0.5), bounds=(0, 1.1))
@@ -312,7 +438,8 @@ def test_integer_param(document, comm):
 
 def test_object_selector_param(document, comm):
     class Test(param.Parameterized):
-        a = param.Selector(default='b', objects=[1, 'b', 'c'])
+        a: t.Literal[1, 'b', 'c'] = param.Selector(
+            default='b', objects=[1, 'b', 'c'])  # type: ignore[assignment, ty:invalid-assignment]
 
     test = Test()
     test_pane = Param(test)
@@ -436,7 +563,8 @@ def test_number_param_overrides(document, comm):
 
 def test_object_selector_param_overrides(document, comm):
     class Test(param.Parameterized):
-        a = param.Selector(default='b', objects=[1, 'b', 'c'])
+        a: t.Literal[1, 'b', 'c'] = param.Selector(
+            default='b', objects=[1, 'b', 'c'])  # type: ignore[assignment, ty:invalid-assignment]
 
     test = Test()
     test_pane = Param(test, widgets={'a': {'options': ['b', 'c'], 'value': 'c'}})
@@ -522,6 +650,23 @@ def test_number_input_none_support():
     assert test_widget[2].value is None
 
 
+def test_bounded_number_none_default_uses_input_widget(document, comm):
+    class Test(param.Parameterized):
+        integer = param.Integer(default=None, bounds=(0, 10))
+        number = param.Number(default=None, bounds=(0, 5))
+
+    test_pane = Param(Test())
+    assert isinstance(test_pane._widgets['integer'], IntInput)
+    assert isinstance(test_pane._widgets['number'], FloatInput)
+    assert test_pane._widgets['integer'].value is None
+    assert test_pane._widgets['integer'].start == 0
+    assert test_pane._widgets['integer'].end == 10
+
+    model = test_pane.get_root(document, comm=comm)
+    document.add_root(model)
+    document.to_json()
+
+
 def test_explicit_params(document, comm):
     class Test(param.Parameterized):
         a = param.Boolean(default=False)
@@ -566,6 +711,47 @@ def test_param_precedence(document, comm):
 
     a_param.precedence = None
     assert test_pane._widgets['a'] in test_pane._widget_box.objects
+
+
+def test_param_precedence_unpacked_widget():
+    class Test(param.Parameterized):
+        a = param.Number(default=1.2, bounds=(0, 5))
+
+    test = Test()
+    widget = panel(test.param.a)
+    assert widget.visible
+
+    test.param.a.precedence = -1
+    assert not widget.visible
+
+    test.param.a.precedence = 1
+    assert widget.visible
+
+    test.param.a.precedence = -1
+    test.param.a.precedence = None
+    assert widget.visible
+
+
+def test_param_precedence_preserves_user_visible():
+    class Test(param.Parameterized):
+        a = param.Number(default=1.2)
+
+    test = Test()
+    widget = panel(test.param.a)
+    widget.visible = False
+
+    test.param.a.precedence = 2
+    assert not widget.visible
+
+    test.param.a.precedence = -1
+    test.param.a.precedence = 1
+    assert not widget.visible
+
+    widget.visible = True
+    test.param.a.precedence = -1
+    assert not widget.visible
+    test.param.a.precedence = 1
+    assert widget.visible
 
 
 def test_hide_constant(document, comm):
@@ -618,7 +804,7 @@ def test_param_widget_type(document, comm):
     assert isinstance(wb, EditableFloatSlider)
     assert wb.value == 1.2
     assert (wb.fixed_start, wb.fixed_end) == (0, 5)
-    assert wb.name == 'B'
+    assert wb.label == 'B'
 
 
 def test_param_throttled(document, comm):
@@ -682,12 +868,12 @@ def test_param_onkeyup(document, comm):
 
     ma.value = '1'
     assert ma.value == '1'
-    assert ma.value_input == ''
+    assert ma.value_input == '1.2'
     assert test.a == '1'
 
     test.a = '2'
     assert ma.value == '2'
-    assert ma.value_input == ''
+    assert ma.value_input == '2'
     assert test.a == '2'
 
     # `test.b` is linked to `mb.value_input` instead of `mb.value` when onkeyup
@@ -1032,7 +1218,7 @@ def test_expand_param_subobject(document, comm):
 
 def test_switch_param_subobject(document, comm):
     class Test(param.Parameterized):
-        a = param.Selector()
+        a: t.Any = param.Selector()  # type: ignore[assignment, ty:invalid-assignment]
 
     o1 = Test(name='Subobject 1')
     o2 = Test(name='Subobject 2')
@@ -1222,7 +1408,7 @@ class View(param.Parameterized):
 
     a = param.Integer(default=0)
 
-    b = param.Parameter()
+    b: t.Any = param.Parameter()  # type: ignore[assignment, ty:invalid-assignment]
 
     @param.depends('a')
     def view(self):
@@ -1282,6 +1468,30 @@ def test_param_function_pane(document, comm):
     pane._cleanup(row)
     assert pane._models == {}
     assert inner_pane._models == {}
+
+
+def test_param_function_inner_pane_uses_configured_design():
+    from panel.theme import Material
+
+    with config.set(design=Material):
+        pane = ParamFunction(lambda: Div(text='blah'))
+        assert isinstance(pane._pane._design, Material)
+
+
+def test_param_function_inner_pane_inherits_explicit_design():
+    from panel.theme import Material
+
+    pane = ParamFunction(lambda: Div(text='blah'), design=Material)
+    assert isinstance(pane._pane._design, Material)
+
+
+def test_param_function_inner_pane_inherits_design_opt_out():
+    from panel.theme import Material
+    from panel.theme.native import Native
+
+    with config.set(design=Material):
+        pane = ParamFunction(lambda: Div(text='blah'), design=None)
+        assert isinstance(pane._pane._design, Native)
 
 
 def test_resolve_param_function_pane_when_defer_load(document, comm):
@@ -1636,7 +1846,8 @@ def test_set_widget_autocompleteinput(document, comm):
     class Test(param.Parameterized):
         # Testing with default='' and check_on_set=False since this feels
         # like the most sensible default config for Selector -> AutocompleteInput
-        choice = param.Selector(default='', objects=['a', 'b'], check_on_set=False)
+        choice: t.Literal['a', 'b'] = param.Selector(
+            default='', objects=['a', 'b'], check_on_set=False)  # type: ignore[assignment, ty:invalid-assignment]
 
     test = Test()
     test_pane = Param(test, widgets={'choice': AutocompleteInput})
@@ -1664,7 +1875,8 @@ def test_set_widget_autocompleteinput_empty_objects(document, comm):
     class Test(param.Parameterized):
         # Testing with default='' and check_on_set=False since this feels
         # like the most sensible default config for Selector -> AutocompleteInput
-        choice = param.Selector(default='', objects=[], check_on_set=False)
+        choice: t.Any = param.Selector(
+            default='', objects=[], check_on_set=False)  # type: ignore[assignment, ty:invalid-assignment]
 
     test = Test()
     test_pane = Param(test, widgets={'choice': AutocompleteInput})
@@ -1686,9 +1898,9 @@ def test_sorted():
 
     my_class = MyClass()
     _, input1, input2, input3 = Param(my_class, sort=True)
-    assert input1.name=="aaa"
-    assert input2.name=="bbb"
-    assert input3.name=="zzz"
+    assert input1.label == "aaa"
+    assert input2.label == "bbb"
+    assert input3.label == "zzz"
 
 def test_sorted_func():
     class MyClass(param.Parameterized):
@@ -1700,9 +1912,9 @@ def test_sorted_func():
     def sort_func(x):
         return x[1].label[::-1]
     _, input1, input2, input3 = Param(my_class, sort=sort_func)
-    assert input1.name=="cba"
-    assert input2.name=="acb"
-    assert input3.name=="bac"
+    assert input1.label == "cba"
+    assert input2.label == "acb"
+    assert input3.label == "bac"
 
 
 def test_param_editablerangeslider_with_bounds():
@@ -1885,17 +2097,11 @@ async def test_param_generator_append(document, comm):
 
     root = pane.get_root(document, comm)
 
-    await async_wait_until(lambda: len(root.children) == 2)
-    assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
-    assert root.children[1].text == '&lt;p&gt;True&lt;/p&gt;\n'
+    await async_wait_until(lambda: [c.text for c in root.children] == ['&lt;p&gt;False&lt;/p&gt;\n', '&lt;p&gt;True&lt;/p&gt;\n'])
 
     checkbox.value = True
 
-    await async_wait_until(lambda: len(root.children) == 2)
-    await async_wait_until(lambda: (
-        (root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n') and
-        (root.children[1].text == '&lt;p&gt;False&lt;/p&gt;\n')
-    ))
+    await async_wait_until(lambda: [c.text for c in root.children] == ['&lt;p&gt;True&lt;/p&gt;\n', '&lt;p&gt;False&lt;/p&gt;\n'])
 
 
 async def test_param_async_generator(document, comm):
@@ -1915,7 +2121,83 @@ async def test_param_async_generator(document, comm):
     await async_wait_until(lambda: root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n')
 
 
-@pytest.mark.flaky(max_runs=3)
+async def test_param_async_function_loading_until_complete(document, comm):
+    event = asyncio.Event()
+
+    async def function():
+        await event.wait()
+        return Markdown("done")
+
+    pane = ParamFunction(function, loading_indicator=True)
+    pane.get_root(document, comm)
+
+    await asyncio.sleep(0.05)
+    assert pane._inner_layout.loading
+
+    event.set()
+    await async_wait_until(lambda: not pane._inner_layout.loading)
+    assert pane._pane.object == "done"
+
+
+async def test_param_async_function_loading_cleared_on_error(document, comm):
+    event = asyncio.Event()
+
+    async def function():
+        await event.wait()
+        raise ValueError("boom")
+
+    pane = ParamFunction(function, loading_indicator=True)
+    pane.get_root(document, comm)
+
+    await asyncio.sleep(0.05)
+    assert pane._inner_layout.loading
+
+    event.set()
+    await async_wait_until(lambda: not pane._inner_layout.loading)
+
+
+async def test_param_async_generator_loading_until_complete(document, comm):
+    event = asyncio.Event()
+
+    async def function():
+        yield Markdown("first")
+        await event.wait()
+        yield Markdown("second")
+
+    pane = ParamFunction(function, loading_indicator=True)
+    pane.get_root(document, comm)
+
+    await async_wait_until(lambda: pane._pane.object == "first")
+    assert pane._inner_layout.loading
+
+    event.set()
+    await async_wait_until(lambda: not pane._inner_layout.loading)
+    assert pane._pane.object == "second"
+
+
+async def test_param_async_function_replaced_keeps_loading(document, comm):
+    event = asyncio.Event()
+    checkbox = Checkbox(value=False)
+
+    async def function(value):
+        if not value:
+            await asyncio.sleep(10)
+        await event.wait()
+        return Markdown(f"{value}")
+
+    pane = ParamFunction(bind(function, checkbox), loading_indicator=True)
+    pane.get_root(document, comm)
+    await asyncio.sleep(0.05)
+
+    checkbox.value = True
+    await asyncio.sleep(0.05)
+    assert pane._inner_layout.loading
+
+    event.set()
+    await async_wait_until(lambda: not pane._inner_layout.loading)
+    assert pane._pane.object == "True"
+
+
 async def test_param_async_generator_append(document, comm):
     checkbox = Checkbox(value=False)
 
@@ -1928,22 +2210,15 @@ async def test_param_async_generator_append(document, comm):
 
     root = pane.get_root(document, comm)
 
-    await async_wait_until(lambda: len(root.children) == 1, interval=10)
-    await async_wait_until(lambda: root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n')
-    await async_wait_until(lambda: len(root.children) == 2, interval=10)
-    assert root.children[0].text == '&lt;p&gt;False&lt;/p&gt;\n'
-    assert root.children[1].text == '&lt;p&gt;True&lt;/p&gt;\n'
+    await async_wait_until(lambda: [c.text for c in root.children] == ['&lt;p&gt;False&lt;/p&gt;\n'], interval=10)
+    await async_wait_until(lambda: [c.text for c in root.children] == ['&lt;p&gt;False&lt;/p&gt;\n', '&lt;p&gt;True&lt;/p&gt;\n'], interval=10)
 
     checkbox.value = True
 
-    await async_wait_until(lambda: len(root.children) == 1, interval=10)
-    assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
-    await async_wait_until(lambda: len(root.children) == 2, interval=10)
-    assert root.children[0].text == '&lt;p&gt;True&lt;/p&gt;\n'
-    assert root.children[1].text == '&lt;p&gt;False&lt;/p&gt;\n'
+    await async_wait_until(lambda: [c.text for c in root.children] == ['&lt;p&gt;True&lt;/p&gt;\n'], interval=10)
+    await async_wait_until(lambda: [c.text for c in root.children] == ['&lt;p&gt;True&lt;/p&gt;\n', '&lt;p&gt;False&lt;/p&gt;\n'], interval=10)
 
 
-@pytest.mark.flaky(max_runs=3)
 async def test_param_generator_multiple(document, comm):
     checkbox = Checkbox(value=False)
 
@@ -2051,3 +2326,88 @@ async def test_async_skip_param(document, comm):
     button.param.trigger('value')
     await asyncio.sleep(0.01)
     assert div.text == '&lt;pre&gt; &lt;/pre&gt;'
+
+
+@pytest.mark.parametrize('param_type,initial_value,user_input,expected_value', [
+    (param.Boolean, False, True, False),
+    (param.Number, 0, 7, 5),
+])
+def test_param_widget_updates_from_own_callback(document, comm, param_type, initial_value, user_input, expected_value):
+    class TestClass(param.Parameterized):
+        value = param_type(default=initial_value)
+
+        @param.depends('value', watch=True)
+        def update(self):
+            self.value = expected_value
+
+    instance = TestClass()
+    param_pane = Param(instance, parameters=['value'])
+    widget = param_pane._widgets['value']
+
+    widget.value = user_input
+
+    assert instance.value == expected_value
+    assert widget.value == expected_value
+
+
+@pytest.mark.parametrize('bound', [0, 2])
+def test_throttled_number_param_repeated_exclusive_boundary(document, comm, bound):
+    class Test(param.Parameterized):
+        a = param.Number(default=1, bounds=(0, 2), inclusive_bounds=(False, False))
+
+    obj = Test()
+    pane = Param(obj, widgets={'a': {'throttled': True}})
+    model = pane.get_root(document, comm=comm).children[1]
+    widget = pane._widgets['a']
+
+    for _ in range(2):
+        widget._process_events({'value': bound, 'value_throttled': bound})
+        assert obj.a == 1
+        assert widget.value == 1
+        assert model.value == 1
+
+    widget._process_events({'value': 1.5})
+    assert obj.a == 1
+    widget._process_events({'value_throttled': 1.5})
+    assert obj.a == 1.5
+    assert widget.value == 1.5
+
+
+@pytest.mark.parametrize('value', [(0, 1.5), (0.5, 2)])
+def test_throttled_range_param_repeated_exclusive_boundary(document, comm, value):
+    class Test(param.Parameterized):
+        a = param.Range(default=(0.5, 1.5), bounds=(0, 2), inclusive_bounds=(False, False))
+
+    obj = Test()
+    pane = Param(obj, widgets={'a': {'throttled': True}})
+    model = pane.get_root(document, comm=comm).children[1]
+    widget = pane._widgets['a']
+
+    for _ in range(2):
+        widget._process_events({'value': value, 'value_throttled': value})
+        assert obj.a == (0.5, 1.5)
+        assert widget.value == (0.5, 1.5)
+        assert model.value == (0.5, 1.5)
+
+    widget._process_events({'value': (0.7, 1.3)})
+    assert obj.a == (0.5, 1.5)
+    widget._process_events({'value_throttled': (0.7, 1.3)})
+    assert obj.a == (0.7, 1.3)
+
+
+def test_param_selector_objects_update_with_parameterized_options():
+    class Option(param.Parameterized):
+        pass
+
+    class Test(param.Parameterized):
+        sel = param.Selector(objects={'a': Option()}, check_on_set=False)
+
+    test = Test()
+    pane = Param(test)
+    row = pane._widgets['sel']
+    assert isinstance(row, Row)
+
+    new = {'a': Option(), 'b': Option()}
+    test.param.sel.objects = new
+
+    assert row[0].options == new

@@ -1,4 +1,5 @@
 import pathlib
+import typing as t
 
 import param
 
@@ -47,9 +48,10 @@ class FastBaseTemplate(BasicTemplate):
         A HTML string appended to the sidebar""")
 
     # Might be extended to accordion or tabs in the future
-    main_layout = param.Selector(default="card", label="Layout", objects=[None, "card"], doc="""
+    main_layout: t.Literal[None, "card"] = param.Selector(
+        default="card", label="Layout", objects=[None, "card"], doc="""
         What to wrap the main components into. Options are '' (i.e. none) and 'card' (Default).
-        Could be extended to Accordion, Tab etc. in the future.""")
+        Could be extended to Accordion, Tab etc. in the future.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     design = param.ClassSelector(class_=Design, default=Fast,
                                  is_instance=False, instantiate=False, doc="""
@@ -89,6 +91,16 @@ class FastBaseTemplate(BasicTemplate):
             return
         theme_arg = theme_arg[0].decode("utf-8")
         return theme_arg.strip("'").strip('"')
+
+    def resolve_resources(
+        self,
+        cdn: bool | t.Literal['auto'] = 'auto',
+        extras: dict[str, dict[str, str]] | None = None
+    ):
+        resources = super().resolve_resources(cdn=cdn, extras=extras)
+        if self.font_url:
+            resources['css']['font_url'] = self.font_url
+        return resources
 
     def _update_vars(self):
         super()._update_vars()

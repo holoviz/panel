@@ -45,7 +45,6 @@ We will start by defining a `Parameterized` class:
 import panel as pn
 import param
 
-
 class Settings(param.Parameterized):
     integer = param.Integer(default=1, bounds=(0, 10))
     string = param.String(default='A string')
@@ -75,5 +74,39 @@ pn.Param(settings).servable()
 </video>
 
 Note to *unsync* the Parameterized object you can simply call `pn.state.location.unsync(query_example)`.
+
+### Sync a list of Parameterized objects
+
+URL query parameters can only contain serializable values. To synchronize a
+list of `Parameterized` objects, define how the list parameter converts its
+items to and from plain Python values:
+
+```python
+class Curve(param.Parameterized):
+    product = param.String()
+
+class CurveList(param.List):
+
+    @classmethod
+    def serialize(cls, value):
+        return [{"product": curve.product} for curve in value]
+
+    @classmethod
+    def deserialize(cls, value):
+        return [Curve(**curve) for curve in value]
+
+class CurveCollection(param.Parameterized):
+    curves = CurveList(default=[], item_type=Curve)
+
+collection = CurveCollection(curves=[Curve(product="A")])
+pn.state.location.sync(collection, ["curves"])
+
+pn.Param(collection).servable()
+```
+
+Changing `collection.curves` now updates the URL with a JSON representation,
+and loading that URL reconstructs the `Curve` objects. Keep synchronized data
+small and non-sensitive because query strings have practical length limits and
+are commonly retained in browser history and server logs.
 
 ## Related Resources

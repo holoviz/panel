@@ -75,6 +75,83 @@ async def test_run_list_args():
     assert subprocess.running
     subprocess.kill()
 
+_SCRIPT = """
+import atexit, os, sys, time, warnings
+import panel as pn
+
+marker = sys.argv[1]
+atexit.register(lambda: open(marker, 'a').write(f'{os.getpid()}\\n'))
+
+terminal = pn.widgets.Terminal()
+sub = terminal.subprocess
+with warnings.catch_warnings(record=True) as caught:
+    warnings.simplefilter('always')
+    sub.run(*eval(sys.argv[2]), **eval(sys.argv[3]))
+print('WARNINGS', [str(w.message) for w in caught])
+for _ in range(100):
+    sub._forward_subprocess_output_to_terminal()
+    if not sub.running:
+        break
+    time.sleep(0.05)
+print('RUNNING' if sub.running else 'DONE', repr(terminal.output))
+"""
+
+
+def _run_script(tmp_path, args, kwargs=None):
+    import os
+    import subprocess
+
+    marker = tmp_path / 'marker'
+    env = {**os.environ, 'PYTHONPATH': os.pathsep.join(sys.path)}
+    proc = subprocess.run(
+        [sys.executable, '-c', _SCRIPT, str(marker), repr(args), repr(kwargs or {})],
+        capture_output=True, text=True, timeout=60, env=env
+    )
+    assert proc.returncode == 0, proc.stderr
+    pids = marker.read_text().split() if marker.exists() else []
+    return proc.stdout.strip(), pids
+
+
+@not_windows
+@pytest.mark.subprocess
+def test_subprocess_child_does_not_run_parent_atexit_handlers(tmp_path):
+    out, pids = _run_script(tmp_path, [sys.executable, '-c', 'print("hello")'])
+    assert "DONE" in out
+    assert 'hello' in out
+    assert len(pids) == 1
+
+
+@not_windows
+@pytest.mark.subprocess
+def test_subprocess_failed_exec_does_not_run_parent_code(tmp_path):
+    out, pids = _run_script(tmp_path, ['this-command-does-not-exist'])
+    assert "DONE" in out
+    assert 'this-command-does-not-exist' in out or 'No such file' in out
+    assert len(pids) == 1
+
+
+@not_windows
+@pytest.mark.subprocess
+def test_subprocess_cwd_env_and_shell(tmp_path):
+    out, pids = _run_script(
+        tmp_path, ['echo $PWD-$FOO'],
+        {'shell': True, 'cwd': str(tmp_path), 'env': {'FOO': 'bar', 'PATH': '/bin:/usr/bin'}}
+    )
+    assert "DONE" in out
+    assert f'{tmp_path.resolve()}-bar' in out.replace('\\r', '').replace(str(tmp_path), str(tmp_path.resolve()))
+    assert len(pids) == 1
+
+
+@not_windows
+@pytest.mark.subprocess
+def test_subprocess_unsupported_kwargs_warn(tmp_path):
+    out, pids = _run_script(tmp_path, [sys.executable, '-c', 'print("hello")'], {'timeout': 1})
+    assert 'timeout' in out.splitlines()[0]
+    assert 'DONE' in out
+    assert 'hello' in out
+    assert len(pids) == 1
+
+
 def test_cannot_assign_string_args_with_spaces():
     terminal = pn.widgets.Terminal()
     subprocess = terminal.subprocess
@@ -126,41 +203,41 @@ def get_app():
     )
 
     write_to_terminal_button = pn.widgets.Button(
-        name="Write to the Terminal", button_type="primary"
+        label="Write to the Terminal", color="primary"
     )
     write_to_terminal_button.on_click(lambda x: write_to_terminal(terminal))
 
     special_characters_button = pn.widgets.Button(
-        name="Write special to the Terminal", button_type="primary"
+        label="Write special to the Terminal", color="primary"
     )
     special_characters_button.on_click(lambda x: _special_characters(terminal))
 
     print_to_terminal_button = pn.widgets.Button(
-        name="Print to Terminal", button_type="primary"
+        label="Print to Terminal", color="primary"
     )
     print_to_terminal_button.on_click(lambda x: print_to_terminal(terminal))
 
     logger = get_logger(terminal)
-    log_button = pn.widgets.Button(name="Log", button_type="primary")
+    log_button = pn.widgets.Button(label="Log", color="primary")
     log_button.on_click(lambda x: logger.info("Hello Info Logger"))
 
-    stream_button = pn.widgets.Button(name="Stream", button_type="primary")
+    stream_button = pn.widgets.Button(label="Stream", color="primary")
     stream_button.on_click(lambda x: [logger.info(uuid.uuid4()) for i in range(300)])
 
     run_ls_in_subprocess_button = pn.widgets.Button(
-        name="Run ls in subprocess", button_type="primary"
+        label="Run ls in subprocess", color="primary"
     )
     run_ls_in_subprocess_button.on_click(lambda x: terminal.subprocess.run(args="ls"))
 
     run_ls_l_in_subprocess_button = pn.widgets.Button(
-        name="Run ls -l in subprocess", button_type="primary"
+        label="Run ls -l in subprocess", color="primary"
     )
     run_ls_l_in_subprocess_button.on_click(
         lambda x: terminal.subprocess.run("ls", "-l")
     )
 
     run_bash_in_subprocess_button = pn.widgets.Button(
-        name="Run bash in subprocess", button_type="primary"
+        label="Run bash in subprocess", color="primary"
     )
     run_bash_in_subprocess_button.on_click(
         lambda x: terminal.subprocess.run("bash")
@@ -219,3 +296,19 @@ def get_app():
 
 if pn.state.served:
     get_app().servable()
+
+
+def test_terminal_writes_are_not_combined_away_by_a_hold(document):
+    terminal = pn.widgets.Terminal()
+    model = terminal.get_root(document)
+    document.add_root(model)
+
+    document.hold('combine')
+    terminal.write('first ')
+    terminal.write('second')
+    assert model.output == 'first second'
+    document.unhold()
+
+    terminal.write('third')
+    assert model.output == 'third'
+    assert terminal.output == 'first secondthird'

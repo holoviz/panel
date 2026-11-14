@@ -63,7 +63,7 @@ class BootstrapVueComponent(BasicVueComponent):
         "https://unpkg.com/bootstrap-vue@latest/dist/bootstrap-vue.min.css",
     ]
 
-pn.extension('vue', sizing_mode="stretch_width", template="bootstrap")
+pn.extension('vue', sizing_mode="stretch_width", template="page")
 ```
 
 In this example we are building a Vue.js component containing an input field and a button that will update the `value` parameter of the `PDBInput` component:
@@ -139,8 +139,8 @@ pdb_input = PDBInput(height=90, max_width=800)
 
 iget_klifs_data = pn.bind(get_pdb_data_from_klifs, pdb_id=pdb_input.param.value)
 
-pn.Column(
+pn.ui.Column(
     pdb_input,
-    pn.pane.JSON(iget_klifs_data, theme="light")
+    pn.ui.JSON(iget_klifs_data, theme="light")
 ).servable()
 ```

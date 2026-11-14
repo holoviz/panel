@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import sys
-
-from typing import TYPE_CHECKING, ClassVar
+import typing as t
 
 import param
 
@@ -11,7 +10,7 @@ from ..viewable import Viewable
 from ..widgets import Terminal
 from .base import Pane
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
@@ -30,9 +29,9 @@ class Textual(Pane):
     >>> Textual(app)
     """
 
-    priority: ClassVar[float | bool | None] = 1.0
+    priority: t.ClassVar[float | bool | None] = 1.0
 
-    _updates: ClassVar[bool] = True
+    _updates: t.ClassVar[bool] = True
 
     @classmethod
     def applies(cls, object):
@@ -43,7 +42,8 @@ class Textual(Pane):
 
     def __init__(self, object=None, **params):
         super().__init__(object=object, **params)
-        self._terminal = Terminal(**{p: v for p, v in self.param.values().items() if p in Viewable.param})
+        kwargs = {p: v for p, v in self.param.values().items() if p in Viewable.param and p != "name"}
+        self._terminal = Terminal(**kwargs)
         self._internal_callbacks.append(
             self.param.watch(self._link_terminal_params, list(Viewable.param))
         )

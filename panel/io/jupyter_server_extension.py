@@ -25,6 +25,7 @@ from __future__ import annotations
 import asyncio
 import calendar
 import datetime as dt
+import importlib.util
 import inspect
 import json
 import logging
@@ -32,10 +33,9 @@ import os
 import pathlib
 import textwrap
 import time
+import typing as t
 
-from collections.abc import Awaitable
 from queue import Empty
-from typing import Any
 from urllib.parse import urljoin
 
 import tornado
@@ -56,9 +56,15 @@ from tornado.ioloop import PeriodicCallback
 from tornado.web import StaticFileHandler
 
 from ..config import config
-from .resources import DIST_DIR, ERROR_TEMPLATE, _env
+from ..util import HTML_SANITIZER
+from .resources import (
+    DIST_DIR, ERROR_TEMPLATE, JUPYTER_ENDPOINT_ENV, _env,
+)
 from .server import COMPONENT_PATH, ComponentResourceHandler
 from .state import state
+
+if t.TYPE_CHECKING:
+    from collections.abc import Awaitable
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +73,7 @@ CONNECTION_TIMEOUT = 30 # Timeout for WS connection to open
 
 KERNEL_ERROR_TEMPLATE = _env.get_template('kernel_error.html')
 
-async def ensure_async(obj: Awaitable | Any) -> Any:
+async def ensure_async(obj: Awaitable | t.Any) -> t.Any:
     """Convert a non-awaitable object to a coroutine if needed,
     and await it if it was not already awaited.
     """
@@ -96,6 +102,47 @@ def url_path_join(*pieces):
     if final: result = result + '/'
     if result == '//': result = '/'
     return result
+
+def find_extension_dist(name: str) -> pathlib.Path | None:
+    """
+    Locates the dist directory of an extension without importing it.
+
+    Extensions register themselves in Bokeh's `extension_dirs` when they
+    are imported, which happens in the kernel and not in the Jupyter
+    server process. They conventionally register the `dist` directory of
+    a package whose import name is the extension name with dashes
+    replaced by underscores, e.g. `panel-material-ui` -> `panel_material_ui`.
+    """
+    module = name.replace('-', '_')
+    if not module.isidentifier():
+        return None
+    try:
+        spec = importlib.util.find_spec(module)
+    except (ImportError, ValueError):
+        return None
+    if spec is None or not spec.submodule_search_locations:
+        return None
+    for location in spec.submodule_search_locations:
+        dist = pathlib.Path(location) / 'dist'
+        if dist.is_dir():
+            return dist
+    return None
+
+
+class ExtensionStaticHandler(MultiRootStaticHandler):
+    """
+    Serves extension artifacts, resolving extensions the kernel registered
+    but the server process never imported.
+    """
+
+    @classmethod
+    def get_absolute_path(cls, root, path):
+        if isinstance(root, dict):
+            name = path.split(os.sep, 1)[0]
+            if name not in root and (dist := find_extension_dist(name)):
+                root[name] = dist
+        return super().get_absolute_path(root, path)
+
 
 def get_server_root_dir(settings):
     if 'server_root_dir' in settings:
@@ -302,7 +349,7 @@ class PanelJupyterHandler(PanelBaseHandler):
                 base_url=f'{root_url}/',
                 error_type="Kernel Error",
                 error="Failed to start application",
-                error_msg=str(e),
+                error_msg=HTML_SANITIZER.clean(str(e)),
                 title="Panel: Kernel Error"
             )
             self.finish(html)
@@ -335,7 +382,7 @@ class PanelWSProxy(WSHandler, JupyterHandler):  # type: ignore
         # Note: tornado_app is stored as self.application
         kw['application_context'] = None
         super().__init__(tornado_app, *args, **kw)
-        self.kernel: Any = None
+        self.kernel: t.Any = None
         self.comm_id: str | None = None
         self.kernel_id: str | None = None
         self.session_id: str | None = None
@@ -354,7 +401,7 @@ class PanelWSProxy(WSHandler, JupyterHandler):  # type: ignore
     def get_current_user(self) -> str:
         return "default_user"
 
-    def check_origin(self, origin_to_satisfy_tornado: str | None = None) -> bool:
+    def check_origin(self, origin_to_satisfy_tornado: str = "") -> bool:
         return True
 
     @tornado.web.authenticated
@@ -394,15 +441,15 @@ class PanelWSProxy(WSHandler, JupyterHandler):  # type: ignore
         self.session_id = get_session_id(token)
         if self.session_id not in state._kernels:
             self.close()
-            msg = f"Session ID '{self.session_id}' does not correspond to any active kernel."
-            raise RuntimeError(msg)
+            error = f"Session ID '{self.session_id}' does not correspond to any active kernel."
+            raise RuntimeError(error)
 
-        kernel_info: tuple[Any, str, str, bool] = state._kernels[self.session_id]
+        kernel_info: tuple[t.Any, str, str, bool] = state._kernels[self.session_id]
         self.kernel, self.comm_id, self.kernel_id, _ = kernel_info
         state._kernels[self.session_id] = kernel_info[:-1] + (True,)
 
-        msg = protocol.create('ACK')
-        await self.send_message(msg)
+        ack_msg = protocol.create('ACK')
+        await self.send_message(ack_msg)
 
         self._ping_job.start()
         task = asyncio.create_task(self._check_for_message())
@@ -476,7 +523,7 @@ def _load_jupyter_server_extension(notebook_app):
         host_pattern=r".*$",
         host_handlers=[
             (urljoin(base_url, r"panel-preview/static/extensions/(.*)"),
-             MultiRootStaticHandler, dict(root=extension_dirs)),
+             ExtensionStaticHandler, dict(root=extension_dirs)),
             (urljoin(base_url, r"panel-preview/static/(.*)"),
              StaticHandler),
             (urljoin(base_url, r"panel-preview/render/(.*)/ws"),
@@ -491,6 +538,7 @@ def _load_jupyter_server_extension(notebook_app):
              ComponentResourceHandler, {})
         ]
     )
+    os.environ[JUPYTER_ENDPOINT_ENV] = '1'
 
 
 # compat for older versions of Jupyter

@@ -1,0 +1,33 @@
+:host .bk-input.filepond--root,
+:host .bk-input.filepond--root:not([disabled]):hover {
+  background-color: transparent;
+  border: 1px dashed var(--mui-palette-divider);
+  border-radius: var(--mui-shape-borderRadius);
+  box-shadow: none;
+  font-family: var(--bokeh-base-font);
+}
+
+:host .bk-input.filepond--root:not([disabled]):hover {
+  border-color: var(--mui-palette-primary-main);
+}
+
+:host .filepond--panel-root,
+:host .filepond--panel-root .filepond--panel-top,
+:host .filepond--panel-root .filepond--panel-center,
+:host .filepond--panel-root .filepond--panel-bottom {
+  background-color: transparent;
+}
+
+:host .filepond--drop-label {
+  background-color: transparent;
+  color: var(--mui-palette-text-secondary);
+}
+
+:host .filepond--label-action {
+  color: var(--mui-palette-primary-main);
+  text-decoration-color: var(--mui-palette-primary-main);
+}
+
+:host .filepond--item-panel {
+  background-color: var(--mui-palette-grey-700);
+}

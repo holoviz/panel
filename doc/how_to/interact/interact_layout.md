@@ -31,9 +31,9 @@ print(layout)
 Now, by indexing into this Panel we can lay out the objects precisely how we want:
 
 ```{pyodide}
-pn.Row(pn.Column('First Column', layout[0][0], layout[0][1], width=200),
-       pn.Column('Second Column', layout[0][2], width=200),
-       pn.Column('Returns', layout[1]),
+pn.ui.Row(pn.ui.Column('First Column', layout[0][0], layout[0][1], width=200),
+       pn.ui.Column('Second Column', layout[0][2], width=200),
+       pn.ui.Column('Returns', layout[1]),
       )
 ```
 

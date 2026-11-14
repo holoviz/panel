@@ -1,18 +1,35 @@
 import re
 
-from io import StringIO
+from io import BytesIO, StringIO
 from pathlib import Path
 
 import numpy as np
+import pytest
 
+from bokeh.io import browser as bk_browser, webdriver as bk_webdriver
 from bokeh.resources import Resources
+from PIL import Image
 
+import panel.io.save as save_module
+
+from panel import bind
 from panel.config import config
+from panel.io.convert import (
+    PYODIDE_MODULE_URL, PYODIDE_PYC_MODULE_URL, PYODIDE_VERSION,
+    script_to_html,
+)
 from panel.io.resources import CDN_DIST
+from panel.io.state import state
+from panel.layout import Column
+from panel.models.state import State
 from panel.models.vega import VegaPlot
 from panel.pane import Alert, Vega
 from panel.template import BootstrapTemplate
 from panel.tests.util import hv_available
+from panel.widgets import IntSlider
+
+BACKEND_MODULES = {"browser": bk_browser, "webdriver": bk_webdriver}
+
 
 vega_example = {
     'config': {
@@ -42,6 +59,76 @@ def test_save_external():
         assert js.replace(config.npm_cdn, f'{CDN_DIST}bundled/vegaplot') in html
 
 
+def test_pyodide_worker_uses_module_loader():
+    """Pyodide 314 requires module workers for converted apps."""
+    html, worker = script_to_html(
+        StringIO("import panel as pn\npn.pane.Str('Ready').servable()"),
+        runtime='pyodide-worker', prerender=False, compiled=False
+    )
+
+    assert "{type: 'module'}" in html
+    assert f'import {{ loadPyodide }} from "{PYODIDE_MODULE_URL}"' in worker
+    assert 'importScripts' not in worker
+
+
+def test_pyodide_compiled_worker_uses_module_loader():
+    """Compiled Pyodide workers load the matching precompiled module."""
+    _, worker = script_to_html(
+        StringIO("import panel as pn\npn.pane.Str('Ready').servable()"),
+        runtime='pyodide-worker', prerender=False, compiled=True
+    )
+
+    assert f'import {{ loadPyodide }} from "{PYODIDE_PYC_MODULE_URL}"' in worker
+
+
+def test_pyodide_worker_uses_configured_cdn_root():
+    """Air-gapped deployments can load Pyodide from a self-hosted CDN."""
+    with config.set(pyodide_cdn_root='https://example.com/pyodide/'):
+        _, worker = script_to_html(
+            StringIO("import panel as pn\npn.pane.Str('Ready').servable()"),
+            runtime='pyodide-worker', prerender=False, compiled=True
+        )
+
+    url = f'https://example.com/pyodide/{PYODIDE_VERSION}/pyc/pyodide.mjs'
+    assert f'import {{ loadPyodide }} from "{url}"' in worker
+    assert 'cdn.jsdelivr.net' not in worker
+
+
+def test_pyodide_uses_cdn_root_from_env(monkeypatch):
+    # A missing trailing slash must not be glued onto the version
+    monkeypatch.setenv('PANEL_PYODIDE_CDN_ROOT', 'https://example.com/pyodide')
+    html, _ = script_to_html(
+        StringIO("import panel as pn\npn.pane.Str('Ready').servable()"),
+        runtime='pyodide', prerender=False, compiled=False
+    )
+
+    url = f'https://example.com/pyodide/{PYODIDE_VERSION}/full/pyodide.js'
+    assert f'<script src="{url}" defer></script>' in html
+    assert 'cdn.jsdelivr.net/pyodide' not in html
+
+
+@pytest.mark.parametrize('runtime', ['pyodide', 'pyodide-worker', 'pyscript'])
+def test_pyodide_uses_page_loader(runtime):
+    html, _ = script_to_html(
+        StringIO("import panel as pn\npn.pane.Str('Ready').servable()"),
+        runtime=runtime, prerender=True
+    )
+
+    assert '<div id="loader" style="display: flex;">' in html
+    assert '<body>' in html
+    assert '<body class=' not in html
+
+
+def test_pyodide_template_uses_page_loader():
+    html, _ = script_to_html(
+        StringIO("import panel as pn\npn.template.BootstrapTemplate(main=['Ready']).servable()"),
+        runtime='pyodide-worker', prerender=True
+    )
+
+    assert html.count('id="loader"') == 1
+    assert '<body class=' not in html
+
+
 def test_save_inline_resources():
     alert = Alert('# Save test')
 
@@ -52,6 +139,17 @@ def test_save_inline_resources():
     assert 'alert-primary' in html
 
 
+def test_save_inline_resources_inlines_component_stylesheets():
+    import pandas as pd
+
+    from panel.widgets import Tabulator
+
+    sio = StringIO()
+    Tabulator(pd.DataFrame({'a': [1, 2, 3]})).save(sio, resources='inline')
+    html = sio.getvalue()
+    assert '"name":"ImportedStyleSheet"' not in html
+
+
 def test_save_cdn_resources():
     alert = Alert('# Save test')
 
@@ -60,6 +158,36 @@ def test_save_cdn_resources():
     sio.seek(0)
     html = sio.read()
     assert re.findall('https://cdn.holoviz.org/panel/(.*)/dist/panel.min.js', html)
+
+
+@pytest.mark.parametrize('resources', ['cdn', 'inline'])
+@pytest.mark.parametrize('embed', [False, True])
+@pytest.mark.parametrize('favicon', [
+    pytest.param('favicon.ico', id='relative'),
+    pytest.param('https://example.org/favicon.ico', id='url'),
+    pytest.param(
+        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+        id='data-uri',
+    ),
+])
+def test_save_custom_favicon(resources, embed, favicon):
+    slider = IntSlider(start=0, end=2)
+    layout = Column(slider, bind(str, slider))
+    template_variables = {'app_favicon': favicon}
+    sio = StringIO()
+
+    layout.save(
+        sio, title='My report', resources=resources, embed=embed,
+        template_variables=template_variables, progress=False,
+    )
+    html = sio.getvalue()
+
+    assert f'<link rel="icon" href="{favicon}">' in html
+    assert html.count('rel="icon"') == 1
+    assert f'{CDN_DIST}images/favicon.ico' not in html
+    assert '<title>My report</title>' in html
+    assert template_variables == {'app_favicon': favicon}
+    assert (f'"name":"{State.__qualified_model__}"' in html) is embed
 
 
 @hv_available
@@ -91,3 +219,58 @@ def test_save_template():
     for doc in template._documents:
         for root in doc.roots:
             assert f"data-root-id=\"{root.ref['id']}\"" in html
+
+
+@pytest.fixture
+def screenshots(monkeypatch):
+    """Record what save_png hands to Bokeh instead of launching a browser."""
+    calls = []
+
+    def fake_screenshot(model, **kwargs):
+        calls.append({
+            **kwargs,
+            "html": {name: module.get_layout_html(model, resources=kwargs["resources"], width=None, height=None)
+                     for name, module in BACKEND_MODULES.items()},
+            "wait": {name: module._WAIT_SCRIPT for name, module in BACKEND_MODULES.items()},
+        })
+        return Image.new("RGB", (10, 10))
+
+    monkeypatch.setattr(save_module, "get_screenshot_as_png", fake_screenshot)
+    monkeypatch.setattr(state, "webdriver", None)
+    monkeypatch.setattr(bk_webdriver.webdriver_control, "create", lambda *a, **k: pytest.fail("Selenium driver created"))
+    return calls
+
+
+@pytest.mark.parametrize("backend", ["argument", "setting"])
+def test_save_png_playwright_does_not_need_selenium(screenshots, monkeypatch, backend):
+    """Saving a PNG with Bokeh's Playwright backend must not create a Selenium driver."""
+    if backend == "argument":
+        Alert('Hello').save(BytesIO(), as_png=True, backend='playwright')
+    else:
+        monkeypatch.setenv("BOKEH_EXPORT_BACKEND", "playwright")
+        Alert('Hello').save(BytesIO(), as_png=True)
+
+    assert screenshots[0]["driver"] is None
+    assert state.webdriver is None
+
+
+def test_save_png_uses_state_webdriver(screenshots, monkeypatch):
+    """A browser set on state.webdriver (Selenium or Playwright) is passed to Bokeh as is."""
+    browser = object()
+    monkeypatch.setattr(state, "webdriver", browser)
+
+    Alert('Hello').save(BytesIO(), as_png=True)
+
+    assert screenshots[0]["driver"] is browser
+
+
+def test_save_png_template_reaches_export_backends(screenshots):
+    """Panel's page template and wait script reach Bokeh's per-backend export modules, and are restored after."""
+    originals = {name: module.get_layout_html for name, module in BACKEND_MODULES.items()}
+
+    Alert('Hello').save(BytesIO(), as_png=True, backend='playwright')
+
+    for name in BACKEND_MODULES:
+        assert "overflow: hidden" in screenshots[0]["html"][name]
+        assert screenshots[0]["wait"][name] == save_module._WAIT_SCRIPT
+    assert {name: module.get_layout_html for name, module in BACKEND_MODULES.items()} == originals

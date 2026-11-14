@@ -11,16 +11,18 @@ import pytest
 
 from bokeh.document import Document
 from bokeh.io.doc import patch_curdoc
-from bokeh.models import Div
+from bokeh.models import Div, ImportedStyleSheet, InlineStyleSheet
 
 from panel.depends import bind, depends
-from panel.io.state import set_curdoc
+from panel.io.loading import loading_css
+from panel.io.resources import stylesheet_url
+from panel.io.state import set_curdoc, state
 from panel.layout import Tabs, WidgetBox
 from panel.pane import Markdown
-from panel.reactive import Reactive, ReactiveHTML
+from panel.reactive import Reactive, ReactiveHTML, drop_default_properties
 from panel.viewable import Viewable
 from panel.widgets import (
-    Checkbox, IntInput, IntSlider, StaticText, TextInput,
+    Button, Checkbox, IntInput, IntSlider, StaticText, TextInput,
 )
 
 
@@ -57,6 +59,23 @@ def test_link():
 
     assert obj.a == 1
     assert obj2.a == 1
+
+
+def test_link_holoviews_stream():
+    "Link a Reactive object to a HoloViews stream"
+    try:
+        import holoviews as hv
+    except ImportError:
+        pytest.skip("holoviews not available")
+
+    class ReactiveLink(Reactive):
+        selection = param.List(default=[])
+
+    obj = ReactiveLink()
+    stream = hv.streams.Selection1D()
+    obj.link(stream, selection='index')
+    obj.selection = [0, 1]
+    assert stream.index == [0, 1]
 
 
 def test_param_rename():
@@ -117,6 +136,78 @@ def test_link_properties_server(document):
     assert cb.func == obj._server_change
 
 
+def test_link_properties_shared_callback(document):
+
+    class ReactiveLink(Reactive):
+
+        text = param.String(default='A')
+
+        visible = param.Boolean(default=True)
+
+    obj = ReactiveLink()
+    div = Div()
+
+    obj._link_props(div, ['text', 'visible'], document, div)
+    assert div._callbacks['text'] == div._callbacks['visible']
+    assert len(div._callbacks['text']) == 1
+
+    div.text = 'B'
+    div.visible = False
+    assert obj.text == 'B'
+    assert not obj.visible
+
+
+def test_link_properties_unknown_property(document):
+    obj = Reactive()
+    div = Div()
+
+    with pytest.raises(AttributeError):
+        obj._link_props(div, ['does_not_exist'], document, div)
+
+
+def test_synced_params_cached_until_parameter_added():
+
+    class ReactiveSynced(Reactive):
+
+        a = param.Number(default=1)
+
+    obj = ReactiveSynced()
+    synced = obj._synced_params
+    assert 'a' in synced
+    assert obj._synced_params is synced
+    assert ReactiveSynced()._synced_params is synced
+
+    ReactiveSynced.param.add_parameter('b', param.Number(default=2))
+    assert 'b' in obj._synced_params
+    assert 'b' in obj._linkable_params
+
+
+def test_drop_default_properties():
+    properties = {
+        'text': 'A', 'visible': True, 'disabled': False, 'width': 100,
+        'css_classes': [], 'styles': {}, 'tags': ['tag'], 'sizing_mode': None,
+    }
+    assert drop_default_properties(Div, properties) == {
+        'text': 'A', 'width': 100, 'tags': ['tag']
+    }
+
+    # Values must match the type of the default to be dropped, bokeh
+    # validation decides what happens to them otherwise.
+    assert drop_default_properties(Div, {'visible': 1}) == {'visible': 1}
+    assert drop_default_properties(Div, {'css_classes': ()}) == {'css_classes': ()}
+
+
+def test_drop_default_properties_matches_bokeh(document):
+    widget = IntSlider(start=0, end=10)
+    properties = widget._get_properties(document)
+    dropped = drop_default_properties(widget._widget_type, properties)
+    assert dropped != properties
+
+    full = widget._widget_type(**properties)
+    filtered = widget._widget_type(**dropped)
+    assert full._property_values == filtered._property_values
+
+
 def test_text_input_controls():
     text_input = TextInput()
 
@@ -126,8 +217,8 @@ def test_text_input_controls():
     assert len(controls) == 2
     wb1, wb2 = controls
     assert isinstance(wb1, WidgetBox)
-    assert len(wb1) == 7
-    name, value, disabled, *(ws) = wb1
+    assert len(wb1) == 8
+    name, label, value, disabled, *(ws) = wb1
 
     assert isinstance(value, TextInput)
     text_input.value = "New value"
@@ -137,18 +228,22 @@ def test_text_input_controls():
 
     not_checked = []
     for w in ws:
-        if w.name == 'Value input':
+        if w.label == 'Value input':
             assert isinstance(w, TextInput)
-        elif w.name == 'Placeholder':
+        elif w.label == 'Placeholder':
             assert isinstance(w, TextInput)
             text_input.placeholder = "Test placeholder..."
             assert w.value == "Test placeholder..."
-        elif w.name == 'Max length':
+        elif w.label == 'Max length':
             assert isinstance(w, IntInput)
-        elif w.name == 'Description':
+        elif w.label == 'Description':
             assert isinstance(w, TextInput)
             text_input.description = "Test description..."
             assert w.value == "Test description..."
+        elif w.label == 'Label':
+            assert isinstance(w, TextInput)
+            text_input.description = "Test label..."
+            assert w.value == ""
         else:
             not_checked.append(w)
 
@@ -156,8 +251,8 @@ def test_text_input_controls():
 
     assert isinstance(wb2, WidgetBox)
 
-    params1 = {w.name.replace(" ", "_").lower() for w in wb2 if len(w.name)}
-    params2 = set(Viewable.param) - {"background", "design", "stylesheets", "loading"}
+    params1 = {w.label.replace(" ", "_").lower() for w in wb2 if len(w.label)}
+    params2 = set(Viewable.param) - {"background", "design", "stylesheets", "loading", "name"}
     # Background should be moved when Layoutable.background is removed.
 
     assert not len(params1 - params2)
@@ -248,8 +343,8 @@ async def test_pass_bind_multi_async_generator_by_reference():
     assert text_input.width == 121
 
 def test_pass_refs():
-    slider = IntSlider(value=5, start=1, end=10, name='Number')
-    size = IntSlider(value=12, start=6, end=24, name='Size')
+    slider = IntSlider(value=5, start=1, end=10, label='Number')
+    size = IntSlider(value=12, start=6, end=24, label='Size')
 
     def refs(number, size):
         return {
@@ -393,6 +488,75 @@ def test_in_process_change_event_cleaned_up(document, comm):
         checkbox._process_events({'active': True})
 
     assert document not in checkbox._in_process__events
+
+def test_rapid_toggle_disabled(document, comm):
+    button = Button(label="dummy")
+    model = button.get_root(document, comm)
+
+    assert model.disabled is False
+
+    # Rapid toggle: True then immediately False
+    button.disabled = True
+    button.disabled = False
+
+    assert model.disabled is False
+    assert button.disabled is False
+    assert 'disabled' not in button._events
+
+def test_rapid_toggle_disabled_repeated(document, comm):
+    button = Button(label="dummy")
+    model = button.get_root(document, comm)
+
+    for _ in range(5):
+        button.disabled = True
+        button.disabled = False
+
+    assert model.disabled is False
+    assert button.disabled is False
+    assert 'disabled' not in button._events
+
+def test_python_update_clears_stale_events(document, comm):
+    text_input = TextInput(value='A')
+    model = text_input.get_root(document, comm)
+
+    # Simulate stale frontend event contaminating _events
+    text_input._events['value'] = 'stale'
+
+    # Python sets a new value
+    text_input.value = 'C'
+
+    assert model.value == 'C'
+    assert text_input.value == 'C'
+    assert 'value' not in text_input._events
+
+def test_boomerang_value_is_skipped(document, comm):
+    # When the Python update matches the recorded frontend value
+    # it is a boomerang echo and must not be re-pushed to the model.
+    text_input = TextInput(value='A')
+    model = text_input.get_root(document, comm)
+
+    # Prime _events as if the frontend just pushed 'frontend'
+    text_input._events['value'] = 'frontend'
+
+    # Python sets the same value — treated as a boomerang echo
+    text_input.value = 'frontend'
+
+    # Model stays at its original value since the echo is skipped
+    assert model.value == 'A'
+    assert text_input.value == 'frontend'
+    assert 'value' not in text_input._events
+
+def test_reactive_html_child_config_data_model_name():
+
+    class ChildConfigNaming(ReactiveHTML):
+
+        _icon_html = param.String(default='<img>')
+
+        _child_config = {'_icon_html': 'literal'}
+
+        _template = '<div id="div">${_icon_html}</div>'
+
+    assert ChildConfigNaming._data_model.__name__.startswith('ChildConfigNaming')
 
 def test_reactive_html_basic():
 
@@ -729,6 +893,58 @@ def test_reactive_html_scripts_linked_properties_assignment_operator():
 
             assert TestScripts()._linked_properties == ('clicks',)
 
+@pytest.mark.parametrize('expr', [
+    'data.hb--', 'data.hb++', '--data.hb', '++data.hb', '-- data.hb', 'data.hb --',
+    'x = data.hb-- > 0', 'data.c = 0 < --data.hb ? 1 : 2',
+])
+def test_reactive_html_scripts_linked_properties_increment_decrement(expr):
+
+    class TestScripts(ReactiveHTML):
+
+        hb = param.Integer()
+
+        _template = "<div id='test'></div>"
+
+        _scripts = {'render': f'{expr}'}
+
+    assert 'hb' in TestScripts()._linked_properties
+
+@pytest.mark.parametrize('expr', [
+    'data.hb == 1', 'data.hb === 1', 'data.hb != 1', 'data.hb !== 1',
+    'data.hb <= 1', 'data.hb >= 1', 'data.hb < 1', 'data.hb > 1', 'data.hb + 1',
+])
+def test_reactive_html_scripts_linked_properties_ignores_comparison(expr):
+
+    class TestScripts(ReactiveHTML):
+
+        hb = param.Integer()
+
+        _template = "<div id='test'></div>"
+
+        _scripts = {'render': f'if ({expr}) {{ }}'}
+
+    assert TestScripts()._linked_properties == ()
+
+def test_reactive_html_scripts_update_before_init_does_not_change_shared_scripts():
+
+    class TestScripts(ReactiveHTML):
+
+        _template = '<div id="test"></div>'
+
+        _scripts = {'render': 'data.clicks += 1'}
+
+        def __init__(self, **params):
+            self._scripts.update({'render': 'data.clicks += 2'})
+            super().__init__(**params)
+
+    with pytest.raises(AttributeError):
+        TestScripts()
+
+    with pytest.raises(TypeError):
+        TestScripts._scripts['render'] = 'data.clicks += 2'
+
+    assert TestScripts._scripts['render'] == 'data.clicks += 1'
+
 def test_reactive_html_templated_literal_add_loop_id_and_for_loop_var():
 
     class TestTemplatedChildren(ReactiveHTML):
@@ -821,6 +1037,172 @@ def test_reactive_design_stylesheets_update(document, comm):
     assert model.stylesheets[-1] == widget.stylesheets[0]
 
 
+def test_reactive_stylesheets_shared_component_across_documents(document, comm):
+    """A reused component's stylesheets belong to each notebook output's document."""
+    other_doc = Document()
+    widget = TextInput(stylesheets=['https://example.com/custom.css'])
+
+    with set_curdoc(document):
+        model1 = widget.get_root(document, comm)
+        document.add_root(model1)
+        model2 = widget.get_root(other_doc, comm)
+        other_doc.add_root(model2)
+
+        widget.stylesheets = ['https://example.com/updated.css']
+
+    for model, doc in ((model1, document), (model2, other_doc)):
+        assert all(sts.document is doc for sts in model.stylesheets if isinstance(sts, ImportedStyleSheet))
+        assert any(
+            isinstance(sts, ImportedStyleSheet) and sts.url == 'https://example.com/updated.css'
+            for sts in model.stylesheets
+        )
+        doc.to_json()
+    assert not {
+        id(sts) for sts in model1.stylesheets if isinstance(sts, ImportedStyleSheet)
+    } & {
+        id(sts) for sts in model2.stylesheets if isinstance(sts, ImportedStyleSheet)
+    }
+
+
+def test_reactive_pane_stylesheets_shared_across_documents(document, comm):
+    """Updating a pane reused in notebook outputs keeps stylesheets document-local."""
+    other_doc = Document()
+    pane = Markdown('first')
+
+    with set_curdoc(document):
+        model1 = pane.get_root(document, comm)
+        document.add_root(model1)
+        model2 = pane.get_root(other_doc, comm)
+        other_doc.add_root(model2)
+        pane.object = 'second'
+
+    assert model1.text == model2.text
+    for model, doc in ((model1, document), (model2, other_doc)):
+        assert all(sts.document is doc for sts in model.stylesheets if isinstance(sts, ImportedStyleSheet))
+        doc.to_json()
+
+
+def test_reactive_html_stylesheet_updates_across_documents(document, comm):
+    """ReactiveHTML updates do not share stylesheet models across outputs."""
+    other_doc = Document()
+    component = ReactiveHTML(stylesheets=['https://example.com/first.css'])
+
+    with set_curdoc(document):
+        model1 = component.get_root(document, comm)
+        document.add_root(model1)
+        model2 = component.get_root(other_doc, comm)
+        other_doc.add_root(model2)
+        shared = ImportedStyleSheet(url='https://example.com/shared.css')
+        process = component._process_param_change
+
+        def add_shared(params):
+            props = process(params)
+            if 'stylesheets' in props:
+                props['stylesheets'].append(shared)
+            return props
+
+        component._process_param_change = add_shared
+        component.stylesheets = ['https://example.com/second.css']
+
+    for model, doc in ((model1, document), (model2, other_doc)):
+        assert any(
+            isinstance(sts, ImportedStyleSheet) and sts.url == 'https://example.com/shared.css'
+            for sts in model.stylesheets
+        )
+        assert all(sts.document is doc for sts in model.stylesheets if isinstance(sts, ImportedStyleSheet))
+        doc.to_json()
+
+
+def test_reactive_destroyed_stylesheet_dropped(document, comm):
+    # Regression: https://github.com/holoviz/panel/issues/8106
+    widget = Markdown('foo')
+
+    # Emulates a Design injecting a stylesheet that was destroyed along
+    # with the Document it was originally rendered into. Patched on the
+    # instance since subclassing a Pane would register a new pane type.
+    process_param_change = widget._process_param_change
+
+    def _process_param_change(params):
+        props = process_param_change(params)
+        if 'stylesheets' in props:
+            props['stylesheets'] = [*props['stylesheets'], ImportedStyleSheet()]
+        return props
+
+    widget._process_param_change = _process_param_change
+
+    model = widget.get_root(document, comm)
+
+    assert all(
+        stylesheet_url(sts) is not None for sts in model.stylesheets
+        if isinstance(sts, ImportedStyleSheet)
+    )
+    # The Document must remain serializable
+    document.to_json()
+
+def test_reactive_recreates_destroyed_stylesheet(document, comm):
+    with set_curdoc(document):
+        widget1 = TextInput()
+        widget1.get_root(document, comm)
+
+        cache = state._stylesheets[document]
+        assert cache
+        stale = list(cache.values())
+
+        # Bokeh clears the property values of every model on a Document
+        # when the Document is destroyed at the end of a session
+        for stylesheet in stale:
+            stylesheet.destroy()
+
+        widget2 = TextInput()
+        model2 = widget2.get_root(document, comm)
+
+    stale_ids = {id(stylesheet) for stylesheet in stale}
+    for stylesheet in model2.stylesheets:
+        if isinstance(stylesheet, ImportedStyleSheet):
+            assert stylesheet_url(stylesheet) is not None
+            assert id(stylesheet) not in stale_ids
+
+def test_reactive_loading_css_shared_per_document(document, comm):
+    other_doc = Document()
+    widget1, widget2 = TextInput(), TextInput()
+
+    with set_curdoc(document):
+        model1 = widget1.get_root(document, comm)
+        model2 = widget2.get_root(document, comm)
+        model3 = widget1.get_root(other_doc, comm)
+        document.add_root(model1)
+        document.add_root(model2)
+        other_doc.add_root(model3)
+
+    loading1, loading2, loading3 = (m.stylesheets[0] for m in (model1, model2, model3))
+    assert isinstance(loading1, InlineStyleSheet)
+    assert loading1.css == loading_css()
+    assert loading1 is loading2
+    assert loading1 is not loading3
+    assert loading1.document is document
+    assert loading3.document is other_doc
+
+    # A stylesheets update keeps the shared instance
+    widget1.stylesheets = ['.custom { color: red; }']
+    assert model1.stylesheets[0] is loading1
+    assert model3.stylesheets[0] is loading3
+    document.to_json()
+    other_doc.to_json()
+
+def test_reactive_recreates_destroyed_loading_stylesheet(document, comm):
+    with set_curdoc(document):
+        widget1 = TextInput()
+        model1 = widget1.get_root(document, comm)
+        stale = model1.stylesheets[0]
+        assert isinstance(stale, InlineStyleSheet)
+        stale.destroy()
+
+        widget2 = TextInput()
+        model2 = widget2.get_root(document, comm)
+
+    assert model2.stylesheets[0] is not stale
+    assert model2.stylesheets[0].css == loading_css()
+
 def test_reactive_attribute_no_name(document, comm):
     # Regression: https://github.com/holoviz/panel/pull/7655
     class CustomComponent2(ReactiveHTML):
@@ -831,3 +1213,18 @@ def test_reactive_attribute_no_name(document, comm):
     component.get_root(document, comm)
     # Should not error out
     component.groups = []
+
+
+def test_refs_enabled_for_parameter_added_after_instantiation():
+    class Custom(Reactive):
+        value = param.Integer(default=0)
+
+    Custom()
+    Custom.param.add_parameter('other', param.String(default=''))
+    source = TextInput(value='3')
+
+    obj = Custom(other=source.param.value)
+    assert obj.other == '3'
+
+    source.value = '4'
+    assert obj.other == '4'

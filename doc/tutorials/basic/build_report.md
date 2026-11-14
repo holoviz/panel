@@ -95,57 +95,55 @@ CARD_STYLE = {
   "border-radius": "5px"
 }
 
-header = pn.Row(
-    pn.pane.Markdown(
+header = pn.ui.Row(
+    pn.ui.Markdown(
         "# Wind Turbine Report", styles={"color": BRAND_TEXT_ON_COLOR}, margin=(5, 20)
     ),
     styles={"background": BRAND_COLOR},
 )
-indicators = pn.FlexBox(
-    pn.indicators.Number(
+indicators = pn.ui.FlexBox(
+    pn.ui.Number(
         value=total_capacity / 1e6,
-        name="Total Capacity (GW)",
+        label="Total Capacity (GW)",
         format="{value:,.0f}",
+        font_size="28pt",
         styles=CARD_STYLE,
     ),
-    pn.indicators.Number(
+    pn.ui.Number(
         value=avg_capacity,
-        name="Avg. Capacity (MW)",
+        label="Avg. Capacity (MW)",
         format="{value:,.1f}",
+        font_size="28pt",
         styles=CARD_STYLE,
     ),
-    pn.indicators.Number(
+    pn.ui.Number(
         value=avg_rotor_diameter,
-        name="Avg. Rotor Diameter (m)",
+        label="Avg. Rotor Diameter (m)",
         format="{value:,.0f}",
+        font_size="28pt",
         styles=CARD_STYLE,
     ),
-    pn.indicators.Number(
-        value=avg_rotor_diameter,
-        name="Avg. Rotor Diameter (m)",
-        format="{value:,.0f}",
-        styles=CARD_STYLE,
-    ),
-    pn.indicators.Number(
+    pn.ui.Number(
         value=count,
-        name="Count",
+        label="Count",
         format="{value:,.0f}",
+        font_size="28pt",
         styles=CARD_STYLE,
     ),
     margin=(20, 5),
 )
 
-plot = pn.pane.Vega(
+plot = pn.ui.Vega(
     fig,
     styles=CARD_STYLE,
     margin=10,
 )
 
-table = pn.pane.DataFrame(example_df, styles=CARD_STYLE)
+table = pn.ui.DataFrame(example_df, styles=CARD_STYLE)
 
 ## Put the components together
 
-main = pn.Column(
+main = pn.ui.Column(
     "# Summary",
     indicators,
     TEXT,
@@ -155,12 +153,8 @@ main = pn.Column(
     table,
 )
 
-main_container = pn.Row(
-    main,
-    max_width=1024,
-    styles={"margin-right": "auto", "margin-left": "auto", "margin-top": "10px", "margin-bottom": "20px"},
-)
-report = pn.Column(header, main_container)
+main_container = pn.ui.Container(main, width_option="lg")
+report = pn.ui.Column(header, main_container)
 
 ## Export and save it
 
@@ -287,8 +281,8 @@ CARD_STYLE = {
   "border-radius": "5px"
 }
 
-header = pn.Row(
-    pn.pane.Markdown(
+header = pn.ui.Row(
+    pn.ui.Markdown(
         "# Wind Turbine Report", styles={"color": BRAND_TEXT_ON_COLOR}, margin=(5, 20)
     ),
     styles={"background": BRAND_COLOR},
@@ -298,52 +292,50 @@ header = pn.Row(
 Here, we define some styling constants and create a header for the report, which consists of a Markdown title styled with the brand color and a teal background.
 
 ```{pyodide}
-indicators = pn.FlexBox(
-    pn.indicators.Number(
+indicators = pn.ui.FlexBox(
+    pn.ui.Number(
         value=total_capacity / 1e6,
-        name="Total Capacity (GW)",
+        label="Total Capacity (GW)",
         format="{value:,.0f}",
+        font_size="28pt",
         styles=CARD_STYLE,
     ),
-    pn.indicators.Number(
+    pn.ui.Number(
         value=avg_capacity,
-        name="Avg. Capacity (MW)",
+        label="Avg. Capacity (MW)",
         format="{value:,.1f}",
+        font_size="28pt",
         styles=CARD_STYLE,
     ),
-    pn.indicators.Number(
+    pn.ui.Number(
         value=avg_rotor_diameter,
-        name="Avg. Rotor Diameter (m)",
+        label="Avg. Rotor Diameter (m)",
         format="{value:,.0f}",
+        font_size="28pt",
         styles=CARD_STYLE,
     ),
-    pn.indicators.Number(
-        value=avg_rotor_diameter,
-        name="Avg. Rotor Diameter (m)",
-        format="{value:,.0f}",
-        styles=CARD_STYLE,
-    ),
-    pn.indicators.Number(
+    pn.ui.Number(
         value=count,
-        name="Count",
+        label="Count",
         format="{value:,.0f}",
+        font_size="28pt",
         styles=CARD_STYLE,
     ),
     margin=(20, 5),
 )
 
-plot = pn.pane.Vega(
+plot = pn.ui.Vega(
     fig,
     styles=CARD_STYLE,
     margin=10,
 )
-table = pn.pane.DataFrame(example_df, styles=CARD_STYLE)
+table = pn.ui.DataFrame(example_df, styles=CARD_STYLE)
 ```
 
-We create various components for the report, including a set of indicators (total capacity, average capacity, etc.), a Vega plot (`plot`) displaying the capacity by manufacturer, and a DataFrame (`table`) showing example turbine data.
+We create various components for the report, including a set of indicators (total capacity, average capacity, etc.) with a `font_size` reduced from the default of 54pt so they fit side by side, a Vega plot (`plot`) displaying the capacity by manufacturer, and a DataFrame (`table`) showing example turbine data.
 
 ```{pyodide}
-main = pn.Column(
+main = pn.ui.Column(
     "# Summary",
     indicators,
     TEXT,
@@ -357,22 +349,20 @@ main = pn.Column(
 We assemble the main content of the report (`main`) as a Column layout, including the summary section, the indicators, the Markdown text, the plot, and the table.
 
 ```{pyodide}
-main_container = pn.Row(
-    main,
-    max_width=1024,
-    styles={"margin-right": "auto", "margin-left": "auto", "margin-top": "10px", "margin-bottom": "20px"},
-)
-report = pn.Column(header, main_container)
+main_container = pn.ui.Container(main, width_option="lg")
+report = pn.ui.Column(header, main_container)
 report
 ```
 
-We create a container (`main_container`) to hold the main content with a maximum width and some margin styling. Then, we compose the entire report (`report`) by combining the header and the main container.
+We create a [`Container`](../../reference/layouts/Container.md) (`main_container`) that centers the main content horizontally and limits its width to the `"lg"` breakpoint. Then, we compose the entire report (`report`) by combining the header and the main container.
 
 ```python
 report.save("report.html")
 ```
 
 Finally, we save the report as an HTML file named "report.html". This HTML file will contain the rendered content of the report, including the header, indicators, text, plot, and table.
+
+By default the saved file loads its JavaScript and CSS from a CDN, so it needs an internet connection to display. To embed all resources in the file, so it also works offline, save it with `report.save("report.html", resources="inline")`. The resulting file is considerably larger.
 
 :::{note}
 With `.save` you can produce *static* reports that display content and have very limited interactivity. It is possible to add more interactivity. Check out the [*Embed State*](../../how_to/export/embedding.md) or [Convert Panel Applications](../../how_to/wasm/convert.md) guides for more detail.

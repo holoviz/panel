@@ -16,6 +16,8 @@ from ipywidgets import Widget
 from ipywidgets._version import __protocol_version__
 from ipywidgets.widgets.widget import _remove_buffers
 
+_ORIG_KERNEL = ipykernel.kernelbase.Kernel._instance
+
 # Stop ipywidgets_bokeh from patching the kernel
 ipykernel.kernelbase.Kernel._instance = ''  # type: ignore
 
@@ -108,7 +110,7 @@ class MessageSentBuffers(TypedDict):
     msg_type: str
 
 
-class MessageSentEventPatched(MessageSentEvent):
+class MessageSentEventPatched(MessageSentEvent, kind='MessageSent'):  # type: ignore[call-arg]
     """
     Patches MessageSentEvent with fix that ensures MessageSent event
     does not define msg_data (which is an assumption in BokehJS
@@ -231,7 +233,11 @@ class PanelKernel(Kernel):
         return wrapper
 
 # Patch kernel and widget objects
-_ORIG_KERNEL = ipykernel.kernelbase.Kernel._instance
-if isinstance(ipykernel.kernelbase.Kernel._instance, (BokehKernel, str)):
-    ipykernel.kernelbase.Kernel._instance = classproperty(_get_kernel)  # type: ignore
+# The proxy is installed even when a real kernel already exists (e.g. when
+# serving from a notebook) so that Kernel.instance() resolves to the
+# per-document PanelKernel inside a session and to the original kernel
+# everywhere else.
+if not isinstance(_ORIG_KERNEL, Kernel):
+    _ORIG_KERNEL = BokehKernel()
+ipykernel.kernelbase.Kernel._instance = classproperty(_get_kernel)  # type: ignore
 Widget.on_widget_constructed(_on_widget_constructed)

@@ -15,7 +15,7 @@
   --font-size: var(--type-ramp-base-font-size);
   --switch-size: 12px;
   --container-background: var(--panel-surface-color);
-  color: var(--neutral-foreground-rest);
+  color: var(--panel-on-surface-color, inherit);
   --panel-primary-color: var(--accent-foreground-rest);
   --panel-on-primary-color: var(--foreground-on-accent-rest);
 }
@@ -70,24 +70,6 @@ hr {
 canvas,
 img {
   border-radius: calc(var(--corner-radius) * 1px);
-}
-
-/* Toolbar */
-
-.bk-toolbar.bk-above .bk-toolbar-button.bk-active {
-  border-bottom-color: var(--accent-foreground-active);
-}
-
-.bk-toolbar.bk-below .bk-toolbar-button.bk-active {
-  border-top-color: var(--accent-foreground-active);
-}
-
-.bk-toolbar.bk-right .bk-toolbar-button.bk-active {
-  border-left-color: var(--accent-foreground-active);
-}
-
-.bk-toolbar.bk-left .bk-toolbar-button.bk-active {
-  border-right-color: var(--accent-foreground-active);
 }
 
 /* Tooltips */
@@ -805,7 +787,6 @@ select:not([size]).bk-input {
 
 progress {
   border-radius: calc(var(--corner-radius) * 1px);
-  height: 5px;
   margin: 0 0 0.5em;
 }
 
@@ -831,7 +812,6 @@ progress:not([value])::-webkit-progress-bar {
 
 progress:not([value])::before {
   border-radius: calc(var(--corner-radius) * 1px);
-  height: 5px;
 }
 
 /* Panes */

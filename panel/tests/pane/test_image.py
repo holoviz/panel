@@ -1,17 +1,15 @@
 import os
 
 from base64 import b64decode, b64encode
+from html import escape
 from io import BytesIO, StringIO
 from pathlib import Path
 
 import pytest
 
-from requests.exceptions import MissingSchema
-
 from panel.pane import (
-    AVIF, GIF, ICO, JPG, PDF, PNG, SVG, WebP,
+    AVIF, GIF, ICO, JPG, PDF, PNG, SVG, Image, WebP,
 )
-from panel.pane.markup import escape
 
 AVIF_FILE = 'https://assets.holoviz.org/panel/samples/avif_sample.avif'
 JPG_FILE = 'https://assets.holoviz.org/panel/samples/jpg_sample.jpg'
@@ -83,7 +81,10 @@ twopixel = dict(\
     ico = b'AAABAAEAAgEAAAEAIAA0AAAAFgAAACgAAAACAAAAAgAAAAEAIAAAAAAACAAAAHQ' + \
           b'SAAB0EgAAAAAAAAAAAAD//////////wAAAAA=',
     webp= b'UklGRkIAAABXRUJQVlA4WAoAAAAQAAAAAQAAAAAAQUxQSAMAAAAAAAAAVlA4IBg' + \
-          b'AAAAwAQCdASoCAAEAAUAmJaQAA3AA/v02aAA='
+          b'AAAAwAQCdASoCAAEAAUAmJaQAA3AA/v02aAA=',
+    webp_lossy = b'UklGRjoAAABXRUJQVlA4IC4AAACwAQCdASoCAAEAAUAmJaACdLoABDAAAP7x3I/4' + \
+                 b'DdfFtMv/vYL/3YL/3YL/WwAA',
+    webp_lossless = b'UklGRh4AAABXRUJQVlA4TBEAAAAvAQAAAAdQjyLXo/+BiOh/AAA=',
           )
 
 
@@ -171,12 +172,35 @@ def test_pdf_no_embed(document, comm):
 def test_pdf_local_file(document, comm):
     path = Path(__file__).parent.parent / "test_data" / "sample.pdf"
     pdf_pane = PDF(object=path)
-    try:
-        model = pdf_pane.get_root(document, comm)
-    except MissingSchema:
-        return # ignore issues with local paths
-    assert model.text.startswith("&lt;embed src=&quot;data:application/pdf;base64,JVBER")
-    assert model.text.endswith("==#page=1&quot; width=&#x27;100%&#x27; height=&#x27;100%&#x27; type=&quot;application/pdf&quot;&gt;")
+    model = pdf_pane.get_root(document, comm)
+    assert model.embed
+    assert model.text.startswith("JVBER")
+
+def test_pdf_bytes_no_embed(document, comm):
+    path = Path(__file__).parent.parent / "test_data" / "sample.pdf"
+    pdf_pane = PDF(path.read_bytes(), embed=False)
+    model = pdf_pane.get_root(document, comm)
+    assert model.embed
+    assert model.text.startswith("JVBER")
+
+def test_pdf_url_embed_false_stays_html(document, comm):
+    url = 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
+    model = PDF(url, embed=False).get_root(document, comm)
+    assert not model.embed
+
+def test_pdf_switch_between_url_and_local_data(document, comm):
+    path = Path(__file__).parent.parent / "test_data" / "sample.pdf"
+    url = 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
+    pdf_pane = PDF(url, embed=False)
+    model = pdf_pane.get_root(document, comm)
+
+    pdf_pane.object = path.read_bytes()
+    assert model.embed
+    assert not pdf_pane.embed
+
+    pdf_pane.object = url
+    assert not model.embed
+    assert model.text.startswith("&lt;embed")
 
 def test_png_native_size(document, comm):
     png = PNG(PNG_FILE, embed=False)
@@ -337,3 +361,60 @@ def test_image_caption(document, comm):
     model = png.get_root(document, comm)
     assert 'Some Caption' in model.text
     assert 'figcaption' in model.text
+
+
+@pytest.mark.parametrize('cls,data', [
+    (PNG, b'\x89PNG\r\n\x1a\n'),        # Valid PNG header but truncated before IHDR dimensions
+    (GIF, b'GIF89a'),                     # Valid GIF header but truncated before dimensions
+    (ICO, b'\x00\x00\x01\x00\x01'),      # Valid ICO header but truncated before entry
+], ids=['png', 'gif', 'ico'])
+def test_imgshape_truncated_data(cls, data):
+    with pytest.raises(ValueError, match="insufficient data"):
+        cls._imgshape(data)
+
+
+def test_imgshape_jpg_no_sof_marker():
+    # JPEG with valid SOI marker but no SOF marker (just SOI + SOS)
+    data = b'\xff\xd8\xff\xda' + b'\x00' * 10
+    with pytest.raises(ValueError, match="no SOF marker found"):
+        JPG._imgshape(data)
+
+
+def test_imgshape_avif_no_ispe_box():
+    # AVIF data without an ispe box
+    data = b'\x00\x00\x00\x1cftypavifall' + b'\x00' * 50
+    with pytest.raises(ValueError, match="no 'ispe' box found"):
+        AVIF._imgshape(data)
+
+
+@pytest.mark.parametrize('variant', ['webp_lossy', 'webp_lossless'])
+def test_imgshape_webp_variants(variant):
+    w, h = WebP._imgshape(b64decode(twopixel[variant]))
+    assert w == 2
+    assert h == 1
+
+
+_bytes_formats = {
+    AVIF: 'avif', PNG: 'png', JPG: 'jpg', GIF: 'gif', ICO: 'ico', WebP: 'webp'
+}
+
+@pytest.mark.parametrize('cls,fmt', list(_bytes_formats.items()), ids=lambda v: getattr(v, 'name', v))
+def test_imgshape_rejects_other_formats(cls, fmt):
+    for other in _bytes_formats.values():
+        if other == fmt:
+            continue
+        with pytest.raises(ValueError):
+            cls._imgshape(b64decode(twopixel[other]))
+
+
+@pytest.mark.parametrize('cls,fmt', list(_bytes_formats.items()), ids=lambda v: getattr(v, 'name', v))
+def test_image_from_bytes_detects_format(cls, fmt, document, comm):
+    data = b64decode(twopixel[fmt])
+    for img_cls in _bytes_formats:
+        assert bool(img_cls.applies(data)) == (img_cls is cls)
+
+    model = Image(data).get_root(document, comm)
+    filetype = 'x-icon' if cls is ICO else cls.filetype
+    assert f'data:image/{filetype};base64' in model.text
+    assert model.width == 2
+    assert model.height == 1

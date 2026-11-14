@@ -1,12 +1,19 @@
+import io
+
 import pytest
 
 pytest.importorskip("playwright")
 
 from bokeh.models import Tooltip
+from PIL import Image
 from playwright.sync_api import expect
 
+import panel as pn
+
 from panel.tests.util import serve_component, wait_until
+from panel.theme import Fast
 from panel.widgets import TooltipIcon
+from panel.widgets.indicators import Dial, Gauge, Progress
 
 pytestmark = pytest.mark.ui
 
@@ -80,3 +87,136 @@ def test_tooltip_text_updates(page):
     tooltip = page.locator(".bk-tooltip-content")
     expect(tooltip).to_have_count(1)
     expect(tooltip).to_have_text("Updated")
+
+
+def _wait_for_echarts(page, timeout=30000):
+    """Wait for the ECharts JS module to be loaded on the page.
+
+    Gauge renders via ECharts. serve_component only waits for the Panel
+    websocket and networkidle, not for the ECharts module fetch. On slow
+    CI runners the canvas can appear well after networkidle, so polling
+    for `window.echarts` is the reliable readiness signal.
+    """
+    page.wait_for_function("typeof window.echarts !== 'undefined'", timeout=timeout)
+
+
+def test_gauge_renders(page):
+    gauge = Gauge(label="Speed", value=75, bounds=(0, 200))
+
+    serve_component(page, gauge)
+
+    _wait_for_echarts(page)
+    expect(page.locator("canvas")).to_have_count(1, timeout=10000)
+
+
+def test_gauge_does_not_crash_other_widgets(page):
+    """Regression test: Gauge should not crash other widgets on the page."""
+    gauge = Gauge(label="G", value=50, bounds=(0, 100))
+    slider = pn.widgets.IntSlider(label="Slider", value=25, start=0, end=100)
+    col = pn.Column(gauge, slider)
+
+    serve_component(page, col)
+
+    # The slider must render even if Gauge is on the same page
+    expect(page.locator(".noUi-target")).to_have_count(1, timeout=10000)
+    # Gauge canvas should also eventually render
+    _wait_for_echarts(page)
+    expect(page.locator("canvas")).to_have_count(1, timeout=10000)
+
+
+def test_gauge_value_update(page):
+    gauge = Gauge(label="G", value=25, bounds=(0, 100))
+
+    serve_component(page, gauge)
+
+    _wait_for_echarts(page)
+    expect(page.locator("canvas")).to_have_count(1, timeout=10000)
+
+    # Update value and verify no crash
+    gauge.value = 75
+
+    # Canvas should still be present after update
+    expect(page.locator("canvas")).to_have_count(1, timeout=5000)
+
+
+def test_fast_progress_indicator_height(page):
+    progress = Progress(value=20, design=Fast)
+
+    serve_component(page, progress)
+
+    progress_el = page.locator("progress")
+    expect(progress_el).to_have_count(1)
+    expect(progress_el).to_have_css("height", "20px")
+
+
+def test_fast_progress_indicator_explicit_height(page):
+    progress = Progress(value=20, height=32, design=Fast)
+
+    serve_component(page, progress)
+
+    progress_el = page.locator("progress")
+    expect(progress_el).to_have_count(1)
+    expect(progress_el).to_have_css("height", "32px")
+
+
+@pytest.mark.parametrize("height", [10, 20, 30, 50, 80])
+def test_progress_active_stripes_fill_bar(page, height):
+    progress = Progress(active=True, height=height)
+
+    serve_component(page, progress)
+
+    progress_el = page.locator("progress")
+    expect(progress_el).to_have_count(1)
+    expect(progress_el).to_have_css("height", f"{height}px")
+    stripes = progress_el.evaluate(
+        "el => { const s = getComputedStyle(el, '::before'); return [s.height, s.backgroundSize] }"
+    )
+    assert stripes[0] == f"{height}px"
+    assert stripes[1].endswith(" 100%")
+
+
+def test_dial_frame_is_transparent_on_dark_background(page):
+    dial = Dial(value=25, width=200, height=200)
+    row = pn.Row(dial, styles={'background': 'rgb(0, 0, 0)'})
+
+    serve_component(page, row)
+
+    figure = page.locator('.bk-Figure')
+    expect(figure).to_have_count(1)
+    page.wait_for_timeout(500)
+    image = Image.open(io.BytesIO(figure.screenshot())).convert('RGB')
+    # The corners sit outside the arc, so anything but the page
+    # background there means the figure border is painted.
+    for xy in [(1, 1), (image.width-2, 1), (1, image.height-2), (image.width-2, image.height-2)]:
+        assert image.getpixel(xy) == (0, 0, 0)
+
+
+@pytest.mark.parametrize('kwargs', [{'max_width': 150}, {'max_height': 150}])
+def test_dial_canvas_matches_max_dimensions(page, kwargs):
+    dial = Dial(value=25, **kwargs)
+
+    serve_component(page, dial)
+
+    expected = (min(250, kwargs.get('max_width', 250)), min(250, kwargs.get('max_height', 250)))
+    canvas = page.locator('.bk-Canvas canvas').first
+    expect(canvas).to_have_count(1)
+    box = canvas.bounding_box()
+    assert (box['width'], box['height']) == pytest.approx(expected, abs=1)
+
+    # The drawing is scaled to the figure's own size, which must match the canvas
+    # or the glyphs are stretched.
+    figure_size = page.evaluate("""() => {
+        const fig = Bokeh.documents[0].roots().find(m => m.type === 'Figure')
+        return [fig.width, fig.height]
+    }""")
+    assert tuple(figure_size) == expected
+
+
+def test_dial_stretch_width_respects_max_width(page):
+    dial = Dial(value=25, sizing_mode='stretch_width', max_width=150)
+
+    serve_component(page, dial)
+
+    canvas = page.locator('.bk-Canvas canvas').first
+    expect(canvas).to_have_count(1)
+    assert canvas.bounding_box()['width'] <= 151

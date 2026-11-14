@@ -1,27 +1,34 @@
+
 try:
     import holoviews as hv
 except ImportError:
     hv = None
 
+import typing as t
+
 import param
 import pytest
 
+from bokeh.models import Div
 from bokeh.plotting import figure
 
 from panel.custom import JSComponent
+from panel.io.state import set_curdoc
 from panel.layout import Row
-from panel.links import Link
+from panel.links import Callback, CallbackGenerator, Link
 from panel.pane import Bokeh, HoloViews
+from panel.reactive import Reactive
 from panel.tests.util import hv_available
+from panel.util.warnings import PanelUserWarning
 from panel.widgets import (
-    ColorPicker, DatetimeInput, FloatInput, FloatSlider, RangeSlider,
-    TextInput,
+    Button, ColorPicker, CrossSelector, DatetimeInput, FloatInput, FloatSlider,
+    RangeSlider, Tabulator, TextInput,
 )
 
 
 class MockJSComponent(JSComponent):
 
-    value = param.Parameter()
+    value: t.Any = param.Parameter()  # type: ignore[assignment, ty:invalid-assignment]
 
 
 def test_widget_link_bidirectional():
@@ -398,3 +405,176 @@ def test_link_with_customcode(document, comm):
     assert link_customjs.args['source'] is range_slider
     assert link_customjs.args['x_range'] is x_range
     assert link_customjs.code == f"try {{ {code} }} catch(err) {{ console.log(err) }}"
+
+
+def test_callback_unwatch():
+    button = Button(label="Test")
+    cb = button.js_on_click(args=dict(url="google.com"), code="window.open(url, '_blank');")
+
+    assert len(Callback.registry.get(button, [])) == 1
+    assert cb in Callback.registry[button]
+
+    cb.unwatch()
+
+    assert len(Callback.registry.get(button, [])) == 0
+
+
+def test_callback_unwatch_multiple_callbacks():
+    button = Button(label="Test")
+    cb1 = button.js_on_click(args=dict(url1="url1"), code="console.log('1');")
+    cb2 = button.js_on_click(args=dict(url2="url2"), code="console.log('2');")
+
+    assert len(Callback.registry.get(button, [])) == 2
+
+    cb1.unwatch()
+
+    assert len(Callback.registry.get(button, [])) == 1
+    assert cb1 not in Callback.registry[button]
+    assert cb2 in Callback.registry[button]
+
+    cb2.unwatch()
+
+    assert len(Callback.registry.get(button, [])) == 0
+
+
+def test_crossselector_jscallback_skips_missing_value(document, comm):
+    widget = CrossSelector(options=['a', 'b', 'c'])
+    widget.jscallback(value="console.log('hello world')")
+
+    with pytest.warns(PanelUserWarning, match="value"):
+        model = widget.get_root(document, comm)
+
+    assert 'change:value' not in model.js_property_callbacks
+    assert 'value' not in model.js_property_callbacks
+
+
+def test_crossselector_jslink_code_skips_missing_value(document, comm):
+    cross = CrossSelector(options=['a', 'b', 'c'])
+    other = TextInput()
+    cross.jslink(other, code={'value': "console.log('x')"})
+    row = Row(cross, other)
+
+    with pytest.warns(PanelUserWarning, match="value"):
+        root = row.get_root(document, comm)
+
+    cross_model = cross._models[root.ref['id']][0]
+    assert 'change:value' not in cross_model.js_property_callbacks
+    assert 'value' not in cross_model.js_property_callbacks
+
+
+def test_crossselector_jslink_keyword_skips_missing_value(document, comm):
+    cross = CrossSelector(options=['a', 'b', 'c'])
+    other = TextInput()
+    cross.jslink(other, value='value')
+    row = Row(cross, other)
+
+    with pytest.warns(PanelUserWarning, match="value"):
+        root = row.get_root(document, comm)
+
+    cross_model = cross._models[root.ref['id']][0]
+    assert 'change:value' not in cross_model.js_property_callbacks
+    assert 'value' not in cross_model.js_property_callbacks
+
+
+def test_crossselector_jscallback_width_registers(document, comm):
+    widget = CrossSelector(options=['a', 'b', 'c'])
+    widget.jscallback(width="console.log('width')")
+
+    model = widget.get_root(document, comm)
+
+    assert 'change:width' in model.js_property_callbacks
+
+
+def test_tabulator_jslink_skips_missing_value(dataframe, document, comm):
+    table = Tabulator(value=dataframe)
+    other = TextInput()
+    table.jslink(other, code={'value': "console.log('tab test')"})
+    row = Row(table, other)
+
+    with pytest.warns(PanelUserWarning, match="value"):
+        root = row.get_root(document, comm)
+
+    table_model = table._models[root.ref['id']][0]
+    assert 'change:value' not in table_model.js_property_callbacks
+    assert 'value' not in table_model.js_property_callbacks
+
+
+def test_tabulator_jscallback_selection_registers_selection_event(dataframe, document, comm):
+    table = Tabulator(value=dataframe)
+    table.jscallback(selection="console.log('selected')")
+
+    root = table.get_root(document, comm)
+
+    model = table._models[root.ref['id']][0]
+    assert 'selection-change' in model.js_event_callbacks
+
+
+def test_jscallback_python_only_parameter_raises(dataframe, document, comm):
+    table = Tabulator(value=dataframe)
+    table.jscallback(row_height="console.log('height')")
+
+    with pytest.raises(ValueError, match="only available in Python"):
+        table.get_root(document, comm)
+
+
+class RenamedPane(Reactive):
+
+    selection = param.List(default=[])
+
+    _rename = {'selection': 'indices'}
+
+    def _get_model(self, doc, root=None, parent=None, comm=None):
+        model = Div()
+        root = root or model
+        self._models[root.ref['id']] = (model, parent)
+        return model
+
+
+def test_controls_jslink_tolerates_missing_renamed_property():
+    pane = RenamedPane()
+    controls = pane.controls(['selection'])
+
+    with pytest.warns(PanelUserWarning, match="non-existent property 'indices'"):
+        Row(controls, pane).get_root()
+
+
+def test_user_jslink_raises_on_missing_renamed_property(monkeypatch):
+    monkeypatch.setattr(CallbackGenerator, 'error', True)
+    pane = RenamedPane()
+    widget = TextInput()
+    widget.jslink(pane, value='selection', bidirectional=True)
+
+    with pytest.raises(ValueError, match="non-existent property 'indices'"):
+        Row(widget, pane).get_root()
+
+
+def test_link_to_child_appended_to_layout(document, comm):
+    from panel.widgets import IntSlider
+
+    source, target = IntSlider(), IntSlider()
+    source.jslink(target, value='value')
+    row = Row(source)
+    model = row.get_root(document, comm)
+    with set_curdoc(document):
+        row.append(target)
+
+    ref = model.ref['id']
+    assert 'change:value' in source._models[ref][0].js_property_callbacks
+
+
+def test_appending_unlinked_children_skips_link_processing(document, comm, monkeypatch):
+    from panel.widgets import IntSlider
+
+    source, target = IntSlider(), IntSlider()
+    source.jslink(target, value='value')
+    row = Row(source, target)
+    row.get_root(document, comm)
+    processed = []
+    monkeypatch.setattr(Callback, '_callbacks', {
+        k: (lambda *args, cb=cb, **kwargs: processed.append(1) or cb(*args, **kwargs))
+        for k, cb in Callback._callbacks.items()
+    })
+    with set_curdoc(document):
+        row.append(Div(text='unlinked'))
+
+    assert not processed

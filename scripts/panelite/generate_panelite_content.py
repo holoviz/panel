@@ -1,18 +1,27 @@
 """
 Helper script to convert and copy example notebooks into JupyterLite build.
 """
+import io
 import json
 import os
 import pathlib
 import re
 import shutil
+import sys
 
 from test.notebooks_with_panelite_issues import NOTEBOOK_ISSUES
+from types import SimpleNamespace
 
 import nbformat
 
 HERE = pathlib.Path(__file__).parent
 PANEL_BASE = HERE.parent.parent
+# The lite environment does not install this checkout, but the panel.ui
+# notebooks must be generated from its panel.ui and docs extension.
+sys.path.insert(0, str(PANEL_BASE))
+
+from doc._ext.ui_reference import _material_examples, reference_pages
+
 EXAMPLES_DIR = PANEL_BASE / 'examples'
 LITE_FILES = PANEL_BASE / 'lite' / 'files'
 DOC_DIR = PANEL_BASE / 'doc'
@@ -159,30 +168,60 @@ def convert_docs():
         with open(out, 'w', encoding='utf-8') as fout:
             nbformat.write(nb, fout)
 
+def _write_notebook(nb, nbpath, out):
+    dependencies = _get_dependencies(nbpath)
+    if dependencies:
+        install = _get_install_code_cell(dependencies=dependencies)
+        nb['cells'].insert(0, install)
+    info = _get_info_markdown_cell(nbpath)
+    nb['cells'].insert(0, info)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    with open(out, 'w', encoding='utf-8') as fout:
+        nbformat.write(nb, fout)
+
+def _copy_notebook(nbpath, out):
+    with open(nbpath, encoding='utf-8') as fin:
+        nb = nbformat.read(fin, 4)
+    _write_notebook(nb, nbpath, out)
+
 def copy_examples():
     nbs = list(EXAMPLES_DIR.glob('*/*/*.ipynb')) + list(EXAMPLES_DIR.glob('*/*.*'))
     for nb in nbs:
         if ".ipynb_checkpoints" in str(nb):
             continue
         nbpath = pathlib.Path(nb)
-        out = LITE_FILES / nbpath.relative_to(EXAMPLES_DIR)
+        relative = nbpath.relative_to(EXAMPLES_DIR)
+        if relative.parts[0] == 'reference':
+            # The website serves the classic reference under reference/classic.
+            relative = pathlib.Path('reference', 'classic', *relative.parts[1:])
+        out = LITE_FILES / relative
         out.parent.mkdir(parents=True, exist_ok=True)
 
         if nb.suffix == '.ipynb':
-            dependencies = _get_dependencies(nbpath)
-
-            with open(nb, encoding='utf-8') as fin:
-                nb = nbformat.read(fin, 4)
-                if dependencies:
-                    install = _get_install_code_cell(dependencies=dependencies)
-                    nb['cells'].insert(0, install)
-
-                info = _get_info_markdown_cell(nbpath)
-                nb['cells'].insert(0, info)
-            with open(out, 'w', encoding='utf-8') as fout:
-                nbformat.write(nb, fout)
+            _copy_notebook(nbpath, out)
         elif not nb.is_dir():
             shutil.copyfile(nb, out)
+
+def generate_ui_reference():
+    """Write the panel.ui reference notebooks to the paths of their website pages."""
+    app = SimpleNamespace(config=SimpleNamespace(ui_reference_pmui_source=None))
+    material = _material_examples(app)
+    if material is None:
+        raise FileNotFoundError('PMUI reference notebooks are unavailable')
+    try:
+        for section, name, content, classic in reference_pages(EXAMPLES_DIR / 'reference', material, api=False):
+            out = LITE_FILES / 'reference' / section / f'{name}.ipynb'
+            # Dependencies and known issues are keyed by the website page path.
+            nbpath = DOC_DIR / 'reference' / section / f'{name}.ipynb'
+            if classic:
+                # The website page redirects to the classic page, so serve the same notebook.
+                _copy_notebook(classic, out)
+            else:
+                nb = convert_md_to_nb(io.StringIO(f'# {name}\n\n{content}\n'))
+                _write_notebook(nb, nbpath, out)
+    finally:
+        if temporary := getattr(app, '_pmui_reference_dir', None):
+            temporary.cleanup()
 
 def copy_assets():
     shutil.copytree(
@@ -197,6 +236,9 @@ def copy_assets():
     )
 
 if __name__=="__main__":
+    # Drop notebooks from a previous build that used the old reference layout.
+    shutil.rmtree(LITE_FILES / 'reference', ignore_errors=True)
     convert_docs()
     copy_examples()
+    generate_ui_reference()
     copy_assets()

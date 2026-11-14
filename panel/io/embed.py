@@ -93,6 +93,13 @@ def param_to_jslink(model, widget):
     from ..widgets import LiteralInput, Widget
 
     param_pane = widget._param_pane
+
+    # If param_pane is a class (not an instance), it means the widget was created
+    # via Widget.from_param() as a class method. In this case, we cannot access
+    # instance attributes like _widgets, so we skip JS link conversion.
+    if isinstance(param_pane, type):
+        return
+
     pobj = param_pane.object
     pname = [k for k, v in param_pane._widgets.items() if v is widget]
     watchers = [
@@ -279,16 +286,27 @@ def embed_state(panel, model, doc, max_states=1000, max_opts=3,
             if not isinstance(w_model, w_type):
                 w_model = w_model.select_one({'type': w_type})
 
-        # If there is a widget with the same name, merge with it
-        if widget.name and widget.name in merged:
-            merged[widget.name][0].append(w)
-            merged[widget.name][1].append(w_model)
-            continue
+        # If there is a widget with the same name, type, and values, merge with it
+        if widget.label and widget.label in merged:
+            matching_entry = None
+            for entry in merged[widget.label]:
+                existing_ws, existing_models, existing_vals = entry[0], entry[1], entry[2]
+                if type(w) is type(existing_ws[0]) and vals == existing_vals:
+                    existing_ws.append(w)
+                    existing_models.append(w_model)
+                    matching_entry = entry
+                    break
+            if matching_entry is not None:
+                continue
 
         js_callback = CustomJS(code=STATE_JS.format(
             id=state_model.ref['id'], js_getter=js_getter))
-        widget_data.append(([w], [w_model], vals, getter, js_callback, on_change))
-        merged[widget.name] = widget_data[-1]
+        entry = ([w], [w_model], vals, getter, js_callback, on_change)
+        widget_data.append(entry)
+        if widget.label:
+            if widget.label not in merged:
+                merged[widget.label] = []
+            merged[widget.label].append(entry)
 
     # Ensure we recording state for widgets which could be JS linked
     values = []

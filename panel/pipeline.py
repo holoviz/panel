@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import sys
 import traceback as tb
+import typing as t
 
 from collections import defaultdict
-from typing import ClassVar
 
 import param
 
@@ -164,7 +164,7 @@ class Pipeline(Viewer):
 
     previous = param.Event()
 
-    _ignored_refs: ClassVar[tuple[str, ...]] = ('next_parameter', 'ready_parameter')
+    _ignored_refs: t.ClassVar[tuple[str, ...]] = ('next_parameter', 'ready_parameter')
 
     def __init__(self, stages=[], graph={}, **params):
         try:
@@ -180,7 +180,6 @@ class Pipeline(Viewer):
         self._states = {}
         self._state = None
         self._linear = True
-        self._block = False
         self._error = None
         self._graph = {}
         self._route = []
@@ -248,18 +247,12 @@ class Pipeline(Viewer):
         return self._stages[index][0]
 
     def _unblock(self, event):
-        if self._state is not event.obj or self._block:
-            self._block = False
+        self.next_button.disabled = not event.new
+        if not event.new:
             return
 
-        button = self.next_button
-        if button.disabled and event.new:
-            button.disabled = False
-        elif not button.disabled and not event.new:
-            button.disabled = True
-
         stage_kwargs = self._stages[self._stage][-1]
-        if event.new and stage_kwargs.get('auto_advance', self.auto_advance):
+        if stage_kwargs.get('auto_advance', self.auto_advance):
             self._next()
 
     def _select_next(self, event):
@@ -271,10 +264,12 @@ class Pipeline(Viewer):
     def _init_stage(self):
         stage, stage_kwargs = self._stages[self._stage]
 
-        previous = []
-        for src, tgts in self._graph.items():
-            if self._stage in tgts:
-                previous.append(src)
+        # Only stages on the current route feed this stage, so that states
+        # left over from other branches cannot override the branch taken.
+        previous = [
+            src for src in self._route
+            if self._stage in self._graph.get(src, ())
+        ]
         prev_states = [self._states[prev] for prev in previous if prev in self._states]
 
         outputs = []
@@ -359,21 +354,24 @@ class Pipeline(Viewer):
 
     def _update_button(self):
         stage, kwargs = self._stages[self._stage]
-        options = list(self._graph.get(self._stage, []))
+        next_options = list(self._graph.get(self._stage, []))
         next_param = kwargs.get('next_parameter', self.next_parameter)
-        option = getattr(self._state, next_param) if next_param and next_param in stage.param else None
-        if option is None:
-            option = options[0] if options else None
-        self.next_selector.options = options
-        self.next_selector.value = option
-        self.next_selector.disabled = not bool(options)
-        previous = []
+        next_option = getattr(self._state, next_param) if next_param and next_param in stage.param else None
+        if next_option is None:
+            next_option = next_options[0] if next_options else None
+        self.next_selector.options = next_options
+        self.next_selector.value = next_option
+        self.next_selector.disabled = not bool(next_options)
+        previous_options = []
+        previous_option = None
         for src, tgts in self._graph.items():
             if self._stage in tgts:
-                previous.append(src)
-        self.prev_selector.options = previous
-        self.prev_selector.value = self._route[-1] if previous else None
-        self.prev_selector.disabled = not bool(previous)
+                previous_options.append(src)
+                if src in self._route:
+                    previous_option = src
+        self.prev_selector.options = previous_options
+        self.prev_selector.value = previous_option
+        self.prev_selector.disabled = not bool(previous_options)
 
         # Disable previous button
         if self._prev_stage is None:
@@ -386,7 +384,7 @@ class Pipeline(Viewer):
             self.next_button.disabled = True
         else:
             ready = kwargs.get('ready_parameter', self.ready_parameter)
-            disabled = (not getattr(stage, ready)) if ready in stage.param else False
+            disabled = (not getattr(self._state, ready)) if ready in self._state.param else False
             self.next_button.disabled = disabled
 
     def _get_error_button(self, e):
@@ -398,7 +396,7 @@ class Pipeline(Viewer):
                          (msg, ''.join(tb_list[-5:-1]), tb_list[-1]))
         else:
             traceback = msg or "Undefined error, enable debug mode."
-        button = Button(name='Error', button_type='danger', width=100,
+        button = Button(label='Error', color='danger', width=100,
                         align='center', margin=(0, 0, 0, 5))
         button.js_on_click(code=f"alert(`{traceback}`)")
         return button
@@ -444,7 +442,6 @@ class Pipeline(Viewer):
                 self.stage[0] = self._state.panel()
             else:
                 self.stage[0] = self._init_stage()
-            self._block = True
         except Exception as e:
             self.error[:] = [self._get_error_button(e)]
             self._error = self._stage
@@ -457,6 +454,13 @@ class Pipeline(Viewer):
             self._error = None
             self._update_button()
             self._route.pop()
+            if self._stage in self._route:
+                del self._route[self._route.index(self._stage)+1:]
+            else:
+                # A predecessor off the current route was selected, so the
+                # abandoned branch must not stay on the route.
+                path = find_route(self._graph, self._route[0], self._stage)
+                self._route[1:] = path or [self._stage]
         finally:
             self._update_progress()
 
@@ -482,8 +486,8 @@ class Pipeline(Viewer):
 
         edges = []
         for src, tgts in self._graph.items():
-            for t in tgts:
-                edges.append((src, t))
+            for tgt in tgts:
+                edges.append((src, tgt))
 
         nodes = []
         for depth, subnodes in breadths.items():
@@ -592,7 +596,7 @@ class Pipeline(Viewer):
         for source, targets in graph.items():
             if source not in stages:
                 not_found.append(source)
-            not_found += [t for t in targets if t not in stages]
+            not_found += [tgt for tgt in targets if tgt not in stages]
         if not_found:
             raise ValueError(
                 'Pipeline stage(s) %s not found, ensure all stages '

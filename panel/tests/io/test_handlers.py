@@ -191,6 +191,24 @@ def test_parse_notebook_markdown_escaped():
 
     assert code == f"_pn__state._cell_outputs['{cell.id}'].append(\"\"\"This is a test of markdown terminated by a quote\\\"\"\"\")"
 
+@nbformat_available
+def test_parse_notebook_strips_line_magics():
+    cell = nbformat.v4.new_code_cell('%load_ext autoreload\n%autoreload 2\nimport panel as pn\n%run ./other.ipynb\npn.Row(1)')
+    nb = nbformat.v4.new_notebook(cells=[cell])
+    sio = StringIO(nbformat.v4.writes(nb))
+    nb, code, layout = parse_notebook(sio)
+
+    assert code == f"""\
+import panel as pn
+_pn__state._cell_outputs['{cell.id}'].append((pn.Row(1)))
+for _cell__out in _CELL__DISPLAY:
+    _pn__state._cell_outputs['{cell.id}'].append(_cell__out)
+_CELL__DISPLAY.clear()
+_fig__out = _get__figure()
+if _fig__out:
+    _pn__state._cell_outputs['{cell.id}'].append(_fig__out)
+"""
+
 def test_create_copy_button():
     """Test that _create_copy_button creates a ButtonIcon with correct properties."""
 

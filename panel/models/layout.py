@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+import typing as t
 
 from bokeh.core.properties import (
     Bool, Int, List, Nullable, String,
@@ -8,6 +8,8 @@ from bokeh.core.properties import (
 from bokeh.events import ModelEvent
 from bokeh.models import Column as BkColumn
 from bokeh.models.layouts import LayoutDOM
+
+from .resource import ExternalResourcesMixin
 
 __all__ = (
     "Card",
@@ -24,11 +26,11 @@ class ScrollToEvent(ModelEvent):
         self.index = index
         super().__init__(model=model)
 
-    def event_values(self) -> dict[str, Any]:
+    def event_values(self) -> dict[str, t.Any]:
         return dict(super().event_values(), index=self.index)
 
 
-class HTMLBox(LayoutDOM):
+class HTMLBox(LayoutDOM, ExternalResourcesMixin):
     """ """
 
 

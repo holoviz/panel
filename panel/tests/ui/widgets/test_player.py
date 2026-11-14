@@ -52,34 +52,34 @@ def test_show_value(page):
     assert page.query_selector('.pn-player-value') is not None
 
 
-def test_name(page):
-    player = Player(name='test')
+def test_label(page):
+    player = Player(label='test')
     serve_component(page, player)
 
     expect(page.locator('label')).to_have_count(3)
     assert page.query_selector('.pn-player-value') is None
 
-    name = page.locator('.pn-player-title:has-text("test")')
-    expect(name).to_have_count(1)
+    label = page.locator('.pn-player-title:has-text("test")')
+    expect(label).to_have_count(1)
 
 
 def test_value_align(page):
-    player = Player(name='test', value_align='end')
+    player = Player(label='test', value_align='end')
     serve_component(page, player)
 
-    name = page.locator('.pn-player-title:has-text("test")')
-    expect(name).to_have_css("text-align", "right")
+    label = page.locator('.pn-player-title:has-text("test")')
+    expect(label).to_have_css("text-align", "right")
 
 
-def test_name_and_show_value(page):
-    player = Player(name='test', show_value=True)
+def test_label_and_show_value(page):
+    player = Player(label='test', show_value=True)
     serve_component(page, player)
 
     expect(page.locator('label')).to_have_count(3)
     assert page.query_selector('.pn-player-value') is not None
 
-    name = page.locator('.pn-player-title:has-text("test")')
-    expect(name).to_have_count(1)
+    label = page.locator('.pn-player-title:has-text("test")')
+    expect(label).to_have_count(1)
 
 def test_player_visible_buttons(page):
     player = Player(visible_buttons=["play", "pause"])

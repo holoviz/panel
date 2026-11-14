@@ -54,12 +54,12 @@ Copy the code below into a file named `app.py`.
 ```python
 import panel as pn
 
-pn.extension(design="material")
+pn.extension()
 
 def handle_click(event):
     breakpoint()
 
-pn.widgets.Button(name="Click Me", on_click=handle_click, button_type="primary").servable()
+pn.ui.Button(label="Click Me", on_click=handle_click, color="primary").servable()
 ```
 
 Serve the app with `panel serve app.py --dev`.

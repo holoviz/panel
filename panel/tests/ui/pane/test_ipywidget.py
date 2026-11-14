@@ -26,7 +26,7 @@ except Exception:
     anywidget = None  # type: ignore
 requires_anywidget = pytest.mark.skipif(anywidget is None, reason="requires anywidget")
 
-pytestmark = pytest.mark.ui
+pytestmark = [pytest.mark.ui, pytest.mark.internet]
 
 
 @pytest.fixture(scope="module", autouse=True)

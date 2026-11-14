@@ -23,6 +23,20 @@ def test_gridspec_cleanup(document, comm):
     assert ref not in spacer._models
 
 
+def test_gridspec_delete_cleans_up_removed_pane(document, comm):
+    spacer = Spacer()
+    gspec = GridSpec()
+    gspec[0, 0] = spacer
+
+    model = gspec.get_root(document, comm)
+    ref = model.ref['id']
+
+    del gspec[0, 0]
+
+    assert ref not in spacer._models
+    assert model.children == []
+
+
 def test_gridspec_integer_setitem():
     div = Div()
     gspec = GridSpec()

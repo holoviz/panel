@@ -66,9 +66,9 @@ import panel as pn
 
 pn.extension()
 
-layout = pn.Spacer(styles={'background': 'green'}, sizing_mode='stretch_width', height=200)
+layout = pn.ui.Spacer(styles={'background': 'green'}, sizing_mode='stretch_width', height=200)
 
-pn.Column(layout, width=400, height=400, styles={'border': '1px solid black'}).servable()
+pn.ui.Column(layout, width=400, height=400, styles={'border': '1px solid black'}).servable()
 ```
 
 :::
@@ -80,9 +80,9 @@ import panel as pn
 
 pn.extension()
 
-layout = pn.Spacer(styles={'background': 'green'}, sizing_mode='stretch_height', width=200)
+layout = pn.ui.Spacer(styles={'background': 'green'}, sizing_mode='stretch_height', width=200)
 
-pn.Column(layout, width=400, height=400, styles={'border': '1px solid black'}).servable()
+pn.ui.Column(layout, width=400, height=400, styles={'border': '1px solid black'}).servable()
 ```
 
 :::
@@ -94,9 +94,9 @@ import panel as pn
 
 pn.extension()
 
-layout = pn.Spacer(styles={'background': 'green'}, sizing_mode='stretch_both')
+layout = pn.ui.Spacer(styles={'background': 'green'}, sizing_mode='stretch_both')
 
-pn.Column(layout, width=400, height=400, styles={'border': '1px solid black'}).servable()
+pn.ui.Column(layout, width=400, height=400, styles={'border': '1px solid black'}).servable()
 ```
 
 :::
@@ -133,17 +133,17 @@ data = pd.DataFrame(
 )
 
 fig = figure(
-    x_range=data["Day"],
+    x_range=list(data["Day"]),
     title="Wind Speed by Day",
     y_axis_label="Wind Speed (m/s)",
     # <- insert argument here
 )
 fig.vbar(x=data["Day"], top=data["Wind Speed (m/s)"], width=0.5, color="navy", )
 
-md = pn.pane.Markdown(
+md = pn.ui.Markdown(
     text,  # <- insert arguments here
 )
-pn.Row(fig, md, height=500, sizing_mode="stretch_width").servable()
+pn.ui.Row(fig, md, height=500, sizing_mode="stretch_width").servable()
 ```
 
 :::{hint}
@@ -183,17 +183,17 @@ data = pd.DataFrame(
 )
 
 fig = figure(
-    x_range=data["Day"],
+    x_range=list(data["Day"]),
     title="Wind Speed by Day",
     y_axis_label="Wind Speed (m/s)",
     sizing_mode='stretch_both',
 )
 fig.vbar(x=data["Day"], top=data["Wind Speed (m/s)"], width=0.5, color="navy", )
 
-md = pn.pane.Markdown(
+md = pn.ui.Markdown(
     text,  sizing_mode="stretch_width", min_width=200, max_width=500,
 )
-pn.Row(fig, md, height=500, sizing_mode="stretch_width").servable()
+pn.ui.Row(fig, md, height=500, sizing_mode="stretch_width").servable()
 ```
 
 :::
@@ -201,16 +201,16 @@ pn.Row(fig, md, height=500, sizing_mode="stretch_width").servable()
 #### Finetune with Widgets
 
 :::{tip}
-**Pro Tip**: Speed up the process of fine-tuning by using interactive widgets instead of code. Panel's `pn.Param` provides an easy way to create widgets to control your Panel component.
+**Pro Tip**: Speed up the process of fine-tuning by using interactive widgets instead of code. Panel's `pn.ui.Param` provides an easy way to create widgets to control your Panel component.
 :::
 
 Continue from the previous exercise solution. Add the `settings` component below your `Row`:
 
 ```python
-settings = pn.Param(md, parameters=["sizing_mode", "min_width", "max_width"])
+settings = pn.ui.Param(md, parameters=["sizing_mode", "min_width", "max_width"])
 ```
 
-Try changing the values of the `sizing_mode`, `min_height`, and `max_height` widgets interactively. Observe the effect on the component's display as you adjust the values.
+Try changing the values of the `sizing_mode`, `min_width`, and `max_width` widgets interactively. Observe the effect on the component's display as you adjust the values.
 
 :::{dropdown} Solution
 
@@ -236,18 +236,18 @@ data = pd.DataFrame(
 )
 
 fig = figure(
-    x_range=data["Day"],
+    x_range=list(data["Day"]),
     title="Wind Speed by Day",
     y_axis_label="Wind Speed (m/s)",
     sizing_mode='stretch_both',
 )
 fig.vbar(x=data["Day"], top=data["Wind Speed (m/s)"], width=0.5, color="navy", )
 
-md = pn.pane.Markdown(
+md = pn.ui.Markdown(
     text,  min_width=200, max_width=500,
 )
-settings = pn.Param(md, parameters=["sizing_mode", "min_width", "max_width"])
-pn.Row(fig, md, settings, height=500,).servable()
+settings = pn.ui.Param(md, parameters=["sizing_mode", "min_width", "max_width"])
+pn.ui.Row(fig, md, settings, height=500,).servable()
 ```
 
 :::
@@ -255,7 +255,7 @@ pn.Row(fig, md, settings, height=500,).servable()
 #### Change the Defaults
 
 :::{note}
-The default `sizing_mode` of Panel is `"fixed"`. We can change the default `sizing_mode` via `pn.extension(sizing_mode=...)` or `pn.config.sizing_mode=...`.
+By default Panel does not set a global `sizing_mode`, so components keep their inherent or fixed size unless told otherwise. We can change the default `sizing_mode` via `pn.extension(sizing_mode=...)` or `pn.config.sizing_mode=...`.
 :::
 
 Let's redo the initial `sizing_mode` exercise, but this time with a default `sizing_mode` of `"stretch_width"`.
@@ -284,17 +284,17 @@ data = pd.DataFrame(
 )
 
 fig = figure(
-    x_range=data["Day"],
+    x_range=list(data["Day"]),
     title="Wind Speed by Day",
     y_axis_label="Wind Speed (m/s)",
     sizing_mode='stretch_both',
 )
 fig.vbar(x=data["Day"], top=data["Wind Speed (m/s)"], width=0.5, color="navy", )
 
-md = pn.pane.Markdown(
+md = pn.ui.Markdown(
     text,  min_width=200, max_width=500,
 )
-pn.Row(fig, md, height=500,).servable()
+pn.ui.Row(fig, md, height=500,).servable()
 ```
 
 :::
@@ -312,7 +312,7 @@ import random
 pn.extension()
 
 def create_random_spacer():
-    return pn.Spacer(
+    return pn.ui.Spacer(
         height=100,
         width=random.randint(1, 4) * 100,
         styles={"background": "teal"},
@@ -320,7 +320,7 @@ def create_random_spacer():
     )
 spacers = [create_random_spacer() for _ in range(10)]
 
-pn.FlexBox(*spacers).servable()
+pn.ui.FlexBox(*spacers).servable()
 ```
 
 Adjust the width of your browser window to observe the layout's responsiveness.

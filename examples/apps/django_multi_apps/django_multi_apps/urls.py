@@ -1,7 +1,7 @@
 """django_multi_apps URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/3.0/topics/http/urls/
+    https://docs.djangoproject.com/en/stable/topics/http/urls/
 Examples:
 Function views
     1. Add an import:  from my_app import views
@@ -14,24 +14,9 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
-import gbm.pn_app as gbm_app
-import sliders.pn_app as sliders_app
-import stockscreener.pn_app as stockscreener_app
-
-try:
-    from bokeh_django import autoload, static_extensions
-except ModuleNotFoundError:
-    from bokeh.server.django import autoload, static_extensions
-
-from django.apps import apps
 from django.contrib import admin
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.urls import include, path
-
-from .settings import bokeh_app_module
-from .themes import plot_themes
-
-pn_app_config = apps.get_app_config(bokeh_app_module)
 
 urlpatterns = [
     path('', include('landing.urls')),
@@ -41,14 +26,6 @@ urlpatterns = [
     path('admin/', admin.site.urls),
 ]
 
-bokeh_apps = [
-    autoload("sliders", sliders_app.app),
-    autoload("gbm", gbm_app.app),
-    autoload("stockscreener", stockscreener_app.app),
-]
-
-urlpatterns += static_extensions()
+# Serve the static files of the Django project itself, e.g. the admin's.
+# Panel serves the BokehJS and extension resources it needs itself.
 urlpatterns += staticfiles_urlpatterns()
-
-# Set the themes
-plot_themes()

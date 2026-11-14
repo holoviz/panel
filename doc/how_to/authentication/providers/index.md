@@ -1,8 +1,8 @@
 # OAuth Providers
 
-Panel supports a number of OAuth providers out-of-the-box. Follow the guide for setting up an OAuth application specific to your provider and then refer to the [Configuring OAuth guide](configuration) to add OAuth to your application.
+Panel supports a number of OAuth providers out-of-the-box. Follow the guide for setting up an OAuth application specific to your provider and then refer to the [Configuring OAuth guide](../configuration) to add OAuth to your application.
 
-If you experience issues check out the [OAuth Troubleshooting](trouble_shooting.md) guide for further guidance.
+If you experience issues check out the [OAuth Troubleshooting](../trouble_shooting.md) guide for further guidance.
 
 ## **Azure Entra ID**
 

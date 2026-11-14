@@ -1,5 +1,9 @@
 import pytest
 
+pytest.importorskip("playwright")
+
+from playwright.sync_api import expect
+
 from panel.layout import Spacer, Swipe
 from panel.tests.util import serve_component, wait_until
 
@@ -48,10 +52,12 @@ def test_swipe_fixed_width(page):
 
     swipe.value = 25
 
-    assert page.locator('.swipe-container .outer').nth(0).evaluate("""(element) =>
-        window.getComputedStyle(element).getPropertyValue('clip-path')""") == 'polygon(0% 0%, calc(25% + 5px) 0%, calc(25% + 5px) 100%, 0% 100%)'
-    assert page.locator('.swipe-container .outer').nth(1).evaluate("""(element) =>
-        window.getComputedStyle(element).getPropertyValue('clip-path')""") == 'polygon(calc(25% + 5px) 0%, 100% 0%, 100% 100%, calc(25% + 5px) 100%)'
+    expect(page.locator('.swipe-container .outer').nth(0)).to_have_css(
+        'clip-path', 'polygon(0% 0%, calc(25% + 5px) 0%, calc(25% + 5px) 100%, 0% 100%)'
+    )
+    expect(page.locator('.swipe-container .outer').nth(1)).to_have_css(
+        'clip-path', 'polygon(calc(25% + 5px) 0%, 100% 0%, 100% 100%, calc(25% + 5px) 100%)'
+    )
 
 
 def test_swipe_stretch_width(page):
@@ -96,7 +102,9 @@ def test_swipe_stretch_width(page):
 
     swipe.value = 25
 
-    assert page.locator('.swipe-container .outer').nth(0).evaluate("""(element) =>
-        window.getComputedStyle(element).getPropertyValue('clip-path')""") == 'polygon(0% 0%, calc(25% + 5px) 0%, calc(25% + 5px) 100%, 0% 100%)'
-    assert page.locator('.swipe-container .outer').nth(1).evaluate("""(element) =>
-        window.getComputedStyle(element).getPropertyValue('clip-path')""") == 'polygon(calc(25% + 5px) 0%, 100% 0%, 100% 100%, calc(25% + 5px) 100%)'
+    expect(page.locator('.swipe-container .outer').nth(0)).to_have_css(
+        'clip-path', 'polygon(0% 0%, calc(25% + 5px) 0%, calc(25% + 5px) 100%, 0% 100%)'
+    )
+    expect(page.locator('.swipe-container .outer').nth(1)).to_have_css(
+        'clip-path', 'polygon(calc(25% + 5px) 0%, 100% 0%, 100% 100%, calc(25% + 5px) 100%)'
+    )

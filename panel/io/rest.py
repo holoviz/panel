@@ -1,3 +1,11 @@
+"""
+REST providers served by ``panel serve --rest-provider``.
+
+.. deprecated:: 1.10
+    This module, ``--rest-provider`` and ``pn.state.publish`` will be
+    removed in Panel 2.0. Declare custom endpoints in a ``--plugins``
+    module instead.
+"""
 import json
 import os
 import tempfile

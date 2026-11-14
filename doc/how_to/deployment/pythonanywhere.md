@@ -145,7 +145,7 @@ text_align = {
 base_configuration = {
     "clipboard": "copy"
 }
-summary_table = pn.widgets.Tabulator(
+summary_table = pn.ui.Tabulator(
     summary_data,
     editors=editors,
     formatters=formatters,
@@ -167,7 +167,7 @@ summary_table.style.map(style_of_action_cell, subset=["action"]).set_properties(
     **{"background-color": "#444"}, subset=["quantity"]
 )
 
-patches = pn.widgets.IntInput(description="Used to raise an event when a cell value has changed")
+patches = pn.ui.IntInput(description="Used to raise an event when a cell value has changed")
 
 def handle_cell_edit(event, table=summary_table):
     """Updates the `value` cell when the `quantity` cell is updated"""
@@ -236,8 +236,8 @@ template = pn.template.FastGridTemplate(
     theme='dark',
     row_height=160
 )
-template.main[0:3, 0:8]  = pn.pane.Plotly(candlestick)
-template.main[0:3, 8:12] = pn.pane.Plotly(portfolio_distribution)
+template.main[0:3, 0:8]  = pn.ui.Plotly(candlestick)
+template.main[0:3, 8:12] = pn.ui.Plotly(portfolio_distribution)
 template.main[3:5, :]    = summary_table
 template.servable()
 ```

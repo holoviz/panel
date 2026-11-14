@@ -57,6 +57,7 @@ custom_viewer
 python/create_custom_widget
 examples/plot_viewer
 examples/table_viewer
+publish_extension
 ```
 
 ## ESM Components
@@ -94,6 +95,13 @@ How to create panes using ESM components
 :link-type: doc
 
 How to create a custom widget using ESM components
+:::
+
+:::{grid-item-card} {octicon}`paintbrush;2.5em;sd-mr-1 sd-animate-grow50` Build Material UI Components
+:link: esm/material_ui
+:link-type: doc
+
+How to build components on top of Material UI that share the theme of the `pn.ui` components.
 :::
 
 :::{grid-item-card} {octicon}`columns;2.5em;sd-mr-1 sd-animate-grow50` Create Custom Layouts
@@ -153,6 +161,7 @@ esm/callbacks
 esm/custom_panes
 esm/custom_widgets
 esm/custom_layout
+esm/material_ui
 esm/dataframe
 examples/esm_canvas
 examples/esm_leaflet
@@ -163,6 +172,10 @@ examples/esm_material_ui
 ## `ReactiveHTML` Components
 
 Build custom components using HTML, CSS and Javascript and without Javascript build tools.
+
+:::{admonition} warn
+We recommend using `JSComponent` over `ReactiveHTML` for new custom components.
+:::
 
 ::::{grid} 1 2 2 3
 :gutter: 1 1 1 2
@@ -266,3 +279,17 @@ examples/canvas_draw
 examples/leaflet
 examples/vue
 ```
+
+## Publish your extension
+
+::::{grid} 1 2 2 3
+:gutter: 1 1 1 2
+
+:::{grid-item-card} {octicon}`package;2.5em;sd-mr-1 sd-animate-grow50` Publish a Panel Extension
+:link: publish_extension
+:link-type: doc
+
+How to package and publish a custom Panel component as a reusable Python package.
+:::
+
+::::

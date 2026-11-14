@@ -19,8 +19,8 @@ def calculate_power(wind_speed, efficiency):
         f"Power Generation: {power_generation:.1f} kW"
     )
 
-wind_speed = pn.widgets.FloatSlider(
-    value=5, start=0, end=20, step=1, name="Wind Speed (m/s)"
+wind_speed = pn.ui.FloatSlider(
+    value=5, start=0, end=20, step=1, label="Wind Speed (m/s)"
 )
 
 efficiency = 0.3
@@ -29,10 +29,12 @@ power = pn.bind(
     calculate_power, wind_speed=wind_speed, efficiency=efficiency
 )
 
-pn.Column(wind_speed, power).servable()
+pn.ui.Column(wind_speed, power).servable()
 ```
 
 As you interact with the slider, notice how the displayed power generation dynamically updates, reflecting changes in wind speed.
+
+Here we drop the bound function straight into the `Column` as a shortcut. Below, in [Using References](#using-references), you will learn the recommended way: passing it to a stable component like `pn.ui.Markdown`.
 
 You can of course bind multiple widgets. Let's make the `efficiency` a widget:
 
@@ -49,21 +51,21 @@ def calculate_power(wind_speed, efficiency):
         f"Power Generation: {power_generation:.1f} kW"
     )
 
-wind_speed = pn.widgets.FloatSlider(
-    value=5, start=0, end=20, step=1, name="Wind Speed (m/s)"
+wind_speed = pn.ui.FloatSlider(
+    value=5, start=0, end=20, step=1, label="Wind Speed (m/s)"
 )
-efficiency = pn.widgets.FloatInput(value=0.3, start=0.0, end=1.0, name="Efficiency (kW/(m/s))")
+efficiency = pn.ui.FloatInput(value=0.3, start=0.0, end=1.0, label="Efficiency (kW/(m/s))")
 
 power = pn.bind(
     calculate_power, wind_speed=wind_speed, efficiency=efficiency
 )
 
-pn.Column(wind_speed, efficiency, power).servable()
+pn.ui.Column(wind_speed, efficiency, power).servable()
 ```
 
 ## Using References
 
-Bound functions can be displayed directly as we have done above or they can be used as references when passed to a Panel component. This approach is usually more efficient since we only have to update the specific parameter:
+Bound functions can be displayed directly as we have done above, but it is better to use them as references when passed to a Panel component. This approach is more efficient since we only have to update the specific parameter:
 
 ```{pyodide}
 import panel as pn
@@ -78,18 +80,18 @@ def calculate_power(wind_speed, efficiency):
         f"Power Generation: {power_generation:.1f} kW"
     )
 
-wind_speed = pn.widgets.FloatSlider(
-    value=5, start=0, end=20, step=1, name="Wind Speed (m/s)"
+wind_speed = pn.ui.FloatSlider(
+    value=5, start=0, end=20, step=1, label="Wind Speed (m/s)"
 )
-efficiency = pn.widgets.FloatInput(value=0.3, start=0.0, end=1.0, name="Efficiency (kW/(m/s))")
+efficiency = pn.ui.FloatInput(value=0.3, start=0.0, end=1.0, label="Efficiency (kW/(m/s))")
 
 power = pn.bind(
     calculate_power, wind_speed=wind_speed, efficiency=efficiency
 )
 
-power_md = pn.pane.Markdown(power)
+power_md = pn.ui.Markdown(power)
 
-pn.Column(wind_speed, efficiency, power_md).servable()
+pn.ui.Column(wind_speed, efficiency, power_md).servable()
 ```
 
 Note how we pass the bound function as an argument to the `Markdown` pane. This way the Markdown pane only has to send the updated text.
@@ -111,30 +113,30 @@ def calculate_power(wind_speed, efficiency):
         f"Power Generation: {power_generation:.1f} kW"
     )
 
-wind_speed = pn.widgets.FloatSlider(
-    value=5, start=0, end=20, step=1, name="Wind Speed (m/s)"
+wind_speed = pn.ui.FloatSlider(
+    value=5, start=0, end=20, step=1, label="Wind Speed (m/s)"
 )
-efficiency = pn.widgets.FloatInput(value=0.3, start=0.0, end=1.0, name="Efficiency (kW/(m/s))")
+efficiency = pn.ui.FloatInput(value=0.3, start=0.0, end=1.0, label="Efficiency (kW/(m/s))")
 
 power = pn.bind(
     calculate_power, wind_speed=wind_speed, efficiency=efficiency
 )
 
-submit = pn.widgets.Button(name="Submit", button_type="primary")
+submit = pn.ui.Button(label="Submit", color="primary")
 
-def result(clicked):
-    if clicked:
+def submit_result(clicks):
+    if clicks:
         return power()
     return "Click Submit"
 
-result = pn.pane.Markdown(pn.bind(result, submit))
+result = pn.ui.Markdown(pn.bind(submit_result, submit.param.clicks))
 
-pn.Column(
+pn.ui.Column(
     wind_speed, efficiency, submit, result
 ).servable()
 ```
 
-Notice how the text is updated only when the Submit Button is clicked.
+Notice how the text is updated only when the Submit Button is clicked. We bind to the `clicks` parameter because it changes on every click.
 
 ## Harnessing Throttling for Performance
 
@@ -155,8 +157,8 @@ def calculate_power(wind_speed, efficiency):
         f"Power Generation: {power_generation:.1f} kW"
     )
 
-wind_speed = pn.widgets.FloatSlider(
-    value=5, start=0, end=20, step=1, name="Wind Speed (m/s)"
+wind_speed = pn.ui.FloatSlider(
+    value=5, start=0, end=20, step=1, label="Wind Speed (m/s)"
 )
 
 efficiency = 0.3
@@ -165,12 +167,16 @@ calculate_power_bnd = pn.bind(
     calculate_power, wind_speed=wind_speed.param.value_throttled, efficiency=efficiency
 )
 
-power_md = pn.pane.Markdown(calculate_power_bnd)
+power_md = pn.ui.Markdown(calculate_power_bnd)
 
-pn.Column(wind_speed, power_md).servable()
+pn.ui.Column(wind_speed, power_md).servable()
 ```
 
 Try dragging the slider. Notice that the `calculate_power` function is only run when you release the mouse.
+
+:::{tip}
+Instead of binding to `value_throttled` on each slider, you can enable throttling globally with `pn.extension(throttled=True)`. Sliders then only update their `value` when you release the mouse, so you can bind to the widget directly.
+:::
 
 ### Binding to bound functions
 
@@ -191,8 +197,8 @@ def format_power_gen(wind_speed, efficiency, power):
         f"Power Generation: {power:.1f} kW"
     )
 
-wind_speed = pn.widgets.FloatSlider(
-    value=5, start=0, end=20, step=1, name="Wind Speed (m/s)"
+wind_speed = pn.ui.FloatSlider(
+    value=5, start=0, end=20, step=1, label="Wind Speed (m/s)"
 )
 
 efficiency = 0.3
@@ -201,7 +207,7 @@ power = pn.bind(power_generation, wind_speed, efficiency)
 
 power_text = pn.bind(format_power_gen, wind_speed, efficiency, power)
 
-pn.Column(wind_speed, power, power_text).servable()
+pn.ui.Column(wind_speed, power, power_text).servable()
 ```
 
 :::{warning}
@@ -229,21 +235,21 @@ import panel as pn
 
 pn.extension()
 
-submit = pn.widgets.Button(name="Start the wind turbine")
+submit = pn.ui.Button(label="Start the wind turbine")
 
-def start_stop_wind_turbine(clicked):
-    if submit.clicks % 2:
-        submit.name = "Start the wind turbine"
+def start_stop_wind_turbine(clicks):
+    if clicks % 2:
+        submit.label = "Stop the wind turbine"
     else:
-        submit.name = "Stop the wind turbine"
+        submit.label = "Start the wind turbine"
 
-pn.bind(start_stop_wind_turbine, submit, watch=True)
+pn.bind(start_stop_wind_turbine, submit.param.clicks, watch=True)
 
-pn.Column(submit).servable()
+pn.ui.Column(submit).servable()
 ```
 
 ```{warning}
-In the example provided, our side effect directly modifies the UI by altering the name of the Button. However, this approach indicates poor architectural design.
+In the example provided, our side effect directly modifies the UI by altering the label of the `Button`. However, this approach indicates poor architectural design.
 
 It's advisable to avoid directly updating the UI through side effects. Instead, focus on updating the application's *state*, allowing the UI to respond automatically to any changes in the state. The concept of state will be explored further in the subsequent section.
 ```
@@ -256,19 +262,19 @@ import panel as pn
 
 pn.extension()
 
-submit = pn.widgets.Button(name="Start the wind turbine")
+submit = pn.ui.Button(label="Start the wind turbine")
 
-def start_stop_wind_turbine(clicked):
+def start_stop_wind_turbine(clicks):
     with submit.param.update(loading=True, disabled=True):
         time.sleep(2)
-        if bool(submit.clicks%2):
-            submit.name = "Start the wind turbine"
+        if clicks % 2:
+            submit.label = "Stop the wind turbine"
         else:
-            submit.name = "Stop the wind turbine"
+            submit.label = "Start the wind turbine"
 
-pn.bind(start_stop_wind_turbine, submit, watch=True)
+pn.bind(start_stop_wind_turbine, submit.param.clicks, watch=True)
 
-pn.Column(submit).servable()
+pn.ui.Column(submit).servable()
 ```
 
 ### Keep the UI responsive with threads or processes
@@ -284,20 +290,20 @@ import panel as pn
 
 pn.extension()
 
-submit = pn.widgets.Button(name="Start the wind turbine")
+submit = pn.ui.Button(label="Start the wind turbine")
 
-async def start_stop_wind_turbine(clicked):
+async def start_stop_wind_turbine(clicks):
     with submit.param.update(loading=True, disabled=True):
         result = await asyncio.to_thread(sleep, 5)
 
-        if submit.clicks % 2:
-            submit.name = "Start the wind turbine"
+        if clicks % 2:
+            submit.label = "Stop the wind turbine"
         else:
-            submit.name = "Stop the wind turbine"
+            submit.label = "Start the wind turbine"
 
-pn.bind(start_stop_wind_turbine, submit, watch=True)
+pn.bind(start_stop_wind_turbine, submit.param.clicks, watch=True)
 
-pn.Column(submit).servable()
+pn.ui.Column(submit).servable()
 ```
 
 :::{note}

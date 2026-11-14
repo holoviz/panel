@@ -1,0 +1,76 @@
+:host .ql-toolbar.ql-snow,
+:host .ql-container.ql-snow {
+  border-color: var(--mui-palette-divider);
+  font-family: var(--bokeh-base-font);
+}
+
+:host .ql-toolbar.ql-snow {
+  border-top-left-radius: var(--mui-shape-borderRadius);
+  border-top-right-radius: var(--mui-shape-borderRadius);
+}
+
+:host .ql-container.ql-snow {
+  background-color: transparent;
+  border-bottom-left-radius: var(--mui-shape-borderRadius);
+  border-bottom-right-radius: var(--mui-shape-borderRadius);
+  color: var(--mui-palette-text-primary);
+}
+
+:host .ql-editor.ql-blank::before {
+  color: var(--mui-palette-text-disabled);
+}
+
+:host .ql-snow .ql-stroke {
+  stroke: var(--mui-palette-text-secondary);
+}
+
+:host .ql-snow .ql-fill,
+:host .ql-snow .ql-stroke.ql-fill {
+  fill: var(--mui-palette-text-secondary);
+}
+
+:host .ql-snow .ql-picker {
+  color: var(--mui-palette-text-secondary);
+}
+
+:host .ql-snow .ql-picker-options {
+  background-color: var(--mui-palette-background-paper);
+  border-radius: var(--mui-shape-borderRadius);
+  box-shadow: var(--mui-shadows-8);
+}
+
+:host .ql-snow.ql-toolbar button:hover .ql-stroke,
+:host .ql-snow.ql-toolbar button:focus .ql-stroke,
+:host .ql-snow.ql-toolbar button.ql-active .ql-stroke,
+:host .ql-snow.ql-toolbar .ql-picker-label:hover .ql-stroke,
+:host .ql-snow.ql-toolbar .ql-picker-label.ql-active .ql-stroke {
+  stroke: var(--mui-palette-primary-main);
+}
+
+:host .ql-snow.ql-toolbar button:hover .ql-fill,
+:host .ql-snow.ql-toolbar button:focus .ql-fill,
+:host .ql-snow.ql-toolbar button.ql-active .ql-fill,
+:host .ql-snow.ql-toolbar .ql-picker-label:hover .ql-fill,
+:host .ql-snow.ql-toolbar .ql-picker-label.ql-active .ql-fill {
+  fill: var(--mui-palette-primary-main);
+}
+
+:host .ql-snow.ql-toolbar button:hover,
+:host .ql-snow.ql-toolbar button.ql-active,
+:host .ql-snow.ql-toolbar .ql-picker-label:hover,
+:host .ql-snow.ql-toolbar .ql-picker-label.ql-active,
+:host .ql-snow.ql-toolbar .ql-picker-item:hover,
+:host .ql-snow.ql-toolbar .ql-picker-item.ql-selected {
+  color: var(--mui-palette-primary-main);
+}
+
+:host .ql-snow .ql-editor a,
+:host .ql-snow a {
+  color: var(--mui-palette-primary-main);
+}
+
+:host .ql-snow .ql-editor pre.ql-syntax,
+:host .ql-snow .ql-editor code {
+  background-color: var(--mui-palette-action-hover);
+  color: var(--mui-palette-text-primary);
+}

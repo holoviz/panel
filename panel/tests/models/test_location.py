@@ -12,7 +12,7 @@ def test_constructor():
     assert actual.port == ""
     assert actual.search == ""
     assert actual.hash == ""
-    assert actual.reload == True
+    assert actual.reload == False
 
 
 def test_constructor_with__href():
@@ -30,4 +30,4 @@ def test_constructor_with__href():
     assert actual.port == ""
     assert actual.search == ""
     assert actual.hash == ""
-    assert actual.reload == True
+    assert actual.reload == False

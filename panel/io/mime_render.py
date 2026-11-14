@@ -19,16 +19,17 @@ import copy
 import io
 import sys
 import traceback
+import typing as t
 
 from contextlib import redirect_stderr, redirect_stdout
 from html import escape
 from textwrap import dedent
-from typing import IO, Any
 
 #---------------------------------------------------------------------
 # Import API
 #---------------------------------------------------------------------
 
+_GLOBAL_CONTEXT_EXEC: dict[str, t.Any] = {}
 _STDLIBS = sys.stdlib_module_names
 _PACKAGE_MAP = {
     'sklearn': 'scikit-learn',
@@ -111,7 +112,7 @@ def _convert_expr(expr: ast.Expr) -> ast.Expression:
     expr.lineno, expr.col_offset = 0, 0
     return ast.Expression(expr.value)
 
-_OUT_BUFFER = []
+_OUT_BUFFER: list = []
 
 def _display(*objs, **kwargs):
     """
@@ -123,10 +124,10 @@ def _display(*objs, **kwargs):
 
 def exec_with_return(
     code: str,
-    global_context: dict[str, Any] | None = None,
-    stdout: IO | None = None,
-    stderr: IO | None = None
-) -> Any:
+    global_context: dict[str, t.Any] | None = None,
+    stdout: t.IO | None = None,
+    stderr: t.IO | None = None
+) -> t.Any:
     """
     Executes a code snippet and returns the resulting output of the
     last line.
@@ -135,7 +136,7 @@ def exec_with_return(
     ----------
     code: str
         The code to execute
-    global_context: Dict[str, Any]
+    global_context: dict[str, Any] | None
         The globals to inject into the execution context.
     stdout: io.StringIO
         The stream to redirect stdout to.
@@ -147,7 +148,7 @@ def exec_with_return(
 
     The return value of the executed code.
     """
-    global_context = global_context if global_context else globals()
+    global_context = global_context if global_context else _GLOBAL_CONTEXT_EXEC
     global_context['display'] = _display
     code_ast = ast.parse(code)
 

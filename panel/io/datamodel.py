@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import sys
+import typing as t
 
 from functools import partial
-from typing import Any
 from weakref import WeakKeyDictionary
 
 import bokeh.core.properties as bp
@@ -47,7 +47,7 @@ class PolarsDataFrame(Property):
 
     """
 
-    def validate(self, value: Any, detail: bool = True) -> None:
+    def validate(self, value: t.Any, detail: bool = True) -> None:
         super().validate(value, detail)
 
         import polars as pl

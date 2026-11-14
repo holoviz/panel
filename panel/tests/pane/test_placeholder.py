@@ -23,6 +23,6 @@ class TestPlaceholder:
         assert placeholder.object == "⏳ Idle"
 
     def test_param_ref(self):
-        int_input = IntInput(name="IntInput", start=1, end=10, value=5)
+        int_input = IntInput(label="IntInput", start=1, end=10, value=5)
         placeholder = Placeholder(int_input.param.value)
         assert isinstance(placeholder.object, param.Integer)

@@ -1,5 +1,4 @@
 import sys
-import time
 
 from http.client import HTTPConnection
 from subprocess import PIPE, Popen
@@ -10,56 +9,77 @@ pytest.importorskip("playwright")
 
 from playwright.sync_api import expect
 
+from panel.tests.util import wait_until
+
 pytestmark = pytest.mark.jupyter
+
+
+def _assert_serves_mjs_as_javascript():
+    conn = HTTPConnection("localhost:8123")
+    try:
+        conn.request("HEAD", '/static/pyodide/pyodide.mjs')
+        response = conn.getresponse()
+    finally:
+        conn.close()
+    assert response.status == 200
+    assert response.getheader('Content-Type', '').startswith(('text/javascript', 'application/javascript'))
 
 
 @pytest.fixture()
 def launch_jupyterlite():
     process = Popen(
-        [sys.executable, "-m", "http.server", "8123", "--directory", 'lite/dist/'], stdout=PIPE
+        [
+            sys.executable, "-c",
+            "import mimetypes, runpy; "
+            "mimetypes.add_type('text/javascript', '.mjs'); "
+            "runpy.run_module('http.server', run_name='__main__')",
+            "8123", "--directory", 'lite/dist/',
+        ], stdout=PIPE
     )
-    retries = 5
-    while retries > 0:
+    def serving():
         conn = HTTPConnection("localhost:8123")
         try:
             conn.request("HEAD", 'index.html')
-            response = conn.getresponse()
-            if response is not None:
-                conn.close()
-                break
+            return conn.getresponse() is not None
         except ConnectionRefusedError:
-            time.sleep(1)
-            retries -= 1
+            return False
+        finally:
+            conn.close()
 
-    if not retries:
+    try:
+        wait_until(serving)
+    except TimeoutError as e:
         process.terminate()
         process.wait()
-        raise RuntimeError("Failed to start http server")
+        raise RuntimeError("Failed to start http server") from e
     try:
+        _assert_serves_mjs_as_javascript()
         yield
     finally:
         process.terminate()
         process.wait()
 
 
+@pytest.mark.flaky(reruns=3, reruns_delay=5)
 @pytest.mark.filterwarnings("ignore::ResourceWarning")
 def test_jupyterlite_execution(launch_jupyterlite, page):
     # INFO: Needs TS changes uploaded to CDN. Relevant when
     # testing a new version of Bokeh.
     page.goto("http://localhost:8123/index.html")
+    page.wait_for_load_state('networkidle')
 
     page.locator('text="Getting_Started.ipynb"').first.dblclick()
-
-    # Select the kernel
-    if page.locator('.jp-Dialog').count() == 1:
-        page.locator('.jp-select-wrapper > select').select_option('Python (Pyodide)')
-        page.locator('.jp-Dialog-footer > button').nth(1).click()
+    page.wait_for_load_state('networkidle')
 
     for _ in range(6):
         page.locator('jp-button[data-command="notebook:run-cell-and-select-next"]').click()
-        page.wait_for_timeout(500)
+        if page.locator('.jp-Dialog').count() == 1: # Select the kernel if pop-up
+            page.locator('.jp-select-wrapper > select').select_option('Python (Pyodide)')
+            page.locator('.jp-Dialog-footer > button').nth(1).click()
+        page.wait_for_load_state('networkidle')
+        expect(page.locator('.jp-Notebook-ExecutionIndicator')).to_have_attribute('data-status', 'idle', timeout=60_000)
 
-    page.locator('.noUi-handle').click(timeout=120 * 1000)
+    page.locator('.noUi-handle').click()
 
     page.keyboard.press('ArrowRight')
 

@@ -15,6 +15,29 @@ import {convertUndefined, deepCopy, get, reshape, throttle} from "./util"
 
 import plotly_css from "styles/models/plotly.css"
 
+const FORBIDDEN_KEYS = new Set(["__proto__", "prototype", "constructor"])
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null
+}
+
+function isSafePath(path: string[]): boolean {
+  return path.every((part) => part.length > 0 && !FORBIDDEN_KEYS.has(part))
+}
+
+function getSafeParent(obj: unknown, path: string[]): Record<string, unknown> | null {
+  let current: unknown = obj
+
+  for (const key of path) {
+    if (!isRecord(current) || FORBIDDEN_KEYS.has(key) || !Object.hasOwn(current, key)) {
+      return null
+    }
+    current = current[key]
+  }
+
+  return isRecord(current) ? current : null
+}
+
 export class PlotlyEvent extends ModelEvent {
   constructor(readonly data: any) {
     super()
@@ -43,6 +66,17 @@ interface PlotlyHTMLElement extends HTMLDivElement {
   on(event: "plotly_selected", callback: (eventData: any) => void): void
   on(event: "plotly_deselect", callback: () => void): void
   on(event: "plotly_unhover", callback: () => void): void
+}
+
+const decodeUndefined = (obj: any): any => {
+  if (obj === "_undefined_") {
+    return undefined
+  } else if (Array.isArray(obj)) {
+    return obj.map(decodeUndefined)
+  } else if (isPlainObject(obj)) {
+    return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, decodeUndefined(v)]))
+  }
+  return obj
 }
 
 const filterEventData = (gd: any, eventData: any, event: string) => {
@@ -110,8 +144,12 @@ const filterEventData = (gd: any, eventData: any, event: string) => {
       const pointData: {[k: string]: any} = {}
       for (const property in fullPoint) {
         const val = fullPoint[property]
+        // Arrays of primitives (e.g. multicategory x, heatmap pointNumber)
+        // are safe; arrays holding objects may be circular or huge.
+        const isPrimitiveArray = Array.isArray(val) &&
+          val.every((v: any) => v === null || typeof v !== "object")
         if (fullPoint.hasOwnProperty(property) &&
-            !Array.isArray(val) && !isPlainObject(val) &&
+            (isPrimitiveArray || (!Array.isArray(val) && !isPlainObject(val))) &&
             val !== undefined)  {
           pointData[property] = val
         }
@@ -173,13 +211,18 @@ export class PlotlyPlotView extends HTMLBoxView {
   _rendered: boolean = false
   _reacting: boolean = false
   _relayouting: boolean = false
+  _model_restyles: number = 0
   _hoverdata: any = null
   container: PlotlyHTMLElement
-  _watched_sources: string[]
   _end_relayouting = debounce(() => {
     this._relayouting = false
   }, 2000, false)
   _throttled_resize: any
+  // Frames handed to Plotly for the current plot
+  _frames: any[] | null = null
+  _plot_promise: Promise<void> | null = null
+  _plot_scheduled: boolean = false
+  _new_plot: boolean = false
 
   override initialize(): void {
     super.initialize()
@@ -194,13 +237,11 @@ export class PlotlyPlotView extends HTMLBoxView {
       viewport_update_throttle, _render_count, frames, viewport,
     } = this.model.properties
 
-    this.on_change([data, data_sources, layout], () => {
-      const render_count = this.model._render_count
-      setTimeout(() => {
-        if (this.model._render_count === render_count) {
-          this.model._render_count += 1
-        }
-      }, 250)
+    this.on_change([data, data_sources, layout, _render_count], () => {
+      this._schedule_plot()
+    })
+    this.on_change(frames, () => {
+      this._schedule_plot(true)
     })
     this.on_change(relayout, () => {
       if (this.model.relayout == null) {
@@ -213,7 +254,11 @@ export class PlotlyPlotView extends HTMLBoxView {
       if (this.model.restyle == null) {
         return
       }
-      (window as any).Plotly.restyle(this.container, this.model.restyle.data, this.model.restyle.traces)
+      const data = decodeUndefined(this.model.restyle.data)
+      this._model_restyles += 1
+      ;(window as any).Plotly.restyle(this.container, data, this.model.restyle.traces).finally(() => {
+        this._model_restyles -= 1
+      })
       this.model.restyle = null
     })
 
@@ -223,15 +268,28 @@ export class PlotlyPlotView extends HTMLBoxView {
     this.on_change(viewport_update_throttle, () => {
       this._updateSetViewportFunction()
     })
-    this.on_change(_render_count, () => {
-      this.plot()
-    })
-    this.on_change(frames, () => {
-      this.plot(true)
-    })
     this.on_change(viewport, () => {
       this._updateViewportFromProperty()
     })
+  }
+
+  /**
+   * Plots once all changes applied in the current task have been
+   * processed, waiting for a plot in progress to finish first.
+   */
+  _schedule_plot(new_plot: boolean = false): void {
+    this._new_plot ||= new_plot
+    if (this._plot_scheduled) {
+      return
+    }
+    this._plot_scheduled = true
+    const run = () => {
+      this._plot_scheduled = false
+      const replot = this._new_plot
+      this._new_plot = false
+      this._plot_promise = this.plot(replot)
+    }
+    (this._plot_promise ?? Promise.resolve()).then(run, run)
   }
 
   override stylesheets(): StyleSheetLike[] {
@@ -251,7 +309,7 @@ export class PlotlyPlotView extends HTMLBoxView {
     set_size(this.container, this.model)
     this._rendered = false
     this.watch_stylesheets()
-    this.plot(true).then(() => {
+    this._plot_promise = this.plot(true).then(() => {
       this.shadow_el.appendChild(this.container)
       this._rendered = true
       this.resize_layout()
@@ -259,6 +317,16 @@ export class PlotlyPlotView extends HTMLBoxView {
         (window as any).Plotly.relayout(this.container, this.model.relayout)
       }
     })
+  }
+
+  /**
+   * The plot size derived from the model and the element, or null while
+   * the element is not laid out.
+   */
+  _plot_size(): [number, number] | null {
+    const width = Math.min(this.model.width || this.el.clientWidth, this.model.max_width || Infinity)
+    const height = Math.min(this.model.height || this.el.clientHeight, this.model.max_height || Infinity)
+    return width > 0 && height > 0 ? [width, height] : null
   }
 
   override style_redraw(): void {
@@ -270,7 +338,12 @@ export class PlotlyPlotView extends HTMLBoxView {
       return
     }
     const width: number = Math.min(this.model.width || this.el.clientWidth, this.model.max_width || Infinity)
-    const height: number = Math.min(this.model.height || this.el.clientHeight, this.model.max_height || Infinity);
+    const height: number = Math.min(this.model.height || this.el.clientHeight, this.model.max_height || Infinity)
+    // A relayout resets the hover state, dropping clicks right after it
+    const {layout} = this.container
+    if (layout != null && layout.width === width && layout.height === height) {
+      return
+    }
     (window as any).Plotly.relayout(this.container, {width, height})
   }
 
@@ -300,6 +373,13 @@ export class PlotlyPlotView extends HTMLBoxView {
         }
       }, {})
     }
+    // Sizing the plot up front saves the relayout resize_layout would
+    // otherwise issue after every update.
+    const size = this._rendered ? this._plot_size() : null
+    if (size != null) {
+      newLayout.width ??= size[0]
+      newLayout.height ??= size[1]
+    }
     return newLayout
   }
 
@@ -326,6 +406,10 @@ export class PlotlyPlotView extends HTMLBoxView {
 
     //  - plotly_restyle
     this.container.on("plotly_restyle", (eventData: any) => {
+      // Echoing a restyle sent by Python could arrive after a newer update and revert it
+      if (this._model_restyles > 0) {
+        return
+      }
       this.model.restyle_data = filterEventData(
         this.container, eventData, "restyle")
 
@@ -377,12 +461,18 @@ export class PlotlyPlotView extends HTMLBoxView {
 
     //  - plotly_unhover
     this.container.on("plotly_unhover", () => {
-      // Override hoverdata to ensure click event has context
-      this.container._hoverdata = this._hoverdata
       this.model.trigger_event(new PlotlyEvent({type: "hover", data: null}))
+      // Plotly already stored the new point when moving straight to it
+      if (this.container._hoverdata != null) {
+        return
+      }
+      // Override hoverdata to ensure click event has context
+      const hoverdata = this.container._hoverdata = this._hoverdata
       setTimeout(() => {
         // Remove hoverdata once events have been processed
-        delete this.container._hoverdata
+        if (this.container._hoverdata === hoverdata) {
+          delete this.container._hoverdata
+        }
       }, 0)
     })
   }
@@ -393,24 +483,28 @@ export class PlotlyPlotView extends HTMLBoxView {
     }
     const data = this._trace_data()
     const newLayout = this._layout_data()
+    const {config, frames} = this.model
     this._reacting = true
-    if (new_plot) {
-      const obj = {data, layout: newLayout, config: this.model.config, frames: this.model.frames}
-      await (window as any).Plotly.newPlot(this.container, obj)
-    } else {
-      await (window as any).Plotly.react(this.container, data, newLayout, this.model.config)
-      if (this.model.frames != null) {
-        await (window as any).Plotly.addFrames(this.container, this.model.frames)
+    try {
+      if (new_plot || !this._plotInitialized) {
+        await (window as any).Plotly.newPlot(this.container, {data, layout: newLayout, config, frames})
+      } else if (frames !== this._frames) {
+        // Passing frames makes react replace the existing ones
+        await (window as any).Plotly.react(this.container, {data, layout: newLayout, config, frames})
+      } else {
+        await (window as any).Plotly.react(this.container, data, newLayout, config)
       }
+      this._frames = frames
+      this._updateSetViewportFunction()
+      this._updateViewportProperty()
+      if (!this._plotInitialized) {
+        this._install_callbacks()
+      } else if (!_isHidden(this.container)) {
+        this.resize_layout()
+      }
+    } finally {
+      this._reacting = false
     }
-    this._updateSetViewportFunction()
-    this._updateViewportProperty()
-    if (!this._plotInitialized) {
-      this._install_callbacks()
-    } else if (!_isHidden(this.container)) {
-      (window as any).Plotly.Plots.resize(this.container)
-    }
-    this._reacting = false
     this._plotInitialized = true
   }
 
@@ -422,17 +516,21 @@ export class PlotlyPlotView extends HTMLBoxView {
       if (array.shape != null && array.shape.length > 1) {
         array = reshape(array, array.shape)
       }
-      const prop_path = column.split(".")
-      const prop = prop_path[prop_path.length - 1]
-      let prop_parent = trace
-      for (const k of prop_path.slice(0, -1)) {
-        prop_parent = (prop_parent[k])
+
+      // Column name used for resolving object data needs to be validated
+      // to avoid prototype pollution
+      const propPath = column.split(".")
+      const prop = propPath[propPath.length - 1]
+      const propParent = getSafeParent(trace, propPath.slice(0, -1))
+      if (!propParent || !prop || !isSafePath(propPath) || FORBIDDEN_KEYS.has(prop)) {
+        console.warn("Attempted prototype pollution detected via Plotly column resolution.")
+        continue
       }
 
-      if (update && prop_path.length == 1) {
-        prop_parent[prop] = [array]
+      if (update && propPath.length == 1) {
+        propParent[prop] = [array]
       } else {
-        prop_parent[prop] = array
+        propParent[prop] = array
       }
     }
     return trace

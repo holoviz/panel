@@ -18,7 +18,7 @@ class MaterialBase(ReactiveHTML):
 
     _extension_name = 'material_ui'
 
-pn.extension('material_ui', template='material')
+pn.extension('material_ui', template='page')
 ```
 
 This example demonstrates how to wrap Material UI components using `ReactiveHTML`.
@@ -80,12 +80,12 @@ class MaterialSlider(MaterialBase):
 slider     = MaterialSlider(value=5, start=0, end=100, width=200)
 text_field = MaterialTextField()
 
-pn.Row(
-    pn.Column(
+pn.ui.Row(
+    pn.ui.Column(
         slider.controls(['value']),
         slider
     ),
-    pn.Column(
+    pn.ui.Column(
         text_field.controls(['value']),
         text_field
     ),

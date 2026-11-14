@@ -24,12 +24,12 @@ def get_response(contents, user, instance):
     sleep(1)
     return response
 
-chat_bot = pn.chat.ChatInterface(callback=get_response, max_height=500)
+chat_bot = pn.ui.ChatInterface(callback=get_response, max_height=500)
 chat_bot.send("Ask me what a wind turbine is", user="Assistant", respond=False)
 chat_bot.servable()
 ```
 
-Try entering `What is a wind turbine?` in the *text input* and click *Send*.
+Try entering `What is a wind turbine?` in the *text input* and press *Enter* or click the *send* button.
 
 :::{note}
 The `callback` function `get_response` will receive `"What is a wind turbine?"` in the `contents` argument. Since `contents` contains the word *turbine*, the chat bot will return `"A wind turbine converts wind energy into electricity."` as the `response`.
@@ -56,12 +56,12 @@ def get_response(contents, user, instance):
         yield response[0:index+1]
         sleep(0.03) # to simulate slowish response
 
-chat_bot = pn.chat.ChatInterface(callback=get_response, max_height=500)
+chat_bot = pn.ui.ChatInterface(callback=get_response, max_height=500)
 chat_bot.send("Ask me anything!", user="Assistant", respond=False)
 chat_bot.servable()
 ```
 
-Try entering `What is a wind turbine?` in the *text input* and click *Send*.
+Try entering `What is a wind turbine?` in the *text input* and press *Enter* or click the *send* button.
 
 :::{note}
 The chat app is now *streaming* because we `yield` the partial `response` instead of `return`ing the full `response`.
@@ -73,7 +73,7 @@ To make the Streaming Chat Bot scale to many users you should be using `async`. 
 
 ## Learn More
 
-We can learn more about the `ChatInterface` via its [*reference guide*](../../reference/chat/ChatInterface.md). We find the *reference guide* in the [Chat Section](../../reference/index.rst#chat) of the [Component Gallery](../../reference/index.rst).
+We can learn more about the `ChatInterface` via its [*reference guide*](../../reference/chat/ChatInterface.md). We find the *reference guide* in the [Chat Section](../../reference/index.md#chat) of the [Component Gallery](../../reference/index.md).
 
 ## Find Inspiration
 
@@ -90,5 +90,5 @@ In this section, we have used the *easy to use*, *high-level* [`ChatInterface`](
 
 ## Resources
 
-- [Chat Component Gallery](../../reference/index.rst#chat)
+- [Chat Component Gallery](../../reference/index.md#chat)
 - [Panel-Chat-Examples](https://holoviz-topics.github.io/panel-chat-examples/)

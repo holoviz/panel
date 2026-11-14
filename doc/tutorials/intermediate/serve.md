@@ -105,7 +105,7 @@ usage: panel serve [-h] [--port PORT] [--address ADDRESS] [--unix-socket UNIX-SO
                    [--include-cookies INCLUDE_COOKIES [INCLUDE_COOKIES ...]] [--cookie-path COOKIE_PATH] [--cookie-secret COOKIE_SECRET] [--index INDEX]
                    [--disable-index] [--disable-index-redirect] [--num-procs N] [--session-token-expiration N]
                    [--websocket-max-message-size BYTES] [--websocket-compression-level LEVEL] [--websocket-compression-mem-level LEVEL]
-                   [--glob] [--index-titles KEY=VALUE [KEY=VALUE ...]] [--static-dirs KEY=VALUE [KEY=VALUE ...]] [--basic-auth BASIC_AUTH] [--oauth-provider OAUTH_PROVIDER]
+                   [--glob] [--index-titles KEY=VALUE [KEY=VALUE ...]] [--page-config JSON] [--static-dirs KEY=VALUE [KEY=VALUE ...]] [--basic-auth BASIC_AUTH] [--oauth-provider OAUTH_PROVIDER]
                    [--oauth-key OAUTH_KEY] [--oauth-secret OAUTH_SECRET] [--oauth-redirect-uri OAUTH_REDIRECT_URI]
                    [--oauth-extra-params OAUTH_EXTRA_PARAMS] [--oauth-jwt-user OAUTH_JWT_USER] [--oauth-encryption-key OAUTH_ENCRYPTION_KEY]
                    [--oauth-error-template OAUTH_ERROR_TEMPLATE] [--oauth-expiry-days OAUTH_EXPIRY_DAYS] [--oauth-refresh-tokens]
@@ -199,6 +199,9 @@ options:
                         Custom titles to use for Multi Page Apps specified as key=value pairs mapping
                         from the application page slug to the title to show on the Multi Page App index
                         page.
+  --page-config JSON    Theme, logo and title of the index, login, logout and error pages, as a JSON string
+                        or the path to a JSON file with the keys theme_config, dark_theme, logo, title,
+                        favicon, site_url, css_files and raw_css.
   --static-dirs KEY=VALUE [KEY=VALUE ...]
                         Static directories to serve specified as key=value pairs mapping from URL route to static file directory.
   --basic-auth BASIC_AUTH
@@ -237,10 +240,12 @@ options:
   --basic-login-template BASIC_LOGIN_TEMPLATE
                         Template to serve for Basic Authentication login page.
   --rest-provider REST_PROVIDER
-                        The interface to use to serve REST API
+                        Deprecated, will be removed in 2.0. The interface to use to serve REST API.
+                        Declare custom endpoints with --plugins instead.
   --rest-endpoint REST_ENDPOINT
-                        Endpoint to store REST API on.
-  --rest-session-info   Whether to serve session info on the REST API
+                        Deprecated, will be removed in 2.0. Endpoint to store REST API on, defaults
+                        to 'rest'.
+  --rest-session-info   Whether to serve session info on the /session_info endpoint.
   --session-history SESSION_HISTORY
                         The length of the session history to record.
   --warm                Whether to execute scripts on startup to warm up the server.

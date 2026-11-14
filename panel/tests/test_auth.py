@@ -3,6 +3,8 @@ This module contains tests for handling OAuth login and response decoding
 using the Tornado HTTP client and Panel's OAuthLoginHandler.
 """
 
+import asyncio
+
 from unittest.mock import Mock, patch
 
 import pytest
@@ -10,7 +12,10 @@ import pytest
 from tornado.httpclient import HTTPRequest, HTTPResponse
 from tornado.web import HTTPError
 
-from panel.auth import OAuthLoginHandler, decode_response_body
+from panel.auth import (
+    BasicAuthProvider, OAuthLoginHandler, decode_response_body,
+)
+from panel.config import config
 
 
 def _create_mock_response(body, code=401):
@@ -61,3 +66,55 @@ def test_raise_error():
         handler = OAuthLoginHandler()
         with pytest.raises(HTTPError):
             handler._raise_error(response=response, body=None, status=401)
+
+
+def test_get_authenticated_user_forwards_extra_oauth_params():
+    """
+    Extra OAuth parameters configured via ``config.oauth_extra_params``
+    (e.g. ``prompt`` or ``login_hint``) should be forwarded to the
+    authorization endpoint, while keys consumed internally by the provider
+    (e.g. ``tenant``) must not be.
+    """
+    with patch.object(OAuthLoginHandler, '__init__', lambda self, *args, **kwargs: None):
+        handler = OAuthLoginHandler()
+        handler.authorize_redirect = Mock()
+        original = config._oauth_extra_params
+        config._oauth_extra_params = {
+            'prompt': 'login',
+            'login_hint': 'user@example.org',
+            'tenant': 'my-tenant',  # reserved (Azure) -> must NOT be forwarded
+            'audience': 'my-audience',
+        }
+        try:
+            asyncio.run(handler.get_authenticated_user(
+                redirect_uri='https://example.org',
+                client_id='client-id',
+                state='state-123',
+            ))
+        finally:
+            config._oauth_extra_params = original
+
+    assert handler.authorize_redirect.called
+    extra_params = handler.authorize_redirect.call_args.kwargs['extra_params']
+    assert extra_params['state'] == 'state-123'
+    # New behaviour: arbitrary authorization params are forwarded
+    assert extra_params['prompt'] == 'login'
+    assert extra_params['login_hint'] == 'user@example.org'
+    # Existing behaviour is preserved
+    assert extra_params['audience'] == 'my-audience'
+    # Provider-internal keys are not leaked to the authorize URL
+    assert 'tenant' not in extra_params
+
+
+def test_basic_auth_provider_reads_custom_templates_as_utf8(tmp_path):
+    templates = {}
+    for name in ('login', 'logout', 'error'):
+        path = tmp_path / f'{name}.html'
+        path.write_text(f'<p>{name}: 안녕하세요 ✅</p>', encoding='utf-8')
+        templates[f'{name}_template'] = path
+
+    provider = BasicAuthProvider(**templates)
+
+    assert provider._login_template.render() == '<p>login: 안녕하세요 ✅</p>'
+    assert provider._logout_template.render() == '<p>logout: 안녕하세요 ✅</p>'
+    assert provider._error_template.render() == '<p>error: 안녕하세요 ✅</p>'

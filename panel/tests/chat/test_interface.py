@@ -37,7 +37,7 @@ class TestChatInterface:
         for index, button_data in enumerate(chat_interface._button_data.values()):
             widget = inputs[index + 1]
             assert isinstance(widget, Button)
-            assert widget.name == button_data.name.title()
+            assert widget.label == button_data.label.title()
 
     def test_init_avatar_image(self, chat_interface):
         chat_interface.avatar = Image("https://panel.holoviz.org/_static/logo_horizontal.png")
@@ -51,7 +51,7 @@ class TestChatInterface:
         assert isinstance(chat_interface.avatar, type_)
 
     def test_init_custom_widgets(self):
-        widgets = [TextInput(name="Text"), FileInput()]
+        widgets = [TextInput(label="Text"), FileInput()]
         chat_interface = ChatInterface(widgets=widgets)
         assert len(chat_interface._widgets) == 2
         assert isinstance(chat_interface._input_layout, Tabs)
@@ -59,26 +59,56 @@ class TestChatInterface:
         assert isinstance(chat_interface._widgets["FileInput"], FileInput)
         assert chat_interface.active == 0
 
+    def test_widget_placeholder_default(self, chat_interface):
+        assert chat_interface.widget_placeholder == "Send a message"
+        assert chat_interface.active_widget.placeholder == "Send a message"
+
+    def test_widget_placeholder_custom(self):
+        chat_interface = ChatInterface(widget_placeholder="Ask a question")
+        assert chat_interface.widget_placeholder == "Ask a question"
+        assert chat_interface.active_widget.placeholder == "Ask a question"
+
+    def test_widget_placeholder_ignored_with_custom_widget(self):
+        widget = TextInput(placeholder="Custom widget")
+        chat_interface = ChatInterface(widgets=widget, widget_placeholder="Ignored")
+        assert chat_interface.active_widget is widget
+        assert widget.placeholder == "Custom widget"
+
+        chat_interface.widget_placeholder = "Still ignored"
+        assert chat_interface.widget_placeholder == "Still ignored"
+        assert widget.placeholder == "Custom widget"
+
+    def test_widget_placeholder_dynamic_update(self, chat_interface):
+        chat_interface.widget_placeholder = "Ask me anything"
+        assert chat_interface.active_widget.placeholder == "Ask me anything"
+
+    def test_widget_placeholder_dynamic_update_after_widget_replacement(self, chat_interface):
+        widget = TextInput(placeholder="Replacement")
+        chat_interface.widgets = widget
+        chat_interface.widget_placeholder = "Should not apply"
+        assert widget.placeholder == "Replacement"
+        assert chat_interface.active_widget.placeholder == "Replacement"
+
     def test_active_in_constructor(self):
-        widgets = [TextInput(name="Text"), FileInput()]
+        widgets = [TextInput(label="Text"), FileInput()]
         chat_interface = ChatInterface(widgets=widgets, active=1)
         assert chat_interface.active == 1
 
     def test_file_input_only(self):
-        ChatInterface(widgets=[FileInput(name="CSV File", accept=".csv")])
+        ChatInterface(widgets=[FileInput(label="CSV File", accept=".csv")])
 
     def test_active_widget(self, chat_interface):
         active_widget = chat_interface.active_widget
         assert isinstance(active_widget, ChatAreaInput)
 
     def test_active(self):
-        widget = TextInput(name="input")
+        widget = TextInput(label="input")
         chat_interface = ChatInterface(widgets=[widget])
         assert chat_interface.active == -1
 
     def test_active_multiple_widgets(self, chat_interface):
-        widget1 = TextInput(name="input1")
-        widget2 = TextInput(name="input2")
+        widget1 = TextInput(label="input1")
+        widget2 = TextInput(label="input2")
         chat_interface.widgets = [widget1, widget2]
         assert chat_interface.active == 0
 
@@ -115,8 +145,8 @@ class TestChatInterface:
         chat_interface.send("Message", respond=True)
         send_button = chat_interface._input_layout[1]
         stop_button = chat_interface._input_layout[2]
-        assert send_button.name == "Send"
-        assert stop_button.name == "Stop"
+        assert send_button.label == "Send"
+        assert stop_button.label == "Stop"
         assert send_button.visible
         assert not send_button.disabled
         assert not stop_button.visible
@@ -259,13 +289,13 @@ class TestChatInterface:
         assert chat_interface.width is None
         chat_interface.width = 200
         assert chat_interface.show_button_name
-        assert chat_interface._input_layout[1].name == "Send"
+        assert chat_interface._input_layout[1].label == "Send"
 
     def test_show_button_name_set(self, chat_interface):
         chat_interface.show_button_name = False
         chat_interface.width = 800
         assert not chat_interface.show_button_name
-        assert chat_interface._input_layout[1].name == ""
+        assert chat_interface._input_layout[1].label == ""
 
     def test_show_send_interactive(self, chat_interface):
         send_button = chat_interface._input_layout[1]

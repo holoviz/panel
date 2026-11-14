@@ -54,13 +54,16 @@ class DataStore(Viewer):
         for filt in self.filters:
             dtype = self.data.dtypes[filt]
             if dtype.kind == "f":
-                widget = pn.widgets.RangeSlider(
-                    name=filt, start=dfx[filt].min(), end=dfx[filt].max()
+                widget = pn.ui.RangeSlider(
+                    label=filt, start=dfx[filt].min(), end=dfx[filt].max(),
+                    sizing_mode="stretch_width",
                 )
                 condition = dfx[filt].between(*widget.rx())
             else:
                 options = dfx[filt].unique().tolist()
-                widget = pn.widgets.MultiChoice(name=filt, options=options)
+                widget = pn.ui.MultiChoice(
+                    label=filt, options=options, sizing_mode="stretch_width"
+                )
                 condition = dfx[filt].isin(widget.rx().rx.where(widget, options))
             dfx = dfx[condition]
             widgets.append(widget)
@@ -74,16 +77,12 @@ class DataStore(Viewer):
         )
         self._widgets = widgets
 
-    def filter(
-        self,
-    ):
-        return
-
     def __panel__(self):
-        return pn.Column(
+        return pn.ui.Column(
             "## Filters",
             *self._widgets,
             stylesheets=[CARD_STYLE.format(padding="5px 10px")],
+            sizing_mode="stretch_width",
             margin=10
         )
 ```
@@ -112,15 +111,19 @@ class View(Viewer):
 
 class Table(View):
     columns = param.List(
-        default=["p_name", "p_year", "t_state", "t_county", "t_manu", "t_cap", "p_cap"]
+        default=["p_name", "p_year", "t_state", "t_manu", "p_cap"]
     )
 
     def __panel__(self):
         data = self.data_store.filtered[self.param.columns]
-        return pn.widgets.Tabulator(
+        return pn.ui.Tabulator(
             data,
             pagination="remote",
-            page_size=13,
+            page_size=10,
+            layout="fit_data_stretch",
+            show_index=False,
+            sizing_mode="stretch_width",
+            min_width=500,
             stylesheets=[CARD_STYLE.format(padding="10px")],
             margin=10,
         )
@@ -145,10 +148,10 @@ class Histogram(View):
             .transform_calculate(jitter="sqrt(-2*log(random()))*cos(2*PI*random())")
             .properties(
                 height=400,
-                width=600,
+                width=400,
             )
         )
-        return pn.pane.Vega(
+        return pn.ui.Vega(
             fig, stylesheets=[CARD_STYLE.format(padding="0")], margin=10
         )
 
@@ -156,28 +159,28 @@ class Histogram(View):
 class Indicators(View):
     def __panel__(self):
         style = {"stylesheets": [CARD_STYLE.format(padding="10px")]}
-        return pn.FlexBox(
-            pn.indicators.Number(
+        return pn.ui.FlexBox(
+            pn.ui.Number(
                 value=self.data_store.total_capacity / 1e6,
-                name="Total Capacity (GW)",
+                label="Total Capacity (GW)",
                 format="{value:,.2f}",
                 **style
             ),
-            pn.indicators.Number(
+            pn.ui.Number(
                 value=self.data_store.count,
-                name="Count",
+                label="Count",
                 format="{value:,.0f}",
                 **style
             ),
-            pn.indicators.Number(
+            pn.ui.Number(
                 value=self.data_store.avg_capacity,
-                name="Avg. Capacity (kW)",
+                label="Avg. Capacity (kW)",
                 format="{value:,.2f}",
                 **style
             ),
-            pn.indicators.Number(
+            pn.ui.Number(
                 value=self.data_store.avg_rotor_diameter,
-                name="Avg. Rotor Diameter (m)",
+                label="Avg. Rotor Diameter (m)",
                 format="{value:,.2f}",
                 **style
             ),
@@ -217,20 +220,17 @@ class App(Viewer):
             if updating
             else pn.state.curdoc.unhold()
         )
-        self._views = pn.FlexBox(
-            *(view(data_store=self.data_store) for view in self.views), loading=updating
+        self._views = pn.ui.FlexBox(
+            *(view(data_store=self.data_store) for view in self.views),
+            loading=updating,
+            margin=10,
         )
-        self._template = pn.template.MaterialTemplate(title=self.title)
-        self._template.sidebar.append(self.data_store)
-        self._template.main.append(self._views)
-
-    def servable(self):
-        if pn.state.served:
-            return self._template.servable()
-        return self
+        self._page = pn.ui.Page(
+            title=self.title, sidebar=[self.data_store], main=[self._views]
+        )
 
     def __panel__(self):
-        return pn.Row(self.data_store, self._views)
+        return self._page
 
 
 data = get_turbines()
@@ -265,9 +265,9 @@ turbines = get_turbines()
 
 ds = DataStore(data=turbines, filters=['p_year', 'p_cap', 't_manu'])
 
-pn.Row(
+pn.ui.Row(
     ds,
-    pn.Tabs(
+    pn.ui.Tabs(
         ('Indicators', Indicators(data_store=ds)),
         ('Histogram', Histogram(data_store=ds)),
         ('Table', Table(data_store=ds)),

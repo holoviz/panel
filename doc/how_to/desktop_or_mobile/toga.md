@@ -97,8 +97,8 @@ class MyPanelApp(toga.App):
 
     def create_panel_app(self):
         """Create your Panel application."""
-        slider = pn.widgets.IntSlider(
-            name='Value',
+        slider = pn.ui.IntSlider(
+            label='Value',
             start=0,
             end=100,
             value=50
@@ -109,12 +109,12 @@ class MyPanelApp(toga.App):
 
         text = pn.bind(update_text, slider.param.value)
 
-        app = pn.Column(
+        app = pn.ui.Column(
             "# Panel in Toga!",
             "This Panel app is running inside a Toga native application.",
             slider,
             text,
-            pn.pane.Markdown(
+            pn.ui.Markdown(
                 "You can deploy this to Windows, macOS, Linux, iOS, and Android!"
             ),
         )

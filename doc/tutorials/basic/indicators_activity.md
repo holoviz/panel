@@ -29,7 +29,7 @@ import panel as pn
 
 pn.extension()
 
-pn.widgets.Button(name="Loading", loading=True, button_type="primary").servable()
+pn.ui.Button(label="Loading", loading=True, color="primary").servable()
 ```
 
 It also works for composed components.
@@ -41,9 +41,9 @@ import panel as pn
 
 pn.extension()
 
-pn.WidgetBox(
-    pn.widgets.Checkbox(name="Checked", value=True),
-    pn.widgets.Button(name="Submit", button_type="primary"),
+pn.ui.WidgetBox(
+    pn.ui.Checkbox(label="Checked", value=True),
+    pn.ui.Button(label="Submit", color="primary"),
     loading=True, margin=(10,10),
 ).servable()
 ```
@@ -67,7 +67,7 @@ data = pd.DataFrame([
     ('Friday', 4), ('Saturday', 5), ('Sunday', 4)], columns=['Day', 'Wind Speed (m/s)']
 )
 
-button = pn.widgets.Button(name="Submit", button_type="primary")
+button = pn.ui.Button(label="Submit", color="primary")
 
 def get_figure(running):
     if not running:
@@ -79,7 +79,7 @@ def get_figure(running):
 bound_function = pn.bind(get_figure, button)
 plot = pn.panel(bound_function, height=400, sizing_mode="stretch_width", loading_indicator=True)
 
-pn.Column(button, plot).servable()
+pn.ui.Column(button, plot).servable()
 ```
 
 ### Exercise: Configure Global Loading Indicator
@@ -104,7 +104,7 @@ import panel as pn
 
 pn.extension(sizing_mode="stretch_width", loading_indicator=True)
 
-button = pn.widgets.Button(name="Submit", button_type="primary")
+button = pn.ui.Button(label="Submit", color="primary")
 
 data = pd.DataFrame([
     ('Monday', 7), ('Tuesday', 4), ('Wednesday', 9), ('Thursday', 4),
@@ -125,7 +125,7 @@ plot2 = pn.panel(bound_function2, height=400)
 bound_function3 = pn.bind(get_figure, button)
 plot3 = pn.panel(bound_function3, height=400)
 
-pn.Column(button, plot, pn.Row(plot2, plot3), sizing_mode="stretch_width").servable()
+pn.ui.Column(button, plot, pn.ui.Row(plot2, plot3)).servable()
 ```
 
 :::
@@ -148,7 +148,7 @@ import panel as pn
 
 pn.extension(sizing_mode="stretch_width")
 
-button = pn.widgets.Button(name="Submit", button_type="primary")
+button = pn.ui.Button(label="Submit", color="primary")
 
 data = pd.DataFrame([
     ('Monday', 7), ('Tuesday', 4), ('Wednesday', 9), ('Thursday', 4),
@@ -166,7 +166,7 @@ plot2 = pn.panel(bound_function2, height=400)
 bound_function3 = pn.bind(get_figure, button)
 plot3 = pn.panel(bound_function3, height=400)
 
-pn.Column(button, plot, pn.Row(plot2, plot3), sizing_mode="stretch_width").servable()
+pn.ui.Column(button, plot, pn.ui.Row(plot2, plot3)).servable()
 ```
 
 Notice that it takes +6 seconds before the application loads.
@@ -185,7 +185,7 @@ import panel as pn
 
 pn.extension(sizing_mode="stretch_width", defer_load=True, loading_indicator=True)
 
-button = pn.widgets.Button(name="Submit", button_type="primary")
+button = pn.ui.Button(label="Submit", color="primary")
 
 data = pd.DataFrame([
     ('Monday', 7), ('Tuesday', 4), ('Wednesday', 9), ('Thursday', 4),
@@ -203,7 +203,7 @@ plot2 = pn.panel(bound_function2, height=400)
 bound_function3 = pn.bind(get_figure, button)
 plot3 = pn.panel(bound_function3, height=400)
 
-pn.Column(button, plot, pn.Row(plot2, plot3), sizing_mode="stretch_width").servable()
+pn.ui.Column(button, plot, pn.ui.Row(plot2, plot3)).servable()
 ```
 
 :::
@@ -219,25 +219,19 @@ import panel as pn
 
 pn.extension()
 
-pn.Row(
-    pn.Column(
+pn.ui.Row(
+    pn.ui.Column(
         "## Loading Spinner",
-        pn.Column(
-            pn.indicators.LoadingSpinner(value=False, height=25, width=25),
-            pn.indicators.LoadingSpinner(
-                value=True, height=25, width=25, color="secondary"
-            ),
+        pn.ui.Column(
+            pn.ui.LoadingSpinner(value=False, size=25),
+            pn.ui.LoadingSpinner(value=True, size=25, color="secondary"),
         ),
     ),
-    pn.Column(
+    pn.ui.Column(
         "## Progress",
-        pn.Column(
-            pn.indicators.Progress(
-                name="Progress", value=20, width=150, bar_color="dark"
-            ),
-            pn.indicators.Progress(
-                name="Progress", active=True, width=150, bar_color="dark"
-            ),
+        pn.ui.Column(
+            pn.ui.Progress(label="Progress", value=20, width=150, color="dark"),
+            pn.ui.Progress(label="Progress", active=True, width=150, color="dark"),
         ),
     )
 ).servable()
@@ -254,10 +248,10 @@ import panel as pn
 
 pn.extension()
 
-button = pn.widgets.Button(name="Submit", button_type="primary")
+button = pn.ui.Button(label="Submit", color="primary")
 
-running_indicator = pn.indicators.LoadingSpinner(
-    value=False, height=25, width=25, color="secondary", visible=True
+running_indicator = pn.ui.LoadingSpinner(
+    value=False, size=25, color="secondary", visible=True
 )
 
 
@@ -271,7 +265,7 @@ def predict(running):
 
 prediction = pn.bind(predict, button)
 
-pn.Column(
+pn.ui.Column(
     button,
     running_indicator,
     prediction,
@@ -299,27 +293,24 @@ import panel as pn
 
 pn.extension()
 
-button = pn.widgets.Button(name="Submit", button_type="primary")
+button = pn.ui.Button(label="Submit", color="primary")
 
-running_indicator = pn.indicators.LoadingSpinner(
-    value=False, height=25, width=25, color="secondary", visible=False
+running_indicator = pn.ui.LoadingSpinner(
+    value=False, size=25, color="secondary", visible=False
 )
+prediction = pn.ui.Markdown("Click Submit")
 
 
-def predict(running):
-    if not running:
-        return "Click Submit"
-
+def predict(event):
     running_indicator.value = running_indicator.visible = True
-
     sleep(2)
+    prediction.object = "It's a Wind Turbine!"
     running_indicator.value = running_indicator.visible = False
-    return "It's a Wind Turbine!"
 
 
-prediction = pn.bind(predict, button)
+button.on_click(predict)
 
-pn.Column(button, running_indicator, prediction).servable()
+pn.ui.Column(button, running_indicator, prediction).servable()
 ```
 
 :::
@@ -336,29 +327,26 @@ pn.extension()
 
 is_running = pn.rx(False)
 
-button = pn.widgets.Button(
-    name="Submit", button_type="primary", disabled=is_running, loading=is_running
+button = pn.ui.Button(
+    label="Submit", color="primary", disabled=is_running, loading=is_running
 )
 
-running_indicator = pn.indicators.LoadingSpinner(
-    value=is_running, height=25, width=25, color="secondary", visible=is_running
+running_indicator = pn.ui.LoadingSpinner(
+    value=is_running, size=25, color="secondary", visible=is_running
 )
+prediction = pn.rx("Click Submit")
 
 
-def predict(running):
-
-    if not running:
-        return "Click Submit"
-
-    is_running.rx.value=True
+def predict(event):
+    is_running.rx.value = True
     sleep(2)
-    is_running.rx.value=False
-    return "It's a Wind Turbine!"
+    prediction.rx.value = "It's a Wind Turbine!"
+    is_running.rx.value = False
 
 
-prediction = pn.bind(predict, button)
+button.on_click(predict)
 
-pn.Column(button, running_indicator, prediction).servable()
+pn.ui.Column(button, running_indicator, pn.ui.Markdown(prediction)).servable()
 ```
 
 :::
@@ -379,7 +367,7 @@ pn.extension(notifications=True)
 def send_notification(event):
     pn.state.notifications.info("This is a notification", duration=3000)
 
-pn.widgets.Button(name="Send", on_click=send_notification).servable()
+pn.ui.Button(label="Send", on_click=send_notification).servable()
 ```
 
 Try clicking the `Button`. You should see a notification pop up in the lower left corner of the app.
@@ -395,7 +383,7 @@ Try changing `pn.state.notifications.info` to `pn.state.notifications.warning`. 
 
 Try changing `duration=3000` to `duration=0`. Then click the `Button`. What happens?
 
-See the [Notifications](../../reference/global/Notifications.md) reference guide for more detail.
+See the [Notifications](../../reference/classic/global/Notifications.md) reference guide for more detail.
 
 ## Recap
 
@@ -417,4 +405,4 @@ We've explored how to show activity with indicators, much like the rotating blad
 
 ### Reference Guides
 
-- [Notifications](../../reference/global/Notifications.md)
+- [Notifications](../../reference/classic/global/Notifications.md)

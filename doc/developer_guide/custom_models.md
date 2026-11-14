@@ -176,7 +176,7 @@ def test_constructor():
 
 def get_app():
     chartjs = pn.pane.ChartJS(object="Click Me Now!")
-    return pn.Column(
+    return pn.ui.Column(
         chartjs, pn.Param(chartjs, parameters=["object", "clicks"])
     )
 
@@ -257,7 +257,7 @@ def test_constructor():
 
 def get_app():
     chartjs = pn.pane.ChartJS(object="Click Me Now!")
-    return pn.Column(
+    return pn.ui.Column(
         chartjs, pn.Param(chartjs, parameters=["object", "clicks"])
     )
 

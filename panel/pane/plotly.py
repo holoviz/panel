@@ -4,8 +4,8 @@ bokeh model.
 """
 from __future__ import annotations
 
-from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any, ClassVar
+import json
+import typing as t
 
 import numpy as np
 import param
@@ -18,7 +18,11 @@ from ..util.checks import datetime_types, isdatetime
 from ..viewable import Layoutable
 from .base import ModelPane
 
-if TYPE_CHECKING:
+UNDEFINED = '_undefined_'
+
+if t.TYPE_CHECKING:
+    from collections.abc import Mapping
+
     from bokeh.document import Document
     from bokeh.model import Model
     from pyviz_comms import Comm
@@ -61,14 +65,20 @@ class Plotly(ModelPane):
 
     relayout_data = param.Dict(nested_refs=True, doc="Relayout event data from `plotly_relayout` event")
 
-    restyle_data = param.List(nested_refs=True, doc="Restyle event data from `plotly_restyle` event")
+    restyle_data: list[t.Any] = param.List(
+        default=[], nested_refs=True, doc="""
+        Restyle event data from `plotly_restyle` event""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    selected_data = param.Dict(nested_refs=True, doc="Selected event data from `plotly_selected` and `plotly_deselect` events.")
+    selected_data = param.Dict(
+        nested_refs=True, doc="Selected event data from `plotly_selected` and `plotly_deselect` events."
+    )
 
-    viewport = param.Dict(nested_refs=True, doc="""Current viewport state, i.e. the x- and y-axis limits of the displayed plot.
-                          Updated on `plotly_relayout`, `plotly_relayouting` and `plotly_restyle` events.""")
+    viewport = param.Dict(nested_refs=True, doc="""
+        Current viewport state, i.e. the x- and y-axis limits of the displayed plot.
+        Updated on `plotly_relayout`, `plotly_relayouting` and `plotly_restyle` events.""")
 
-    viewport_update_policy = param.Selector(default="mouseup", doc="""
+    viewport_update_policy: t.Literal["mouseup", "continuous", "throttle"] = param.Selector(
+        default="mouseup", doc="""
         Policy by which the viewport parameter is updated during user interactions.
 
         * "mouseup": updates are synchronized when mouse button is
@@ -76,7 +86,7 @@ class Plotly(ModelPane):
         * "continuous": updates are synchronized continually while panning
         * "throttle": updates are synchronized while panning, at
           intervals determined by the viewport_update_throttle parameter
-        """, objects=["mouseup", "continuous", "throttle"])
+        """, objects=["mouseup", "continuous", "throttle"])  # type: ignore[assignment, ty:invalid-assignment]
 
     viewport_update_throttle = param.Integer(default=200, bounds=(0, None), doc="""
         Time interval in milliseconds at which viewport updates are
@@ -85,11 +95,11 @@ class Plotly(ModelPane):
     _render_count = param.Integer(default=0, doc="""
         Number of renders, increment to trigger re-render""")
 
-    priority: ClassVar[float | bool | None] = 0.8
+    priority: t.ClassVar[float | bool | None] = 0.8
 
-    _updates: ClassVar[bool] = True
+    _updates: t.ClassVar[bool] = True
 
-    _rename: ClassVar[Mapping[str, str | None]] = {
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
         'link_figure': None,
         'object': None,
         'doubleclick_data': None,
@@ -100,10 +110,10 @@ class Plotly(ModelPane):
     }
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
-        return ((isinstance(obj, list) and obj and all(cls.applies(o) for o in obj)) or
-                hasattr(obj, 'to_plotly_json') or (isinstance(obj, dict)
-                                                   and 'data' in obj and 'layout' in obj))
+    def applies(cls, object: t.Any) -> float | bool | None:
+        return ((isinstance(object, list) and object and all(cls.applies(o) for o in object)) or
+                hasattr(object, 'to_plotly_json') or (isinstance(object, dict)
+                                                   and 'data' in object and 'layout' in object))
 
     def __init__(self, object=None, **params):
         super().__init__(object, **params)
@@ -114,16 +124,18 @@ class Plotly(ModelPane):
 
     def _to_figure(self, obj):
         import plotly.graph_objs as go
+        frames = None
         if isinstance(obj, (go.Figure, go.FigureWidget)):
             return obj
         elif isinstance(obj, dict):
             data, layout = obj['data'], obj['layout']
+            frames = obj.get('frames')
         elif isinstance(obj, tuple):
             data, layout = obj
         else:
             data, layout = obj, {}
         data = data if isinstance(data, list) else [data]
-        return go.Figure(data=data, layout=layout)
+        return go.Figure(data=data, layout=layout, frames=frames)
 
     @staticmethod
     def _get_sources(json):
@@ -143,11 +155,13 @@ class Plotly(ModelPane):
                 array = json.pop(key)
                 data[full_path] = [array]
             elif isinstance(value, dict):
-                # Recurse into dictionaries:
-                Plotly._get_sources_for_trace(value, data=data, parent_path=full_path)
+                # Nested containers may still belong to the original figure.
+                json[key] = dict(value)
+                Plotly._get_sources_for_trace(json[key], data=data, parent_path=full_path)
             elif isinstance(value, list) and value and isinstance(value[0], dict):
                 # recurse into object arrays:
-                for i, element in enumerate(value):
+                json[key] = [dict(element) for element in value]
+                for i, element in enumerate(json[key]):
                     element_path = full_path + '.' + str(i)
                     Plotly._get_sources_for_trace(
                         element, data=data, parent_path=element_path
@@ -155,21 +169,29 @@ class Plotly(ModelPane):
 
     @param.depends('object', 'link_figure', watch=True)
     def _update_figure(self):
-        import plotly.graph_objs as go
-
-        if (self.object is None or not isinstance(self.object, (go.Figure, go.FigureWidget)) or
-            self.object is self._figure or not self.link_figure):
+        fig = self.object
+        if (fig is None or isinstance(fig, (dict, list, tuple)) or fig is self._figure or not self.link_figure):
             return
 
-        # Monkey patch the message stubs used by FigureWidget.
-        fig = self.object
-        fig._send_addTraces_msg = lambda *_, **__: self._update_from_figure('add')
-        fig._send_deleteTraces_msg = lambda *_, **__: self._update_from_figure('delete')
-        fig._send_moveTraces_msg = lambda *_, **__: self._update_from_figure('move')
-        fig._send_restyle_msg = self._send_restyle_msg
-        fig._send_relayout_msg = self._send_relayout_msg
-        fig._send_update_msg = self._send_update_msg
-        fig._send_animate_msg = lambda *_, **__: self._update_from_figure('animate')
+        def _from_plotly(attr):
+            mod_attr = getattr(fig, attr, None)
+            return mod_attr is None or getattr(mod_attr, "__module__", "").startswith('plotly.')
+
+        # Monkey patch the message stubs used by FigureWidget, only if the method is from plotly
+        if _from_plotly('_send_addTraces_msg'):
+            fig._send_addTraces_msg = lambda *_, **__: self._update_from_figure('add')
+        if _from_plotly('_send_deleteTraces_msg'):
+            fig._send_deleteTraces_msg = lambda *_, **__: self._update_from_figure('delete')
+        if _from_plotly('_send_moveTraces_msg'):
+            fig._send_moveTraces_msg = lambda *_, **__: self._update_from_figure('move')
+        if _from_plotly('_send_restyle_msg'):
+            fig._send_restyle_msg = self._send_restyle_msg
+        if _from_plotly('_send_relayout_msg'):
+            fig._send_relayout_msg = self._send_relayout_msg
+        if _from_plotly('_send_update_msg'):
+            fig._send_update_msg = self._send_update_msg
+        if _from_plotly('_send_animate_msg'):
+            fig._send_animate_msg = lambda *_, **__: self._update_from_figure('animate')
         self._figure = fig
 
     def _send_relayout_msg(self, relayout_data, source_view_id=None):
@@ -207,6 +229,21 @@ class Plotly(ModelPane):
             key: val for key, val in relayout_data.items() if not key.endswith("._derived")
         }
 
+    @classmethod
+    def _encode_undefined(cls, obj):
+        # Plotly marks "leave this trace unchanged" slots in batched restyle
+        # payloads with a bare object() that Bokeh cannot serialize. Use the
+        # same string plotly's own widget uses; the frontend maps it back to
+        # undefined, since null would reset the property instead.
+        from plotly.basedatatypes import Undefined
+        if obj is Undefined:
+            return UNDEFINED
+        elif isinstance(obj, dict):
+            return {k: cls._encode_undefined(v) for k, v in obj.items()}
+        elif isinstance(obj, (list, tuple)):
+            return [cls._encode_undefined(v) for v in obj]
+        return obj
+
     def _send_update_msg(
         self, restyle_data, relayout_data, trace_indexes=None, source_view_id=None
     ):
@@ -217,7 +254,18 @@ class Plotly(ModelPane):
         if relayout_data:
             msg['relayout'] = relayout_data
         if restyle_data:
-            msg['restyle'] = {'data': restyle_data, 'traces': trace_indexes}
+            # Datetimes must be sent as strings like in the initial render,
+            # otherwise they are serialized as epoch numbers and plotly.js
+            # turns the date axis into a linear one (#4850).
+            restyle_data = {
+                key: [
+                    self._convert_trace({'value': v})['value'] for v in values
+                ] if isinstance(values, list) else values
+                for key, values in restyle_data.items()
+            }
+            msg['restyle'] = {
+                'data': self._encode_undefined(restyle_data), 'traces': trace_indexes
+            }
         for ref, (m, _) in self._models.copy().items():
             self._apply_update([], msg, m, ref)
 
@@ -287,7 +335,9 @@ class Plotly(ModelPane):
             layout['shapes'] = [
                 cls._convert_trace(shape) for shape in layout['shapes']
             ]
-        return {'data': data, 'layout': layout}
+        # Frames bypass the ColumnDataSource conversions for arrays and dates.
+        frames = [json.loads(frame.to_json()) for frame in fig.frames]
+        return {'data': data, 'layout': layout, 'frames': frames}
 
     def _init_params(self):
         viewport_params = [p for p in self.param if 'viewport' in p]
@@ -469,7 +519,7 @@ class Plotly(ModelPane):
         except Exception:
             update_frames = True
 
-        updates: dict[str, Any] = {}
+        updates: dict[str, t.Any] = {}
         if self.sizing_mode is self.param.sizing_mode.default and 'autosize' in layout:
             autosize = layout.get('autosize')
             styles = dict(model.styles)

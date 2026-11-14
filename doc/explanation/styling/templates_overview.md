@@ -23,13 +23,13 @@ These four areas behave very similarly to other Panel layout components and have
 
 Panel ships with a number of these default themes built on different CSS frameworks:
 
-* **[``MaterialTemplate``](../../reference/templates/Material.md)**: Built on [Material Components for the web](https://material.io/develop/web/)
-* **[``BootstrapTemplate``](../../reference/templates/Bootstrap.md)**: Built on  [Bootstrap v4](https://getbootstrap.com/docs/4.0/getting-started/introduction/)
-* **[``VanillaTemplate``](../../reference/templates/Vanilla.md)**: Built using pure CSS without relying on any specific framework
-* **[``FastListTemplate``](../../reference/templates/FastListTemplate.md)**: Built on the [Fast UI](https://fast.design/) framework using a list-like API
-* **[``FastGridTemplate``](../../reference/templates/FastGridTemplate.md)**: Built on the [Fast UI](https://fast.design/) framework using grid-like API
-* **[``GoldenTemplate``](../../reference/templates/GoldenLayout.md)**: Built on the [Golden Layout](https://golden-layout.com/) framework
-* **[``Slidestemplate``](../../reference/templates/Slides.md)**: For presentations, built on [reveal.js](https://revealjs.com/) framework
+* **[``MaterialTemplate``](../../reference/classic/templates/Material.md)**: Built on [Material Components for the web](https://material.io/develop/web/)
+* **[``BootstrapTemplate``](../../reference/classic/templates/Bootstrap.md)**: Built on  [Bootstrap v4](https://getbootstrap.com/docs/4.0/getting-started/introduction/)
+* **[``VanillaTemplate``](../../reference/classic/templates/Vanilla.md)**: Built using pure CSS without relying on any specific framework
+* **[``FastListTemplate``](../../reference/classic/templates/FastListTemplate.md)**: Built on the [Fast UI](https://fast.design/) framework using a list-like API
+* **[``FastGridTemplate``](../../reference/classic/templates/FastGridTemplate.md)**: Built on the [Fast UI](https://fast.design/) framework using grid-like API
+* **[``GoldenTemplate``](../../reference/classic/templates/GoldenLayout.md)**: Built on the [Golden Layout](https://golden-layout.com/) framework
+* **[``Slidestemplate``](../../reference/classic/templates/Slides.md)**: For presentations, built on [reveal.js](https://revealjs.com/) framework
 
 ## Related Resources
 

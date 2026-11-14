@@ -3,23 +3,23 @@ Defines utilities to save panel objects to files as HTML or PNG.
 """
 from __future__ import annotations
 
+import importlib.util
 import io
-import os
+import typing as t
 
-from collections.abc import Iterable
-from typing import IO, TYPE_CHECKING, Any
-
-import bokeh
+from contextlib import contextmanager
 
 from bokeh.document.document import Document
 from bokeh.embed.elements import html_page_for_render_items
 from bokeh.embed.util import (
     OutputDocumentFor, standalone_docs_json_and_render_items,
 )
+from bokeh.io import browser as bk_browser, webdriver as bk_webdriver
 from bokeh.io.export import get_screenshot_as_png
 from bokeh.model import Model
 from bokeh.models import UIElement
 from bokeh.resources import CDN, INLINE, Resources as BkResources
+from bokeh.settings import settings as bk_settings
 from pyviz_comms import Comm
 
 from ..config import config
@@ -31,10 +31,16 @@ from .resources import (
 )
 from .state import state
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
+    import os
+
+    from collections.abc import Iterable, Iterator
+
     from bokeh.embed.standalone import ThemeLike
+    from bokeh.io.export import ExportBackendType
     from jinja2 import Template
 
+    from ..template.base import BaseTemplate
     from ..viewable import Viewable
     from .resources import MODES
 
@@ -57,15 +63,31 @@ else
   doc.idle.connect(done);
 """
 
-bokeh.io.export._WAIT_SCRIPT = _WAIT_SCRIPT
+@contextmanager
+def _patch_export_html(get_layout_html: t.Callable[..., str]) -> Iterator[None]:
+    # Since Bokeh 3.10 each export backend imports these from bokeh.io.util
+    # into its own namespace, so that is where they have to be replaced.
+    patches = {"get_layout_html": get_layout_html, "_WAIT_SCRIPT": _WAIT_SCRIPT}
+    originals = [(module, {attr: getattr(module, attr) for attr in patches}) for module in (bk_browser, bk_webdriver)]
+    for module, _ in originals:
+        for attr, value in patches.items():
+            setattr(module, attr, value)
+    try:
+        yield
+    finally:
+        for module, values in originals:
+            for attr, value in values.items():
+                setattr(module, attr, value)
+
 
 def save_png(
     model: UIElement | Document,
-    filename: str | os.PathLike | IO,
+    filename: str | os.PathLike | t.IO,
     resources: BkResources = CDN,
     template=None,
-    template_variables: dict[str, Any] | None = None,
-    timeout: int = 5
+    template_variables: dict[str, t.Any] | None = None,
+    timeout: int = 5,
+    backend: ExportBackendType | None = None,
 ) -> None:
     """
     Saves a bokeh model to png
@@ -84,12 +106,26 @@ def save_png(
       template_variables file dict, as used by bokeh.file_html
     timeout: int
       The maximum amount of time (in seconds) to wait for
+    backend: 'selenium' | 'playwright' | None
+      Browser automation used to take the screenshot. If None, a browser
+      set on ``pn.state.webdriver`` is used, otherwise Bokeh's default
+      (the ``BOKEH_EXPORT_BACKEND`` setting, else Selenium if installed,
+      else Playwright).
     """
-    from bokeh.io.webdriver import webdriver_control
-    if not state.webdriver:
-        state.webdriver = webdriver_control.create()
-
-    webdriver = state.webdriver
+    if backend is None and state.webdriver is None:
+        # Bokeh's own resolution order, so a Selenium driver is only created
+        # (and cached on state) when Bokeh would have picked Selenium anyway.
+        configured = bk_settings.export_backend()
+        if configured not in ("selenium", "playwright"):
+            configured = "selenium" if importlib.util.find_spec("selenium") else "playwright"
+        backend = t.cast("ExportBackendType", configured)
+    if backend == "playwright":
+        # Bokeh's Playwright backend launches and reuses its own browser.
+        webdriver = None
+    else:
+        if state.webdriver is None:
+            state.webdriver = bk_webdriver.webdriver_control.create()
+        webdriver = state.webdriver
 
     if template is None:
         template = r"""\
@@ -108,27 +144,23 @@ def save_png(
         {% endblock %}
         """
 
-    try:
-        def get_layout_html(obj: UIElement | Document, resources: Resources, width: int | None, height: int | None, **kwargs):
-            resources = Resources.from_bokeh(resources)
-            return file_html(
-                obj, resources, title="", template=template,
-                template_variables=template_variables or {},
-                _always_new=True
-            )
-        old_layout_fn = bokeh.io.export.get_layout_html
-        bokeh.io.export.get_layout_html = get_layout_html    # type: ignore
-        img = get_screenshot_as_png(model, driver=webdriver, timeout=timeout, resources=resources)
+    def get_layout_html(obj: UIElement | Document, resources: Resources, width: int | None, height: int | None, **kwargs):
+        resources = Resources.from_bokeh(resources)
+        return file_html(
+            obj, resources, title="", template=template,
+            template_variables=template_variables or {},
+            _always_new=True
+        )
 
-        if img.width == 0 or img.height == 0:
-            raise ValueError("unable to save an empty image")
+    with _patch_export_html(get_layout_html):
+        img = get_screenshot_as_png(
+            model, driver=webdriver, timeout=timeout, resources=resources, backend=backend
+        )
 
-        img.save(filename, format="png")
-    except Exception:
-        raise
-    finally:
-        if template:
-            bokeh.io.export.get_layout_html = old_layout_fn
+    if img.width == 0 or img.height == 0:
+        raise ValueError("unable to save an empty image")
+
+    img.save(filename, format="png")
 
 def _title_from_models(models: Iterable[Model], title: str) -> str:
     if title is not None:
@@ -149,7 +181,7 @@ def file_html(
     resources: BkResources,
     title: str | None = None,
     template: Template | str = BASE_TEMPLATE,
-    template_variables: dict[str, Any] = {},
+    template_variables: dict[str, t.Any] = {},
     theme: ThemeLike = None,
     _always_new: bool = False
 ):
@@ -161,7 +193,10 @@ def file_html(
     else:
         models_seq = models
 
-    template_variables['dist_url'] = CDN_DIST
+    from ..theme.base import design_template_variables
+    template_variables = {
+        **design_template_variables(), **template_variables, 'dist_url': CDN_DIST
+    }
 
     with OutputDocumentFor(models_seq, apply_theme=theme, always_new=_always_new):
         (docs_json, render_items) = standalone_docs_json_and_render_items(
@@ -179,12 +214,12 @@ def file_html(
 #---------------------------------------------------------------------
 
 def save(
-    panel: Viewable | Document,
-    filename: str | os.PathLike | IO,
+    panel: Viewable | Document | BaseTemplate,
+    filename: str | os.PathLike | t.IO,
     title: str | None = None,
-    resources: BkResources | None = None,
+    resources: BkResources | str | None = None,
     template: Template | str | None = None,
-    template_variables: dict[str, Any] | None = None,
+    template_variables: dict[str, t.Any] | None = None,
     embed: bool = False,
     max_states: int = 1000,
     max_opts: int = 3,
@@ -202,7 +237,7 @@ def save(
 
     Parameters
     ----------
-    panel: Viewable
+    panel: Viewable | bokeh.document.Document | panel.template.base.BaseTemplate
       The Panel Viewable to save to file
     filename: str or file-like object
       Filename to save the plot to
@@ -235,6 +270,9 @@ def save(
     as_png: boolean (default=None)
         To save as a .png. If None save_png will be true if filename is
         string and ends with png.
+    **kwargs
+        Passed to `save_png` when saving a .png, e.g. ``timeout`` or
+        ``backend='playwright'``.
     """
     from ..pane import PaneBase
     from ..template import BaseTemplate
@@ -278,14 +316,18 @@ def save(
                 template_variables.update(doc._template_variables)
             model = doc
         else:
-            model = panel.get_root(doc, comm)
-            if embed:
-                embed_state(
-                    panel, model, doc, max_states, max_opts, embed_json,
-                    json_prefix, save_path, load_path, progress, embed_states
-                )
-            else:
-                add_to_doc(model, doc, True)
+            # Models resolve the urls of the resources they need when they are
+            # created, so the mode has to be set before rendering, not just
+            # when the page is written out.
+            with set_resource_mode(mode):
+                model = panel.get_root(doc, comm)
+                if embed:
+                    embed_state(
+                        panel, model, doc, max_states, max_opts, embed_json,
+                        json_prefix, save_path, load_path, progress, embed_states
+                    )
+                else:
+                    add_to_doc(model, doc, True)
 
     if isinstance(model, Model) and not isinstance(model, UIElement):
         raise ValueError("Cannot render non-UI components.")
@@ -308,6 +350,14 @@ def save(
         kwargs['template_variables'] = template_variables
 
     save_resources = Resources.from_bokeh(resources, absolute=True)
+
+    if save_resources.mode == 'inline':
+        from .notebook import patch_inline_stylesheets
+
+        # Component stylesheets resolve to CDN urls even in inline mode,
+        # which a self-contained file must not depend on.
+        for submodel in doc.select({'type': UIElement}):
+            patch_inline_stylesheets(submodel, doc)
 
     # Set resource mode
     with set_resource_mode(save_resources.mode):

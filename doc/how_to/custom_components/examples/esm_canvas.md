@@ -69,20 +69,20 @@ export function render({model, el}){
 """
 
 canvas = Canvas(height=400, width=400)
-png_view = pn.pane.HTML(
+png_view = pn.ui.HTML(
     pn.rx("<img src='{uri}'></img>").format(uri=canvas.param.uri),
     height=400
 )
 
-pn.Column(
+pn.ui.Column(
     '# Drag on canvas to draw\n To export the drawing to a png click save.',
     pn.Param(
         canvas.param,
-        default_layout=pn.Row,
+        default_layout=pn.ui.Row,
         parameters=['color', 'line_width'],
         show_name=False
     ),
-    pn.Row(
+    pn.ui.Row(
         canvas,
         png_view
     ),

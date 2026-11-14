@@ -3,9 +3,9 @@ Editable template
 """
 from __future__ import annotations
 
+import json
 import pathlib
-
-from typing import TYPE_CHECKING
+import typing as t
 
 import param
 
@@ -15,7 +15,7 @@ from ...config import config
 from ...reactive import ReactiveHTML
 from ..vanilla import VanillaTemplate
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from bokeh.document import Document
     from pyviz_comms import Comm
 
@@ -28,11 +28,11 @@ class TemplateEditor(ReactiveHTML):
     the current layout state with Python.
     """
 
-    layout = param.List(doc="""
+    layout: list[dict[str, t.Any]] = param.List(item_type=dict, doc="""
         The current layout of the template, which is updated by the editor.
         It is a list of dictionaries with the keys 'id', 'width', 'height', and 'visible'.
         The 'id' corresponds to the component's model id, while 'width' and 'height'
-        are in percentage of the grid cell size.""")
+        are in percentage of the grid cell size.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     _scripts = {
         'render': """
@@ -105,7 +105,7 @@ class EditableTemplate(VanillaTemplate):
     ]
 
     _resources = {
-        "css": {"lato": "https://fonts.googleapis.com/css?family=Lato&subset=latin,latin-ext"},
+        "font": {"lato": "https://fonts.googleapis.com/css?family=Lato&subset=latin,latin-ext"},
         "js": {
             "interactjs": f"{config.npm_cdn}/interactjs@1.10.19/dist/interact.min.js",
             "muuri": f"{config.npm_cdn}/muuri@0.9.5/dist/muuri.min.js",
@@ -123,7 +123,9 @@ class EditableTemplate(VanillaTemplate):
         self._render_variables['muuri_layout'] = list(layout.values())
         self._render_variables['editable'] = self.editable
         self._render_variables['local_save'] = self.local_save
-        self._render_variables['loading_spinner'] = config.loading_spinner
+        self._render_variables['loading_classes'] = json.dumps(
+            self._design.loading_css_classes()
+        )
         super()._update_vars()
 
     def _init_doc(

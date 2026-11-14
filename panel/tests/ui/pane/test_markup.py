@@ -6,10 +6,13 @@ pytest.importorskip("playwright")
 
 from playwright.sync_api import expect
 
-from panel.layout import Row
+from panel.custom import Child, JSComponent
+from panel.layout import Column, Row
 from panel.models import HTML
-from panel.pane import Markdown
+from panel.models.markup import HTMLStreamEvent
+from panel.pane import HTML as HTMLPane, Markdown
 from panel.tests.util import serve_component, wait_until
+from panel.widgets import Button
 
 pytestmark = pytest.mark.ui
 
@@ -91,6 +94,34 @@ def test_markdown_pane_visible_toggle(page):
     expect(page.locator(".markdown").locator("div")).to_be_visible()
 
 
+class UnrenderedChild(JSComponent):
+
+    child = Child()
+
+    _esm = """
+    export function render() {
+      const div = document.createElement("div")
+      div.className = "unrendered-parent"
+      return div
+    }
+    """
+
+
+def test_markdown_pane_visible_toggle_before_render(page):
+    md = Markdown('Initial', visible=False)
+    errors = []
+    page.on("pageerror", lambda error: errors.append(error))
+
+    serve_component(page, UnrenderedChild(child=md))
+
+    expect(page.locator(".unrendered-parent")).to_be_attached()
+
+    md.visible = True
+
+    page.wait_for_timeout(500)
+    assert errors == []
+
+
 def test_markdown_pane_stream(page):
     md = Markdown('Empty', enable_streaming=True)
 
@@ -105,6 +136,81 @@ def test_markdown_pane_stream(page):
     assert md.object == ''.join(map(str, range(100)))
 
     expect(page.locator('.markdown')).to_have_text(md.object)
+
+
+def test_markdown_pane_stream_keeps_completed_blocks(page):
+    md = Markdown('# Title', enable_streaming=True)
+
+    serve_component(page, md)
+
+    # The first streamed update re-renders the initial (non-streamed) DOM
+    md.object += '\n\nFirst paragraph'
+    expect(page.locator('.markdown p')).to_have_text('First paragraph')
+    page.locator('.markdown h1').evaluate("el => { el.dataset.marker = 'kept' }")
+
+    for i in range(20):
+        md.object += f' word{i}'
+    md.object += '\n\nSecond paragraph'
+
+    expect(page.locator('.markdown p').nth(1)).to_have_text('Second paragraph')
+    expect(page.locator('.markdown h1')).to_have_attribute('data-marker', 'kept')
+    expect(page.locator('.markdown p').first).to_have_text(
+        'First paragraph ' + ' '.join(f'word{i}' for i in range(20))
+    )
+
+
+def test_markdown_pane_stream_matches_full_render(page):
+    src = (
+        "## Heading\n\nSome *text* & <b>html</b> with `code`.\n\n"
+        "- item\n  - nested\n\n```python\nx = {'a': [1, 2]}\n```\n\n"
+        "| a | b |\n|---|---|\n| 1 | 2 |\n"
+    )
+    streamed = Markdown('', enable_streaming=True, css_classes=['streamed'])
+    reference = Markdown(src, css_classes=['reference'])
+
+    serve_component(page, Column(streamed, reference))
+
+    for i in range(0, len(src), 3):
+        streamed.object = src[:i+3]
+
+    inner_html = "el => [...el.shadowRoot.children].filter(c => c.tagName === 'DIV').pop().innerHTML"
+    expect(page.locator('.streamed table')).to_be_visible()
+    wait_until(lambda: (
+        page.locator('.streamed').evaluate(inner_html) ==
+        page.locator('.reference').evaluate(inner_html)
+    ), page)
+    expect(page.locator('.streamed .copybtn')).to_have_count(1)
+
+
+def test_markdown_pane_stream_emoji(page):
+    md = Markdown('', enable_streaming=True, disable_anchors=True)
+
+    serve_component(page, md)
+
+    expected = ''
+    for token in ['Hi 😀', ' there', ' 🎉🎉', ' **bold** 👍', ' end']:
+        md.object += token
+        expected += token
+        page.wait_for_timeout(50)
+
+    expect(page.locator('.markdown p')).to_have_text('Hi 😀 there 🎉🎉 bold 👍 end')
+    expect(page.locator('.markdown strong')).to_have_text('bold')
+
+
+def test_html_pane_stream_events_applied_in_order(page):
+    pane = HTMLPane('<p>a</p>', enable_streaming=True)
+
+    serve_component(page, pane)
+
+    expect(page.locator('p')).to_have_text('a')
+
+    # Event 2 arrives before event 1 and is only applied after it
+    pane._send_event(HTMLStreamEvent, patch=escape('c'), start=5, end=5, version=2)
+    pane._send_event(HTMLStreamEvent, patch=escape('b'), start=4, end=4, version=1)
+    # Replayed events are ignored
+    pane._send_event(HTMLStreamEvent, patch=escape('b'), start=4, end=4, version=1)
+
+    expect(page.locator('p')).to_have_text('abc')
 
 
 def test_html_model_no_stylesheet(page):
@@ -153,3 +259,137 @@ def test_anchor_scroll_on_init(page):
 
     expect(page.locator('#tag1')).not_to_be_in_viewport()
     expect(page.locator('#tag3')).to_be_in_viewport()
+
+
+def test_markdown_pane_visible_when_stylesheet_fails_to_load(page):
+    # Markup panes hide themselves until their stylesheets have loaded, so a
+    # stylesheet that never arrives must not hide them forever.
+    md = Markdown('Initial', stylesheets=['missing.css'])
+
+    serve_component(page, md)
+
+    expect(page.locator(".markdown").locator("div")).to_be_visible()
+
+
+def test_markdown_pane_visible_after_stylesheet_url_patched(page):
+    # A pane rendered after page load is handed CDN stylesheet URLs, which
+    # Panel patches to the locally served ones as soon as the model is
+    # attached. The patch recreates the <link> elements, discarding the load
+    # events the pane waits on before revealing itself (holoviz/panel#8696).
+    # Never answered, so the pane is still waiting when the URL is patched
+    page.route("**/pending.css", lambda route: None)
+
+    md = Markdown('Added', stylesheets=['pending.css'])
+
+    def app():
+        column = Column()
+        button = Button(label='Add')
+        button.on_click(lambda event: column.append(md))
+        return Column(column, button)
+
+    serve_component(page, app)
+
+    page.get_by_role("button", name="Add").click()
+
+    expect(page.locator(".markdown")).to_have_count(1)
+    expect(page.locator(".markdown").locator("div")).not_to_be_visible()
+
+    page.evaluate("""() => {  // Mimic Panel patching the stylesheet URLs
+      for (const model of Bokeh.documents[0].all_models) {
+        if (String(model.url).includes("pending.css")) {
+          model.url = "patched.css"
+        }
+      }
+    }""")
+
+    expect(page.locator(".markdown").locator("div")).to_be_visible()
+
+
+@pytest.mark.parametrize('renderer', ['markdown-it', 'markdown'])
+def test_markdown_pane_math_with_asterisks(page, renderer):
+    md = Markdown(
+        "$${(100+10)*2=220}$$ **NOT** $${100+10*2=120}$$ done", renderer=renderer
+    )
+
+    serve_component(page, md)
+
+    expect(page.locator(".markdown mjx-container")).to_have_count(2)
+    # 0x3C is the "<" of a stray <em> tag typeset as math
+    expect(page.locator(".markdown mjx-container [data-c='3C']")).to_have_count(0)
+
+
+def test_markdown_pane_stream_math_keeps_completed_blocks(page):
+    md = Markdown('Intro $$a^2$$', enable_streaming=True)
+
+    serve_component(page, md)
+
+    expect(page.locator('.markdown mjx-container')).to_have_count(1)
+
+    # The first streamed update re-renders the initial (non-streamed) DOM
+    md.object += '\n\nSecond $$b^2$$'
+    expect(page.locator('.markdown mjx-container')).to_have_count(2)
+    page.locator('.markdown mjx-container').first.evaluate("el => { el.dataset.marker = 'kept' }")
+
+    for i in range(10):
+        md.object += f' word{i}'
+    md.object += ' and $$c^2$$'
+
+    expect(page.locator('.markdown mjx-container')).to_have_count(3)
+    expect(page.locator('.markdown mjx-container').first).to_have_attribute('data-marker', 'kept')
+    expect(page.locator('.markdown p').nth(1)).to_contain_text('word9 and')
+
+
+def test_markdown_pane_stream_math_matches_full_render(page):
+    src = (
+        "## Heading\n\nInline $$x^2$$ math *and* text.\n\n$$\ny = mx + b\n$$\n\n"
+        "- item $$a_1$$\n- item two\n\nAfter **bold** $$z$$ done.\n"
+    )
+    md = Markdown(src)
+
+    serve_component(page, md)
+
+    # MathJax numbers the ids of the glyphs it emits per typeset call
+    inner_html = """el => [...el.shadowRoot.children].filter(c => c.tagName === 'DIV').pop()
+      .innerHTML.replace(/ (id|xlink:href)="[^"]*"/g, '')"""
+    expect(page.locator('.markdown mjx-container')).to_have_count(4)
+    reference = page.locator('.markdown').evaluate(inner_html)
+
+    md.object = ''
+    expect(page.locator('.markdown mjx-container')).to_have_count(0)
+
+    md.enable_streaming = True
+    for i in range(0, len(src), 3):
+        md.object = src[:i+3]
+
+    expect(page.locator('.markdown mjx-container')).to_have_count(4)
+    wait_until(lambda: page.locator('.markdown').evaluate(inner_html) == reference, page)
+
+
+HAS_MATHJAX_SCRIPT = "[...document.scripts].some((s) => s.src.includes('bokeh-mathjax'))"
+
+def test_markdown_pane_loads_mathjax_lazily(page):
+    md = Markdown('No math yet')
+
+    serve_component(page, md)
+
+    expect(page.locator('.markdown')).to_have_text('No math yet')
+    # Nothing contained math when the page was served
+    assert not page.evaluate(HAS_MATHJAX_SCRIPT)
+
+    md.object = 'Euler $$e^{i\\pi}+1=0$$'
+
+    expect(page.locator('.markdown mjx-container')).to_have_count(1)
+    assert page.evaluate(HAS_MATHJAX_SCRIPT)
+
+
+def test_markdown_pane_stream_loads_mathjax_lazily(page):
+    md = Markdown('Streaming', enable_streaming=True)
+
+    serve_component(page, md)
+
+    expect(page.locator('.markdown')).to_have_text('Streaming')
+    assert not page.evaluate(HAS_MATHJAX_SCRIPT)
+
+    md.object += ' $$e^{i\\pi}+1=0$$'
+
+    expect(page.locator('.markdown mjx-container')).to_have_count(1)

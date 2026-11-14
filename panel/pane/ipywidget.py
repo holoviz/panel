@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import os
-
-from typing import TYPE_CHECKING, Any, ClassVar
+import typing as t
 
 import param
 
@@ -14,7 +13,7 @@ from ..config import config
 from ..models import IPyWidget as _BkIPyWidget
 from .base import Pane
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from bokeh.document import Document
     from pyviz_comms import Comm
 
@@ -39,12 +38,12 @@ class IPyWidget(Pane):
         The IPywidget being wrapped, which will be converted to a
         Bokeh model.""")
 
-    priority: ClassVar[float | bool | None] = 0.6
+    priority: t.ClassVar[float | bool | None] = 0.6
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
+    def applies(cls, object: t.Any) -> float | bool | None:
         try:
-            return (hasattr(obj, 'traits') and hasattr(obj, 'get_manager_state') and hasattr(obj, 'comm'))
+            return (hasattr(object, 'traits') and hasattr(object, 'get_manager_state') and hasattr(object, 'comm'))
         except Exception:
             return False
 
@@ -82,15 +81,18 @@ class IPyWidget(Pane):
 
 class IPyLeaflet(IPyWidget):
 
-    sizing_mode = param.Selector(default='stretch_width', objects=[
+    sizing_mode: t.Literal[
         'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
-        'scale_width', 'scale_height', 'scale_both', None])
+        'scale_width', 'scale_height', 'scale_both'
+    ] | None = param.Selector(default='stretch_width', objects=[
+        'fixed', 'stretch_width', 'stretch_height', 'stretch_both',
+        'scale_width', 'scale_height', 'scale_both', None])  # type: ignore[assignment, ty:invalid-assignment]
 
-    priority: ClassVar[float | bool | None] = 0.7
+    priority: t.ClassVar[float | bool | None] = 0.7
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
-        return IPyWidget.applies(obj) and obj._view_module == 'jupyter-leaflet'
+    def applies(cls, object: t.Any) -> float | bool | None:
+        return IPyWidget.applies(object) and object._view_module == 'jupyter-leaflet'
 
 
 class Reacton(IPyWidget):
@@ -100,8 +102,8 @@ class Reacton(IPyWidget):
         self._rcs = {}
 
     @classmethod
-    def applies(cls, obj: Any) -> float | bool | None:
-        return getattr(obj, '__module__', 'None').startswith('reacton')
+    def applies(cls, object: t.Any) -> float | bool | None:
+        return getattr(object, '__module__', 'None').startswith('reacton')
 
     def _cleanup(self, root: Model | None = None) -> None:
         if root and root.ref['id'] in self._rcs:

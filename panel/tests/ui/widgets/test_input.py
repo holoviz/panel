@@ -556,7 +556,7 @@ def test_datetimepicker_name(page):
     name = 'Datetime Picker'
     # add css class to search for name more easily
     datetime_picker_widget = DatetimePicker(
-        name=name, css_classes=['datetimepicker-with-name']
+        label=name, css_classes=['datetimepicker-with-name']
     )
 
     serve_component(page, datetime_picker_widget)

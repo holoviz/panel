@@ -164,9 +164,58 @@ export class QuillInputView extends HTMLBoxView {
         return
       }
       this._editing = true
-      this.model.text = this.quill.getSemanticHTML()
+      const html = this.quill.getSemanticHTML()
+      this.model.text_input = html
+      if (this.model.on_keyup) {
+        this.model.text = html
+      }
       this._editing = false
     })
+
+    // selection-change drives two behaviors:
+    //   1. When range is null the editor has blurred; if on_keyup is false,
+    //      commit the current content into text (deferred commit). Also
+    //      clear the selection state.
+    //   2. When range is non-null update the selection param with the
+    //      visible text (or clear it if the selection collapsed).
+    // The _editing guard avoids acting on selection-change events fired by
+    // programmatic content replacement (pasteHTML / setContents).
+    this.quill.on("selection-change", (range: any, _oldRange: any, _source: string) => {
+      if (this._editing) {
+        return
+      }
+      if (range === null) {
+        if (!this.model.on_keyup) {
+          this._editing = true
+          this.model.text = this.quill.getSemanticHTML()
+          this._editing = false
+        }
+        if (Object.keys(this.model.selection).length > 0) {
+          this.model.selection = {}
+        }
+        return
+      }
+      if (range.length > 0) {
+        const text = this.quill.getText(range.index, range.length)
+        this.model.selection = {text}
+      } else if (Object.keys(this.model.selection).length > 0) {
+        this.model.selection = {}
+      }
+    })
+
+    // Ctrl/Cmd+Enter commits text_input -> text when on_keyup is false.
+    // preventDefault unconditionally so the shortcut doesn't insert a newline.
+    this.quill.root.addEventListener("keydown", (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        e.preventDefault()
+        if (!this.model.on_keyup) {
+          this._editing = true
+          this.model.text = this.quill.getSemanticHTML()
+          this._editing = false
+        }
+      }
+    })
+
     if (!this.model.disabled) {
       this.quill.enable(!this.model.disabled)
     }
@@ -199,8 +248,11 @@ export namespace QuillInput {
 
   export type Props = HTMLBox.Props & {
     mode:        p.Property<string>
+    on_keyup:    p.Property<boolean>
     placeholder: p.Property<string>
+    selection:   p.Property<{[key: string]: any}>
     text:        p.Property<string>
+    text_input:  p.Property<string>
     toolbar:     p.Property<any>
   }
 }
@@ -219,11 +271,14 @@ export class QuillInput extends HTMLBox {
   static {
     this.prototype.default_view = QuillInputView
 
-    this.define<QuillInput.Props>(({Any, Str}) => ({
-      mode:         [ Str, "toolbar" ],
-      placeholder:  [ Str,        "" ],
-      text:         [ Str,        "" ],
-      toolbar:      [ Any,         null ],
+    this.define<QuillInput.Props>(({Any, Bool, Dict, Str}) => ({
+      mode:         [ Str,              "toolbar" ],
+      on_keyup:     [ Bool,                  true ],
+      placeholder:  [ Str,                     "" ],
+      selection:    [ Dict(Any),               {} ],
+      text:         [ Str,                     "" ],
+      text_input:   [ Str,                     "" ],
+      toolbar:      [ Any,                   null ],
     }))
 
     this.override<QuillInput.Props>({

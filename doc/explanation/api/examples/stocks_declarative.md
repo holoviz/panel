@@ -11,7 +11,7 @@ import plotly.graph_objects as go
 from bokeh.sampledata import stocks
 from matplotlib.figure import Figure
 
-pn.extension('plotly', 'vega', template='bootstrap')
+pn.extension('plotly', 'vega', template='page')
 import hvplot.pandas
 
 tickers = ['AAPL', 'FB', 'GOOG', 'IBM', 'MSFT']
@@ -74,8 +74,8 @@ class StockExplorer(param.Parameterized):
 
 explorer = StockExplorer()
 
-pn.Row(
-    pn.Column(explorer.param),
+pn.ui.Row(
+    pn.ui.Column(explorer.param),
     pn.panel(explorer.plot, sizing_mode='stretch_width'),
 ).servable()
 ```

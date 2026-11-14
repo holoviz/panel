@@ -7,7 +7,7 @@ from playwright.sync_api import expect
 from panel.chat import ChatMessage
 from panel.tests.util import serve_component
 
-pytestmark = pytest.mark.ui
+pytestmark = [pytest.mark.ui, pytest.mark.internet]
 
 
 def test_chat_message_dynamic_footer_objects(page):

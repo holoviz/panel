@@ -14,10 +14,10 @@ class CallbackException(Parameter):
     def _validate(self, val):
         self._validate_value(val, self.allow_None)
 
-    def _validate_value(self, val, allow_None, valid=("raise", "summary", "verbose", "traceback", "ignore")):
-        if ((val is None and allow_None) or val in valid or callable(val)):
+    def _validate_value(self, value, allow_None, valid=("raise", "summary", "verbose", "traceback", "ignore")):
+        if ((value is None and allow_None) or value in valid or callable(value)):
             return
         raise ValueError(
-            f"Callback exception mode {val} not recognized. "
+            f"Callback exception mode {value} not recognized. "
             f"Valid options are {valid} or a callable."
         )

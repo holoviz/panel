@@ -23,7 +23,7 @@ ECHARTS_THEMES = {
     "vintage": "https://fastly.jsdelivr.net/npm/echarts/theme/vintage.js?_v_=20200710_1",
 }
 
-pn.pane.ECharts.param.theme.objects = pn.pane.ECharts.param.theme.objects + list(
+pn.ui.ECharts.param.theme.objects = pn.ui.ECharts.param.theme.objects + list(
     ECHARTS_THEMES
 )
 
@@ -38,11 +38,11 @@ echart_bar = {
     "series": [{"name": "Sales", "type": "bar", "data": [5, 20, 36, 10, 10, 20]}],
 }
 
-plot = pn.pane.ECharts(
+plot = pn.ui.ECharts(
     echart_bar,
     height=500,
     sizing_mode="stretch_width",
     theme=THEME,
 )
-pn.Column(plot.param.theme, plot, sizing_mode="stretch_width").servable()
+pn.ui.Column(plot.param.theme, plot, sizing_mode="stretch_width").servable()
 ```

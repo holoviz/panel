@@ -6,13 +6,11 @@ from __future__ import annotations
 
 import os
 import sys
+import typing as t
 import uuid
 
 from functools import partial
 from pathlib import Path, PurePath
-from typing import (
-    IO, TYPE_CHECKING, Any, ClassVar, Literal, cast,
-)
 
 import jinja2
 import param
@@ -29,7 +27,7 @@ from ..io.notebook import render_template
 from ..io.notifications import NotificationArea, NotificationAreaBase
 from ..io.resources import (
     BUNDLE_DIR, CDN_DIST, JS_VERSION, ResourceComponent, _env,
-    component_resource_path, get_dist_path, loading_css, parse_template,
+    component_resource_path, get_dist_path, parse_template,
     resolve_custom_path, use_cdn,
 )
 from ..io.save import save
@@ -44,6 +42,7 @@ from ..reactive import ReactiveHTML
 from ..theme.base import (
     THEMES, DefaultTheme, Design, Theme,
 )
+from ..theme.native import Native
 from ..util import isurl
 from ..viewable import (
     MimeRenderMixin, Renderable, ServableMixin, Viewable,
@@ -51,7 +50,7 @@ from ..viewable import (
 from ..widgets import Button
 from ..widgets.indicators import BooleanIndicator, LoadingSpinner
 
-if TYPE_CHECKING:
+if t.TYPE_CHECKING:
     from bokeh.model import Model
     from bokeh.server.contexts import BokehSessionContext
     from jinja2 import Template as _Template
@@ -91,17 +90,17 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
                                 constant=True, is_instance=False, instantiate=False)
 
     # Dictionary of property overrides by Viewable type
-    modifiers: ClassVar[dict[type[Viewable], dict[str, Any]]] = {}
+    modifiers: t.ClassVar[dict[type[Viewable], dict[str, t.Any]]] = {}
 
     #############
     # Resources #
     #############
 
     # pathlib.Path pointing to local CSS file(s)
-    _css: ClassVar[list[Path | str]] = []
+    _css: t.ClassVar[list[Path | str]] = []
 
     # pathlib.Path pointing to local JS file(s)
-    _js: ClassVar[Path | str | list[Path | str] | None] = None
+    _js: t.ClassVar[Path | str | list[Path | str] | None] = None
 
     # External resources
     _resources = {
@@ -118,7 +117,13 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
             p: v for p, v in params.items() if p in _base_config.param
         }
         self._render_items: dict[str, tuple[Renderable, list[str]]]  = {}
-        self._render_variables: dict[str, Any] = {}
+        self._render_variables: dict[str, t.Any] = {}
+        if (
+            'design' not in params
+            and self.param.design.default in (None, Design, Native)
+            and config.design is not None
+        ):
+            params['design'] = config.design
         super().__init__(**{
             p: v for p, v in params.items() if p not in _base_config.param or p == 'name'
         })
@@ -151,15 +156,15 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
     def _build_layout(self) -> Column:
         str_repr = Str(repr(self))
         server_info = HTML('')
-        button = Button(name='Launch server')
+        button = Button(label='Launch server')
         def launch(event):
             if self._server:
-                button.name = 'Launch server'
+                button.label = 'Launch server'
                 server_info.object = ''
                 self._server.stop()
                 self._server = None
             else:
-                button.name = 'Stop server'
+                button.label = 'Stop server'
                 self._server = self._get_server(start=True, show=True)
                 server_info.object = _server_info.format(port=self._server.port)
         button.param.watch(launch, 'clicks')
@@ -218,45 +223,47 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         objs, models = [], []
         stylesheets, sizing_modes = {}, {}
         tracked_models: set[Model] = set()
-        for name, (obj, tags) in self._render_items.items():
-            # Render root without pre-processing
-            with config.set(design=self.design):
+        # A single design override for every render item; config.set is
+        # expensive enough that entering it per item dominated this loop.
+        with config.set(design=self.design):
+            for name, (obj, tags) in self._render_items.items():
+                # Render root without pre-processing
                 model = obj.get_root(document, comm, preprocess=False)
-            model.name = name
-            model.tags = model.tags + [tag for tag in tags if tag not in model.tags]
-            mref = model.ref['id']
-            if isinstance(model, LayoutDOM):
-                sizing_modes[mref] = model.sizing_mode
-                if self._design._apply_hooks not in obj._hooks:
-                    obj._hooks.append(self._design._apply_hooks)
+                model.name = name
+                model.tags = model.tags + [tag for tag in tags if tag not in model.tags]
+                mref = model.ref['id']
+                if isinstance(model, LayoutDOM):
+                    sizing_modes[mref] = model.sizing_mode
+                    if self._design._apply_hooks not in obj._hooks:
+                        obj._hooks.append(self._design._apply_hooks)
 
-                # Alias model ref with the fake root ref to ensure that
-                # pre-processor correctly operates on fake root
-                for sub in obj.select(Viewable):
-                    submodel = sub._models.get(mref)
-                    for stylesheet in getattr(sub, '_stylesheets', []):
-                        if isinstance(stylesheet, PurePath):
-                            stylesheet = str(stylesheet)
-                        if not stylesheet.endswith('.css'):
+                    # Alias model ref with the fake root ref to ensure that
+                    # pre-processor correctly operates on fake root
+                    for sub in obj.select(Viewable):
+                        submodel = sub._models.get(mref)
+                        for stylesheet in getattr(sub, '_stylesheets', []):
+                            if isinstance(stylesheet, PurePath):
+                                stylesheet = str(stylesheet)
+                            if not stylesheet.endswith('.css'):
+                                continue
+                            sts_name = f'extra_{os.path.basename(stylesheet)}'
+                            stylesheets[sts_name] = stylesheet
+                        if submodel is None:
                             continue
-                        sts_name = f'extra_{os.path.basename(stylesheet)}'
-                        stylesheets[sts_name] = stylesheet
-                    if submodel is None:
-                        continue
-                    sub._models[ref] = submodel
-                    if isinstance(sub, HoloViews) and mref in sub._plots:
-                        sub._plots[ref] = sub._plots.get(mref)
+                        sub._models[ref] = submodel
+                        if isinstance(sub, HoloViews) and mref in sub._plots:
+                            sub._plots[ref] = sub._plots.get(mref)
 
-                # Apply any template specific hooks to root
-                self._apply_root(name, model, tags)
+                    # Apply any template specific hooks to root
+                    self._apply_root(name, model, tags)
 
-                # Add document
-                obj._documents[document] = model
-                objs.append(obj)
-                models.append(model)
+                    # Add document
+                    obj._documents[document] = model
+                    objs.append(obj)
+                    models.append(model)
 
-            tracked_models |= add_to_doc(model, document, hold=bool(comm), skip=tracked_models)
-            document.on_session_destroyed(obj._server_destroy) # type: ignore
+                tracked_models |= add_to_doc(model, document, hold=bool(comm), skip=tracked_models)
+                document.on_session_destroyed(obj._server_destroy) # type: ignore
 
         # Here we ensure that the preprocessor is run across all roots
         # and set up session cleanup hooks for the fake root.
@@ -265,7 +272,13 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         col.objects = objs
         preprocess_root.children[:] = models
         preprocess_root.document = document
-        self._design.apply(col, preprocess_root, isolated=False)
+        # The design hook appended to the fake root applies the design to
+        # every render item when the root is preprocessed, so applying it
+        # explicitly as well walked the whole tree twice. Only the document
+        # theme, which the hook does not set, is applied here.
+        theme = self._design.theme
+        if theme and theme.bokeh_theme:
+            document.theme = theme.bokeh_theme
         col._preprocess(preprocess_root)
         col._documents[document] = preprocess_root
         document.on_session_destroyed(col._server_destroy) # type: ignore
@@ -335,7 +348,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
 
     def resolve_resources(
         self,
-        cdn: bool | Literal['auto'] = 'auto',
+        cdn: bool | t.Literal['auto'] = 'auto',
         extras: dict[str, dict[str, str]] | None = None
     ) -> ResourcesType:
         """
@@ -368,10 +381,11 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         dist_path = get_dist_path(cdn=cdn)
         version_suffix = f'?v={JS_VERSION}'
 
-        css_files['loading'] = f'{dist_path}css/loading.css{version_suffix}'
-        raw_css.extend(list(self.config.raw_css) + [loading_css(
-            config.loading_spinner, config.loading_color, config.loading_max_height
-        )])
+        loading = self._design.loading_resources(dist_path=dist_path)
+        for i, css in enumerate(loading['css']):
+            res_name = 'loading' if not i else f'loading_{i}'
+            css_files[res_name] = f'{css}{version_suffix}'
+        raw_css.extend(list(self.config.raw_css) + loading['raw_css'])
         for rname, res in self._design.resolve_resources(cdn).items():
             if isinstance(res, dict):
                 resource_types[rname].update(res)  # type: ignore
@@ -389,6 +403,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
                 js = f'{state.rel_path}/{js}'
             js_modules[rname] = js
         for i, css in enumerate(list(self.config.css_files)):
+            css = t.cast("str", css)
             if '//' not in css and state.rel_path:
                 css = f'{state.rel_path}/{css}'
             css_files[f'config_{i}'] = css
@@ -412,7 +427,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
             if (BUNDLE_DIR / tmpl_name / css_file).is_file():
                 css_files[f'base_{css_file}'] = f'{dist_path}bundled/{tmpl_name}/{css_file}{version_suffix}'
             elif isurl(css):
-                css_files[f'base_{css_file}'] = cast("str", css)
+                css_files[f'base_{css_file}'] = t.cast("str", css)
             elif resolve_custom_path(self, css):
                 css_files[f'base_{css_file}' ] = component_resource_path(self, '_css', css)
 
@@ -432,16 +447,16 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
                     tmpl_name = cls.__name__.lower()
             js_name = os.path.basename(js)
             if (BUNDLE_DIR / tmpl_name / js_name).is_file():
-                js_files[f'base_{js_name}'] = dist_path + f'bundled/{tmpl_name}/{js_name}'
+                js_files[f'base_{js_name}'] = f'{dist_path}bundled/{tmpl_name}/{js_name}{version_suffix}'
             elif isurl(js):
-                js_files[f'base_{js_name}'] = cast("str", js)
+                js_files[f'base_{js_name}'] = t.cast("str", js)
             elif resolve_custom_path(self, js):
                 js_files[f'base_{js_name}'] = component_resource_path(self, '_js', js)
 
         return resource_types
 
     def save(
-        self, filename: str | os.PathLike | IO, title: str | None = None,
+        self, filename: str | os.PathLike | t.IO, title: str | None = None,
         resources=None, embed: bool = False, max_states: int = 1000,
         max_opts: int = 3, embed_json: bool = False, json_prefix: str='',
         save_path: str='./', load_path: str | None = None
@@ -580,9 +595,9 @@ class TemplateActions(ReactiveHTML):
         The number of times the close modal action has been triggered.
         This is used to trigger the close modal script.""")
 
-    _template: ClassVar[str] = ""
+    _template: t.ClassVar[str] = ""
 
-    _scripts: ClassVar[dict[str, list[str] | str]] = {
+    _scripts: t.ClassVar[dict[str, list[str] | str]] = {
         'open_modal': ["""
           document.getElementById('pn-Modal').style.display = 'block'
           window.dispatchEvent(new Event('resize'));
@@ -605,8 +620,9 @@ class BasicTemplate(BaseTemplate):
                                          allow_None=True, doc="""
         Visual indicator of application busy state.""")
 
-    collapsed_sidebar = param.Selector(default=False, constant=True, doc="""
-        Whether the sidebar (if present) is initially collapsed.""")
+    collapsed_sidebar: t.Literal[True, False] = param.Selector(
+        default=False, constant=True, doc="""
+        Whether the sidebar (if present) is initially collapsed.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     header = param.ClassSelector(class_=ListLike, constant=True, doc="""
         A list-like container which populates the header bar.""")
@@ -678,9 +694,10 @@ class BasicTemplate(BaseTemplate):
         Specifies the base URL for all relative URLs in a
         page. Default is '', i.e. not the domain.""")
 
-    base_target = param.Selector(default="_self",
+    base_target: t.Literal["_blank", "_self", "_parent", "_top"] = param.Selector(
+        default="_self",
         objects=["_blank", "_self", "_parent", "_top"], doc="""
-        Specifies the base Target for all relative URLs in a page.""")
+        Specifies the base Target for all relative URLs in a page.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     header_background = param.String(doc="""
         Optional header background color override.""")
@@ -697,7 +714,7 @@ class BasicTemplate(BaseTemplate):
     #############
 
     # pathlib.Path pointing to local Jinja2 template
-    _template: ClassVar[Path | None] = None
+    _template: t.ClassVar[Path | None] = None
 
     __abstract = True
 
@@ -732,7 +749,7 @@ class BasicTemplate(BaseTemplate):
         if 'favicon' in params and isinstance(params['favicon'], PurePath):
             params['favicon'] = str(params['favicon'])
         if 'notifications' not in params and config.notifications:
-            params['notifications'] = state.notifications if state.curdoc else NotificationArea()
+            params['notifications'] = state.notifications if state.curdoc else NotificationArea(js_events=state._notification_js_events())
 
         super().__init__(template=template, **params)
         self._js_area = HTML(margin=0, width=0, height=0)
@@ -961,7 +978,7 @@ class Template(BaseTemplate):
 
     def __init__(
         self, template: str | _Template, nb_template: str | _Template | None = None,
-        items: dict[str, Any] | None = None, **params
+        items: dict[str, t.Any] | None = None, **params
     ):
         super().__init__(template=template, nb_template=nb_template, items=items, **params)
         items = {} if items is None else items
@@ -972,7 +989,7 @@ class Template(BaseTemplate):
     # Public API
     #----------------------------------------------------------------
 
-    def add_panel(self, name: str, panel: Any, tags: list[str] = []) -> None:
+    def add_panel(self, name: str, panel: t.Any, tags: list[str] = []) -> None:
         """
         Add panels to the Template, which may then be referenced by
         the given name using the jinja2 embed macro.
@@ -995,7 +1012,7 @@ class Template(BaseTemplate):
         self._render_items[name] = (rendered, tags)
         self._layout[0].object = repr(self) # type: ignore
 
-    def add_variable(self, name: str, value: Any) -> None:
+    def add_variable(self, name: str, value: t.Any) -> None:
         """
         Add parameters to the template, which may then be referenced
         by the given name in the Jinja2 template.

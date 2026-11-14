@@ -53,27 +53,18 @@ class DeckGLPlot(HTMLBox):
     @classproperty
     def __js_skip__(cls):
         return {
-            'deck': cls.__javascript__[:-1],
-            'mapboxgl': cls.__javascript__[-1:],
+            'h3': cls.__javascript__[:1],
+            'deck': cls.__javascript__[1:3],
+            'loaders': cls.__javascript__[3:6],
+            'mapboxgl': cls.__javascript__[6:7],
+            'maplibregl': cls.__javascript__[7:8],
+            'CartoLibrary': cls.__javascript__[8:],
         }
 
-    __js_require__ = {
-        'paths': {
-            "h3": f"{config.npm_cdn}/h3-js@4.1.0/dist/h3-js.umd",
-            "deck-gl": f"{config.npm_cdn}/deck.gl@{DECKGL_VERSION}/dist.min",
-            "deck-json": f"{config.npm_cdn}/@deck.gl/json@{DECKGL_VERSION}/dist.min",
-            "loader-csv": f"{config.npm_cdn}/@loaders.gl/csv@4.2.2/dist/dist.min",
-            "loader-json": f"{config.npm_cdn}/@loaders.gl/json@4.2.2/dist/dist.min",
-            "loader-tiles": f"{config.npm_cdn}/@loaders.gl/3d-tiles@4.2.2/dist/dist.min",
-            "mapbox-gl": "https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl",
-            "carto": f"{config.npm_cdn}/@deck.gl/carto@^{DECKGL_VERSION}/dist.min",
-    },
-        'exports': {"deck-gl": "deck", "mapbox-gl": "mapboxgl", "h3": "h3"},
-        'shim': {
-            'deck-json': {'deps': ["deck-gl"]},
-            'deck-gl': {'deps': ["h3"]}
-        }
-    }
+    # No __js_require__: deck.gl's json and carto bundles embed UMD copies
+    # of their dependencies and call define() anonymously more than once,
+    # which RequireJS rejects. Loaded by script tag instead, they take their
+    # browser-global branch even on a page with RequireJS.
 
     data = Dict(String, Any)
 
