@@ -7,7 +7,9 @@ from panel.config import config
 from panel.io.resources import CDN_DIST, stylesheet_url
 from panel.io.state import set_curdoc, state
 from panel.theme import Bootstrap, Material, Native
-from panel.theme.base import BOKEH_DARK, Design, Inherit
+from panel.theme.base import (
+    BOKEH_DARK, DefaultTheme, Design, Inherit,
+)
 from panel.viewable import Viewable
 from panel.widgets import FloatSlider, IntSlider, TextInput
 
@@ -427,3 +429,19 @@ def test_design_configured_after_creation_applies_at_render(document, comm):
 
     urls = [s.url for s in model.stylesheets if isinstance(s, ImportedStyleSheet)]
     assert any(url.endswith('/bundled/theme/material.css') for url in urls)
+
+
+def test_theme_stylesheets_cached_per_theme():
+    theme = DefaultTheme()
+
+    stylesheets = Native._theme_stylesheets(theme)
+    assert stylesheets == [f'{CDN_DIST}bundled/theme/default.css']
+    assert Native._theme_stylesheets(theme) is stylesheets
+    assert Material._theme_stylesheets(theme) is not stylesheets
+
+    # Changing the theme CSS invalidates the cached stylesheets
+    theme.css = pathlib.Path(__file__).parent / 'test.css'
+    updated = Native._theme_stylesheets(theme)
+    assert updated is not stylesheets
+    assert len(updated) == 2
+    assert updated[0] == stylesheets[0]

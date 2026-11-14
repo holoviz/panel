@@ -29,7 +29,7 @@ from ..links import Link
 from ..models import (
     ReactiveESM as _ReactiveESM, ReactiveHTML as _BkReactiveHTML,
 )
-from ..reactive import Reactive
+from ..reactive import Reactive, drop_default_properties
 from ..util import _descendents, param_reprs
 from ..util.checks import is_dataframe, is_series
 from ..util.parameters import get_params_to_inherit
@@ -626,7 +626,8 @@ class ModelPane(Pane):
             raise NotImplementedError(
                 f'Pane {type(self).__name__} did not define a _bokeh_model'
             )
-        model = self._bokeh_model(**self._get_properties(doc))
+        properties = drop_default_properties(self._bokeh_model, self._get_properties(doc))
+        model = self._bokeh_model(**properties)
         if root is None:
             root = model
         self._models[root.ref['id']] = (model, parent)

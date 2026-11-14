@@ -18,7 +18,7 @@ from param.parameterized import register_reference_transform
 from .._param import Margin
 from ..io.state import state
 from ..layout.base import Row
-from ..reactive import Reactive
+from ..reactive import Reactive, drop_default_properties
 from ..util import edit_readonly, unique_iterator
 from ..util.warnings import find_stack_level
 from ..viewable import Layoutable, Viewable
@@ -258,7 +258,8 @@ class Widget(Reactive, WidgetBase):
             raise NotImplementedError(
                 f'Widget {type(self).__name__} did not define a _widget_type'
             )
-        model = self._widget_type(**self._get_properties(doc))
+        properties = drop_default_properties(self._widget_type, self._get_properties(doc))
+        model = self._widget_type(**properties)
         root = root or model
         self._models[root.ref['id']] = (model, parent)
         self._link_props(model, self._linked_properties, doc, root, comm)
