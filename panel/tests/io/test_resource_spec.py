@@ -7,7 +7,8 @@ from panel.config import config, panel_extension as extension
 from panel.custom import JSComponent
 from panel.io import resources as resources_module
 from panel.io.resource_spec import (
-    SPEC_VERSION, declared_specs, lazy_load_available, resource_spec,
+    COMPILER_CDN_URL, SPEC_VERSION, compiler_url, declared_specs,
+    lazy_load_available, resource_spec,
 )
 from panel.io.resources import (
     CDN_DIST, JS_VERSION, Resources, set_resource_mode,
@@ -416,3 +417,51 @@ def test_resource_spec_ignores_stale_notebook_default_in_server_session(document
         )
     finally:
         resources_module.NOTEBOOK_RESOURCES = old_notebook_resources
+
+
+def test_compiler_url_server_mode_is_relative():
+    assert compiler_url('server') == 'static/extensions/panel/sucrase.min.js'
+
+
+def test_compiler_url_cdn_mode():
+    assert compiler_url('cdn') == COMPILER_CDN_URL == f'{CDN_DIST}sucrase.min.js'
+
+
+def test_compiler_url_inline_falls_back_to_cdn():
+    """
+    The compiler is only fetched once a component without a bundle is
+    compiled, by which time an inline page has nothing left to inline.
+    """
+    assert compiler_url('inline') == COMPILER_CDN_URL
+
+
+@pytest.mark.parametrize('mode', MODES)
+def test_compiler_url_follows_active_mode(mode):
+    with set_resource_mode(mode):
+        assert compiler_url() == compiler_url(mode)
+
+
+def test_compiler_url_respects_rel_path(document):
+    from panel.util import edit_readonly
+    with set_curdoc(document):
+        with edit_readonly(state):
+            state.base_url = '/app/'
+            state.rel_path = '..'
+        try:
+            url = compiler_url('server')
+        finally:
+            with edit_readonly(state):
+                state.base_url = '/'
+                state.rel_path = ''
+    assert url == '../static/extensions/panel/sucrase.min.js'
+
+
+def test_compiler_url_uses_jupyter_endpoint(document, jupyter_endpoint):
+    old_notebook_resources = resources_module.NOTEBOOK_RESOURCES
+    resources_module.NOTEBOOK_RESOURCES = True
+    try:
+        with set_curdoc(document):
+            url = compiler_url('server')
+    finally:
+        resources_module.NOTEBOOK_RESOURCES = old_notebook_resources
+    assert url == '/panel-preview/static/extensions/panel/sucrase.min.js'

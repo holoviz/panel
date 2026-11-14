@@ -30,7 +30,7 @@ from bokeh.model import Model
 from ..config import config
 from ..util import isurl
 from .resources import (
-    Resources, component_resource_path, extension_declared,
+    CDN_DIST, Resources, component_resource_path, extension_declared,
     get_notebook_resources, get_resource_mode, resolve_resource_cdn,
     set_resource_mode,
 )
@@ -60,6 +60,10 @@ _RESOURCE_ATTRS = (
 _CUSTOM_ELEMENT_RE = re.compile(r"^customElements\.get\(\s*['\"]([^'\"]+)['\"]\s*\)\s*$")
 
 _SPEC_CACHE: dict[t.Any, dict[str, t.Any] | None] = {}
+
+# The in-browser compiler (sucrase) is built into its own dist file so that
+# panel.js does not carry it for the components that ship a compiled bundle.
+COMPILER_CDN_URL = f'{CDN_DIST}sucrase.min.js'
 
 
 class _Entry(t.NamedTuple):
@@ -266,6 +270,21 @@ def _shim_url(resources: Resources) -> str | None:
     from ..models.esm import ReactiveESM
     urls = resources.adjust_paths(ReactiveESM.__javascript__)
     return urls[0] if urls else None
+
+
+def compiler_url(mode: MODES | None = None) -> str:
+    """
+    The url of the in-browser compiler (sucrase) that ESM components
+    without a precompiled bundle load on demand.
+
+    Resolved like any other dist resource: relative to the server's static
+    endpoint, the Jupyter extension endpoint or the CDN, which ``inline``
+    output falls back to as well since a page cannot inline a file it only
+    learns it needs after it has been rendered.
+    """
+    resolved_mode, _ = _spec_mode(mode)
+    with set_resource_mode(resolved_mode):  # type: ignore[arg-type]
+        return _resources(resolved_mode).adjust_paths([COMPILER_CDN_URL])[0]
 
 
 def _has_resources(cls: type) -> bool:

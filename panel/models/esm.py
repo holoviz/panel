@@ -38,6 +38,9 @@ class ReactiveESM(HTMLBox):
 
     bundle = bp.Nullable(bp.String)
 
+    compiler = bp.Nullable(bp.String, help="""
+    Url of the in-browser compiler, required when there is no bundle.""")
+
     class_name = bp.String()
 
     children = bp.List(bp.String)
