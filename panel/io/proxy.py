@@ -9,7 +9,7 @@ import logging
 import re
 import typing as t
 
-from urllib.parse import urlencode
+from urllib.parse import parse_qs, urlencode, urlsplit
 
 from .state import state
 
@@ -23,6 +23,8 @@ log = logging.getLogger(__name__)
 PREFIX_HEADERS = ('X-Forwarded-Prefix', 'X-Script-Name')
 
 HOST_HEADER = 'X-Forwarded-Host'
+
+PROXY_HEADERS = (*PREFIX_HEADERS, HOST_HEADER, 'X-Forwarded-For', 'X-Forwarded-Proto')
 
 _HOST_RE = re.compile(r'^(?:[A-Za-z0-9._-]+|\[[0-9A-Fa-f:.]+\])(?::\d{1,5})?$')
 
@@ -150,18 +152,37 @@ def relative_url(path: str, target: str) -> str:
     return ('../' * (len(base) - common) or './') + '/'.join(segments[common:])
 
 
+def _is_proxied(handler: RequestHandler) -> bool:
+    """
+    Whether the request is known to have passed through the proxy. A
+    server with a root path may also be reached directly, e.g. from
+    within the network the proxy forwards to.
+    """
+    request = handler.request
+    if getattr(request, 'root_path', None):
+        return True
+    if uses_xheaders(handler) and any(_header(request.headers, name) for name in PROXY_HEADERS):
+        return True
+    # The OAuth provider returns the user to the external URL of the
+    # server root, which has no trailing slash.
+    prefix = getattr(handler.application, 'prefix', None) or ''
+    at_root = request.path.rstrip('/') == prefix
+    return at_root and 'code' in parse_qs(urlsplit(request.uri).query)
+
+
 def login_redirect_url(handler: RequestHandler, login_url: str) -> str:
     """
-    The URL to send an unauthenticated request to. If the external root
-    path is known the URL is absolute, which is also correct if the
-    proxy dropped a trailing slash, otherwise it is relative to the
-    request.
+    The URL to send an unauthenticated request to. It is relative to
+    the request, so that it is valid whether the request was proxied
+    or not, unless the request is known to have come through a proxy
+    serving the server on a root path. The absolute URL returned in
+    that case is also correct if the proxy dropped a trailing slash.
     """
     if not login_url.startswith('/') or login_url.startswith('//'):
         return login_url
     target = (getattr(handler.application, 'prefix', None) or '') + login_url
     request = handler.request
-    if not root_path(handler):
+    if not (root_path(handler) and _is_proxied(handler)):
         return relative_url(request.path, target)
     url = external_path(handler, target)
     if '?' not in url:

@@ -234,6 +234,28 @@ def test_generic_oauth_via_prefix_stripping_proxy(py_file, page, server, root_pa
 
 
 @linux_only
+@linux_only
+def test_generic_oauth_with_root_path_accessed_directly(py_file, page):
+    # Mirrors test_auth0_oauth_via_proxy, which opens the app on the port
+    # of the server and only returns from the provider through the proxy
+    write_file(USER_APP, py_file.file)
+    app_name = os.path.basename(py_file.name)[:-3]
+
+    with proxied_oauth_provider() as proxy:
+        base = f"http://localhost:{proxy['port']}/proxy"
+        cmd = [
+            *_generic_oauth_args(proxy), "--root-path", "/proxy/",
+            "--oauth-redirect-uri", f"{base}/login", py_file.name
+        ]
+        with run_panel_serve(cmd) as p:
+            proxy['upstream'] = port = wait_for_port(p.stdout)
+            page.goto(f"http://localhost:{port}")
+
+            expect(page.locator('.markdown')).to_have_text(proxy['user'], timeout=10000)
+            expect(page).to_have_url(f"{base}/{app_name}")
+            assert proxy['redirect_uris'] == [f"{base}/login"]
+
+
 @pytest.mark.parametrize('server', ['tornado', 'fastapi'])
 def test_generic_oauth_with_prefix(py_file, page, server):
     write_file(USER_APP, py_file.file)

@@ -131,10 +131,33 @@ def test_root_path_and_prefix_are_combined(set_root_path):
     set_root_path('/proxy/')
     handler = make_handler(uri='/prefix/app?a=1', prefix='/prefix')
     assert external_url(handler) == 'http://internal:5006/proxy/prefix'
-    assert login_redirect_url(handler, '/login') == (
-        '/proxy/prefix/login?next=%2Fproxy%2Fprefix%2Fapp%3Fa%3D1'
-    )
     assert _default_next_url(handler) == '/proxy/prefix/'
+    assert _validate_next_url('/prefix/app?a=1', handler) == '/proxy/prefix/app?a=1'
+
+
+@pytest.mark.parametrize('uri', ['/', '/app', '/app?code=1', '/nested/app'])
+def test_login_redirect_url_is_relative_for_direct_request_with_root_path(set_root_path, uri):
+    # The server stays reachable without the proxy, where the root path is not served
+    set_root_path('/proxy/')
+    handler = make_handler(uri=uri, headers=PROXY_HEADERS)
+    assert not login_redirect_url(handler, '/login').startswith('/')
+
+
+@pytest.mark.parametrize('uri, prefix, expected', [
+    ('/?code=1&state=2', '', '/proxy/login?next=%2Fproxy%2F%3Fcode%3D1%26state%3D2'),
+    ('/prefix?code=1', '/prefix', '/proxy/prefix/login?next=%2Fproxy%2Fprefix%3Fcode%3D1'),
+])
+def test_login_redirect_url_is_absolute_for_oauth_callback_on_root_path(set_root_path, uri, prefix, expected):
+    # The provider returns to the root path without a trailing slash
+    set_root_path('/proxy/')
+    handler = make_handler(uri=uri, prefix=prefix)
+    assert login_redirect_url(handler, '/login') == expected
+
+
+def test_login_redirect_url_is_absolute_for_forwarded_request_with_root_path(set_root_path):
+    set_root_path('/proxy/')
+    handler = make_handler(headers={'X-Forwarded-For': '10.0.0.1'}, use_xheaders=True)
+    assert login_redirect_url(handler, '/login') == '/proxy/login?next=%2Fproxy%2Fapp'
 
 
 def test_login_redirect_url_with_prefix_only():
