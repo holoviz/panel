@@ -41,7 +41,7 @@ from pyviz_comms import (
 
 from ..util import _descendents
 from .embed import embed_state
-from .model import add_to_doc, diff
+from .model import _drop_unsent_model_changes, add_to_doc, diff
 from .resources import (
     CDN_DIST, DIST_DIR, LOCAL_DIST, PANEL_DIR, Resources, _env,
     bundle_resources, is_cdn_url, jupyter_endpoint_available,
@@ -79,6 +79,7 @@ def push(doc: Document, comm: Comm, binary: bool = True, msg: Message | None = N
     Pushes events stored on the document across the provided comm.
     """
     if msg is None:
+        doc.callbacks._held_events = _drop_unsent_model_changes(doc, doc.callbacks._held_events)
         msg = diff(doc, binary=binary)
     if msg is None:
         return

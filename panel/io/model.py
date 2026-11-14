@@ -11,8 +11,8 @@ import numpy as np
 from bokeh.core.serialization import Serializer
 from bokeh.document import Document
 from bokeh.document.events import (
-    ColumnDataChangedEvent, DocumentChangedEvent, DocumentPatchedEvent,
-    ModelChangedEvent,
+    ColumnDataChangedEvent, ColumnsPatchedEvent, ColumnsStreamedEvent,
+    DocumentChangedEvent, DocumentPatchedEvent, ModelChangedEvent,
 )
 from bokeh.document.json import PatchJson
 from bokeh.model import DataModel
@@ -40,6 +40,32 @@ class comparable_array(np.ndarray):
 
     def __ne__(self, other: t.Any) -> bool:
         return not np.array_equal(self, other, equal_nan=True)
+
+_MODEL_CHANGE_EVENTS = (ModelChangedEvent, ColumnDataChangedEvent, ColumnsStreamedEvent, ColumnsPatchedEvent)
+
+def _drop_unsent_model_changes(
+    doc: Document, events: list[DocumentChangedEvent]
+) -> list[DocumentChangedEvent]:
+    """
+    Drops changes to models the client has not been sent yet, since the
+    message that first defines a model serializes its current state.
+
+    Under the 'combine' hold policy a later change is merged into the
+    slot of an earlier one, e.g. when a pane re-renders twice, which can
+    discard the only definition preceding a change to a new model and
+    leave the client dereferencing a model it does not know. Only these
+    events refer to their own model by reference, all others define it.
+
+    Only safe for a client that was sent the Document, since a model it
+    already has but that is still marked unsent would stop receiving changes.
+    """
+    unsent = getattr(doc.models, '_new_models', None)
+    if not unsent:
+        return events
+    return [
+        event for event in events
+        if not (isinstance(event, _MODEL_CHANGE_EVENTS) and event.model in unsent)
+    ]
 
 def monkeypatch_events(events: Sequence[DocumentChangedEvent]) -> None:
     """

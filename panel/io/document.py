@@ -31,7 +31,9 @@ from bokeh.models import CustomJS
 
 from ..config import config
 from .loading import _loading_css_classes
-from .model import monkeypatch_events  # noqa: F401 API import
+from .model import (  # noqa: F401 API import
+    _drop_unsent_model_changes, monkeypatch_events,
+)
 from .state import state
 
 if t.TYPE_CHECKING:
@@ -746,7 +748,7 @@ def _flush_events(curdoc: Document, session: ServerSession) -> None:
             locked = True
             break
 
-    events = list(curdoc.callbacks._held_events or [])
+    events = _drop_unsent_model_changes(curdoc, list(curdoc.callbacks._held_events or []))
     curdoc.callbacks._held_events = []
     monkeypatch_events(events)
 
@@ -936,6 +938,7 @@ def hold(
                     else:
                         def _unhold(lock=hold_lock, doc=doc):
                             with lock:
+                                doc.callbacks._held_events = _drop_unsent_model_changes(doc, doc.callbacks._held_events)
                                 _suppress_property_callbacks(doc.callbacks._held_events)
                                 doc.unhold()
                         with hold_lock:
