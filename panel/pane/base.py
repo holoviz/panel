@@ -172,7 +172,30 @@ class PaneBase(Layoutable):
         self._internal_callbacks.append(
             self.param.watch(self._sync_layoutable, list(Layoutable.param))
         )
-        self._sync_layoutable()
+        # The layout was constructed from the same parameters, so the sync
+        # only changes it when margins pad the width or height, when refs
+        # were resolved into the pane or when the class defaults differ.
+        if ('refs' in params or
+            (self.margin and (self.width is not None or self.height is not None)) or
+            self._layout_defaults_differ(type(self.layout))):
+            self._sync_layoutable()
+
+    @classmethod
+    def _layout_defaults_differ(cls, layout_type: type[Layoutable]) -> bool:
+        cache = cls.__dict__.get('_layout_defaults_cache')
+        if cache is None:
+            cache = {}
+            cls._layout_defaults_cache = cache
+        differ = cache.get(layout_type)
+        if differ is None:
+            sizing_mode = cls.param.sizing_mode
+            differ = cache[layout_type] = (
+                sizing_mode.constant or sizing_mode.readonly or any(
+                    cls.param[p].default != layout_type.param[p].default
+                    for p in Layoutable.param if p not in cls._skip_layoutable
+                )
+            )
+        return differ
 
     def _validate_ref(self, pname, value):
         super()._validate_ref(pname, value)
