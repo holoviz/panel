@@ -12,6 +12,7 @@ from pyviz_comms import JupyterComm
 
 from ..reactive import SyncableData
 from ..util import isdatetime, lazy_load
+from ..util.dataframe import is_dataframe, is_indexless, to_column_data
 from .base import ModelPane
 
 if t.TYPE_CHECKING:
@@ -84,6 +85,8 @@ class Vizzu(ModelPane, SyncableData):
             import pandas as pd
             if isinstance(object, pd.DataFrame):
                 return 0
+        if is_dataframe(object):
+            return 0
         return False
 
     def _get_data(self):
@@ -91,14 +94,19 @@ class Vizzu(ModelPane, SyncableData):
             return {}, {}
         if isinstance(self.object, dict):
             cols = data = dict(self.object)
+        elif is_indexless(self.object):
+            data = self.object
+            cols = to_column_data(data)
         else:
             data = self.object
             cols = ColumnDataSource.from_df(self.object)
         return data, {str(k): v for k, v in cols.items()}
 
     def _get_columns(self):
-        import pandas as pd
-
+        if 'pandas' in sys.modules:
+            from pandas import Period
+        else:
+            Period = ()
         columns = []
         for col, array in self._data.items():
             if col in self.column_types:
@@ -118,7 +126,7 @@ class Vizzu(ModelPane, SyncableData):
                     value = array[0]
                     if isinstance(value, dt.date):
                         columns.append({'name': col, 'type': 'datetime'})
-                    elif isdatetime(value) or isinstance(value, pd.Period):
+                    elif isdatetime(value) or isinstance(value, Period):
                         columns.append({'name': col, 'type': 'datetime'})
                     elif isinstance(value, str):
                         columns.append({'name': col, 'type': 'dimension'})
