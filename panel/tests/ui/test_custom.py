@@ -1707,6 +1707,39 @@ def test_react_root_ready_after_children_append(page):
     """, timeout=10000)
 
 
+# Re-renders the React child of a JS parent and has it removed before it can
+# mount, in either order, the way a component re-rendering its children from
+# an async callback can race a change to its children.
+RERENDER_REMOVED_CHILD = """
+async (order) => {
+    const root = Object.values(Bokeh.index)[0]
+    const child_view = root.get_child_view(root.model.data.objects[0])
+    if (order === 'remove_first') {
+        root.model.data.objects = []
+        await new Promise((resolve) => setTimeout(resolve, 100))
+        child_view.rerender_()
+    } else {
+        child_view.rerender_()
+        root.model.data.objects = []
+        await new Promise((resolve) => setTimeout(resolve, 100))
+    }
+    const timeout = new Promise((resolve) => setTimeout(() => resolve('timeout'), 2000))
+    const ready = root.ready.then(() => 'ready')
+    return [child_view.is_destroyed, await Promise.race([ready, timeout])]
+}
+"""
+
+@pytest.mark.internet
+@pytest.mark.parametrize('order', ['remove_first', 'rerender_first'])
+def test_react_child_rerendered_and_removed_before_mount_settles_root_ready(page, order):
+    example = JSChildren(objects=[ReactChildInner(text='child')])
+
+    serve_component(page, example)
+    expect(page.locator('.inner')).to_have_text('child')
+
+    assert page.evaluate(RERENDER_REMOVED_CHILD, order) == [True, 'ready']
+
+
 class ReactChildrenRace(ReactComponent):
 
     views = Children()
