@@ -220,7 +220,6 @@ nbsite_gallery_conf = {
                 'DeckGL': 'PyDeck & Deck.gl',
                 'ECharts': 'PyEcharts & ECharts',
                 'IPyWidget': 'ipywidgets',
-                'PanelCallbackHandler': 'LangChain CallbackHandler',
             },
             'as_pyodide': True,
             'normalize_titles': False,
