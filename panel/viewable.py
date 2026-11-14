@@ -726,6 +726,9 @@ class Renderable(param.Parameterized, MimeRenderMixin):
             return
         ref = root.ref['id']
         self._model_parents.pop(ref, None)
+        for doc, model in list(self._documents.items()):
+            if model is root:
+                del self._documents[doc]
         if ref in state._handles:
             del state._handles[ref]
 
@@ -785,7 +788,7 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         root = self._documents[doc]
         ref = root.ref['id']
         self._cleanup(root)
-        del self._documents[doc]
+        self._documents.pop(doc, None)
         if ref in state._views:
             del state._views[ref]
 

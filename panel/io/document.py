@@ -189,10 +189,37 @@ def _dispatch_unconnected_events(doc: Document) -> None:
     else:
         retrigger_events(doc, events)
 
+def _clear_document_state(doc: Document) -> None:
+    """
+    Drops the Document from the per-Document registries on ``state``.
+
+    These are WeakKeyDictionaries, but a value that refers back to the
+    Document (e.g. a Location whose model callbacks hold it, or a
+    stylesheet model attached to it) keeps its own key alive, so the
+    entries have to be removed explicitly.
+    """
+    for attr in dir(state):
+        # _param_watchers is deprecated in Param 2.0 and will raise a warning
+        if not attr.startswith('_') or attr == "_param_watchers":
+            continue
+        state_obj = getattr(state, attr)
+        if isinstance(state_obj, weakref.WeakKeyDictionary) and doc in state_obj:
+            del state_obj[doc]
+
 def _cleanup_doc(doc, destroy=True):
-    for callback in doc.session_destroyed_callbacks:
+    from ..viewable import Viewable
+    views = [(ref, view) for ref, view in state._views.items() if view[2] is doc]
+
+    # The callbacks look the Document up on the session context, so a
+    # Document without a session (e.g. one created by the liveness
+    # endpoint) is given a mock one, otherwise none of them run.
+    if destroy:
+        session_context = doc.session_context or MockSessionContext(doc)
+    else:
+        session_context = None
+    for callback in list(doc.session_destroyed_callbacks):
         try:
-            callback(None)
+            callback(session_context)
         except Exception:
             pass
     if not destroy:
@@ -201,23 +228,20 @@ def _cleanup_doc(doc, destroy=True):
         doc.callbacks._change_callbacks[None] = lambda e: e
 
     # Remove views
-    from ..viewable import Viewable
-    to_remove = []
-    for ref, (pane, root, vdoc, _comm) in list(state._views.items()):
-        if vdoc is doc:
+    for ref, (pane, root, _vdoc, _comm) in views:
+        # A root's _server_destroy callback may have cleaned it up already
+        if ref in state._views:
             pane._cleanup(root)
-            if isinstance(pane, Viewable):
-                pane._hooks = []
-                for p in pane.select():
-                    p._hooks = []
-                    p.param.watchers = {}
-                    p._documents = {}
-                    p._internal_callbacks = {}
-            pane.param.watchers = {}
-            pane._documents = {}
-            pane._internal_callbacks = {}
-            to_remove.append(ref)
-    for ref in to_remove:
+        if isinstance(pane, Viewable):
+            pane._hooks = []
+            for p in pane.select():
+                p._hooks = []
+                p.param.watchers = {}
+                p._documents = {}
+                p._internal_callbacks = {}
+        pane.param.watchers = {}
+        pane._documents = {}
+        pane._internal_callbacks = {}
         state._views.pop(ref, None)
 
     # When reusing sessions we must clean up the Panel state but we
@@ -230,6 +254,8 @@ def _cleanup_doc(doc, destroy=True):
         tmpl = state._templates[doc]
         tmpl._documents = []
         del state._templates[doc]
+
+    _clear_document_state(doc)
 
     # Destroy document
     doc.destroy(None)
@@ -397,6 +423,12 @@ def _destroy_document(self, session):
     self._session_context = None
 
     self.callbacks.destroy()
+    # The on_change callbacks Panel registers on the models are partials
+    # holding the Document, so a model that outlives the session (e.g.
+    # one a user kept a reference to) would otherwise keep all of it alive.
+    for model in list(getattr(self.models, '_models', {}).values()):
+        model._callbacks.clear()
+        model._event_callbacks.clear()
     self.models.destroy()
 
     # Module cleanup without trawling through referrers (as self.modules.destroy() does)
@@ -424,13 +456,7 @@ def _destroy_document(self, session):
         task.cancel()
 
     # Clean up pn.state to avoid tasks getting executed on dead session
-    for attr in dir(state):
-        # _param_watchers is deprecated in Param 2.0 and will raise a warning
-        if not attr.startswith('_') or attr == "_param_watchers":
-            continue
-        state_obj = getattr(state, attr)
-        if isinstance(state_obj, weakref.WeakKeyDictionary) and self in state_obj:
-            del state_obj[self]
+    _clear_document_state(self)
 
     # Schedule GC
     global _panel_last_cleanup
@@ -438,7 +464,8 @@ def _destroy_document(self, session):
     at = dt.datetime.now() + dt.timedelta(seconds=GC_DEBOUNCE)
     state.schedule_task('gc.collect', _garbage_collect, at=at)
 
-    del self.destroy
+    if 'destroy' in self.__dict__:
+        del self.destroy
 
 #---------------------------------------------------------------------
 # Public API

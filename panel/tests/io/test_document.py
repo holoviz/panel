@@ -952,3 +952,68 @@ def test_hold_with_comm_keeps_persistent_hold(monkeypatch):
         pass
 
     assert doc.callbacks.hold_value == 'combine'
+
+
+def test_cleanup_doc_releases_document():
+    doc = Document()
+    col = pn.Column(IntSlider(), pn.pane.Markdown('# Title'))
+    col.server_doc(doc)
+    ref = weakref.ref(doc)
+    assert doc in state._locations
+
+    _cleanup_doc(doc)
+
+    assert doc not in state._locations
+    assert not col._documents
+    assert not col._models
+    del doc
+    gc.collect()
+    assert ref() is None
+
+
+def test_cleanup_doc_runs_session_destroyed_callbacks_with_context():
+    doc = Document()
+    col = pn.Column(IntSlider())
+    col.server_doc(doc)
+    contexts = []
+    doc.on_session_destroyed(contexts.append)
+
+    _cleanup_doc(doc)
+
+    assert len(contexts) == 1
+    assert contexts[0].document is doc
+
+
+def test_destroy_document_releases_document_held_by_model():
+    doc = Document()
+    doc.destroy = partial(_destroy_document, doc)
+    col = pn.Column(IntSlider())
+    col.server_doc(doc)
+    # The Location is not cleaned up with the root and keeps its model
+    location = state._locations[doc]
+    ref = weakref.ref(doc)
+
+    _cleanup_doc(doc)
+    del doc, col
+    gc.collect()
+
+    assert location._models
+    assert ref() is None
+
+
+def test_server_session_destroyed_releases_document():
+    refs = []
+    def app():
+        refs.append(weakref.ref(state.curdoc))
+        return pn.Column(IntSlider(), pn.pane.Markdown('# Title'))
+
+    serve_and_request(
+        app, n=3, check_unused_sessions_milliseconds=200,
+        unused_session_lifetime_milliseconds=200
+    )
+
+    assert len(refs) == 3
+    def collected():
+        gc.collect()
+        return all(ref() is None for ref in refs)
+    wait_until(collected, timeout=10000)
