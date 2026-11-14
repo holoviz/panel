@@ -454,6 +454,8 @@ def test_unlocked_writes_immediately_only_for_document_lock_holder(monkeypatch):
     session = doc.session_context.session
     asyncio_loop = doc.session_context.server_context.application_context.io_loop.asyncio_loop
     monkeypatch.setitem(state._loaded, doc, True)
+    # The fake connection never pulled the Document, which marks its models sent
+    doc.models.flush_synced()
 
     socket_writes, bokeh_writes = [], []
 

@@ -525,12 +525,16 @@ def _send_patch(ws, events):
 @contextmanager
 def _connect(client, path='/app'):
     """
-    Connects a websocket to a new session and reports the document as
-    ready, leaving the session in the state a live browser session is in.
+    Connects a websocket to a new session, pulls the document and reports
+    it as ready, leaving the session in the state a live browser session is in.
     """
     subprotocols = ['bokeh', _token(client, path)]
     with client.websocket_connect(f'{path}/ws', subprotocols=subprotocols) as ws:
         assert _receive(ws)[0] == 'ACK'
+        ws.send_text(json.dumps({'msgid': '0', 'msgtype': 'PULL-DOC-REQ'}))
+        ws.send_text('{}')
+        ws.send_text('{}')
+        assert _receive(ws)[0] == 'PULL-DOC-REPLY'
         _send_patch(ws, DOCUMENT_READY)
         assert _receive(ws)[0] == 'OK'
         yield ws
