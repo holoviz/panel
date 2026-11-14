@@ -19,8 +19,8 @@ from panel.config import config
 from panel.io.state import state
 from panel.pane import Markdown
 from panel.tests.util import (
-    linux_only, reverse_proxy, run_panel_serve, serve_component, wait_for_port,
-    wait_until, write_file,
+    linux_only, proxied_oauth_provider, reverse_proxy, run_panel_serve,
+    serve_component, wait_for_port, wait_until, write_file,
 )
 
 pytestmark = pytest.mark.ui
@@ -188,6 +188,101 @@ def test_basic_auth_via_proxy(py_file, page, prefix, reverse_proxy):
         page.get_by_role("button").click(force=True)
 
         expect(page.locator('.markdown')).to_have_text('test_user', timeout=10000)
+
+
+USER_APP = "import panel as pn; pn.pane.Markdown(pn.state.user).servable(title='A')"
+
+
+def _generic_oauth_args(provider):
+    extra_params = {key: provider[key] for key in ('AUTHORIZE_URL', 'TOKEN_URL')}
+    return [
+        "--port", "0", "--oauth-provider", "generic", "--oauth-key", "key",
+        "--oauth-secret", "secret", "--cookie-secret", "secret",
+        "--oauth-extra-params", repr(extra_params),
+        "--allow-websocket-origin", f"localhost:{provider['port']}",
+    ]
+
+
+@linux_only
+@pytest.mark.parametrize('server', ['tornado', 'fastapi'])
+@pytest.mark.parametrize('root_path', [['--use-xheaders'], ['--root-path', '/proxy']])
+def test_generic_oauth_via_prefix_stripping_proxy(py_file, page, server, root_path):
+    write_file(USER_APP, py_file.file)
+    app_name = os.path.basename(py_file.name)[:-3]
+
+    # Only the proxy headers can reveal the external host of the server
+    host = 'internal:5006' if root_path == ['--use-xheaders'] else None
+    with proxied_oauth_provider(host=host) as proxy:
+        base = f"http://localhost:{proxy['port']}/proxy"
+        cmd = [*_generic_oauth_args(proxy), "--server", server, *root_path, py_file.name]
+        with run_panel_serve(cmd) as p:
+            proxy['upstream'] = wait_for_port(p.stdout)
+            page.goto(f"{base}/{app_name}")
+
+            expect(page.locator('.markdown')).to_have_text(proxy['user'], timeout=10000)
+            expect(page).to_have_url(f"{base}/{app_name}")
+            assert proxy['websockets'] == [f'/proxy/{app_name}/ws']
+            assert proxy['redirect_uris'] == [base]
+
+            page.goto(f"{base}/logout")
+            page.get_by_role("button").click()
+
+            expect(page.locator('.markdown')).to_have_text(proxy['user'], timeout=10000)
+            expect(page).to_have_url(f"{base}/{app_name}")
+
+    assert not [(code, uri) for code, uri in proxy['requests'] if code >= 400]
+
+
+@linux_only
+@pytest.mark.parametrize('server', ['tornado', 'fastapi'])
+def test_generic_oauth_with_prefix(py_file, page, server):
+    write_file(USER_APP, py_file.file)
+    app_name = os.path.basename(py_file.name)[:-3]
+
+    with proxied_oauth_provider() as provider:
+        cmd = [
+            *_generic_oauth_args(provider), "--server", server, "--prefix", "prefix",
+            "--allow-websocket-origin", "*", py_file.name
+        ]
+        with run_panel_serve(cmd) as p:
+            port = wait_for_port(p.stdout)
+            page.goto(f"http://localhost:{port}/prefix/{app_name}")
+
+            expect(page.locator('.markdown')).to_have_text(provider['user'], timeout=10000)
+            expect(page).to_have_url(f"http://localhost:{port}/prefix/{app_name}")
+            assert provider['redirect_uris'] == [f"http://localhost:{port}/prefix"]
+
+
+@linux_only
+@pytest.mark.parametrize('server', ['tornado', 'fastapi'])
+def test_basic_auth_error_via_prefix_stripping_proxy(py_file, page, server):
+    write_file(USER_APP, py_file.file)
+    app_name = os.path.basename(py_file.name)[:-3]
+
+    with proxied_oauth_provider() as proxy:
+        base = f"http://localhost:{proxy['port']}/proxy"
+        cmd = [
+            "--port", "0", "--basic-auth", "my_password", "--cookie-secret", "secret",
+            "--allow-websocket-origin", f"localhost:{proxy['port']}", "--server", server,
+            "--use-xheaders", py_file.name
+        ]
+        with run_panel_serve(cmd) as p:
+            proxy['upstream'] = wait_for_port(p.stdout)
+            page.goto(f"{base}/{app_name}")
+
+            page.locator('input[name="username"]').fill("test_user")
+            page.locator('input[name="password"]').fill("wrong")
+            page.get_by_role("button").click(force=True)
+
+            expect(page.locator('#error-message')).to_be_visible()
+            expect(page).to_have_url(re.compile(rf"^{re.escape(base)}/login\?error="))
+
+            page.locator('input[name="username"]').fill("test_user")
+            page.locator('input[name="password"]').fill("my_password")
+            page.get_by_role("button").click(force=True)
+
+            expect(page.locator('.markdown')).to_have_text('test_user', timeout=10000)
+            expect(page).to_have_url(f"{base}/{app_name}")
 
 
 @linux_only

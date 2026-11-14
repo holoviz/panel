@@ -375,7 +375,9 @@ class _config(_base_config):
         The key in the ID JWT token to consider the user.""")
 
     _oauth_redirect_uri = param.String(default=None, doc="""
-        A redirect URI to provide to the OAuth provider.""")
+        A redirect URI to provide to the OAuth provider. Defaults to
+        the public URL of the server, including the root path it is
+        proxied on and its prefix.""")
 
     _oauth_encryption_key = param.ClassSelector(default=None, class_=bytes, doc="""
         A random string used to encode OAuth related user information.""")

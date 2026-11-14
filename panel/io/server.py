@@ -87,6 +87,7 @@ from .liveness import LivenessHandler
 from .loading import _loading_css_classes
 from .logging import LOG_SESSION_CREATED
 from .pages import page_theme
+from .proxy import login_redirect_url, normalize_root_path
 from .reload import record_modules
 from .resources import (
     BASE_TEMPLATE, CDN_DIST, COMPONENT_PATH, DIST_DIR, ERROR_TEMPLATE,
@@ -779,6 +780,7 @@ class Server(BokehServer):
         # stylesheets served to clients accepting it.
         kwargs.setdefault('compress_response', True)
         super().__init__(*args, **kwargs)
+        self._tornado.use_xheaders = bool(kwargs.get('use_xheaders'))  # type: ignore[attr-defined]
         self._autoreload_stop_event = None
         if state._admin_context:
             state._admin_context._loop = self._loop
@@ -844,9 +846,9 @@ class LoginUrlMixin:
 
         '''
         if self.application.auth_provider.get_login_url is not None:
-            return '.' + self.application.auth_provider.get_login_url(self)
+            return login_redirect_url(self, self.application.auth_provider.get_login_url(self))
         if self.application.auth_provider.login_url is not None:
-            return '.' + self.application.auth_provider.login_url
+            return login_redirect_url(self, self.application.auth_provider.login_url)
         raise RuntimeError('login_url or get_login_url() must be supplied when authentication hooks are enabled')
 
 
@@ -1304,18 +1306,7 @@ for _i, _pattern in enumerate(toplevel_patterns):
 del _i, _pattern
 
 
-class AuthenticatedStaticFileHandler(StaticFileHandler):
-
-    def get_login_url(self):
-        ''' Delegates to``get_login_url`` method of the auth provider, or the
-        ``login_url`` attribute.
-
-        '''
-        if self.application.auth_provider.get_login_url is not None:
-            return self.application.auth_provider.get_login_url(self)
-        if self.application.auth_provider.login_url is not None:
-            return self.application.auth_provider.login_url
-        raise RuntimeError('login_url or get_login_url() must be supplied when authentication hooks are enabled')
+class AuthenticatedStaticFileHandler(LoginUrlMixin, StaticFileHandler):
 
     def get_current_user(self):
         ''' Delegate to the synchronous ``get_user`` method of the auth
@@ -1537,7 +1528,10 @@ def serve(
     compress: boolean (default=True)
       Whether to gzip HTTP responses for clients that accept it
     kwargs: dict
-      Additional keyword arguments to pass to Server instance
+      Additional keyword arguments to pass to Server instance, e.g.
+      `prefix` to serve everything under a URL prefix or
+      `use_xheaders=True` to trust the X-Forwarded-* headers of a
+      reverse proxy for the client IP and the public URL of the server.
     """
     kwargs = dict(kwargs, **dict(
         port=port, address=address, websocket_origin=websocket_origin,
@@ -1721,7 +1715,8 @@ def get_server(
     oauth_secret: str (optional, default=None)
       The client secret for the OAuth provider
     oauth_redirect_uri: Optional[str] = None,
-      Overrides the default OAuth redirect URI
+      Overrides the default OAuth redirect URI, which is the public
+      URL of the server including the `root_path` and `prefix`.
     oauth_extra_params: dict (optional, default={})
       Additional information for the OAuth provider
     oauth_error_template: str (optional, default=None)
@@ -1743,8 +1738,10 @@ def get_server(
       Whether the user will be forced to go through login flow or if
       they can access all applications as a guest.
     root_path: str (optional, default=None)
-      Root path the application is being served on when behind
-      a reverse proxy.
+      The path a reverse proxy serves the application on if it strips
+      that path from the requests it forwards. Used to build the login
+      redirects and the default OAuth redirect URI and takes precedence
+      over the X-Forwarded-Prefix header read with `use_xheaders=True`.
     login_endpoint: str (optional, default=None)
       Overrides the default login endpoint `/login`
     logout_endpoint: str (optional, default=None)
@@ -1890,7 +1887,7 @@ def get_server(
         opts['auth_provider'] = provider
     if root_path:
         with edit_readonly(state):
-            state.base_url = root_path  # type: ignore
+            state.base_url = f'{normalize_root_path(root_path)}/'  # type: ignore
     opts['cookie_path'] = config.cookie_path
     opts['cookie_secret'] = config.cookie_secret
     opts['compress_response'] = compress

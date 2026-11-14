@@ -4,6 +4,8 @@ Panel supports a number of OAuth providers out-of-the-box. Follow the guide for 
 
 If you experience issues check out the [OAuth Troubleshooting](../trouble_shooting.md) guide for further guidance.
 
+Every provider asks you to register a redirect URI (also called callback URL). Unless you override it with `--oauth-redirect-uri`, register the public URL of the Panel server, including any `--prefix` and the path a reverse proxy serves it on, e.g. `https://example.org/myapp`. See [Redirect URI](../configuration.md) and [Configuring a reverse proxy](../../server/proxy.md).
+
 ## **Azure Entra ID**
 
 Previously known as Azure Active Directory. See [Azure Entra ID](azure.md).

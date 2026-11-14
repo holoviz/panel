@@ -2,7 +2,15 @@
 
 If the goal is to serve an web application to the general Internet, it is often desirable to host the application on an internal network, and proxy connections to it through some dedicated HTTP server. For some basic configurations to set up a Bokeh server behind some common reverse proxies, including Nginx and Apache, refer to the [Bokeh documentation](https://docs.bokeh.org/en/latest/docs/user_guide/server/deploy.html#basic-reverse-proxy-setup).
 
-Two important things that can cause issues when deploying a Panel app behind a reverse proxy are issues with large client headers and handling of the root path.
+Three things can cause issues when deploying a Panel app behind a reverse proxy: WebSocket connections, large client headers and the path the proxy serves the app on.
+
+## WebSockets
+
+A Panel app talks to the server over a WebSocket, so the proxy has to forward the `Upgrade` and `Connection` headers, and the server has to accept connections that originate from the public host:
+
+```bash
+panel serve app.py --allow-websocket-origin example.org
+```
 
 ## Client Headers
 
@@ -12,16 +20,87 @@ To communicate cookies and headers across processes, Panel may include this info
 large_client_header_buffers 4 24k;
 ```
 
-### Proxy with a stripped path prefixes
+## Serving on a path prefix
 
-Configuring a proxy with a stripped path prefix, which is one common use of a proxy, means that you might serve a Panel app on `/app`, but then configure the proxy to serve the app under a path prefix like `/api/v1`. Unless you configure the proxy to forward appropriate headers Panel will have no idea that it is being served on a path prefix and may incorrectly configure internal redirects. To avoid this provide `panel` with a `root_path` when serving:
+A proxy frequently serves an app on a sub-path of a host, e.g. `https://example.org/myapp/`. The pages Panel renders load their resources and open their WebSocket using URLs relative to the page, so they work on any path without configuration. Redirects are different: to send a user to the login page, back to the app after logging in, or to tell an OAuth provider where to return to, Panel has to know the public URL of the server. There are two ways to set this up.
+
+### The proxy strips the prefix
+
+The proxy removes the prefix before forwarding the request, so that `https://example.org/myapp/app` reaches Panel as `/app`. Panel then has to be told about the prefix, which can be done by the proxy itself or on the command line.
+
+**Let the proxy declare it.** Start Panel with `--use-xheaders` and have the proxy set the standard forwarding headers:
 
 ```bash
-panel serve app.py --root-path /proxy/
+panel serve app.py --use-xheaders --allow-websocket-origin example.org
 ```
 
-Additionally, should you have configured an OAuth provider you **must** also declare an explicit `--oauth-redirect-uri` that includes the proxied path, e.g.:
+```nginx
+location /myapp/ {
+    proxy_pass http://127.0.0.1:5006/;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Forwarded-Prefix /myapp;
+    proxy_buffering off;
+}
+```
+
+With `--use-xheaders` Panel reads the following headers:
+
+| Header | Used for |
+| --- | --- |
+| `X-Forwarded-Proto` | The protocol, `http` or `https` |
+| `X-Forwarded-Host` | The public host, if the proxy does not pass on the `Host` header |
+| `X-Forwarded-Prefix` (or `X-Script-Name`) | The path prefix the proxy stripped |
+| `X-Forwarded-For` | The address of the client |
+
+Some proxies set these on their own, e.g. the `StripPrefix` middleware of Traefik adds `X-Forwarded-Prefix`. `X-Script-Name` is only read if `X-Forwarded-Prefix` is not set. If several proxies are chained and each appends to a header, the first value is used. A value that is not a plain host or a plain absolute path is ignored and logged as a warning.
+
+:::{warning}
+Only enable `--use-xheaders` if the server can exclusively be reached through a proxy which sets or removes these headers. Otherwise a client can send them itself. Without the flag the headers are ignored.
+:::
+
+**Declare it on the command line.** If you cannot change the headers the proxy sets, provide the prefix with `--root-path`:
 
 ```bash
-panel serve app.py --root-path /api/v1/ ... --oauth-redirect-uri https://<my-host>/api/v1/login
+panel serve app.py --root-path /myapp --allow-websocket-origin example.org
 ```
+
+An explicit `--root-path` takes precedence over the `X-Forwarded-Prefix` header.
+
+### The proxy keeps the prefix
+
+The proxy forwards the request unchanged and Panel serves everything below the prefix itself:
+
+```bash
+panel serve app.py --prefix /myapp --allow-websocket-origin example.org
+```
+
+```nginx
+location /myapp/ {
+    proxy_pass http://127.0.0.1:5006;
+    ...
+}
+```
+
+`--prefix` and `--root-path` may be combined if the proxy strips only part of the path.
+
+## OAuth behind a proxy
+
+The redirect URI Panel sends to the OAuth provider is the public URL of the server root, built from the protocol and host of the request, the root path and the prefix. In the examples above it is `https://example.org/myapp`, which is the URL you have to register with the provider. For this to work the protocol and host have to reach Panel, so either let the proxy pass on the `Host` header or set `X-Forwarded-Host`, and set `X-Forwarded-Proto` if the proxy terminates TLS, together with `--use-xheaders`.
+
+If the public URL cannot be derived from the request, e.g. because the proxy listens on a non-standard port it does not report, declare the redirect URI explicitly. It has to point at the server root or at its login endpoint:
+
+```bash
+panel serve app.py --root-path /myapp ... --oauth-redirect-uri https://example.org/myapp/login
+```
+
+:::{important}
+As of Panel 1.10.1 the default redirect URI includes the `--prefix` and, with `--use-xheaders`, follows the `X-Forwarded-Host` and `X-Forwarded-Prefix` (or `X-Script-Name`) headers of the proxy. If you registered the previous default with your provider, i.e. the URL without the prefix or with the host Panel is reachable on internally, either register the new redirect URI or keep the old one by passing it as `--oauth-redirect-uri`.
+:::
+
+`--oauth-redirect-uri` only determines where the provider sends the user. Where Panel sends the user afterwards is determined by the root path, so a proxy which strips a prefix still needs `--root-path` or the `X-Forwarded-Prefix` header.

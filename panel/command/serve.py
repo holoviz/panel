@@ -14,6 +14,7 @@ import pathlib
 import sys
 import typing as t
 
+from dataclasses import replace
 from glob import glob
 from types import ModuleType
 
@@ -146,10 +147,27 @@ class AdminApplicationContext(ApplicationContext):
         super().run_unload_hook()
 
 
+_HELP_OVERRIDES = {
+    '--prefix': (
+        "URL prefix to serve all applications and endpoints under. Use this "
+        "if a reverse proxy forwards the prefix, and --root-path if it "
+        "strips it."
+    ),
+    '--use-xheaders': (
+        "Trust the X-Forwarded-For, X-Forwarded-Proto, X-Forwarded-Host and "
+        "X-Forwarded-Prefix (or X-Script-Name) headers set by a reverse "
+        "proxy to determine the client IP and the public URL of the server."
+    ),
+}
+
+
 class Serve(_BkServe):
 
     args = (
-        tuple((arg, arg_obj) for arg, arg_obj in _BkServe.args if arg != '--dev') + (
+        tuple(
+            (arg, replace(arg_obj, help=_HELP_OVERRIDES[arg]) if arg in _HELP_OVERRIDES else arg_obj)
+            for arg, arg_obj in _BkServe.args if arg != '--dev'
+        ) + (
         ('--index-titles', Argument(
             metavar="KEY=VALUE",
             nargs='+',
@@ -201,7 +219,10 @@ class Serve(_BkServe):
         ('--oauth-redirect-uri', Argument(
             action  = 'store',
             type    = str,
-            help    = "The OAuth2 redirect URI",
+            help    = (
+                "The OAuth2 redirect URI. Defaults to the public URL of the "
+                "server, including the --root-path and --prefix."
+            ),
         )),
         ('--oauth-extra-params', Argument(
             action  = 'store',
@@ -248,7 +269,11 @@ class Serve(_BkServe):
         ('--root-path', Argument(
             action  = 'store',
             type    = str,
-            help    = "The root path can be used to handle cases where Panel is served behind a proxy."
+            help    = (
+                "The path a reverse proxy serves Panel on if it strips that "
+                "path from the requests it forwards. Overrides the "
+                "X-Forwarded-Prefix header read with --use-xheaders."
+            )
         )),
         ('--login-endpoint', Argument(
             action  = 'store',
@@ -1096,6 +1121,7 @@ class Serve(_BkServe):
 
         asgi = PanelASGI(
             applications,
+            use_xheaders=args.use_xheaders,
             index_enabled=not args.disable_index,
             redirect_root=not args.disable_index_redirect,
             static_dirs=self._static_dirs,

@@ -63,6 +63,10 @@ The basic auth provider will now check the provided credentials against the cred
 When serving an application dynamically using `pn.serve` you can also provide a dictionary of usernames and passwords via the `basic_auth` keyword argument. The same argument is accepted by `panel.io.fastapi.add_applications` when [embedding Panel in FastAPI](../integrations/FastAPI) and by `panel.io.django.get_asgi_application` when [embedding Panel in Django](../integrations/Django).
 :::
 
+## Serving behind a reverse proxy or with a prefix
+
+The login and logout pages are served next to your apps, so with `--prefix /myapp` they live on `/myapp/login` and `/myapp/logout`. Link to them with relative URLs, like the `./logout` in the example above, and they keep working on any path. If a reverse proxy serves the app on a sub-path that it strips before forwarding the request, tell Panel about it with `--root-path` or `--use-xheaders` so that it redirects back to the right URL after logging in. See [Configuring a reverse proxy](../server/proxy.md).
+
 ## Custom templates
 
 ```{admonition} Prerequisites
