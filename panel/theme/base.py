@@ -6,6 +6,7 @@ import importlib
 import os
 import pathlib
 import typing as t
+import weakref
 
 import param
 
@@ -99,6 +100,10 @@ class DarkTheme(Theme):
                                       default=_BkTheme(json=BOKEH_DARK))
 
     _name: t.ClassVar[str] = 'dark'
+
+
+# Design and Theme stylesheets per Theme instance, see Design._theme_stylesheets
+_THEME_STYLESHEETS: weakref.WeakKeyDictionary[Theme, dict[type[Design], list[str]]] = weakref.WeakKeyDictionary()
 
 
 def _stylesheet_cache(doc: Document) -> dict[str, ImportedStyleSheet]:
@@ -230,32 +235,54 @@ class Design(param.Parameterized, ResourceComponent):
         return modifiers, child_modifiers
 
     @classmethod
-    def _get_modifiers(
-        cls, viewable: Viewable, theme: Theme | None = None, isolated: bool = True
-    ):
+    def _theme_stylesheets(cls, theme: Theme | None) -> list[str]:
+        """
+        Resolves the stylesheets of the Design and the Theme, caching
+        the result per theme instance since resolving the theme's CSS
+        paths is expensive and the result is needed for every component.
+        """
         from ..io.resources import (
             CDN_DIST, component_resource_path, resolve_custom_path,
         )
+        if theme is None:
+            return list(cls._resources.get('css', {}).values())
+        cached = _THEME_STYLESHEETS.get(theme)
+        if cached is None:
+            cached = _THEME_STYLESHEETS[theme] = {}
+            theme_ref = weakref.ref(theme)
+
+            def invalidate(*_):
+                if (owner := theme_ref()) is not None:
+                    _THEME_STYLESHEETS.pop(owner, None)
+
+            theme.param.watch(invalidate, ['base_css', 'css'])
+        elif cls in cached:
+            return cached[cls]
+        stylesheets = list(cls._resources.get('css', {}).values())
+        for p in ('base_css', 'css'):
+            css = getattr(theme, p)
+            if css is None:
+                continue
+            css = pathlib.Path(css)
+            if relative_to(css, THEME_CSS):
+                stylesheets.append(f'{CDN_DIST}bundled/theme/{css.name}')
+            elif resolve_custom_path(theme, css):
+                stylesheets.append(component_resource_path(theme, p, css))
+            else:
+                stylesheets.append(css.read_text(encoding='utf-8'))
+        cached[cls] = stylesheets
+        return stylesheets
+
+    @classmethod
+    def _get_modifiers(
+        cls, viewable: Viewable, theme: Theme | None = None, isolated: bool = True
+    ):
         theme_type = type(theme) if isinstance(theme, Theme) else theme
         is_server = bool(state.curdoc.session_context) if not state._is_pyodide and state.curdoc else False
         modifiers, child_modifiers = cls._resolve_modifiers(type(viewable), theme_type, is_server=is_server)  # type: ignore
         modifiers = dict(modifiers)
         if 'stylesheets' in modifiers:
-            if isolated:
-                pre = list(cls._resources.get('css', {}).values())
-                for p in ('base_css', 'css'):
-                    css = getattr(theme, p)
-                    if css is None:
-                        continue
-                    css = pathlib.Path(css)
-                    if relative_to(css, THEME_CSS):
-                        pre.append(f'{CDN_DIST}bundled/theme/{css.name}')
-                    elif resolve_custom_path(theme, css):
-                        pre.append(component_resource_path(theme, p, css))
-                    else:
-                        pre.append(css.read_text(encoding='utf-8'))
-            else:
-                pre = []
+            pre = cls._theme_stylesheets(theme) if isolated else []
             modifiers['stylesheets'] = pre + modifiers['stylesheets']
         return modifiers, child_modifiers
 

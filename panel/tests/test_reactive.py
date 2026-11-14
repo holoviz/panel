@@ -18,7 +18,7 @@ from panel.io.resources import stylesheet_url
 from panel.io.state import set_curdoc, state
 from panel.layout import Tabs, WidgetBox
 from panel.pane import Markdown
-from panel.reactive import Reactive, ReactiveHTML
+from panel.reactive import Reactive, ReactiveHTML, drop_default_properties
 from panel.viewable import Viewable
 from panel.widgets import (
     Button, Checkbox, IntInput, IntSlider, StaticText, TextInput,
@@ -133,6 +133,78 @@ def test_link_properties_server(document):
     assert isinstance(cb, partial)
     assert cb.args == (document, div.ref['id'], None)
     assert cb.func == obj._server_change
+
+
+def test_link_properties_shared_callback(document):
+
+    class ReactiveLink(Reactive):
+
+        text = param.String(default='A')
+
+        visible = param.Boolean(default=True)
+
+    obj = ReactiveLink()
+    div = Div()
+
+    obj._link_props(div, ['text', 'visible'], document, div)
+    assert div._callbacks['text'] == div._callbacks['visible']
+    assert len(div._callbacks['text']) == 1
+
+    div.text = 'B'
+    div.visible = False
+    assert obj.text == 'B'
+    assert not obj.visible
+
+
+def test_link_properties_unknown_property(document):
+    obj = Reactive()
+    div = Div()
+
+    with pytest.raises(AttributeError):
+        obj._link_props(div, ['does_not_exist'], document, div)
+
+
+def test_synced_params_cached_until_parameter_added():
+
+    class ReactiveSynced(Reactive):
+
+        a = param.Number(default=1)
+
+    obj = ReactiveSynced()
+    synced = obj._synced_params
+    assert 'a' in synced
+    assert obj._synced_params is synced
+    assert ReactiveSynced()._synced_params is synced
+
+    ReactiveSynced.param.add_parameter('b', param.Number(default=2))
+    assert 'b' in obj._synced_params
+    assert 'b' in obj._linkable_params
+
+
+def test_drop_default_properties():
+    properties = {
+        'text': 'A', 'visible': True, 'disabled': False, 'width': 100,
+        'css_classes': [], 'styles': {}, 'tags': ['tag'], 'sizing_mode': None,
+    }
+    assert drop_default_properties(Div, properties) == {
+        'text': 'A', 'width': 100, 'tags': ['tag']
+    }
+
+    # Values must match the type of the default to be dropped, bokeh
+    # validation decides what happens to them otherwise.
+    assert drop_default_properties(Div, {'visible': 1}) == {'visible': 1}
+    assert drop_default_properties(Div, {'css_classes': ()}) == {'css_classes': ()}
+
+
+def test_drop_default_properties_matches_bokeh(document):
+    widget = IntSlider(start=0, end=10)
+    properties = widget._get_properties(document)
+    dropped = drop_default_properties(widget._widget_type, properties)
+    assert dropped != properties
+
+    full = widget._widget_type(**properties)
+    filtered = widget._widget_type(**dropped)
+    assert full._property_values == filtered._property_values
 
 
 def test_text_input_controls():
