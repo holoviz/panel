@@ -25,14 +25,15 @@ import pathlib
 import re
 import typing as t
 
-from bokeh.model import Model
+from functools import lru_cache
 
 from ..config import config
 from ..util import isurl
 from .resources import (
-    Resources, component_resource_path, extension_declared,
-    get_notebook_resources, get_resource_mode, resolve_resource_cdn,
-    set_resource_mode,
+    EXTENSION_CDN, Resources, component_resource_path, extension_declared,
+    get_notebook_resources, get_resource_mode, jupyter_endpoint_available,
+    model_registry_key, remember, resolve_resource_cdn, set_resource_mode,
+    sorted_model_classes,
 )
 from .state import state
 
@@ -60,6 +61,7 @@ _RESOURCE_ATTRS = (
 _CUSTOM_ELEMENT_RE = re.compile(r"^customElements\.get\(\s*['\"]([^'\"]+)['\"]\s*\)\s*$")
 
 _SPEC_CACHE: dict[t.Any, dict[str, t.Any] | None] = {}
+_DECLARED_CACHE: dict[t.Any, dict[str, t.Any]] = {}
 
 
 class _Entry(t.NamedTuple):
@@ -268,6 +270,7 @@ def _shim_url(resources: Resources) -> str | None:
     return urls[0] if urls else None
 
 
+@lru_cache(maxsize=None)
 def _has_resources(cls: type) -> bool:
     mro = getattr(cls, '__mro__', (cls,))
     return any(
@@ -382,17 +385,31 @@ def _resource_classes() -> list[type]:
     ``Resources.extra_resources``, extension gate included, so that what
     is declared to the registry is exactly what was rendered.
     """
+    classes = [cls for cls in sorted_model_classes() if extension_declared(cls)]
+    return classes + _loaded_custom_classes()
+
+
+def _loaded_custom_classes() -> list[type]:
     from ..reactive import ReactiveCustomBase
     from ..util import _descendents
-
-    classes = [
-        cls for _, cls in sorted(Model.model_class_reverse_map.items(), key=lambda item: item[0])
-        if extension_declared(cls)
-    ]
-    classes += [
+    return [
         cls for cls in _descendents(ReactiveCustomBase, concrete=True) if cls._loaded()
     ]
-    return classes
+
+
+def _declared_key(mode: str) -> tuple:
+    """
+    Everything ``declared_specs`` depends on besides the class declarations
+    themselves, which only change when a class is registered or loaded.
+    """
+    extensions = state._extensions
+    return (
+        mode, state.rel_path, state.base_url,
+        get_notebook_resources() and not state._is_server_session,
+        jupyter_endpoint_available(), config.npm_cdn, len(EXTENSION_CDN),
+        None if extensions is None else frozenset(extensions),
+        model_registry_key(), frozenset(_loaded_custom_classes()),
+    )
 
 
 def declared_specs(mode: MODES | None = None) -> dict[str, t.Any]:
@@ -407,6 +424,13 @@ def declared_specs(mode: MODES | None = None) -> dict[str, t.Any]:
     if not config.lazy_resources:
         return {}
     resolved_mode, _ = _spec_mode(mode)
+    key = _declared_key(resolved_mode)
+    if key in _DECLARED_CACHE:
+        return copy.deepcopy(_DECLARED_CACHE[key])
+    return copy.deepcopy(remember(_DECLARED_CACHE, key, _build_declared(resolved_mode)))
+
+
+def _build_declared(resolved_mode: str) -> dict[str, t.Any]:
     libs: dict[str, dict[str, t.Any]] = {}
     css: list[str] = []
     for cls in _resource_classes():
@@ -430,4 +454,4 @@ def declared_specs(mode: MODES | None = None) -> dict[str, t.Any]:
         declared['libs'] = list(libs.values())
     if css:
         declared['css'] = css
-    return copy.deepcopy(declared)
+    return declared
