@@ -88,6 +88,43 @@ def _convert_datetime_array_ignore_list(v):
         return convert_datetime_array(v)
     return v
 
+def _df_to_cds_data(df: pd.DataFrame) -> dict[str, np.ndarray]:
+    """
+    Converts a DataFrame into a ColumnDataSource data dict, producing
+    the same columns as ``ColumnDataSource.from_df`` without the
+    intermediate frame copy and reset_index.
+    """
+    import pandas as pd
+    columns = df.columns
+    if isinstance(columns, pd.MultiIndex):
+        try:
+            names = ['_'.join(col) for col in columns.values]
+        except TypeError:
+            raise TypeError('Could not flatten MultiIndex columns. '
+                            'use string column names or flatten manually') from None
+    else:
+        names = columns.tolist()
+    index = df.index
+    if isinstance(index.name, str):
+        index_name = index.name
+    else:
+        try:
+            index_name = '_'.join(index.names)
+        except TypeError:
+            index_name = 'index'
+    if index_name == 'index' and 'index' in names:
+        index_name = 'level_0'
+    # Copies keep the ColumnDataSource arrays independent of the frame's
+    # storage, which is otherwise mutated in place by edits and patches.
+    data = {index_name: np.array(pd.Index(index.values))}
+    for name, (_, col) in zip(names, df.items()):
+        # tz-aware datetimes are sent as naive UTC datetime64 like bokeh does
+        if isinstance(col.dtype, pd.DatetimeTZDtype):
+            data[name] = col.values.copy()
+        else:
+            data[name] = col.to_numpy(copy=True)
+    return data
+
 def _get_value_from_keys(d:dict, key1, key2, default=None):
     if key1 in d:
         return d[key1]
@@ -211,7 +248,6 @@ class BaseTable(ReactiveData, Widget):
     def __init__(self, value=None, **params):
         self._renamed_cols = {}
         self._filters = []
-        self._index_mapping = {}
         self._edited_indexes = []
         super().__init__(value=value, **params)
         self._internal_callbacks.extend([
@@ -428,19 +464,19 @@ class BaseTable(ReactiveData, Widget):
     def _formatter_change(self, attr: str, new: t.Any, old: t.Any):
         self.param.trigger('formatters')
 
-    def _update_index_mapping(self):
-        if self._processed is None or isinstance(self._processed, list) and not self._processed:
-            self._index_mapping = {}
-            return
-        self._index_mapping = {
-            i: index
-            for i, index in enumerate(self._processed.index)
-        }
+    def _processed_index(self, row: int):
+        """
+        Maps a row position in the processed data to its index label,
+        falling back to the position itself if it is out of bounds.
+        """
+        processed = self._processed
+        if processed is None or isinstance(processed, list) or not (0 <= row < len(processed)):
+            return row
+        return processed.index[row]
 
     @updating
     def _update_cds(self, *events: param.parameterized.Event):
         self._processed, data = self._get_data()
-        self._update_index_mapping()
         self._data = {k: _convert_datetime_array_ignore_list(v) for k, v in data.items()}
         named_events = {e.name: e for e in events}
         msg = {'data': self._data}
@@ -498,25 +534,7 @@ class BaseTable(ReactiveData, Widget):
     def _sort_df(self, df: pd.DataFrame) -> pd.DataFrame:
         if not self.sorters:
             return df
-        fields = [self._renamed_cols.get(s['field'], s['field']) for s in self.sorters]
-        ascending = [s['dir'] == 'asc' for s in self.sorters]
-
-        # Making a copy of the DataFrame because it could be a view of the original
-        # dataframe. There could be a better place to do this.
-        df = df.copy()
-        # Temporarily add _index_ column because Tabulator uses internal _index
-        # as additional sorter to break ties
-        df['_index_'] = np.arange(len(df)).astype(str)
-        fields.append('_index_')
-        ascending.append(True)
-
-        # Handle sort on index column if show_index=True
-        if self.show_index:
-            rename = 'index' in fields and df.index.name is None
-            if rename:
-                df.index.name = 'index'
-        else:
-            rename = False
+        import pandas as pd
 
         def tabulator_sorter(col):
             # Tabulator JS defines its own sorting algorithm:
@@ -528,13 +546,28 @@ class BaseTable(ReactiveData, Widget):
             except Exception:
                 return col
 
-        df_sorted = df.sort_values(fields, ascending=ascending, kind='mergesort',
-                                  key=tabulator_sorter)
+        indexes = self.indexes
+        keys, ascending = {}, []
+        for i, sorter in enumerate(self.sorters):
+            field = self._renamed_cols.get(sorter['field'], sorter['field'])
+            if field in df.columns:
+                col = df[field]
+            elif field in indexes:
+                col = pd.Series(df.index.get_level_values(indexes.index(field)))
+            elif field in df.index.names:
+                col = pd.Series(df.index.get_level_values(field))
+            else:
+                raise KeyError(field)
+            keys[i] = tabulator_sorter(col).array
+            ascending.append(sorter['dir'] == 'asc')
 
-        # Revert temporary changes to DataFrames
-        if rename:
-            df_sorted.index.name = None
-        return df_sorted.drop(columns=['_index_'])
+        # Sorting only the sort keys avoids copying the full frame; the
+        # stable mergesort keeps ties in their original order, matching
+        # Tabulator's own numeric _index tie-breaker.
+        order = pd.DataFrame(keys).sort_values(
+            list(keys), ascending=ascending, kind='mergesort'
+        ).index.to_numpy()
+        return df.iloc[order]
 
     def _filter_dataframe(
         self,
@@ -782,7 +815,7 @@ class BaseTable(ReactiveData, Widget):
             indexes = [df.index.name or default_index]
         if df.columns.nlevels > 1 and len(indexes) > 1:
             indexes = [i + "_" * (df.columns.nlevels - 1) for i in indexes]
-        data = ColumnDataSource.from_df(df.reset_index() if len(indexes) > 1 else df)
+        data = _df_to_cds_data(df.reset_index() if len(indexes) > 1 else df)
         if not self.show_index and len(indexes) > 1:
             data = {k: v for k, v in data.items() if k not in indexes}
         return df, {k if isinstance(k, str) else str(k): self._process_column(v, k, df) for k, v in data.items()}
@@ -1545,7 +1578,7 @@ class Tabulator(BaseTable):
             nrows = self.page_size or self.initial_page_size
             event.row = event.row+(self.page-1)*nrows
 
-        idx = self._index_mapping.get(event.row, event.row)
+        idx = self._processed_index(event.row)
         iloc = self.value.index.get_loc(idx)
         self._validate_iloc(idx, iloc)
         event.row = iloc
@@ -1675,7 +1708,7 @@ class Tabulator(BaseTable):
             indexes = [df.index.name or default_index]
         if len(indexes) > 1:
             page_df = page_df.reset_index()
-        data = ColumnDataSource.from_df(page_df).items()
+        data = _df_to_cds_data(page_df).items()
         return df, {k if isinstance(k, str) else str(k): self._process_column(v, k, page_df) for k, v in data}
 
     def _get_style_data(self, recompute=True):
@@ -1845,7 +1878,6 @@ class Tabulator(BaseTable):
         super()._stream(stream, rollover)
         self._update_style()
         self._update_selectable()
-        self._update_index_mapping()
 
     def stream(self, stream_value, rollover=None, reset_index=True, follow=True):
         for ref, (model, _) in self._models.copy().items():
@@ -1858,23 +1890,50 @@ class Tabulator(BaseTable):
             nrows = self.page_size or self.initial_page_size
             self.page = max(length//nrows + bool(length%nrows), 1)
 
+    def _map_patch_to_page(self, patch):
+        """
+        Maps patch positions in the value to positions on the current
+        page of the processed data, dropping patches off the page.
+        """
+        nrows = self.page_size or self.initial_page_size
+        start = (self.page - 1) * nrows
+        end = start + nrows
+        labels = self.value.index
+        processed_index = self._processed.index
+        mapped = {}
+        for c, values in patch.items():
+            expanded = []
+            for ind, val in values:
+                if isinstance(ind, slice):
+                    expanded.extend(zip(range(ind.start or 0, ind.stop, ind.step or 1), val))
+                else:
+                    expanded.append((ind, val))
+            if not expanded:
+                continue
+            positions = processed_index.get_indexer(labels[[ind for ind, _ in expanded]])
+            values = [
+                (int(pos - start), val) for pos, (_, val) in zip(positions, expanded)
+                if start <= pos < end
+            ]
+            if values:
+                mapped[c] = values
+        return mapped
+
     @updating
     def _patch(self, patch):
-        if self.filters or self._filters or self.sorters:
+        remote = self.pagination == 'remote'
+        # Locally the ColumnDataSource holds the unsorted, header-unfiltered
+        # data so only Python-side filters change the row positions.
+        if self._filters or (remote and (self.filters or self.sorters)):
             self._updating = False
             self._update_cds()
             return
-        if self.pagination == 'remote':
-            nrows = self.page_size or self.initial_page_size
-            start = (self.page - 1) * nrows
-            end = start+nrows
-            filtered = {}
-            for c, values in patch.items():
-                values = [(ind, val) for (ind, val) in values
-                          if ind >= start and ind < end]
-                if values:
-                    filtered[c] = values
-            patch = filtered
+        if remote:
+            if not self._processed.index.is_unique:
+                self._updating = False
+                self._update_cds()
+                return
+            patch = self._map_patch_to_page(patch)
         if not patch:
             return
         super()._patch(patch)

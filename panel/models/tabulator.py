@@ -5,7 +5,6 @@ See http://tabulator.info/
 """
 from bokeh.core.properties import (
     Any, Bool, Dict, Either, Enum, Instance, Int, List, Nullable, String,
-    Tuple,
 )
 from bokeh.events import ModelEvent
 from bokeh.model import Model
@@ -180,7 +179,9 @@ class DataTabulator(HTMLBox):
 
     source = Instance(ColumnDataSource)
 
-    cell_styles = Dict(String, Either(String, Dict(Int, Dict(String, List(Either(String, Tuple(String, String)))))))
+    # Validating the nested per-cell styles costs tens of milliseconds for
+    # large tables and the frontend treats the value as opaque anyway.
+    cell_styles = Dict(String, Any)
 
     pagination = Nullable(String)
 
