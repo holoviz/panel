@@ -507,7 +507,8 @@ class _state(param.Parameterized):
     def _cleanup_busy_counter(self, event_id: str | None = None, timeout: float = 30.0) -> None:
         with self._busy_lock:
             counter = self._busy_counter
-            counter.pop(event_id, None)
+            if event_id is not None:
+                counter.pop(event_id, None)
             if counter:
                 expired = time.monotonic() - timeout
                 for eid, started_at in list(counter.items()):
