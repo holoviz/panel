@@ -615,6 +615,14 @@ def sorted_model_classes() -> list[type]:
     return _SORTED_MODELS[1]
 
 
+def loaded_custom_classes() -> list[type]:
+    """The ReactiveHTML/ReactiveESM classes whose extension is loaded."""
+    from ..reactive import ReactiveCustomBase
+    return [
+        cls for cls in _descendents(ReactiveCustomBase, concrete=True) if cls._loaded()
+    ]
+
+
 _EXTENSION_MODULES: tuple[tuple[int, int], dict[str, str]] = ((0, 0), {})
 
 def _extension_modules() -> dict[str, str]:
@@ -745,13 +753,7 @@ def bundle_resources(
     global RESOURCE_MODE
     if not isinstance(resources, Resources):
         resources = Resources.from_bokeh(resources, notebook=notebook)
-    js_resources = css_resources = resources
-    RESOURCE_MODE = mode = js_resources.mode if resources is not None else "inline"
-
-    js_files = []
-    js_raw = []
-    css_files = []
-    css_raw = []
+    RESOURCE_MODE = mode = resources.mode if resources is not None else "inline"
 
     if isinstance(enable_mathjax, bool):
         use_mathjax = enable_mathjax
@@ -770,6 +772,65 @@ def bundle_resources(
         notebook or roots is None or 'bokeh-tables' in ext._loaded_extensions or
         _panel_use_tables(roots)
     )
+
+    # Everything below only depends on the resources, the session configuration
+    # and which models are registered, so a repeat request reuses the bundle.
+    if config.autoreload:
+        bundle = _build_bundle(resources, mode, reloading, use_mathjax, use_tables)
+    else:
+        key = _bundle_key(resources, reloading, use_mathjax, use_tables)
+        bundle = _BUNDLE_CACHE.get(key)
+        if bundle is None:
+            bundle = remember(
+                _BUNDLE_CACHE, key, _build_bundle(resources, mode, reloading, use_mathjax, use_tables)
+            )
+    return Bundle(
+        css_files=list(bundle['css_files']),
+        css_raw=list(bundle['css_raw']),
+        hashes=dict(bundle['hashes']),
+        js_files=list(bundle['js_files']),
+        js_raw=list(bundle['js_raw']),
+        js_module_exports=dict(bundle['js_module_exports']),
+        js_modules=list(bundle['js_modules']),
+        resource_declarations=bundle['resource_declarations'],
+        notebook=notebook,
+    )
+
+
+_BUNDLE_CACHE: dict[tuple, dict[str, t.Any]] = {}
+
+def _bundle_key(resources: Resources, reloading: bool, use_mathjax: bool, use_tables: bool) -> tuple:
+    extensions = state._extensions
+    notifications = state.notifications if config.notifications else None
+    return (
+        resources.mode, resources.version, resources.minified, resources.dev,
+        resources.log_level, resources._root_url, tuple(resources.components),
+        resources.base_dir, resources.root_dir, resources.absolute,
+        resources.notebook, resources.path_versioner,
+        reloading, use_mathjax, use_tables,
+        state.rel_path, state.base_url, state._is_pyodide, state._is_server_session,
+        None if extensions is None else frozenset(extensions),
+        tuple(extension._loaded_extensions), frozenset(loaded_custom_classes()),
+        config.design, tuple(config.css_files), tuple(config.js_files.items()),
+        tuple(config.js_modules.items()), tuple(config.raw_css), tuple(config.global_css),
+        config.global_loading_spinner, config.loading_spinner, config.loading_color,
+        config.loading_max_height, config.npm_cdn, config.lazy_resources,
+        config.notebook_resources, config.inline,
+        tuple(notifications._stylesheets) if notifications else None,
+        jupyter_endpoint_available(), NOTEBOOK_RESOURCES, _settings.dev,
+        _settings.resources(default='server'), model_registry_key(), len(EXTENSION_CDN),
+    )
+
+
+def _build_bundle(
+    resources: Resources, mode: str, reloading: bool, use_mathjax: bool, use_tables: bool
+) -> dict[str, t.Any]:
+    js_resources = css_resources = resources
+
+    js_files = []
+    js_raw = []
+    css_files = []
+    css_raw = []
 
     if js_resources:
         js_resources = js_resources.clone()
@@ -819,7 +880,7 @@ def bundle_resources(
 
     hashes = js_resources.hashes if js_resources else {}
 
-    return Bundle(
+    return dict(
         css_files=[URL(css_file) for css_file in css_files],
         css_raw=css_raw,
         hashes=hashes,
@@ -828,7 +889,6 @@ def bundle_resources(
         js_module_exports=resources.js_module_exports,
         js_modules=resources.js_modules,
         resource_declarations=resources.resource_declarations,
-        notebook=notebook,
     )
 
 

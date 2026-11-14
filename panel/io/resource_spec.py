@@ -32,8 +32,8 @@ from ..util import isurl
 from .resources import (
     EXTENSION_CDN, Resources, component_resource_path, extension_declared,
     get_notebook_resources, get_resource_mode, jupyter_endpoint_available,
-    model_registry_key, remember, resolve_resource_cdn, set_resource_mode,
-    sorted_model_classes,
+    loaded_custom_classes, model_registry_key, remember, resolve_resource_cdn,
+    set_resource_mode, sorted_model_classes,
 )
 from .state import state
 
@@ -386,15 +386,7 @@ def _resource_classes() -> list[type]:
     is declared to the registry is exactly what was rendered.
     """
     classes = [cls for cls in sorted_model_classes() if extension_declared(cls)]
-    return classes + _loaded_custom_classes()
-
-
-def _loaded_custom_classes() -> list[type]:
-    from ..reactive import ReactiveCustomBase
-    from ..util import _descendents
-    return [
-        cls for cls in _descendents(ReactiveCustomBase, concrete=True) if cls._loaded()
-    ]
+    return classes + loaded_custom_classes()
 
 
 def _declared_key(mode: str) -> tuple:
@@ -408,7 +400,7 @@ def _declared_key(mode: str) -> tuple:
         get_notebook_resources() and not state._is_server_session,
         jupyter_endpoint_available(), config.npm_cdn, len(EXTENSION_CDN),
         None if extensions is None else frozenset(extensions),
-        model_registry_key(), frozenset(_loaded_custom_classes()),
+        model_registry_key(), frozenset(loaded_custom_classes()),
     )
 
 
