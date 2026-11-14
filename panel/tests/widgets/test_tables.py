@@ -1025,12 +1025,33 @@ def test_tabulator_header_filters_config_boolean(document, comm):
     model = table.get_root(document, comm)
 
     assert model.configuration['columns'] == [
-        {'field': 'index', 'sorter': 'number', 'headerFilter': 'number'},
-        {'field': 'A', 'sorter': 'number', 'headerFilter': True},
-        {'field': 'B', 'sorter': 'number', 'headerFilter': True},
-        {'field': 'C', 'headerFilter': True},
+        {'field': 'index', 'sorter': 'number', 'headerFilter': 'number', 'headerFilterPlaceholder': 'Filter by index...'},
+        {'field': 'A', 'sorter': 'number', 'headerFilter': True, 'headerFilterPlaceholder': 'Filter by A...'},
+        {'field': 'B', 'sorter': 'number', 'headerFilter': True, 'headerFilterPlaceholder': 'Filter by B...'},
+        {'field': 'C', 'headerFilter': True, 'headerFilterPlaceholder': 'Filter by C...'},
         {'field': 'D', 'headerFilter': False, 'sorter': 'timestamp'} # Datetime header filtering not supported
     ]
+
+def test_tabulator_header_filters_placeholder_uses_title(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df, header_filters=True, titles={'A': 'Alpha'})
+
+    model = table.get_root(document, comm)
+
+    columns = {col['field']: col for col in model.configuration['columns']}
+    assert columns['A']['headerFilterPlaceholder'] == 'Filter by Alpha...'
+    assert columns['B']['headerFilterPlaceholder'] == 'Filter by B...'
+
+
+def test_tabulator_header_filters_dict_config_has_no_default_placeholder(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df, header_filters={'A': {'type': 'input', 'func': 'like'}})
+
+    model = table.get_root(document, comm)
+
+    columns = {col['field']: col for col in model.configuration['columns']}
+    assert 'headerFilterPlaceholder' not in columns['A']
+
 
 def test_tabulator_header_filters_column_config_list(document, comm):
     df = makeMixedDataFrame()
