@@ -1497,6 +1497,26 @@ def test_tabulator_frozen_rows(page):
     wait_until(_frozen_rows_unchanged, page)
 
 
+def test_tabulator_frozen_rows_patch_updates_styles(page):
+    df = pd.DataFrame({'v': np.arange(50)})
+    widget = Tabulator(df, frozen_rows=[0, 1], height=300)
+    widget.style.apply(
+        lambda s: ['background-color: red' if v % 3 == 0 else '' for v in s], subset=['v']
+    )
+
+    serve_component(page, widget)
+
+    frozen = page.locator('.tabulator-frozen-rows-holder .tabulator-cell[tabulator-field="v"]')
+    expect(frozen).to_have_count(2)
+    expect(frozen.first).to_have_css('background-color', 'rgb(255, 0, 0)')
+
+    widget.patch({'v': [(0, 1), (1, 3)]})
+
+    expect(frozen.first).to_have_text('1')
+    expect(frozen.first).not_to_have_css('background-color', 'rgb(255, 0, 0)')
+    expect(frozen.nth(1)).to_have_css('background-color', 'rgb(255, 0, 0)')
+
+
 def test_tabulator_patch_no_horizontal_rescroll(page, df_mixed):
     widths = 100
     width = int(((df_mixed.shape[1] + 1) * widths) / 2)
@@ -2414,6 +2434,21 @@ def test_tabulator_hierarchical(page, df_multiindex):
         subgr = page.locator(f'text="subgroup{i}"')
         expect(subgr).to_have_count(1)
         expect(subgr).to_be_visible()
+
+
+def test_tabulator_groupby_patch_regroups(page):
+    df = pd.DataFrame({'g': ['a', 'b'] * 10, 'v': np.arange(20)})
+    widget = Tabulator(df, groupby=['g'], height=600)
+
+    serve_component(page, widget)
+
+    groups = page.locator('.pnx-tabulator .tabulator-group')
+    expect(groups).to_have_count(2)
+
+    widget.patch({'g': [(0, 'b'), (2, 'b')]})
+
+    expect(groups.filter(has_text='g: a')).to_contain_text('(8 items)')
+    expect(groups.filter(has_text='g: b')).to_contain_text('(12 items)')
 
 
 def test_tabulator_cell_click_event(page, df_mixed):
@@ -4271,6 +4306,40 @@ def test_tabulator_update_hidden_columns(page):
         assert title_box['x'] == cell_box['x']
         assert title_box['width'] == cell_box['width']
     wait_until(aligned, page)
+
+
+@pytest.mark.parametrize('layout', ['fit_columns', 'fit_data_stretch'])
+@pytest.mark.parametrize('start,target', [(['b'], []), ([], ['b'])])
+def test_tabulator_update_hidden_columns_layout(page, layout, start, target):
+    df = pd.DataFrame({'a': ['aaaa'] * 3, 'b': ['b' * 24] * 3, 'c': ['c'] * 3})
+    updated = Tabulator(df, hidden_columns=start, layout=layout, width=600)
+    fresh = Tabulator(df, hidden_columns=target, layout=layout, width=600)
+
+    serve_component(page, Column(updated, fresh, width=800))
+
+    tables = page.locator('.pnx-tabulator')
+    expect(tables.locator('.tabulator-row')).to_have_count(6)
+
+    updated.hidden_columns = target
+
+    measure = """(t) => {
+      const left = t.getBoundingClientRect().x;
+      const out = {};
+      for (const f of ['a', 'b', 'c']) {
+        const h = t.querySelector(`.tabulator-col[tabulator-field="${f}"]`);
+        const c = t.querySelector(`.tabulator-row .tabulator-cell[tabulator-field="${f}"]`);
+        if (h.offsetParent === null) continue;
+        out[f] = [
+          Math.round(h.getBoundingClientRect().x - left), h.offsetWidth,
+          Math.round(c.getBoundingClientRect().x - left), c.offsetWidth
+        ];
+      }
+      return out
+    }"""
+
+    def same_layout():
+        assert tables.nth(0).evaluate(measure) == tables.nth(1).evaluate(measure)
+    wait_until(same_layout, page)
 
 
 def test_tabulator_remote_pagination_auto_page_size_grow(page, df_mixed):

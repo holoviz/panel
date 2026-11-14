@@ -540,7 +540,10 @@ export class DataTabulatorView extends HTMLBoxView {
       this._styles_version += 1
       this.setStyles()
     })
-    this.on_change(hidden_columns, () => this.setHidden())
+    this.on_change(hidden_columns, () => {
+      this.setHidden()
+      this.tabulator.columnManager.redraw(false)
+    })
     this.on_change(page_size, () => this.setPageSize())
     this.on_change(page, () => {
       if (!this._updating_page) {
@@ -1568,6 +1571,8 @@ export class DataTabulatorView extends HTMLBoxView {
     const rows = this.tabulator.rowManager.getRows().length
     if (
       this.can_update_in_place &&
+      // Tabulator does not regroup rows whose data is updated in place.
+      !this.tabulator.options.groupBy &&
       isArray(indices) &&
       indices.length > 0 &&
       indices.length * 2 < rows &&
@@ -1634,8 +1639,11 @@ export class DataTabulatorView extends HTMLBoxView {
     if (this.tabulator == null || this.tabulator.rowManager.renderer == null) {
       return
     }
-    for (const row of this.tabulator.getRows("visible")) {
-      this._style_row(row)
+    // Chained so frozen rows, which sit outside the scrolled rows, are included.
+    for (const row of this.tabulator.rowManager.getVisibleRows(true, true)) {
+      if (row.type === "row") {
+        this._style_row(row.getComponent())
+      }
     }
   }
 
