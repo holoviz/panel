@@ -838,7 +838,10 @@ class BaseTable(ReactiveData, Widget):
         reset_index: (bool, default=True)
           If True and the stream_value is a DataFrame,
           then its index is reset. Helps to keep the
-          index unique and named `index`
+          index unique and named `index`. Has no effect
+          if the existing index is non-numeric (e.g. datetimes),
+          in which case the index of the stream_value (or the
+          name of a streamed Series) is preserved.
 
         Raises
         ------
@@ -882,13 +885,17 @@ class BaseTable(ReactiveData, Widget):
         import pandas as pd
 
         index_max = self.value.index.max()
-        if isinstance(index_max, (int, float, np.number)) and np.isfinite(index_max):
+        numeric_index = isinstance(index_max, (int, float, np.number))
+        if numeric_index and np.isfinite(index_max):
             value_index_start = index_max + 1
         else:
             value_index_start = 1
 
         if isinstance(stream_value, pd.DataFrame):
-            if reset_index:
+            # Integer labels cannot be generated for a non-numeric index
+            # (e.g. datetimes) without corrupting it, so the incoming
+            # index is kept instead.
+            if reset_index and numeric_index:
                 stream_value = stream_value.reset_index(drop=True)
                 stream_value.index += value_index_start
             if self.value.empty:
@@ -913,7 +920,25 @@ class BaseTable(ReactiveData, Widget):
             finally:
                 self._updating = False
         elif isinstance(stream_value, pd.Series):
-            self.value.loc[value_index_start] = stream_value
+            if numeric_index:
+                label = value_index_start
+            elif stream_value.name is None:
+                raise ValueError(
+                    "Cannot stream an unnamed Series to a table with a "
+                    "non-numeric index. Stream a Series whose name is the "
+                    "index label, or a DataFrame with the desired index, "
+                    "instead."
+                )
+            elif stream_value.name in self.value.index:
+                # .loc would silently overwrite the existing row
+                # instead of appending one.
+                raise ValueError(
+                    f"Cannot stream a Series named {stream_value.name!r}, "
+                    "a row with that index label already exists."
+                )
+            else:
+                label = stream_value.name
+            self.value.loc[label] = stream_value
             if rollover is not None and len(self.value) > rollover:
                 with param.discard_events(self):
                     self.value = self.value.iloc[-rollover:]
@@ -924,7 +949,14 @@ class BaseTable(ReactiveData, Widget):
             finally:
                 self._updating = False
         elif isinstance(stream_value, dict):
-            if stream_value:
+            if stream_value and not numeric_index:
+                raise ValueError(
+                    "Cannot stream a dict to a table with a non-numeric "
+                    "index since it carries no index labels. Stream a "
+                    "DataFrame with the desired index, or a Series whose "
+                    "name is the index label, instead."
+                )
+            elif stream_value:
                 try:
                     stream_value = pd.DataFrame(stream_value)
                 except ValueError:

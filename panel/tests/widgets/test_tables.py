@@ -2178,17 +2178,60 @@ def test_tabulator_paginated_sorted_selection(document, comm):
     assert table.selection == [1]
 
 
-def test_tabulator_stream_datetime_index():
+@pytest.mark.parametrize('reset_index', [True, False])
+def test_tabulator_stream_datetime_index(document, comm, reset_index):
     # https://github.com/holoviz/panel/issues/4504
-    index = pd.date_range('2023-01-01', periods=6, freq='8h')
-    df = pd.DataFrame({'j': range(6)}, index=index)
-    table = Tabulator(df)
+    index = pd.date_range('2023-01-01', periods=9, freq='8h')
+    df = pd.DataFrame({'j': range(9)}, index=index)
+    table = Tabulator(df.iloc[:3].copy())
+    model = table.get_root(document, comm)
 
-    table.stream(df.copy(), follow=True)
+    table.stream(df.iloc[3:6], reset_index=reset_index)
+    table.stream(df.iloc[6:], reset_index=reset_index)
 
-    assert len(table.value) == 12
-    assert list(table.value['j']) == [*range(6), *range(6)]
-    assert list(table.value.index[:6]) == list(index)
+    pd.testing.assert_index_equal(table.value.index, index)
+    assert table.value.index.dtype == index.dtype
+    assert list(table.value['j']) == list(range(9))
+    np.testing.assert_array_equal(model.source.data['j'], np.arange(9))
+
+    table.patch({'j': [(index[7], 70)]})
+
+    assert table.value.loc[index[7], 'j'] == 70
+    assert model.source.data['j'][7] == 70
+
+
+def test_tabulator_stream_series_datetime_index(document, comm):
+    index = pd.date_range('2023-01-01', periods=5, freq='8h')
+    df = pd.DataFrame({'j': range(5)}, index=index)
+    table = Tabulator(df.iloc[:3].copy())
+    model = table.get_root(document, comm)
+
+    table.stream(df.iloc[3])
+    table.stream(df.iloc[4])
+
+    pd.testing.assert_index_equal(table.value.index, index)
+    assert table.value.index.dtype == index.dtype
+    assert list(table.value['j']) == list(range(5))
+    np.testing.assert_array_equal(model.source.data['j'], np.arange(5))
+
+    table.patch({'j': [(index[4], 40)]})
+
+    assert table.value.loc[index[4], 'j'] == 40
+    assert model.source.data['j'][4] == 40
+
+
+def test_tabulator_stream_series_datetime_index_unnamed_error():
+    index = pd.date_range('2023-01-01', periods=3, freq='8h')
+    table = Tabulator(pd.DataFrame({'j': range(3)}, index=index))
+
+    with pytest.raises(ValueError, match='unnamed Series'):
+        table.stream(pd.Series({'j': 3}))
+    with pytest.raises(ValueError, match='already exists'):
+        table.stream(pd.Series({'j': 3}, name=index[0]))
+    with pytest.raises(ValueError, match='dict'):
+        table.stream({'j': [3]})
+
+    pd.testing.assert_index_equal(table.value.index, index)
 
 
 def test_tabulator_stream_dataframe(document, comm):
