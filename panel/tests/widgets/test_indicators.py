@@ -307,5 +307,19 @@ def test_linear_gauge_is_transparent(document, comm):
     assert model.border_fill_alpha == 0
 
 
+def test_linear_gauge_none_value(document, comm):
+    gauge = LinearGauge(value=None)
+
+    model = gauge.get_root(document, comm)
+    needle = model.select_one({'name': 'needle_source'})
+    assert needle.data['text'] == ['-%']
+
+    gauge.value = 30
+    assert needle.data['text'] == ['30.00%']
+
+    gauge.value = None
+    assert needle.data['text'] == ['-%']
+
+
 def test_gauge_background_is_transparent():
     assert Gauge(value=25)._process_param_change({})['data']['backgroundColor'] == 'transparent'
