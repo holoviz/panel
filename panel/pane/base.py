@@ -5,6 +5,7 @@ object transforming it into a Bokeh model that can be rendered.
 from __future__ import annotations
 
 import typing as t
+import weakref
 
 from functools import partial
 
@@ -260,17 +261,14 @@ class PaneBase(Layoutable):
         """
         if isinstance(obj, Viewable):
             return type(obj)
-        descendents = []
-        for p in _descendents(PaneBase, concrete=True):
-            if p.priority is None:
-                applies = True
-                try:
-                    priority = p.applies(obj, **(kwargs if p._applies_kw else {}))
-                except Exception:
-                    priority = False
-            else:
-                applies = None
-                priority = p.priority
+        panes, static, dynamic = cls._dispatch_order()
+        candidates = list(static)
+        for idx in dynamic:
+            p = panes[idx]
+            try:
+                priority = p.applies(obj, **(kwargs if p._applies_kw else {}))
+            except Exception:
+                priority = False
             if isinstance(priority, bool) and priority:
                 raise ValueError('If a Pane declares no priority '
                                  'the applies method should return a '
@@ -279,18 +277,48 @@ class PaneBase(Layoutable):
                                  'declares no priority.')
             elif priority is None or priority is False:
                 continue
-            descendents.append((priority, applies, p))
-        pane_types = reversed(sorted(descendents, key=lambda x: x[0]))
-        for _, applies, pane_type in pane_types:
-            if applies is None:
-                try:
-                    applies = pane_type.applies(obj, **(kwargs if pane_type._applies_kw else {}))
-                except Exception:
-                    applies = False
-            if not applies:
-                continue
-            return pane_type
+            candidates.append((priority, idx))
+        if dynamic:
+            candidates.sort(reverse=True)
+        for _, idx in candidates:
+            pane_type = panes[idx]
+            if idx in dynamic:
+                return pane_type
+            try:
+                applies = pane_type.applies(obj, **(kwargs if pane_type._applies_kw else {}))
+            except Exception:
+                applies = False
+            if applies:
+                return pane_type
         raise TypeError(f'{type(obj).__name__} type could not be rendered.')
+
+    # Resolved dispatch order: weak references to the concrete panes in
+    # _descendents order, the (priority, index) of the panes with a static
+    # priority sorted highest first and the indices of the panes with a
+    # dynamic priority. Rebuilt when the set of pane classes changes;
+    # a priority reassigned on an existing class is not picked up.
+    _dispatch_cache: t.ClassVar[
+        tuple[list[weakref.ReferenceType[type]], list[tuple[float, int]], list[int]] | None
+    ] = None
+
+    @classmethod
+    def _dispatch_order(cls) -> tuple[list[type[PaneBase]], list[tuple[float, int]], list[int]]:
+        panes = t.cast('list[type[PaneBase]]', _descendents(PaneBase, concrete=True))
+        cache = PaneBase._dispatch_cache
+        if (cache is None or len(cache[0]) != len(panes) or
+            any(ref() is not p for ref, p in zip(cache[0], panes, strict=True))):
+            static, dynamic = [], []
+            for idx, p in enumerate(panes):
+                if p.priority is None:
+                    dynamic.append(idx)
+                else:
+                    static.append((p.priority, idx))
+            # Ties keep the reversed _descendents order, matching the
+            # reversed stable sort this replaces.
+            static.sort(reverse=True)
+            cache = ([weakref.ref(p) for p in panes], static, dynamic)
+            PaneBase._dispatch_cache = cache
+        return panes, cache[1], cache[2]
 
 
 class Pane(PaneBase, Reactive):
