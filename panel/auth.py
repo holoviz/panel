@@ -1027,10 +1027,20 @@ class BasicAuthProvider(AuthProvider):
     def _allow_guest(self, uri):
         if config.oauth_optional and not (uri == self._login_endpoint or '?code=' in uri):
             return True
-        for gep in self._guest_endpoints:
-            if uri == gep or uri == gep.rstrip('/') + '/ws':
-                return True
-        return False
+        path = uri.split('?', 1)[0]
+        return any(self._guest_endpoint_covers(gep, path) for gep in self._guest_endpoints)
+
+    @staticmethod
+    def _guest_endpoint_covers(gep, path):
+        # Only a trailing `/*` opts the endpoint into covering the paths below it,
+        # because a guest endpoint is an entry on an auth bypass list.
+        gep = gep.split('?', 1)[0]
+        subtree = gep.endswith('/*')
+        gep = gep.rstrip('*').rstrip('/')
+        if not gep:
+            # The root endpoint covers the root app and its websocket only
+            return path in ('/', '/ws')
+        return path == gep or path == gep + '/ws' or (subtree and path.startswith(gep + '/'))
 
     @property
     def get_user(self):

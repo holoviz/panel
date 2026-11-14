@@ -15,7 +15,9 @@ import requests
 from starlette.testclient import TestClient
 from tornado.web import create_signed_value, decode_signed_value
 
-from panel.auth import AUTH_PROVIDERS, OAuthLoginHandler, OAuthProvider
+from panel.auth import (
+    AUTH_PROVIDERS, BasicAuthProvider, OAuthLoginHandler, OAuthProvider,
+)
 from panel.config import config
 from panel.io.asgi import build_asgi_app
 from panel.io.state import state
@@ -354,6 +356,71 @@ def test_guest_endpoints_allow_unauthenticated_access(basic_auth_client):
         assert 'is_guest=1' in ''.join(r.headers.get_list('set-cookie'))
         assert client.get('/private', follow_redirects=False).status_code == 302
     assert users == ['guest']
+
+
+def test_guest_endpoint_matches_query_string(basic_auth_client):
+    apps = {'/app': lambda: Markdown('# Test app')}
+    with basic_auth_client(apps, oauth_guest_endpoints=['/app']) as client:
+        assert client.get('/app?foo=1').status_code == 200
+
+
+def test_guest_endpoint_matches_static_sub_path(basic_auth_client, tmp_path):
+    (tmp_path / 'logo.png').write_bytes(b'\x89PNG\r\n\x1a\n')
+    apps = {'/app': lambda: Markdown('# Test app')}
+    with basic_auth_client(
+        apps, oauth_guest_endpoints=['/assets/*'], static_dirs={'assets': str(tmp_path)}
+    ) as client:
+        r = client.get('/assets/logo.png')
+        assert r.status_code == 200
+        assert r.content.startswith(b'\x89PNG')
+
+
+def test_guest_endpoint_requires_segment_boundary(basic_auth_client):
+    apps = {'/app': lambda: Markdown('# Test app'), '/app-private': lambda: Markdown('# Private')}
+    with basic_auth_client(apps, oauth_guest_endpoints=['/app/*']) as client:
+        assert client.get('/app-private', follow_redirects=False).status_code == 302
+
+
+def test_guest_endpoint_plain_entry_covers_no_sub_path(basic_auth_client, tmp_path):
+    (tmp_path / 'logo.png').write_bytes(b'\x89PNG\r\n\x1a\n')
+    apps = {'/app': lambda: Markdown('# Test app')}
+    with basic_auth_client(
+        apps, oauth_guest_endpoints=['/assets'], static_dirs={'assets': str(tmp_path)}
+    ) as client:
+        assert client.get('/assets/logo.png', follow_redirects=False).status_code == 302
+
+
+def test_guest_endpoint_root_allows_websocket_only():
+    provider = BasicAuthProvider(guest_endpoints=['/'])
+    assert provider._allow_guest('/')
+    assert provider._allow_guest('/ws')
+    assert provider._allow_guest('/?foo=1')
+    assert not provider._allow_guest('/app')
+    assert not provider._allow_guest('//app')
+
+
+def test_guest_endpoint_sub_path_opt_in():
+    provider = BasicAuthProvider(guest_endpoints=['/assets/*'])
+    assert provider._allow_guest('/assets')
+    assert provider._allow_guest('/assets/logo.png')
+    assert provider._allow_guest('/assets?version=1')
+    assert not provider._allow_guest('/assets-private')
+    assert not provider._allow_guest('/')
+
+
+def test_guest_endpoint_trailing_slash_is_exact():
+    provider = BasicAuthProvider(guest_endpoints=['/assets/'])
+    assert provider._allow_guest('/assets')
+    assert provider._allow_guest('/assets/ws')
+    assert not provider._allow_guest('/assets/logo.png')
+
+
+def test_guest_endpoint_plain_entry_is_exact():
+    provider = BasicAuthProvider(guest_endpoints=['/assets'])
+    assert provider._allow_guest('/assets')
+    assert provider._allow_guest('/assets/ws')
+    assert not provider._allow_guest('/assets/logo.png')
+    assert not provider._allow_guest('/assets-private')
 
 
 def test_oauth_optional_allows_unauthenticated_access(basic_auth_client):
