@@ -112,6 +112,78 @@ def test_list_hash():
     assert not hashes_equal([0], [1])
     assert not hashes_equal(['a', ['b']], ['a', ['c']])
 
+def test_flat_container_hash_distinguishes_types():
+    assert not hashes_equal([1], [True])
+    assert not hashes_equal([1], [1.0])
+    assert not hashes_equal(['1'], [b'1'])
+    assert not hashes_equal([0.0], [-0.0])
+    assert not hashes_equal([None], [0])
+    assert not hashes_equal([1], (1,))
+    assert not hashes_equal({'a': 1}, {'a': True})
+    assert not hashes_equal({1: 'a'}, {True: 'a'})
+    assert not hashes_equal([1, 2], [1, [2]])
+    assert hashes_equal({'a': 1, 'b': 2}, {'a': 1, 'b': 2})
+    assert not hashes_equal({'a': 1, 'b': 2}, {'b': 2, 'a': 1})
+
+def test_flat_container_hash_subclasses_not_treated_as_natives():
+    class Name(str):
+        pass
+
+    Point = namedtuple('Point', ['x'])
+    assert not hashes_equal(['a'], [Name('a')])
+    assert not hashes_equal((1,), Point(1))
+
+def test_custom_scalar_hash_func_applies_inside_containers():
+    def f(a):
+        return a
+
+    same = {int: lambda obj: b'int'}
+    assert compute_hash(f, same, ([1, 2],), {}) == compute_hash(f, same, ([3, 4],), {})
+    assert compute_hash(f, same, ({'a': 1},), {}) == compute_hash(f, same, ({'a': 2},), {})
+    assert compute_hash(f, {}, ([1, 2],), {}) != compute_hash(f, {}, ([3, 4],), {})
+
+def test_hash_funcs_exact_type_overrides_named_default():
+    # The docs recommend hashing frames by a version, which must take
+    # precedence over the default registered under the type's name
+    df = pd.DataFrame({'a': [1]})
+    df.attrs['version'] = 1
+    other = pd.DataFrame({'a': [2]})
+    other.attrs['version'] = 1
+    calls = []
+
+    @cache(hash_funcs={pd.DataFrame: lambda df: str(df.attrs['version']).encode()})
+    def process(df):
+        calls.append(1)
+        return len(df)
+
+    assert process(df) == 1
+    assert process(other) == 1
+    assert len(calls) == 1
+
+def test_hash_funcs_registered_directly_apply_immediately():
+    class Versioned:
+        def __init__(self, version):
+            self.version = version
+
+    a, b = Versioned(1), Versioned(1)
+    assert not hashes_equal(a, b)
+    cache_module._hash_funcs[Versioned] = lambda obj: str(obj.version).encode()
+    try:
+        assert hashes_equal(a, b)
+        assert not hashes_equal(a, Versioned(2))
+    finally:
+        del cache_module._hash_funcs[Versioned]
+    assert not hashes_equal(a, b)
+
+def test_hash_func_lookup_not_memoized_for_instance_dependent_matches():
+    # Dataclass instances are matched by a predicate, which may depend
+    # on the instance rather than its type
+    assert hashes_equal(_Point(1), _Point(1))
+    assert not hashes_equal(_Point(1), _Point(2))
+    assert _Point not in cache_module._HASH_FUNC_CACHE
+    _generate_hash([1])
+    assert cache_module._HASH_FUNC_CACHE[list] is cache_module._container_hash
+
 def test_list_hash_recursive():
     # Recursion
     l = [0]
@@ -522,6 +594,121 @@ def test_cache_ttl(to_disk, tmp_path):
     assert fn(0, 0) == 0
     time.sleep(0.2)
     assert fn(0, 0) == 1
+
+def test_cache_ttl_expired_entries_never_returned(monkeypatch):
+    # The sweep that frees expired entries runs once per ttl, an
+    # expired entry must still never be returned in between
+    clock = [0.0]
+    monkeypatch.setattr(cache_module, '_TIME_FN', lambda: clock[0])
+    calls = []
+
+    @cache(ttl=10)
+    def identity(value):
+        calls.append(value)
+        return value
+
+    buckets = set(state._memoize_cache)
+    identity(0)
+    bucket, = (state._memoize_cache[k] for k in set(state._memoize_cache) - buckets)
+    for value in range(1, 5):
+        clock[0] = value
+        identity(value)
+    assert len(bucket) == 5
+
+    clock[0] = 10
+    assert identity(0) == 0
+    assert len(calls) == 5
+
+    clock[0] = 10.5
+    assert identity(0) == 0
+    assert len(calls) == 6
+    # The sweep that ran found nothing else expired
+    assert len(bucket) == 5
+
+    clock[0] = 15
+    assert identity(1) == 1
+    assert len(calls) == 7
+    # 2-4 have expired but linger until the next sweep
+    assert len(bucket) == 5
+
+    clock[0] = 21
+    assert identity(0) == 0
+    assert len(calls) == 8
+    # Swept, only 0 and 1 remain
+    assert len(bucket) == 2
+
+def test_cache_ttl_with_max_items_evicts_expired_first(monkeypatch):
+    clock = [0.0]
+    monkeypatch.setattr(cache_module, '_TIME_FN', lambda: clock[0])
+    calls = []
+
+    @cache(ttl=10, max_items=3, policy='lru')
+    def identity(value):
+        calls.append(value)
+        return value
+
+    identity(0)
+    clock[0] = 5
+    identity(1)
+    clock[0] = 6
+    identity(2)
+    clock[0] = 10.5
+    # Sweeps 0 and makes 1 the most recently used
+    assert identity(1) == 1
+    clock[0] = 11
+    identity(3)
+    clock[0] = 16
+    # The cache is full, 1 has expired and 2 is the least recently
+    # used: 1 must go rather than 2
+    identity(4)
+    assert identity(2) == 2
+    assert calls == [0, 1, 2, 3, 4]
+    assert identity(1) == 1
+    assert calls == [0, 1, 2, 3, 4, 1]
+
+def test_cache_lru_tracks_hits():
+    global OFFSET
+    OFFSET.clear()
+    fn = cache(function_with_args, max_items=3, policy='lru')
+    assert fn(0, 0) == 0
+    assert fn(0, 1) == 1
+    assert fn(0, 2) == 2
+    assert fn(0, 1) == 1
+    assert fn(0, 0) == 0
+    assert fn(0, 3) == 3 # (0, 2) should be evicted
+    assert fn(0, 0) == 0
+    assert fn(0, 1) == 1
+    assert fn(0, 2) == 3
+
+def test_cache_decorations_with_different_settings_do_not_share(monkeypatch):
+    clock = [0.0]
+    monkeypatch.setattr(cache_module, '_TIME_FN', lambda: clock[0])
+    calls = []
+
+    def identity(value):
+        calls.append(value)
+        return value
+
+    plain = cache(identity)
+    expiring = cache(identity, ttl=1)
+    assert plain(1) == 1
+    clock[0] = 2
+    # A separate bucket, so this neither hits the plain entry nor
+    # expires it
+    assert expiring(1) == 1
+    assert plain(1) == 1
+    assert len(calls) == 2
+
+@diskcache_available
+def test_cache_to_disk_not_shadowed_by_memory_cache(tmp_path):
+    def identity(value):
+        return value
+
+    in_memory = cache(identity)
+    on_disk = cache(identity, to_disk=True, cache_path=tmp_path)
+    in_memory(1)
+    on_disk(1)
+    assert list(tmp_path.glob('*'))
 
 def test_cache_on_undecorated_parameterized_method():
     class Model(param.Parameterized):

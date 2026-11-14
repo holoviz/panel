@@ -68,6 +68,37 @@ _NATIVE_TYPES = (
     bytes, str, float, int, bool, bytearray, type(None)
 )
 
+_NATIVE_TYPE_SET = frozenset(_NATIVE_TYPES)
+
+# Native types whose equal values are interchangeable as memo keys,
+# which excludes float since 0.0 == -0.0 while they hash differently
+_KEY_TYPES = frozenset({int, str, bool, bytes, type(None)})
+
+# Hash functions for the native scalar types, resolved from _hash_funcs
+# whenever it changes so that a scalar is hashed with one dict lookup
+_SCALAR_HASHERS: dict[type, Callable[[t.Any], bytes]] = {}
+
+_DEFAULT_SCALAR_HASHERS: dict[type, Callable[[t.Any], bytes]] = {}
+
+# Whether flat containers of native scalars may be hashed from their
+# repr in one go, which is only sound while every native type is
+# hashed by its default hash function
+_REPR_FAST_PATH = False
+
+# The entries of _hash_funcs not keyed by name, in order, each marked
+# as a predicate or a type to match with isinstance
+_SCAN_ENTRIES: list[tuple[bool, t.Any, t.Any]] = []
+
+# Memo of _find_hash_func results for types whose lookup does not
+# depend on the instance, invalidated whenever _hash_funcs changes
+_HASH_FUNC_CACHE: dict[type, Callable[[t.Any], bytes] | None] = {}
+
+_HASH_FUNC_CACHE_MAX_ITEMS = 1024
+
+# Bounds the number of cache buckets a decorated function remembers,
+# which grows with the sessions seen when caching per session
+_MAX_BUCKETS = 256
+
 _ARRAY_SIZE_LARGE = 100_000
 
 _ARRAY_SAMPLE_SIZE = 100_000
@@ -122,10 +153,31 @@ def _is_native(obj: t.Any) -> bool:
     return isinstance(obj, _NATIVE_TYPES)
 
 def _container_hash(obj: t.Any) -> bytes:
-    h = hashlib.new("md5")
-    h.update(_generate_hash(f'__{type(obj).__name__}'))
+    obj_type = type(obj)
+    if _REPR_FAST_PATH:
+        if obj_type is dict:
+            flat = (
+                _NATIVE_TYPE_SET.issuperset(map(type, obj)) and
+                _NATIVE_TYPE_SET.issuperset(map(type, obj.values()))
+            )
+        else:
+            flat = (
+                (obj_type is list or obj_type is tuple) and
+                _NATIVE_TYPE_SET.issuperset(map(type, obj))
+            )
+        if flat:
+            # The repr of a flat container of natives is an unambiguous
+            # literal, so it can be hashed without visiting each item
+            return hashlib.md5(b'repr:' + repr(obj).encode()).digest()
+    h = hashlib.md5()
+    h.update(_generate_hash(f'__{obj_type.__name__}'))
+    hash_stack = state._current_stack
     for item in (obj.items() if isinstance(obj, dict) else obj):
-        h.update(_generate_hash(item))
+        hash_func = _SCALAR_HASHERS.get(type(item))
+        if hash_func is not None:
+            h.update(_call_hash_func(hash_func, item))
+        else:
+            h.update(_generate_hash_tracked(item, hash_stack))
     return h.digest()
 
 def _slice_hash(x: slice) -> bytes:
@@ -250,7 +302,55 @@ def _io_hash(obj):
     h.update(_generate_hash(obj.getvalue()))
     return h.digest()
 
-_hash_funcs: dict[str | type[t.Any] | tuple[type, ...] | Callable[[t.Any], bool], bytes | Callable[[t.Any], bytes]] = {
+class _HashFuncs(dict):
+    """
+    The registry of hash functions, which rebuilds the lookup tables
+    derived from it whenever it is modified, since downstream libraries
+    register their own hash functions by mutating it directly.
+    """
+
+    def __setitem__(self, key, value):
+        super().__setitem__(key, value)
+        _rebuild_hash_tables()
+
+    def __delitem__(self, key):
+        super().__delitem__(key)
+        _rebuild_hash_tables()
+
+    def __ior__(self, other):
+        super().update(other)
+        _rebuild_hash_tables()
+        return self
+
+    def update(self, *args, **kwargs):
+        super().update(*args, **kwargs)
+        _rebuild_hash_tables()
+
+    def clear(self):
+        super().clear()
+        _rebuild_hash_tables()
+
+    def pop(self, *args):
+        value = super().pop(*args)
+        _rebuild_hash_tables()
+        return value
+
+    def popitem(self):
+        item = super().popitem()
+        _rebuild_hash_tables()
+        return item
+
+    def setdefault(self, key, default=None):
+        value = super().setdefault(key, default)
+        _rebuild_hash_tables()
+        return value
+
+    def replace(self, mapping):
+        super().clear()
+        super().update(mapping)
+        _rebuild_hash_tables()
+
+_hash_funcs: dict[str | type[t.Any] | tuple[type, ...] | Callable[[t.Any], bool], bytes | Callable[[t.Any], bytes]] = _HashFuncs({
     # Types
     # NOTE: Enum comes first so that IntEnum and StrEnum members are not
     # matched by plain int or str.
@@ -302,44 +402,90 @@ _hash_funcs: dict[str | type[t.Any] | tuple[type, ...] | Callable[[t.Any], bool]
     inspect.ismodule           : lambda obj: obj.__name__,
     lambda x: dataclasses.is_dataclass(x) and not isinstance(x, type): _dataclass_hash,
     lambda x: hasattr(x, "tobytes") and x.shape == (): lambda x: x.tobytes(),  # Single numpy dtype like: np.int32
-}
+    **{name: b'0' for name in _FFI_TYPE_NAMES},
+})
 
-for name in _FFI_TYPE_NAMES:
-    _hash_funcs[name] = b'0'
+def _lookup_hash_func(obj):
+    """
+    Resolves the hash function registered for an object, and whether
+    the match depends on its type alone, so that it may be memoized
+    per type.
+    """
+    obj_type = type(obj)
+    # Exact type matches come first so that a subclass does not pick up
+    # the hash function of its base, e.g. bool being hashed as an int,
+    # and so that a custom hash function for a type the defaults
+    # register by name, e.g. pandas.DataFrame, takes precedence
+    hash_func = _hash_funcs.get(obj_type)
+    if hash_func is not None:
+        return hash_func, True
+    hash_func = _hash_funcs.get(_get_fqn(obj))
+    if hash_func is not None:
+        return hash_func, True
+    by_type = not isinstance(obj, type)
+    for is_predicate, otype, hash_func in _SCAN_ENTRIES:
+        if is_predicate:
+            # Predicates may depend on the instance, not just its type
+            by_type = False
+            if otype(obj):
+                return hash_func, False
+        elif isinstance(obj, otype):
+            return hash_func, by_type
+    return None, by_type
 
 def _find_hash_func(obj):
-    fqn_type = _get_fqn(obj)
-    if fqn_type in _hash_funcs:
-        return _hash_funcs[fqn_type]
     obj_type = type(obj)
-    if obj_type in _hash_funcs:
-        # Exact type matches avoid the scan below and ensure a subclass
-        # does not pick up the hash function of its base, e.g. bool
-        # being hashed as an int
-        return _hash_funcs[obj_type]
-    for otype, hash_func in _hash_funcs.items():
-        if isinstance(otype, str):
-            if otype == fqn_type:
-                return hash_func
-        elif inspect.isfunction(otype):
-            if otype(obj):
-                return hash_func
-        elif isinstance(obj, otype):
-            return hash_func
+    try:
+        return _HASH_FUNC_CACHE[obj_type]
+    except KeyError:
+        pass
+    hash_func, by_type = _lookup_hash_func(obj)
+    if by_type:
+        if len(_HASH_FUNC_CACHE) >= _HASH_FUNC_CACHE_MAX_ITEMS:
+            _HASH_FUNC_CACHE.clear()
+        _HASH_FUNC_CACHE[obj_type] = hash_func
+    return hash_func
+
+_NATIVE_SAMPLES = (b'', '', 0.0, 0, False, bytearray(), None)
+
+def _rebuild_hash_tables():
+    global _REPR_FAST_PATH
+    _HASH_FUNC_CACHE.clear()
+    _SCAN_ENTRIES[:] = [
+        (not isinstance(key, (type, tuple)), key, hash_func)
+        for key, hash_func in _hash_funcs.items() if not isinstance(key, str)
+    ]
+    hashers = {}
+    for sample in _NATIVE_SAMPLES:
+        hash_func, _ = _lookup_hash_func(sample)
+        if hash_func is not None:
+            hashers[type(sample)] = hash_func
+    _SCALAR_HASHERS.clear()
+    _SCALAR_HASHERS.update(hashers)
+    _REPR_FAST_PATH = all(
+        hashers.get(native) is hash_func
+        for native, hash_func in _DEFAULT_SCALAR_HASHERS.items()
+    )
+
+_rebuild_hash_tables()
+
+_DEFAULT_SCALAR_HASHERS.update(_SCALAR_HASHERS)
+
+def _call_hash_func(hash_func, obj):
+    try:
+        return hash_func(obj)
+    except BaseException as e:
+        raise ValueError(
+            f'User hash function {hash_func!r} failed for input '
+            f'{obj!r} with following error: {type(e).__name__}("{e}").'
+        ) from e
 
 def _generate_hash_inner(obj):
     hash_func = _find_hash_func(obj)
     if hash_func is not None:
-        try:
-            output = hash_func(obj)
-        except BaseException as e:
-            raise ValueError(
-                f'User hash function {hash_func!r} failed for input '
-                f'{obj!r} with following error: {type(e).__name__}("{e}").'
-            ) from e
-        return output
+        return _call_hash_func(hash_func, obj)
     if hasattr(obj, '__reduce__') and inspect.isclass(obj):
-        h = hashlib.new("md5")
+        h = hashlib.md5()
         try:
             reduce_data = obj.__reduce__()
         except BaseException:
@@ -349,9 +495,8 @@ def _generate_hash_inner(obj):
         return h.digest()
     return _int_to_bytes(id(obj))
 
-def _generate_hash(obj):
+def _generate_hash_tracked(obj, hash_stack):
     # Break recursive cycles.
-    hash_stack = state._current_stack
     if obj in hash_stack:
         # Encodes which ancestor is referenced, otherwise distinct cyclic
         # structures, e.g. a reference to the root vs. to a nested
@@ -359,10 +504,16 @@ def _generate_hash(obj):
         return _CYCLE_PLACEHOLDER + _int_to_bytes(hash_stack.distance(obj))
     hash_stack.push(obj)
     try:
-        hash_value = _generate_hash_inner(obj)
+        return _generate_hash_inner(obj)
     finally:
         hash_stack.pop()
-    return hash_value
+
+def _generate_hash(obj):
+    # Scalars cannot take part in a cycle, so they skip the cycle stack
+    hash_func = _SCALAR_HASHERS.get(type(obj))
+    if hash_func is not None:
+        return _call_hash_func(hash_func, obj)
+    return _generate_hash_tracked(obj, state._current_stack)
 
 def _key(obj, _seen=None):
     """
@@ -376,9 +527,22 @@ def _key(obj, _seen=None):
     not be derived from the identity of a mutable object, since the
     address may be recycled and the contents may change in place.
     """
-    if obj is None:
-        return None
-    elif isinstance(obj, bytearray):
+    obj_type = type(obj)
+    if obj_type in _KEY_TYPES:
+        return (obj_type.__name__, obj)
+    elif obj_type is tuple or obj_type is list:
+        if _KEY_TYPES.issuperset(map(type, obj)):
+            # Equal natives of one type are interchangeable, so the types
+            # and the values need not be paired up
+            return (f'__{obj_type.__name__}', tuple(map(type, obj)), tuple(obj))
+    elif obj_type is dict:
+        if (_KEY_TYPES.issuperset(map(type, obj)) and
+            _KEY_TYPES.issuperset(map(type, obj.values()))):
+            return (
+                '__dict', tuple(map(type, obj)), tuple(obj),
+                tuple(map(type, obj.values())), tuple(obj.values())
+            )
+    if isinstance(obj, bytearray):
         return ('bytearray', bytes(obj))
     elif isinstance(obj, float):
         return (type(obj).__name__, _float_to_bytes(obj))
@@ -415,11 +579,9 @@ def _memoize_hash(key, hash_value):
     with _HASH_MAP_LOCK:
         if key in _HASH_MAP:
             return
-        excess = (len(_HASH_MAP) + 1) - _HASH_MAP_MAX_ITEMS
-        if excess > 0:
+        while len(_HASH_MAP) >= _HASH_MAP_MAX_ITEMS:
             # dicts preserve insertion order, so this evicts FIFO
-            for stale in list(_HASH_MAP)[:excess]:
-                del _HASH_MAP[stale]
+            del _HASH_MAP[next(iter(_HASH_MAP))]
         _HASH_MAP[key] = hash_value
 
 def _closure_key(func):
@@ -456,38 +618,48 @@ def _closure_key(func):
 
 def _cleanup_cache(cache, policy, max_items, time):
     """
-    Deletes items in the cache if the exceed the number of items or
-    their TTL (time-to-live) has expired.
+    Deletes items from the cache according to the (lowercase) policy
+    until there is room for one more.
     """
     while len(cache) >= max_items:
-        if policy.lower() == 'fifo':
-            key = list(cache.keys())[0]
-        elif policy.lower() == 'lru':
-            key = sorted(((k, time-t) for k, (_, _, _, t) in cache.items()),
-                         key=lambda o: o[1])[-1][0]
-        elif policy.lower() == 'lfu':
-            key = sorted(cache.items(), key=lambda o: o[1][2])[0][0]
+        if policy == 'fifo' or (policy == 'lru' and type(cache) is dict):
+            # Hits move the entry of a dict to its end, so the first key
+            # is the oldest and the least recently used one
+            key = next(iter(cache))
+        elif policy == 'lru':
+            key = min(reversed(list(cache.items())), key=lambda o: o[1][3])[0]
+        else:
+            key = min(cache.items(), key=lambda o: o[1][2])[0]
         del cache[key]
 
 def _cleanup_ttl(cache, ttl, time):
     """
     Deletes items in the cache if their TTL (time-to-live) has expired.
     """
-    for key, (_, ts, _, _) in list(cache.items()):
-        if (time-ts) > ttl:
-            del cache[key]
+    expired = [key for key, (_, ts, _, _) in cache.items() if (time-ts) > ttl]
+    for key in expired:
+        cache.pop(key, None)
 
 @contextmanager
 def _hash_context(hash_funcs, approximate=True):
-    backup = dict(_hash_funcs)
-    _hash_funcs.update(hash_funcs)
     token = _APPROXIMATE.set(approximate)
+    if hash_funcs:
+        backup = dict(_hash_funcs)
+        _hash_funcs.update(hash_funcs)
     try:
         yield
     finally:
         _APPROXIMATE.reset(token)
-        _hash_funcs.clear()
-        _hash_funcs.update(backup)
+        if hash_funcs:
+            _hash_funcs.replace(backup)
+
+def _hash_arguments(args, kwargs):
+    hasher = hashlib.md5()
+    if args:
+        hasher.update(_generate_hash(args))
+    if kwargs:
+        hasher.update(_generate_hash(kwargs))
+    return hasher.hexdigest()
 
 #---------------------------------------------------------------------
 # Public API
@@ -517,22 +689,24 @@ def compute_hash(func, hash_funcs, args, kwargs, approximate=True):
     # hash for the very same arguments.
     key = _INDETERMINATE
     if not hash_funcs:
-        args_key, kwargs_key = _key(args), _key(kwargs)
-        if args_key is not _INDETERMINATE and kwargs_key is not _INDETERMINATE:
-            key = (func, args_key, kwargs_key, approximate)
-            try:
-                if key in _HASH_MAP:
-                    return _HASH_MAP[key]
-            except TypeError:
-                # The callable itself is not hashable
-                key = _INDETERMINATE
-    hasher = hashlib.new("md5")
-    with _hash_context(hash_funcs, approximate):
-        if args:
-            hasher.update(_generate_hash(args))
-        if kwargs:
-            hasher.update(_generate_hash(kwargs))
-    hash_value = hasher.hexdigest()
+        args_key = _key(args)
+        if args_key is not _INDETERMINATE:
+            kwargs_key = _key(kwargs)
+            if kwargs_key is not _INDETERMINATE:
+                key = (func, args_key, kwargs_key, approximate)
+                try:
+                    hash_value = _HASH_MAP.get(key)
+                except TypeError:
+                    # The callable itself is not hashable
+                    key = _INDETERMINATE
+                else:
+                    if hash_value is not None:
+                        return hash_value
+    if hash_funcs or _APPROXIMATE.get() != approximate:
+        with _hash_context(hash_funcs, approximate):
+            hash_value = _hash_arguments(args, kwargs)
+    else:
+        hash_value = _hash_arguments(args, kwargs)
     if key is not _INDETERMINATE:
         _memoize_hash(key, hash_value)
     return hash_value
@@ -636,6 +810,7 @@ def cache(
         raise ValueError(
             f"Cache policy must be one of 'FIFO', 'LRU' or 'LFU', not {policy}."
         )
+    policy = policy.lower()  # type: ignore[assignment]
 
     if cache_path is None:
         cache_path = config.cache_path
@@ -662,18 +837,35 @@ def cache(
     with _hash_context(hash_funcs, approximate):
         closure_key = _closure_key(func)
 
-    fallback_fname = uuid.uuid4().hex
+    # If the function is defined inside a bokeh/panel application it is
+    # recreated for each session, therefore we cache by file, class and
+    # qualified function name. Since that is shared by all functions a
+    # factory generates we also key on the values the function closes
+    # over, and on the settings so that two decorations of one function
+    # with e.g. a different ttl or to_disk do not share a cache.
+    func_name = func.__name__
+    qualname = getattr(func, '__qualname__', func_name)
+    module = sys.modules.get(func.__module__)
+    fname = '__main__' if func.__module__ == '__main__' else getattr(module, '__file__', None)
+    if fname is None:
+        fname = uuid.uuid4().hex
+    settings = (
+        max_items, policy, ttl, to_disk, str(cache_path) if to_disk else None,
+        per_session, approximate
+    )
+    # The usage counts and access times only serve eviction
+    track_usage = max_items is not None
+    lru_dict = track_usage and policy == 'lru' and not to_disk
+    # The bucket and the time of its last ttl sweep per method owner and
+    # session, since the bucket hash is otherwise fixed for the function
+    buckets: dict[tuple, tuple[str, list[float]]] = {}
     lock = threading.RLock()
 
-    def hash_func(*args, **kwargs):
+    def lookup(args, kwargs):
         # Handle param.depends method by adding parameters to arguments
-        func_name = func.__name__
-        is_method = (
-            args and isinstance(args[0], object) and
-            getattr(type(args[0]), func_name, None) is wrapped_func
-        )
+        is_method = args and getattr(type(args[0]), func_name, None) is wrapped_func
         hash_args, hash_kwargs = args, kwargs
-        if (is_method and isinstance(args[0], param.Parameterized)):
+        if is_method and isinstance(args[0], param.Parameterized):
             dinfo = getattr(wrapped_func, '_dinfo', {})
             hash_args = tuple(getattr(args[0], d) for d in dinfo.get('dependencies', ())) + args[1:]
             hash_kwargs = dict(dinfo.get('kw', {}), **kwargs)
@@ -681,24 +873,24 @@ def cache(
 
         time = _TIME_FN()
 
-        # If the function is defined inside a bokeh/panel application
-        # it is recreated for each session, therefore we cache by
-        # file, class and qualified function name. Since that is shared
-        # by all functions a factory generates we also key on the values
-        # the function closes over.
-        module = sys.modules.get(func.__module__)
-        fname = '__main__' if func.__module__ == '__main__' else getattr(module, '__file__', None)
-        if fname is None:
-            fname = fallback_fname
-        qualname = getattr(func, '__qualname__', func_name)
-        if is_method:
-            func_hash = (fname, type(args[0]).__name__, qualname)
-        else:
-            func_hash = (fname, qualname)
-        func_hash += (closure_key,)
-        if per_session:
-            func_hash += (id(state.curdoc),)
-        func_hash = hashlib.sha256(_generate_hash(func_hash)).hexdigest()
+        scope = (
+            type(args[0]).__name__ if is_method else None,
+            id(state.curdoc) if per_session else None,
+        )
+        bucket = buckets.get(scope)
+        if bucket is None:
+            if len(buckets) >= _MAX_BUCKETS:
+                buckets.clear()
+            if is_method:
+                func_hash = (fname, scope[0], qualname)
+            else:
+                func_hash = (fname, qualname)
+            func_hash += (closure_key, settings)
+            if per_session:
+                func_hash += (scope[1],)
+            func_hash = hashlib.sha256(_generate_hash(func_hash)).hexdigest()
+            buckets[scope] = bucket = (func_hash, [time])
+        func_hash, sweep = bucket
 
         func_hashes[0] = func_hash
         func_cache = state._memoize_cache.get(func_hash)
@@ -706,47 +898,65 @@ def cache(
         if func_cache is None:
             if to_disk:
                 from diskcache import Index
-                cache = Index(os.path.join(cache_path, func_hash))
+                func_cache = Index(os.path.join(cache_path, func_hash))
             else:
-                cache = {}
-            state._memoize_cache[func_hash] = func_cache = cache
+                func_cache = {}
+            state._memoize_cache[func_hash] = func_cache
+
+        entry = func_cache.get(hash_value)
 
         if ttl is not None:
-            _cleanup_ttl(func_cache, ttl, time)
+            if entry is not None and (time - entry[1]) > ttl:
+                func_cache.pop(hash_value, None)
+                entry = None
+            if (time - sweep[0]) > ttl:
+                # An expired hit is dropped above, so the sweep that
+                # frees the other expired entries only has to run
+                # once per ttl rather than on every call
+                sweep[0] = time
+                _cleanup_ttl(func_cache, ttl, time)
 
-        if hash_value in func_cache:
-            return func_cache, hash_value, time
-
-        if max_items is not None:
+        if entry is None and track_usage and len(func_cache) >= max_items:
+            if ttl is not None:
+                # Expired entries should not cost live ones their slot
+                _cleanup_ttl(func_cache, ttl, time)
             _cleanup_cache(func_cache, policy, max_items, time)
 
-        return func_cache, hash_value, time
+        return func_cache, hash_value, time, entry
+
+    def record_hit(func_cache, hash_value, time):
+        with lock:
+            entry = func_cache.get(hash_value)
+            if entry is None:
+                return
+            ret, ts, count, _ = entry
+            if lru_dict:
+                del func_cache[hash_value]
+            func_cache[hash_value] = (ret, ts, count+1, time)
 
     if iscoroutinefunction(func):
         @functools.wraps(func)
         async def wrapped_func(*args: _P.args, **kwargs: _P.kwargs) -> _R:
-            func_cache, hash_value, time = hash_func(*args, **kwargs)
-            if hash_value in func_cache:
-                with lock:
-                    ret, ts, count, _ = func_cache[hash_value]
-                    func_cache[hash_value] = (ret, ts, count+1, time)
-            else:
-                ret = await t.cast("Awaitable[t.Any]", func(*args, **kwargs))
-                with lock:
-                    func_cache[hash_value] = (ret, time, 0, time)
+            func_cache, hash_value, time, entry = lookup(args, kwargs)
+            if entry is not None:
+                if track_usage:
+                    record_hit(func_cache, hash_value, time)
+                return entry[0]
+            ret = await t.cast("Awaitable[t.Any]", func(*args, **kwargs))
+            with lock:
+                func_cache[hash_value] = (ret, time, 0, time)
             return ret
     else:
         @functools.wraps(func)
         def wrapped_func(*args: _P.args, **kwargs: _P.kwargs) -> _R:
-            func_cache, hash_value, time = hash_func(*args, **kwargs)
-            if hash_value in func_cache:
-                with lock:
-                    ret, ts, count, _ = func_cache[hash_value]
-                    func_cache[hash_value] = (ret, ts, count+1, time)
-            else:
-                ret = func(*args, **kwargs)
-                with lock:
-                    func_cache[hash_value] = (ret, time, 0, time)
+            func_cache, hash_value, time, entry = lookup(args, kwargs)
+            if entry is not None:
+                if track_usage:
+                    record_hit(func_cache, hash_value, time)
+                return entry[0]
+            ret = func(*args, **kwargs)
+            with lock:
+                func_cache[hash_value] = (ret, time, 0, time)
             return ret
 
     def clear(func_hashes=func_hashes):
