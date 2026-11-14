@@ -952,3 +952,220 @@ def test_hold_with_comm_keeps_persistent_hold(monkeypatch):
         pass
 
     assert doc.callbacks.hold_value == 'combine'
+
+
+def test_cleanup_doc_releases_document():
+    doc = Document()
+    col = pn.Column(IntSlider(), pn.pane.Markdown('# Title'))
+    col.server_doc(doc)
+    ref = weakref.ref(doc)
+    assert doc in state._locations
+
+    _cleanup_doc(doc)
+
+    assert doc not in state._locations
+    assert not col._documents
+    assert not col._models
+    del doc
+    gc.collect()
+    assert ref() is None
+
+
+def test_cleanup_doc_runs_session_destroyed_callbacks_with_context():
+    doc = Document()
+    col = pn.Column(IntSlider())
+    col.server_doc(doc)
+    contexts = []
+    doc.on_session_destroyed(contexts.append)
+
+    _cleanup_doc(doc)
+
+    assert len(contexts) == 1
+    assert contexts[0].document is doc
+
+
+def test_destroy_document_releases_document_held_by_model():
+    doc = Document()
+    doc.destroy = partial(_destroy_document, doc)
+    col = pn.Column(IntSlider())
+    col.server_doc(doc)
+    # The Location is not cleaned up with the root and keeps its model
+    location = state._locations[doc]
+    ref = weakref.ref(doc)
+
+    _cleanup_doc(doc)
+    del doc, col
+    gc.collect()
+
+    assert location._models
+    assert ref() is None
+
+
+def test_server_session_destroyed_releases_document():
+    refs = []
+    def app():
+        refs.append(weakref.ref(state.curdoc))
+        return pn.Column(IntSlider(), pn.pane.Markdown('# Title'))
+
+    serve_and_request(
+        app, n=3, check_unused_sessions_milliseconds=200,
+        unused_session_lifetime_milliseconds=200
+    )
+
+    assert len(refs) == 3
+    def collected():
+        gc.collect()
+        return all(ref() is None for ref in refs)
+    wait_until(collected, timeout=10000)
+
+
+@pytest.fixture
+def recompute_count(monkeypatch):
+    from bokeh.document.models import DocumentModelManager
+
+    count = []
+    recompute = DocumentModelManager.recompute
+    def counting_recompute(self):
+        count.append(1)
+        recompute(self)
+    monkeypatch.setattr(DocumentModelManager, 'recompute', counting_recompute)
+    return count
+
+
+def _rendered_column(n=3):
+    doc = Document()
+    column = pn.Column(*[pn.pane.Markdown(f'item {i}') for i in range(n)])
+    root = column.get_root(doc)
+    doc.add_root(root)
+    doc.models.flush_synced()
+    return doc, column, root
+
+
+def _assert_graph_matches_recompute(doc):
+    incremental = dict(doc.models._models)
+    doc.models.recompute()
+    assert incremental == doc.models._models
+
+
+def test_freeze_doc_attaches_appended_models_without_recompute(recompute_count):
+    doc, column, root = _rendered_column()
+    recompute_count.clear()
+    new = pn.Row(pn.pane.Markdown('appended'), pn.widgets.IntSlider())
+    existing = set(doc.models._models)
+
+    with set_curdoc(doc):
+        column.append(new)
+
+    assert not recompute_count
+    models = new._models[root.ref['id']][0].references()
+    assert len(models) > 2
+    for model in models:
+        assert model.document is doc
+        assert doc.models._models[model.id] is model
+        # Stylesheets are shared with the existing children and so were synced before
+        assert (model in doc.models._new_models) == (model.id not in existing)
+    _assert_graph_matches_recompute(doc)
+
+
+def test_freeze_doc_reorder_does_not_recompute(recompute_count):
+    doc, column, root = _rendered_column()
+    recompute_count.clear()
+
+    with set_curdoc(doc):
+        column.objects = column.objects[::-1]
+
+    assert not recompute_count
+    assert [c.text.strip() for c in root.children] == [
+        '&lt;p&gt;item 2&lt;/p&gt;', '&lt;p&gt;item 1&lt;/p&gt;', '&lt;p&gt;item 0&lt;/p&gt;'
+    ]
+    _assert_graph_matches_recompute(doc)
+
+
+def test_freeze_doc_recomputes_when_models_are_removed(recompute_count):
+    doc, column, root = _rendered_column()
+    recompute_count.clear()
+    removed = root.children[0]
+
+    with set_curdoc(doc):
+        column.pop(0)
+
+    assert len(recompute_count) == 1
+    assert removed.document is None
+    assert removed.id not in doc.models._models
+    with set_curdoc(doc):
+        column[0] = pn.pane.Markdown('replaced')
+
+    assert len(recompute_count) == 2
+    _assert_graph_matches_recompute(doc)
+
+
+def test_freeze_doc_recomputes_when_graph_changed_while_frozen(recompute_count):
+    from bokeh.models import CustomJS
+
+    from panel.io.document import freeze_doc
+
+    doc, column, root = _rendered_column()
+    recompute_count.clear()
+    added = pn.pane.Markdown('added')._get_model(doc, root, root)
+    added.name = 'added'
+    children = list(root.children) + [added]
+
+    with freeze_doc(doc, root, {'children': children}):
+        root.children = children
+        root.children[0].js_on_change('text', CustomJS(code=''))
+
+    assert len(recompute_count) == 1
+    callback = root.children[0].js_property_callbacks['change:text'][0]
+    assert callback.document is doc
+    assert added.document is doc
+    assert doc.get_model_by_name('added') is added
+    _assert_graph_matches_recompute(doc)
+
+
+def test_freeze_doc_nested_freezes_recompute_once(recompute_count):
+    from panel.io.document import freeze_doc
+
+    doc, column, root = _rendered_column()
+    recompute_count.clear()
+    outer = pn.pane.Markdown('outer')._get_model(doc, root, root)
+    inner = pn.pane.Markdown('inner')._get_model(doc, root, root)
+    outer.name, inner.name = 'outer', 'inner'
+
+    with freeze_doc(doc, root, {'children': list(root.children) + [outer]}):
+        root.children = list(root.children) + [outer]
+        with freeze_doc(doc, root, {'children': list(root.children) + [inner]}):
+            root.children = list(root.children) + [inner]
+        assert inner.document is None
+
+    assert len(recompute_count) == 1
+    assert outer.document is doc
+    assert inner.document is doc
+    assert doc.get_model_by_name('outer') is outer
+    assert doc.get_model_by_name('inner') is inner
+    _assert_graph_matches_recompute(doc)
+
+
+def test_freeze_doc_releases_freeze_on_error():
+    from panel.io.document import freeze_doc
+
+    doc, column, root = _rendered_column()
+
+    with pytest.raises(RuntimeError):
+        with freeze_doc(doc, root, {'children': []}):
+            raise RuntimeError('boom')
+
+    assert doc.models._freeze_count == 0
+    assert 'invalidate' not in doc.models.__dict__
+
+
+def test_freeze_doc_unchanged_properties_do_not_freeze(recompute_count):
+    from panel.io.document import freeze_doc
+
+    doc, column, root = _rendered_column()
+    recompute_count.clear()
+
+    with freeze_doc(doc, root, {'children': list(root.children), 'width': 100}):
+        assert doc.models._freeze_count == 0
+        root.width = 100
+
+    assert not recompute_count

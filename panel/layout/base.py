@@ -13,6 +13,7 @@ from collections.abc import (
 
 import param
 
+from bokeh.core.has_props import HasProps
 from bokeh.models import Row as BkRow
 from param import bind
 from param.parameterized import iscoroutinefunction, resolve_ref
@@ -44,6 +45,43 @@ _SCROLL_MAPPING = {
 
 _row = namedtuple("row", ["children"]) # type: ignore
 _col = namedtuple("col", ["children"]) # type: ignore
+
+_SIZING_PROPS = ('sizing_mode', 'width', 'min_width', 'height', 'min_height')
+
+_SIZING_DEFAULTS: dict[type, tuple[t.Any, ...]] = {}
+
+
+def _sizing_props(child: t.Any) -> tuple[t.Any, ...]:
+    """
+    Returns the (sizing_mode, width, min_width, height, min_height)
+    of a bokeh model.
+
+    Reading an unset bokeh property resolves its default through the
+    theming machinery on every access, which dominates the cost of a
+    layout update once a layout has hundreds of children, so we look
+    the value up directly and only resolve the default once per class.
+    """
+    if not isinstance(child, HasProps):
+        return tuple(getattr(child, prop, None) for prop in _SIZING_PROPS)
+    cls = type(child)
+    defaults = _SIZING_DEFAULTS.get(cls)
+    if defaults is None:
+        resolved = []
+        for prop in _SIZING_PROPS:
+            descriptor = cls.lookup(prop, raises=False)
+            resolved.append(
+                None if descriptor is None else
+                descriptor.property.themed_default(cls, prop, None)
+            )
+        _SIZING_DEFAULTS[cls] = defaults = tuple(resolved)
+    values = child._property_values
+    themed = child.themed_values()
+    if themed:
+        return tuple(
+            values[prop] if prop in values else themed.get(prop, default)
+            for prop, default in zip(_SIZING_PROPS, defaults)
+        )
+    return tuple(values.get(prop, default) for prop, default in zip(_SIZING_PROPS, defaults))
 
 
 class SizingModeMixin:
@@ -97,7 +135,7 @@ class SizingModeMixin:
         explicit_width = getattr(self, '_explicit_width_policy', False)
         explicit_height = getattr(self, '_explicit_height_policy', False)
         for child in children:
-            smode = child.sizing_mode
+            smode, child_width, child_min_width, child_height, child_min_height = _sizing_props(child)
             if smode and 'scale' in smode:
                 scale = True
 
@@ -106,11 +144,11 @@ class SizingModeMixin:
             expand_width |= width_expanded
             expand_height |= height_expanded
             if width_expanded:
-                width = child.min_width
+                width = child_min_width
             else:
-                width = child.width
-                if not child.width:
-                    width = child.min_width
+                width = child_width
+                if not child_width:
+                    width = child_min_width
             if width:
                 if isinstance(margin, tuple):
                     if len(margin) == 2:
@@ -122,13 +160,13 @@ class SizingModeMixin:
                 widths.append(width)
 
             if height_expanded:
-                height = child.min_height
+                height = child_min_height
             else:
-                height = child.height
+                height = child_height
                 if height:
                     all_expand_height = False
                 else:
-                    height = child.min_height
+                    height = child_min_height
             if height:
                 if isinstance(margin, tuple):
                     if len(margin) == 2:
@@ -338,14 +376,16 @@ class Panel(Reactive, SizingModeMixin):
         from ..pane.base import RerenderError
         new_models, old_models = [], []
 
+        current_objects = list(self.objects)
+        current_ids = {id(obj) for obj in current_objects}
         for obj in old_objects:
-            if obj not in self.objects:
+            if id(obj) not in current_ids:
                 obj._release_model(root, model)
 
-        current_objects = list(self.objects)
+        old_ids = {id(obj) for obj in old_objects}
         ref = root.ref['id']
-        for i, pane in enumerate(self.objects):
-            if pane in old_objects and ref in pane._models:
+        for i, pane in enumerate(current_objects):
+            if id(pane) in old_ids and ref in pane._models:
                 child, _ = pane._models[ref]
                 old_models.append(child)
             else:

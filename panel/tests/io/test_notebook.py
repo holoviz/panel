@@ -9,6 +9,7 @@ from bokeh.models import ImportedStyleSheet, InlineStyleSheet
 
 from panel.config import config, panel_extension
 from panel.io import resources as resources_module
+from panel.io.loading import loading_css
 from panel.io.notebook import (
     LOAD_MIME, _autoload_js, _bundled_require_path, _cdn_url_key, ipywidget,
     load_notebook, replace_inline_css, require_components,
@@ -135,7 +136,9 @@ def test_notebook_cdn_css_stylesheets_not_inlined_on_update(nb_loaded):
 
     pane.object = pd.DataFrame({'a': [3, 4]})
 
-    assert not any(isinstance(sts, InlineStyleSheet) for sts in model.stylesheets)
+    # Only the shared loading indicator CSS is inlined, never a CDN stylesheet
+    inlined = [sts for sts in model.stylesheets if isinstance(sts, InlineStyleSheet)]
+    assert [sts.css for sts in inlined] == [loading_css()]
 
 
 def test_notebook_inline_resources_shadow_amd_globals(monkeypatch, notebook_bootstrap):

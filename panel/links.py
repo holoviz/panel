@@ -210,6 +210,41 @@ class Callback(param.Parameterized):
         return self._source() if self._source else None
 
     @classmethod
+    def _links_new_objects(cls, changed: Viewable, ref: str, old_models) -> bool:
+        """
+        Whether a registered link involves an object added to the changed
+        layout. Layout updates only add links for new children, so this
+        avoids walking every object and model in the document when it is
+        cheap to tell which children are new; True whenever it cannot be.
+        """
+        objects = getattr(changed, 'objects', None)
+        if old_models is None or not isinstance(objects, list) or not cls.registry:
+            return bool(cls.registry)
+        old = {id(model) for model in old_models}
+        added: set[int] = set()
+        hv_pane: type | None = None
+        if 'panel.pane.holoviews' in sys.modules:
+            from .pane.holoviews import HoloViews
+            hv_pane = HoloViews
+        for obj in objects:
+            model = getattr(obj, '_models', {}).get(ref, (None,))[0]
+            if model is not None and id(model) in old:
+                continue
+            for view in obj.select(Viewable):
+                # HoloViews links are registered on elements, not panes
+                if hv_pane is not None and isinstance(view, hv_pane):
+                    return True
+                added.add(id(view))
+            if model is not None:
+                added.update(id(m) for m in model.select({'type': BkModel}))
+        if not added:
+            return False
+        return any(
+            id(src) in added or id(getattr(link, 'target', None)) in added
+            for src, links in list(cls.registry.items()) for link in links
+        )
+
+    @classmethod
     def _process_callbacks(
         cls, root_view: Viewable, root_model: BkModel, changed: Viewable | None = None, old_models=None
     ):
@@ -217,6 +252,8 @@ class Callback(param.Parameterized):
             return
 
         ref = root_model.ref['id']
+        if changed is not None and not cls._links_new_objects(changed, ref, old_models):
+            return
         if changed is not None:
             inspect = root_view.select(Viewable)
             if ref in changed._models:

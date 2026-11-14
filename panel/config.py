@@ -577,7 +577,8 @@ class _config(_base_config):
         ensure that even on first access mutable parameters do not
         end up being modified.
         """
-        if _config_uninitialized or attr in ('_param__private', '_globals', '_parameter_set', '__class__', 'param'):
+        if (_config_uninitialized or attr in ('_param__private', '_globals', '_parameter_set', '__class__', 'param')
+            or attr in _config._globals):
             return super().__getattribute__(attr)
 
         from .io.state import state
@@ -590,7 +591,7 @@ class _config(_base_config):
             curdoc and attr not in session_config[curdoc]):
             new_obj = copy.copy(super().__getattribute__(attr))
             setattr(self, attr, new_obj)
-        if attr in _config._globals or attr == 'theme':
+        if attr == 'theme':
             return super().__getattribute__(attr)
         elif curdoc and curdoc in session_config and attr in session_config[curdoc]:
             return session_config[curdoc][attr]

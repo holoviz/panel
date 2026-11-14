@@ -13,6 +13,7 @@ from bokeh.models import Div
 from bokeh.plotting import figure
 
 from panel.custom import JSComponent
+from panel.io.state import set_curdoc
 from panel.layout import Row
 from panel.links import Callback, CallbackGenerator, Link
 from panel.pane import Bokeh, HoloViews
@@ -545,3 +546,35 @@ def test_user_jslink_raises_on_missing_renamed_property(monkeypatch):
 
     with pytest.raises(ValueError, match="non-existent property 'indices'"):
         Row(widget, pane).get_root()
+
+
+def test_link_to_child_appended_to_layout(document, comm):
+    from panel.widgets import IntSlider
+
+    source, target = IntSlider(), IntSlider()
+    source.jslink(target, value='value')
+    row = Row(source)
+    model = row.get_root(document, comm)
+    with set_curdoc(document):
+        row.append(target)
+
+    ref = model.ref['id']
+    assert 'change:value' in source._models[ref][0].js_property_callbacks
+
+
+def test_appending_unlinked_children_skips_link_processing(document, comm, monkeypatch):
+    from panel.widgets import IntSlider
+
+    source, target = IntSlider(), IntSlider()
+    source.jslink(target, value='value')
+    row = Row(source, target)
+    row.get_root(document, comm)
+    processed = []
+    monkeypatch.setattr(Callback, '_callbacks', {
+        k: (lambda *args, cb=cb, **kwargs: processed.append(1) or cb(*args, **kwargs))
+        for k, cb in Callback._callbacks.items()
+    })
+    with set_curdoc(document):
+        row.append(Div(text='unlinked'))
+
+    assert not processed

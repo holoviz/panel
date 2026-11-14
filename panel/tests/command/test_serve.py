@@ -229,6 +229,22 @@ def test_serve_setup(server, tmp_path):
         assert output[0].strip() == "Setup running before"
 
 
+def test_serve_setup_with_non_ascii_source(server, tmp_path):
+    app = "import panel as pn; pn.panel('Hello').servable()"
+    py = tmp_path / "app.py"
+    py.write_text(app)
+
+    text = "안녕하세요 ✅"
+    setup_app = f'print("Setup text:", "{text}".encode("utf-8").hex(), flush=True)'
+    setup_py = tmp_path / "setup.py"
+    setup_py.write_text(setup_app, encoding="utf-8")
+
+    regex = re.compile('(Setup text: [0-9a-f]+)')
+    with run_panel_serve(["--port", "0", "--server", server, py, "--setup", setup_py], cwd=tmp_path) as p:
+        _, output = wait_for_regex(p.stdout, regex=regex, return_output=True)
+        assert output[0].strip() == f"Setup text: {text.encode('utf-8').hex()}"
+
+
 def test_serve_authorize_callback_exception(server, tmp_path):
     app = "import panel as pn; pn.panel('Hello').servable()"
     py = tmp_path / "app.py"

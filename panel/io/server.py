@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import asyncio
 import datetime as dt
+import gzip
 import importlib
 import inspect
 import json
@@ -49,6 +50,7 @@ from bokeh.server.views.doc_handler import DocHandler as BkDocHandler
 from bokeh.server.views.metadata_handler import (
     MetadataHandler as BkMetadataHandler,
 )
+from bokeh.server.views.multi_root_static_handler import MultiRootStaticHandler
 from bokeh.server.views.root_handler import RootHandler as BkRootHandler
 from bokeh.server.views.static_handler import StaticHandler
 from bokeh.server.views.ws import WSHandler as BkWSHandler
@@ -61,7 +63,8 @@ from bokeh.util.token import (
 from tornado.ioloop import IOLoop
 from tornado.process import task_id
 from tornado.web import (
-    HTTPError, RequestHandler, StaticFileHandler, authenticated,
+    GZipContentEncoding, HTTPError, RequestHandler, StaticFileHandler,
+    authenticated,
 )
 from tornado.wsgi import WSGIContainer
 
@@ -87,8 +90,8 @@ from .pages import page_theme
 from .reload import record_modules
 from .resources import (
     BASE_TEMPLATE, CDN_DIST, COMPONENT_PATH, DIST_DIR, ERROR_TEMPLATE,
-    LOCAL_DIST, Resources, _env, bundle_resources, patch_model_css,
-    resolve_custom_path,
+    LOCAL_DIST, Resources, _env, bundle_resources, dedupe_template_resources,
+    patch_model_css, resolve_custom_path,
 )
 from .session import generate_session
 from .state import set_curdoc, state
@@ -384,6 +387,10 @@ def html_page_for_render_items(
 
     from ..theme.base import design_template_variables
     context = {**design_template_variables(), **template_variables}
+    if context.get('template_resources') and not isinstance(bundle, tuple):
+        context['template_resources'] = dedupe_template_resources(
+            context['template_resources'], bundle
+        )
 
     context.update(dict(
         title = title,
@@ -542,7 +549,7 @@ def render_auth_error(auth_error: str) -> str:
     Render the authorization error page for the given message.
     """
     if config.auth_template:
-        with open(config.auth_template) as f:
+        with open(config.auth_template, encoding='utf-8') as f:
             template = _env.from_string(f.read())
     else:
         template = ERROR_TEMPLATE
@@ -768,6 +775,9 @@ if not getattr(ServerSession.with_document_locked.__wrapped__, '_panel_tracks_lo
 class Server(BokehServer):
 
     def __init__(self, *args, **kwargs):
+        # Tornado application setting; gzips the pages, scripts and
+        # stylesheets served to clients accepting it.
+        kwargs.setdefault('compress_response', True)
         super().__init__(*args, **kwargs)
         self._autoreload_stop_event = None
         if state._admin_context:
@@ -1197,6 +1207,103 @@ toplevel_patterns[0] = (r'/?', RootHandler)
 bokeh.server.tornado.RootHandler = RootHandler  # type: ignore
 
 
+# A directory named after an exact package version, e.g.
+# bundled/datatabulator/tabulator-tables@6.4.0/, never changes its contents
+# while a range such as @^1.10.0 may be upgraded in place.
+# Tornado hands get_cache_time the path with native separators
+_VERSIONED_PATH_RE = re.compile(r'@v?\d+\.\d+\.\d+[\w.+-]*[\\/]')
+
+
+_GZIP_CACHE: dict[tuple[str, int, int], bytes] = {}
+
+_GZIP_CACHE_SIZE = 256
+
+
+class PrecompressedStaticMixin:
+    """
+    Serves compressible static files gzipped from an in-memory cache.
+
+    Tornado's ``compress_response`` gzips every response again on the event
+    loop, which for the megabytes of JavaScript a page loads costs more time
+    than the smaller transfer saves, so each file is compressed once instead.
+    Responses that already carry a ``Content-Encoding`` are left alone by
+    Tornado's transform.
+    """
+
+    async def get(self, path: str, include_body: bool = True) -> None:
+        handled, body = self._precompressed(path)
+        if handled:
+            return
+        if body is None:
+            return await super().get(path, include_body)  # type: ignore[misc]
+        self.set_headers()  # type: ignore[attr-defined]
+        if self.should_return_304():  # type: ignore[attr-defined]
+            self.set_status(304)  # type: ignore[attr-defined]
+            return
+        self.set_header('Content-Encoding', 'gzip')  # type: ignore[attr-defined]
+        self.set_header('Content-Length', len(body))  # type: ignore[attr-defined]
+        if include_body:
+            self.write(body)  # type: ignore[attr-defined]
+
+    def _precompressed(self, path: str) -> tuple[bool, bytes | None]:
+        handler = t.cast('StaticFileHandler', self)
+        request = handler.request
+        if not handler.settings.get('compress_response') or request.method != 'GET':
+            return False, None
+        if 'gzip' not in request.headers.get('Accept-Encoding', '') or request.headers.get('Range'):
+            return False, None
+        handler.path = handler.parse_url_path(path)
+        absolute = handler.validate_absolute_path(
+            handler.root, handler.get_absolute_path(handler.root, handler.path)
+        )
+        if absolute is None:
+            # validate_absolute_path already redirected the request
+            return True, None
+        handler.absolute_path = absolute
+        ctype = handler.get_content_type()
+        if not (ctype.startswith('text/') or ctype in GZipContentEncoding.CONTENT_TYPES):
+            return False, None
+        stat = os.stat(absolute)
+        if stat.st_size < GZipContentEncoding.MIN_LENGTH:
+            return False, None
+        key = (absolute, stat.st_mtime_ns, stat.st_size)
+        body = _GZIP_CACHE.get(key)
+        if body is None:
+            with open(absolute, 'rb') as f:
+                body = gzip.compress(f.read(), compresslevel=GZipContentEncoding.GZIP_LEVEL, mtime=0)
+            if len(_GZIP_CACHE) >= _GZIP_CACHE_SIZE:
+                _GZIP_CACHE.clear()
+            _GZIP_CACHE[key] = body
+        handler.modified = handler.get_modified_time()
+        return False, body
+
+
+class PanelStaticHandler(PrecompressedStaticMixin, StaticHandler):
+    """
+    Serves Bokeh's static resources, compressing each file once.
+    """
+
+
+class ExtensionStaticHandler(PrecompressedStaticMixin, MultiRootStaticHandler):
+    """
+    Serves the static/extensions/ resources of Panel and other extensions,
+    caching versioned urls as long as Bokeh caches its own ``?v=`` urls.
+    """
+
+    def get_cache_time(self, path: str, modified, mime_type: str) -> int:
+        if 'v' in self.request.arguments or _VERSIONED_PATH_RE.search(path):
+            return self.CACHE_MAX_AGE
+        return 0
+
+
+for _i, _pattern in enumerate(toplevel_patterns):
+    if _pattern[1] is MultiRootStaticHandler:
+        toplevel_patterns[_i] = (_pattern[0], ExtensionStaticHandler, *_pattern[2:])
+    elif _pattern[1] is StaticHandler:
+        toplevel_patterns[_i] = (_pattern[0], PanelStaticHandler, *_pattern[2:])
+del _i, _pattern
+
+
 class AuthenticatedStaticFileHandler(StaticFileHandler):
 
     def get_login_url(self):
@@ -1249,7 +1356,7 @@ def create_static_handler(prefix, key, app):
         route += _to_non_capturing_groups(key) + "/static/(.*)"
     if app.static_path is not None:
         return (route, StaticFileHandler, {"path" : app.static_path})
-    return (route, StaticHandler, {})
+    return (route, PanelStaticHandler, {})
 
 bokeh.server.tornado.create_static_handler = create_static_handler
 
@@ -1277,7 +1384,7 @@ if (
 # Public API
 #---------------------------------------------------------------------
 
-class ComponentResourceHandler(StaticFileHandler):
+class ComponentResourceHandler(PrecompressedStaticMixin, StaticFileHandler):
     """
     A handler that serves local resources relative to a Python module.
     The handler resolves a specific Panel component by module reference
@@ -1427,6 +1534,8 @@ def serve(
       Whether to start the server on a new Thread
     admin: boolean (default=False)
       Whether to enable the admin panel
+    compress: boolean (default=True)
+      Whether to gzip HTTP responses for clients that accept it
     kwargs: dict
       Additional keyword arguments to pass to Server instance
     """
@@ -1561,6 +1670,7 @@ def get_server(
     session_history: str | None = None,
     liveness: bool | str = False,
     warm: bool = False,
+    compress: bool = True,
     **kwargs
 ) -> Server:
     """
@@ -1656,6 +1766,10 @@ def get_server(
     warm: bool (optional, default=False)
       Whether to run the applications before serving them to ensure
       all imports and caches are fully warmed up before serving the app.
+    compress: bool (optional, default=True)
+      Whether to gzip HTTP responses (pages, scripts, stylesheets and
+      JSON) for clients that accept it. Disable when a reverse proxy
+      compresses responses already.
     kwargs: dict
       Additional keyword arguments to pass to Server instance.
 
@@ -1779,6 +1893,7 @@ def get_server(
             state.base_url = root_path  # type: ignore
     opts['cookie_path'] = config.cookie_path
     opts['cookie_secret'] = config.cookie_secret
+    opts['compress_response'] = compress
 
     server = Server(apps, port=port, **opts)
     if verbose:

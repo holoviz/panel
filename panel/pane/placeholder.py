@@ -29,6 +29,7 @@ class Placeholder(ReplacementPane):
         self._temporary = False
         if object is not None:
             self._replace_panel()
+        self._init_placeholder()
 
     @param.depends("object", watch=True)
     def _replace_panel(self):

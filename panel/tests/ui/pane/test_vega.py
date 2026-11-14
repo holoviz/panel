@@ -175,3 +175,42 @@ def test_altair_select_agg(page, dataframe):
     page.mouse.click(bbox['x']+50, bbox['y']+10)
 
     wait_until(lambda: pane.selection.multi_bar_ref == [{'str': 'C'}, {'str': 'A'}], page)
+
+
+def test_vega_update_data_without_reembedding(page):
+    obj = {
+        "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+        "mark": "bar",
+        "encoding": {
+            "x": {"field": "month", "type": "ordinal"},
+            "y": {"field": "revenue", "type": "quantitative"},
+        },
+        "data": {
+            "values": pd.DataFrame(
+                {"month": ["Jan", "Feb", "Mar"], "revenue": [100000, 125000, 150000]}
+            )
+        },
+    }
+    vega = Vega(obj)
+
+    serve_component(page, vega)
+
+    vega_plot = page.locator('.vega-embed')
+    wait_until(lambda: vega_plot.locator('path[aria-label*="Jan"]').count() > 0, page)
+
+    page.evaluate("""() => {
+      window.__embeds = 0
+      const embed = window.vegaEmbed
+      window.vegaEmbed = (...args) => { window.__embeds += 1; return embed(...args) }
+    }""")
+
+    new_values = pd.DataFrame({"month": ["Apr", "May", "Jun"], "revenue": [175000, 200000, 225000]})
+    vega.object = {**obj, "data": {"values": new_values}}
+    wait_until(lambda: vega_plot.locator('path[aria-label*="Apr"]').count() > 0, page)
+    wait_until(lambda: vega_plot.locator('path[aria-label*="Jan"]').count() == 0, page)
+    # The data is pushed into the existing view instead of recompiling the spec
+    assert page.evaluate("() => window.__embeds") == 0
+
+    vega.object = {**obj, "mark": "point", "data": {"values": new_values}}
+    wait_until(lambda: page.evaluate("() => window.__embeds") == 1, page)
+    wait_until(lambda: vega_plot.locator('path[aria-label*="Apr"]').count() > 0, page)
