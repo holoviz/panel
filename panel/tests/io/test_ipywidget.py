@@ -58,3 +58,18 @@ def test_existing_kernel_singleton_proxied_in_session():
         "assert Kernel.instance() is kernel\n"
     )
     assert result.returncode == 0, result.stderr
+
+
+def test_fallback_kernel_not_subscribed_to_session_document():
+    # The module is imported lazily while a session renders its first
+    # ipywidget; the fallback kernel must not listen on that Document or it
+    # closes the comms opened by the session's PanelKernel.
+    result = _run(
+        "from bokeh.document import Document\n"
+        "from bokeh.io.doc import patch_curdoc\n"
+        "doc = Document()\n"
+        "with patch_curdoc(doc):\n"
+        "    import panel.io.ipywidget\n"
+        "assert 'ipywidgets_bokeh' not in doc.callbacks._message_callbacks\n"
+    )
+    assert result.returncode == 0, result.stderr
