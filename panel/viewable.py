@@ -1005,10 +1005,13 @@ class Viewable(Renderable, Layoutable, ServableMixin):
             return render_model(model)
 
         if resources == 'inline':
-            for submodel in model.select({'type': UIElement}):
-                if not isinstance(submodel, UIElement):
-                    continue
-                patch_inline_stylesheets(submodel, doc)
+            # Each stylesheets update would otherwise recompute the whole
+            # model graph, making the inlining quadratic in the model count
+            with doc.models.freeze():
+                for submodel in model.select({'type': UIElement}):
+                    if not isinstance(submodel, UIElement):
+                        continue
+                    patch_inline_stylesheets(submodel, doc)
 
         bundle, meta = self._render_mimebundle(model, doc, comm, location)
 

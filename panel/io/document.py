@@ -99,11 +99,10 @@ class MockSessionContext(SessionContext):
     def request(self):
         return Request(headers={}, cookies={}, arguments={})
 
-def _cleanup_task(task):
-    for tasks in _write_tasks.values():
-        if task in tasks:
-            tasks.remove(task)
-            break
+def _cleanup_task(doc: Document, task: asyncio.Task) -> None:
+    tasks = _write_tasks.get(doc)
+    if tasks and task in tasks:
+        tasks.remove(task)
 
 def _client_has_document(doc: Document) -> bool:
     """
@@ -293,7 +292,7 @@ def _dispatch_write_task(doc, func, *args, **kwargs):
         return
     task = loop.create_task(func(*args, **kwargs))
     _write_tasks.setdefault(doc, []).append(task)
-    task.add_done_callback(_cleanup_task)
+    task.add_done_callback(partial(_cleanup_task, doc))
 
 def _is_write_locked(conn: ServerConnection) -> bool:
     return _is_write_blocked(conn._socket)

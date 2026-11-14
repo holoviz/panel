@@ -98,8 +98,11 @@ class Syncable(Renderable):
     # Timeout if a notebook comm message is swallowed
     _timeout: t.ClassVar[int] = 20000
 
-    # Timeout before the first event is processed
-    _debounce: t.ClassVar[int] = 50
+    # Timeout (in ms) before the first frontend change event is processed,
+    # giving further changes sent shortly after a chance to be batched.
+    # BokehJS already batches the changes made in one tick per message so
+    # this mostly adds latency; subclasses may override it.
+    _debounce: t.ClassVar[int] = 20
 
     # Property changes which should not be debounced
     _priority_changes: t.ClassVar[list[str]] = []
@@ -765,10 +768,11 @@ class Reactive(Syncable, Viewable):
         properties['stylesheets'] = stylesheets
 
     def _update_properties(self, *events: param.parameterized.Event, doc: Document) -> dict[str, t.Any]:
-        params, _ = self._design.params(self, doc) if self._design else ({}, None)
         changes = {event.name: event.new for event in events}
-        if 'stylesheets' in changes and 'stylesheets' in params:
-            changes['stylesheets'] = params['stylesheets'] + changes['stylesheets']
+        if 'stylesheets' in changes and self._design:
+            params, _ = self._design.params(self, doc)
+            if 'stylesheets' in params:
+                changes['stylesheets'] = params['stylesheets'] + changes['stylesheets']
         return self._process_param_change(changes)
 
     #----------------------------------------------------------------
