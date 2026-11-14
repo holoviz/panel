@@ -76,6 +76,27 @@ def test_modal_create_button_opens_and_closes(page, panel_ui):
     wait_until(lambda: not modal.open, page)
 
 
+
+def test_modal_fits_wide_content(page, panel_ui):
+    modal = panel_ui.Modal(panel_ui.Spacer(width=800, height=120), open=True)
+    serve_component(page, modal)
+
+    paper = page.locator('.MuiDialog-paper')
+    expect(paper).to_be_visible()
+    assert paper.evaluate('element => element.getBoundingClientRect().width') >= 800
+
+
+def test_modal_explicit_width_updates_paper(page, panel_ui):
+    modal = panel_ui.Modal(panel_ui.Spacer(width=300, height=120), open=True, width=800)
+    serve_component(page, modal)
+
+    paper = page.locator('.MuiDialog-paper')
+    expect(paper).to_have_css('width', '800px')
+
+    modal.width = 700
+    expect(paper).to_have_css('width', '700px')
+
+
 def test_modal_background_close(page, panel_ui):
     modal = panel_ui.Modal('Modal content', open=True, background_close=False)
     serve_component(page, modal)
