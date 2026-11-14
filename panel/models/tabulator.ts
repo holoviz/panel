@@ -10,13 +10,15 @@ import type * as p from "@bokehjs/core/properties"
 import {Model} from "@bokehjs/model"
 import type {LayoutDOM} from "@bokehjs/models/layouts/layout_dom"
 import {ColumnDataSource} from "@bokehjs/models/sources/column_data_source"
-import type {Attrs} from "@bokehjs/core/types"
+import type {Attrs, Data} from "@bokehjs/core/types"
+import {ColumnsStreamedEvent} from "@bokehjs/document/events"
+import type {DocumentChangedEvent} from "@bokehjs/document/events"
 
 import {debounce} from "debounce"
 
 import {cell_formatter} from "./cell_formatters"
 import {comm_settings} from "./comm_manager"
-import {transform_cds_to_records} from "./data"
+import {transform_cds_rows_to_records, transform_cds_to_records} from "./data"
 import {HTMLBox, HTMLBoxView} from "./layout"
 import {schedule_when, transformJsPlaceholders} from "./util"
 
@@ -406,6 +408,34 @@ function clone_column(group: any): any {
   return {...group, columns: group_columns}
 }
 
+const set_cache = new WeakMap<readonly number[], Set<number>>()
+
+/** Tabulator queries membership once per row, so index arrays are looked up as sets. */
+function as_set(indices: readonly number[]): Set<number> {
+  let indices_set = set_cache.get(indices)
+  if (indices_set === undefined) {
+    indices_set = new Set(indices)
+    set_cache.set(indices, indices_set)
+  }
+  return indices_set
+}
+
+/** Dicts with numeric keys deserialize as Maps, empty ones as plain objects. */
+function lookup(mapping: any, key: any): any | null {
+  if (mapping == null) {
+    return null
+  }
+  return mapping instanceof Map ? (mapping.get(key) ?? null) : (mapping[key] ?? null)
+}
+
+function stream_length(data: Data): number | null {
+  const columns: any[] = data instanceof Map ? [...data.values()] : Object.values(data)
+  for (const column of columns) {
+    return column.shape != null ? column.shape[0] : column.length
+  }
+  return null
+}
+
 /** Ignore Tabulator redraw after `after_resize` when `this.el` client size changes by at most this many pixels per axis. */
 const EL_CLIENT_RESIZE_EPSILON_PX = 3
 
@@ -435,9 +465,13 @@ export class DataTabulatorView extends HTMLBoxView {
   _initializing: boolean = true
   _lastVerticalScrollbarTopPosition: number = 0
   _lastHorizontalScrollbarLeftPosition: number = 0
-  _applied_styles: boolean = false
+  /** Bumped when `cell_styles` changes; cells styled with an older version are restyled when visible. */
+  _styles_version: number = 0
+  _styled_cells: WeakMap<HTMLElement, {version: number, props: string[]}> = new WeakMap()
   _building: boolean = false
   _pending_data: boolean = false
+  /** A data update in flight; its `renderComplete` must not run `postUpdate` a second time. */
+  _updating_data: boolean = false
   _redrawing: boolean = false
   /** Coalesced resize redraw; waits for `this.root.ready` (Bokeh view async chain) before redrawing. */
   _resize_pending: boolean = false
@@ -484,19 +518,13 @@ export class DataTabulatorView extends HTMLBoxView {
       if (this.tabulator == null) {
         return
       }
-      // The first cell is the cell of the frozen _index column.
+      const expanded = as_set(this.model.expanded)
+      // The first cell is the cell of the frozen _index column, the second
+      // holds the expand icon, which must follow changes made from Python.
       for (const row of this.tabulator.rowManager.getRows()) {
-        if (row.cells.length > 0) {
+        if (row.cells.length > 1) {
           row.cells[0].layoutElement()
-        }
-      }
-      // Make sure the expand icon is changed when expanded is
-      // changed from Python.
-      for (const row of this.tabulator.rowManager.getRows()) {
-        if (row.cells.length > 0) {
-          const index = row.data._index
-          const icon = this.model.expanded.includes(index) ? "▼" : "►"
-          row.cells[1].element.innerText = icon
+          row.cells[1].element.innerText = expanded.has(row.data._index) ? "▼" : "►"
         }
       }
       // If content is embedded, views may not have been
@@ -508,19 +536,10 @@ export class DataTabulatorView extends HTMLBoxView {
     })
 
     this.on_change(cell_styles, () => {
-      if (this._applied_styles) {
-        this.record_scroll()
-        this._updating_scroll = true
-        this.tabulator.redraw(true)
-        this._updating_scroll = false
-      }
-      this.restore_scroll()
+      this._styles_version += 1
       this.setStyles()
     })
-    this.on_change(hidden_columns, () => {
-      this.setHidden()
-      this.tabulator.redraw(true)
-    })
+    this.on_change(hidden_columns, () => this.setHidden())
     this.on_change(page_size, () => this.setPageSize())
     this.on_change(page, () => {
       if (!this._updating_page) {
@@ -534,7 +553,7 @@ export class DataTabulatorView extends HTMLBoxView {
     this.on_change(theme_classes, () => this.setCSSClasses(this.tabulator.element))
 
     this.on_change(this.model.source.properties.data, () => {
-      if (this.tabulator === undefined) {
+      if (this.tabulator == null) {
         return
       }
       this._restore_scroll = "horizontal"
@@ -542,25 +561,37 @@ export class DataTabulatorView extends HTMLBoxView {
       // The scroll event of a scroll just before may not have been handled yet.
       this.record_scroll()
       this._updating_scroll = true
-      void this.setData().then(() => {
+      this._updating_data = true
+      void this.setData().finally(() => {
+        this._updating_data = false
+      }).then(() => {
         this._selection_updating = false
         this.postUpdate()
         this.restore_scroll()
       })
     })
-    this.connect(this.model.source.streaming, () => this.addData())
-    this.connect(this.model.source.patching, () => {
-      const inds = this.model.source.selected.indices
-      this.record_scroll()
-      this._updating_scroll = true
-      this.updateOrAddData()
-      this._updating_scroll = false
-      // Restore indices since updating data may have reset checkbox column
-      this.model.source.selected.indices = inds
-      this.restore_scroll()
-    })
+    // The streaming signal carries no payload; the document event also tells how
+    // many rows were streamed and the rollover, which decide whether rows can be appended.
+    const doc = this.model.document
+    if (doc != null) {
+      doc.on_change(this._on_document_change)
+    } else {
+      this.connect(this.model.source.streaming, () => this.addData(null, null))
+    }
+    this.connect(this.model.source.patching, (indices: unknown) => this.updateOrAddData(indices))
     this.connect(this.model.source.selected.change, () => this.setSelection())
     this.connect(this.model.source.selected.properties.indices.change, () => this.setSelection())
+  }
+
+  override disconnect_signals(): void {
+    this.model.document?.remove_on_change(this._on_document_change)
+    super.disconnect_signals()
+  }
+
+  private _on_document_change = (event: DocumentChangedEvent): void => {
+    if (event instanceof ColumnsStreamedEvent && event.model === this.model.source && event.attr === "data") {
+      this.addData(event.data, event.rollover ?? null)
+    }
   }
 
   get groupBy(): boolean | ((data: any) => string) {
@@ -580,11 +611,9 @@ export class DataTabulatorView extends HTMLBoxView {
     if (this.model.sorters.length > 0) {
       sorters.push({column: "_index", dir: "asc"})
     }
-    for (const sort of this.model.sorters.reverse()) {
-      if (sort.column === undefined) {
-        sort.column = sort.field
-      }
-      sorters.push(sort)
+    // Copy, the model array must not be reversed in place.
+    for (const sort of [...this.model.sorters].reverse()) {
+      sorters.push(sort.column === undefined ? {...sort, column: sort.field} : sort)
     }
     return sorters
   }
@@ -838,14 +867,13 @@ export class DataTabulatorView extends HTMLBoxView {
     // Rendering callbacks
     this.tabulator.on("selectableRowsCheck", (row: any) => {
       const selectable = this.model.selectable_rows
-      return (selectable == null) || selectable.includes(row._row.data._index)
+      return (selectable == null) || as_set(selectable).has(row._row.data._index)
     })
     this.tabulator.on("tooltips", (cell: any) => {
       return `${cell.getColumn().getField()}: ${cell.getValue()}`
     })
-    this.tabulator.on("scrollVertical", debounce(() => {
-      this.setStyles()
-    }, 50, false))
+    // Rows scrolled back into view reuse their elements, so restyle them when `cell_styles` changed since.
+    this.tabulator.on("scrollVertical", () => this.setStyles())
 
     // Sync state with model
     this.tabulator.on("rowSelectionChanged", (data: any, rows: any, selected: any, deselected: any) => {
@@ -874,7 +902,7 @@ export class DataTabulatorView extends HTMLBoxView {
       this.updatePage(pageno)
     })
     this.tabulator.on("renderComplete", () => {
-      if (this._building) {
+      if (this._building || this._updating_data) {
         return
       }
       this.postUpdate()
@@ -920,7 +948,10 @@ export class DataTabulatorView extends HTMLBoxView {
     this._initializing = this._building = false
     this.setVisibility()
     if (this._pending_data) {
-      void this.setData().then(() => this.postUpdate())
+      this._updating_data = true
+      void this.setData().finally(() => {
+        this._updating_data = false
+      }).then(() => this.postUpdate())
     }
     this._request_resize_redraw()
   }
@@ -1043,9 +1074,12 @@ export class DataTabulatorView extends HTMLBoxView {
       popupContainer: this.model.container_popup && this.container,
       groupBy: this.groupBy,
       frozenRows: (row: any) => {
-        return (this.model.frozen_rows.length > 0) ? this.model.frozen_rows.includes(row._row.data._index) : false
+        return (this.model.frozen_rows.length > 0) ? as_set(this.model.frozen_rows).has(row._row.data._index) : false
       },
-      rowFormatter: (row: any) => this._render_row(row, false),
+      rowFormatter: (row: any) => {
+        this._style_row(row)
+        this._render_row(row, false)
+      },
     }
     if (this.model.max_height != null) {
       configuration.maxHeight = this.model.max_height
@@ -1109,7 +1143,7 @@ export class DataTabulatorView extends HTMLBoxView {
 
   _render_row(row: any, resize: boolean = true): void {
     const index = row._row?.data._index
-    if (!this.model.expanded.includes(index)) {
+    if (!as_set(this.model.expanded).has(index)) {
       return
     }
     const model = this.get_child(index)
@@ -1119,8 +1153,6 @@ export class DataTabulatorView extends HTMLBoxView {
     }
     schedule_when(() => {
       const rowEl = row.getElement()
-      const style = getComputedStyle(this.tabulator.element.children[1].children[0])
-      const bg = style.backgroundColor
       const neg_margin = rowEl.style.paddingLeft ? `-${rowEl.style.paddingLeft}` : "0"
       const prev_child = rowEl.children[rowEl.children.length-1]
       let viewEl
@@ -1130,6 +1162,7 @@ export class DataTabulatorView extends HTMLBoxView {
           return
         }
       } else {
+        const bg = getComputedStyle(this.tabulator.element.children[1].children[0]).backgroundColor
         viewEl = div({class: "row-content", style: {background_color: bg, margin_left: neg_margin, max_width: "100%", overflow_x: "hidden"}})
         rowEl.appendChild(viewEl)
       }
@@ -1156,8 +1189,7 @@ export class DataTabulatorView extends HTMLBoxView {
 
   _expand_render(cell: any): string {
     const index = cell._cell.row.data._index
-    const icon = this.model.expanded.indexOf(index) < 0 ? "►" : "▼"
-    return icon
+    return as_set(this.model.expanded).has(index) ? "▼" : "►"
   }
 
   _update_expand(cell: any): void {
@@ -1404,12 +1436,51 @@ export class DataTabulatorView extends HTMLBoxView {
     }
   }
 
-  addData(): void {
+  /** Whether rows can be added or updated in place rather than rebuilding the whole table. */
+  get can_update_in_place(): boolean {
+    return (
+      this.tabulator != null &&
+      this.tabulator.initialized &&
+      !this._initializing &&
+      !this._building &&
+      !this._pending_data &&
+      !this.model.configuration.dataTree
+    )
+  }
+
+  /**
+   * Appends the streamed rows. Rolling over drops leading rows and shifts every
+   * `_index`, so that case (and anything out of sync) rebuilds the table.
+   */
+  addData(streamed: Data | null, rollover: number | null): void {
+    if (this.tabulator == null) {
+      return
+    }
     const rows = this.tabulator.rowManager.getRows()
     const last_row = rows[rows.length-1]
     const start = ((last_row?.data._index) || 0)
+    const total = this.model.source.get_length() ?? 0
+    const n_streamed = streamed == null ? null : stream_length(streamed)
+    const append = (
+      n_streamed != null &&
+      this.can_update_in_place &&
+      rows.length + n_streamed === total &&
+      (rollover == null || total <= rollover)
+    )
     this._updating_page = true
-    void this.setData().then(() => {
+    let update: Promise<unknown>
+    if (append) {
+      this._updating_data = true
+      try {
+        this._append_rows(transform_cds_to_records(this.model.source, true, rows.length))
+      } finally {
+        this._updating_data = false
+      }
+      update = Promise.resolve()
+    } else {
+      update = this.setData()
+    }
+    void update.then(() => {
       if (this.model.follow) {
         if (this.model.pagination) {
           this.tabulator.setPage(Math.ceil(this.tabulator.rowManager.getDataCount() / (this.model.page_size || 20)))
@@ -1422,6 +1493,40 @@ export class DataTabulatorView extends HTMLBoxView {
     })
   }
 
+  /**
+   * Tabulator's `addData` copies the active rows array and, with pagination,
+   * refreshes the whole data pipeline once per added row, which makes appending
+   * a batch slower than rebuilding the table. This appends rows the way
+   * `RowManager.addRows` does but refreshes once.
+   */
+  _append_rows(records: any[]): void {
+    const manager = this.tabulator.rowManager
+    // With pagination Tabulator places new rows on the current page unless the
+    // preceding row is given explicitly.
+    let after = this.model.pagination == null ? undefined : manager.rows[manager.rows.length - 1]
+    const {setActiveRows, refreshActiveData} = manager
+    manager.setActiveRows = () => {}
+    manager.refreshActiveData = () => {}
+    try {
+      for (const record of records) {
+        const row = manager.addRow(record, false, after, true)
+        manager.dispatch("row-added", row, record, false, after)
+        if (after !== undefined) {
+          after = row
+        }
+      }
+    } finally {
+      manager.setActiveRows = setActiveRows
+      manager.refreshActiveData = refreshActiveData
+    }
+    manager.setActiveRows(manager.activeRows)
+    manager.refreshActiveData(false, false, true)
+    manager.regenerateRowPositions()
+    if (manager.displayRowsCount) {
+      manager._clearPlaceholder()
+    }
+  }
+
   postUpdate(): void {
     this.setSelection()
     this.setStyles()
@@ -1431,11 +1536,33 @@ export class DataTabulatorView extends HTMLBoxView {
     this._restore_scroll = false
   }
 
-  updateOrAddData(): void {
+  /** Updates the patched rows in place; patches touching most rows rebuild the table instead. */
+  updateOrAddData(indices: unknown): void {
     // To avoid double updating the tabulator data
-    if (this._tabulator_cell_updating) {
+    if (this._tabulator_cell_updating || this.tabulator == null) {
       return
     }
+    const rows = this.tabulator.rowManager.getRows().length
+    if (
+      this.can_update_in_place &&
+      isArray(indices) &&
+      indices.length > 0 &&
+      indices.length * 2 < rows &&
+      indices.every(isNumber)
+    ) {
+      const records = transform_cds_rows_to_records(this.model.source, indices, true)
+      if (records.length === indices.length) {
+        this.tabulator.updateData(records).catch(() => this.replaceData())
+        return
+      }
+    }
+    this.replaceData()
+  }
+
+  replaceData(): void {
+    const inds = this.model.source.selected.indices
+    this.record_scroll()
+    this._updating_scroll = true
 
     // Temporarily set minHeight to avoid "scroll-to-top" issues caused
     // by Tabulator JS entirely destroying the table when .setData is called.
@@ -1443,10 +1570,14 @@ export class DataTabulatorView extends HTMLBoxView {
     const prev_minheight = this.tabulator.element.style.minHeight
     this.tabulator.element.style.minHeight = `${this.tabulator.element.offsetHeight}px`
 
-    const data = transform_cds_to_records(this.model.source, true)
+    const data = this.getData()
     this.tabulator.setData(data).then(() => {
       this.tabulator.element.style.minHeight = prev_minheight
     })
+    this._updating_scroll = false
+    // Restore indices since updating data may have reset checkbox column
+    this.model.source.selected.indices = inds
+    this.restore_scroll()
   }
 
   setFrozen(): void {
@@ -1475,38 +1606,50 @@ export class DataTabulatorView extends HTMLBoxView {
     this.tabulator.setSort(this.sorters)
   }
 
+  /** Styles the rendered rows; rows rendered later are styled by the `rowFormatter`. */
   setStyles(): void {
-    const style_data = this.model.cell_styles.data
-    if (this.tabulator == null || this.tabulator.getDataCount() == 0 || style_data == null || !style_data.size) {
+    if (this.tabulator == null || this.tabulator.rowManager.renderer == null) {
       return
     }
-    this._applied_styles = false
-    for (const r of style_data.keys()) {
-      const row_style = style_data.get(r)
-      const row = this.tabulator.getRow(r)
-      if (!row) {
+    for (const row of this.tabulator.getRows("visible")) {
+      this._style_row(row)
+    }
+  }
+
+  _style_row(row: any): void {
+    const version = this._styles_version
+    const index = row._row?.data._index
+    const row_style = index == null ? null : lookup(this.model.cell_styles.data, index)
+    for (const cell of row._row?.cells ?? []) {
+      const element: HTMLElement | undefined = cell.element
+      if (element == null) {
         continue
       }
-      const cells = new Map<string, any>(row._row.cells.map((cell: any) => [cell.column.field, cell]))
-      for (const [field, style] of Object.entries<any[]>(row_style)) {
-        const cell = cells.get(field)
-        if (cell == null || !style.length) {
-          continue
-        }
-        const element = cell.element
-        for (const s of style) {
-          let prop, value
-          if (isArray(s)) {
-            [prop, value] = s
-          } else if (!s.includes(":")) {
-            continue
-          } else {
-            [prop, value] = s.split(":")
-          }
-          element.style.setProperty(prop, value.trimLeft())
-          this._applied_styles = true
-        }
+      const styled = this._styled_cells.get(element)
+      if (styled != null && styled.version === version) {
+        continue
       }
+      if (styled != null) {
+        for (const prop of styled.props) {
+          element.style.removeProperty(prop)
+        }
+        this._styled_cells.delete(element)
+      }
+      const style: any[] | null = lookup(row_style, cell.column.field)
+      const props: string[] = []
+      for (const s of style ?? []) {
+        let prop, value
+        if (isArray(s)) {
+          [prop, value] = s
+        } else if (!s.includes(":")) {
+          continue
+        } else {
+          [prop, value] = s.split(":")
+        }
+        element.style.setProperty(prop, value.trimLeft())
+        props.push(prop)
+      }
+      this._styled_cells.set(element, {version, props})
     }
   }
 
@@ -1563,10 +1706,13 @@ export class DataTabulatorView extends HTMLBoxView {
     this._selection_updating = true
     this.tabulator.deselectRow()
     this.tabulator.selectRow(indices)
-    for (const index of indices) {
-      const row = this.tabulator.rowManager.findRow(index)
-      if (row) {
-        this.tabulator.scrollToRow(index, "center", false).catch(() => {})
+    // Scroll once, to the last selected row that is displayed (e.g. on the current page).
+    const displayed = new Set(this.tabulator.rowManager.getDisplayRows())
+    for (let i = indices.length - 1; i >= 0; i--) {
+      const row = this.tabulator.rowManager.findRow(indices[i])
+      if (row && displayed.has(row)) {
+        this.tabulator.scrollToRow(indices[i], "center", false).catch(() => {})
+        break
       }
     }
     this._selection_updating = false
@@ -1694,14 +1840,12 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   _filter_selected(indices: number[]): number[] {
-    const filtered = []
-    for (const ind of indices) {
-      if (this.model.selectable_rows == null ||
-          this.model.selectable_rows.indexOf(ind) >= 0) {
-        filtered.push(ind)
-      }
+    const selectable = this.model.selectable_rows
+    if (selectable == null) {
+      return [...indices]
     }
-    return filtered
+    const selectable_set = as_set(selectable)
+    return indices.filter((ind) => selectable_set.has(ind))
   }
 
   rowSelectionChanged(data: any, _row: any, selected: any, deselected: any): void {
