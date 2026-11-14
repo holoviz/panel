@@ -92,6 +92,11 @@ export class CommManager extends Model {
   }
 
   protected _document_changed(event: DocumentChangedEvent): void {
+    // Changes applied from a Python patch are not synced; echoing them back
+    // would also resend models Python already knows as new models
+    if (!event.sync) {
+      return
+    }
     // Filter out changes to attributes that aren't server-visible
     if (event instanceof ModelChangedEvent && !event.model.properties[event.attr].syncable) {
       return
