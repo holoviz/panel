@@ -13,6 +13,7 @@ import time
 import typing as t
 import weakref
 
+from collections import deque
 from contextlib import ExitStack, contextmanager, nullcontext
 from functools import partial, wraps
 from weakref import WeakKeyDictionary
@@ -29,11 +30,12 @@ from bokeh.model.util import (
     collect_models, visit_value_and_its_immediate_references,
 )
 from bokeh.models import CustomJS
+from bokeh.server.session import _needs_document_lock_on_loop
 
 from ..config import config
 from .loading import _loading_css_classes
 from .model import monkeypatch_events  # noqa: F401 API import
-from .state import state
+from .state import set_curdoc, state
 
 if t.TYPE_CHECKING:
     from asyncio.futures import Future
@@ -62,9 +64,12 @@ _HOLD_LOCK: WeakKeyDictionary[Document, threading.Lock] = WeakKeyDictionary()
 # always collects, see _hold_doc.
 _HOLD_POLICY: WeakKeyDictionary[Document, HoldPolicyType] = WeakKeyDictionary()
 _WRITE_FUTURES: WeakKeyDictionary[Document, list[Future]] = WeakKeyDictionary()
-_WRITE_EVENTS: WeakKeyDictionary[Document, list[EventBatch]] = WeakKeyDictionary()
+_WRITE_EVENTS: WeakKeyDictionary[Document, deque[EventBatch]] = WeakKeyDictionary()
 _WRITE_BLOCK: WeakKeyDictionary[Document, bool] = WeakKeyDictionary()
+_WRITE_LOCK = threading.Lock()
 _UNCONNECTED_EVENTS: WeakKeyDictionary[Document, list[DocumentChangedEvent]] = WeakKeyDictionary()
+_SCHEDULED_UPDATES: WeakKeyDictionary[Document, deque[Callable[[], t.Any]]] = WeakKeyDictionary()
+_SCHEDULED_UPDATES_LOCK = threading.Lock()
 
 _panel_last_cleanup = None
 _write_tasks: WeakKeyDictionary[Document, list[asyncio.Task]] = WeakKeyDictionary()
@@ -335,6 +340,45 @@ async def _await_writes(futures: Iterable[Future]) -> None:
         except Exception as e:
             logger.warning(f"Failed sending message due to following error: {e}")
 
+def _log_task_exception(task: asyncio.Task) -> None:
+    if task.cancelled():
+        return
+    if (exception := task.exception()) is not None:
+        logger.error("Error thrown from callback:", exc_info=exception)
+
+def _track_task(doc: Document, task: asyncio.Task) -> None:
+    _write_tasks.setdefault(doc, []).append(task)
+    task.add_done_callback(partial(_cleanup_task, doc))
+
+@_needs_document_lock_on_loop
+def _run_with_document_lock(session: ServerSession, func: Callable[..., t.Any], *args, **kwargs) -> t.Any:
+    return func(*args, **kwargs)
+
+def _schedule_locked(doc: Document, func: Callable[..., t.Any], *args, **kwargs) -> None:
+    """
+    Runs ``func`` on the server event loop while holding the Document
+    lock, awaiting its result if it is a coroutine. Unlike a next tick
+    callback the function is not offloaded to a worker thread first
+    and scheduling it emits no session callback events.
+    """
+    session = getattr(doc.session_context, 'session', None)
+    loop = state._document_loop(doc)
+    asyncio_loop = t.cast(
+        'asyncio.AbstractEventLoop | None', getattr(loop, 'asyncio_loop', loop)
+    )
+    if session is None or asyncio_loop is None:
+        doc.add_next_tick_callback(partial(func, *args, **kwargs))
+        return
+
+    def start() -> None:
+        task = asyncio.ensure_future(
+            _run_with_document_lock(session, func, *args, **kwargs), loop=asyncio_loop
+        )
+        _track_task(doc, task)
+        task.add_done_callback(_log_task_exception)
+
+    asyncio_loop.call_soon_threadsafe(start)
+
 def _dispatch_write_task(doc, func, *args, **kwargs):
     """
     Schedules tasks that write messages to the socket.
@@ -345,11 +389,9 @@ def _dispatch_write_task(doc, func, *args, **kwargs):
         # No running loop on this thread (e.g. a callback offloaded to a
         # worker thread by Bokeh); avoid creating the coroutine here
         # since there is nothing to await it, and reschedule instead.
-        doc.add_next_tick_callback(partial(func, *args, **kwargs))
+        _schedule_locked(doc, func, *args, **kwargs)
         return
-    task = loop.create_task(func(*args, **kwargs))
-    _write_tasks.setdefault(doc, []).append(task)
-    task.add_done_callback(partial(_cleanup_task, doc))
+    _track_task(doc, loop.create_task(func(*args, **kwargs)))
 
 def _is_write_locked(conn: ServerConnection) -> bool:
     return _is_write_blocked(conn._socket)
@@ -422,42 +464,51 @@ def _keep_unsent_models_new(doc: Document) -> None:
 
 async def _dispatch_msgs(doc):
     """
-    Serializes and writes batches of events to the sockets, ensuring
-    that the write_lock is not set, otherwise re-schedules the write
-    task on the event loop.
+    Serializes and writes the queued batches of events to the sockets
+    in order, waiting for each socket's write lock rather than writing
+    while something else is writing to it. Only one dispatcher runs per
+    Document, draining batches queued while it was writing, so the
+    order the batches were scheduled in is preserved.
 
-    The events are serialized here, i.e. at write time, and not when
-    they were scheduled. Bokeh tracks which models a client has already
-    been sent as part of the Document, so serializing a patch declares
-    the models it defines as synced. Serializing eagerly and writing
-    later would therefore allow a message that was serialized after
-    ours (e.g. one Bokeh itself dispatches at the end of a locked
-    callback) to be written first, referencing models the client has
-    not been sent yet.
+    The events are serialized here, i.e. at write time while holding
+    the write lock, and not when they were scheduled. Bokeh tracks which
+    models a client has already been sent as part of the Document, so
+    serializing a patch declares the models it defines as synced.
+    Serializing eagerly and writing later would therefore allow a
+    message that was serialized after ours (e.g. one Bokeh itself
+    dispatches at the end of a locked callback) to be written first,
+    referencing models the client has not been sent yet.
     """
-    if doc not in _WRITE_BLOCK:
-        return
-    futures: list[Future] = []
-    batches = _WRITE_EVENTS.pop(doc, [])
-    while batches:
-        connections, events = batches[0]
-        if any(_is_write_locked(conn) for conn in connections):
-            break
-        batches.pop(0)
-        futures += write_events(doc, connections, events, run=False)
-    if futures:
-        if doc in _WRITE_FUTURES:
-            _WRITE_FUTURES[doc] += futures
-        else:
-            _WRITE_FUTURES[doc] = futures
-        await _run_write_futures(doc)
-    if not batches:
-        if doc in _WRITE_BLOCK:
-            del _WRITE_BLOCK[doc]
-        return
-    _WRITE_EVENTS[doc] = batches + _WRITE_EVENTS.get(doc, [])
-    await asyncio.sleep(0.01)
-    _dispatch_write_task(doc, _dispatch_msgs, doc)
+    while True:
+        with _WRITE_LOCK:
+            batches = _WRITE_EVENTS.get(doc)
+            if not batches or doc not in _WRITE_BLOCK:
+                if not batches:
+                    _WRITE_EVENTS.pop(doc, None)
+                _WRITE_BLOCK.pop(doc, None)
+                return
+            connections, events = batches[0]
+            # Consecutive batches for the same connections share a message
+            merged = 1
+            while merged < len(batches) and batches[merged][0] == connections:
+                events = events + batches[merged][1]
+                merged += 1
+        try:
+            message = None
+            for conn in connections:
+                lock = getattr(conn._socket, 'write_lock', None)
+                with (await lock.acquire()) if lock is not None else nullcontext():
+                    if message is None:
+                        message = conn.protocol.create('PATCH-DOC', events)
+                    await _await_writes(_socket_dispatcher(conn._socket)(conn, msg=message))
+        except Exception as e:
+            logger.warning(f"Failed sending message due to following error: {e}")
+        finally:
+            with _WRITE_LOCK:
+                # The destroyed document already dropped its queue
+                if _WRITE_EVENTS.get(doc) is batches:
+                    for _ in range(merged):
+                        batches.popleft()
 
 def _garbage_collect():
     if (new_time:= time.monotonic()-_panel_last_cleanup) < GC_DEBOUNCE:
@@ -506,10 +557,13 @@ def _destroy_document(self, session):
         cb.stop()
 
     # Cancel any pending write tasks for this document
-    _WRITE_EVENTS.pop(self, None)
-    _WRITE_BLOCK.pop(self, None)
+    with _WRITE_LOCK:
+        _WRITE_EVENTS.pop(self, None)
+        _WRITE_BLOCK.pop(self, None)
     _UNCONNECTED_EVENTS.pop(self, None)
     _HOLD_POLICY.pop(self, None)
+    with _SCHEDULED_UPDATES_LOCK:
+        _SCHEDULED_UPDATES.pop(self, None)
     for future in _WRITE_FUTURES.pop(self, []):
         future.cancel()
     for task in _write_tasks.pop(self, []):
@@ -579,6 +633,46 @@ def write_events(
         doc.add_next_tick_callback(partial(_run_write_futures, doc))  # type: ignore[arg-type]
     return futures
 
+def schedule_model_update(doc: Document, callback: Callable[[], t.Any]) -> None:
+    """
+    Queues a model update that may only be applied while the Document
+    lock is held, e.g. one made from a thread that does not own it, and
+    schedules one locked callback per Document that applies all queued
+    updates and writes them in a single message.
+    """
+    with _SCHEDULED_UPDATES_LOCK:
+        pending = _SCHEDULED_UPDATES.get(doc)
+        if pending is None:
+            _SCHEDULED_UPDATES[doc] = pending = deque()
+        pending.append(callback)
+        schedule = len(pending) == 1
+    if not schedule:
+        return
+    try:
+        _schedule_locked(doc, _apply_scheduled_updates, doc)
+    except Exception:
+        with _SCHEDULED_UPDATES_LOCK:
+            _SCHEDULED_UPDATES.pop(doc, None)
+        raise
+
+def _apply_scheduled_updates(doc: Document) -> None:
+    with _SCHEDULED_UPDATES_LOCK:
+        pending = _SCHEDULED_UPDATES.pop(doc, None)
+    if not pending:
+        return
+    errors: list[Exception] = []
+    with set_curdoc(doc):
+        # Every queued update is written, so updates to the same property
+        # must not be combined into the last one.
+        with unlocked(policy='collect'):
+            for callback in pending:
+                try:
+                    callback()
+                except Exception as e:
+                    errors.append(e)
+        for error in errors:
+            state._handle_exception(error)
+
 def schedule_write_events(
     doc: Document,
     connections: Iterable[ServerConnection],
@@ -590,10 +684,15 @@ def schedule_write_events(
     thread. The events are serialized by ``_dispatch_msgs`` when they
     are actually written.
     """
-    # Set up write locks
-    _WRITE_BLOCK[doc] = True
-    _WRITE_EVENTS[doc] = batches = _WRITE_EVENTS.get(doc, [])
-    batches.append((list(connections), events))
+    with _WRITE_LOCK:
+        batches = _WRITE_EVENTS.get(doc)
+        if batches is None:
+            _WRITE_EVENTS[doc] = batches = deque()
+        batches.append((list(connections), events))
+        if doc in _WRITE_BLOCK:
+            # The running dispatcher drains the queue
+            return
+        _WRITE_BLOCK[doc] = True
     _dispatch_write_task(doc, _dispatch_msgs, doc)
 
 def create_doc_if_none_exists(doc: Document | None) -> Document:
@@ -1001,14 +1100,7 @@ def hold(
                         def _unhold(lock=hold_lock, doc=doc):
                             with lock:
                                 _release_held_events(doc)
-                        with hold_lock:
-                            # Clear the hold around scheduling the callback
-                            # so the SessionCallbackAdded event it emits is
-                            # dispatched rather than collected by the hold
-                            # it is releasing.
-                            doc.callbacks._hold = None
-                            doc.add_next_tick_callback(_unhold)
-                            doc.callbacks._hold = policy
+                        _schedule_locked(doc, _unhold)
             elif held:
                 doc.callbacks._hold = held
             elif comm is not None:

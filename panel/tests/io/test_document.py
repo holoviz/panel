@@ -684,7 +684,7 @@ async def test_schedule_write_events_defers_serialization():
         assert written == []
 
         # Release the socket and let the write task drain the queue
-        conn._socket.write_lock._block._value = 1
+        conn._socket.write_lock.release()
         await asyncio.sleep(0.05)
 
         assert len(conn.protocol.created) == 1
@@ -715,7 +715,7 @@ async def test_schedule_write_events_defers_on_asgi_socket():
         assert conn.protocol.created == []
         assert written == []
 
-        conn._socket.write_lock._lock._locked = False
+        conn._socket.write_lock._lock.release()
         await asyncio.sleep(0.05)
 
         assert len(conn.protocol.created) == 1
@@ -1242,3 +1242,89 @@ def test_hold_collects_and_combines_on_release():
 
     assert doc.callbacks.hold_value is None
     assert [(e.attr, e.new) for e in dispatched] == [('value', 10)]
+
+
+@pytest.mark.asyncio
+async def test_dispatch_msgs_merges_queued_batches_into_one_message():
+    """
+    Batches queued while the socket was busy are written in one message
+    once it is released, in the order they were queued.
+    """
+    written = []
+    extra_socket_handlers[_FakeSocket] = lambda conn, msg=None: written.append(msg) or []
+
+    class RecordingProtocol(_FakeProtocol):
+        def create(self, msgtype, events):
+            self.created.append(list(events))
+            return self.created[-1]
+
+    try:
+        doc = Document()
+        conn = _FakeConn(lock_held=True)
+        conn.protocol = RecordingProtocol()
+        first, second = object(), object()
+
+        schedule_write_events(doc, [conn], [first])
+        schedule_write_events(doc, [conn], [second])
+        await asyncio.sleep(0.05)
+
+        assert len(_write_tasks[doc]) == 1
+        assert conn.protocol.created == []
+
+        conn._socket.write_lock.release()
+        await asyncio.sleep(0.05)
+
+        assert conn.protocol.created == [[first, second]]
+        assert written == conn.protocol.created
+        assert doc not in _WRITE_BLOCK
+    finally:
+        extra_socket_handlers.pop(_FakeSocket, None)
+        _WRITE_BLOCK.pop(doc, None)
+
+
+@pytest.mark.xdist_group(name="server")
+def test_scheduled_updates_from_thread_are_batched_without_loss(threads, monkeypatch):
+    """
+    Updates made from a thread that does not hold the document lock are
+    applied by a single locked callback and written in one message,
+    with every intermediate value, in order.
+    """
+    slider = IntSlider()
+
+    serve_and_request(slider)
+    wait_until(lambda: bool(slider._documents))
+
+    doc, model = list(slider._documents.items())[0]
+    session = doc.session_context.session
+    monkeypatch.setitem(state._loaded, doc, True)
+    monkeypatch.setitem(state._connected, doc, True)
+
+    messages = []
+    conn = _FakeConn(lock_held=False)
+    conn.protocol = Protocol()
+    monkeypatch.setattr(session, '_subscribed_connections', {conn})
+    monkeypatch.setitem(
+        extra_socket_handlers, _FakeSocket,
+        lambda conn, msg=None: messages.append(msg) or []
+    )
+
+    n = 50
+    expected = list(range(1, n + 1))
+
+    def update():
+        with set_curdoc(doc):
+            for value in expected:
+                slider.value = value
+
+    state._thread_pool.submit(update).result(timeout=5)
+
+    def values():
+        return [
+            event['new'] for msg in messages for event in msg.content['events']
+            if event['kind'] == 'ModelChanged' and event['attr'] == 'value'
+        ]
+
+    wait_until(lambda: len(values()) >= n)
+    assert values() == expected
+    assert len(messages) < n
+    assert model.value == n
