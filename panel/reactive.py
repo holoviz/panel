@@ -29,6 +29,7 @@ import param
 
 from bokeh.core.property.descriptors import UnsetValueError
 from bokeh.model import DataModel
+from bokeh.model.util import visit_value_and_its_immediate_references
 from bokeh.models import ImportedStyleSheet, InlineStyleSheet
 from packaging.version import Version
 from param.parameterized import (
@@ -57,7 +58,9 @@ from .viewable import (
 )
 
 if t.TYPE_CHECKING:
-    from collections.abc import Callable, Mapping, Sequence
+    from collections.abc import (
+        Callable, Iterable, Mapping, Sequence,
+    )
 
     import pandas as pd
 
@@ -1783,15 +1786,37 @@ class ReactiveCustomBase(Reactive):
         return props
 
     @classmethod
-    def _patch_datamodel_ref(cls, props, ref):
+    def _patch_datamodel_ref(cls, props, ref, attrs: Iterable[str] | None = None):
         """
         Ensure all DataModels have reference to the root model to ensure
         that they can be cleaned up correctly.
+
+        Only DataModels referenced from the DataModel's own property
+        values are visited (optionally restricted to the given
+        attributes): child components tag the DataModels they own
+        themselves, so walking into their models, as a select over all
+        references would, costs time proportional to the whole tree.
         """
         ref_str = f"__ref:{ref}"
-        for m in props.select({'type': DataModel}):
+        models = [props]
+        seen = set()
+        while models:
+            m = models.pop()
+            if id(m) in seen:
+                continue
+            seen.add(id(m))
             if ref_str not in m.tags:
                 m.tags.append(ref_str)
+            if attrs is None:
+                values = m.properties_with_values(include_defaults=False).values()
+            else:
+                values = [getattr(m, attr) for attr in attrs]
+                attrs = None
+            def visit(sub):
+                if isinstance(sub, DataModel):
+                    models.append(sub)
+            for value in values:
+                visit_value_and_its_immediate_references(value, visit)
 
     def _set_on_model(self, msg: Mapping[str, t.Any], root: Model, model: Model) -> list[str]:
         if not msg:
@@ -1824,8 +1849,8 @@ class ReactiveCustomBase(Reactive):
                 self._changing[root.ref['id']] = prev_changing
             else:
                 del self._changing[root.ref['id']]
-        if isinstance(model, DataModel):
-            self._patch_datamodel_ref(model, root.ref['id'])
+        if transformed and isinstance(model, DataModel):
+            self._patch_datamodel_ref(model, root.ref['id'], attrs=transformed)
         return changing
 
 
