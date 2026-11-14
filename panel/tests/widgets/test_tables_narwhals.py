@@ -344,6 +344,38 @@ def test_tabulator_header_filters(frame, filt, expected):
     assert pandas_table.current_view['int'].tolist() == expected
 
 
+@pytest.mark.parametrize('column', ['datetime', 'date'])
+@pytest.mark.parametrize('value', [
+    '2024-01-02', '2024-01-02T00:00:00', 1704153600000, dt.datetime(2024, 1, 2)
+], ids=['date-string', 'iso-string', 'milliseconds', 'datetime'])
+def test_tabulator_datetime_header_filters(backend, column, value):
+    frame = backend({
+        'int': [1, 2, 3],
+        'datetime': [dt.datetime(2024, 1, i) for i in (1, 2, 3)],
+        'date': [dt.date(2024, 1, i) for i in (1, 2, 3)],
+    })
+    table = Tabulator(frame, filters=[{'field': column, 'type': '>=', 'value': value}])
+
+    assert to_dict(table.current_view)['int'] == [2, 3]
+
+
+def test_tabulator_datetime_header_filter_like(backend):
+    frame = backend({'int': [1, 2], 'datetime': [dt.datetime(2023, 1, 1), dt.datetime(2024, 1, 1)]})
+    table = Tabulator(frame, filters=[{'field': 'datetime', 'type': 'like', 'value': '2024'}])
+
+    assert to_dict(table.current_view)['int'] == [2]
+
+
+def test_tabulator_unsigned_header_filter_negative_value(backend):
+    import narwhals.stable.v2 as nw
+    frame = to_narwhals(backend({'int': [1, 2], 'u': [1, 2]})).with_columns(
+        nw.col('u').cast(nw.UInt32)
+    ).to_native()
+    table = Tabulator(frame, filters=[{'field': 'u', 'type': '>', 'value': -1}])
+
+    assert to_dict(table.current_view)['int'] == [1, 2]
+
+
 def test_tabulator_header_filters_remote_pagination(frame, document, comm):
     table = Tabulator(
         frame, pagination='remote',
