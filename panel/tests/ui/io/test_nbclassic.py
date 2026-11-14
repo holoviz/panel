@@ -291,6 +291,47 @@ def test_nbclassic_comm_does_not_echo_python_changes(page, nbclassic_server):
         assert '"attr":"children"' not in payload, described
 
 
+def test_nbclassic_shared_view_comm(page, nbclassic_server):
+    """
+    A second view of the same output (like JupyterLab's "Create New View
+    for Cell Output") shares the client comm of the first view and must
+    still deliver its events.
+    """
+    cell = (
+        "button = pn.widgets.Button(name='Increment')\n"
+        "counter = pn.pane.Markdown('0', css_classes=['nbclassic-shared-counter'])\n"
+        "button.on_click(lambda event: setattr(counter, 'object', str(int(counter.object) + 1)))\n"
+        "pn.Row(button, counter)"
+    )
+    run_notebook(page, nbclassic_server, 'shared_view_comm', [
+        'import panel as pn\npn.extension(comms="default", inline=False)',
+        cell,
+    ])
+    counters = page.locator('.nbclassic-shared-counter')
+    expect(counters).to_have_count(1)
+
+    # Rendering the same output again reuses its plot id, creating a shared view
+    page.evaluate("""() => {
+        const output_area = Jupyter.notebook.get_cell(1).output_area
+        const output = output_area.outputs.find((output) => output.metadata?.['application/vnd.holoviews_exec.v0+json']?.id)
+        output_area.append_output({...JSON.parse(JSON.stringify(output)), output_type: 'display_data'})
+    }""")
+    expect(counters).to_have_count(2)
+    buttons = page.get_by_role('button', name='Increment')
+
+    buttons.last.click()
+    expect(counters.first).to_have_text('1')
+    expect(counters.last).to_have_text('1')
+
+    buttons.first.click()
+    expect(counters.first).to_have_text('2')
+    expect(counters.last).to_have_text('2')
+
+    buttons.last.click()
+    expect(counters.first).to_have_text('3')
+    expect(counters.last).to_have_text('3')
+
+
 def test_nbclassic_warns_when_extension_missing(page, nbclassic_server):
     """
     The proactive liveness check must warn even when nothing else on the

@@ -58,7 +58,7 @@ export class CommManager extends Model {
     } else {
       this.ns = (window as any).PyViz
       this.ns.comm_manager.register_target(this.plot_id, this.comm_id, (msg: any) => {
-        for (const view of this.ns.shared_views.get(this.plot_id)) {
+        for (const view of this.ns.shared_views.get(this.plot_id) ?? []) {
           if (view !== this) {
             view.msg_handler(msg)
           }
@@ -69,7 +69,16 @@ export class CommManager extends Model {
           console.error(e)
         }
       })
-      this._client_comm = this.ns.comm_manager.get_client_comm(this.plot_id, this.client_comm_id, (msg: any) => this.on_ack(msg))
+      this._client_comm = this.ns.comm_manager.get_client_comm(this.plot_id, this.client_comm_id, (msg: any) => {
+        // Views of the same plot share one client comm and only the view
+        // that opened it receives the acknowledgements
+        for (const view of this.ns.shared_views.get(this.plot_id) ?? []) {
+          if (view !== this) {
+            view._unblock()
+          }
+        }
+        this.on_ack(msg)
+      })
       this._reconnect = !this._client_comm?.active || false
       if (this.ns.shared_views == null) {
         this.ns.shared_views = new Map()
@@ -143,13 +152,16 @@ export class CommManager extends Model {
     if ((this.document == null) || (this._client_comm == null)) {
       return
     }
+    if (this._event_buffer.length === 0) {
+      return
+    }
     const patch = this.document.create_json_patch(this._event_buffer)
     this._event_buffer = []
     const message = {...Message.create("PATCH-DOC", {}, patch)}
     const buffers: ArrayBuffer[] = []
     this._extract_buffers(message.content, buffers)
     this._client_comm.send(message, {}, buffers)
-    for (const view of this.ns.shared_views.get(this.plot_id)) {
+    for (const view of this.ns.shared_views.get(this.plot_id) ?? []) {
       if (view !== this && view.document != null) {
         view.document.apply_json_patch(patch, [], this.id)
       }
@@ -162,19 +174,15 @@ export class CommManager extends Model {
     if (views == null) {
       return
     }
-    const index = views.indexOf(this)
-    if (index !== -1) {
-      views.splice(index, 1)
-    }
-    if (views.length === 0) {
+    const remaining = views.filter((view: CommManager) => view !== this)
+    if (remaining.length) {
+      this.ns.shared_views.set(this.plot_id, remaining)
+    } else {
       this.ns.shared_views.delete(this.plot_id)
     }
   }
 
-  on_ack(msg: any) {
-    // Receives acknowledgement from Python, processing event
-    // and unblocking Comm if event queue empty
-    const metadata = msg.metadata
+  protected _unblock(): void {
     if (this._event_buffer.length > 0) {
       this._blocked = true
       this._timeout = Date.now()+this.timeout
@@ -182,6 +190,13 @@ export class CommManager extends Model {
     } else {
       this._blocked = false
     }
+  }
+
+  on_ack(msg: any) {
+    // Receives acknowledgement from Python, processing event
+    // and unblocking Comm if event queue empty
+    const metadata = msg.metadata
+    this._unblock()
     if ((metadata.msg_type == "Ready") && metadata.content) {
       // eslint-disable-next-line no-console
       console.log("Python callback returned following output:", metadata.content)
