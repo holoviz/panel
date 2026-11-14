@@ -45,7 +45,6 @@ We will start by defining a `Parameterized` class:
 import panel as pn
 import param
 
-
 class Settings(param.Parameterized):
     integer = param.Integer(default=1, bounds=(0, 10))
     string = param.String(default='A string')
@@ -69,6 +68,13 @@ Lets try to serve it as an app
 pn.Param(settings).servable()
 ```
 
+<video muted controls loop poster="../../_static/images/location_example_app.png" style="max-height: 400px; max-width: 100%;">
+    <source src="https://assets.holoviz.org/panel/how_to/state/sync_url.mp4" type="video/mp4">
+    Your browser does not support the video tag.
+</video>
+
+Note to *unsync* the Parameterized object you can simply call `pn.state.location.unsync(query_example)`.
+
 ### Sync a list of Parameterized objects
 
 URL query parameters can only contain serializable values. To synchronize a
@@ -79,9 +85,7 @@ items to and from plain Python values:
 class Curve(param.Parameterized):
     product = param.String()
 
-
 class CurveList(param.List):
-    class_ = Curve
 
     @classmethod
     def serialize(cls, value):
@@ -91,10 +95,8 @@ class CurveList(param.List):
     def deserialize(cls, value):
         return [Curve(**curve) for curve in value]
 
-
 class CurveCollection(param.Parameterized):
-    curves = CurveList(default=[])
-
+    curves = CurveList(default=[], item_type=Curve)
 
 collection = CurveCollection(curves=[Curve(product="A")])
 pn.state.location.sync(collection, ["curves"])
@@ -106,12 +108,5 @@ Changing `collection.curves` now updates the URL with a JSON representation,
 and loading that URL reconstructs the `Curve` objects. Keep synchronized data
 small and non-sensitive because query strings have practical length limits and
 are commonly retained in browser history and server logs.
-
-<video muted controls loop poster="../../_static/images/location_example_app.png" style="max-height: 400px; max-width: 100%;">
-    <source src="https://assets.holoviz.org/panel/how_to/state/sync_url.mp4" type="video/mp4">
-    Your browser does not support the video tag.
-</video>
-
-Note to *unsync* the Parameterized object you can simply call `pn.state.location.unsync(query_example)`.
 
 ## Related Resources
