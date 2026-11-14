@@ -153,7 +153,17 @@ export class CommManager extends Model {
 
   override disconnect_signals(): void {
     super.disconnect_signals()
-    this.ns.shared_views.shared_views.delete(this.plot_id)
+    const views = this.ns?.shared_views?.get(this.plot_id)
+    if (views == null) {
+      return
+    }
+    const index = views.indexOf(this)
+    if (index !== -1) {
+      views.splice(index, 1)
+    }
+    if (views.length === 0) {
+      this.ns.shared_views.delete(this.plot_id)
+    }
   }
 
   on_ack(msg: any) {
