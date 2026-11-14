@@ -1,4 +1,7 @@
 import asyncio
+# Imported for its side effect: the exit hook that disables thread pools must
+# be registered before ours so that ours runs first
+import concurrent.futures.thread  # noqa: F401
 import logging
 import threading
 import typing as t

@@ -13,12 +13,14 @@ import threading
 import time
 import weakref
 
+from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 
 import param
 import pytest
 import requests
 
+from bokeh.client import pull_session
 from bokeh.events import ButtonClick
 from packaging.version import Version
 from tornado.ioloop import IOLoop
@@ -2262,7 +2264,18 @@ def test_serve_threaded_after_main_thread_finishes():
         # The script's main thread finishes before the server responds
         wait_for_server(port, timeout=60)
         response = requests.get(f"http://127.0.0.1:{port}/", timeout=10)
+        # Session replies are handed to a separate thread pool; a broken
+        # pool leaves the client waiting forever, hence the timeout
+        def pull_roots():
+            with pull_session(url=f"http://127.0.0.1:{port}/") as session:
+                return session.document.roots
+        executor = ThreadPoolExecutor(max_workers=1)
+        try:
+            roots = executor.submit(pull_roots).result(timeout=30)
+        finally:
+            executor.shutdown(wait=False)
     finally:
         process.kill()
         process.wait()
     assert response.status_code == 200
+    assert roots
