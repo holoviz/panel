@@ -29,7 +29,7 @@ from bokeh.embed.bundle import (
     bundle_models, extension_dirs,
 )
 from bokeh.model import Model
-from bokeh.models import ImportedStyleSheet
+from bokeh.models import ImportedStyleSheet, InlineStyleSheet
 from bokeh.resources import Resources as BkResources, _get_server_urls
 from bokeh.settings import _Unset, settings as _settings
 from jinja2.environment import Environment
@@ -42,6 +42,7 @@ from .pages import page_theme
 from .state import state
 
 if t.TYPE_CHECKING:
+    from bokeh.document import Document
     from bokeh.resources import Urls
 
     class TarballType(t.TypedDict, total=False):
@@ -399,6 +400,25 @@ def stylesheet_url(stylesheet: ImportedStyleSheet) -> str | None:
         return stylesheet.url
     except UnsetValueError:
         return None
+
+def shared_inline_stylesheet(
+    css: str, cache: dict[str, InlineStyleSheet], doc: Document
+) -> InlineStyleSheet:
+    """
+    Returns the InlineStyleSheet holding the CSS on a Document, creating
+    it on first use so every model on the Document references the same
+    instance. A cached stylesheet is replaced if it was destroyed along
+    with a previous Document or is still attached to another one.
+    """
+    cached = cache.get(css)
+    if cached is not None:
+        try:
+            if cached.css == css and cached.document in (None, doc):
+                return cached
+        except UnsetValueError:
+            pass
+    cache[css] = stylesheet = InlineStyleSheet(css=css)
+    return stylesheet
 
 def patch_stylesheet(stylesheet, dist_url):
     url = stylesheet_url(stylesheet)

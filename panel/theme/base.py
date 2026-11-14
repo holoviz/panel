@@ -9,7 +9,7 @@ import typing as t
 
 import param
 
-from bokeh.models import ImportedStyleSheet
+from bokeh.models import ImportedStyleSheet, InlineStyleSheet
 from bokeh.themes import Theme as _BkTheme, _dark_minimal, built_in_themes
 
 from ..config import config
@@ -323,6 +323,16 @@ class Design(param.Parameterized, ResourceComponent):
         doc = model.document or document
         reactive = viewable._view__ if isinstance(viewable, PyComponent) else viewable
         reactive._resolve_stylesheets(props, doc)
+        if doc is None and 'stylesheets' in props:
+            # Without a Document the loading CSS resolves to its raw string
+            # again; keep the shared stylesheet the model already references.
+            inlined = {
+                sts.css: sts for sts in model.stylesheets if isinstance(sts, InlineStyleSheet)
+            }
+            props['stylesheets'] = [
+                inlined.get(sts, sts) if isinstance(sts, str) else sts
+                for sts in props['stylesheets']
+            ]
 
         # Do not update stylesheets if they match
         if 'stylesheets' in props and len(model.stylesheets) == len(props['stylesheets']):
