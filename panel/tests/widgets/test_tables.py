@@ -2,6 +2,7 @@ import asyncio
 import datetime as dt
 import random
 import string
+import warnings
 
 from zoneinfo import ZoneInfo
 
@@ -3590,7 +3591,11 @@ def test_df_to_cds_data_matches_bokeh_from_df(name):
     from panel.widgets.tables import _df_to_cds_data
 
     df = _cds_frames()[name]
-    _assert_cds_data_equal(_df_to_cds_data(df), ColumnDataSource.from_df(df))
+    # bokeh's from_df uses DatetimeIndex.values, deprecated for tz-aware indexes in pandas 3.1
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore', message='DatetimeIndex.values returning an ndarray')
+        expected = ColumnDataSource.from_df(df)
+    _assert_cds_data_equal(_df_to_cds_data(df), expected)
 
 
 def test_df_to_cds_data_multiindex_columns_non_string_raises():

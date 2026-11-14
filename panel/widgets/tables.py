@@ -117,18 +117,22 @@ def _df_to_cds_data(df: pd.DataFrame) -> dict[str, np.ndarray]:
         index_name = index.name
     else:
         try:
-            index_name = '_'.join(index.names)
+            index_name = '_'.join(t.cast('list[str]', index.names))
         except TypeError:
             index_name = 'index'
     if index_name == 'index' and 'index' in names:
         index_name = 'level_0'
     # Copies keep the ColumnDataSource arrays independent of the frame's
     # storage, which is otherwise mutated in place by edits and patches.
-    data = {index_name: np.array(pd.Index(index.values))}
+    # tz-aware datetimes are sent as naive UTC datetime64 like bokeh does
+    if isinstance(index, pd.DatetimeIndex) and index.tz is not None:
+        index_values = index.tz_convert(None).to_numpy(copy=True)
+    else:
+        index_values = np.array(pd.Index(index.values))
+    data = {index_name: index_values}
     for name, (_, col) in zip(names, df.items()):
-        # tz-aware datetimes are sent as naive UTC datetime64 like bokeh does
         if isinstance(col.dtype, pd.DatetimeTZDtype):
-            data[name] = col.values.copy()
+            data[name] = col.dt.tz_convert(None).to_numpy(copy=True)
         else:
             data[name] = col.to_numpy(copy=True)
     return data
@@ -601,7 +605,7 @@ class BaseTable(ReactiveData, Widget):
                 col = pd.Series(df.index.get_level_values(field))
             else:
                 raise KeyError(field)
-            keys[i] = tabulator_sorter(col).array
+            keys[str(i)] = tabulator_sorter(col).array
             ascending.append(sorter['dir'] == 'asc')
 
         # Sorting only the sort keys avoids copying the full frame; the
