@@ -128,6 +128,16 @@ def test_autocomplete_unrestricted(document, comm):
     select.value = 'bar'
     assert widget.value == 'bar'
 
+def test_autocomplete_unrestricted_non_string_value(document, comm):
+    autocomplete = AutocompleteInput(options=[1251, 1561], restrict=False)
+
+    model = autocomplete.get_root(document, comm=comm)
+
+    autocomplete.value = 1399
+
+    assert autocomplete.value == 1399
+    assert model.value == '1399'
+
 def test_autocomplete_restricted_reset_on_new_options(document, comm):
     opts = {'A': 'a', '1': 1}
     select = AutocompleteInput(options=opts, value=1, label='Autocomplete', restrict=True)
@@ -196,6 +206,22 @@ def test_select_groups_dict_options(document, comm):
 
     select.value = groups['A']['a']
     assert widget.value == str(groups['A']['a'])
+
+
+def test_select_groups_duplicate_labels(document, comm):
+    select = Select(groups={'G1': {'T1': 1, 'T2': 2}, 'G2': {'T1': 3, 'T4': 4}})
+
+    widget = select.get_root(document, comm=comm)
+
+    assert widget.options == {
+        'G1': [('1', 'T1'), ('2', 'T2')], 'G2': [('3', 'T1'), ('4', 'T4')]
+    }
+
+    select._process_events({'value': '1'})
+    assert select.value == 1
+
+    select._process_events({'value': '3'})
+    assert select.value == 3
 
 
 def test_select_change_groups(document, comm):

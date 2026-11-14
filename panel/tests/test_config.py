@@ -175,3 +175,10 @@ def test_config_set_npm_cdn():
         assert config.npm_cdn == "https://cdn.jsdelivr.net/npm"
     with config.set(npm_cdn = "https://unpkg.com"):
         assert config.npm_cdn == "https://unpkg.com"
+
+
+def test_config_set_restores_notifications_with_notification_messages():
+    assert not config.notifications
+    with config.set(ready_notification='Ready', disconnect_notification='Lost'):
+        assert config.notifications
+    assert not config.notifications

@@ -243,7 +243,10 @@ class Matplotlib(Image, IPyWidget):
         The format to render the plot as if the plot is not interactive.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     high_dpi = param.Boolean(default=True, doc="""
-        Whether to optimize output for high-dpi displays.""")
+        Whether to optimize output for high-dpi displays. PNG output
+        is rendered at twice the dpi and displayed at the size given
+        by dpi, so it is sharp on displays with a device pixel ratio
+        of up to 2.""")
 
     interactive = param.Boolean(default=False, constant=True, doc="""
         Whether to render interactive matplotlib plot with ipympl.""")
@@ -318,9 +321,16 @@ class Matplotlib(Image, IPyWidget):
 
     def _imgshape(self, data):
         try:
-            return self._img_type._imgshape(data)
+            width, height = self._img_type._imgshape(data)
         except TypeError:
-            return self._img_type._imgshape(self, data)
+            width, height = self._img_type._imgshape(self, data)
+        if self._render_high_dpi:
+            return width // 2, height // 2
+        return width, height
+
+    @property
+    def _render_high_dpi(self) -> bool:
+        return self.high_dpi and self.format == 'png'
 
     def _format_html(
         self, src: str, width: str | None = None, height: str | None = None
@@ -393,7 +403,7 @@ class Matplotlib(Image, IPyWidget):
             format=self.format,
             facecolor=obj.get_facecolor(),
             edgecolor=obj.get_edgecolor(),
-            dpi=self.dpi,
+            dpi=self.dpi * 2 if self._render_high_dpi else self.dpi,
             bbox_inches=bbox_inches
         )
         value = b.getvalue()

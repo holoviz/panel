@@ -74,7 +74,10 @@ def _get_min_max_value(
         tick = round((value - min_val) / step)
         # Only step back when rounding overshot max; out-of-range values must still raise below
         in_range = value <= max_val
-        if isinstance(min_val, Integral) and isinstance(step, Integral):
+        if isinstance(min_val, Integral) and isinstance(step, Integral) or not (
+            isinstance(min_val, (int, float)) and isinstance(step, (int, float))
+        ):
+            # Exact arithmetic types (ints, Fractions, ...) need no Decimal round trip
             snapped = min_val + tick * step
             if in_range and snapped > max_val:
                 snapped -= step

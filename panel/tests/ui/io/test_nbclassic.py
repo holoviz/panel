@@ -249,6 +249,84 @@ def test_nbclassic_component_comm(page, nbclassic_server):
     expect(page.locator('.nbclassic-counter')).to_have_text('1')
 
 
+def test_nbclassic_comm_does_not_echo_python_changes(page, nbclassic_server):
+    """
+    Changes Python pushes to the browser must not be sent back to Python,
+    otherwise models Python just created return as unknown new models.
+    """
+    frames = _record_kernel_frames(page)
+    cell = (
+        "button = pn.widgets.Button(name='Increment')\n"
+        "counter = pn.pane.Markdown('0', css_classes=['nbclassic-echo-counter'])\n"
+        "column = pn.Column()\n"
+        "def increment(event):\n"
+        "    counter.object = str(int(counter.object) + 1)\n"
+        "    column.objects = [pn.pane.Markdown('Python created model', css_classes=['nbclassic-echo-new'])]\n"
+        "button.on_click(increment)\n"
+        "pn.Row(button, counter, column)"
+    )
+    run_notebook(page, nbclassic_server, 'comm_echo', [
+        'import panel as pn\npn.extension(comms="default", inline=False)',
+        cell,
+    ])
+
+    button = page.get_by_role('button', name='Increment')
+    button.click()
+    expect(page.locator('.nbclassic-echo-counter')).to_have_text('1')
+    expect(page.locator('.nbclassic-echo-new')).to_have_count(1)
+    # A second round trip flushes anything the comm queued after the first
+    button.click()
+    expect(page.locator('.nbclassic-echo-counter')).to_have_text('2')
+
+    patches = [
+        payload if isinstance(payload, str) else payload.decode('utf-8', 'replace')
+        for _, direction, payload in frames
+        if direction == 'sent'
+    ]
+    patches = [payload for payload in patches if 'PATCH-DOC' in payload]
+    described = _describe_frames(frames)
+    assert any('"button_click"' in payload for payload in patches), described
+    for payload in patches:
+        assert '"attr":"text"' not in payload, described
+        assert '"attr":"children"' not in payload, described
+
+
+def test_nbclassic_shared_view_comm(page, nbclassic_server):
+    """
+    A second view of the same output (like JupyterLab's "Create New View
+    for Cell Output") shares the client comm of the first view and must
+    still deliver its events.
+    """
+    cell = (
+        "button = pn.widgets.Button(name='Increment')\n"
+        "counter = pn.pane.Markdown('0', css_classes=['nbclassic-shared-counter'])\n"
+        "button.on_click(lambda event: setattr(counter, 'object', str(int(counter.object) + 1)))\n"
+        "pn.Row(button, counter)"
+    )
+    run_notebook(page, nbclassic_server, 'shared_view_comm', [
+        'import panel as pn\npn.extension(comms="default", inline=False)',
+        cell,
+    ])
+    counters = page.locator('.nbclassic-shared-counter')
+    expect(counters).to_have_count(1)
+
+    # Rendering the same output again reuses its plot id, creating a shared view
+    page.evaluate("""() => {
+        const output_area = Jupyter.notebook.get_cell(1).output_area
+        const output = output_area.outputs.find((output) => output.metadata?.['application/vnd.holoviews_exec.v0+json']?.id)
+        output_area.append_output({...JSON.parse(JSON.stringify(output)), output_type: 'display_data'})
+    }""")
+    expect(counters).to_have_count(2)
+    buttons = page.get_by_role('button', name='Increment')
+
+    # Without the fix the second view only recovers after the comm timeout,
+    # so its second click is the one that stalls
+    for count, button in enumerate([buttons.last, buttons.last, buttons.first], start=1):
+        button.click()
+        expect(counters.first).to_have_text(str(count))
+        expect(counters.last).to_have_text(str(count))
+
+
 def test_nbclassic_warns_when_extension_missing(page, nbclassic_server):
     """
     The proactive liveness check must warn even when nothing else on the

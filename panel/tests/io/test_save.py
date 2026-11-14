@@ -12,6 +12,7 @@ from PIL import Image
 
 import panel.io.save as save_module
 
+from panel import bind
 from panel.config import config
 from panel.io.convert import (
     PYODIDE_MODULE_URL, PYODIDE_PYC_MODULE_URL, PYODIDE_VERSION,
@@ -19,10 +20,13 @@ from panel.io.convert import (
 )
 from panel.io.resources import CDN_DIST
 from panel.io.state import state
+from panel.layout import Column
+from panel.models.state import State
 from panel.models.vega import VegaPlot
 from panel.pane import Alert, Vega
 from panel.template import BootstrapTemplate
 from panel.tests.util import hv_available
+from panel.widgets import IntSlider
 
 BACKEND_MODULES = {"browser": bk_browser, "webdriver": bk_webdriver}
 
@@ -154,6 +158,36 @@ def test_save_cdn_resources():
     sio.seek(0)
     html = sio.read()
     assert re.findall('https://cdn.holoviz.org/panel/(.*)/dist/panel.min.js', html)
+
+
+@pytest.mark.parametrize('resources', ['cdn', 'inline'])
+@pytest.mark.parametrize('embed', [False, True])
+@pytest.mark.parametrize('favicon', [
+    pytest.param('favicon.ico', id='relative'),
+    pytest.param('https://example.org/favicon.ico', id='url'),
+    pytest.param(
+        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+        id='data-uri',
+    ),
+])
+def test_save_custom_favicon(resources, embed, favicon):
+    slider = IntSlider(start=0, end=2)
+    layout = Column(slider, bind(str, slider))
+    template_variables = {'app_favicon': favicon}
+    sio = StringIO()
+
+    layout.save(
+        sio, title='My report', resources=resources, embed=embed,
+        template_variables=template_variables, progress=False,
+    )
+    html = sio.getvalue()
+
+    assert f'<link rel="icon" href="{favicon}">' in html
+    assert html.count('rel="icon"') == 1
+    assert f'{CDN_DIST}images/favicon.ico' not in html
+    assert '<title>My report</title>' in html
+    assert template_variables == {'app_favicon': favicon}
+    assert (f'"name":"{State.__qualified_model__}"' in html) is embed
 
 
 @hv_available

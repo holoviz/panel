@@ -51,3 +51,64 @@ def test_float_panel_resize(page):
     wait_until(lambda: int(page.locator('.red').bounding_box()['width']) == 200, page)
     wait_until(lambda: int(page.locator('.green').bounding_box()['width']) == 200, page)
     wait_until(lambda: int(page.locator('.blue').bounding_box()['width']) == 200, page)
+
+
+@pytest.mark.parametrize('contained', [True, False])
+def test_float_panel_auto_size_fits_content(page, contained):
+    float_panel = FloatPanel(
+        Spacer(styles=dict(background='red'), width=200, height=200),
+        Spacer(styles=dict(background='green'), width=200, height=200),
+        Spacer(styles=dict(background='blue'), width=200, height=200),
+        contained=contained,
+        )
+
+    serve_component(page, float_panel)
+
+    content = page.locator('.jsPanel-content')
+
+    wait_until(lambda: content.bounding_box()['height'] >= 600, page)
+    wait_until(lambda: content.bounding_box()['width'] >= 200, page)
+
+    if not contained:
+        normal = content.bounding_box()['height']
+        float_panel.status = 'maximized'
+        wait_until(lambda: content.bounding_box()['height'] != normal, page)
+        float_panel.status = 'normalized'
+        wait_until(lambda: content.bounding_box()['height'] == normal, page)
+
+
+def test_float_panel_stretch_both_fills_content(page):
+    float_panel = FloatPanel(
+        Spacer(styles=dict(background='red'), css_classes=['stretch'], sizing_mode='stretch_both'),
+        width=400, height=300, contained=False,
+    )
+
+    serve_component(page, float_panel)
+
+    content = page.locator('.jsPanel-content')
+    child = page.locator('.stretch')
+    wait_until(lambda: content.bounding_box()['height'] > 200, page)
+    wait_until(lambda: child.bounding_box()['height'] >= content.bounding_box()['height'] - 20, page)
+    assert child.bounding_box()['width'] >= content.bounding_box()['width'] - 40
+
+
+@pytest.mark.parametrize('panel_size', ['400 300', {'width': 400, 'height': 300}])
+def test_float_panel_config_panel_size_respected(page, panel_size):
+    float_panel = FloatPanel(
+        'short', contained=False, config={'panelSize': panel_size},
+    )
+
+    serve_component(page, float_panel)
+
+    panel = page.locator('.jsPanel')
+    wait_until(lambda: int(panel.bounding_box()['height']) == 300, page)
+    assert int(panel.bounding_box()['width']) == 400
+
+
+def test_float_panel_plain_sizes_to_content(page):
+    float_panel = FloatPanel('short', contained=False)
+
+    serve_component(page, float_panel)
+
+    panel = page.locator('.jsPanel')
+    wait_until(lambda: panel.bounding_box()['height'] < 150, page)

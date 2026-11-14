@@ -36,6 +36,13 @@ EXPANDED_SVG_ICON = """
 </svg>
 """ # noqa
 
+TOOLBAR_CSS = """
+.bk-OnOffButton.bk-active.bk-above { border-bottom-color: var(--accent-foreground-active); }
+.bk-OnOffButton.bk-active.bk-below { border-top-color: var(--accent-foreground-active); }
+.bk-OnOffButton.bk-active.bk-right { border-left-color: var(--accent-foreground-active); }
+.bk-OnOffButton.bk-active.bk-left { border-right-color: var(--accent-foreground-active); }
+"""
+
 FONT_URL = "//fonts.googleapis.com/css?family=Open+Sans"
 
 
@@ -129,6 +136,7 @@ class FastStyle(param.Parameterized):
                     "text_font": self.font,
                     "text_font_size": "1.15em",
                 },
+                "Toolbar": {"stylesheets": [TOOLBAR_CSS]},
             }
         }
 

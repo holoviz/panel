@@ -123,6 +123,10 @@ class ChatInterface(ChatFeed):
         Widgets to use for the input. If not provided, defaults to
         `[TextInput]`.""")
 
+    widget_placeholder = param.String(default="Send a message", doc="""
+        Placeholder text for the default input widget.
+        Has no effect when custom `widgets` are provided.""")
+
     button_properties = param.Dict(default={}, doc="""
         Allows addition of functionality or customization of buttons
         by supplying a mapping from the button name to a dictionary
@@ -171,12 +175,18 @@ class ChatInterface(ChatFeed):
 
     def __init__(self, *objects, **params):
         widgets = params.get("widgets")
+        default_widget: WidgetBase | None = None
         if widgets is None:
-            params["widgets"] = [self._input_type(placeholder="Send a message")]
+            placeholder = params.get(
+                "widget_placeholder", type(self).param.widget_placeholder.default
+            )
+            default_widget = self._input_type(placeholder=placeholder)
+            params["widgets"] = [default_widget]
         elif not isinstance(widgets, list):
             params["widgets"] = [widgets]
         active = params.pop("active", None)
         super().__init__(*objects, **params)
+        self._default_input_widget = default_widget
 
         self._input_container = Row(
             css_classes=["chat-interface-input-container"],
@@ -208,6 +218,25 @@ class ChatInterface(ChatFeed):
         """
         if self.show_button_name is None:
             self.show_button_name = self.width is None or self.width >= 400
+
+    @param.depends("widget_placeholder", watch=True)
+    def _update_widget_placeholder(self):
+        """
+        Update the placeholder on the default input widget.
+
+        Custom widgets are left unchanged.
+        """
+        widget = getattr(self, "_default_input_widget", None)
+        if widget is None or "placeholder" not in widget.param:
+            return
+        widgets = self.widgets
+        if isinstance(widgets, WidgetBase):
+            widgets = [widgets]
+        elif not isinstance(widgets, list):
+            return
+        if not any(widget is item for item in widgets):
+            return
+        widget.placeholder = self.widget_placeholder
 
     def _init_button_data(self):
         default_button_properties = {
