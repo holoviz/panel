@@ -583,7 +583,24 @@ class ModelPane(Pane):
         return model
 
     def _update(self, ref: str, model: Model) -> None:
-        model.update(**self._get_properties(model.document))
+        model.update(**self._get_rerender_properties(model.document))
+
+    def _get_rerender_properties(self, doc: Document | None) -> dict[str, t.Any]:
+        """
+        Computes the properties derived from the ``_rerender_params``,
+        the only parameters that can have changed when an existing
+        model is updated in place since all others are synced directly.
+        Recomputing every property here would also allocate fresh
+        stylesheet models on each update.
+        """
+        params = {}
+        for p in self._rerender_params:
+            v = getattr(self, p)
+            if v is not None or p == 'object':
+                params[p] = v
+        properties = self._process_param_change(params)
+        self._resolve_stylesheets(properties, doc)
+        return properties
 
     def _init_params(self) -> dict[str, t.Any]:
         params = {}
