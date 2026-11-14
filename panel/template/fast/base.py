@@ -92,6 +92,16 @@ class FastBaseTemplate(BasicTemplate):
         theme_arg = theme_arg[0].decode("utf-8")
         return theme_arg.strip("'").strip('"')
 
+    def resolve_resources(
+        self,
+        cdn: bool | t.Literal['auto'] = 'auto',
+        extras: dict[str, dict[str, str]] | None = None
+    ):
+        resources = super().resolve_resources(cdn=cdn, extras=extras)
+        if self.font_url:
+            resources['css']['font_url'] = self.font_url
+        return resources
+
     def _update_vars(self):
         super()._update_vars()
         style = self._design.theme.style

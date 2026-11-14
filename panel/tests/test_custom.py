@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import pandas as pd
 import param
@@ -369,3 +371,106 @@ def test_esm_event_reset_does_not_retrigger_watchers(document, comm):
 
     assert values == [True]
     assert model.data.value is False
+
+
+def test_reactive_esm_children_preprocess_jslink(document, comm):
+    from panel.widgets import IntSlider
+
+    container = ESMWithChildren()
+    container.get_root(document, comm)
+
+    w1 = IntSlider(value=1)
+    w2 = IntSlider(value=2)
+    w1.jslink(w2, value='value', bidirectional=True)
+    with set_curdoc(document):
+        container.children = [w1, w2]
+
+    ref = list(container._models.keys())[0]
+    m1 = w1._models[ref][0]
+    m2 = w2._models[ref][0]
+    assert 'change:value' in m1.js_property_callbacks
+    assert 'change:value' in m2.js_property_callbacks
+
+
+class Inner(param.Parameterized):
+
+    text = param.String(default='a')
+
+
+class ESMWithNested(ReactiveESM):
+
+    child = param.ClassSelector(class_=Inner)
+
+    children = param.List(item_type=Inner)
+
+
+def test_reactive_esm_tags_nested_datamodels(document, comm):
+    esm = ESMWithNested(child=Inner(), children=[Inner()])
+
+    model = esm.get_root(document, comm)
+
+    ref = f"__ref:{model.ref['id']}"
+    assert ref in model.data.tags
+    assert ref in model.data.child.tags
+    assert ref in model.data.children[0].tags
+
+    esm.child = Inner(text='b')
+    esm.children = [Inner(text='c')]
+
+    assert model.data.child.text == 'b'
+    assert ref in model.data.child.tags
+    assert model.data.children[0].text == 'c'
+    assert ref in model.data.children[0].tags
+
+
+def test_reactive_esm_children_append_attaches_without_recompute(document, comm, monkeypatch):
+    from bokeh.document.models import DocumentModelManager
+
+    from panel.config import config
+
+    # Inlining the stylesheets of new children in a notebook replaces
+    # models, which does require a recompute.
+    monkeypatch.setattr(config, 'inline', False)
+    md1 = Markdown('foo')
+    esm = ESMWithChildren(children=[md1])
+
+    model = esm.get_root(document, comm)
+    document.add_root(model)
+
+    recomputes = []
+    recompute = DocumentModelManager.recompute
+    monkeypatch.setattr(
+        DocumentModelManager, 'recompute', lambda self: recomputes.append(1) or recompute(self)
+    )
+
+    md2 = Markdown('bar')
+    esm.children = [md1, md2]
+
+    ref = model.ref['id']
+    assert ref in md1._models and ref in md2._models
+    md2_model, _ = md2._models[ref]
+    assert model.data.children == [md1._models[ref][0], md2_model]
+    assert md2_model.document is document
+    assert md2_model.id in document.models._models
+    assert not recomputes
+
+    monkeypatch.undo()
+    attached = set(document.models._models)
+    document.models.recompute()
+    assert set(document.models._models) == attached
+
+
+def test_render_esm_reflects_file_changes(tmp_path):
+    esm_file = tmp_path / 'component.js'
+    esm_file.write_text('export function render() { return "a" }')
+
+    class ESMFromFile(ReactiveESM):
+        _esm = esm_file
+
+    assert 'return "a"' in ESMFromFile._render_esm()
+
+    esm_file.write_text('export function render() { return "b" }')
+    stat = esm_file.stat()
+    os.utime(esm_file, ns=(stat.st_atime_ns, stat.st_mtime_ns + 10**9))
+
+    assert 'return "b"' in ESMFromFile._render_esm()

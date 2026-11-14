@@ -363,3 +363,33 @@ def test_markdown_pane_stream_math_matches_full_render(page):
 
     expect(page.locator('.markdown mjx-container')).to_have_count(4)
     wait_until(lambda: page.locator('.markdown').evaluate(inner_html) == reference, page)
+
+
+HAS_MATHJAX_SCRIPT = "[...document.scripts].some((s) => s.src.includes('bokeh-mathjax'))"
+
+def test_markdown_pane_loads_mathjax_lazily(page):
+    md = Markdown('No math yet')
+
+    serve_component(page, md)
+
+    expect(page.locator('.markdown')).to_have_text('No math yet')
+    # Nothing contained math when the page was served
+    assert not page.evaluate(HAS_MATHJAX_SCRIPT)
+
+    md.object = 'Euler $$e^{i\\pi}+1=0$$'
+
+    expect(page.locator('.markdown mjx-container')).to_have_count(1)
+    assert page.evaluate(HAS_MATHJAX_SCRIPT)
+
+
+def test_markdown_pane_stream_loads_mathjax_lazily(page):
+    md = Markdown('Streaming', enable_streaming=True)
+
+    serve_component(page, md)
+
+    expect(page.locator('.markdown')).to_have_text('Streaming')
+    assert not page.evaluate(HAS_MATHJAX_SCRIPT)
+
+    md.object += ' $$e^{i\\pi}+1=0$$'
+
+    expect(page.locator('.markdown mjx-container')).to_have_count(1)
