@@ -1316,7 +1316,22 @@ def test_scheduled_updates_from_thread_are_batched_without_loss(threads, monkeyp
             for value in expected:
                 slider.value = value
 
-    state._thread_pool.submit(update).result(timeout=5)
+    # Batching coalesces whatever is queued when the locked callback runs,
+    # so pause the event loop until every update is queued; otherwise the
+    # loop may apply each update before the next one is made.
+    asyncio_loop = doc.session_context.server_context.application_context.io_loop.asyncio_loop
+    paused, resume = threading.Event(), threading.Event()
+
+    def pause():
+        paused.set()
+        resume.wait(timeout=5)
+
+    asyncio_loop.call_soon_threadsafe(pause)
+    assert paused.wait(timeout=5)
+    try:
+        state._thread_pool.submit(update).result(timeout=5)
+    finally:
+        resume.set()
 
     def values():
         return [
@@ -1326,5 +1341,5 @@ def test_scheduled_updates_from_thread_are_batched_without_loss(threads, monkeyp
 
     wait_until(lambda: len(values()) >= n)
     assert values() == expected
-    assert len(messages) < n
+    assert len(messages) == 1
     assert model.value == n
