@@ -542,7 +542,7 @@ def render_auth_error(auth_error: str) -> str:
     Render the authorization error page for the given message.
     """
     if config.auth_template:
-        with open(config.auth_template) as f:
+        with open(config.auth_template, encoding='utf-8') as f:
             template = _env.from_string(f.read())
     else:
         template = ERROR_TEMPLATE

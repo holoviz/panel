@@ -343,9 +343,11 @@ class GridSpec(Panel):
         if isinstance(old_objects, dict):
             old_objects = list(old_objects.values())
 
+        current_ids = {id(obj) for obj in current_objects}
         for old in old_objects:
-            if old not in current_objects:
+            if id(old) not in current_ids:
                 old._release_model(root, model)
+        old_ids = {id(obj) for obj in old_objects}
 
         children, old_children = [], []
         for i, ((y0, x0, y1, x1), obj) in enumerate(self.objects.items()):
@@ -371,7 +373,7 @@ class GridSpec(Panel):
             obj.param.update(**{k: v for k, v in properties.items()
                                    if not obj.param[k].readonly})
 
-            if obj in old_objects and root.ref['id'] in obj._models:
+            if id(obj) in old_ids and root.ref['id'] in obj._models:
                 child, _ = obj._models[root.ref['id']]
                 old_children.append(child)
             else:

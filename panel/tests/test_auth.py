@@ -12,7 +12,9 @@ import pytest
 from tornado.httpclient import HTTPRequest, HTTPResponse
 from tornado.web import HTTPError
 
-from panel.auth import OAuthLoginHandler, decode_response_body
+from panel.auth import (
+    BasicAuthProvider, OAuthLoginHandler, decode_response_body,
+)
 from panel.config import config
 
 
@@ -102,3 +104,17 @@ def test_get_authenticated_user_forwards_extra_oauth_params():
     assert extra_params['audience'] == 'my-audience'
     # Provider-internal keys are not leaked to the authorize URL
     assert 'tenant' not in extra_params
+
+
+def test_basic_auth_provider_reads_custom_templates_as_utf8(tmp_path):
+    templates = {}
+    for name in ('login', 'logout', 'error'):
+        path = tmp_path / f'{name}.html'
+        path.write_text(f'<p>{name}: 안녕하세요 ✅</p>', encoding='utf-8')
+        templates[f'{name}_template'] = path
+
+    provider = BasicAuthProvider(**templates)
+
+    assert provider._login_template.render() == '<p>login: 안녕하세요 ✅</p>'
+    assert provider._logout_template.render() == '<p>logout: 안녕하세요 ✅</p>'
+    assert provider._error_template.render() == '<p>error: 안녕하세요 ✅</p>'

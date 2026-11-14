@@ -4,8 +4,8 @@ import pytest
 
 from panel.custom import ReactiveESM
 from panel.io.compile import (
-    find_module_bundles, packages_from_code, packages_from_importmap,
-    replace_imports,
+    find_module_bundles, generate_project, packages_from_code,
+    packages_from_importmap, replace_imports,
 )
 
 
@@ -108,3 +108,13 @@ def test_packages_from_importmap_path(url):
     code, pkgs = packages_from_importmap('import * from "chart-js/auto"', {'chart-js/': url})
     assert code == 'import * from "chart.js/auto"'
     assert pkgs == {'chart.js': '^1.0.0'}
+
+def test_generate_project_writes_non_ascii_code_as_utf8(tmp_path):
+    class NonAsciiESM(ReactiveESM):
+        _esm = 'export function render() { return "안녕하세요 ✅" }'
+        _esm_shared = {'greeting': 'export const greeting = "café ✅"'}
+
+    generate_project([NonAsciiESM], tmp_path)
+
+    assert '안녕하세요 ✅' in (tmp_path / 'NonAsciiESM.js').read_text(encoding='utf-8')
+    assert 'café ✅' in (tmp_path / 'greeting.js').read_text(encoding='utf-8')

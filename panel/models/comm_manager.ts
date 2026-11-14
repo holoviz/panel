@@ -92,6 +92,11 @@ export class CommManager extends Model {
   }
 
   protected _document_changed(event: DocumentChangedEvent): void {
+    // Changes applied from a Python patch are not synced; echoing them back
+    // would also resend models Python already knows as new models
+    if (!event.sync) {
+      return
+    }
     // Filter out changes to attributes that aren't server-visible
     if (event instanceof ModelChangedEvent && !event.model.properties[event.attr].syncable) {
       return
@@ -153,7 +158,17 @@ export class CommManager extends Model {
 
   override disconnect_signals(): void {
     super.disconnect_signals()
-    this.ns.shared_views.shared_views.delete(this.plot_id)
+    const views = this.ns?.shared_views?.get(this.plot_id)
+    if (views == null) {
+      return
+    }
+    const index = views.indexOf(this)
+    if (index !== -1) {
+      views.splice(index, 1)
+    }
+    if (views.length === 0) {
+      this.ns.shared_views.delete(this.plot_id)
+    }
   }
 
   on_ack(msg: any) {

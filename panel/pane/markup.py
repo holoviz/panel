@@ -214,7 +214,7 @@ class HTMLBasePane(ModelPane):
 
     def _update(self, ref: str, model: Model) -> None:
         self._raw_html = None
-        props = self._get_properties(model.document)
+        props = self._get_rerender_properties(model.document)
         text = props.get('text')
         if (not self.enable_streaming or text is None or ref not in state._views
             or not isinstance(model, _BkHTML)):
