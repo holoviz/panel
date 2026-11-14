@@ -40,8 +40,8 @@ from ..util.dataframe import (
     ROW_INDEX, add_row_index, all_of, coerce_frame, column_names,
     column_to_numpy, concat_rows, drop_row_index, dtype_kind, evaluate_mask,
     filter_expr, frame_from_columns, has_index, header_filter_exprs, is_date,
-    is_indexless, row_dict, row_positions, set_values, sort_frame, take_rows,
-    to_column_data, to_narwhals,
+    is_indexless, row_dict, row_position_array, row_positions, set_values,
+    sort_frame, take_rows, to_column_data, to_narwhals,
 )
 from ..util.warnings import deprecated, warn
 from .base import Widget
@@ -867,7 +867,7 @@ class BaseTable(ReactiveData, Widget):
 
     def _update_column(self, column: str, array: TDataColumn):
         if is_indexless(self.value):
-            positions = row_positions(self._processed)
+            positions = row_position_array(self._processed)
             if len(positions) == len(array):
                 self._update_indexless(column, positions, array)
             return
@@ -878,7 +878,7 @@ class BaseTable(ReactiveData, Widget):
             with pd.option_context('mode.chained_assignment', None):
                 self._processed[column] = array
 
-    def _update_indexless(self, column: str, positions: list[int], array: TDataColumn):
+    def _update_indexless(self, column: str, positions: np.ndarray, array: TDataColumn):
         """
         Replaces the values of a column at the supplied row positions
         in a DataFrame without an index. Since such frames may be
@@ -887,10 +887,12 @@ class BaseTable(ReactiveData, Widget):
         with param.discard_events(self):
             self.value = set_values(self.value, column, positions, array)
         if self._processed is not None and len(self._processed):
-            lookup = {pos: i for i, pos in enumerate(row_positions(self._processed))}
-            rows = [lookup[pos] for pos in positions if pos in lookup]
-            values = np.asarray(array)[[i for i, pos in enumerate(positions) if pos in lookup]]
-            self._processed = set_values(self._processed, column, rows, values)
+            processed = row_position_array(self._processed)
+            lookup = np.full(len(self.value), -1, dtype=np.int64)
+            lookup[processed] = np.arange(len(processed))
+            rows = lookup[positions]
+            found = rows >= 0
+            self._processed = set_values(self._processed, column, rows[found], np.asarray(array)[found])
 
     #----------------------------------------------------------------
     # Public API
@@ -2273,7 +2275,7 @@ class Tabulator(BaseTable):
     def _update_column(self, column: str, array: TDataColumn) -> None:
         remote = self.pagination == 'remote'
         if is_indexless(self.value):
-            positions = row_positions(self._processed)
+            positions = row_position_array(self._processed)
             if remote:
                 nrows = self.page_size or self.initial_page_size
                 start = (self.page - 1) * nrows

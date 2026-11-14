@@ -147,7 +147,11 @@ def row_positions(obj: t.Any) -> list[int]:
     Returns the positions of the rows in the original frame, as
     recorded by `add_row_index`.
     """
-    return to_narwhals(obj)[ROW_INDEX].to_list()
+    return row_position_array(obj).tolist()
+
+
+def row_position_array(obj: t.Any) -> np.ndarray:
+    return to_narwhals(obj)[ROW_INDEX].to_numpy()
 
 
 def take_rows(obj: t.Any, rows: Sequence[int] | slice) -> t.Any:
@@ -209,8 +213,8 @@ def set_values(obj: t.Any, column: str, rows: Sequence[int], values: t.Any) -> t
     """
     df = to_narwhals(obj)
     series = df[column]
-    rows = list(rows)
-    if len(rows) == len(df) and rows == list(range(len(df))):
+    rows = np.asarray(rows, dtype=np.int64)
+    if len(rows) == len(df) and np.array_equal(rows, np.arange(len(df))):
         new = _to_series(column, values, series.dtype, df.implementation)
     else:
         new = series.scatter(rows, _to_series(column, values, series.dtype, df.implementation))
