@@ -399,14 +399,20 @@ def test_guest_endpoint_root_allows_websocket_only():
     assert not provider._allow_guest('//app')
 
 
-def test_guest_endpoint_sub_path_opt_in_forms():
-    for entry in ('/assets/*', '/assets/'):
-        provider = BasicAuthProvider(guest_endpoints=[entry])
-        assert provider._allow_guest('/assets'), entry
-        assert provider._allow_guest('/assets/logo.png'), entry
-        assert provider._allow_guest('/assets?version=1'), entry
-        assert not provider._allow_guest('/assets-private'), entry
-        assert not provider._allow_guest('/'), entry
+def test_guest_endpoint_sub_path_opt_in():
+    provider = BasicAuthProvider(guest_endpoints=['/assets/*'])
+    assert provider._allow_guest('/assets')
+    assert provider._allow_guest('/assets/logo.png')
+    assert provider._allow_guest('/assets?version=1')
+    assert not provider._allow_guest('/assets-private')
+    assert not provider._allow_guest('/')
+
+
+def test_guest_endpoint_trailing_slash_is_exact():
+    provider = BasicAuthProvider(guest_endpoints=['/assets/'])
+    assert provider._allow_guest('/assets')
+    assert provider._allow_guest('/assets/ws')
+    assert not provider._allow_guest('/assets/logo.png')
 
 
 def test_guest_endpoint_plain_entry_is_exact():
