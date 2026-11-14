@@ -36,7 +36,7 @@ class QuillInput(HTMLBox):
 
     __js_require__ = {
         'paths': {
-            'Quill': 'https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill',
+            'Quill': f'{config.npm_cdn}/quill@2.0.2/dist/quill',
         },
         'exports': {
             'Quill': 'Quill'
