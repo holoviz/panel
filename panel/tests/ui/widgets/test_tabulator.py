@@ -5104,3 +5104,34 @@ def test_tabulator_jscallback_selection_fires_on_row_click(page, df_mixed):
     page.locator('text="idx0"').click()
 
     wait_until(lambda: page.title() == 'selected', page)
+
+
+def test_tabulator_edit_after_value_trigger_is_processed(page, df_mixed):
+    widget = Tabulator(df_mixed)
+
+    values = []
+    widget.on_edit(lambda e: values.append((e.column, e.row, e.old, e.value)))
+
+    serve_component(page, widget)
+
+    # Re-sending identical data must neither register as an edit nor
+    # swallow the edit that follows it.
+    widget.param.trigger('value')
+    page.wait_for_timeout(200)
+    assert values == []
+
+    cell = page.locator('text="A"')
+    cell.click()
+    editable_cell = page.locator('input[type="text"]')
+    editable_cell.fill("AA")
+    editable_cell.press('Enter')
+
+    wait_until(lambda: len(values) >= 1, page)
+    assert values == [('str', 0, 'A', 'AA')]
+    assert df_mixed.at['idx0', 'str'] == 'AA'
+    expect(page.locator('text="AA"')).to_have_count(1)
+
+    widget.param.trigger('value')
+    page.wait_for_timeout(200)
+    assert len(values) == 1
+    expect(page.locator('text="AA"')).to_have_count(1)
