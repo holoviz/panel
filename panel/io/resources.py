@@ -567,6 +567,53 @@ def bundled_files(model: Model, file_type: str = 'javascript') -> list[str]:
             files.append(url)
     return files
 
+def model_registry_key() -> tuple[type, ...]:
+    """
+    Identifies the current contents of Bokeh's model registry.
+
+    Caches derived from the registry key on this rather than on its size,
+    since tests (and ``Model.clear_extensions``) unregister and re-register
+    classes, which leaves the size unchanged.
+    """
+    return tuple(Model.model_class_reverse_map.values())
+
+
+def remember(cache: dict, key: t.Hashable, value: t.Any, limit: int = 32) -> t.Any:
+    """
+    Stores a value in a bounded cache, evicting the oldest entry first.
+    """
+    if len(cache) >= limit:
+        cache.pop(next(iter(cache)))
+    cache[key] = value
+    return value
+
+
+_SORTED_MODELS: tuple[tuple[type, ...], list[type]] | None = None
+
+def sorted_model_classes() -> list[type]:
+    """
+    The registered model classes sorted by qualified name.
+    """
+    global _SORTED_MODELS
+    registry = Model.model_class_reverse_map
+    key = tuple(registry.values())
+    if _SORTED_MODELS is None or _SORTED_MODELS[0] != key:
+        _SORTED_MODELS = (key, [cls for _, cls in sorted(registry.items(), key=lambda item: item[0])])
+    return _SORTED_MODELS[1]
+
+
+_EXTENSION_MODULES: tuple[tuple[int, int], dict[str, str]] = ((0, 0), {})
+
+def _extension_modules() -> dict[str, str]:
+    """Maps the module of an extension's models to the extension name."""
+    global _EXTENSION_MODULES
+    imports = extension._imports
+    key = (id(imports), len(imports))
+    if _EXTENSION_MODULES[0] != key:
+        _EXTENSION_MODULES = (key, {module: name for name, module in imports.items()})
+    return _EXTENSION_MODULES[1]
+
+
 def extension_declared(cls: type) -> bool:
     """
     Whether a model class' extension was declared in this session.
@@ -578,7 +625,7 @@ def extension_declared(cls: type) -> bool:
     extensions = state._extensions
     if extensions is None:
         return True
-    ext = {module: name for name, module in extension._imports.items()}.get(cls.__module__)
+    ext = _extension_modules().get(cls.__module__)
     return ext is None or ext in extensions
 
 
@@ -871,7 +918,7 @@ class Resources(BkResources):
         """ Collect external resources set on resource_attr attribute of all models."""
         external_resources: list[str] = []
 
-        for _, cls in sorted(Model.model_class_reverse_map.items(), key=lambda arg: arg[0]):
+        for cls in sorted_model_classes():
             if not extension_declared(cls):
                 continue
             external: list[str] | str | None = getattr(cls, resource_attr, None)
