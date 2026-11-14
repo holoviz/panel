@@ -144,6 +144,8 @@ export class ClickableIconView extends ControlView {
       this.icon_view.remove()
       this.icon_view = icon_view
       this.was_svg_icon = is_svg_icon
+      // The size may have changed while the new icon view was built
+      this.update_size()
       this.update_cursor()
       // We need to re-append the new icon view to the DOM
       this.row_div.insertBefore(this.icon_view.el, this.label_el)
