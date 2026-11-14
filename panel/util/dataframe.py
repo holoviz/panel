@@ -66,7 +66,15 @@ def to_narwhals(obj: t.Any) -> nw.DataFrame[t.Any]:
     Wraps a native DataFrame in a Narwhals DataFrame without copying.
     """
     import narwhals.stable.v2 as nw
-    return nw.from_native(obj, eager_only=True)
+    try:
+        return nw.from_native(obj, eager_only=True)
+    except TypeError:
+        if isinstance(nw.from_native(obj, pass_through=True), nw.LazyFrame):
+            raise TypeError(
+                f'Lazy frames such as {type(obj).__name__} are not supported, '
+                'collect it into an eager DataFrame first.'
+            ) from None
+        raise
 
 
 def to_native(df: t.Any) -> t.Any:
