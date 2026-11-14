@@ -532,6 +532,10 @@ class Perspective(ModelPane, ReactiveData):
         self._register_events('perspective-click', model=model, doc=doc, comm=comm)
         return model
 
+    def _update_pane(self, *events) -> None:
+        if not self._sent_by_stream(events):
+            super()._update_pane(*events)
+
     def _update(self, ref: str, model: Model) -> None:
         model.update(**self._get_properties(model.document, source=model.source))
 
