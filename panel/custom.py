@@ -329,15 +329,17 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
     @classproperty
     def _bundle_path(cls) -> os.PathLike | None:
         # Resolving the bundle checks the filesystem and imports modules,
-        # so the result is cached for every instance of the class.
+        # so a found bundle is cached for every instance of the class. A
+        # missing one is not, since it may be compiled while the process runs.
         autoreload = bool(config.autoreload)
         # classproperty is called with the class, which mypy cannot infer
         owner = t.cast('type', cls)
-        cached = _BUNDLE_PATHS.get(owner)
-        if cached is not None and autoreload in cached:
-            return cached[autoreload]
+        cached = _BUNDLE_PATHS.get(owner, {}).get(autoreload)
+        if cached is not None and os.path.isfile(cached):
+            return cached
         path = cls._resolve_bundle_path()
-        _BUNDLE_PATHS.setdefault(owner, {})[autoreload] = path
+        if path is not None:
+            _BUNDLE_PATHS.setdefault(owner, {})[autoreload] = path
         return path
 
     @classmethod
@@ -407,12 +409,16 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
 
     @classmethod
     def _esm_path(cls, compiled: bool | t.Literal['compiling'] = True) -> os.PathLike | None:
-        key = (compiled is True, bool(config.autoreload))
-        cached = _ESM_PATHS.get(cls)
-        if cached is not None and key in cached:
-            return cached[key]
+        autoreload = bool(config.autoreload)
+        key = (compiled is True, autoreload)
+        cached = _ESM_PATHS.get(cls, {}).get(key)
+        if cached is not None and os.path.isfile(cached):
+            return cached
         path = cls._resolve_esm_path(compiled)
-        _ESM_PATHS.setdefault(cls, {})[key] = path
+        # When compiled, the source of a component without a bundle is not
+        # cached either, so a bundle compiled later takes over.
+        if path is not None and (compiled is not True or path == _BUNDLE_PATHS.get(cls, {}).get(autoreload)):
+            _ESM_PATHS.setdefault(cls, {})[key] = path
         return path
 
     @classmethod
