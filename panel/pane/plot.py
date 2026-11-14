@@ -76,7 +76,9 @@ class Bokeh(Pane):
         and on_event callbacks in the notebook.""")
 
     theme = param.ClassSelector(default=None, class_=(Theme, str), doc="""
-        Bokeh theme to apply to the plot.""")
+        Bokeh theme to apply to the plot. The theme is set on the Bokeh
+        Document, so it applies to all Bokeh and HoloViews plots rendered
+        in the same Document and the theme set last takes effect.""")
 
     priority: t.ClassVar[float | bool | None] = 0.8
 
