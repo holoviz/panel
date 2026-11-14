@@ -211,3 +211,30 @@ def test_parse_timedelta(time_str, expected):
 @pytest.mark.parametrize('time_str', ['', '90', 'abc', '1h30', '5 m'])
 def test_parse_timedelta_invalid(time_str):
     assert parse_timedelta(time_str) is None
+
+
+def test_descendents_tracks_new_and_collected_subclasses():
+    import gc
+    import weakref
+
+    from panel.util import _descendents, _walk_descendents
+
+    class Root:
+        pass
+
+    class Child(Root):
+        pass
+
+    assert _descendents(Root) == _walk_descendents(Root) == [Root, Child]
+    assert _descendents(Root, concrete=True) == [Root, Child]
+
+    class Late(Child):
+        pass
+
+    assert _descendents(Root) == [Root, Child, Late]
+
+    ref = weakref.ref(Late)
+    del Late
+    gc.collect()
+    assert ref() is None, 'the cache must not keep classes alive'
+    assert _descendents(Root) == [Root, Child]

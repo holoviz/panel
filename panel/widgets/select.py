@@ -153,7 +153,7 @@ class SingleSelectBase(SelectBase):
                     idx = indexOf(params['value'], self.unicode_values)
                 else:
                     idx = indexOf(params['value'], self.labels)
-                params['value'] = self._items[self.labels[idx]]
+                params['value'] = self.values[idx]
         params.pop('options', None)
         return params
 

@@ -67,12 +67,6 @@ def _eval_panel(
 
     doc.on_event('document_ready', partial(state._schedule_on_load, doc))
 
-    # Set up instrumentation for logging sessions
-    logger.info(LOG_SESSION_LAUNCHING, id(doc))
-    def _log_session_destroyed(session_context):
-        logger.info(LOG_SESSION_DESTROYED, id(doc))
-    doc.on_session_destroyed(_log_session_destroyed)
-
     with set_curdoc(doc):
         if isinstance(panel, (FunctionType, MethodType)):
             panel = panel()

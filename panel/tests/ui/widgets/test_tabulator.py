@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime as dt
+import re
 import typing as t
 
 from contextlib import contextmanager
@@ -3034,6 +3035,19 @@ def test_tabulator_styling_multi_index_columns(page):
     row = page.locator('.tabulator-row').first
     expect(row.locator('.tabulator-cell[tabulator-field="a_c"]')).to_have_css('color', _color_mapping['red'])
     expect(row.locator('.tabulator-cell[tabulator-field="a_b"]')).not_to_have_css('color', _color_mapping['red'])
+
+
+def test_tabulator_styling_bar_keeps_column_width(page):
+    df = pd.DataFrame({'A': [1., 2., 3.], 'B': [4, 5, 6]})
+    widget = Tabulator(df, show_index=False)
+    widget.style.bar(subset=['A'], color='#d65f5f')
+
+    serve_component(page, widget)
+
+    cell = page.locator('.tabulator-row').first.locator('.tabulator-cell[tabulator-field="A"]')
+    expect(cell).to_have_css('background-image', re.compile('linear-gradient'))
+    header = page.locator('.tabulator-col[tabulator-field="A"]')
+    assert cell.bounding_box()['width'] == header.bounding_box()['width']
 
 
 @pytest.mark.parametrize('kwargs', [

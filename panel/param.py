@@ -923,6 +923,8 @@ class ParamRef(ReplacementPane):
             self._validate_object()
             if not self.defer_load:
                 self._replace_pane()
+        # Deferred, lazy and async objects show the placeholder until resolved
+        self._init_placeholder()
 
     @classmethod
     def applies(cls, object: t.Any) -> float | bool | None:

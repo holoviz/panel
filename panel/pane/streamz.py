@@ -41,6 +41,7 @@ class Streamz(ReplacementPane):
 
     def __init__(self, object=None, **params):
         super().__init__(object, **params)
+        self._init_placeholder()
         self._stream = None
         if self.always_watch:
             self._setup_stream()

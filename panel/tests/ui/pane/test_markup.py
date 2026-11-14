@@ -316,3 +316,80 @@ def test_markdown_pane_math_with_asterisks(page, renderer):
     expect(page.locator(".markdown mjx-container")).to_have_count(2)
     # 0x3C is the "<" of a stray <em> tag typeset as math
     expect(page.locator(".markdown mjx-container [data-c='3C']")).to_have_count(0)
+
+
+def test_markdown_pane_stream_math_keeps_completed_blocks(page):
+    md = Markdown('Intro $$a^2$$', enable_streaming=True)
+
+    serve_component(page, md)
+
+    expect(page.locator('.markdown mjx-container')).to_have_count(1)
+
+    # The first streamed update re-renders the initial (non-streamed) DOM
+    md.object += '\n\nSecond $$b^2$$'
+    expect(page.locator('.markdown mjx-container')).to_have_count(2)
+    page.locator('.markdown mjx-container').first.evaluate("el => { el.dataset.marker = 'kept' }")
+
+    for i in range(10):
+        md.object += f' word{i}'
+    md.object += ' and $$c^2$$'
+
+    expect(page.locator('.markdown mjx-container')).to_have_count(3)
+    expect(page.locator('.markdown mjx-container').first).to_have_attribute('data-marker', 'kept')
+    expect(page.locator('.markdown p').nth(1)).to_contain_text('word9 and')
+
+
+def test_markdown_pane_stream_math_matches_full_render(page):
+    src = (
+        "## Heading\n\nInline $$x^2$$ math *and* text.\n\n$$\ny = mx + b\n$$\n\n"
+        "- item $$a_1$$\n- item two\n\nAfter **bold** $$z$$ done.\n"
+    )
+    md = Markdown(src)
+
+    serve_component(page, md)
+
+    # MathJax numbers the ids of the glyphs it emits per typeset call
+    inner_html = """el => [...el.shadowRoot.children].filter(c => c.tagName === 'DIV').pop()
+      .innerHTML.replace(/ (id|xlink:href)="[^"]*"/g, '')"""
+    expect(page.locator('.markdown mjx-container')).to_have_count(4)
+    reference = page.locator('.markdown').evaluate(inner_html)
+
+    md.object = ''
+    expect(page.locator('.markdown mjx-container')).to_have_count(0)
+
+    md.enable_streaming = True
+    for i in range(0, len(src), 3):
+        md.object = src[:i+3]
+
+    expect(page.locator('.markdown mjx-container')).to_have_count(4)
+    wait_until(lambda: page.locator('.markdown').evaluate(inner_html) == reference, page)
+
+
+HAS_MATHJAX_SCRIPT = "[...document.scripts].some((s) => s.src.includes('bokeh-mathjax'))"
+
+def test_markdown_pane_loads_mathjax_lazily(page):
+    md = Markdown('No math yet')
+
+    serve_component(page, md)
+
+    expect(page.locator('.markdown')).to_have_text('No math yet')
+    # Nothing contained math when the page was served
+    assert not page.evaluate(HAS_MATHJAX_SCRIPT)
+
+    md.object = 'Euler $$e^{i\\pi}+1=0$$'
+
+    expect(page.locator('.markdown mjx-container')).to_have_count(1)
+    assert page.evaluate(HAS_MATHJAX_SCRIPT)
+
+
+def test_markdown_pane_stream_loads_mathjax_lazily(page):
+    md = Markdown('Streaming', enable_streaming=True)
+
+    serve_component(page, md)
+
+    expect(page.locator('.markdown')).to_have_text('Streaming')
+    assert not page.evaluate(HAS_MATHJAX_SCRIPT)
+
+    md.object += ' $$e^{i\\pi}+1=0$$'
+
+    expect(page.locator('.markdown mjx-container')).to_have_count(1)

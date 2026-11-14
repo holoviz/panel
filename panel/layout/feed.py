@@ -5,7 +5,7 @@ import typing as t
 import param
 
 from ..models.feed import Feed as PnFeed, ScrollButtonClick, ScrollLatestEvent
-from ..util import edit_readonly, isIn
+from ..util import edit_readonly
 from .base import Column
 
 if t.TYPE_CHECKING:
@@ -173,7 +173,9 @@ class Feed(Column):
     ):
         # If no previously visible objects are visible now, reset the visible range
         events = self._in_process__events.get(doc, {})
-        if self._last_synced and 'visible_range' not in events and not any(isIn(obj, self.objects) for obj in old_objects[slice(*self._last_synced)]):
+        current_objects = list(self.objects)
+        current_ids = {id(obj) for obj in current_objects}
+        if self._last_synced and 'visible_range' not in events and not any(id(obj) in current_ids for obj in old_objects[slice(*self._last_synced)]):
             with edit_readonly(self):
                 self.visible_range = None
 
@@ -182,10 +184,9 @@ class Feed(Column):
         self._last_synced = self._synced_range
 
         for obj in old_objects:
-            if obj not in self.objects:
+            if id(obj) not in current_ids:
                 obj._release_model(root, model)
 
-        current_objects = list(self.objects)
         ref = root.ref['id']
         for i in range(*self._last_synced):
             pane = current_objects[i]

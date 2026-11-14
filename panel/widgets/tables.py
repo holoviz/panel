@@ -635,7 +635,16 @@ class BaseTable(ReactiveData, Widget):
                 elif not val:
                     continue
 
-            if col.dtype.kind != 'O':
+            # Text filters read the displayed characters. A datetime or number
+            # column has no ``.str`` accessor, so ``like`` on a date header
+            # filter raised AttributeError (#4543). Compare those columns as
+            # text and leave equality and range filters on the original dtype.
+            if op in {'like', 'starts', 'ends', 'keywords'}:
+                if col.dtype.kind not in 'SUO':
+                    col = col.astype('string')
+                if not isinstance(val, str):
+                    val = str(val)
+            elif col.dtype.kind != 'O':
                 val = col.dtype.type(val)
             if op == '=':
                 filters.append(col == val)
@@ -1716,7 +1725,10 @@ class Tabulator(BaseTable):
                     r -= start
             if r not in styles:
                 styles[int(r)] = {}
-            styles[int(r)][self._field_name(df.columns[int(c)])] = s
+            # Cell widths come from the column; Styler.bar emits width: 10em
+            styles[int(r)][self._field_name(df.columns[int(c)])] = [
+                p for p in s if p[0] != 'width'
+            ]
         return {'id': uuid.uuid4().hex, 'data': styles}
 
     def _get_selectable(self):
