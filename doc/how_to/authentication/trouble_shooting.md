@@ -55,6 +55,15 @@ Try opening your app in a new private/incognito browser window. Your debugging a
 
 As always, try to search our [GitHub Issue tracker](https://github.com/holoviz/panel/issues) or [Discord community](https://discord.gg/rb6gPXbdAr) to see if someone else has experienced the same issue. If you need further assistance, reach out to the [community](../../community.md).
 
+### Redirect URI mismatch or a 404 after logging in
+
+If the provider rejects the login with a redirect URI mismatch, or you land on a page that does not exist after logging in, Panel and the provider disagree about the public URL of your app. Compare the `redirect_uri` parameter in the URL of the provider's login page with the one you registered.
+
+- Behind a reverse proxy that serves the app on a sub-path, Panel has to know that path. Start it with `--use-xheaders` and let the proxy send `X-Forwarded-Prefix`, or pass `--root-path`. See [Configuring a reverse proxy](../server/proxy.md).
+- If the `redirect_uri` contains an internal host such as `127.0.0.1:5006`, the proxy does not pass on the `Host` header. Let it send `Host` or `X-Forwarded-Host` and start Panel with `--use-xheaders`.
+- If it starts with `http://` although the app is served over HTTPS, let the proxy send `X-Forwarded-Proto` and start Panel with `--use-xheaders`.
+- As of Panel 1.10.1 the default redirect URI includes the `--prefix` and follows the forwarded headers. If you upgraded, register the new URI with your provider or pass the previous one with `--oauth-redirect-uri`.
+
 ### Could not open websocket
 
 If the websocket cannot connect, you will see an error like this in the browser console:

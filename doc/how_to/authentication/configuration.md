@@ -185,6 +185,10 @@ Once the OAuth provider has authenticated a user it has to redirect them back to
 
 When the app is served with a `--prefix` or behind a reverse proxy the default redirect URI includes the prefix and the path the proxy serves the app on, e.g. `https://myapp.myprovider.com/prefix`. See [Configuring a reverse proxy](../server/proxy.md) for the flags and headers this relies on.
 
+:::{note}
+Before Panel 1.10.1 the default redirect URI did not include the `--prefix` and ignored the `X-Forwarded-Host` and `X-Forwarded-Prefix` headers a reverse proxy sends when Panel is started with `--use-xheaders`. If you registered that URI with your provider, update it there or pass the old value explicitly with `--oauth-redirect-uri`.
+:::
+
 Examples:
 
 ```

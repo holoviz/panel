@@ -1528,7 +1528,10 @@ def serve(
     compress: boolean (default=True)
       Whether to gzip HTTP responses for clients that accept it
     kwargs: dict
-      Additional keyword arguments to pass to Server instance
+      Additional keyword arguments to pass to Server instance, e.g.
+      `prefix` to serve everything under a URL prefix or
+      `use_xheaders=True` to trust the X-Forwarded-* headers of a
+      reverse proxy for the client IP and the public URL of the server.
     """
     kwargs = dict(kwargs, **dict(
         port=port, address=address, websocket_origin=websocket_origin,
@@ -1712,7 +1715,8 @@ def get_server(
     oauth_secret: str (optional, default=None)
       The client secret for the OAuth provider
     oauth_redirect_uri: Optional[str] = None,
-      Overrides the default OAuth redirect URI
+      Overrides the default OAuth redirect URI, which is the public
+      URL of the server including the `root_path` and `prefix`.
     oauth_extra_params: dict (optional, default={})
       Additional information for the OAuth provider
     oauth_error_template: str (optional, default=None)
@@ -1734,8 +1738,10 @@ def get_server(
       Whether the user will be forced to go through login flow or if
       they can access all applications as a guest.
     root_path: str (optional, default=None)
-      Root path the application is being served on when behind
-      a reverse proxy.
+      The path a reverse proxy serves the application on if it strips
+      that path from the requests it forwards. Used to build the login
+      redirects and the default OAuth redirect URI and takes precedence
+      over the X-Forwarded-Prefix header read with `use_xheaders=True`.
     login_endpoint: str (optional, default=None)
       Overrides the default login endpoint `/login`
     logout_endpoint: str (optional, default=None)
