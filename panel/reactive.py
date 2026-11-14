@@ -98,8 +98,11 @@ class Syncable(Renderable):
     # Timeout if a notebook comm message is swallowed
     _timeout: t.ClassVar[int] = 20000
 
-    # Timeout before the first event is processed
-    _debounce: t.ClassVar[int] = 50
+    # Timeout (in ms) before the first frontend change event is processed,
+    # giving further changes sent shortly after a chance to be batched.
+    # BokehJS already batches the changes made in one tick per message so
+    # this mostly adds latency; subclasses may override it.
+    _debounce: t.ClassVar[int] = 20
 
     # Property changes which should not be debounced
     _priority_changes: t.ClassVar[list[str]] = []
