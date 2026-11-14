@@ -11,7 +11,7 @@ except ImportError:
     pytestmark = [pytest.mark.skip("playwright not available")]
 
 from panel.io.state import state
-from panel.tests.util import serve_component, wait_until
+from panel.tests.util import serve_component
 
 CURPATH = pathlib.Path(__file__).parent
 
@@ -97,8 +97,9 @@ def test_reload_app_on_local_module_change(page, autoreload, py_files):
 
     expect(page.locator('.markdown')).to_have_text('foo')
 
+    # The cached bytecode is validated on mtime (in whole seconds) and size,
+    # so a same-size rewrite within a second of the import would be ignored.
     with open(module.name, 'w') as f:
-        f.write("var = 'bar';")
-    pathlib.Path(module.name).touch()
+        f.write("var = 'changed';")
 
-    wait_until(lambda: expect(page.locator('.markdown')).to_have_text('bar'), page)
+    expect(page.locator('.markdown')).to_have_text('changed')
