@@ -255,6 +255,8 @@ For instance, if your FastAPI `/` endpoint is accessed at `https://some.domain/s
 
 For more details, refer to the [Behind a Proxy](https://fastapi.tiangolo.com/advanced/behind-a-proxy/) guide.
 
+Panel uses the root path to build the login redirects and the default OAuth redirect URI. If you would rather have the proxy declare the prefix and public host through the `X-Forwarded-Prefix` and `X-Forwarded-Host` headers, pass `use_xheaders=True` to `add_applications`. See [Configuring a reverse proxy](../server/proxy.md) for the supported setups.
+
 ## Conclusion
 
 That's it! You now have embedded panel in FastAPI! You can now build off of this to create your own web app tailored to your needs.
