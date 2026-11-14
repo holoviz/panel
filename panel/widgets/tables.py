@@ -770,6 +770,10 @@ class BaseTable(ReactiveData, Widget):
             The value by which to filter the DataFrame along the
             declared column, or a function accepting the DataFrame to
             be filtered and returning a filtered copy of the DataFrame.
+            For DataFrames without an index, e.g. Polars, the function
+            receives an additional `__panel_row_index__` column, which
+            a filtered copy must keep. Such functions may also return a
+            boolean mask.
         column: str or None
             Column to which the filter will be applied, if the filter
             is a constant value, widget or parameter.
