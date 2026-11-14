@@ -307,7 +307,7 @@ def test_resources_design_server(document):
         with set_curdoc(document):
             extension(design='bootstrap')
             assert resources.js_files[-1:] == [
-                'static/extensions/panel/bundled/bootstrap5/js/bootstrap.bundle.min.js'
+                f'static/extensions/panel/bundled/bootstrap5/js/bootstrap.bundle.min.js?v={JS_VERSION}'
             ]
 
 def test_resources_design_cdn(document):
@@ -429,3 +429,78 @@ def test_jupyter_cdn_map(tmp_path, monkeypatch):
     assert cdn_map['static/extensions/panel-foo/'] == 'https://cdn.holoviz.org/panel-foo/v1.0.0/'
     assert cdn_map['static/js/bokeh.min.js'] == f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-{bokeh_version}.min.js'
     assert cdn_map['static/js/bokeh-widgets.min.js'] == f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-widgets-{bokeh_version}.min.js'
+
+
+def _uses_bundle(bundle, name):
+    return any(name in str(url) for url in bundle.js_files)
+
+def test_bundle_resources_markdown_skips_mathjax(document, comm, monkeypatch):
+    from panel.pane import Markdown
+    monkeypatch.setattr(extension, '_loaded_extensions', [])
+    model = Markdown('# Title').get_root(document, comm)
+    assert not _uses_bundle(bundle_resources([model], Resources(mode='cdn')), 'bokeh-mathjax')
+
+def test_bundle_resources_nested_markdown_math_loads_mathjax(document, comm, monkeypatch):
+    from panel.layout import Column
+    from panel.pane import Markdown
+    monkeypatch.setattr(extension, '_loaded_extensions', [])
+    model = Column(Markdown('Euler $$e^{i\\pi}+1=0$$')).get_root(document, comm)
+    assert _uses_bundle(bundle_resources([model], Resources(mode='cdn')), 'bokeh-mathjax')
+
+def test_bundle_resources_html_math_disabled_skips_mathjax(document, comm, monkeypatch):
+    from panel.pane import HTML
+    monkeypatch.setattr(extension, '_loaded_extensions', [])
+    model = HTML('$$x$$', disable_math=True).get_root(document, comm)
+    assert not _uses_bundle(bundle_resources([model], Resources(mode='cdn')), 'bokeh-mathjax')
+
+def test_bundle_resources_html_math_enabled_loads_mathjax(document, comm, monkeypatch):
+    from panel.pane import HTML
+    monkeypatch.setattr(extension, '_loaded_extensions', [])
+    model = HTML('$$x$$', disable_math=False).get_root(document, comm)
+    assert _uses_bundle(bundle_resources([model], Resources(mode='cdn')), 'bokeh-mathjax')
+
+def test_bundle_resources_mathjax_extension_loads_mathjax(document, comm, monkeypatch):
+    monkeypatch.setattr(extension, '_loaded_extensions', ['mathjax'])
+    model = Button().get_root(document, comm)
+    assert _uses_bundle(bundle_resources([model], Resources(mode='cdn')), 'bokeh-mathjax')
+
+def test_bundle_resources_always_loads_bokeh_gl(document, comm, monkeypatch):
+    # A plot added after the page loaded cannot render with webgl unless
+    # the gl bundle was loaded up front, so it is never pruned.
+    from bokeh.plotting import figure
+
+    from panel.layout import Column
+    from panel.pane import Bokeh
+    monkeypatch.setattr(extension, '_loaded_extensions', [])
+    model = Column(Button(), Bokeh(figure())).get_root(document, comm)
+    assert _uses_bundle(bundle_resources([model], Resources(mode='cdn')), 'bokeh-gl')
+
+def test_dedupe_template_resources():
+    from bokeh.embed.bundle import URL
+
+    from panel.io.resources import Bundle, dedupe_template_resources
+    bundle = Bundle(
+        js_files=[URL('./static/extensions/panel/bundled/lib/lib.min.js')],
+        js_modules=['./static/extensions/panel/bundled/fast/js/fast_design.js'],
+        css_files=[URL('https://fonts.googleapis.com/css?family=Open+Sans')],
+        js_raw=[], css_raw=[], hashes={},
+    )
+    template_resources = {
+        'js': {
+            'lib': f'static/extensions/panel/bundled/lib/lib.min.js?v={JS_VERSION}',
+            'other': 'static/extensions/panel/bundled/other/other.js',
+        },
+        'js_modules': {'fast': 'static/extensions/panel/bundled/fast/js/fast_design.js'},
+        'css': {
+            'font': '//fonts.googleapis.com/css?family=Open+Sans',
+            'roboto': 'https://fonts.googleapis.com/css?family=Roboto',
+            'roboto_again': 'https://fonts.googleapis.com/css?family=Roboto',
+        },
+        'raw_css': ['body {}'],
+    }
+    assert dedupe_template_resources(template_resources, bundle) == {
+        'js': {'other': 'static/extensions/panel/bundled/other/other.js'},
+        'js_modules': {},
+        'css': {'roboto': 'https://fonts.googleapis.com/css?family=Roboto'},
+        'raw_css': ['body {}'],
+    }

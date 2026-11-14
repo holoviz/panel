@@ -154,7 +154,8 @@ class BaseTable(ReactiveData, Widget):
         be used for hierarchical multi-indexes (valid aggregators
         include 'min', 'max', 'mean' and 'sum'). If separate
         aggregators for different columns are required the dictionary
-        may be nested as `{index_name: {column_name: aggregator}}`""")
+        may be nested as `{index_name: {column_name: aggregator}}`. Group
+        rows of index levels without an aggregator are left blank.""")
 
     editables = param.Dict(default={}, nested_refs=True, doc="""
         Allows to edit table's contents for a particular column.""")
@@ -634,7 +635,16 @@ class BaseTable(ReactiveData, Widget):
                 elif not val:
                     continue
 
-            if col.dtype.kind != 'O':
+            # Text filters read the displayed characters. A datetime or number
+            # column has no ``.str`` accessor, so ``like`` on a date header
+            # filter raised AttributeError (#4543). Compare those columns as
+            # text and leave equality and range filters on the original dtype.
+            if op in {'like', 'starts', 'ends', 'keywords'}:
+                if col.dtype.kind not in 'SUO':
+                    col = col.astype('string')
+                if not isinstance(val, str):
+                    val = str(val)
+            elif col.dtype.kind != 'O':
                 val = col.dtype.type(val)
             if op == '=':
                 filters.append(col == val)
@@ -871,10 +881,11 @@ class BaseTable(ReactiveData, Widget):
         """
         import pandas as pd
 
-        if not np.isfinite(self.value.index.max()):
-            value_index_start = 1
+        index_max = self.value.index.max()
+        if isinstance(index_max, (int, float, np.number)) and np.isfinite(index_max):
+            value_index_start = index_max + 1
         else:
-            value_index_start = self.value.index.max() + 1
+            value_index_start = 1
 
         if isinstance(stream_value, pd.DataFrame):
             if reset_index:
@@ -1036,10 +1047,16 @@ class BaseTable(ReactiveData, Widget):
                         self.value.loc[data_ind, k] = value
                     else:
                         self.value.iloc[data_ind, columns.index(k)] = value
-                    if isinstance(value, pd.Timestamp):
-                        value = datetime_as_utctimestamp(value)
-                    elif value is pd.NaT:
+                    if isinstance(value, np.datetime64):
+                        value = pd.Timestamp(value)
+                    if value is pd.NaT:
                         value = np.nan
+                    elif isinstance(value, dt.datetime):
+                        if value.tzinfo is not None:
+                            value = value.astimezone(dt.timezone.utc)
+                        value = datetime_as_utctimestamp(value)
+                    elif isinstance(value, dt.date):
+                        value = datetime_as_utctimestamp(dt.datetime.combine(value, dt.time()))
                     values.append((patch_ind, value))
                 patches[k] = values
             self._patch(patches)
@@ -1431,6 +1448,8 @@ class Tabulator(BaseTable):
         'title_formatters': None, 'sortable': None, 'initial_page_size': None
     }
 
+    _js_events: t.ClassVar[Mapping[str, str]] = {'selection': 'selection-change'}
+
     # Determines the maximum size limits beyond which (local, remote)
     # pagination is enabled
     _MAX_ROW_LIMITS: t.ClassVar[tuple[int, int]] = (200, 10000)
@@ -1706,7 +1725,10 @@ class Tabulator(BaseTable):
                     r -= start
             if r not in styles:
                 styles[int(r)] = {}
-            styles[int(r)][self._field_name(df.columns[int(c)])] = s
+            # Cell widths come from the column; Styler.bar emits width: 10em
+            styles[int(r)][self._field_name(df.columns[int(c)])] = [
+                p for p in s if p[0] != 'width'
+            ]
         return {'id': uuid.uuid4().hex, 'data': styles}
 
     def _get_selectable(self):

@@ -853,6 +853,30 @@ class DatetimeRangeSlider(DateRangeSlider):
         return DatetimeRangeSlider
 
 
+def _editable_slider_bounds(widget, lo, hi, widen=False):
+    # Bokeh >=3.10.2 clamps slider values to start/end on the client,
+    # so the inner slider range must always contain the value.
+    starts = [v for v in (widget.start, lo) if v is not None]
+    ends = [v for v in (widget.end, hi) if v is not None]
+    if widen:
+        starts.append(widget._slider.start)
+        ends.append(widget._slider.end)
+    start, end = min(starts), max(ends)
+    if widget.fixed_start is not None:
+        start = max(start, widget.fixed_start)
+    if widget.fixed_end is not None:
+        end = min(end, widget.fixed_end)
+    return start, end
+
+
+def _clamp_to_fixed(widget, value):
+    if widget.fixed_start is not None and value < widget.fixed_start:
+        return type(value)(widget.fixed_start)
+    if widget.fixed_end is not None and value > widget.fixed_end:
+        return type(value)(widget.fixed_end)
+    return value
+
+
 class _EditableContinuousSlider(CompositeWidget):
     """
     The EditableFloatSlider extends the FloatSlider by adding a text
@@ -888,7 +912,7 @@ class _EditableContinuousSlider(CompositeWidget):
         self._value_edit = self._input_widget(
             margin=0, align='end', css_classes=['slider-edit'],
             stylesheets=[f'{CDN_DIST}css/editable_slider.css'],
-            format=self.format,
+            format=self._input_format,
         )
         self._value_edit.param.watch(self._sync_value, 'value')
         self._value_edit.param.watch(self._sync_value, 'value_throttled')
@@ -941,6 +965,10 @@ class _EditableContinuousSlider(CompositeWidget):
         if "value" not in params and "end" in params:
             params["value"] = params["end"]
 
+    @property
+    def _input_format(self):
+        return self.format
+
     @param.depends('width', 'height', 'sizing_mode', watch=True)
     def _update_layout(self):
         self._value_edit.sizing_mode = self.sizing_mode
@@ -969,17 +997,18 @@ class _EditableContinuousSlider(CompositeWidget):
     @param.depends('start', 'end', 'step', 'bar_color', 'direction',
                    'show_value', 'tooltips', 'format', watch=True)
     def _update_slider(self):
+        start, end = _editable_slider_bounds(self, self.value, self.value)
         self._slider.param.update(
             format=self.format,
-            start=self.start,
-            end=self.end,
+            start=start,
+            end=end,
             step=self.step,
             bar_color=self.bar_color,
             direction=self.direction,
             show_value=self.show_value,
             tooltips=self.tooltips
         )
-        self._value_edit.step = self.step
+        self._value_edit.param.update(format=self._input_format, step=self.step)
 
     @param.depends('value', watch=True)
     def _update_value(self):
@@ -988,7 +1017,8 @@ class _EditableContinuousSlider(CompositeWidget):
         edit_ctx = _syncing(self._value_edit, ['value']) if self._syncing else nullcontext()
         with slider_ctx, edit_ctx:
             if self.value is not None:
-                self._slider.value = self.value
+                start, end = _editable_slider_bounds(self, self.value, self.value, widen=True)
+                self._slider.param.update(start=start, end=end, value=self.value)
             self._value_edit.value = self.value
 
     def _sync_value(self, event):
@@ -1010,13 +1040,14 @@ class _EditableContinuousSlider(CompositeWidget):
         self.param.value.bounds = (self.fixed_start, self.fixed_end)
         self.param.value_throttled.bounds = (self.fixed_start, self.fixed_end)
 
+        if self.value is not None:
+            self.value = _clamp_to_fixed(self, self.value)
+
         # First changing _slider and then _value_edit,
         # because else _value_edit will change the _slider
         # with the jscallback.
-        if self.fixed_start is not None:
-            self._slider.start = max(self.fixed_start, self.start)
-        if self.fixed_end is not None:
-            self._slider.end = min(self.fixed_end, self.end)
+        start, end = _editable_slider_bounds(self, self.value, self.value, widen=True)
+        self._slider.param.update(start=start, end=end)
 
         self._value_edit.start = self.fixed_start
         self._value_edit.end = self.fixed_end
@@ -1045,6 +1076,14 @@ class EditableFloatSlider(_EditableContinuousSlider, FloatSlider):
 
     _slider_widget: t.ClassVar[type[WidgetBase]] = FloatSlider
     _input_widget: t.ClassVar[type[WidgetBase]] = FloatInput
+
+    @property
+    def _input_format(self):
+        if self.format is not None:
+            return self.format
+        # Hide float noise such as 0.10000000001 without truncating the step
+        step_decimals = len(f'{self.step:.10f}'.rstrip('0').partition('.')[2])
+        return '0.0[' + '0' * (max(step_decimals, 5) - 1) + ']'
 
 
 class EditableIntSlider(_EditableContinuousSlider, IntSlider):
@@ -1242,10 +1281,11 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
     @param.depends('start', 'end', 'step', 'bar_color', 'direction',
                    'show_value', 'tooltips', 'label', 'format', watch=True)
     def _update_slider(self):
+        start, end = _editable_slider_bounds(self, *self.value)
         self._slider.param.update(
             format=self.format,
-            start=self.start,
-            end=self.end,
+            start=start,
+            end=end,
             step=self.step,
             bar_color=self.bar_color,
             direction=self.direction,
@@ -1262,7 +1302,8 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
         start_ctx = _syncing(self._start_edit, ['value']) if self._syncing else nullcontext()
         end_ctx = _syncing(self._end_edit, ['value']) if self._syncing else nullcontext()
         with slider_ctx, start_ctx, end_ctx:
-            self._slider.value = self.value
+            start, end = _editable_slider_bounds(self, *self.value, widen=True)
+            self._slider.param.update(start=start, end=end, value=self.value)
             self._start_edit.value = self.value[0]
             self._end_edit.value = self.value[1]
 
@@ -1321,13 +1362,13 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
         self.param.value.bounds = (self.fixed_start, self.fixed_end)
         self.param.value_throttled.bounds = (self.fixed_start, self.fixed_end)
 
+        self.value = tuple(_clamp_to_fixed(self, v) for v in self.value)
+
         # First changing _slider and then _value_edit,
         # because else _value_edit will change the _slider
         # with the jscallback.
-        if self.fixed_start is not None:
-            self._slider.start = max(self.fixed_start, self.start)
-        if self.fixed_end is not None:
-            self._slider.end = min(self.fixed_end, self.end)
+        start, end = _editable_slider_bounds(self, *self.value, widen=True)
+        self._slider.param.update(start=start, end=end)
 
         self._start_edit.start = self.fixed_start
         self._start_edit.end = self.fixed_end

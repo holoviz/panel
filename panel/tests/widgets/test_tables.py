@@ -2009,6 +2009,61 @@ def test_tabulator_patch_with_timestamp(document, comm):
         if col != 'index':
             np.testing.assert_array_equal(table.value[col].values, expected[col])
 
+@pytest.mark.parametrize('patch_value', [
+    dt.datetime(2021, 1, 1),
+    pd.Timestamp('2021-01-01'),
+    np.datetime64('2021-01-01T00:00:00'),
+], ids=['datetime', 'Timestamp', 'datetime64'])
+@pytest.mark.parametrize('form', ['dict', 'dataframe', 'series'])
+def test_tabulator_patch_datetime_column(document, comm, patch_value, form):
+    # https://github.com/holoviz/panel/issues/4144
+    df = pd.DataFrame(dict(A=pd.to_datetime(['1980-01-01', '1980-01-02'])))
+    table = Tabulator(df)
+
+    model = table.get_root(document, comm)
+
+    if form == 'dict':
+        table.patch({'A': [(0, patch_value)]})
+    elif form == 'dataframe':
+        table.patch(pd.DataFrame({'A': [patch_value]}, index=[0]))
+    else:
+        table.patch(pd.Series([patch_value], index=[0], name='A', dtype=object))
+
+    expected = np.array(['2021-01-01T00:00:00', '1980-01-02T00:00:00'], dtype='datetime64[ns]')
+    np.testing.assert_array_equal(table.value['A'].values, expected)
+    np.testing.assert_array_equal(model.source.data['A'], expected.astype(np.int64) / 10e5)
+
+@pytest.mark.parametrize('form', ['dict', 'series'])
+def test_tabulator_patch_tz_aware_datetime_column(document, comm, form):
+    index = pd.to_datetime(['2021-01-01', '2022-01-01']).tz_localize('US/Eastern')
+    table = Tabulator(pd.DataFrame(dict(A=index)))
+
+    model = table.get_root(document, comm)
+
+    new = pd.Timestamp('2016-02-01', tz='US/Eastern')
+    if form == 'dict':
+        table.patch({'A': [(0, new)]})
+    else:
+        table.patch(pd.Series([new], index=[0], name='A'))
+
+    assert model.source.data['A'][0] == new.value / 1e6
+    assert model.source.data['A'][1] == index[1].value / 1e6
+
+@pytest.mark.parametrize('form', ['dict', 'series'])
+def test_tabulator_patch_date_column(document, comm, form):
+    df = pd.DataFrame(dict(A=[dt.date(2021, 1, 1), dt.date(2022, 1, 1)]))
+    table = Tabulator(df)
+
+    model = table.get_root(document, comm)
+
+    if form == 'dict':
+        table.patch({'A': [(0, dt.date(2016, 2, 1))]})
+    else:
+        table.patch(pd.Series([dt.date(2016, 2, 1)], index=[0], name='A'))
+
+    assert table.value['A'].iloc[0] == dt.date(2016, 2, 1)
+    assert model.source.data['A'][0] == pd.Timestamp('2016-02-01').value / 1e6
+
 def test_tabulator_patch_with_NaT(document, comm):
     df = pd.DataFrame(dict(A=pd.to_datetime(['1980-01-01', np.nan])))
     assert df.loc[1, 'A'] is pd.NaT
@@ -2121,6 +2176,19 @@ def test_tabulator_paginated_sorted_selection(document, comm):
     table.sorters = [{'field': 'A', 'sorter': 'number', 'dir': 'asc'}]
     table._process_events({'indices': [1]})
     assert table.selection == [1]
+
+
+def test_tabulator_stream_datetime_index():
+    # https://github.com/holoviz/panel/issues/4504
+    index = pd.date_range('2023-01-01', periods=6, freq='8h')
+    df = pd.DataFrame({'j': range(6)}, index=index)
+    table = Tabulator(df)
+
+    table.stream(df.copy(), follow=True)
+
+    assert len(table.value) == 12
+    assert list(table.value['j']) == [*range(6), *range(6)]
+    assert list(table.value.index[:6]) == list(index)
 
 
 def test_tabulator_stream_dataframe(document, comm):
@@ -3153,6 +3221,20 @@ def test_tabulator_styled_df_with_background_gradient(document, comm):
 
     assert list(model.cell_styles['data'][0]) == ['A', 'C', 'D']
 
+def test_tabulator_style_bar_drops_width(document, comm):
+    df = pd.DataFrame({'A': [1., 2., 3.], 'B': [1, 2, 3]})
+    table = Tabulator(df)
+    table.style.bar(subset=['A'], color='#d65f5f').set_properties(
+        subset=['B'], width='5em', color='red'
+    )
+
+    model = table.get_root(document, comm)
+
+    for row in model.cell_styles['data'].values():
+        assert all(prop != 'width' for prop, _ in row['A'])
+        assert any(prop == 'background' for prop, _ in row['A'])
+        assert ('color', 'red') in row['B']
+
 def test_tabulator_editor_property_change(dataframe, document, comm):
     editor = SelectEditor(options=['A', 'B', 'C'])
     table = Tabulator(dataframe, editors={'str': editor})
@@ -3364,6 +3446,50 @@ def test_header_filter_comparison_operators(op, value, expected):
     widget.filters = [{'field': 'n', 'type': op, 'value': value}]
 
     assert list(widget.current_view['n']) == expected
+
+
+@pytest.mark.parametrize('pagination', ['local', 'remote', None])
+def test_header_filter_like_on_datetime_matches_that_day(pagination):
+    # https://github.com/holoviz/panel/issues/4543
+    df = pd.DataFrame({
+        'dt': pd.date_range('2023-01-01', periods=6, freq='8h'),
+        'j': range(6),
+    })
+    widget = Tabulator(
+        df,
+        header_filters={'dt': {'type': 'date', 'func': 'like'}},
+        pagination=pagination,
+    )
+
+    widget.filters = [{'field': 'dt', 'type': 'like', 'value': '2023-01-01'}]
+
+    assert list(widget.current_view['j']) == [0, 1, 2]
+
+
+def test_header_filter_like_on_number_matches_the_digits():
+    widget = Tabulator(pd.DataFrame({'n': [1, 12, 20]}), header_filters=True)
+
+    widget.filters = [{'field': 'n', 'type': 'like', 'value': '1'}]
+
+    assert list(widget.current_view['n']) == [1, 12]
+
+
+def test_header_filter_like_stringifies_a_non_string_value():
+    widget = Tabulator(pd.DataFrame({'n': [1, 12, 20]}), header_filters=True)
+
+    widget.filters = [{'field': 'n', 'type': 'like', 'value': 1}]
+
+    assert list(widget.current_view['n']) == [1, 12]
+
+
+def test_header_filter_datetime_equals_keeps_that_timestamp():
+    df = pd.DataFrame({'dt': pd.date_range('2023-01-01', periods=6, freq='8h')})
+    widget = Tabulator(df, header_filters={'dt': {'type': 'date', 'func': '='}})
+
+    widget.filters = [{'field': 'dt', 'type': '=', 'value': '2023-01-01'}]
+
+    assert list(widget.current_view['dt']) == [pd.Timestamp('2023-01-01')]
+
 
 @pytest.mark.parametrize('aggs', [{}, {'Country': 'sum'}, {'Country': {'Int': 'sum', 'Float': 'mean'}}])
 def test_tabulator_aggregators(document, comm, df_agg, aggs):

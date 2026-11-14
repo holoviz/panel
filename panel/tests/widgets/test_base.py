@@ -8,7 +8,8 @@ from panel.tests.util import check_layoutable_properties
 from panel.util import _descendents
 from panel.widgets import (
     CompositeWidget, Dial, FileDownload, FloatSlider, LinearGauge,
-    LoadingSpinner, Terminal, TextInput, ToggleGroup, Tqdm, Widget,
+    LoadingSpinner, RadioButtonGroup, Terminal, TextInput, ToggleGroup, Tqdm,
+    Widget,
 )
 from panel.widgets.tables import BaseTable
 
@@ -230,3 +231,42 @@ def test_infer_params_attribute_error():
         TextInput.from_param(MyComponent.name, label='Name Input')
 
     assert str(excinfo.value) == "TextInput.from_param only accepts Parameter types, provided value is of type <class 'str'>."
+
+
+def test_widget_from_param_parameterized_selector_no_expand_button():
+    class Sub(param.Parameterized):
+        x = param.Number()
+
+    class Test(param.Parameterized):
+        a = param.Selector(objects=[Sub(), Sub()])
+
+    widget = RadioButtonGroup.from_param(Test.param.a)
+    assert isinstance(widget, RadioButtonGroup)
+
+
+def test_widget_from_param_expand_button_kwarg():
+    class Sub(param.Parameterized):
+        x = param.Number()
+
+    class Test(param.Parameterized):
+        a = param.Selector(objects=[Sub(), Sub()])
+
+    widget = RadioButtonGroup.from_param(Test.param.a, expand_button=True)
+    assert isinstance(widget, Row)
+    assert isinstance(widget[0], RadioButtonGroup)
+
+
+@pytest.mark.filterwarnings('ignore:Widget.name is deprecated:PendingDeprecationWarning')
+def test_widget_name_and_label_stay_in_sync():
+    widget = TextInput(name='a')
+    assert widget.label == 'a'
+
+    widget.label = 'b'
+    assert widget.name == 'b'
+
+    widget.name = 'c'
+    assert widget.label == 'c'
+
+    widget.param.update(name='d', label='e')
+    assert widget.name == 'd'
+    assert widget.label == 'd'

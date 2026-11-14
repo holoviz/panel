@@ -147,8 +147,9 @@ def test_reload_set_at_build_time_navigates_on_pathname_change(page):
     page.evaluate("() => { window.__marker = true }")
     page.locator('.bk-btn').click()
 
-    wait_until(lambda: page.evaluate("() => window.__marker === undefined"), page)
-    assert page.evaluate("() => document.location.pathname") == '/other'
+    # Evaluating while the page navigates raises, so wait for the load to finish
+    page.wait_for_url('**/other')
+    assert page.evaluate("() => window.__marker === undefined")
 
 
 def test_default_location_pathname_change_does_not_reload(page):

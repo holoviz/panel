@@ -86,6 +86,8 @@ def _MathExtension():
     return MathExtension()
 
 
+_MATH_FENCE = re.compile(r'^ {0,3}\$\$', re.MULTILINE)
+
 _HEADING_ID = re.compile(r'<h[1-6][^>]*?\sid="([^"]*)"')
 
 
@@ -212,7 +214,7 @@ class HTMLBasePane(ModelPane):
 
     def _update(self, ref: str, model: Model) -> None:
         self._raw_html = None
-        props = self._get_properties(model.document)
+        props = self._get_rerender_properties(model.document)
         text = props.get('text')
         if (not self.enable_streaming or text is None or ref not in state._views
             or not isinstance(model, _BkHTML)):
@@ -824,6 +826,16 @@ class Markdown(HTMLBasePane):
             (i, token.map[0]) for i in range(len(tokens)-1, 0, -1)
             if (token := tokens[i]).level == 0 and token.map is not None
         ), (0, 0))
+        if split and not self.disable_math:
+            # An unclosed $$ block parses as plain paragraphs, which must
+            # not be committed before the closing delimiter arrives.
+            block, block_line = 0, 0
+            for i, token in enumerate(tokens[:split]):
+                if token.level == 0 and token.map is not None:
+                    block, block_line = i, token.map[0]
+                if token.type == 'inline' and _MATH_FENCE.search(token.content):
+                    split, line = block, block_line
+                    break
         render = parser.renderer.render
         stable_html = render(tokens[:split], parser.options, env) if split else ''
         tail_html = render(tokens[split:], parser.options, env)

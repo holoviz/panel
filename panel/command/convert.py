@@ -128,7 +128,7 @@ class Convert(Subcommand):
         prev_hashes: dict[pathlib.Path, int] = {}
         built = False
         while True:
-            hashes = {f: hash(open(f).read()) for f in included}
+            hashes = {f: hash(f.read_bytes()) for f in included}
             if hashes == prev_hashes:
                 time.sleep(0.5)
                 continue

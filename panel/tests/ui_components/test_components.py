@@ -42,6 +42,47 @@ def test_modal_keeps_classic_defaults(panel_ui):
     assert modal.show_close_button
 
 
+
+def test_modal_allows_content_to_set_paper_width(panel_ui, document, comm):
+    modal = panel_ui.Modal('Content')
+    model = modal.get_root(document, comm=comm)
+
+    assert modal.width_option is False
+    assert model.data.width_option is False
+
+
+def test_modal_explicit_width_sets_paper_style(panel_ui, document, comm):
+    style = {'color': 'blue', '& .MuiDialog-paper': {'borderRadius': '12px'}}
+    modal = panel_ui.Modal('Content', width=800, sx=style)
+    model = modal.get_root(document, comm=comm)
+
+    assert model.data.sx['color'] == 'blue'
+    assert model.data.sx['& .MuiDialog-paper'] == {
+        'borderRadius': '12px',
+        'width': '800px',
+    }
+    assert modal.sx == style
+
+    modal.width = 700
+    assert model.data.sx['& .MuiDialog-paper']['width'] == '700px'
+
+    modal.width = None
+    assert model.data.sx == style
+
+
+def test_modal_preserves_custom_paper_width(panel_ui, document, comm):
+    modal = panel_ui.Modal(
+        'Content',
+        width=800,
+        width_option='lg',
+        sx={'& .MuiDialog-paper': {'width': '70vw'}},
+    )
+    model = modal.get_root(document, comm=comm)
+
+    assert model.data.width_option == 'lg'
+    assert model.data.sx['& .MuiDialog-paper']['width'] == '70vw'
+
+
 @pytest.mark.parametrize('param_name', ['background_close', 'close_on_click'])
 def test_modal_background_close_aliases_close_on_click(panel_ui, param_name):
     modal = panel_ui.Modal('Content', **{param_name: False})

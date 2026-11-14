@@ -112,6 +112,16 @@ def test_render_auth_error_sanitizes_message():
     assert 'denied' in page
 
 
+def test_render_auth_error_reads_custom_template_as_utf8(tmp_path):
+    template = tmp_path / 'auth_error.html'
+    template.write_text('<p>{{ error_type }}: 접근 거부 ✅</p>', encoding='utf-8')
+
+    with config.set(auth_template=str(template)):
+        page = render_auth_error('denied')
+
+    assert page == '<p>Authorization Error: 접근 거부 ✅</p>'
+
+
 #---------------------------------------------------------------------
 # Token payload
 #---------------------------------------------------------------------

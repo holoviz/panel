@@ -256,7 +256,8 @@ setup-dev = { depends-on = ["install", "lint-install"], description = "Set up th
 # =============================================
 [feature.test-core.dependencies]
 psutil = "*"
-pytest = "*"
+# 9.2 stops xdist_group applying with pytest-xdist 3.8, see pytest-dev/pytest-xdist#1407
+pytest = "<9.2"
 pytest-asyncio = "*"
 pytest-cov = "*"
 pytest-github-actions-annotate-failures = "*"
@@ -276,8 +277,6 @@ test-example = { cmd = 'pytest -n logical --dist loadscope --nbval-lax examples'
 nbval = "*"
 
 [feature.test-ui.dependencies]
-# TODO: Remove once the UI test failures with 3.10.2rc1 are resolved
-bokeh = ">=3.10.0,<3.11.0a0,!=3.10.2rc1"
 playwright = ">=1.61.0"
 playwright-python = ">=1.61.0"
 pytest-playwright = "*"
@@ -328,7 +327,7 @@ SPHINX_APIDOC_OPTIONS = "members,show-inheritance"
 
 [feature.doc.dependencies]
 lxml = "*"
-nbsite = ">=0.10.0a9"
+nbsite = ">=0.10.0a12"
 nodejs = ">=18"
 panel-material-ui = ">=0.16.6,<0.17"
 pip = "*"
