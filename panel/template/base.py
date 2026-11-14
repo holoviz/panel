@@ -223,45 +223,47 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         objs, models = [], []
         stylesheets, sizing_modes = {}, {}
         tracked_models: set[Model] = set()
-        for name, (obj, tags) in self._render_items.items():
-            # Render root without pre-processing
-            with config.set(design=self.design):
+        # A single design override for every render item; config.set is
+        # expensive enough that entering it per item dominated this loop.
+        with config.set(design=self.design):
+            for name, (obj, tags) in self._render_items.items():
+                # Render root without pre-processing
                 model = obj.get_root(document, comm, preprocess=False)
-            model.name = name
-            model.tags = model.tags + [tag for tag in tags if tag not in model.tags]
-            mref = model.ref['id']
-            if isinstance(model, LayoutDOM):
-                sizing_modes[mref] = model.sizing_mode
-                if self._design._apply_hooks not in obj._hooks:
-                    obj._hooks.append(self._design._apply_hooks)
+                model.name = name
+                model.tags = model.tags + [tag for tag in tags if tag not in model.tags]
+                mref = model.ref['id']
+                if isinstance(model, LayoutDOM):
+                    sizing_modes[mref] = model.sizing_mode
+                    if self._design._apply_hooks not in obj._hooks:
+                        obj._hooks.append(self._design._apply_hooks)
 
-                # Alias model ref with the fake root ref to ensure that
-                # pre-processor correctly operates on fake root
-                for sub in obj.select(Viewable):
-                    submodel = sub._models.get(mref)
-                    for stylesheet in getattr(sub, '_stylesheets', []):
-                        if isinstance(stylesheet, PurePath):
-                            stylesheet = str(stylesheet)
-                        if not stylesheet.endswith('.css'):
+                    # Alias model ref with the fake root ref to ensure that
+                    # pre-processor correctly operates on fake root
+                    for sub in obj.select(Viewable):
+                        submodel = sub._models.get(mref)
+                        for stylesheet in getattr(sub, '_stylesheets', []):
+                            if isinstance(stylesheet, PurePath):
+                                stylesheet = str(stylesheet)
+                            if not stylesheet.endswith('.css'):
+                                continue
+                            sts_name = f'extra_{os.path.basename(stylesheet)}'
+                            stylesheets[sts_name] = stylesheet
+                        if submodel is None:
                             continue
-                        sts_name = f'extra_{os.path.basename(stylesheet)}'
-                        stylesheets[sts_name] = stylesheet
-                    if submodel is None:
-                        continue
-                    sub._models[ref] = submodel
-                    if isinstance(sub, HoloViews) and mref in sub._plots:
-                        sub._plots[ref] = sub._plots.get(mref)
+                        sub._models[ref] = submodel
+                        if isinstance(sub, HoloViews) and mref in sub._plots:
+                            sub._plots[ref] = sub._plots.get(mref)
 
-                # Apply any template specific hooks to root
-                self._apply_root(name, model, tags)
+                    # Apply any template specific hooks to root
+                    self._apply_root(name, model, tags)
 
-                # Add document
-                obj._documents[document] = model
-                objs.append(obj)
-                models.append(model)
+                    # Add document
+                    obj._documents[document] = model
+                    objs.append(obj)
+                    models.append(model)
 
-            tracked_models |= add_to_doc(model, document, hold=bool(comm), skip=tracked_models)
-            document.on_session_destroyed(obj._server_destroy) # type: ignore
+                tracked_models |= add_to_doc(model, document, hold=bool(comm), skip=tracked_models)
+                document.on_session_destroyed(obj._server_destroy) # type: ignore
 
         # Here we ensure that the preprocessor is run across all roots
         # and set up session cleanup hooks for the fake root.
