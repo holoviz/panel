@@ -42,6 +42,7 @@ from .pages import page_theme
 from .state import state
 
 if t.TYPE_CHECKING:
+    from bokeh.core.has_props import HasProps
     from bokeh.document import Document
     from bokeh.resources import Urls
 
@@ -506,11 +507,15 @@ def patch_model_css(root: Model, dist_url: str):
     """
     # Patch model CSS properties
     doc = root.document
+    stylesheets: t.Iterable[Model]
     if doc:
         held = doc.callbacks.hold_value
         events = list(doc.callbacks._held_events)
         doc.hold()
-    for stylesheet in root.select({'type': ImportedStyleSheet}):
+        stylesheets = [m for m in _document_models(doc) if isinstance(m, ImportedStyleSheet)]
+    else:
+        stylesheets = root.select({'type': ImportedStyleSheet})
+    for stylesheet in stylesheets:
         patch_stylesheet(stylesheet, dist_url)
     if doc:
         doc.callbacks._held_events = events
@@ -525,9 +530,19 @@ def global_css(name: str) -> str:
     else:
         return f'{CDN_DIST}css/{name}.css'
 
+_BUNDLED_FILES: dict[tuple, list[str]] = {}
+
 def bundled_files(model: Model, file_type: str = 'javascript') -> list[str]:
-    name = model.__name__.lower()
     raw_files = getattr(model, f"__{file_type}_raw__", [])
+    if config.autoreload:
+        return _bundled_files(model, file_type, raw_files)
+    key = (model, file_type, RESOURCE_MODE, config.npm_cdn, tuple(raw_files))
+    if key in _BUNDLED_FILES:
+        return list(_BUNDLED_FILES[key])
+    return list(remember(_BUNDLED_FILES, key, _bundled_files(model, file_type, raw_files), limit=256))
+
+def _bundled_files(model: Model, file_type: str, raw_files: list[str]) -> list[str]:
+    name = model.__name__.lower()
     for cls in model.__mro__[1:]:
         cls_files = getattr(cls, f"__{file_type}_raw__", [])
         if raw_files is cls_files:
@@ -567,6 +582,61 @@ def bundled_files(model: Model, file_type: str = 'javascript') -> list[str]:
             files.append(url)
     return files
 
+def model_registry_key() -> tuple[type, ...]:
+    """
+    Identifies the current contents of Bokeh's model registry.
+
+    Caches derived from the registry key on this rather than on its size,
+    since tests (and ``Model.clear_extensions``) unregister and re-register
+    classes, which leaves the size unchanged.
+    """
+    return tuple(Model.model_class_reverse_map.values())
+
+
+def remember(cache: dict, key: t.Hashable, value: t.Any, limit: int = 32) -> t.Any:
+    """
+    Stores a value in a bounded cache, evicting the oldest entry first.
+    """
+    if len(cache) >= limit:
+        cache.pop(next(iter(cache)))
+    cache[key] = value
+    return value
+
+
+_SORTED_MODELS: tuple[tuple[type, ...], list[type]] | None = None
+
+def sorted_model_classes() -> list[type]:
+    """
+    The registered model classes sorted by qualified name.
+    """
+    global _SORTED_MODELS
+    registry = Model.model_class_reverse_map
+    key = tuple(registry.values())
+    if _SORTED_MODELS is None or _SORTED_MODELS[0] != key:
+        _SORTED_MODELS = (key, [cls for _, cls in sorted(registry.items(), key=lambda item: item[0])])
+    return _SORTED_MODELS[1]
+
+
+def loaded_custom_classes() -> list[type]:
+    """The ReactiveHTML/ReactiveESM classes whose extension is loaded."""
+    from ..reactive import ReactiveCustomBase
+    return [
+        cls for cls in _descendents(ReactiveCustomBase, concrete=True) if cls._loaded()
+    ]
+
+
+_EXTENSION_MODULES: tuple[tuple[int, int], dict[str, str]] = ((0, 0), {})
+
+def _extension_modules() -> dict[str, str]:
+    """Maps the module of an extension's models to the extension name."""
+    global _EXTENSION_MODULES
+    imports = extension._imports
+    key = (id(imports), len(imports))
+    if _EXTENSION_MODULES[0] != key:
+        _EXTENSION_MODULES = (key, {module: name for name, module in imports.items()})
+    return _EXTENSION_MODULES[1]
+
+
 def extension_declared(cls: type) -> bool:
     """
     Whether a model class' extension was declared in this session.
@@ -578,7 +648,7 @@ def extension_declared(cls: type) -> bool:
     extensions = state._extensions
     if extensions is None:
         return True
-    ext = {module: name for name, module in extension._imports.items()}.get(cls.__module__)
+    ext = _extension_modules().get(cls.__module__)
     return ext is None or ext in extensions
 
 
@@ -606,6 +676,41 @@ def _panel_use_mathjax(roots) -> bool:
     return _any(roots, lambda obj: isinstance(obj, PanelHTML))
 
 
+def _document_models(doc) -> set[HasProps]:
+    """
+    All models of a Document, from its model index when that is current.
+
+    The index is only recomputed once a ``freeze`` block exits, so while
+    frozen the roots have to be walked.
+    """
+    manager = doc.models
+    if getattr(manager, '_freeze_count', 0):
+        models: set[HasProps] = set()
+        for root in doc.roots:
+            models |= root.references()
+        return models
+    return set(manager)
+
+
+def _reachable_models(roots) -> set[HasProps]:
+    """
+    All models reachable from roots, read off the Document's model index
+    instead of walking the references when the roots are attached to one.
+    """
+    doc = None
+    for root in roots:
+        if root.document is None or (doc is not None and root.document is not doc):
+            break
+        doc = root.document
+    else:
+        if doc is not None:
+            return _document_models(doc)
+    models: set[HasProps] = set()
+    for root in roots:
+        models |= root.references()
+    return models
+
+
 def _panel_use_tables(roots) -> bool:
     """
     Whether any model reachable from roots requires the bokeh-tables bundle.
@@ -614,12 +719,29 @@ def _panel_use_tables(roots) -> bool:
     and so do extensions defining custom cell editors or formatters.
     """
     from bokeh.models.widgets.tables import CellEditor, CellFormatter
-    models = set()
-    for root in roots:
-        models |= root.references()
+    models = _reachable_models(roots)
     return _use_tables(models) or _query_extensions(
         models, lambda cls: issubclass(cls, (CellEditor, CellFormatter))
     )
+
+
+_EXTENSION_BUNDLES: dict[tuple, list] = {}
+
+def _extension_bundles(resources: BkResources) -> list:
+    """
+    The bundles of every registered extension, cached per resource
+    configuration since computing them reads each extension's package
+    metadata from disk.
+    """
+    if config.autoreload:
+        return _bundle_extensions(None, resources)
+    key = (
+        resources.mode, resources.root_url, resources.minified, _settings.dev,
+        model_registry_key()
+    )
+    if key in _EXTENSION_BUNDLES:
+        return list(_EXTENSION_BUNDLES[key])
+    return list(remember(_EXTENSION_BUNDLES, key, _bundle_extensions(None, resources)))
 
 
 def bundle_resources(
@@ -631,15 +753,11 @@ def bundle_resources(
 ):
     from ..config import panel_extension as ext
     global RESOURCE_MODE
-    if not isinstance(resources, Resources):
-        resources = Resources.from_bokeh(resources, notebook=notebook)
-    js_resources = css_resources = resources
-    RESOURCE_MODE = mode = js_resources.mode if resources is not None else "inline"
-
-    js_files = []
-    js_raw = []
-    css_files = []
-    css_raw = []
+    panel_resources = (
+        resources if isinstance(resources, Resources) else
+        Resources.from_bokeh(resources, notebook=notebook)
+    )
+    RESOURCE_MODE = mode = panel_resources.mode if panel_resources is not None else "inline"
 
     if isinstance(enable_mathjax, bool):
         use_mathjax = enable_mathjax
@@ -659,6 +777,67 @@ def bundle_resources(
         _panel_use_tables(roots)
     )
 
+    # Everything below only depends on the resources, the session configuration
+    # and which models are registered, so a repeat request reuses the bundle.
+    bundle: dict[str, t.Any]
+    if config.autoreload:
+        bundle = _build_bundle(panel_resources, mode, reloading, use_mathjax, use_tables)
+    else:
+        key = _bundle_key(panel_resources, reloading, use_mathjax, use_tables)
+        cached = _BUNDLE_CACHE.get(key)
+        if cached is None:
+            cached = remember(
+                _BUNDLE_CACHE, key, _build_bundle(panel_resources, mode, reloading, use_mathjax, use_tables)
+            )
+        bundle = cached
+    return Bundle(
+        css_files=list(bundle['css_files']),
+        css_raw=list(bundle['css_raw']),
+        hashes=dict(bundle['hashes']),
+        js_files=list(bundle['js_files']),
+        js_raw=list(bundle['js_raw']),
+        js_module_exports=dict(bundle['js_module_exports']),
+        js_modules=list(bundle['js_modules']),
+        resource_declarations=bundle['resource_declarations'],
+        notebook=notebook,
+    )
+
+
+_BUNDLE_CACHE: dict[tuple, dict[str, t.Any]] = {}
+
+def _bundle_key(resources: Resources, reloading: bool, use_mathjax: bool, use_tables: bool) -> tuple:
+    extensions = state._extensions
+    notifications = state.notifications if config.notifications else None
+    return (
+        resources.mode, resources.version, resources.minified, resources.dev,
+        resources.log_level, resources._root_url, tuple(resources.components),
+        resources.base_dir, resources.root_dir, resources.absolute,
+        resources.notebook, resources.path_versioner,
+        reloading, use_mathjax, use_tables,
+        state.rel_path, state.base_url, state._is_pyodide, state._is_server_session,
+        None if extensions is None else frozenset(extensions),
+        tuple(extension._loaded_extensions), frozenset(loaded_custom_classes()),
+        config.design, tuple(config.css_files), tuple(config.js_files.items()),
+        tuple(config.js_modules.items()), tuple(config.raw_css), tuple(config.global_css),
+        config.global_loading_spinner, config.loading_spinner, config.loading_color,
+        config.loading_max_height, config.npm_cdn, config.lazy_resources,
+        config.notebook_resources, config.inline,
+        tuple(notifications._stylesheets) if notifications else None,
+        jupyter_endpoint_available(), NOTEBOOK_RESOURCES, _settings.dev,
+        _settings.resources(default='server'), model_registry_key(), len(EXTENSION_CDN),
+    )
+
+
+def _build_bundle(
+    resources: Resources, mode: str, reloading: bool, use_mathjax: bool, use_tables: bool
+) -> dict[str, t.Any]:
+    js_resources = css_resources = resources
+
+    js_files = []
+    js_raw = []
+    css_files = []
+    css_raw = []
+
     if js_resources:
         js_resources = js_resources.clone()
         if not use_mathjax and "bokeh-mathjax" in js_resources.components:
@@ -674,7 +853,7 @@ def bundle_resources(
     css_files.extend(css_resources.css_files)
     css_raw.extend(css_resources.css_raw)
 
-    extensions = _bundle_extensions(None, js_resources)
+    extensions = _extension_bundles(js_resources)
     if reloading:
         extensions = [
             ext for ext in extensions if not (ext.cdn_url is not None and str(ext.cdn_url).startswith('https://unpkg.com/@holoviz/panel@'))
@@ -707,7 +886,7 @@ def bundle_resources(
 
     hashes = js_resources.hashes if js_resources else {}
 
-    return Bundle(
+    return dict(
         css_files=[URL(css_file) for css_file in css_files],
         css_raw=css_raw,
         hashes=hashes,
@@ -716,7 +895,6 @@ def bundle_resources(
         js_module_exports=resources.js_module_exports,
         js_modules=resources.js_modules,
         resource_declarations=resources.resource_declarations,
-        notebook=notebook,
     )
 
 
@@ -871,7 +1049,7 @@ class Resources(BkResources):
         """ Collect external resources set on resource_attr attribute of all models."""
         external_resources: list[str] = []
 
-        for _, cls in sorted(Model.model_class_reverse_map.items(), key=lambda arg: arg[0]):
+        for cls in sorted_model_classes():
             if not extension_declared(cls):
                 continue
             external: list[str] | str | None = getattr(cls, resource_attr, None)
