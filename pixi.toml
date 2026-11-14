@@ -270,7 +270,7 @@ test-unit = { cmd = 'pytest panel/tests -n logical --dist loadgroup', descriptio
 test-subprocess = { cmd = 'pytest panel/tests --subprocess', description = "Run the tests that need a subprocess" }
 
 [feature.test-example.tasks]
-test-docs = { cmd = 'pytest panel/tests --docs', description = "Run the documentation tests" }
+test-docs = { cmd = 'pytest panel/tests --docs -n logical --dist loadgroup', description = "Run the documentation tests" }
 test-example = { cmd = 'pytest -n logical --dist loadscope --nbval-lax examples', description = "Run the example notebooks" }
 
 [feature.test-example.dependencies]

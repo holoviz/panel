@@ -37,6 +37,8 @@ env:
   DISPLAY: ":99.0"
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   COV: "--cov=./panel --cov-report=xml --cov-append"
+  # Shows where the time goes when a job gets slow
+  PYTEST_ADDOPTS: "--durations=25"
   LANG: en_US.UTF-8
   LC_ALL: en_US.UTF-8
 
