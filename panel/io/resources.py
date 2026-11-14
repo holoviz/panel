@@ -42,6 +42,7 @@ from .pages import page_theme
 from .state import state
 
 if t.TYPE_CHECKING:
+    from bokeh.core.has_props import HasProps
     from bokeh.document import Document
     from bokeh.resources import Urls
 
@@ -506,6 +507,7 @@ def patch_model_css(root: Model, dist_url: str):
     """
     # Patch model CSS properties
     doc = root.document
+    stylesheets: t.Iterable[Model]
     if doc:
         held = doc.callbacks.hold_value
         events = list(doc.callbacks._held_events)
@@ -674,7 +676,7 @@ def _panel_use_mathjax(roots) -> bool:
     return _any(roots, lambda obj: isinstance(obj, PanelHTML))
 
 
-def _document_models(doc) -> t.Iterable[Model]:
+def _document_models(doc) -> set[HasProps]:
     """
     All models of a Document, from its model index when that is current.
 
@@ -683,14 +685,14 @@ def _document_models(doc) -> t.Iterable[Model]:
     """
     manager = doc.models
     if getattr(manager, '_freeze_count', 0):
-        models: set[Model] = set()
+        models: set[HasProps] = set()
         for root in doc.roots:
             models |= root.references()
         return models
-    return list(manager)
+    return set(manager)
 
 
-def _reachable_models(roots) -> t.Iterable[Model]:
+def _reachable_models(roots) -> set[HasProps]:
     """
     All models reachable from roots, read off the Document's model index
     instead of walking the references when the roots are attached to one.
@@ -703,7 +705,7 @@ def _reachable_models(roots) -> t.Iterable[Model]:
     else:
         if doc is not None:
             return _document_models(doc)
-    models: set[Model] = set()
+    models: set[HasProps] = set()
     for root in roots:
         models |= root.references()
     return models
@@ -751,9 +753,11 @@ def bundle_resources(
 ):
     from ..config import panel_extension as ext
     global RESOURCE_MODE
-    if not isinstance(resources, Resources):
-        resources = Resources.from_bokeh(resources, notebook=notebook)
-    RESOURCE_MODE = mode = resources.mode if resources is not None else "inline"
+    panel_resources = (
+        resources if isinstance(resources, Resources) else
+        Resources.from_bokeh(resources, notebook=notebook)
+    )
+    RESOURCE_MODE = mode = panel_resources.mode if panel_resources is not None else "inline"
 
     if isinstance(enable_mathjax, bool):
         use_mathjax = enable_mathjax
@@ -775,15 +779,17 @@ def bundle_resources(
 
     # Everything below only depends on the resources, the session configuration
     # and which models are registered, so a repeat request reuses the bundle.
+    bundle: dict[str, t.Any]
     if config.autoreload:
-        bundle = _build_bundle(resources, mode, reloading, use_mathjax, use_tables)
+        bundle = _build_bundle(panel_resources, mode, reloading, use_mathjax, use_tables)
     else:
-        key = _bundle_key(resources, reloading, use_mathjax, use_tables)
-        bundle = _BUNDLE_CACHE.get(key)
-        if bundle is None:
-            bundle = remember(
-                _BUNDLE_CACHE, key, _build_bundle(resources, mode, reloading, use_mathjax, use_tables)
+        key = _bundle_key(panel_resources, reloading, use_mathjax, use_tables)
+        cached = _BUNDLE_CACHE.get(key)
+        if cached is None:
+            cached = remember(
+                _BUNDLE_CACHE, key, _build_bundle(panel_resources, mode, reloading, use_mathjax, use_tables)
             )
+        bundle = cached
     return Bundle(
         css_files=list(bundle['css_files']),
         css_raw=list(bundle['css_raw']),
