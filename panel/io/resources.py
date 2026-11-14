@@ -24,10 +24,11 @@ import bokeh.embed.wrappers
 
 from bokeh.core.property.descriptors import UnsetValueError
 from bokeh.embed.bundle import (
-    CSS_RESOURCES as BkCSS_RESOURCES, URL, Bundle as BkBundle, _any,
+    CSS_RESOURCES as BkCSS_RESOURCES, URL, Bundle as BkBundle,
     _bundle_extensions, _query_extensions, _use_mathjax, _use_tables,
     bundle_models, extension_dirs,
 )
+from bokeh.embed.util import contains_tex_string
 from bokeh.model import Model
 from bokeh.models import ImportedStyleSheet, InlineStyleSheet
 from bokeh.resources import Resources as BkResources, _get_server_urls
@@ -670,10 +671,11 @@ def module_tags(
     return tags + list(exports.items())
 
 
-def _panel_use_mathjax(roots) -> bool:
-    """Whether any model in roots is a Panel HTML model (may need MathJax)."""
-    from ..models.markup import HTML as PanelHTML
-    return _any(roots, lambda obj: isinstance(obj, PanelHTML))
+def _referenced_models(roots) -> set[HasProps]:
+    models: set[HasProps] = set()
+    for root in roots:
+        models |= root.references()
+    return models
 
 
 def _document_models(doc) -> set[HasProps]:
@@ -711,15 +713,32 @@ def _reachable_models(roots) -> set[HasProps]:
     return models
 
 
-def _panel_use_tables(roots) -> bool:
+def _panel_use_mathjax(models: set[HasProps]) -> bool:
     """
-    Whether any model reachable from roots requires the bokeh-tables bundle.
+    Whether any Panel markup model needs MathJax, i.e. a MathJax pane is
+    present or an HTML model has math enabled and its text contains a
+    pair of MathJax delimiters.
+    """
+    from ..models.markup import HTML as PanelHTML
+    for obj in models:
+        if type(obj).__module__ == 'panel.models.mathjax':
+            return True
+        if (
+            isinstance(obj, PanelHTML) and not obj.disable_math
+            and contains_tex_string(obj.text)
+        ):
+            return True
+    return False
+
+
+def _panel_use_tables(models: set[HasProps]) -> bool:
+    """
+    Whether any model requires the bokeh-tables bundle.
 
     Tabulator renders without it, but Bokeh's DataTable and DataCube need it
     and so do extensions defining custom cell editors or formatters.
     """
     from bokeh.models.widgets.tables import CellEditor, CellFormatter
-    models = _reachable_models(roots)
     return _use_tables(models) or _query_extensions(
         models, lambda cls: issubclass(cls, (CellEditor, CellFormatter))
     )
@@ -744,6 +763,51 @@ def _extension_bundles(resources: BkResources) -> list:
     return list(remember(_EXTENSION_BUNDLES, key, _bundle_extensions(None, resources)))
 
 
+
+def _resource_key(url: str) -> str:
+    """
+    Normalizes a resource url for duplicate detection: the scheme, a leading
+    ./ and the ?v= cache buster do not make it a different file.
+    """
+    url = str(url)
+    url = re.sub(r'^(https?:)?//', '', url)
+    url = url.removeprefix('./')
+    return re.sub(r'\?v=[^&#]*$', '', url)
+
+
+def dedupe_template_resources(
+    template_resources: ResourcesType, bundle: BkBundle
+) -> ResourcesType:
+    """
+    Drops template resources the page already loads through the bundle,
+    or earlier in the template resources, keeping the remaining order.
+
+    A design's resources are declared on the Document bundle and on the
+    template rendering it, so without this a template page loads e.g. the
+    fast-components module and the font stylesheet twice.
+    """
+    seen = {
+        _resource_key(url) for url in (
+            list(bundle.js_files) + list(getattr(bundle, 'js_modules', [])) +
+            list(bundle.css_files)
+        )
+    }
+    deduped = t.cast('ResourcesType', dict(template_resources))
+    for rtype in ('js', 'js_modules', 'css'):
+        resources = template_resources.get(rtype)
+        if not resources:
+            continue
+        kept: dict[str, str] = {}
+        for name, url in resources.items():  # type: ignore
+            key = _resource_key(url)
+            if key in seen:
+                continue
+            seen.add(key)
+            kept[name] = url
+        deduped[rtype] = kept  # type: ignore
+    return deduped
+
+
 def bundle_resources(
     roots,
     resources: BkResources,
@@ -759,13 +823,15 @@ def bundle_resources(
     )
     RESOURCE_MODE = mode = panel_resources.mode if panel_resources is not None else "inline"
 
+    models = _reachable_models(roots) if roots else set()
+
     if isinstance(enable_mathjax, bool):
         use_mathjax = enable_mathjax
     elif roots:
         use_mathjax = (
-            _use_mathjax(roots) or
-            _panel_use_mathjax(roots) or
-            'mathjax' in ext._loaded_extensions
+            'mathjax' in ext._loaded_extensions or
+            _use_mathjax(models) or
+            _panel_use_mathjax(models)
         )
     else:
         use_mathjax = 'mathjax' in ext._loaded_extensions
@@ -774,7 +840,7 @@ def bundle_resources(
     # know whether a table will be displayed later and always load it
     use_tables = (
         notebook or roots is None or 'bokeh-tables' in ext._loaded_extensions or
-        _panel_use_tables(roots)
+        _panel_use_tables(models)
     )
 
     # Everything below only depends on the resources, the session configuration
@@ -941,7 +1007,11 @@ class ResourceComponent:
         except Exception:
             is_file = False
         if is_file or (state._is_pyodide and not isurl(resource)):
-            return f'{prefixed_dist}bundled/{resource_path}'
+            # Versioned so the server may cache it; a module keeps its
+            # bare url since relative imports between modules would
+            # otherwise load a second instance of it.
+            version = f'?v={JS_VERSION}' if resource_type in ('js', 'css') and not cdn else ''
+            return f'{prefixed_dist}bundled/{resource_path}{version}'
         elif isurl(resource):
             return resource
         elif resolve_custom_path(cls, resource):

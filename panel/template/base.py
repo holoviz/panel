@@ -447,7 +447,7 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
                     tmpl_name = cls.__name__.lower()
             js_name = os.path.basename(js)
             if (BUNDLE_DIR / tmpl_name / js_name).is_file():
-                js_files[f'base_{js_name}'] = dist_path + f'bundled/{tmpl_name}/{js_name}'
+                js_files[f'base_{js_name}'] = f'{dist_path}bundled/{tmpl_name}/{js_name}{version_suffix}'
             elif isurl(js):
                 js_files[f'base_{js_name}'] = t.cast("str", js)
             elif resolve_custom_path(self, js):
