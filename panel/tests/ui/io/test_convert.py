@@ -1,6 +1,5 @@
 import os
 import pathlib
-import re
 import shutil
 import tempfile
 import uuid
@@ -29,9 +28,6 @@ if os.name == "nt":
 else:
     TIMEOUT = 90_000
 
-_worker_id = os.environ.get("PYTEST_XDIST_WORKER", "0")
-HTTP_PORT = 50000 + int(re.sub(r"\D", "", _worker_id))
-HTTP_URL = f"http://localhost:{HTTP_PORT}/"
 RUNTIMES = ['pyodide', 'pyscript', 'pyodide-worker', 'pyscript-worker']
 
 button_app = """
@@ -167,35 +163,36 @@ row.servable()
 
 @pytest.fixture(scope="module")
 def http_serve():
-    temp_dir = tempfile.TemporaryDirectory()
-    temp_path = pathlib.Path(temp_dir.name)
+    with tempfile.TemporaryDirectory() as temp_name:
+        temp_path = pathlib.Path(temp_name)
 
-    test_file = (temp_path / 'test.html')
-    test_file.write_text('<html><body>Test</body></html>')
+        test_file = (temp_path / 'test.html')
+        test_file.write_text('<html><body>Test</body></html>')
 
-    try:
-        shutil.copy(PANEL_LOCAL_WHL, temp_path / PANEL_LOCAL_WHL.name)
-    except shutil.SameFileError:
-        pass
-    try:
-        shutil.copy(BOKEH_LOCAL_WHL, temp_path / BOKEH_LOCAL_WHL.name)
-    except shutil.SameFileError:
-        pass
+        try:
+            shutil.copy(PANEL_LOCAL_WHL, temp_path / PANEL_LOCAL_WHL.name)
+        except shutil.SameFileError:
+            pass
+        try:
+            shutil.copy(BOKEH_LOCAL_WHL, temp_path / BOKEH_LOCAL_WHL.name)
+        except shutil.SameFileError:
+            pass
 
-    httpd, _ = http_serve_directory(str(temp_path), port=HTTP_PORT)
+        # A fixed port can fall into a range Windows has reserved for Hyper-V.
+        httpd, _ = http_serve_directory(str(temp_path))
 
-    def write(app):
-        app_name = uuid.uuid4().hex
-        app_path = temp_path / f'{app_name}.py'
-        with open(app_path, 'w') as f:
-            f.write(app)
-        return app_path
+        def write(app):
+            app_name = uuid.uuid4().hex
+            app_path = temp_path / f'{app_name}.py'
+            with open(app_path, 'w') as f:
+                f.write(app)
+            return app_path
 
-    try:
-        yield write
-    finally:
-        httpd.shutdown()
-        temp_dir.cleanup()
+        write.url = f"http://localhost:{httpd.server_port}/"
+        try:
+            yield write
+        finally:
+            httpd.shutdown()
 
 
 def wait_for_app(http_serve, app, page, runtime, wait=True, resources=None, **kwargs):
@@ -213,13 +210,13 @@ def wait_for_app(http_serve, app, page, runtime, wait=True, resources=None, **kw
     convert_apps(
         [app_path], app_path.parent, runtime=runtime, build_pwa=False,
         prerender=False, panel_version='local', inline=True,
-        local_prefix=HTTP_URL, resources=resource_paths, **kwargs
+        local_prefix=http_serve.url, resources=resource_paths, **kwargs
     )
 
     msgs = []
     page.on("console", lambda msg: msgs.append(msg))
 
-    page.goto(f"{HTTP_URL}{app_path.name[:-3]}.html")
+    page.goto(f"{http_serve.url}{app_path.name[:-3]}.html")
 
     expect(page.locator('#loader')).to_be_visible()
     if wait:
