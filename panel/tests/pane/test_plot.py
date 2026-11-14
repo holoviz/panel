@@ -2,7 +2,9 @@ from bokeh.models import Div, Row as BkRow
 
 import panel as pn
 
-from panel.pane import Bokeh, Matplotlib, PaneBase
+from panel.pane import (
+    PNG, Bokeh, Matplotlib, PaneBase,
+)
 from panel.tests.util import mpl_available, mpl_figure
 
 
@@ -94,3 +96,36 @@ def test_matplotlib_pane_svg_render_not_fixed_aspect(document, comm):
     assert model.text.count('width=&quot;100%&quot;')==1
     assert model.text.count('height=&quot;100%&quot;')==1
     assert model.text.count('preserveAspectRatio=&quot;none&quot;')==1
+
+
+
+@mpl_available
+def test_matplotlib_pane_high_dpi_png_rendered_at_twice_dpi(document, comm):
+    fig = mpl_figure()
+    hidpi = pn.pane.Matplotlib(fig, dpi=144)
+    lodpi = pn.pane.Matplotlib(fig, dpi=144, high_dpi=False)
+    hidpi_width, _ = PNG._imgshape(hidpi._data(fig))
+    lodpi_width, _ = PNG._imgshape(lodpi._data(fig))
+    assert abs(hidpi_width - 2 * lodpi_width) <= 1
+
+
+@mpl_available
+def test_matplotlib_pane_high_dpi_png_displayed_at_dpi_size(document, comm):
+    fig = mpl_figure()
+    hidpi = pn.pane.Matplotlib(fig, dpi=144).get_root(document, comm=comm)
+    lodpi = pn.pane.Matplotlib(fig, dpi=144, high_dpi=False).get_root(document, comm=comm)
+    assert (hidpi.width, hidpi.height) == (lodpi.width, lodpi.height)
+
+
+@mpl_available
+def test_matplotlib_pane_high_dpi_disabled(document, comm):
+    pane = pn.pane.Matplotlib(mpl_figure(), dpi=144, high_dpi=False)
+    model = pane.get_root(document, comm=comm)
+    assert (model.width, model.height) == PNG._imgshape(pane._data(pane.object))
+
+
+@mpl_available
+def test_matplotlib_pane_high_dpi_explicit_width(document, comm):
+    pane = pn.pane.Matplotlib(mpl_figure(), dpi=144, width=300)
+    model = pane.get_root(document, comm=comm)
+    assert model.width == 300

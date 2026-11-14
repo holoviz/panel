@@ -36,6 +36,10 @@ export class TabsView extends BkTabsView {
 
   override connect_signals(): void {
     super.connect_signals()
+    this.on_transitive_change(this.model.properties.tabs, () => {
+      this._update_headers()
+      this.update_active()
+    }, {signal: (tab: any) => tab.properties.title.change})
     let view: any = this
     while (view != null) {
       if (view.model.type.endsWith("Tabs")) {

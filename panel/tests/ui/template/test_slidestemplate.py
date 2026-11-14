@@ -35,3 +35,15 @@ def test_slides_template_updates(page):
     expect(page.locator(".markdown").locator("div")).to_have_text('Initial\n')
     md.object = 'Updated'
     expect(page.locator(".markdown").locator("div")).to_have_text('Updated\n')
+
+
+def test_slides_template_main_max_width(page):
+    tmpl = SlidesTemplate(main_max_width='600px')
+    tmpl.main.append(Markdown('Initial'))
+
+    serve_component(page, tmpl)
+
+    expect(page.locator(".markdown")).to_be_visible()
+    box = page.locator(".reveal").bounding_box()
+    assert box['height'] > 50
+    assert box['width'] <= 600

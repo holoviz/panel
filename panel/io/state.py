@@ -31,7 +31,7 @@ from bokeh.document.locking import UnlockedDocumentProxy
 from bokeh.io import curdoc as _curdoc
 from pyviz_comms import CommManager as _CommManager
 
-from ..util import decode_token, edit_readonly, parse_timedelta
+from ..util import decode_token, parse_timedelta
 from ..util.warnings import deprecated
 from .logging import LOG_SESSION_RENDERED, LOG_USER_MSG
 
@@ -94,6 +94,17 @@ class _Undefined: pass
 _tasks: set[asyncio.Task] = set()
 
 
+def _run_without_document_lock(fn, /, *args, **kwargs):
+    # Workers may inherit the submitter's context when they are spawned
+    # (sys.flags.thread_inherit_context), which must not make them count
+    # as holding the document lock.
+    token = _state._document_lock.set(None)
+    try:
+        return fn(*args, **kwargs)
+    finally:
+        _state._document_lock.reset(token)
+
+
 class _SharedThreadPoolExecutor(ThreadPoolExecutor):
     """
     Thread pool used both by Panel's ``state.execute(schedule='thread')`` and,
@@ -105,6 +116,9 @@ class _SharedThreadPoolExecutor(ThreadPoolExecutor):
     explicitly via ``config._set_thread_pool`` / ``state.reset`` by passing
     ``_shared=False``.
     """
+
+    def submit(self, fn, /, *args, **kwargs):
+        return super().submit(_run_without_document_lock, fn, *args, **kwargs)
 
     def shutdown(self, wait=True, *, cancel_futures=False, _shared=True):
         if _shared:
@@ -143,9 +157,6 @@ class _state(param.Parameterized):
     _base_url = param.String(default='/', readonly=True, doc="""
        Base URL for all server paths.""")
 
-    _busy_counter = param.List(default=[], item_type=tuple, doc="""
-       Active callbacks currently being processed as (event_id, started_at).""")
-
     _memoize_cache = param.Dict(default={}, doc="""
        A dictionary used by the cache decorator.""")
 
@@ -156,6 +167,12 @@ class _state(param.Parameterized):
 
     # Holds temporary curdoc overrides per thread
     _curdoc: ContextVar[Document | None] = ContextVar('curdoc', default=None)
+
+    # A token identifying the document lock acquisition the current
+    # context runs under, matched against the token of the acquisition
+    # each session is currently held by
+    _document_lock: ContextVar[object | None] = ContextVar('document_lock', default=None)
+    _document_lock_owners: t.ClassVar[WeakKeyDictionary[ServerSession, object]] = WeakKeyDictionary()
 
     # Whether to hold comm events
     _hold: bool = False
@@ -244,6 +261,10 @@ class _state(param.Parameterized):
     # inline resources, keyed by the url they replace.
     _inline_stylesheets: t.ClassVar[WeakKeyDictionary[Document, dict[str, InlineStyleSheet]]] = WeakKeyDictionary()
 
+    # Loading indicator CSS shared by all models on a Document, keyed by
+    # the CSS text, so it is serialized once instead of inline per model.
+    _loading_stylesheets: t.ClassVar[WeakKeyDictionary[Document, dict[str, InlineStyleSheet]]] = WeakKeyDictionary()
+
     # Loaded extensions
     _extensions_: t.ClassVar[WeakKeyDictionary[Document, list[str]]] = WeakKeyDictionary()
 
@@ -270,8 +291,14 @@ class _state(param.Parameterized):
     # Watchers
     _watch_events: t.ClassVar[list[asyncio.Event]] = []
     _busy_cleanup_scheduled: t.ClassVar[PeriodicCallback | None] = None
-    # Reentrant since the _busy_counter watcher prunes the counter again
+    # Callbacks currently being processed as event_id -> started_at
+    _busy_counter: t.ClassVar[dict[str, float]] = {}
+    # Reentrant since the busy watcher may process events that touch the counter
     _busy_lock: t.ClassVar[threading.RLock] = threading.RLock()
+    # Held across read, assignment and watcher notification so concurrent
+    # session events neither lose updates nor notify out of order; reentrant
+    # since watchers run synchronously and may update session_info again
+    _session_info_lock: t.ClassVar[threading.RLock] = threading.RLock()
 
     # Types
     _notification_type: t.ClassVar[type[NotificationAreaBase] | None] = None
@@ -336,15 +363,39 @@ class _state(param.Parameterized):
         Whether the calling thread is executing inside a locked Bokeh
         session callback even though it is not the server event loop
         thread itself. Bokeh dispatches such callbacks (e.g.
-        next-tick callbacks) via `loop.run_in_executor`, so the callback
+        next-tick callbacks) via `asyncio.to_thread`, so the callback
         body runs on a worker thread while the session's document lock
         is held for the duration. Mutating Bokeh models is safe in that
         case since no other code can be touching them concurrently, but
         raw socket writes are NOT (see `_on_loop_thread`).
+
+        Only the context the lock was acquired for counts. Another
+        callback holding the lock does not make writes from this
+        thread safe, so ownership is tracked by `_own_document_lock`.
         """
         session = getattr(getattr(self.curdoc, 'session_context', None), 'session', None)
-        session_lock = getattr(session, '_lock', None)
-        return bool(session_lock is not None and session_lock.locked())
+        owner = self._document_lock.get()
+        return owner is not None and session is not None and self._document_lock_owners.get(session) is owner
+
+    @contextmanager
+    def _own_document_lock(self, session: ServerSession) -> Iterator[None]:
+        """
+        Marks the current context as running under the session's
+        document lock. Must only be entered while the lock is held.
+        """
+        owner = object()
+        previous = self._document_lock_owners.get(session)
+        self._document_lock_owners[session] = owner
+        token = self._document_lock.set(owner)
+        try:
+            yield
+        finally:
+            self._document_lock.reset(token)
+            if self._document_lock_owners.get(session) is owner:
+                if previous is None:
+                    del self._document_lock_owners[session]
+                else:
+                    self._document_lock_owners[session] = previous
 
     def _install_thread_pool(self, loop: asyncio.AbstractEventLoop | None = None) -> None:
         """
@@ -430,20 +481,24 @@ class _state(param.Parameterized):
              or self._connected.get(doc))
         )
 
-    @param.depends('_busy_counter', watch=True)
-    def _update_busy_counter(self):
-        self._cleanup_busy_counter()
-        with edit_readonly(self):
-            self.busy = bool(self._busy_counter)
+    def _set_busy(self, busy: bool) -> None:
+        # Flipping readonly on this one parameter is far cheaper than
+        # edit_readonly(self), which toggles every parameter on state.
+        pobj = self.param.busy
+        pobj.readonly = pobj.constant = False
+        try:
+            self.busy = busy
+        finally:
+            pobj.readonly = pobj.constant = True
 
     def _add_busy_event(self, event_id: str) -> None:
         # Busy events are added and removed from any thread, so without the
         # lock a concurrent update could resurrect an event that was removed
         # and leave state.busy stuck until the event expires.
         with self._busy_lock:
-            self._cleanup_busy_counter()
-            with edit_readonly(self):
-                self._busy_counter = [*self._busy_counter, (event_id, time.monotonic())]
+            self._busy_counter[event_id] = time.monotonic()
+            if not self.busy:
+                self._set_busy(True)
             self._schedule_busy_cleanup()
 
     def _remove_busy_event(self, event_id: str) -> None:
@@ -451,13 +506,17 @@ class _state(param.Parameterized):
 
     def _cleanup_busy_counter(self, event_id: str | None = None, timeout: float = 30.0) -> None:
         with self._busy_lock:
-            now = time.monotonic()
-            with edit_readonly(self):
-                self._busy_counter = [
-                    (eid, started_at)
-                    for eid, started_at in self._busy_counter
-                    if now - started_at <= timeout and eid != event_id
-                ]
+            counter = self._busy_counter
+            if event_id is not None:
+                counter.pop(event_id, None)
+            if counter:
+                expired = time.monotonic() - timeout
+                for eid, started_at in list(counter.items()):
+                    if started_at < expired:
+                        del counter[eid]
+            busy = bool(counter)
+            if busy is not self.busy:
+                self._set_busy(busy)
 
     def _schedule_busy_cleanup(self) -> None:
         if _state._busy_cleanup_scheduled:
@@ -488,36 +547,38 @@ class _state(param.Parameterized):
             return
         from .server import logger
         session_id = self.curdoc.session_context.id
-        info = self.session_info
-        session = info['sessions'].get(session_id, {})
-        if session.get('rendered') is not None:
-            return
-        logger.info(LOG_SESSION_RENDERED, id(self.curdoc))
-        # Copy on write so watchers receive distinct old and new values;
-        # only the changed session entry is copied to keep this cheap.
-        self.session_info = {
-            **info,
-            'live': info['live'] + 1,
-            'sessions': {
-                **info['sessions'],
-                session_id: {**session, 'rendered': dt.datetime.now().timestamp()}
+        with self._session_info_lock:
+            info = self.session_info
+            session = info['sessions'].get(session_id, {})
+            if session.get('rendered') is not None:
+                return
+            logger.info(LOG_SESSION_RENDERED, id(self.curdoc))
+            # Copy on write so watchers receive distinct old and new values;
+            # only the changed session entry is copied to keep this cheap.
+            self.session_info = {
+                **info,
+                'live': info['live'] + 1,
+                'sessions': {
+                    **info['sessions'],
+                    session_id: {**session, 'rendered': dt.datetime.now().timestamp()}
+                }
             }
-        }
 
     def _destroy_session(self, session_context):
         session_id = session_context.id
-        info = self.session_info
-        sessions = info['sessions']
-        if session_id in sessions and sessions[session_id]['ended'] is None:
-            session = sessions[session_id]
-            self.session_info = {
-                **info,
-                'live': info['live'] - (session['rendered'] is not None),
-                'sessions': {
-                    **sessions,
-                    session_id: {**session, 'ended': dt.datetime.now().timestamp()}
+        with self._session_info_lock:
+            info = self.session_info
+            sessions = info['sessions']
+            if session_id in sessions and sessions[session_id]['ended'] is None:
+                session = sessions[session_id]
+                self.session_info = {
+                    **info,
+                    'live': info['live'] - (session['rendered'] is not None),
+                    'sessions': {
+                        **sessions,
+                        session_id: {**session, 'ended': dt.datetime.now().timestamp()}
+                    }
                 }
-            }
         doc = session_context._document
 
         if doc in self._periodic:
@@ -546,6 +607,9 @@ class _state(param.Parameterized):
 
         if doc in self._inline_stylesheets:
             del self._inline_stylesheets[doc]
+
+        if doc in self._loading_stylesheets:
+            del self._loading_stylesheets[doc]
 
     @property
     def _current_stack(self):
@@ -1098,8 +1162,10 @@ class _state(param.Parameterized):
         if _state._busy_cleanup_scheduled is not None:
             _state._busy_cleanup_scheduled.stop()
             _state._busy_cleanup_scheduled = None
-        with edit_readonly(self):
-            self._busy_counter = []
+        with self._busy_lock:
+            self._busy_counter.clear()
+            if self.busy:
+                self._set_busy(False)
         self._scheduled.clear()
         if self._thread_pool is not None:
             self._thread_pool.shutdown(wait=True, _shared=False)
@@ -1110,6 +1176,7 @@ class _state(param.Parameterized):
         self._on_session_destroyed.clear()
         self._stylesheets.clear()
         self._inline_stylesheets.clear()
+        self._loading_stylesheets.clear()
         self._scheduled.clear()
         self._periodic.clear()
         self.session_info = {'total': 0, 'live': 0, 'sessions': {}}
@@ -1432,6 +1499,16 @@ class _state(param.Parameterized):
         from .admin import log_terminal
         return log_terminal
 
+    @staticmethod
+    def _notification_js_events() -> dict[str, dict[str, t.Any]]:
+        from panel.config import config
+        js_events = {}
+        if config.ready_notification:
+            js_events['document_ready'] = {'type': 'success', 'message': config.ready_notification, 'duration': 3000}
+        if config.disconnect_notification:
+            js_events['connection_lost'] = {'type': 'error', 'message': config.disconnect_notification}
+        return js_events
+
     @property
     def notifications(self) -> NotificationAreaBase | None:
         if self.curdoc is None:
@@ -1445,11 +1522,7 @@ class _state(param.Parameterized):
         if not (config.notifications and is_session):
             return None if is_session else self._notification
 
-        js_events = {}
-        if config.ready_notification:
-            js_events['document_ready'] = {'type': 'success', 'message': config.ready_notification, 'duration': 3000}
-        if config.disconnect_notification:
-            js_events['connection_lost'] = {'type': 'error', 'message': config.disconnect_notification}
+        js_events = self._notification_js_events()
 
         if _state._notification_type is None:
             from panel.io.notifications import NotificationArea

@@ -1,8 +1,11 @@
 import asyncio
 import datetime as dt
+import gzip
 import logging
 import os
 import pathlib
+import re
+import signal
 import socket
 import subprocess
 import sys
@@ -32,7 +35,7 @@ from panel.io.server import (
 )
 from panel.layout import Row
 from panel.models import HTML as BkHTML
-from panel.models.tabulator import TableEditEvent
+from panel.models.tabulator import TABULATOR_VERSION, TableEditEvent
 from panel.pane import Markdown
 from panel.param import ParamFunction
 from panel.reactive import ReactiveHTML
@@ -162,12 +165,27 @@ def test_server_static_dirs_etag_updates_when_file_changes(tmp_path):
     etag = r1.headers['Etag']
     assert requests.get(url, headers={'If-None-Match': etag}, timeout=30).status_code == 304
 
-    target.write_text('console.log(2)\n')
+    # A different size changes the ETag even where mtimes are coarse
+    target.write_text('console.log("changed")\n')
 
     r2 = requests.get(url, headers={'If-None-Match': etag}, timeout=30)
     assert r2.status_code == 200
-    assert r2.text == 'console.log(2)\n'
+    assert r2.text == 'console.log("changed")\n'
     assert r2.headers['Etag'] != etag
+
+
+def test_server_non_ascii_route_index_display(port):
+    r = serve_and_request(
+        {'/naïve': Markdown('# Title'), '/plain': Markdown('# Plain')},
+        port=port, use_index=True, index=INDEX_HTML, redirect_root=False, suffix='/'
+    )
+
+    content = r.content.decode('utf-8')
+    assert 'href="./na%C3%AFve"' in content
+    assert 'data-search="naïve /naïve"' in content
+    assert '<h2 class="pn-card-title">naïve</h2>' in content
+    assert '<span class="pn-card-path">/naïve</span>' in content
+    assert 'na%c3%afve /na%c3%afve' not in content
 
 def test_server_prefix_root_redirect():
     html = Markdown('# Title')
@@ -364,6 +382,113 @@ def test_server_template_static_resources_with_subpath_and_prefix_relative_url()
     r = serve_and_request({'/subpath/template': template}, prefix='/prefix', suffix="/prefix/subpath/template")
 
     assert f'href="../static/extensions/panel/bundled/bootstraptemplate/bootstrap.css?v={JS_VERSION}"' in r.content.decode('utf-8')
+
+
+def test_server_template_resources_not_duplicated():
+    from panel.template import FastListTemplate, MaterialTemplate
+    apps = {
+        'fast': lambda: FastListTemplate(title='Fast', main=[Markdown('# Title')]),
+        'material': lambda: MaterialTemplate(title='Material', main=[Markdown('# Title')]),
+    }
+    port = serve_and_wait(apps)
+    for app in apps:
+        html = requests.get(f"http://127.0.0.1:{port}/{app}", timeout=30).text
+        urls = re.findall(r'<(?:script|link)[^>]*(?:src|href)="([^"]+)"', html)
+        assert urls
+        assert len(urls) == len(set(urls)), f"Duplicated resources in {app}: {urls}"
+
+
+def test_server_compresses_responses():
+    port = serve_and_wait(Markdown('# Title'))
+    base = f"http://127.0.0.1:{port}"
+
+    page = requests.get(base, headers={'Accept-Encoding': 'gzip'}, timeout=30)
+    assert page.headers['Content-Encoding'] == 'gzip'
+    assert '<h1>Title</h1>' not in page.text and 'Bokeh' in page.text
+
+    url = f"{base}/static/extensions/panel/panel.min.js"
+    with requests.get(url, headers={'Accept-Encoding': 'gzip'}, stream=True, timeout=30) as js:
+        assert js.headers['Content-Encoding'] == 'gzip'
+        compressed = b''.join(js.raw.stream(65536, decode_content=False))
+    identity = requests.get(url, headers={'Accept-Encoding': 'identity'}, timeout=30)
+    assert 'Content-Encoding' not in identity.headers
+    assert identity.content == (DIST_DIR / 'panel.min.js').read_bytes()
+    assert len(compressed) < len(identity.content) / 2
+
+
+def test_server_compress_disabled():
+    port = serve_and_wait(Markdown('# Title'), compress=False)
+    page = requests.get(f"http://127.0.0.1:{port}", headers={'Accept-Encoding': 'gzip'}, timeout=30)
+    assert 'Content-Encoding' not in page.headers
+
+
+def test_server_static_etag_and_range_with_compression():
+    port = serve_and_wait(Markdown('# Title'))
+    url = f"http://127.0.0.1:{port}/static/extensions/panel/panel.min.js"
+
+    r = requests.get(url, headers={'Accept-Encoding': 'gzip'}, timeout=30)
+    assert r.status_code == 200
+    etag = r.headers['ETag']
+    cached = requests.get(url, headers={'Accept-Encoding': 'gzip', 'If-None-Match': etag}, timeout=30)
+    assert cached.status_code == 304
+
+    partial = requests.get(url, headers={'Range': 'bytes=0-99', 'Accept-Encoding': 'identity'}, timeout=30)
+    assert partial.status_code == 206
+    assert partial.headers['Content-Range'].startswith('bytes 0-99/')
+    assert partial.content == (DIST_DIR / 'panel.min.js').read_bytes()[:100]
+
+
+def test_server_caches_versioned_resources():
+    static = {'tests': os.path.dirname(__file__)}
+    port = serve_and_wait(Markdown('# Title'), static_dirs=static)
+    base = f"http://127.0.0.1:{port}"
+
+    def cache_control(path):
+        r = requests.get(f"{base}/{path}", timeout=30)
+        assert r.ok, path
+        return r.headers.get('Cache-Control')
+
+    long_lived = f'max-age={10*365*86400}'
+    # A ?v= cache buster and an exact package version in the path both pin the content
+    assert cache_control(f'static/extensions/panel/css/markdown.css?v={JS_VERSION}') == long_lived
+    assert cache_control(
+        f'static/extensions/panel/bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js'
+    ) == long_lived
+    # A path that may change its contents on upgrade is revalidated by ETag
+    assert cache_control('static/extensions/panel/bundled/datatabulator/luxon/build/global/luxon.min.js') is None
+    assert cache_control('static/extensions/panel/panel.min.js') is None
+    # User resources are not versioned
+    assert cache_control('tests/test_server.py') is None
+
+
+@pytest.mark.parametrize('path', [
+    'bundled/datatabulator/tabulator-tables@6.4.0/dist/js/tabulator.min.js',
+    'bundled\\datatabulator\\tabulator-tables@6.4.0\\dist\\js\\tabulator.min.js',
+])
+def test_versioned_path_matches_native_separators(path):
+    from panel.io.server import _VERSIONED_PATH_RE
+    assert _VERSIONED_PATH_RE.search(path)
+
+
+def test_server_serves_static_files_precompressed():
+    from panel.io.server import _GZIP_CACHE
+    port = serve_and_wait(Markdown('# Title'))
+    url = f"http://127.0.0.1:{port}/static/extensions/panel/panel.min.js"
+    plain = requests.get(url, headers={'Accept-Encoding': 'identity'}, timeout=30)
+    assert 'Content-Encoding' not in plain.headers
+
+    r = requests.get(url, headers={'Accept-Encoding': 'gzip'}, stream=True, timeout=30)
+    body = r.raw.read(decode_content=False)
+    assert r.headers['Content-Encoding'] == 'gzip'
+    assert int(r.headers['Content-Length']) == len(body)
+    assert gzip.decompress(body) == plain.content
+    assert any(key[0].endswith('panel.min.js') for key in _GZIP_CACHE)
+
+    etag = r.headers['Etag']
+    assert requests.get(url, headers={'Accept-Encoding': 'gzip', 'If-None-Match': etag}, timeout=30).status_code == 304
+    partial = requests.get(url, headers={'Accept-Encoding': 'gzip', 'Range': 'bytes=0-99'}, timeout=30)
+    assert partial.status_code == 206
+    assert partial.content == plain.content[:100]
 
 
 def test_server_extensions_on_root(server_implementation):
@@ -1219,6 +1344,19 @@ def test_kill_all_servers(html_server_session, markdown_server_session):
     state.kill_all_servers()
     assert server_1._stopped
     assert server_2._stopped
+
+
+def test_serve_start_false_preserves_sigint_handler(asyncio_loop):
+    handler = lambda *args: None
+    previous = signal.signal(signal.SIGINT, handler)
+    try:
+        server = get_server(Markdown('foo'), port=0, address='127.0.0.1', show=False, start=False)
+        try:
+            assert signal.getsignal(signal.SIGINT) is handler
+        finally:
+            server.stop()
+    finally:
+        signal.signal(signal.SIGINT, previous)
 
 
 def test_async_execute_without_running_loop_reuses_thread_loop():

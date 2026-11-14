@@ -58,9 +58,13 @@ export class CommManager extends Model {
     } else {
       this.ns = (window as any).PyViz
       this.ns.comm_manager.register_target(this.plot_id, this.comm_id, (msg: any) => {
-        for (const view of this.ns.shared_views.get(this.plot_id)) {
+        for (const view of this.ns.shared_views.get(this.plot_id) ?? []) {
           if (view !== this) {
-            view.msg_handler(msg)
+            try {
+              view.msg_handler(msg)
+            } catch (e) {
+              console.error(e)
+            }
           }
         }
         try {
@@ -69,16 +73,51 @@ export class CommManager extends Model {
           console.error(e)
         }
       })
-      this._client_comm = this.ns.comm_manager.get_client_comm(this.plot_id, this.client_comm_id, (msg: any) => this.on_ack(msg))
+      this._client_comm = this.ns.comm_manager.get_client_comm(this.plot_id, this.client_comm_id, (msg: any) => {
+        // Views of the same plot share one client comm and only the view
+        // that opened it receives the acknowledgements
+        for (const view of this.ns.shared_views.get(this.plot_id) ?? []) {
+          if (view !== this) {
+            try {
+              view._unblock()
+            } catch (e) {
+              console.error(e)
+            }
+          }
+        }
+        this.on_ack(msg)
+      })
       this._reconnect = !this._client_comm?.active || false
-      if (this.ns.shared_views == null) {
-        this.ns.shared_views = new Map()
-      }
-      if (this.ns.shared_views.has(this.plot_id)) {
-        this.ns.shared_views.get(this.plot_id).push(this)
-      } else {
-        this.ns.shared_views.set(this.plot_id, [this])
-      }
+      this._register_view()
+    }
+  }
+
+  protected _register_view(): void {
+    if (this.ns == null) {
+      return
+    }
+    if (this.ns.shared_views == null) {
+      this.ns.shared_views = new Map()
+    }
+    const views = this.ns.shared_views.get(this.plot_id)
+    if (views == null) {
+      this.ns.shared_views.set(this.plot_id, [this])
+    } else if (!views.includes(this)) {
+      views.push(this)
+    }
+  }
+
+  protected _unregister_view(): void {
+    this.document?.remove_on_change(this._document_listener)
+    const views = this.ns?.shared_views?.get(this.plot_id)
+    if (views == null) {
+      return
+    }
+    const remaining = views.filter((view: CommManager) => view !== this)
+    if (remaining.length) {
+      this.ns.shared_views.set(this.plot_id, remaining)
+    } else {
+      this.ns.shared_views.delete(this.plot_id)
     }
   }
 
@@ -89,9 +128,22 @@ export class CommManager extends Model {
     if (this.document != null) {
       this.document.on_change(this._document_listener)
     }
+    this._register_view()
+  }
+
+  // Notebook outputs are cleared rather than destroyed, so a disposed view
+  // is only ever detached from its document
+  protected override _doc_detached(): void {
+    this._unregister_view()
+    super._doc_detached()
   }
 
   protected _document_changed(event: DocumentChangedEvent): void {
+    // Changes applied from a Python patch are not synced; echoing them back
+    // would also resend models Python already knows as new models
+    if (!event.sync) {
+      return
+    }
     // Filter out changes to attributes that aren't server-visible
     if (event instanceof ModelChangedEvent && !event.model.properties[event.attr].syncable) {
       return
@@ -138,13 +190,16 @@ export class CommManager extends Model {
     if ((this.document == null) || (this._client_comm == null)) {
       return
     }
+    if (this._event_buffer.length === 0) {
+      return
+    }
     const patch = this.document.create_json_patch(this._event_buffer)
     this._event_buffer = []
     const message = {...Message.create("PATCH-DOC", {}, patch)}
     const buffers: ArrayBuffer[] = []
     this._extract_buffers(message.content, buffers)
     this._client_comm.send(message, {}, buffers)
-    for (const view of this.ns.shared_views.get(this.plot_id)) {
+    for (const view of this.ns.shared_views.get(this.plot_id) ?? []) {
       if (view !== this && view.document != null) {
         view.document.apply_json_patch(patch, [], this.id)
       }
@@ -153,13 +208,10 @@ export class CommManager extends Model {
 
   override disconnect_signals(): void {
     super.disconnect_signals()
-    this.ns.shared_views.shared_views.delete(this.plot_id)
+    this._unregister_view()
   }
 
-  on_ack(msg: any) {
-    // Receives acknowledgement from Python, processing event
-    // and unblocking Comm if event queue empty
-    const metadata = msg.metadata
+  protected _unblock(): void {
     if (this._event_buffer.length > 0) {
       this._blocked = true
       this._timeout = Date.now()+this.timeout
@@ -167,6 +219,13 @@ export class CommManager extends Model {
     } else {
       this._blocked = false
     }
+  }
+
+  on_ack(msg: any) {
+    // Receives acknowledgement from Python, processing event
+    // and unblocking Comm if event queue empty
+    const metadata = msg.metadata
+    this._unblock()
     if ((metadata.msg_type == "Ready") && metadata.content) {
       // eslint-disable-next-line no-console
       console.log("Python callback returned following output:", metadata.content)

@@ -187,3 +187,24 @@ def test_is_viewable_parameter():
     assert is_viewable_param(example.param.l_item_types_viewable)
     assert not is_viewable_param(example.param.l_item_types_not_viewable)
     assert not is_viewable_param(example.param.l_item_types_not_viewable2)
+
+
+def test_viewable_design_and_loading_watchers():
+    from panel.io.loading import LOADING_INDICATOR_CSS_CLASS
+    from panel.theme import Bootstrap, Native
+
+    md = Markdown('x')
+    assert getattr(md, '_assigned_design', None) is None
+
+    md.design = Bootstrap
+    assert isinstance(md._design, Bootstrap)
+
+    md.design = None
+    assert isinstance(md._design, Native)
+
+    md.loading = True
+    assert LOADING_INDICATOR_CSS_CLASS in md.css_classes
+
+    md.param.update(loading=False, design=Bootstrap)
+    assert LOADING_INDICATOR_CSS_CLASS not in md.css_classes
+    assert isinstance(md._design, Bootstrap)

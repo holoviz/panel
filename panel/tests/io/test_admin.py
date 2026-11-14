@@ -48,6 +48,7 @@ def admin_password():
 
 def _log(session, message, level='INFO', app='panel.io.server'):
     log_terminal.write(f'2026-10-03 14:38:04,803 {level}: {app} - Session {session} {message}\n')
+    log_terminal.flush_records()
 
 
 #---------------------------------------------------------------------

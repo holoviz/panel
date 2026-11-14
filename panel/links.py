@@ -210,6 +210,41 @@ class Callback(param.Parameterized):
         return self._source() if self._source else None
 
     @classmethod
+    def _links_new_objects(cls, changed: Viewable, ref: str, old_models) -> bool:
+        """
+        Whether a registered link involves an object added to the changed
+        layout. Layout updates only add links for new children, so this
+        avoids walking every object and model in the document when it is
+        cheap to tell which children are new; True whenever it cannot be.
+        """
+        objects = getattr(changed, 'objects', None)
+        if old_models is None or not isinstance(objects, list) or not cls.registry:
+            return bool(cls.registry)
+        old = {id(model) for model in old_models}
+        added: set[int] = set()
+        hv_pane: type | None = None
+        if 'panel.pane.holoviews' in sys.modules:
+            from .pane.holoviews import HoloViews
+            hv_pane = HoloViews
+        for obj in objects:
+            model = getattr(obj, '_models', {}).get(ref, (None,))[0]
+            if model is not None and id(model) in old:
+                continue
+            for view in obj.select(Viewable):
+                # HoloViews links are registered on elements, not panes
+                if hv_pane is not None and isinstance(view, hv_pane):
+                    return True
+                added.add(id(view))
+            if model is not None:
+                added.update(id(m) for m in model.select({'type': BkModel}))
+        if not added:
+            return False
+        return any(
+            id(src) in added or id(getattr(link, 'target', None)) in added
+            for src, links in list(cls.registry.items()) for link in links
+        )
+
+    @classmethod
     def _process_callbacks(
         cls, root_view: Viewable, root_model: BkModel, changed: Viewable | None = None, old_models=None
     ):
@@ -217,6 +252,8 @@ class Callback(param.Parameterized):
             return
 
         ref = root_model.ref['id']
+        if changed is not None and not cls._links_new_objects(changed, ref, old_models):
+            return
         if changed is not None:
             inspect = root_view.select(Viewable)
             if ref in changed._models:
@@ -302,6 +339,10 @@ class Link(Callback):
     properties = param.Dict(default={}, doc="""
         A dictionary mapping between source specification to target
         specification.""")
+
+    # Whether a missing property on the target model raises or warns;
+    # Panel-generated links (e.g. Reactive.controls) opt out of raising
+    _strict = True
 
     # Whether the link requires a target
     _requires_target = True
@@ -540,10 +581,10 @@ class CallbackGenerator:
         for ch in changes:
             if ch not in properties:
                 msg = f"Could not link non-existent property '{ch}' on {tgt_model} model"
-                if self.error:
+                if self.error and getattr(link, '_strict', True):
                     raise ValueError(msg)
-                else:
-                    warn(msg)
+                warn(msg, PanelUserWarning)
+                continue
             tgt_model.js_on_change(ch, tgt_cb)
         for ev in events:
             tgt_model.js_on_event(ev, tgt_cb)
@@ -615,7 +656,16 @@ class JSCallbackGenerator(CallbackGenerator):
             else:
                 src_prop = src_specs[0]
                 if isinstance(source, Reactive):
+                    event = getattr(source, '_js_events', {}).get(src_prop)
                     src_prop = source._rename.get(src_prop, src_prop)
+                    if event:
+                        src_prop = f'event:{event}'
+                    elif src_prop is None:
+                        raise ValueError(
+                            f"Cannot register a JS callback on parameter {spec!r} of "
+                            f"{type(source).__name__} because it is only available "
+                            "in Python and has no corresponding client-side property."
+                        )
                 src_spec = (None, t.cast("str", src_prop))
         return [(src_spec, (None, None), link.code[spec])]
 

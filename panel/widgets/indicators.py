@@ -1057,9 +1057,14 @@ class LinearGauge(ValueIndicator):
         self.param.value.bounds = self.bounds
 
     @property
+    def _value(self) -> float:
+        # None renders like nan, the same as the Number indicator
+        return float('nan') if self.value is None else self.value
+
+    @property
     def _color_intervals(self):
         vmin, vmax = self.bounds
-        value = self.value
+        value = self._value
         ncolors = len(self.colors) if self.colors else 1
         interval = (vmax-vmin)
         if math.isfinite(value):
@@ -1088,7 +1093,7 @@ class LinearGauge(ValueIndicator):
 
     def _get_data(self, properties):
         vmin, vmax = self.bounds
-        value = self.value
+        value = self._value
         interval = (vmax-vmin)
         colors, values = [], [vmin]
         above = False
@@ -1109,7 +1114,7 @@ class LinearGauge(ValueIndicator):
         value = self.format.format(value=value).replace('nan', self.nan_format)
         return (
             {'y0': values[:-1], 'y1': values[1:], 'color': colors},
-            {'y': [self.value], 'text': [value]}
+            {'y': [self._value], 'text': [value]}
         )
 
     def _get_model(self, doc, root=None, parent=None, comm=None):

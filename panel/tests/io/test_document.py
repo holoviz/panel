@@ -17,6 +17,7 @@ from bokeh.protocol import Protocol
 
 import panel as pn
 
+from panel.io.browser import BrowserInfo
 from panel.io.document import (
     _UNCONNECTED_EVENTS, _WRITE_BLOCK, MockSessionContext, _cleanup_doc,
     _client_has_document, _destroy_document, _is_write_blocked,
@@ -381,6 +382,199 @@ def test_unlocked_dispatches_from_worker_thread():
 
 
 @pytest.mark.xdist_group(name="server")
+def test_unblocked_only_for_document_lock_holder():
+    """
+    While a locked callback holds the document lock on a worker thread,
+    only that thread may write to the Document directly. Any other
+    thread has to schedule its changes, otherwise Bokeh raises because
+    the writes race with the holder releasing the lock.
+    """
+    slider = IntSlider()
+
+    serve_and_request(slider)
+    wait_until(lambda: bool(slider._documents))
+
+    doc = list(slider._documents)[0]
+    session = doc.session_context.session
+    asyncio_loop = doc.session_context.server_context.application_context.io_loop.asyncio_loop
+    state._connected[doc] = True
+
+    entered, release = threading.Event(), threading.Event()
+    seen = {}
+
+    def holder():
+        with set_curdoc(doc):
+            seen['holder'] = state._unblocked(doc)
+        entered.set()
+        release.wait(timeout=5)
+
+    def other():
+        with set_curdoc(doc):
+            seen['other'] = state._unblocked(doc)
+
+    async def trigger():
+        await session.with_document_locked(holder)
+
+    future = asyncio.run_coroutine_threadsafe(trigger(), asyncio_loop)
+    try:
+        assert entered.wait(timeout=5)
+        thread = threading.Thread(target=other)
+        thread.start()
+        thread.join()
+    finally:
+        release.set()
+    future.result(timeout=5)
+
+    assert seen == {'holder': True, 'other': False}
+
+    # Once released the holder's context no longer counts as owning the lock
+    with set_curdoc(doc):
+        assert not state._document_lock_held
+
+
+@pytest.mark.xdist_group(name="server")
+def test_unlocked_writes_immediately_only_for_document_lock_holder(monkeypatch):
+    """
+    Only the context holding the document lock may serialize and write
+    its events right away. Another thread using unlocked() while the
+    lock is held must leave its events to the holder's pending writes.
+    """
+    import panel.io.document as document
+
+    slider = IntSlider()
+
+    serve_and_request(slider)
+    wait_until(lambda: bool(slider._documents))
+
+    doc, model = list(slider._documents.items())[0]
+    session = doc.session_context.session
+    asyncio_loop = doc.session_context.server_context.application_context.io_loop.asyncio_loop
+    monkeypatch.setitem(state._loaded, doc, True)
+
+    socket_writes, bokeh_writes = [], []
+
+    async def send_message(message):
+        bokeh_writes.append(message)
+
+    conn = _FakeConn(lock_held=False)
+    conn.protocol = Protocol()
+    conn.send_message = send_message
+    monkeypatch.setattr(session, '_subscribed_connections', {conn})
+    monkeypatch.setitem(
+        extra_socket_handlers, _FakeSocket,
+        lambda conn, msg=None: socket_writes.append(msg) or []
+    )
+
+    written = []
+    write_from_worker_thread = document._write_from_worker_thread
+
+    def spy(doc, connections, events):
+        result = write_from_worker_thread(doc, connections, events)
+        written.append(result)
+        return result
+
+    monkeypatch.setattr(document, '_write_from_worker_thread', spy)
+
+    entered, release = threading.Event(), threading.Event()
+    pending = {}
+
+    def holder():
+        with set_curdoc(doc), unlocked():
+            model.value = 1
+        pending['holder'] = len(session._pending_writes)
+        entered.set()
+        release.wait(timeout=5)
+
+    def other():
+        with set_curdoc(doc), unlocked():
+            model.value = 2
+        pending['other'] = len(session._pending_writes)
+
+    async def trigger():
+        await session.with_document_locked(holder)
+
+    future = asyncio.run_coroutine_threadsafe(trigger(), asyncio_loop)
+    try:
+        assert entered.wait(timeout=5)
+        thread = threading.Thread(target=other)
+        thread.start()
+        thread.join()
+    finally:
+        release.set()
+    future.result(timeout=5)
+
+    assert written == [True, False]
+    assert pending == {'holder': 0, 'other': 1}
+    wait_until(lambda: len(socket_writes) == 1 and len(bokeh_writes) == 1)
+
+
+@pytest.mark.xdist_group(name="server")
+def test_unblocked_only_for_patch_holder(threads):
+    """
+    While a client patch is applied on a worker thread only that thread
+    may write to the Document directly, other pool threads must schedule.
+    """
+    slider = IntSlider()
+
+    serve_and_request(slider)
+    wait_until(lambda: bool(slider._documents))
+
+    doc = list(slider._documents)[0]
+    session = doc.session_context.session
+    asyncio_loop = doc.session_context.server_context.application_context.io_loop.asyncio_loop
+    state._connected[doc] = True
+
+    seen = {}
+
+    def other():
+        with set_curdoc(doc):
+            seen['other'] = state._unblocked(doc)
+
+    class Patch:
+        def apply_to_document(self, document, setter):
+            with set_curdoc(document):
+                seen['holder'] = state._unblocked(document)
+            state._thread_pool.submit(other).result(timeout=5)
+
+    class Connection:
+        def ok(self, message):
+            return None
+
+    future = asyncio.run_coroutine_threadsafe(
+        session._handle_patch(Patch(), Connection()), asyncio_loop
+    )
+    future.result(timeout=5)
+
+    assert seen == {'holder': True, 'other': False}
+
+
+def test_own_document_lock_restores_outer_owner():
+    class Session:
+        pass
+
+    session = Session()
+    with state._own_document_lock(session):
+        outer = state._document_lock_owners[session]
+        with state._own_document_lock(session):
+            assert state._document_lock_owners[session] is not outer
+        assert state._document_lock_owners[session] is outer
+    assert session not in state._document_lock_owners
+
+
+def test_thread_pool_tasks_do_not_inherit_document_lock():
+    from panel.io.state import _run_without_document_lock
+
+    seen = []
+    token = state._document_lock.set(object())
+    try:
+        _run_without_document_lock(lambda: seen.append(state._document_lock.get()))
+    finally:
+        state._document_lock.reset(token)
+
+    assert seen == [None]
+
+
+@pytest.mark.xdist_group(name="server")
 def test_threaded_hold_does_not_boomerang_python_changes():
     """
     A Python-side change made inside a hold on a worker thread is
@@ -693,3 +887,285 @@ def test_init_doc_keeps_unsent_models_new_once():
 
     init_doc(doc)
     assert doc.apply_json_patch is wrapper
+
+
+def test_comm_patch_with_multiple_changes_syncs_all_properties():
+    doc = Document()
+    comm = state._comm_manager.get_server_comm()
+    info = BrowserInfo()
+    model = info._render_model(doc, comm)
+    doc.unhold()
+
+    doc.hold()
+    for attr, value in [
+        ('dark_mode', False), ('device_pixel_ratio', 2.0),
+        ('language', 'en'), ('timezone', 'Europe/Berlin'),
+    ]:
+        model.set_from_json(attr, value, setter=comm.id)
+    doc.unhold()
+
+    assert info.dark_mode is False
+    assert info.device_pixel_ratio == 2.0
+    assert info.language == 'en'
+    assert info.timezone == 'Europe/Berlin'
+    assert doc.callbacks._held_events == []
+
+
+def test_comm_patch_syncs_changes_across_models():
+    doc = Document()
+    comm = state._comm_manager.get_server_comm()
+    info = BrowserInfo()
+    info_model = info._render_model(doc, comm)
+    slider = IntSlider(start=0, end=10, value=0)
+    slider_model = slider._render_model(doc, comm)
+    doc.unhold()
+
+    doc.hold()
+    info_model.set_from_json('dark_mode', True, setter=comm.id)
+    slider_model.set_from_json('value', 5, setter=comm.id)
+    doc.unhold()
+
+    assert info.dark_mode is True
+    assert slider.value == 5
+
+
+def test_hold_with_comm_restores_unheld_state(monkeypatch):
+    pushed = []
+    monkeypatch.setattr('panel.io.notebook.push', lambda doc, comm: pushed.append(comm))
+    doc = Document()
+    comm = state._comm_manager.get_server_comm()
+
+    with hold(doc, comm=comm):
+        pass
+
+    assert doc.callbacks.hold_value is None
+    assert pushed == [comm]
+
+
+def test_hold_with_comm_keeps_persistent_hold(monkeypatch):
+    monkeypatch.setattr('panel.io.notebook.push', lambda doc, comm: None)
+    doc = Document()
+    comm = state._comm_manager.get_server_comm()
+    doc.hold('combine')
+
+    with hold(doc, comm=comm):
+        pass
+
+    assert doc.callbacks.hold_value == 'combine'
+
+
+def test_cleanup_doc_releases_document():
+    doc = Document()
+    col = pn.Column(IntSlider(), pn.pane.Markdown('# Title'))
+    col.server_doc(doc)
+    ref = weakref.ref(doc)
+    assert doc in state._locations
+
+    _cleanup_doc(doc)
+
+    assert doc not in state._locations
+    assert not col._documents
+    assert not col._models
+    del doc
+    gc.collect()
+    assert ref() is None
+
+
+def test_cleanup_doc_runs_session_destroyed_callbacks_with_context():
+    doc = Document()
+    col = pn.Column(IntSlider())
+    col.server_doc(doc)
+    contexts = []
+    doc.on_session_destroyed(contexts.append)
+
+    _cleanup_doc(doc)
+
+    assert len(contexts) == 1
+    assert contexts[0].document is doc
+
+
+def test_destroy_document_releases_document_held_by_model():
+    doc = Document()
+    doc.destroy = partial(_destroy_document, doc)
+    col = pn.Column(IntSlider())
+    col.server_doc(doc)
+    # The Location is not cleaned up with the root and keeps its model
+    location = state._locations[doc]
+    ref = weakref.ref(doc)
+
+    _cleanup_doc(doc)
+    del doc, col
+    gc.collect()
+
+    assert location._models
+    assert ref() is None
+
+
+def test_server_session_destroyed_releases_document():
+    refs = []
+    def app():
+        refs.append(weakref.ref(state.curdoc))
+        return pn.Column(IntSlider(), pn.pane.Markdown('# Title'))
+
+    serve_and_request(
+        app, n=3, check_unused_sessions_milliseconds=200,
+        unused_session_lifetime_milliseconds=200
+    )
+
+    assert len(refs) == 3
+    def collected():
+        gc.collect()
+        return all(ref() is None for ref in refs)
+    wait_until(collected, timeout=10000)
+
+
+@pytest.fixture
+def recompute_count(monkeypatch):
+    from bokeh.document.models import DocumentModelManager
+
+    count = []
+    recompute = DocumentModelManager.recompute
+    def counting_recompute(self):
+        count.append(1)
+        recompute(self)
+    monkeypatch.setattr(DocumentModelManager, 'recompute', counting_recompute)
+    return count
+
+
+def _rendered_column(n=3):
+    doc = Document()
+    column = pn.Column(*[pn.pane.Markdown(f'item {i}') for i in range(n)])
+    root = column.get_root(doc)
+    doc.add_root(root)
+    doc.models.flush_synced()
+    return doc, column, root
+
+
+def _assert_graph_matches_recompute(doc):
+    incremental = dict(doc.models._models)
+    doc.models.recompute()
+    assert incremental == doc.models._models
+
+
+def test_freeze_doc_attaches_appended_models_without_recompute(recompute_count):
+    doc, column, root = _rendered_column()
+    recompute_count.clear()
+    new = pn.Row(pn.pane.Markdown('appended'), pn.widgets.IntSlider())
+    existing = set(doc.models._models)
+
+    with set_curdoc(doc):
+        column.append(new)
+
+    assert not recompute_count
+    models = new._models[root.ref['id']][0].references()
+    assert len(models) > 2
+    for model in models:
+        assert model.document is doc
+        assert doc.models._models[model.id] is model
+        # Stylesheets are shared with the existing children and so were synced before
+        assert (model in doc.models._new_models) == (model.id not in existing)
+    _assert_graph_matches_recompute(doc)
+
+
+def test_freeze_doc_reorder_does_not_recompute(recompute_count):
+    doc, column, root = _rendered_column()
+    recompute_count.clear()
+
+    with set_curdoc(doc):
+        column.objects = column.objects[::-1]
+
+    assert not recompute_count
+    assert [c.text.strip() for c in root.children] == [
+        '&lt;p&gt;item 2&lt;/p&gt;', '&lt;p&gt;item 1&lt;/p&gt;', '&lt;p&gt;item 0&lt;/p&gt;'
+    ]
+    _assert_graph_matches_recompute(doc)
+
+
+def test_freeze_doc_recomputes_when_models_are_removed(recompute_count):
+    doc, column, root = _rendered_column()
+    recompute_count.clear()
+    removed = root.children[0]
+
+    with set_curdoc(doc):
+        column.pop(0)
+
+    assert len(recompute_count) == 1
+    assert removed.document is None
+    assert removed.id not in doc.models._models
+    with set_curdoc(doc):
+        column[0] = pn.pane.Markdown('replaced')
+
+    assert len(recompute_count) == 2
+    _assert_graph_matches_recompute(doc)
+
+
+def test_freeze_doc_recomputes_when_graph_changed_while_frozen(recompute_count):
+    from bokeh.models import CustomJS
+
+    from panel.io.document import freeze_doc
+
+    doc, column, root = _rendered_column()
+    recompute_count.clear()
+    added = pn.pane.Markdown('added')._get_model(doc, root, root)
+    added.name = 'added'
+    children = list(root.children) + [added]
+
+    with freeze_doc(doc, root, {'children': children}):
+        root.children = children
+        root.children[0].js_on_change('text', CustomJS(code=''))
+
+    assert len(recompute_count) == 1
+    callback = root.children[0].js_property_callbacks['change:text'][0]
+    assert callback.document is doc
+    assert added.document is doc
+    assert doc.get_model_by_name('added') is added
+    _assert_graph_matches_recompute(doc)
+
+
+def test_freeze_doc_nested_freezes_recompute_once(recompute_count):
+    from panel.io.document import freeze_doc
+
+    doc, column, root = _rendered_column()
+    recompute_count.clear()
+    outer = pn.pane.Markdown('outer')._get_model(doc, root, root)
+    inner = pn.pane.Markdown('inner')._get_model(doc, root, root)
+    outer.name, inner.name = 'outer', 'inner'
+
+    with freeze_doc(doc, root, {'children': list(root.children) + [outer]}):
+        root.children = list(root.children) + [outer]
+        with freeze_doc(doc, root, {'children': list(root.children) + [inner]}):
+            root.children = list(root.children) + [inner]
+        assert inner.document is None
+
+    assert len(recompute_count) == 1
+    assert outer.document is doc
+    assert inner.document is doc
+    assert doc.get_model_by_name('outer') is outer
+    assert doc.get_model_by_name('inner') is inner
+    _assert_graph_matches_recompute(doc)
+
+
+def test_freeze_doc_releases_freeze_on_error():
+    from panel.io.document import freeze_doc
+
+    doc, column, root = _rendered_column()
+
+    with pytest.raises(RuntimeError):
+        with freeze_doc(doc, root, {'children': []}):
+            raise RuntimeError('boom')
+
+    assert doc.models._freeze_count == 0
+    assert 'invalidate' not in doc.models.__dict__
+
+
+def test_freeze_doc_unchanged_properties_do_not_freeze(recompute_count):
+    from panel.io.document import freeze_doc
+
+    doc, column, root = _rendered_column()
+    recompute_count.clear()
+
+    with freeze_doc(doc, root, {'children': list(root.children), 'width': 100}):
+        assert doc.models._freeze_count == 0
+        root.width = 100
+
+    assert not recompute_count

@@ -554,6 +554,31 @@ def test_markdown_incremental_render_matches_full_render(src, disable_anchors):
         assert pane._render_markdown(src[:i]) == parser.render(src[:i])
     assert pane._render_markdown(src) == parser.render(src)
 
+MATH_STREAM_DOCS = [
+    "intro\n\n$$\na*b*c\n\nd*e*f\n$$\n\ntail\n",
+    "$$\na*b*c\n\n\nd*e*f\n$$\nafter *x*\n\n$$\ng*h*i\n\nj*k*l\n$$\n",
+    "> $$\n> a*b*c\n>\n> d*e*f\n> $$\n\ntail *t*\n",
+    "`$$` and *a*\n\n```\n$$\n*x*\n\n*y*\n```\n\nend *e*\n",
+]
+
+@pytest.mark.parametrize('src', MATH_STREAM_DOCS)
+@pytest.mark.parametrize('disable_math', [False, True])
+def test_markdown_incremental_render_matches_full_render_with_math(src, disable_math):
+    pane = Markdown(disable_math=disable_math, dedent=False)
+    fresh = lambda s: Markdown(disable_math=disable_math, dedent=False)._transform_object(s)
+    for i in range(1, len(src)+1):
+        assert pane._transform_object(src[:i]) == fresh(src[:i])
+    out = ''
+    pane = Markdown(disable_math=disable_math, dedent=False)
+    for line in src.splitlines(True):
+        out += line
+        assert pane._transform_object(out) == fresh(out)
+
+def test_markdown_incremental_render_caches_blocks_around_math():
+    pane = Markdown(disable_math=False, dedent=False)
+    pane._render_markdown("a\n\n$$\nx*y*z\n\nw\n$$\n\nb\n\nc")
+    assert pane._block_cache[1] == "a\n\n$$\nx*y*z\n\nw\n$$\n\nb\n\n"
+
 def test_markdown_incremental_render_caches_leading_blocks():
     pane = Markdown(dedent=False)
     pane._render_markdown("a\n\nb\n\nc")
