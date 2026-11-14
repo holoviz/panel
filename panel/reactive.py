@@ -667,10 +667,17 @@ class Reactive(Syncable, Viewable):
     __abstract = True
 
     def __init__(self, refs=None, **params):
-        for name, pobj in self.param.objects('existing').items():
-            if (name not in self._param__private.explicit_no_refs and
-                not isinstance(pobj, Child)):
-                pobj.allow_refs = True
+        cls = type(self)
+        pobjs = cls.param.objects(False)
+        # Class Parameters are shared by all instances so refs only have to
+        # be enabled once per class; the count catches Parameters added to
+        # the class afterwards via cls.param.add_parameter.
+        if cls.__dict__.get('_refs_enabled') != len(pobjs):
+            no_refs = cls._param__private.explicit_no_refs
+            for name, pobj in pobjs.items():
+                if name not in no_refs and not isinstance(pobj, Child):
+                    pobj.allow_refs = True
+            cls._refs_enabled = len(pobjs)
         if refs is not None:
             self._refs = refs
             if iscoroutinefunction(refs):
