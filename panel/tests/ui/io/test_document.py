@@ -170,3 +170,30 @@ def test_sync_callback_updates_are_sent_before_it_returns(page):
 
     expect(page.locator('.markdown')).to_have_text('Running', timeout=1500)
     expect(page.locator('.markdown')).to_have_text('Done')
+
+
+def test_threaded_periodic_updates_reach_client_without_loss(page, threads):
+    """
+    A periodic callback running on the thread pool updates a different
+    widget on every tick. The updates are applied by locked callbacks
+    the pool thread does not own, which must neither drop nor merge
+    them, so every widget ends up showing its own value.
+    """
+    n = 20
+    panes = [Markdown('pending', css_classes=[f'target-{i}']) for i in range(n)]
+    ticks = {'i': 0}
+
+    def cb():
+        i = ticks['i']
+        ticks['i'] += 1
+        panes[i].object = f'value {i}'
+
+    def app():
+        state.onload(lambda: state.add_periodic_callback(cb, period=1, count=n))
+        return Column(*panes)
+
+    serve_component(page, app)
+
+    for i in range(n):
+        expect(page.locator(f'.target-{i}')).to_have_text(f'value {i}')
+    wait_until(lambda: ticks['i'] == n, page)

@@ -992,7 +992,12 @@ class _state(param.Parameterized):
             future.add_done_callback(self._handle_future_exception)
         elif param.parameterized.iscoroutinefunction(callback):
             param.parameterized.async_executor(callback)
-        elif doc and doc.session_context and (schedule == True or (schedule == 'auto' and not self._unblocked(doc))):
+        elif doc and doc.session_context and schedule == True:
+            # Explicitly scheduled callbacks update models, so they are
+            # batched into one locked callback writing a single message.
+            from .document import schedule_model_update
+            schedule_model_update(doc, callback)
+        elif doc and doc.session_context and schedule == 'auto' and not self._unblocked(doc):
             doc.add_next_tick_callback(self._handle_exception_wrapper(callback, doc))
         else:
             try:

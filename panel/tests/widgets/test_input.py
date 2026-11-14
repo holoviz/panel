@@ -341,6 +341,20 @@ def test_text_input_set_value_none(widget_type, document, comm):
     assert widget.value == ''
     assert widget.value_input == ''
 
+def test_text_input_value_syncs_value_input_in_one_update(document, comm):
+    text = TextInput(value='ABC')
+    text.get_root(document, comm=comm)
+
+    # A Python-side value change carries value_input in the same update,
+    # a frontend change leaves value_input to the frontend
+    assert text._process_param_change({'value': 'X'}) == {'value': 'X', 'value_input': 'X'}
+    text._param__private.syncing.add('value')
+    try:
+        assert text._process_param_change({'value': 'X'}) == {'value': 'X'}
+    finally:
+        text._param__private.syncing.discard('value')
+
+
 def test_text_input_value_input_synced_with_value(document, comm):
     text = TextInput(value='ABC')
 

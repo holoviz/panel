@@ -76,6 +76,13 @@ class _TextInputBase(Widget):
         )
 
     def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
+        if (
+            'value' in params and 'value_input' not in params and
+            'value' not in self._param__private.syncing
+        ):
+            # _sync_value_input updates the parameter afterwards, syncing
+            # the model here sends both in one message.
+            params = dict(params, value_input=params['value'])
         params = super()._process_param_change(params)
         # The bokeh model only accepts str, None renders as an empty input
         for key in ('value', 'value_input'):
