@@ -2,6 +2,7 @@ from bokeh.core.properties import (
     Any, Bool, Dict, Either, Enum, List, String,
 )
 
+from ..config import config
 from ..io.resources import bundled_files
 from ..util import classproperty
 from .layout import HTMLBox
@@ -13,12 +14,12 @@ class QuillInput(HTMLBox):
     """
 
     __css_raw__ = [
-        'https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.bubble.css',
-        'https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css',
+        f'{config.npm_cdn}/quill@2.0.2/dist/quill.bubble.css',
+        f'{config.npm_cdn}/quill@2.0.2/dist/quill.snow.css',
     ]
 
     __javascript_raw__ = [
-        'https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js',
+        f'{config.npm_cdn}/quill@2.0.2/dist/quill.js',
     ]
 
     @classproperty
@@ -35,7 +36,7 @@ class QuillInput(HTMLBox):
 
     __js_require__ = {
         'paths': {
-            'Quill': 'https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill',
+            'Quill': f'{config.npm_cdn}/quill@2.0.2/dist/quill',
         },
         'exports': {
             'Quill': 'Quill'

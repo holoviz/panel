@@ -610,7 +610,11 @@ def http_serve_directory(directory=".", port=0):
     httpd = http.server.HTTPServer((hostname, port), handler, False)
     # Block only for 0.5 seconds max
     httpd.timeout = 0.5
-    httpd.server_bind()
+    try:
+        httpd.server_bind()
+    except Exception:
+        httpd.server_close()
+        raise
 
     address = f"http://{httpd.server_name}:{httpd.server_port}"
 

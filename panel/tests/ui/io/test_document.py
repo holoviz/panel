@@ -1,6 +1,5 @@
 import asyncio
 import threading
-import time
 
 import pytest
 
@@ -156,10 +155,13 @@ def test_sync_callback_updates_are_sent_before_it_returns(page):
     """
     button = Button(label='Click')
     md = Markdown('Idle')
+    release = threading.Event()
 
     def cb(event):
         md.object = 'Running'
-        time.sleep(2)
+        # Outlasts the expectation below, so 'Running' can only be seen
+        # if it was sent while the callback is still running.
+        release.wait(timeout=30)
         md.object = 'Done'
 
     button.on_click(cb)
@@ -168,7 +170,10 @@ def test_sync_callback_updates_are_sent_before_it_returns(page):
 
     page.locator('.bk-btn').click()
 
-    expect(page.locator('.markdown')).to_have_text('Running', timeout=1500)
+    try:
+        expect(page.locator('.markdown')).to_have_text('Running', timeout=10000)
+    finally:
+        release.set()
     expect(page.locator('.markdown')).to_have_text('Done')
 
 

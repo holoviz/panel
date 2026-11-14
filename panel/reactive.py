@@ -657,10 +657,13 @@ class Syncable(Renderable):
             future = state._thread_pool.submit(self._process_bokeh_event, doc, event)
             future.add_done_callback(partial(state._handle_future_exception, doc=doc))
         else:
-            try:
-                self._process_bokeh_event(doc, event)
-            except Exception as e:
-                state._handle_exception(e)
+            # This coroutine runs on the event loop, so processing the event
+            # here would block it until a sync callback returns, holding back
+            # any update the callback makes. A locked next-tick callback runs
+            # on a worker thread instead, like events processed directly.
+            doc.add_next_tick_callback(
+                state._handle_exception_wrapper(partial(self._process_bokeh_event, doc, event), doc)
+            )
 
     def _change_event(self, doc: Document) -> None:
         events = self._events
