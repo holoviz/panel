@@ -4,11 +4,60 @@ import type {StyleSheetLike} from "@bokehjs/core/dom"
 import type * as p from "@bokehjs/core/properties"
 import type {Attrs, Dict} from "@bokehjs/core/types"
 import {entries} from "@bokehjs/core/util/object"
+import type {MathJaxProvider} from "@bokehjs/models/text/providers"
 import {Markup} from "@bokehjs/models/widgets/markup"
+import {version as bokeh_version} from "@bokehjs/version"
 import {PanelMarkupView} from "./layout"
 import {serializeEvent} from "./event-to-object"
+import {loadScript} from "./util"
 
 import html_css from "styles/models/html.css"
+
+// Pairs of the delimiters MathJax's TeX finder processes by default
+const TEX_DELIMITERS = /\$\$[\s\S]*?\$\$|\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\)/
+
+/**
+ * The url of the bokeh-mathjax bundle matching the BokehJS the page loaded,
+ * whether served by the Bokeh server or the CDN, falling back to the CDN
+ * when BokehJS was inlined.
+ */
+function mathjax_bundle_url(): string {
+  for (const script of document.scripts) {
+    const match = /^(.*\/)bokeh(-\d[\w.-]*?)?(\.min)?\.js(?:\?.*)?$/.exec(script.src)
+    if (match != null) {
+      const [, base, version = "", min = ""] = match
+      return `${base}bokeh-mathjax${version}${min}.js`
+    }
+  }
+  const channel = /dev|rc/.test(bokeh_version) ? "dev" : "release"
+  return `https://cdn.bokeh.org/bokeh/${channel}/bokeh-mathjax-${bokeh_version}.min.js`
+}
+
+let mathjax_loading: Promise<boolean> | null = null
+
+/**
+ * Loads the bokeh-mathjax bundle for a page that was served without it,
+ * because none of its text contained math when it was rendered, and
+ * points the provider BokehJS widgets share at it.
+ */
+function load_mathjax(provider: MathJaxProvider): Promise<boolean> {
+  if (provider.MathJax != null) {
+    return Promise.resolve(true)
+  }
+  if (mathjax_loading == null) {
+    mathjax_loading = (async () => {
+      try {
+        await loadScript("text/javascript", mathjax_bundle_url())
+      } catch {
+        return false
+      }
+      provider.status = "not_started"
+      await provider.fetch()
+      return provider.MathJax != null
+    })()
+  }
+  return mathjax_loading
+}
 
 const COPY_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"  fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"  class="icon icon-tabler icons-tabler-outline icon-tabler-clipboard"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M9 5h-2a2 2 0 0 0 -2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-12a2 2 0 0 0 -2 -2h-2" /><path d="M9 3m0 2a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v0a2 2 0 0 1 -2 2h-2a2 2 0 0 1 -2 -2z"/></svg>`
 
@@ -251,6 +300,8 @@ export class HTMLView extends PanelMarkupView {
   // Lowest offset of the text modified since the last DOM update
   protected _dirty: number | null = null
   protected _frame: number | null = null
+  // Whether this view waits for the lazily loaded MathJax bundle
+  protected _mathjax_pending = false
 
   protected readonly _event_listeners: Map<string, Map<string, (event: Event) => void>> = new Map()
 
@@ -304,7 +355,30 @@ export class HTMLView extends PanelMarkupView {
     if (dirty == null || this.container == null) {
       return
     }
-    this._update_blocks(this.model.stream_text, dirty)
+    const html = this.model.stream_text
+    this._ensure_mathjax(html)
+    this._update_blocks(html, dirty)
+  }
+
+  /**
+   * Fetches MathJax when the text contains math but the page was served
+   * without the bundle, typesetting the text once it is available.
+   */
+  protected _ensure_mathjax(text: string): void {
+    if (
+      this._mathjax_pending || this.model.disable_math ||
+      this.provider.MathJax != null || !TEX_DELIMITERS.test(text)
+    ) {
+      return
+    }
+    this._mathjax_pending = true
+    void load_mathjax(this.provider).then((loaded) => {
+      if (loaded) {
+        this._dirty = null
+        this.set_html(this.process_tex())
+      }
+      this._mathjax_pending = !loaded
+    })
   }
 
   /**
@@ -423,7 +497,9 @@ export class HTMLView extends PanelMarkupView {
   }
 
   override process_tex(): string {
-    return this.typeset(html_decode(this.model.text) ?? this.model.text)
+    const text = html_decode(this.model.text) ?? this.model.text
+    this._ensure_mathjax(text)
+    return this.typeset(text)
   }
 
   /**
