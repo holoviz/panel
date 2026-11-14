@@ -149,10 +149,10 @@ _MAX_APP_PATH_CHARS = 2048
 # the token approaches that size so the cause is discoverable. See
 # https://panel.holoviz.org/how_to/authentication/trouble_shooting.html
 WS_TOKEN_SIZE_WARNING_THRESHOLD = 7600
-_ws_token_size_warned: set[str] = set()
+_ws_token_size_warned: set[str | None] = set()
 
 
-def _warn_if_ws_token_too_large(route: str, token: str) -> None:
+def _warn_if_ws_token_too_large(route: str | None, token: str) -> None:
     """
     Warn (once per app route) when the session token is large enough to risk
     rejection by a proxy's request-header size limit.
