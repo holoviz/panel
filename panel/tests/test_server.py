@@ -1,5 +1,6 @@
 import asyncio
 import datetime as dt
+import gzip
 import logging
 import os
 import pathlib
@@ -445,6 +446,27 @@ def test_server_caches_versioned_resources():
 def test_versioned_path_matches_native_separators(path):
     from panel.io.server import _VERSIONED_PATH_RE
     assert _VERSIONED_PATH_RE.search(path)
+
+
+def test_server_serves_static_files_precompressed():
+    from panel.io.server import _GZIP_CACHE
+    port = serve_and_wait(Markdown('# Title'))
+    url = f"http://127.0.0.1:{port}/static/extensions/panel/panel.min.js"
+    plain = requests.get(url, headers={'Accept-Encoding': 'identity'}, timeout=30)
+    assert 'Content-Encoding' not in plain.headers
+
+    r = requests.get(url, headers={'Accept-Encoding': 'gzip'}, stream=True, timeout=30)
+    body = r.raw.read(decode_content=False)
+    assert r.headers['Content-Encoding'] == 'gzip'
+    assert int(r.headers['Content-Length']) == len(body)
+    assert gzip.decompress(body) == plain.content
+    assert any(key[0].endswith('panel.min.js') for key in _GZIP_CACHE)
+
+    etag = r.headers['Etag']
+    assert requests.get(url, headers={'Accept-Encoding': 'gzip', 'If-None-Match': etag}, timeout=30).status_code == 304
+    partial = requests.get(url, headers={'Accept-Encoding': 'gzip', 'Range': 'bytes=0-99'}, timeout=30)
+    assert partial.status_code == 206
+    assert partial.content == plain.content[:100]
 
 
 def test_server_extensions_on_root(server_implementation):

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import asyncio
 import datetime as dt
+import gzip
 import importlib
 import inspect
 import json
@@ -62,7 +63,8 @@ from bokeh.util.token import (
 from tornado.ioloop import IOLoop
 from tornado.process import task_id
 from tornado.web import (
-    HTTPError, RequestHandler, StaticFileHandler, authenticated,
+    GZipContentEncoding, HTTPError, RequestHandler, StaticFileHandler,
+    authenticated,
 )
 from tornado.wsgi import WSGIContainer
 
@@ -1212,7 +1214,77 @@ bokeh.server.tornado.RootHandler = RootHandler  # type: ignore
 _VERSIONED_PATH_RE = re.compile(r'@v?\d+\.\d+\.\d+[\w.+-]*[\\/]')
 
 
-class ExtensionStaticHandler(MultiRootStaticHandler):
+_GZIP_CACHE: dict[tuple[str, int, int], bytes] = {}
+
+_GZIP_CACHE_SIZE = 256
+
+
+class PrecompressedStaticMixin:
+    """
+    Serves compressible static files gzipped from an in-memory cache.
+
+    Tornado's ``compress_response`` gzips every response again on the event
+    loop, which for the megabytes of JavaScript a page loads costs more time
+    than the smaller transfer saves, so each file is compressed once instead.
+    Responses that already carry a ``Content-Encoding`` are left alone by
+    Tornado's transform.
+    """
+
+    async def get(self, path: str, include_body: bool = True) -> None:
+        handled, body = self._precompressed(path)
+        if handled:
+            return
+        if body is None:
+            return await super().get(path, include_body)  # type: ignore[misc]
+        self.set_headers()  # type: ignore[attr-defined]
+        if self.should_return_304():  # type: ignore[attr-defined]
+            self.set_status(304)  # type: ignore[attr-defined]
+            return
+        self.set_header('Content-Encoding', 'gzip')  # type: ignore[attr-defined]
+        self.set_header('Content-Length', len(body))  # type: ignore[attr-defined]
+        if include_body:
+            self.write(body)  # type: ignore[attr-defined]
+
+    def _precompressed(self, path: str) -> tuple[bool, bytes | None]:
+        handler = t.cast('StaticFileHandler', self)
+        request = handler.request
+        if not handler.settings.get('compress_response') or request.method != 'GET':
+            return False, None
+        if 'gzip' not in request.headers.get('Accept-Encoding', '') or request.headers.get('Range'):
+            return False, None
+        handler.path = handler.parse_url_path(path)
+        absolute = handler.validate_absolute_path(
+            handler.root, handler.get_absolute_path(handler.root, handler.path)
+        )
+        if absolute is None:
+            # validate_absolute_path already redirected the request
+            return True, None
+        handler.absolute_path = absolute
+        ctype = handler.get_content_type()
+        if not (ctype.startswith('text/') or ctype in GZipContentEncoding.CONTENT_TYPES):
+            return False, None
+        stat = os.stat(absolute)
+        if stat.st_size < GZipContentEncoding.MIN_LENGTH:
+            return False, None
+        key = (absolute, stat.st_mtime_ns, stat.st_size)
+        body = _GZIP_CACHE.get(key)
+        if body is None:
+            with open(absolute, 'rb') as f:
+                body = gzip.compress(f.read(), compresslevel=GZipContentEncoding.GZIP_LEVEL, mtime=0)
+            if len(_GZIP_CACHE) >= _GZIP_CACHE_SIZE:
+                _GZIP_CACHE.clear()
+            _GZIP_CACHE[key] = body
+        handler.modified = handler.get_modified_time()
+        return False, body
+
+
+class PanelStaticHandler(PrecompressedStaticMixin, StaticHandler):
+    """
+    Serves Bokeh's static resources, compressing each file once.
+    """
+
+
+class ExtensionStaticHandler(PrecompressedStaticMixin, MultiRootStaticHandler):
     """
     Serves the static/extensions/ resources of Panel and other extensions,
     caching versioned urls as long as Bokeh caches its own ``?v=`` urls.
@@ -1227,6 +1299,8 @@ class ExtensionStaticHandler(MultiRootStaticHandler):
 for _i, _pattern in enumerate(toplevel_patterns):
     if _pattern[1] is MultiRootStaticHandler:
         toplevel_patterns[_i] = (_pattern[0], ExtensionStaticHandler, *_pattern[2:])
+    elif _pattern[1] is StaticHandler:
+        toplevel_patterns[_i] = (_pattern[0], PanelStaticHandler, *_pattern[2:])
 del _i, _pattern
 
 
@@ -1282,7 +1356,7 @@ def create_static_handler(prefix, key, app):
         route += _to_non_capturing_groups(key) + "/static/(.*)"
     if app.static_path is not None:
         return (route, StaticFileHandler, {"path" : app.static_path})
-    return (route, StaticHandler, {})
+    return (route, PanelStaticHandler, {})
 
 bokeh.server.tornado.create_static_handler = create_static_handler
 
@@ -1310,7 +1384,7 @@ if (
 # Public API
 #---------------------------------------------------------------------
 
-class ComponentResourceHandler(StaticFileHandler):
+class ComponentResourceHandler(PrecompressedStaticMixin, StaticFileHandler):
     """
     A handler that serves local resources relative to a Python module.
     The handler resolves a specific Panel component by module reference
