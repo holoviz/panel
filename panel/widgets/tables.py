@@ -473,7 +473,8 @@ class BaseTable(ReactiveData, Widget):
         return model
 
     def _update_columns(self, event: param.parameterized.Event, model: Model):
-        if event.name == 'value' and [c.field for c in model.columns] == self._get_fields():
+        fields = [self._field_name(col) for col in self._get_fields()]
+        if event.name == 'value' and [c.field for c in model.columns] == fields:
             # Skip column update if the data has changed but the columns
             # have not
             return
