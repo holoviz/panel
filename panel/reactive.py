@@ -536,6 +536,33 @@ class Syncable(Renderable):
             except Exception:
                 pass
 
+    def _send_event(self, Event: ModelEvent, **event_kwargs: t.Any):
+        """
+        Send an event to the frontend
+
+        Parameters
+        ----------
+        Event: Bokeh.Event
+            The event to send to the frontend
+        event_kwargs: dict
+            Additional keyword arguments to pass to the event
+            This will create the following event:
+            Event(model=model, **event_kwargs)
+        """
+        for ref, (model, _) in self._models.copy().items():
+            if ref not in state._views or ref in state._fake_roots:
+                continue
+            event = Event(model=model, **event_kwargs)
+            _viewable, root, doc, comm = state._views[ref]
+            if comm or state._unblocked(doc) or not doc.session_context:
+                with unlocked():
+                    doc.callbacks.send_event(event)
+                if comm and 'embedded' not in root.tags:
+                    push(doc, comm)
+            else:
+                cb = partial(doc.callbacks.send_event, event)
+                doc.add_next_tick_callback(cb)
+
     def _update_properties(
         self, *events: param.parameterized.Event, doc: Document
     ) -> dict[str, t.Any]:
@@ -1100,33 +1127,6 @@ class Reactive(Syncable, Viewable):
             assert_target_syncable(self, target, mapping)
         return Link(self, target, properties=links, code=code, args=args,
                     bidirectional=bidirectional)
-
-    def _send_event(self, Event: ModelEvent, **event_kwargs: t.Any):
-        """
-        Send an event to the frontend
-
-        Parameters
-        ----------
-        Event: Bokeh.Event
-            The event to send to the frontend
-        event_kwargs: dict
-            Additional keyword arguments to pass to the event
-            This will create the following event:
-            Event(model=model, **event_kwargs)
-        """
-        for ref, (model, _) in self._models.copy().items():
-            if ref not in state._views or ref in state._fake_roots:
-                continue
-            event = Event(model=model, **event_kwargs)
-            _viewable, root, doc, comm = state._views[ref]
-            if comm or state._unblocked(doc) or not doc.session_context:
-                with unlocked():
-                    doc.callbacks.send_event(event)
-                if comm and 'embedded' not in root.tags:
-                    push(doc, comm)
-            else:
-                cb = partial(doc.callbacks.send_event, event)
-                doc.add_next_tick_callback(cb)
 
 
 class SyncableData(Reactive):

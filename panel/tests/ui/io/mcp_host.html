@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>MCP Apps test host</title>
+  <style>
+    body { margin: 0; font-family: sans-serif; }
+    iframe { display: block; width: 600px; height: 200px; border: 0; }
+  </style>
+</head>
+<body>
+  <iframe id="view"></iframe>
+  <script src="mcp_host.js"></script>
+  <script>
+    (function() {
+      var config = JSON.parse(decodeURIComponent(location.hash.slice(1)));
+      var iframe = document.getElementById("view");
+      var host = new MCPAppHost(iframe, {
+        hostInfo: {name: "panel-test-host", version: "1.0.0"},
+        hostCapabilities: {openLinks: {}, serverTools: {}, logging: {}, updateModelContext: {text: {}}, message: {text: {}}},
+        hostContext: config.hostContext || {}
+      });
+
+      window.host = host;
+      window.modelContext = null;
+      window.chatMessages = [];
+      window.serverToolCalls = [];
+
+      host.onRequest("ui/update-model-context", function(params) {
+        window.modelContext = params;
+        return {};
+      });
+      host.onRequest("ui/message", function(params) {
+        window.chatMessages.push(params);
+        return {};
+      });
+      host.onRequest("tools/call", function(params) {
+        window.serverToolCalls.push(params);
+        return {content: [{type: "text", text: "server ran " + params.name}]};
+      });
+      host.onRequest("ui/request-display-mode", function(params) {
+        host.setHostContext({displayMode: params.mode});
+        return {mode: params.mode};
+      });
+
+      host.initialized.then(function() {
+        if (config.toolInput) {
+          host.sendToolInput(config.toolInput);
+        }
+        if (config.toolResult) {
+          host.sendToolResult(config.toolResult);
+        }
+      });
+
+      iframe.src = config.app;
+    })();
+  </script>
+</body>
+</html>

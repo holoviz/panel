@@ -48,3 +48,12 @@ __all__ = (
     "unlocked",
     "with_lock"
 )
+
+
+def __getattr__(name: str):
+    # The MCP Apps bridge is only needed when serving MCP Views, so defer
+    # loading it until it is first accessed.
+    if name == 'mcp':
+        import importlib
+        return importlib.import_module('panel.io.mcp')
+    raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
