@@ -758,10 +758,11 @@ class Reactive(Syncable, Viewable):
         properties['stylesheets'] = stylesheets
 
     def _update_properties(self, *events: param.parameterized.Event, doc: Document) -> dict[str, t.Any]:
-        params, _ = self._design.params(self, doc) if self._design else ({}, None)
         changes = {event.name: event.new for event in events}
-        if 'stylesheets' in changes and 'stylesheets' in params:
-            changes['stylesheets'] = params['stylesheets'] + changes['stylesheets']
+        if 'stylesheets' in changes and self._design:
+            params, _ = self._design.params(self, doc)
+            if 'stylesheets' in params:
+                changes['stylesheets'] = params['stylesheets'] + changes['stylesheets']
         return self._process_param_change(changes)
 
     #----------------------------------------------------------------
