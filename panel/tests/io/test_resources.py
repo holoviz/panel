@@ -1,6 +1,5 @@
 import os
 import re
-import sys
 
 from pathlib import Path
 from urllib.parse import urljoin
@@ -465,39 +464,16 @@ def test_bundle_resources_mathjax_extension_loads_mathjax(document, comm, monkey
     model = Button().get_root(document, comm)
     assert _uses_bundle(bundle_resources([model], Resources(mode='cdn')), 'bokeh-mathjax')
 
-def test_bundle_resources_skips_bokeh_gl_without_webgl_plot(document, comm, monkeypatch):
+def test_bundle_resources_always_loads_bokeh_gl(document, comm, monkeypatch):
+    # A plot added after the page loaded cannot render with webgl unless
+    # the gl bundle was loaded up front, so it is never pruned.
     from bokeh.plotting import figure
 
     from panel.layout import Column
     from panel.pane import Bokeh
     monkeypatch.setattr(extension, '_loaded_extensions', [])
-    if 'holoviews' in sys.modules:
-        from holoviews import Store
-        if 'bokeh' in Store.renderers:
-            monkeypatch.setattr(Store.renderers['bokeh'], 'webgl', False)
     model = Column(Button(), Bokeh(figure())).get_root(document, comm)
-    assert not _uses_bundle(bundle_resources([model], Resources(mode='cdn')), 'bokeh-gl')
-
-def test_bundle_resources_holoviews_webgl_renderer_loads_bokeh_gl(document, comm, monkeypatch):
-    hv = pytest.importorskip('holoviews')
-    monkeypatch.setattr(extension, '_loaded_extensions', [])
-    renderer = hv.renderer('bokeh')
-    monkeypatch.setattr(renderer, 'webgl', True)
-    model = Button().get_root(document, comm)
     assert _uses_bundle(bundle_resources([model], Resources(mode='cdn')), 'bokeh-gl')
-
-def test_bundle_resources_webgl_plot_loads_bokeh_gl(document, comm, monkeypatch):
-    from bokeh.plotting import figure
-
-    from panel.layout import Column
-    from panel.pane import Bokeh
-    monkeypatch.setattr(extension, '_loaded_extensions', [])
-    model = Column(Bokeh(figure(output_backend='webgl'))).get_root(document, comm)
-    assert _uses_bundle(bundle_resources([model], Resources(mode='cdn')), 'bokeh-gl')
-
-def test_bundle_resources_notebook_loads_bokeh_gl(monkeypatch):
-    monkeypatch.setattr(extension, '_loaded_extensions', [])
-    assert _uses_bundle(bundle_resources(None, Resources(mode='cdn')), 'bokeh-gl')
 
 def test_dedupe_template_resources():
     from bokeh.embed.bundle import URL
