@@ -293,10 +293,21 @@ def concat_rows(obj: t.Any, other: t.Any, rollover: int | None = None) -> t.Any:
     return df.to_native()
 
 
-def _filter_value(value: t.Any, kind: str) -> t.Any:
-    if kind in 'iufb' and not isinstance(value, (list, tuple, set, np.ndarray)):
-        dtype = np.dtype({'i': 'int64', 'u': 'uint64', 'f': 'float64', 'b': 'bool'}[kind])
-        return dtype.type(value).item()
+def _filter_value(value: t.Any, dtype: nw.dtypes.DType) -> t.Any:
+    kind = dtype_kind(dtype)
+    if isinstance(value, (list, tuple, set, np.ndarray)) or value is None:
+        return value
+    elif kind in 'iufb':
+        return {'i': int, 'u': int, 'f': float, 'b': bool}[kind](value)
+    elif kind != 'M':
+        return value
+    if isinstance(value, str):
+        value = dt.datetime.fromisoformat(value)
+    elif isinstance(value, (int, float)) and not isinstance(value, bool):
+        # Tabulator sends datetimes as milliseconds since the epoch
+        value = dt.datetime(1970, 1, 1) + dt.timedelta(milliseconds=value)
+    if is_date(dtype) and isinstance(value, dt.datetime):
+        value = value.date()
     return value
 
 
@@ -356,7 +367,8 @@ def header_filter_exprs(
                 continue
 
         col = nw.col(col_name)
-        val = _filter_value(val, dtype_kind(schema[col_name]))
+        if op not in ('like', 'starts', 'ends', 'keywords', 'regex'):
+            val = _filter_value(val, schema[col_name])
         text = col.cast(nw.String).str.to_lowercase()
         if op == '=':
             expr = col == val
