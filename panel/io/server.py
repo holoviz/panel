@@ -87,6 +87,7 @@ from .liveness import LivenessHandler
 from .loading import _loading_css_classes
 from .logging import LOG_SESSION_CREATED
 from .pages import page_theme
+from .proxy import login_redirect_url, normalize_root_path
 from .reload import record_modules
 from .resources import (
     BASE_TEMPLATE, CDN_DIST, COMPONENT_PATH, DIST_DIR, ERROR_TEMPLATE,
@@ -779,6 +780,7 @@ class Server(BokehServer):
         # stylesheets served to clients accepting it.
         kwargs.setdefault('compress_response', True)
         super().__init__(*args, **kwargs)
+        self._tornado.use_xheaders = bool(kwargs.get('use_xheaders'))  # type: ignore[attr-defined]
         self._autoreload_stop_event = None
         if state._admin_context:
             state._admin_context._loop = self._loop
@@ -844,9 +846,9 @@ class LoginUrlMixin:
 
         '''
         if self.application.auth_provider.get_login_url is not None:
-            return '.' + self.application.auth_provider.get_login_url(self)
+            return login_redirect_url(self, self.application.auth_provider.get_login_url(self))
         if self.application.auth_provider.login_url is not None:
-            return '.' + self.application.auth_provider.login_url
+            return login_redirect_url(self, self.application.auth_provider.login_url)
         raise RuntimeError('login_url or get_login_url() must be supplied when authentication hooks are enabled')
 
 
@@ -1304,18 +1306,7 @@ for _i, _pattern in enumerate(toplevel_patterns):
 del _i, _pattern
 
 
-class AuthenticatedStaticFileHandler(StaticFileHandler):
-
-    def get_login_url(self):
-        ''' Delegates to``get_login_url`` method of the auth provider, or the
-        ``login_url`` attribute.
-
-        '''
-        if self.application.auth_provider.get_login_url is not None:
-            return self.application.auth_provider.get_login_url(self)
-        if self.application.auth_provider.login_url is not None:
-            return self.application.auth_provider.login_url
-        raise RuntimeError('login_url or get_login_url() must be supplied when authentication hooks are enabled')
+class AuthenticatedStaticFileHandler(LoginUrlMixin, StaticFileHandler):
 
     def get_current_user(self):
         ''' Delegate to the synchronous ``get_user`` method of the auth
@@ -1890,7 +1881,7 @@ def get_server(
         opts['auth_provider'] = provider
     if root_path:
         with edit_readonly(state):
-            state.base_url = root_path  # type: ignore
+            state.base_url = f'{normalize_root_path(root_path)}/'  # type: ignore
     opts['cookie_path'] = config.cookie_path
     opts['cookie_secret'] = config.cookie_secret
     opts['compress_response'] = compress

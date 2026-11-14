@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import base64
 import contextlib
 import http.server
 import json
@@ -16,7 +17,8 @@ import uuid
 
 from functools import partial
 from queue import Empty, Queue
-from threading import Thread
+from threading import Event, Thread
+from urllib.parse import urlencode
 
 import numpy as np
 import param
@@ -24,6 +26,11 @@ import pytest
 import requests
 
 from packaging.version import Version
+from tornado.httpclient import AsyncHTTPClient, HTTPRequest
+from tornado.httpserver import HTTPServer
+from tornado.netutil import bind_sockets
+from tornado.web import Application, RequestHandler
+from tornado.websocket import WebSocketHandler, websocket_connect
 
 import panel as pn
 
@@ -633,6 +640,162 @@ class _SimpleRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.send_header('Cross-Origin-Opener-Policy', 'same-origin')
         self.send_header('Cross-Origin-Embedder-Policy', 'credentialless')
         http.server.SimpleHTTPRequestHandler.end_headers(self)
+
+
+_HOP_BY_HOP = {'connection', 'content-length', 'keep-alive', 'transfer-encoding', 'upgrade'}
+
+
+class _PrefixProxyMixin:
+    """
+    Forwards requests below a path prefix to an upstream server with the
+    prefix stripped, declaring it in the headers a proxy would set.
+    """
+
+    def initialize(self, proxy):
+        self.proxy = proxy
+
+    def _upstream(self, scheme, path):
+        query = f'?{self.request.query}' if self.request.query else ''
+        return f"{scheme}://localhost:{self.proxy['upstream']}/{path}{query}"
+
+    def _upstream_headers(self):
+        headers = {
+            name: value for name, value in self.request.headers.get_all()
+            if name.lower() in ('cookie', 'content-type', 'origin', 'accept')
+        }
+        headers['Host'] = self.proxy.get('host') or self.request.host
+        headers['X-Forwarded-Host'] = self.request.host
+        headers['X-Forwarded-Proto'] = self.request.protocol
+        if self.proxy.get('forward_prefix', True):
+            headers['X-Forwarded-Prefix'] = self.proxy['prefix']
+        headers.update(self.proxy.get('headers', {}))
+        return headers
+
+
+class _PrefixProxyHandler(_PrefixProxyMixin, RequestHandler):
+
+    async def get(self, path):
+        response = await AsyncHTTPClient().fetch(
+            self._upstream('http', path), method=self.request.method,
+            headers=self._upstream_headers(), body=self.request.body or None,
+            follow_redirects=False, raise_error=False, decompress_response=False,
+        )
+        self.proxy['requests'].append((response.code, self.request.uri))
+        self.set_status(response.code)
+        self.clear_header('Content-Type')
+        for name, value in response.headers.get_all():
+            if name.lower() not in _HOP_BY_HOP:
+                self.add_header(name, value)
+        self.finish(response.body)
+
+    post = get
+
+
+class _PrefixProxyWebSocket(_PrefixProxyMixin, WebSocketHandler):
+
+    def check_origin(self, origin):
+        return True
+
+    def select_subprotocol(self, subprotocols):
+        return subprotocols[0] if subprotocols else None
+
+    async def open(self, path):
+        protocols = self.request.headers.get('Sec-WebSocket-Protocol', '')
+        self.upstream = await websocket_connect(
+            HTTPRequest(self._upstream('ws', path), headers=self._upstream_headers()),
+            subprotocols=[p.strip() for p in protocols.split(',') if p.strip()],
+            max_message_size=2**28,
+        )
+        self.proxy['websockets'].append(self.request.path)
+        self._forwarding = asyncio.ensure_future(self._forward_upstream())
+
+    async def _forward_upstream(self):
+        while (message := await self.upstream.read_message()) is not None:
+            await self.write_message(message, binary=isinstance(message, bytes))
+        self.close()
+
+    async def on_message(self, message):
+        await self.upstream.write_message(message, binary=isinstance(message, bytes))
+
+    def on_close(self):
+        self.upstream.close()
+
+
+class _OAuthAuthorizeHandler(RequestHandler):
+
+    def initialize(self, provider):
+        self.provider = provider
+
+    def get(self):
+        redirect_uri = self.get_argument('redirect_uri')
+        self.provider['redirect_uris'].append(redirect_uri)
+        query = urlencode({'code': 'code', 'state': self.get_argument('state')})
+        self.redirect(f'{redirect_uri}?{query}')
+
+
+class _OAuthTokenHandler(RequestHandler):
+
+    def initialize(self, provider):
+        self.provider = provider
+
+    def post(self):
+        user = base64.urlsafe_b64encode(
+            json.dumps({'email': self.provider['user']}).encode()
+        ).rstrip(b'=').decode()
+        token = f'e30.{user}.signature'
+        self.write({'access_token': token, 'id_token': token, 'expires_in': 3600})
+
+
+@contextlib.contextmanager
+def proxied_oauth_provider(prefix='/proxy', **proxy):
+    """
+    Serves a reverse proxy, which strips the path ``prefix`` off the
+    requests it forwards, next to an OAuth provider that signs every
+    user in without asking.
+
+    Yields a dictionary holding the ``port`` both are served on, the
+    ``AUTHORIZE_URL`` and ``TOKEN_URL`` of the provider and the
+    ``redirect_uris`` it was asked to return to. The proxy starts
+    forwarding once the port of the ``upstream`` server is set and
+    records the ``requests`` and ``websockets`` it forwards.
+    """
+    info = dict(
+        proxy, prefix=prefix, upstream=None, user='proxy@panel.org',
+        redirect_uris=[], requests=[], websockets=[]
+    )
+    started = Event()
+
+    def run():
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        app = Application([
+            ('/oauth/authorize', _OAuthAuthorizeHandler, dict(provider=info)),
+            ('/oauth/token', _OAuthTokenHandler, dict(provider=info)),
+            (rf'{prefix}/(.*/ws)', _PrefixProxyWebSocket, dict(proxy=info)),
+            (rf'{prefix}/?(.*)', _PrefixProxyHandler, dict(proxy=info)),
+        ])
+        sockets = bind_sockets(0, '127.0.0.1')
+        server = HTTPServer(app)
+        server.add_sockets(sockets)
+        port = sockets[0].getsockname()[1]
+        info.update(
+            port=port, loop=loop,
+            AUTHORIZE_URL=f'http://localhost:{port}/oauth/authorize',
+            TOKEN_URL=f'http://localhost:{port}/oauth/token',
+        )
+        started.set()
+        loop.run_forever()
+        server.stop()
+        loop.close()
+
+    thread = Thread(target=run, daemon=True)
+    thread.start()
+    started.wait(10)
+    try:
+        yield info
+    finally:
+        info['loop'].call_soon_threadsafe(info['loop'].stop)
+        thread.join(10)
 
 
 @contextlib.contextmanager

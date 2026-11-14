@@ -248,7 +248,11 @@ class Serve(_BkServe):
         ('--root-path', Argument(
             action  = 'store',
             type    = str,
-            help    = "The root path can be used to handle cases where Panel is served behind a proxy."
+            help    = (
+                "The path a reverse proxy serves Panel on if it strips that "
+                "path from the requests it forwards. Overrides the "
+                "X-Forwarded-Prefix header read with --use-xheaders."
+            )
         )),
         ('--login-endpoint', Argument(
             action  = 'store',
@@ -1096,6 +1100,7 @@ class Serve(_BkServe):
 
         asgi = PanelASGI(
             applications,
+            use_xheaders=args.use_xheaders,
             index_enabled=not args.disable_index,
             redirect_root=not args.disable_index_redirect,
             static_dirs=self._static_dirs,
