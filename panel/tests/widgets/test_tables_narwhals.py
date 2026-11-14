@@ -733,6 +733,36 @@ def test_tabulator_patch_with_datetime(backend, document, comm):
     assert model.source.data['a'].tolist() == [1577923200000.0]
 
 
+def test_tabulator_patch_with_datetime64(backend, document, comm):
+    table = Tabulator(backend({'a': [dt.datetime(2020, 1, 1)]}))
+    model = table.get_root(document, comm)
+
+    table.patch({'a': [(0, np.datetime64('2020-01-02'))]})
+
+    assert to_dict(table.value)['a'] == [dt.datetime(2020, 1, 2)]
+    assert model.source.data['a'].tolist() == [1577923200000.0]
+
+
+def test_tabulator_patch_slice_with_scalar(frame, document, comm):
+    table = Tabulator(frame)
+    model = table.get_root(document, comm)
+
+    table.patch({'int': [(slice(0, 2), 0)]})
+
+    assert to_dict(table.value)['int'] == [0, 0, 3]
+    np.testing.assert_array_equal(model.source.data['int'], [0, 0, 3])
+
+
+def test_tabulator_patch_negative_index(frame, document, comm):
+    table = Tabulator(frame)
+    model = table.get_root(document, comm)
+
+    table.patch({'int': [(-1, 30)]})
+
+    assert to_dict(table.value)['int'] == [1, 2, 30]
+    np.testing.assert_array_equal(model.source.data['int'], [1, 2, 30])
+
+
 def test_tabulator_patch_with_frame_errors(frame):
     table = Tabulator(frame)
 
