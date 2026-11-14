@@ -214,11 +214,15 @@ export class PlotlyPlotView extends HTMLBoxView {
   _model_restyles: number = 0
   _hoverdata: any = null
   container: PlotlyHTMLElement
-  _watched_sources: string[]
   _end_relayouting = debounce(() => {
     this._relayouting = false
   }, 2000, false)
   _throttled_resize: any
+  // Frames handed to Plotly for the current plot
+  _frames: any[] | null = null
+  _plot_promise: Promise<void> | null = null
+  _plot_scheduled: boolean = false
+  _new_plot: boolean = false
 
   override initialize(): void {
     super.initialize()
@@ -233,13 +237,11 @@ export class PlotlyPlotView extends HTMLBoxView {
       viewport_update_throttle, _render_count, frames, viewport,
     } = this.model.properties
 
-    this.on_change([data, data_sources, layout], () => {
-      const render_count = this.model._render_count
-      setTimeout(() => {
-        if (this.model._render_count === render_count) {
-          this.model._render_count += 1
-        }
-      }, 250)
+    this.on_change([data, data_sources, layout, _render_count], () => {
+      this._schedule_plot()
+    })
+    this.on_change(frames, () => {
+      this._schedule_plot(true)
     })
     this.on_change(relayout, () => {
       if (this.model.relayout == null) {
@@ -266,15 +268,28 @@ export class PlotlyPlotView extends HTMLBoxView {
     this.on_change(viewport_update_throttle, () => {
       this._updateSetViewportFunction()
     })
-    this.on_change(_render_count, () => {
-      this.plot()
-    })
-    this.on_change(frames, () => {
-      this.plot(true)
-    })
     this.on_change(viewport, () => {
       this._updateViewportFromProperty()
     })
+  }
+
+  /**
+   * Plots once all changes applied in the current task have been
+   * processed, waiting for a plot in progress to finish first.
+   */
+  _schedule_plot(new_plot: boolean = false): void {
+    this._new_plot ||= new_plot
+    if (this._plot_scheduled) {
+      return
+    }
+    this._plot_scheduled = true
+    const run = () => {
+      this._plot_scheduled = false
+      const replot = this._new_plot
+      this._new_plot = false
+      this._plot_promise = this.plot(replot)
+    }
+    (this._plot_promise ?? Promise.resolve()).then(run, run)
   }
 
   override stylesheets(): StyleSheetLike[] {
@@ -294,7 +309,7 @@ export class PlotlyPlotView extends HTMLBoxView {
     set_size(this.container, this.model)
     this._rendered = false
     this.watch_stylesheets()
-    this.plot(true).then(() => {
+    this._plot_promise = this.plot(true).then(() => {
       this.shadow_el.appendChild(this.container)
       this._rendered = true
       this.resize_layout()
@@ -302,6 +317,16 @@ export class PlotlyPlotView extends HTMLBoxView {
         (window as any).Plotly.relayout(this.container, this.model.relayout)
       }
     })
+  }
+
+  /**
+   * The plot size derived from the model and the element, or null while
+   * the element is not laid out.
+   */
+  _plot_size(): [number, number] | null {
+    const width = Math.min(this.model.width || this.el.clientWidth, this.model.max_width || Infinity)
+    const height = Math.min(this.model.height || this.el.clientHeight, this.model.max_height || Infinity)
+    return width > 0 && height > 0 ? [width, height] : null
   }
 
   override style_redraw(): void {
@@ -347,6 +372,13 @@ export class PlotlyPlotView extends HTMLBoxView {
           newLayout[key].range = value.range
         }
       }, {})
+    }
+    // Sizing the plot up front saves the relayout resize_layout would
+    // otherwise issue after every update.
+    const size = this._rendered ? this._plot_size() : null
+    if (size != null) {
+      newLayout.width ??= size[0]
+      newLayout.height ??= size[1]
     }
     return newLayout
   }
@@ -451,24 +483,28 @@ export class PlotlyPlotView extends HTMLBoxView {
     }
     const data = this._trace_data()
     const newLayout = this._layout_data()
+    const {config, frames} = this.model
     this._reacting = true
-    if (new_plot) {
-      const obj = {data, layout: newLayout, config: this.model.config, frames: this.model.frames}
-      await (window as any).Plotly.newPlot(this.container, obj)
-    } else {
-      await (window as any).Plotly.react(this.container, data, newLayout, this.model.config)
-      if (this.model.frames != null) {
-        await (window as any).Plotly.addFrames(this.container, this.model.frames)
+    try {
+      if (new_plot || !this._plotInitialized) {
+        await (window as any).Plotly.newPlot(this.container, {data, layout: newLayout, config, frames})
+      } else if (frames !== this._frames) {
+        // Passing frames makes react replace the existing ones
+        await (window as any).Plotly.react(this.container, {data, layout: newLayout, config, frames})
+      } else {
+        await (window as any).Plotly.react(this.container, data, newLayout, config)
       }
+      this._frames = frames
+      this._updateSetViewportFunction()
+      this._updateViewportProperty()
+      if (!this._plotInitialized) {
+        this._install_callbacks()
+      } else if (!_isHidden(this.container)) {
+        this.resize_layout()
+      }
+    } finally {
+      this._reacting = false
     }
-    this._updateSetViewportFunction()
-    this._updateViewportProperty()
-    if (!this._plotInitialized) {
-      this._install_callbacks()
-    } else if (!_isHidden(this.container)) {
-      (window as any).Plotly.Plots.resize(this.container)
-    }
-    this._reacting = false
     this._plotInitialized = true
   }
 

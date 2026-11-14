@@ -476,3 +476,45 @@ def test_plotly_python_restyle_is_not_echoed(page):
 
     page.wait_for_timeout(500)
     assert echoes == []
+
+
+def test_plotly_js_layout_change_replots_without_roundtrip(page, plotly_2d_plot):
+    serve_component(page, plotly_2d_plot)
+
+    expect(page.locator('.js-plotly-plot .plot-container.plotly')).to_have_count(1)
+
+    model_id = next(iter(plotly_2d_plot._models.values()))[0].id
+    page.evaluate(f"""() => {{
+      const model = Bokeh.index.find_one_by_id('{model_id}').model
+      model.layout = {{...model.layout, title: {{text: 'Updated'}}}}
+    }}""")
+
+    expect(page.locator('.js-plotly-plot .gtitle')).to_have_text('Updated')
+
+    page.wait_for_timeout(500)
+    assert plotly_2d_plot._render_count == 0
+
+
+def test_plotly_data_update_keeps_frames(page):
+    frames = [go.Frame(name='first', data=[go.Scatter(y=[3, 4])])]
+    pane = Plotly(go.Figure(data=[go.Scatter(x=[0, 1], y=[1, 2])], frames=frames))
+
+    serve_component(page, pane)
+
+    gd = page.locator('.js-plotly-plot')
+    wait_until(lambda: gd.evaluate("gd => gd._transitionData._frames.length") == 1, page)
+
+    page.evaluate("""() => {
+      window.__addFrames = 0
+      const addFrames = window.Plotly.addFrames
+      window.Plotly.addFrames = (...args) => { window.__addFrames += 1; return addFrames(...args) }
+    }""")
+
+    pane.object = go.Figure(data=[go.Scatter(x=[0, 1], y=[5, 6])], frames=frames)
+    wait_until(lambda: gd.evaluate("gd => gd.data[0].y[0]") == 5, page)
+    assert gd.evaluate("gd => gd._transitionData._frames.length") == 1
+    assert page.evaluate("() => window.__addFrames") == 0
+
+    new_frames = frames + [go.Frame(name='second', data=[go.Scatter(y=[7, 8])])]
+    pane.object = go.Figure(data=[go.Scatter(x=[0, 1], y=[5, 6])], frames=new_frames)
+    wait_until(lambda: gd.evaluate("gd => gd._transitionData._frames.length") == 2, page)
