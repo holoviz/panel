@@ -76,7 +76,9 @@ class Bokeh(Pane):
         and on_event callbacks in the notebook.""")
 
     theme = param.ClassSelector(default=None, class_=(Theme, str), doc="""
-        Bokeh theme to apply to the plot.""")
+        Bokeh theme to apply to the plot. The theme is set on the Bokeh
+        Document, so it applies to all Bokeh and HoloViews plots rendered
+        in the same Document and the theme set last takes effect.""")
 
     priority: t.ClassVar[float | bool | None] = 0.8
 
@@ -185,10 +187,21 @@ class Bokeh(Pane):
 
         self._models[ref] = (model, parent)
 
-        # Apply theme
+        # Bokeh re-applies the document theme to every model when it is
+        # attached, which discards themes applied per model.
         self._design.apply_bokeh_theme_to_model(model, self.theme)
+        if self.theme:
+            doc.theme = self.theme
 
         return model
+
+    @param.depends('theme', watch=True)
+    def _update_theme(self):
+        if not self.theme:
+            return
+        for (model, _) in self._models.values():
+            if model.document:
+                model.document.theme = self.theme
 
 _width_regex = re.compile(rb'width="[\d\.]+pt"')
 _height_regex = re.compile(rb'height="[\d\.]+pt"')
