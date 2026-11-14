@@ -19,6 +19,7 @@ from panel.tests.util import serve_component, wait_until
 pytestmark = pytest.mark.ui
 
 
+@textual_available
 def test_textual_app(page):
     clicks = []
 
