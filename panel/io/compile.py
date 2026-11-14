@@ -425,7 +425,7 @@ def generate_project(
         else:
             index += f'import * as {name} from "./{imprt}"\n'
 
-        with open(path / f'{imprt}.{ext}', 'w') as component_file:
+        with open(path / f'{imprt}.{ext}', 'w', encoding='utf-8') as component_file:
             component_file.write(code)
         # TODO: Improve merging of dependencies
         dependencies.update(component_deps)
@@ -438,19 +438,19 @@ def generate_project(
             code = shared_module.read_text(encoding='utf-8')
         else:
             code = shared_module
-        with open(path / f'{name}.js', 'w') as shared_file:
+        with open(path / f'{name}.js', 'w', encoding='utf-8') as shared_file:
             shared_file.write(code)
 
     # Create package.json and write to temp directory
     package_json = {"dependencies": dependencies}
     if project_config:
         package_json.update(project_config)
-    with open(path / 'package.json', 'w') as package_json_file:
+    with open(path / 'package.json', 'w', encoding='utf-8') as package_json_file:
         json.dump(package_json, package_json_file, indent=2)
 
     # Generate index file from component imports, exports and export specs
     index_js = generate_index(index, component_names, export_spec)
-    with open(path / 'index.js', 'w') as index_js_file:
+    with open(path / 'index.js', 'w', encoding='utf-8') as index_js_file:
         index_js_file.write(index_js)
 
 

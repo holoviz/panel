@@ -723,7 +723,7 @@ def convert_apps(
 
     if build_index and len(files) >= 1:
         index = make_index(files, manifest=build_pwa, title=title)
-        with open(dest_path / 'index.html', 'w') as f:
+        with open(dest_path / 'index.html', 'w', encoding='utf-8') as f:
             f.write(index)
         if verbose:
             print('Successfully wrote index.html.')
