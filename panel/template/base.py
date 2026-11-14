@@ -272,7 +272,13 @@ class BaseTemplate(param.Parameterized, MimeRenderMixin, ServableMixin, Resource
         col.objects = objs
         preprocess_root.children[:] = models
         preprocess_root.document = document
-        self._design.apply(col, preprocess_root, isolated=False)
+        # The design hook appended to the fake root applies the design to
+        # every render item when the root is preprocessed, so applying it
+        # explicitly as well walked the whole tree twice. Only the document
+        # theme, which the hook does not set, is applied here.
+        theme = self._design.theme
+        if theme and theme.bokeh_theme:
+            document.theme = theme.bokeh_theme
         col._preprocess(preprocess_root)
         col._documents[document] = preprocess_root
         document.on_session_destroyed(col._server_destroy) # type: ignore
