@@ -59,7 +59,6 @@ dependencies = [
     'requests',
     'nh3',
     'typing_extensions',
-    'pandas >=1.2',
     'packaging',
     'tqdm',  # TODO: Should this be optional?
 ]
@@ -72,6 +71,7 @@ HoloViz = "https://holoviz.org/"
 [project.optional-dependencies]
 recommended = [
     'jupyterlab',
+    'pandas >=1.2',
     'holoviews >=1.18.0',
     'matplotlib',
     'pillow',
