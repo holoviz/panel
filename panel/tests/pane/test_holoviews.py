@@ -953,20 +953,26 @@ def test_single_datetime_value():
     assert widget.value == ts
 
 
+@pytest.mark.usefixtures("hv_mpl")
+@mpl_available
 @hv_available
-def test_holoviews_pane_mpl_inherits_renderer_dpi(document, comm):
-    hv.extension("matplotlib")
-
-    hv.output(dpi=100)
-
-    hmap = hv.HoloMap(
-        {1: hv.Curve([1, 2, 3]), 2: hv.Curve([1, 2, 3])},
-        kdims="frame",
-    )
-
+def test_holoviews_pane_mpl_uses_default_renderer_dpi(document, comm):
+    hmap = hv.HoloMap({1: hv.Curve([1, 2, 3]), 2: hv.Curve([1, 2, 3])}, kdims="frame")
     pane = HoloViews(hmap, backend="matplotlib")
     pane.get_root(document, comm=comm)
 
-    plot, child_pane = next(iter(pane._plots.values()))
+    _, child_pane = next(iter(pane._plots.values()))
+    assert child_pane.dpi == hv.Store.renderers["matplotlib"].dpi
 
-    assert child_pane.dpi == plot.renderer.dpi
+
+@pytest.mark.usefixtures("hv_mpl")
+@mpl_available
+@hv_available
+def test_holoviews_pane_mpl_inherits_renderer_dpi(document, comm):
+    hmap = hv.HoloMap({1: hv.Curve([1, 2, 3]), 2: hv.Curve([1, 2, 3])}, kdims="frame")
+    renderer = hv.renderer("matplotlib").instance(dpi=100)
+    pane = HoloViews(hmap, backend="matplotlib", renderer=renderer)
+    pane.get_root(document, comm=comm)
+
+    _, child_pane = next(iter(pane._plots.values()))
+    assert child_pane.dpi == 100
