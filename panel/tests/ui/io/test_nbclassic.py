@@ -249,6 +249,48 @@ def test_nbclassic_component_comm(page, nbclassic_server):
     expect(page.locator('.nbclassic-counter')).to_have_text('1')
 
 
+def test_nbclassic_comm_does_not_echo_python_changes(page, nbclassic_server):
+    """
+    Changes Python pushes to the browser must not be sent back to Python,
+    otherwise models Python just created return as unknown new models.
+    """
+    frames = _record_kernel_frames(page)
+    cell = (
+        "button = pn.widgets.Button(name='Increment')\n"
+        "counter = pn.pane.Markdown('0', css_classes=['nbclassic-echo-counter'])\n"
+        "column = pn.Column()\n"
+        "def increment(event):\n"
+        "    counter.object = str(int(counter.object) + 1)\n"
+        "    column.objects = [pn.pane.Markdown('Python created model', css_classes=['nbclassic-echo-new'])]\n"
+        "button.on_click(increment)\n"
+        "pn.Row(button, counter, column)"
+    )
+    run_notebook(page, nbclassic_server, 'comm_echo', [
+        'import panel as pn\npn.extension(comms="default", inline=False)',
+        cell,
+    ])
+
+    button = page.get_by_role('button', name='Increment')
+    button.click()
+    expect(page.locator('.nbclassic-echo-counter')).to_have_text('1')
+    expect(page.locator('.nbclassic-echo-new')).to_have_count(1)
+    # A second round trip flushes anything the comm queued after the first
+    button.click()
+    expect(page.locator('.nbclassic-echo-counter')).to_have_text('2')
+
+    patches = [
+        payload if isinstance(payload, str) else payload.decode('utf-8', 'replace')
+        for _, direction, payload in frames
+        if direction == 'sent'
+    ]
+    patches = [payload for payload in patches if 'PATCH-DOC' in payload]
+    described = _describe_frames(frames)
+    assert any('"button_click"' in payload for payload in patches), described
+    for payload in patches:
+        assert '"attr":"text"' not in payload, described
+        assert '"attr":"children"' not in payload, described
+
+
 def test_nbclassic_warns_when_extension_missing(page, nbclassic_server):
     """
     The proactive liveness check must warn even when nothing else on the
