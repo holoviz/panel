@@ -35,6 +35,7 @@ from ..util import edit_readonly, isurl
 from . import resources
 from .document import MockSessionContext
 from .mime_render import WriteCallbackStream, exec_with_return, format_mime
+from .model import _drop_unsent_model_changes
 from .state import state
 
 resources.RESOURCE_MODE = 'cdn'
@@ -379,6 +380,8 @@ def _link_docs(pydoc: Document, jsdoc: t.Any) -> None:
         setter = getattr(event, 'setter', None)
         if setter is not None and setter == 'js':
             return
+        elif not _drop_unsent_model_changes(pydoc, [event]):
+            return
         json_patch, buffer_map = _process_document_events(pydoc, [event])
         json_patch = pyodide.ffi.to_js(json_patch, dict_converter=_dict_converter)
         buffer_map = js.Map.new(js.Object.entries(pyodide.ffi.to_js(buffer_map)))
@@ -417,6 +420,8 @@ def _link_docs_worker(doc: Document, dispatch_fn: t.Any, msg_id: str | None = No
     """
     def pysync(event):
         if setter is not None and getattr(event, 'setter', None) == setter:
+            return
+        elif not _drop_unsent_model_changes(doc, [event]):
             return
         json_patch, buffer_map = _process_document_events(doc, [event])
         json_patch = pyodide.ffi.to_js(json_patch, dict_converter=_dict_converter)

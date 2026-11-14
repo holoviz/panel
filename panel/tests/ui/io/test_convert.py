@@ -122,6 +122,30 @@ out = pn.pane.Str('')
 pn.Row(Sender(), out).servable();
 """
 
+linked_range_app = """
+import panel as pn
+
+from bokeh.models import Column, Range1d
+from bokeh.plotting import figure
+from panel.io.document import hold
+
+holder, other = Column(children=[figure()]), figure()
+button = pn.widgets.Button(name='go')
+out = pn.pane.Str('')
+
+def rerender(event):
+    with hold():
+        shared = Range1d(0, 1)
+        holder.children = [figure(x_range=shared)]
+        shared.start = 5
+        other.x_range = shared
+        holder.children = [figure()]
+        out.object = 'done'
+
+button.on_click(rerender)
+pn.Row(button, out, pn.pane.Bokeh(Column(children=[holder, other]))).servable();
+"""
+
 error_app = """
 import panel as pn
 
@@ -247,6 +271,21 @@ def test_pyodide_test_convert_esm_messages_with_binary_data(http_serve, page, ru
     # arrive once and in order.
     expect(page.locator('pre:not([class])')).to_have_text('0:- 1:[1, 2, 3] 2:-')
 
+    assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
+
+
+@pytest.mark.parametrize('runtime', ['pyodide', 'pyodide-worker'])
+def test_pyodide_test_convert_hold_with_linked_range(http_serve, page, runtime):
+    # Applying a worker patch that fails to decode raises an uncaught error, not a console error
+    errors = []
+    page.on("pageerror", lambda error: errors.append(error))
+    msgs = wait_for_app(http_serve, linked_range_app, page, runtime)
+
+    page.click('.bk-btn')
+
+    expect(page.locator('pre:not([class])')).to_have_text('done')
+
+    assert errors == []
     assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
 
