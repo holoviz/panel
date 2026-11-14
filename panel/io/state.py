@@ -264,6 +264,10 @@ class _state(param.Parameterized):
     # inline resources, keyed by the url they replace.
     _inline_stylesheets: t.ClassVar[WeakKeyDictionary[Document, dict[str, InlineStyleSheet]]] = WeakKeyDictionary()
 
+    # Loading indicator CSS shared by all models on a Document, keyed by
+    # the CSS text, so it is serialized once instead of inline per model.
+    _loading_stylesheets: t.ClassVar[WeakKeyDictionary[Document, dict[str, InlineStyleSheet]]] = WeakKeyDictionary()
+
     # Loaded extensions
     _extensions_: t.ClassVar[WeakKeyDictionary[Document, list[str]]] = WeakKeyDictionary()
 
@@ -596,6 +600,9 @@ class _state(param.Parameterized):
 
         if doc in self._inline_stylesheets:
             del self._inline_stylesheets[doc]
+
+        if doc in self._loading_stylesheets:
+            del self._loading_stylesheets[doc]
 
     @property
     def _current_stack(self):
@@ -1160,6 +1167,7 @@ class _state(param.Parameterized):
         self._on_session_destroyed.clear()
         self._stylesheets.clear()
         self._inline_stylesheets.clear()
+        self._loading_stylesheets.clear()
         self._scheduled.clear()
         self._periodic.clear()
         self.session_info = {'total': 0, 'live': 0, 'sessions': {}}

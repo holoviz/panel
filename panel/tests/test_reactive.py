@@ -11,9 +11,10 @@ import pytest
 
 from bokeh.document import Document
 from bokeh.io.doc import patch_curdoc
-from bokeh.models import Div, ImportedStyleSheet
+from bokeh.models import Div, ImportedStyleSheet, InlineStyleSheet
 
 from panel.depends import bind, depends
+from panel.io.loading import loading_css
 from panel.io.resources import stylesheet_url
 from panel.io.state import set_curdoc, state
 from panel.layout import Tabs, WidgetBox
@@ -1088,6 +1089,47 @@ def test_reactive_recreates_destroyed_stylesheet(document, comm):
         if isinstance(stylesheet, ImportedStyleSheet):
             assert stylesheet_url(stylesheet) is not None
             assert id(stylesheet) not in stale_ids
+
+def test_reactive_loading_css_shared_per_document(document, comm):
+    other_doc = Document()
+    widget1, widget2 = TextInput(), TextInput()
+
+    with set_curdoc(document):
+        model1 = widget1.get_root(document, comm)
+        model2 = widget2.get_root(document, comm)
+        model3 = widget1.get_root(other_doc, comm)
+        document.add_root(model1)
+        document.add_root(model2)
+        other_doc.add_root(model3)
+
+    loading1, loading2, loading3 = (m.stylesheets[0] for m in (model1, model2, model3))
+    assert isinstance(loading1, InlineStyleSheet)
+    assert loading1.css == loading_css()
+    assert loading1 is loading2
+    assert loading1 is not loading3
+    assert loading1.document is document
+    assert loading3.document is other_doc
+
+    # A stylesheets update keeps the shared instance
+    widget1.stylesheets = ['.custom { color: red; }']
+    assert model1.stylesheets[0] is loading1
+    assert model3.stylesheets[0] is loading3
+    document.to_json()
+    other_doc.to_json()
+
+def test_reactive_recreates_destroyed_loading_stylesheet(document, comm):
+    with set_curdoc(document):
+        widget1 = TextInput()
+        model1 = widget1.get_root(document, comm)
+        stale = model1.stylesheets[0]
+        assert isinstance(stale, InlineStyleSheet)
+        stale.destroy()
+
+        widget2 = TextInput()
+        model2 = widget2.get_root(document, comm)
+
+    assert model2.stylesheets[0] is not stale
+    assert model2.stylesheets[0].css == loading_css()
 
 def test_reactive_attribute_no_name(document, comm):
     # Regression: https://github.com/holoviz/panel/pull/7655

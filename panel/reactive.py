@@ -29,7 +29,7 @@ import param
 
 from bokeh.core.property.descriptors import UnsetValueError
 from bokeh.model import DataModel
-from bokeh.models import ImportedStyleSheet
+from bokeh.models import ImportedStyleSheet, InlineStyleSheet
 from packaging.version import Version
 from param.parameterized import (
     ParameterizedMetaclass, Watcher, _syncing, iscoroutinefunction,
@@ -42,7 +42,7 @@ from .io.notebook import push, replace_inline_css
 from .io.resource_spec import lazy_load_available, resource_spec
 from .io.resources import (
     CDN_DIST, get_dist_path, patch_stylesheet, process_raw_css,
-    resolve_stylesheet, stylesheet_url,
+    resolve_stylesheet, shared_inline_stylesheet, stylesheet_url,
 )
 from .io.state import set_curdoc, state
 from .models.reactive_html import (
@@ -712,8 +712,13 @@ class Reactive(Syncable, Viewable):
     def _resolve_stylesheets(self, properties: dict[str, t.Any], doc: Document | None) -> None:
         if 'stylesheets' not in properties:
             return
+        loading_cache: dict[str, InlineStyleSheet] | None = None
+        spinner_css: str | None = None
         if doc:
             state._stylesheets[doc] = css_cache = state._stylesheets.get(doc, {})
+            loading_cache = state._loading_stylesheets.setdefault(doc, {})
+            design = getattr(self, '_design', None)
+            spinner_css = design.loading_css() if design else loading_css()
         else:
             css_cache = {}
         if doc and 'dist_url' in doc._template_variables:
@@ -725,7 +730,13 @@ class Reactive(Syncable, Viewable):
         inline_cache = state._inline_stylesheets.get(doc) if doc else None
         stylesheets = []
         for stylesheet in properties['stylesheets']:
-            if isinstance(stylesheet, ImportedStyleSheet):
+            if isinstance(stylesheet, str):
+                # Bokeh serializes a raw CSS string inline on every model,
+                # so the loading indicator CSS is wrapped in one shared
+                # InlineStyleSheet per Document instead.
+                if doc is not None and loading_cache is not None and stylesheet == spinner_css:
+                    stylesheet = shared_inline_stylesheet(stylesheet, loading_cache, doc)
+            elif isinstance(stylesheet, ImportedStyleSheet):
                 url = stylesheet_url(stylesheet)
                 if url is None:
                     # The stylesheet was destroyed along with the Document

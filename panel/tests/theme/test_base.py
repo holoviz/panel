@@ -1,7 +1,7 @@
 import pathlib
 
 from bokeh.document import Document
-from bokeh.models import ImportedStyleSheet
+from bokeh.models import ImportedStyleSheet, InlineStyleSheet
 
 from panel.config import config
 from panel.io.resources import CDN_DIST, stylesheet_url
@@ -130,8 +130,8 @@ def test_design_apply(document, comm):
 
     assert len(model.stylesheets) == 5
     s1, s2, s3, s4, s5 = model.stylesheets
-    assert isinstance(s1, str)
-    assert 'pn-loading' in s1
+    assert isinstance(s1, InlineStyleSheet)
+    assert 'pn-loading' in s1.css
     assert isinstance(s2, ImportedStyleSheet)
     assert _is_loading_css(s2.url)
     assert isinstance(s3, ImportedStyleSheet)
@@ -149,8 +149,8 @@ def test_design_apply_not_isolated(document, comm):
 
     assert len(model.stylesheets) == 4
     s1, s2, s3, s4 = model.stylesheets
-    assert isinstance(s1, str)
-    assert 'pn-loading' in s1
+    assert isinstance(s1, InlineStyleSheet)
+    assert 'pn-loading' in s1.css
     assert isinstance(s2, ImportedStyleSheet)
     assert _is_loading_css(s2.url)
     assert isinstance(s3, ImportedStyleSheet)
@@ -167,8 +167,8 @@ def test_design_apply_inherited(document, comm):
 
     assert len(model.stylesheets) == 5
     s1, s2, s3, s4, s5 = model.stylesheets
-    assert isinstance(s1, str)
-    assert 'pn-loading' in s1
+    assert isinstance(s1, InlineStyleSheet)
+    assert 'pn-loading' in s1.css
     assert isinstance(s2, ImportedStyleSheet)
     assert _is_loading_css(s2.url)
     assert isinstance(s3, ImportedStyleSheet)
@@ -187,8 +187,8 @@ def test_design_apply_url_inherited(document, comm):
 
     assert len(model.stylesheets) == 5
     s1, s2, s3, s4, s5 = model.stylesheets
-    assert isinstance(s1, str)
-    assert 'pn-loading' in s1
+    assert isinstance(s1, InlineStyleSheet)
+    assert 'pn-loading' in s1.css
     assert isinstance(s2, ImportedStyleSheet)
     assert _is_loading_css(s2.url)
     assert isinstance(s3, ImportedStyleSheet)
@@ -207,8 +207,8 @@ def test_design_apply_with_dark_theme(document, comm):
 
     assert len(model.stylesheets) == 5
     s1, s2, s3, s4, s5 = model.stylesheets
-    assert isinstance(s1, str)
-    assert 'pn-loading' in s1
+    assert isinstance(s1, InlineStyleSheet)
+    assert 'pn-loading' in s1.css
     assert isinstance(s2, ImportedStyleSheet)
     assert _is_loading_css(s2.url)
     assert isinstance(s3, ImportedStyleSheet)
@@ -228,8 +228,8 @@ def test_design_apply_with_dark_theme_not_isolated(document, comm):
 
     assert len(model.stylesheets) == 4
     s1, s2, s3, s4 = model.stylesheets
-    assert isinstance(s1, str)
-    assert 'pn-loading' in s1
+    assert isinstance(s1, InlineStyleSheet)
+    assert 'pn-loading' in s1.css
     assert isinstance(s2, ImportedStyleSheet)
     assert _is_loading_css(s2.url)
     assert isinstance(s3, ImportedStyleSheet)
@@ -248,8 +248,8 @@ def test_design_apply_with_dist_url(document, comm):
 
     assert len(model.stylesheets) == 5
     s1, s2, s3, s4, s5 = model.stylesheets
-    assert isinstance(s1, str)
-    assert 'pn-loading' in s1
+    assert isinstance(s1, InlineStyleSheet)
+    assert 'pn-loading' in s1.css
     assert isinstance(s2, ImportedStyleSheet)
     assert s2.url.startswith('https://mock.holoviz.org/css/loading.css?v')
     assert isinstance(s3, ImportedStyleSheet)
