@@ -528,9 +528,19 @@ def global_css(name: str) -> str:
     else:
         return f'{CDN_DIST}css/{name}.css'
 
+_BUNDLED_FILES: dict[tuple, list[str]] = {}
+
 def bundled_files(model: Model, file_type: str = 'javascript') -> list[str]:
-    name = model.__name__.lower()
     raw_files = getattr(model, f"__{file_type}_raw__", [])
+    if config.autoreload:
+        return _bundled_files(model, file_type, raw_files)
+    key = (model, file_type, RESOURCE_MODE, config.npm_cdn, tuple(raw_files))
+    if key in _BUNDLED_FILES:
+        return list(_BUNDLED_FILES[key])
+    return list(remember(_BUNDLED_FILES, key, _bundled_files(model, file_type, raw_files), limit=256))
+
+def _bundled_files(model: Model, file_type: str, raw_files: list[str]) -> list[str]:
+    name = model.__name__.lower()
     for cls in model.__mro__[1:]:
         cls_files = getattr(cls, f"__{file_type}_raw__", [])
         if raw_files is cls_files:
@@ -705,6 +715,25 @@ def _panel_use_tables(roots) -> bool:
     )
 
 
+_EXTENSION_BUNDLES: dict[tuple, list] = {}
+
+def _extension_bundles(resources: BkResources) -> list:
+    """
+    The bundles of every registered extension, cached per resource
+    configuration since computing them reads each extension's package
+    metadata from disk.
+    """
+    if config.autoreload:
+        return _bundle_extensions(None, resources)
+    key = (
+        resources.mode, resources.root_url, resources.minified, _settings.dev,
+        model_registry_key()
+    )
+    if key in _EXTENSION_BUNDLES:
+        return list(_EXTENSION_BUNDLES[key])
+    return list(remember(_EXTENSION_BUNDLES, key, _bundle_extensions(None, resources)))
+
+
 def bundle_resources(
     roots,
     resources: BkResources,
@@ -757,7 +786,7 @@ def bundle_resources(
     css_files.extend(css_resources.css_files)
     css_raw.extend(css_resources.css_raw)
 
-    extensions = _bundle_extensions(None, js_resources)
+    extensions = _extension_bundles(js_resources)
     if reloading:
         extensions = [
             ext for ext in extensions if not (ext.cdn_url is not None and str(ext.cdn_url).startswith('https://unpkg.com/@holoviz/panel@'))
