@@ -112,8 +112,9 @@ class Accordion(NamedListPanel):
             pane = panel(pane, name=name)
             self.objects[i] = pane
 
+        current_ids = {id(obj) for obj in self.objects}
         for obj in old_objects:
-            if obj not in self.objects and id(obj) in self._panels:
+            if id(obj) not in current_ids and id(obj) in self._panels:
                 self._panels[id(obj)]._cleanup(root)
                 del self._panels[id(obj)]
 
