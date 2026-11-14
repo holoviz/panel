@@ -71,6 +71,8 @@ The ``pn.serve`` accepts a number of arguments:
       Whether to start the server on a new Thread
     admin: boolean (default=False)
       Whether to enable the admin panel
+    compress: boolean (default=True)
+      Whether to gzip HTTP responses for clients that accept it
     kwargs: dict
       Additional keyword arguments to pass to Server instance
 ```

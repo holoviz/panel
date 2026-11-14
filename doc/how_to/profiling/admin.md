@@ -10,6 +10,8 @@ The `/admin` panel provides an overview of the current application and provides 
 panel serve my-app.py --admin
 ```
 
+The admin panel uses pandas, which is not installed with Panel, so install it first, e.g. with `pip install pandas`.
+
 When you have successfully enabled it you should be able to visit the `/admin` endpoint of your application, e.g. if you are serving locally on port 5006, visit `http://localhost:5006/admin`. You should now be greeted with the overview page, which provides some details about currently active sessions, running versions and resource usage (if `psutil` is installed):
 
 <img src="../../_static/images/admin_overview.png" width="80%"></img>
@@ -70,5 +72,13 @@ panel serve my-app.py --admin --admin-endpoint="/my-new-admin-endpoint"
 ```
 
 and navigating to [http://localhost:5006/admin](http://localhost:5006/admin) will result in a 404 page, however, navigating to [http://localhost:5006/my-new-admin-endpoint](http://localhost:5006/my-new-admin-endpoint) will result in the admin panel.
+
+The endpoint can also be set with the `PANEL_ADMIN_ENDPOINT` environment variable, or with `pn.config.admin_endpoint` when serving with `pn.serve(..., admin=True)`. The `--admin-endpoint` flag takes precedence over both. Setting the endpoint does not enable the admin panel on its own, so you still need `--admin` or `admin=True`:
+
+```bash
+PANEL_ADMIN_ENDPOINT=/my-new-admin-endpoint panel serve my-app.py --admin
+```
+
+Since the routes are created before your application code runs, setting `pn.config.admin_endpoint` inside an application file has no effect on `panel serve`; use the environment variable or the flag instead.
 
 ## Related Resources

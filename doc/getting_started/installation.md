@@ -5,7 +5,7 @@
 [![PyPI badge](https://img.shields.io/pypi/v/panel.svg)](https://pypi.python.org/pypi/panel)
 [![License badge](https://img.shields.io/pypi/l/panel.svg)](https://github.com/holoviz/panel/blob/main/LICENSE.txt)
 
-Panel is compatible with Python 3.9 or later and works seamlessly on Linux, Windows, and Mac.
+Panel is compatible with Python 3.12 or later and works on Linux, Windows, and Mac.
 
 ## Setup
 
@@ -60,6 +60,10 @@ conda install panel watchfiles
 ::::
 
 :::::
+
+:::{note}
+Panel does not install pandas. Its data components, such as `Tabulator` and `Perspective`, also work with Polars, PyArrow and other DataFrame libraries supported by [Narwhals](https://narwhals-dev.github.io/narwhals/). To install pandas along with Panel's other recommended dependencies (JupyterLab, HoloViews, Matplotlib, Pillow and Plotly), run `pip install "panel[recommended]"`, or add `pandas` to the install command above.
+:::
 
 :::{tip}
 We recommend also installing [`watchfiles`](https://watchfiles.helpmanual.io) while developing. This will provide a significantly better experience when using Panel's autoreload features when activating `--dev` mode. It's not needed for production.
