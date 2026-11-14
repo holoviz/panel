@@ -365,7 +365,7 @@ export class ReactiveESMView extends HTMLBoxView {
    * mounted children; `update_layout` still visits all of them.
    */
   override get layoutable_views(): LayoutDOMView[] {
-    return super.layoutable_views.filter((view) => this._is_mountable(view) && (view as any)._was_built)
+    return super.layoutable_views.filter((view) => this._is_mountable(view) && (view as unknown as {_was_built: boolean})._was_built)
   }
 
   override update_layout(): void {
