@@ -862,10 +862,16 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         if self.loading:
             self._update_loading()
         self._update_design(explicit_none)
-        self._internal_callbacks.extend([
-            self.param.watch(self._update_design, 'design'),
-            self.param.watch(self._update_loading, 'loading')
-        ])
+        self._internal_callbacks.append(
+            self.param.watch(self._update_design_or_loading, ['design', 'loading'])
+        )
+
+    def _update_design_or_loading(self, *events):
+        for event in events:
+            if event.name == 'design':
+                self._update_design()
+            else:
+                self._update_loading()
 
     @staticmethod
     @functools.cache

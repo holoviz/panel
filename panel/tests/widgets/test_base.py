@@ -254,3 +254,19 @@ def test_widget_from_param_expand_button_kwarg():
     widget = RadioButtonGroup.from_param(Test.param.a, expand_button=True)
     assert isinstance(widget, Row)
     assert isinstance(widget[0], RadioButtonGroup)
+
+
+@pytest.mark.filterwarnings('ignore:Widget.name is deprecated:PendingDeprecationWarning')
+def test_widget_name_and_label_stay_in_sync():
+    widget = TextInput(name='a')
+    assert widget.label == 'a'
+
+    widget.label = 'b'
+    assert widget.name == 'b'
+
+    widget.name = 'c'
+    assert widget.label == 'c'
+
+    widget.param.update(name='d', label='e')
+    assert widget.name == 'd'
+    assert widget.label == 'd'

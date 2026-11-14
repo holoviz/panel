@@ -183,10 +183,9 @@ class Widget(Reactive, WidgetBase):
         else:
             self._param_pane = None
         super().__init__(**params)
-        self._internal_callbacks.extend([
-            self.param.watch(self._sync__label, ['name']),
-            self.param.watch(self._sync__name, ['label'])
-        ])
+        self._internal_callbacks.append(
+            self.param.watch(self._sync_name_and_label, ['name', 'label'])
+        )
         if 'value_throttled' in self.param and self._auto_sync_value_throttled:
             self._internal_callbacks.append(
                 self.param.watch(self._sync_value_throttled, 'value')
@@ -203,6 +202,14 @@ class Widget(Reactive, WidgetBase):
             return
         with edit_readonly(self):
             self.value_throttled = event.new
+
+    def _sync_name_and_label(self, *events):
+        events = {event.name: event for event in events}
+        # name wins when both change at once, as it did with separate watchers
+        if 'name' in events:
+            self._sync__label(events['name'])
+        elif 'label' in events:
+            self._sync__name(events['label'])
 
     def _sync__label(self, event):
         if self.label != self.name:
