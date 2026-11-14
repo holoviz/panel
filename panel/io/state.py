@@ -31,7 +31,7 @@ from bokeh.document.locking import UnlockedDocumentProxy
 from bokeh.io import curdoc as _curdoc
 from pyviz_comms import CommManager as _CommManager
 
-from ..util import decode_token, edit_readonly, parse_timedelta
+from ..util import decode_token, parse_timedelta
 from ..util.warnings import deprecated
 from .logging import LOG_SESSION_RENDERED, LOG_USER_MSG
 
@@ -156,9 +156,6 @@ class _state(param.Parameterized):
 
     _base_url = param.String(default='/', readonly=True, doc="""
        Base URL for all server paths.""")
-
-    _busy_counter = param.List(default=[], item_type=tuple, doc="""
-       Active callbacks currently being processed as (event_id, started_at).""")
 
     _memoize_cache = param.Dict(default={}, doc="""
        A dictionary used by the cache decorator.""")
@@ -294,7 +291,9 @@ class _state(param.Parameterized):
     # Watchers
     _watch_events: t.ClassVar[list[asyncio.Event]] = []
     _busy_cleanup_scheduled: t.ClassVar[PeriodicCallback | None] = None
-    # Reentrant since the _busy_counter watcher prunes the counter again
+    # Callbacks currently being processed as event_id -> started_at
+    _busy_counter: t.ClassVar[dict[str, float]] = {}
+    # Reentrant since the busy watcher may process events that touch the counter
     _busy_lock: t.ClassVar[threading.RLock] = threading.RLock()
     # Held across read, assignment and watcher notification so concurrent
     # session events neither lose updates nor notify out of order; reentrant
@@ -482,20 +481,24 @@ class _state(param.Parameterized):
              or self._connected.get(doc))
         )
 
-    @param.depends('_busy_counter', watch=True)
-    def _update_busy_counter(self):
-        self._cleanup_busy_counter()
-        with edit_readonly(self):
-            self.busy = bool(self._busy_counter)
+    def _set_busy(self, busy: bool) -> None:
+        # Flipping readonly on this one parameter is far cheaper than
+        # edit_readonly(self), which toggles every parameter on state.
+        pobj = self.param.busy
+        pobj.readonly = pobj.constant = False
+        try:
+            self.busy = busy
+        finally:
+            pobj.readonly = pobj.constant = True
 
     def _add_busy_event(self, event_id: str) -> None:
         # Busy events are added and removed from any thread, so without the
         # lock a concurrent update could resurrect an event that was removed
         # and leave state.busy stuck until the event expires.
         with self._busy_lock:
-            self._cleanup_busy_counter()
-            with edit_readonly(self):
-                self._busy_counter = [*self._busy_counter, (event_id, time.monotonic())]
+            self._busy_counter[event_id] = time.monotonic()
+            if not self.busy:
+                self._set_busy(True)
             self._schedule_busy_cleanup()
 
     def _remove_busy_event(self, event_id: str) -> None:
@@ -503,13 +506,16 @@ class _state(param.Parameterized):
 
     def _cleanup_busy_counter(self, event_id: str | None = None, timeout: float = 30.0) -> None:
         with self._busy_lock:
-            now = time.monotonic()
-            with edit_readonly(self):
-                self._busy_counter = [
-                    (eid, started_at)
-                    for eid, started_at in self._busy_counter
-                    if now - started_at <= timeout and eid != event_id
-                ]
+            counter = self._busy_counter
+            counter.pop(event_id, None)
+            if counter:
+                expired = time.monotonic() - timeout
+                for eid, started_at in list(counter.items()):
+                    if started_at < expired:
+                        del counter[eid]
+            busy = bool(counter)
+            if busy is not self.busy:
+                self._set_busy(busy)
 
     def _schedule_busy_cleanup(self) -> None:
         if _state._busy_cleanup_scheduled:
@@ -1155,8 +1161,10 @@ class _state(param.Parameterized):
         if _state._busy_cleanup_scheduled is not None:
             _state._busy_cleanup_scheduled.stop()
             _state._busy_cleanup_scheduled = None
-        with edit_readonly(self):
-            self._busy_counter = []
+        with self._busy_lock:
+            self._busy_counter.clear()
+            if self.busy:
+                self._set_busy(False)
         self._scheduled.clear()
         if self._thread_pool is not None:
             self._thread_pool.shutdown(wait=True, _shared=False)

@@ -78,7 +78,7 @@ def test_busy_events_from_concurrent_threads_are_not_lost():
     finally:
         sys.setswitchinterval(switch_interval)
 
-    assert state._busy_counter == []
+    assert state._busy_counter == {}
     assert state.busy is False
 
 
@@ -169,7 +169,7 @@ async def test_periodic_callback_failed_thread_submit_does_not_leak_busy_event()
     finally:
         state._thread_pool = thread_pool
 
-    assert state._busy_counter == []
+    assert state._busy_counter == {}
     assert state.busy is False
 
 
