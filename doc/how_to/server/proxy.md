@@ -58,7 +58,7 @@ With `--use-xheaders` Panel reads the following headers:
 | `X-Forwarded-Prefix` (or `X-Script-Name`) | The path prefix the proxy stripped |
 | `X-Forwarded-For` | The address of the client |
 
-Some proxies set these on their own, e.g. the `StripPrefix` middleware of Traefik adds `X-Forwarded-Prefix`.
+Some proxies set these on their own, e.g. the `StripPrefix` middleware of Traefik adds `X-Forwarded-Prefix`. `X-Script-Name` is only read if `X-Forwarded-Prefix` is not set. If several proxies are chained and each appends to a header, the first value is used. A value that is not a plain host or a plain absolute path is ignored and logged as a warning.
 
 :::{warning}
 Only enable `--use-xheaders` if the server can exclusively be reached through a proxy which sets or removes these headers. Otherwise a client can send them itself. Without the flag the headers are ignored.
@@ -98,5 +98,9 @@ If the public URL cannot be derived from the request, e.g. because the proxy lis
 ```bash
 panel serve app.py --root-path /myapp ... --oauth-redirect-uri https://example.org/myapp/login
 ```
+
+:::{important}
+As of Panel 1.10.1 the default redirect URI includes the `--prefix` and, with `--use-xheaders`, follows the `X-Forwarded-Host` and `X-Forwarded-Prefix` (or `X-Script-Name`) headers of the proxy. If you registered the previous default with your provider, i.e. the URL without the prefix or with the host Panel is reachable on internally, either register the new redirect URI or keep the old one by passing it as `--oauth-redirect-uri`.
+:::
 
 `--oauth-redirect-uri` only determines where the provider sends the user. Where Panel sends the user afterwards is determined by the root path, so a proxy which strips a prefix still needs `--root-path` or the `X-Forwarded-Prefix` header.

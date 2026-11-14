@@ -109,7 +109,7 @@ usage: panel serve [-h] [--port PORT] [--address ADDRESS] [--unix-socket UNIX-SO
                    [--oauth-key OAUTH_KEY] [--oauth-secret OAUTH_SECRET] [--oauth-redirect-uri OAUTH_REDIRECT_URI]
                    [--oauth-extra-params OAUTH_EXTRA_PARAMS] [--oauth-jwt-user OAUTH_JWT_USER] [--oauth-encryption-key OAUTH_ENCRYPTION_KEY]
                    [--oauth-error-template OAUTH_ERROR_TEMPLATE] [--oauth-expiry-days OAUTH_EXPIRY_DAYS] [--oauth-refresh-tokens]
-                   [--oauth-guest-endpoints [OAUTH_GUEST_ENDPOINTS ...]] [--oauth-optional] [--login-endpoint LOGIN_ENDPOINT]
+                   [--oauth-guest-endpoints [OAUTH_GUEST_ENDPOINTS ...]] [--oauth-optional] [--root-path ROOT_PATH] [--login-endpoint LOGIN_ENDPOINT]
                    [--logout-endpoint LOGOUT_ENDPOINT] [--auth-template AUTH_TEMPLATE] [--logout-template LOGOUT_TEMPLATE]
                    [--basic-login-template BASIC_LOGIN_TEMPLATE] [--rest-provider REST_PROVIDER] [--rest-endpoint REST_ENDPOINT]
                    [--rest-session-info] [--session-history SESSION_HISTORY] [--warm] [--admin] [--admin-endpoint ADMIN_ENDPOINT]
@@ -144,7 +144,8 @@ options:
   --allow-websocket-origin HOST[:PORT]
                         Public hostnames which may connect to the Bokeh websocket With unix socket, the websocket origin restrictions should
                         be enforced by the proxy.
-  --prefix PREFIX       URL prefix for Bokeh server URLs
+  --prefix PREFIX       URL prefix to serve all applications and endpoints under. Use this if a reverse proxy forwards the prefix, and
+                        --root-path if it strips it.
   --ico-path ICO_PATH   Path to a .ico file to use as the favicon.ico, or 'none' to disable favicon.ico support. If unset, a default Bokeh
                         .ico file will be used
   --keep-alive MILLISECONDS
@@ -157,7 +158,8 @@ options:
                         How often to log stats
   --mem-log-frequency MILLISECONDS
                         How often to log memory usage information
-  --use-xheaders        Prefer X-headers for IP/protocol information
+  --use-xheaders        Trust the X-Forwarded-For, X-Forwarded-Proto, X-Forwarded-Host and X-Forwarded-Prefix (or X-Script-Name) headers set
+                        by a reverse proxy to determine the client IP and the public URL of the server.
   --ssl-certfile CERTFILE
                         Absolute path to a certificate file for SSL termination
   --ssl-keyfile KEYFILE
@@ -213,7 +215,7 @@ options:
   --oauth-secret OAUTH_SECRET
                         The OAuth2 secret to use
   --oauth-redirect-uri OAUTH_REDIRECT_URI
-                        The OAuth2 redirect URI
+                        The OAuth2 redirect URI. Defaults to the public URL of the server, including the --root-path and --prefix.
   --oauth-extra-params OAUTH_EXTRA_PARAMS
                         Additional parameters to use.
   --oauth-jwt-user OAUTH_JWT_USER
@@ -229,6 +231,9 @@ options:
   --oauth-guest-endpoints [OAUTH_GUEST_ENDPOINTS ...]
                         List of endpoints that can be accessed as a guest without authenticating.
   --oauth-optional      Whether the user will be forced to go through login flow or if they can access all applications as a guest.
+  --root-path ROOT_PATH
+                        The path a reverse proxy serves Panel on if it strips that path from the requests it forwards. Overrides the
+                        X-Forwarded-Prefix header read with --use-xheaders.
   --login-endpoint LOGIN_ENDPOINT
                         Endpoint to serve the authentication login page on.
   --logout-endpoint LOGOUT_ENDPOINT

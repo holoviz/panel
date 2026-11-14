@@ -44,7 +44,7 @@ options:
   --show                Open server app(s) in a browser
   --allow-websocket-origin HOST[:PORT]
                         Public hostnames which may connect to the Bokeh websocket With unix socket, the websocket origin restrictions should be enforced by the proxy.
-  --prefix PREFIX       URL prefix for Bokeh server URLs
+  --prefix PREFIX       URL prefix to serve all applications and endpoints under. Use this if a reverse proxy forwards the prefix, and --root-path if it strips it.
   --ico-path ICO_PATH   Path to a .ico file to use as the favicon.ico, or 'none' to disable favicon.ico support. If unset, a default Bokeh .ico file will be used
   --keep-alive MILLISECONDS
                         How often to send a keep-alive ping to clients, 0 to disable.
@@ -56,7 +56,7 @@ options:
                         How often to log stats
   --mem-log-frequency MILLISECONDS
                         How often to log memory usage information
-  --use-xheaders        Prefer X-headers for IP/protocol information
+  --use-xheaders        Trust the X-Forwarded-For, X-Forwarded-Proto, X-Forwarded-Host and X-Forwarded-Prefix (or X-Script-Name) headers set by a reverse proxy to determine the client IP and the public URL of the server.
   --ssl-certfile CERTFILE
                         Absolute path to a certificate file for SSL termination
   --ssl-keyfile KEYFILE
@@ -103,7 +103,7 @@ options:
   --oauth-secret OAUTH_SECRET
                         The OAuth2 secret to use
   --oauth-redirect-uri OAUTH_REDIRECT_URI
-                        The OAuth2 redirect URI
+                        The OAuth2 redirect URI. Defaults to the public URL of the server, including the --root-path and --prefix.
   --oauth-extra-params OAUTH_EXTRA_PARAMS
                         Additional parameters to use.
   --oauth-jwt-user OAUTH_JWT_USER
@@ -116,6 +116,8 @@ options:
                         Expiry off the OAuth cookie in number of days.
   --oauth-refresh-tokens OAUTH_REFRESH_TOKENS
                         Whether to automatically refresh OAuth access tokens when they expire.
+  --root-path ROOT_PATH
+                        The path a reverse proxy serves Panel on if it strips that path from the requests it forwards. Overrides the X-Forwarded-Prefix header read with --use-xheaders.
   --auth-template AUTH_TEMPLATE
                         Template to serve when user is unauthenticated.
   --basic-login-template BASIC_LOGIN_TEMPLATE
@@ -171,6 +173,8 @@ Both ASGI implementations require `uvicorn` to be installed (and `fastapi` addit
 ```bash
 pip install uvicorn fastapi
 ```
+
+When the server runs behind a reverse proxy, `--prefix`, `--root-path`, `--use-xheaders` and `--oauth-redirect-uri` determine the public URL Panel redirects to. See [Configuring a reverse proxy](proxy) for how they fit together.
 
 The ASGI implementations support the same options as the Tornado server, with the exception of a few options that are implemented as Tornado request handlers or rely on Tornado specific functionality, and will error out if you supply them:
 
