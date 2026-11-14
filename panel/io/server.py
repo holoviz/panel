@@ -1306,6 +1306,12 @@ del _i, _pattern
 
 class AuthenticatedStaticFileHandler(StaticFileHandler):
 
+    def compute_etag(self):
+        # Tornado caches content hashes per path for the process lifetime,
+        # so files rebuilt in place would be revalidated with a stale ETag.
+        stat = os.stat(self.absolute_path)
+        return f'"{stat.st_mtime_ns:x}-{stat.st_size:x}"'
+
     def get_login_url(self):
         ''' Delegates to``get_login_url`` method of the auth provider, or the
         ``login_url`` attribute.
