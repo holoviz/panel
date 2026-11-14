@@ -2117,7 +2117,7 @@ class Tabulator(BaseTable):
             else:
                 fspec['headerFilter'] = True
             if fspec.get('headerFilter') not in (False, 'tickCross'):
-                fspec['headerFilterPlaceholder'] = f'Filter by {column.field}...'
+                fspec['headerFilterPlaceholder'] = f'Filter by {column.title or column.field}...'
             return fspec
         filter_type = self.header_filters[column.field]
         if isinstance(filter_type, dict):
