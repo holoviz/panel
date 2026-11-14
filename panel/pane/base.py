@@ -5,6 +5,7 @@ object transforming it into a Bokeh model that can be rendered.
 from __future__ import annotations
 
 import typing as t
+import weakref
 
 from functools import partial
 
@@ -171,7 +172,30 @@ class PaneBase(Layoutable):
         self._internal_callbacks.append(
             self.param.watch(self._sync_layoutable, list(Layoutable.param))
         )
-        self._sync_layoutable()
+        # The layout was constructed from the same parameters, so the sync
+        # only changes it when margins pad the width or height, when refs
+        # were resolved into the pane or when the class defaults differ.
+        if ('refs' in params or
+            (self.margin and (self.width is not None or self.height is not None)) or
+            self._layout_defaults_differ(type(self.layout))):
+            self._sync_layoutable()
+
+    @classmethod
+    def _layout_defaults_differ(cls, layout_type: type[Layoutable]) -> bool:
+        cache = cls.__dict__.get('_layout_defaults_cache')
+        if cache is None:
+            cache = {}
+            cls._layout_defaults_cache = cache
+        differ = cache.get(layout_type)
+        if differ is None:
+            sizing_mode = cls.param.sizing_mode
+            differ = cache[layout_type] = (
+                sizing_mode.constant or sizing_mode.readonly or any(
+                    cls.param[p].default != layout_type.param[p].default
+                    for p in Layoutable.param if p not in cls._skip_layoutable
+                )
+            )
+        return differ
 
     def _validate_ref(self, pname, value):
         super()._validate_ref(pname, value)
@@ -260,17 +284,14 @@ class PaneBase(Layoutable):
         """
         if isinstance(obj, Viewable):
             return type(obj)
-        descendents = []
-        for p in _descendents(PaneBase, concrete=True):
-            if p.priority is None:
-                applies = True
-                try:
-                    priority = p.applies(obj, **(kwargs if p._applies_kw else {}))
-                except Exception:
-                    priority = False
-            else:
-                applies = None
-                priority = p.priority
+        panes, static, dynamic = cls._dispatch_order()
+        candidates = list(static)
+        for idx in dynamic:
+            p = panes[idx]
+            try:
+                priority = p.applies(obj, **(kwargs if p._applies_kw else {}))
+            except Exception:
+                priority = False
             if isinstance(priority, bool) and priority:
                 raise ValueError('If a Pane declares no priority '
                                  'the applies method should return a '
@@ -279,18 +300,48 @@ class PaneBase(Layoutable):
                                  'declares no priority.')
             elif priority is None or priority is False:
                 continue
-            descendents.append((priority, applies, p))
-        pane_types = reversed(sorted(descendents, key=lambda x: x[0]))
-        for _, applies, pane_type in pane_types:
-            if applies is None:
-                try:
-                    applies = pane_type.applies(obj, **(kwargs if pane_type._applies_kw else {}))
-                except Exception:
-                    applies = False
-            if not applies:
-                continue
-            return pane_type
+            candidates.append((priority, idx))
+        if dynamic:
+            candidates.sort(reverse=True)
+        for _, idx in candidates:
+            pane_type = panes[idx]
+            if idx in dynamic:
+                return pane_type
+            try:
+                applies = pane_type.applies(obj, **(kwargs if pane_type._applies_kw else {}))
+            except Exception:
+                applies = False
+            if applies:
+                return pane_type
         raise TypeError(f'{type(obj).__name__} type could not be rendered.')
+
+    # Resolved dispatch order: weak references to the concrete panes in
+    # _descendents order, the (priority, index) of the panes with a static
+    # priority sorted highest first and the indices of the panes with a
+    # dynamic priority. Rebuilt when the set of pane classes changes;
+    # a priority reassigned on an existing class is not picked up.
+    _dispatch_cache: t.ClassVar[
+        tuple[list[weakref.ReferenceType[type]], list[tuple[float, int]], list[int]] | None
+    ] = None
+
+    @classmethod
+    def _dispatch_order(cls) -> tuple[list[type[PaneBase]], list[tuple[float, int]], list[int]]:
+        panes = t.cast('list[type[PaneBase]]', _descendents(PaneBase, concrete=True))
+        cache = PaneBase._dispatch_cache
+        if (cache is None or len(cache[0]) != len(panes) or
+            any(ref() is not p for ref, p in zip(cache[0], panes, strict=True))):
+            static, dynamic = [], []
+            for idx, p in enumerate(panes):
+                if p.priority is None:
+                    dynamic.append(idx)
+                else:
+                    static.append((p.priority, idx))
+            # Ties keep the reversed _descendents order, matching the
+            # reversed stable sort this replaces.
+            static.sort(reverse=True)
+            cache = ([weakref.ref(p) for p in panes], static, dynamic)
+            PaneBase._dispatch_cache = cache
+        return panes, cache[1], cache[2]
 
 
 class Pane(PaneBase, Reactive):
@@ -644,13 +695,18 @@ class ReplacementPane(Pane):
         self._kwargs =  {p: params.pop(p) for p in list(params)
                          if p not in self.param}
         super().__init__(object, **params)
-        self._pane = panel(None)
         self._internal = True
-        self._inner_layout = Column(self._pane, **{k: v for k, v in params.items() if k in Column.param})
+        # The placeholder pane is created on demand (see _init_placeholder)
+        # since most panes replace it with the real content immediately.
+        self._inner_layout = Column(**{k: v for k, v in params.items() if k in Column.param})
         self._internal_callbacks.append(
             self.param.watch(self._update_inner_layout, list(Layoutable.param))
         )
-        self._sync_layout()
+
+    def _init_placeholder(self) -> None:
+        if self._pane is None:
+            self._pane = panel(None)
+            self._inner_layout[:] = [self._pane]
 
     def _get_model(
         self, doc: Document, root: Model | None = None,
@@ -660,6 +716,7 @@ class ReplacementPane(Pane):
             ref = root.ref['id']
             if ref in self._models:
                 self._cleanup(root)
+        self._init_placeholder()
         model = self._inner_layout._get_model(doc, root, parent, comm)
         root = root or model
         self._models[root.ref['id']] = (model, parent)
@@ -667,13 +724,14 @@ class ReplacementPane(Pane):
 
     @param.depends('_pane', '_pane.sizing_mode', '_pane.width_policy', '_pane.height_policy', watch=True)
     def _sync_layout(self):
-        if not hasattr(self, '_inner_layout') or (self._pane is not None and getattr(self._pane, '_object_changing', False)):
+        if not hasattr(self, '_inner_layout') or self._pane is None or getattr(self._pane, '_object_changing', False):
             return
         self._inner_layout.param.update({
             p: getattr(self._pane, p) for p in ('sizing_mode', 'width_policy', 'height_policy')
         })
 
     def _update_inner_layout(self, *events):
+        self._init_placeholder()
         updates = {}
         for event in events:
             value = event.new
@@ -799,9 +857,14 @@ class ReplacementPane(Pane):
         if self.design is None and getattr(self, '_assigned_design', None) is None:
             del kwargs['design']
         with hold():
-            new_pane, internal = self._update_from_object(
-                new_object, self._pane, self._internal, **kwargs
-            )
+            if self._pane is None and self.get_pane_type(new_object) is self.get_pane_type(None):
+                # Mirrors the in-place update the placeholder would have
+                # received, which does not apply the kwargs to the pane.
+                new_pane, internal = panel(new_object), True
+            else:
+                new_pane, internal = self._update_from_object(
+                    new_object, self._pane, self._internal, **kwargs
+                )
         if new_pane is None:
             return
 

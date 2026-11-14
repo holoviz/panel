@@ -307,17 +307,18 @@ class Layoutable(param.Parameterized):
             params['sizing_mode'] = 'fixed'
         elif (not (self.param.sizing_mode.constant or self.param.sizing_mode.readonly) and
               type(self).sizing_mode is None and 'sizing_mode' not in params):
-            if config.sizing_mode == 'stretch_both':
+            default_sizing_mode = config.sizing_mode
+            if default_sizing_mode == 'stretch_both':
                 if params.get('height') is not None:
                     params['sizing_mode'] = 'stretch_width'
                 elif params.get('width') is not None:
                     params['sizing_mode'] = 'stretch_height'
                 else:
-                    params['sizing_mode'] = config.sizing_mode
-            elif config.sizing_mode == 'stretch_width' and 'width' not in params:
-                params['sizing_mode'] = config.sizing_mode
-            elif config.sizing_mode == 'stretch_height' and 'height' not in params:
-                params['sizing_mode'] = config.sizing_mode
+                    params['sizing_mode'] = default_sizing_mode
+            elif default_sizing_mode == 'stretch_width' and 'width' not in params:
+                params['sizing_mode'] = default_sizing_mode
+            elif default_sizing_mode == 'stretch_height' and 'height' not in params:
+                params['sizing_mode'] = default_sizing_mode
         super().__init__(**params)
         self._sizing_initializing = False
         # Track dynamic (post-init) updates to the sizing parameters so
@@ -862,10 +863,16 @@ class Viewable(Renderable, Layoutable, ServableMixin):
         if self.loading:
             self._update_loading()
         self._update_design(explicit_none)
-        self._internal_callbacks.extend([
-            self.param.watch(self._update_design, 'design'),
-            self.param.watch(self._update_loading, 'loading')
-        ])
+        self._internal_callbacks.append(
+            self.param.watch(self._update_design_or_loading, ['design', 'loading'])
+        )
+
+    def _update_design_or_loading(self, *events):
+        for event in events:
+            if event.name == 'design':
+                self._update_design()
+            else:
+                self._update_loading()
 
     @staticmethod
     @functools.cache

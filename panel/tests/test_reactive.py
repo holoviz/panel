@@ -1141,3 +1141,18 @@ def test_reactive_attribute_no_name(document, comm):
     component.get_root(document, comm)
     # Should not error out
     component.groups = []
+
+
+def test_refs_enabled_for_parameter_added_after_instantiation():
+    class Custom(Reactive):
+        value = param.Integer(default=0)
+
+    Custom()
+    Custom.param.add_parameter('other', param.String(default=''))
+    source = TextInput(value='3')
+
+    obj = Custom(other=source.param.value)
+    assert obj.other == '3'
+
+    source.value = '4'
+    assert obj.other == '4'
