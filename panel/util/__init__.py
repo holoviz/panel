@@ -671,9 +671,9 @@ def _descendents(class_: type, concrete: bool = False) -> list[type]:
     count = _subclass_count(class_)
     cached = _descendents_cache.get((class_, concrete))
     if cached is not None and cached[0] == count:
-        out = [ref() for ref in cached[1]]
-        if all(kls is not None for kls in out):
-            return t.cast('list[type]', out)
+        resolved = [ref() for ref in cached[1]]
+        if all(kls is not None for kls in resolved):
+            return t.cast('list[type]', resolved)
     out = _walk_descendents(class_, concrete)
     _descendents_cache[(class_, concrete)] = (count, [weakref.ref(kls) for kls in out])
     return out

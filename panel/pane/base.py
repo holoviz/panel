@@ -695,13 +695,18 @@ class ReplacementPane(Pane):
         self._kwargs =  {p: params.pop(p) for p in list(params)
                          if p not in self.param}
         super().__init__(object, **params)
-        self._pane = panel(None)
         self._internal = True
-        self._inner_layout = Column(self._pane, **{k: v for k, v in params.items() if k in Column.param})
+        # The placeholder pane is created on demand (see _init_placeholder)
+        # since most panes replace it with the real content immediately.
+        self._inner_layout = Column(**{k: v for k, v in params.items() if k in Column.param})
         self._internal_callbacks.append(
             self.param.watch(self._update_inner_layout, list(Layoutable.param))
         )
-        self._sync_layout()
+
+    def _init_placeholder(self) -> None:
+        if self._pane is None:
+            self._pane = panel(None)
+            self._inner_layout[:] = [self._pane]
 
     def _get_model(
         self, doc: Document, root: Model | None = None,
@@ -711,6 +716,7 @@ class ReplacementPane(Pane):
             ref = root.ref['id']
             if ref in self._models:
                 self._cleanup(root)
+        self._init_placeholder()
         model = self._inner_layout._get_model(doc, root, parent, comm)
         root = root or model
         self._models[root.ref['id']] = (model, parent)
@@ -718,13 +724,14 @@ class ReplacementPane(Pane):
 
     @param.depends('_pane', '_pane.sizing_mode', '_pane.width_policy', '_pane.height_policy', watch=True)
     def _sync_layout(self):
-        if not hasattr(self, '_inner_layout') or (self._pane is not None and getattr(self._pane, '_object_changing', False)):
+        if not hasattr(self, '_inner_layout') or self._pane is None or getattr(self._pane, '_object_changing', False):
             return
         self._inner_layout.param.update({
             p: getattr(self._pane, p) for p in ('sizing_mode', 'width_policy', 'height_policy')
         })
 
     def _update_inner_layout(self, *events):
+        self._init_placeholder()
         updates = {}
         for event in events:
             value = event.new
@@ -850,9 +857,14 @@ class ReplacementPane(Pane):
         if self.design is None and getattr(self, '_assigned_design', None) is None:
             del kwargs['design']
         with hold():
-            new_pane, internal = self._update_from_object(
-                new_object, self._pane, self._internal, **kwargs
-            )
+            if self._pane is None and self.get_pane_type(new_object) is self.get_pane_type(None):
+                # Mirrors the in-place update the placeholder would have
+                # received, which does not apply the kwargs to the pane.
+                new_pane, internal = panel(new_object), True
+            else:
+                new_pane, internal = self._update_from_object(
+                    new_object, self._pane, self._internal, **kwargs
+                )
         if new_pane is None:
             return
 
