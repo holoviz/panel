@@ -203,6 +203,7 @@ def _generic_oauth_args(provider):
     ]
 
 
+@linux_only
 @pytest.mark.parametrize('server', ['tornado', 'fastapi'])
 @pytest.mark.parametrize('root_path', [['--use-xheaders'], ['--root-path', '/proxy']])
 def test_generic_oauth_via_prefix_stripping_proxy(py_file, page, server, root_path):
@@ -232,6 +233,7 @@ def test_generic_oauth_via_prefix_stripping_proxy(py_file, page, server, root_pa
     assert not [(code, uri) for code, uri in proxy['requests'] if code >= 400]
 
 
+@linux_only
 @pytest.mark.parametrize('server', ['tornado', 'fastapi'])
 def test_generic_oauth_with_prefix(py_file, page, server):
     write_file(USER_APP, py_file.file)
@@ -251,6 +253,7 @@ def test_generic_oauth_with_prefix(py_file, page, server):
             assert provider['redirect_uris'] == [f"http://localhost:{port}/prefix"]
 
 
+@linux_only
 @pytest.mark.parametrize('server', ['tornado', 'fastapi'])
 def test_basic_auth_error_via_prefix_stripping_proxy(py_file, page, server):
     write_file(USER_APP, py_file.file)
