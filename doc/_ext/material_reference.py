@@ -109,9 +109,9 @@ def banner_line(lines: list[str]) -> int:
 
 def add_material_banner(app, docname, source):
     parts = docname.split('/')
-    if len(parts) != 3 or parts[0] != 'reference':
+    if len(parts) != 4 or parts[:2] != ['reference', 'classic']:
         return
-    _, section, name = parts
+    _, _, section, name = parts
     if name not in material_names():
         return
     pages = material_pages(app.env)
@@ -140,7 +140,7 @@ def report(app):
     """
     names, pages = material_names(), material_pages(app.env)
     linked = [
-        path.stem for path in pathlib.Path(app.srcdir).glob('reference/*/*.md')
+        path.stem for path in pathlib.Path(app.srcdir).glob('reference/classic/*/*.md')
         if path.stem in names and path.stem in pages
     ]
     log = logger.info if linked else logger.warning

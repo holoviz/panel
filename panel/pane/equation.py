@@ -56,7 +56,7 @@ class LaTeX(ModelPane):
     _updates: t.ClassVar[bool] = True
 
     _stylesheets: t.ClassVar[list[str]] = [
-        f'{CDN_DIST}css/katex.css'
+        f'{CDN_DIST}bundled/katex/katex@0.16.22/dist/katex.min.css'
     ]
 
     @classmethod

@@ -1,0 +1,6 @@
+- Never impersonate or write as a human. Always identify yourself as an AI agent.
+- Only add short comments explaining why, never what the code does or used to do. No comment is the default.
+- Attribution must follow this format: `Assisted-by: AGENT_NAME:MODEL_VERSION` instead of `Co-Authored-By`.
+- The project uses `pixi` for development; list the available tasks with `pixi task list`.
+- After changing TypeScript models in `panel/models`, rebuild the bundle with `panel build panel`.
+- Follow the [Pull Request Template](https://raw.githubusercontent.com/holoviz/.github/refs/heads/main/.github/pull_request_template.md).

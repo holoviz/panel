@@ -32,7 +32,7 @@ class CannotReadCamera(Exception):
 class ServerVideoStream(pn.viewable.Viewer):
     value = param.Parameter(doc="The current snapshot as a Pillow Image")
     paused = param.Boolean(default=False, doc="Whether the video stream is paused")
-    fps = param.Number(10, doc="Frames per second", inclusive_bounds=(0, None))
+    fps = param.Number(10, doc="Frames per second", bounds=(1, None))
     camera_index = param.Integer(0, doc="The index of the active camera")
 
     def __init__(self, **params):
@@ -88,11 +88,10 @@ class ServerVideoStream(pn.viewable.Viewer):
                     print("Error: Could not capture image.")
                     print(ex)
 
-            if self.fps > 0:
-                interval = 1 / self.fps
-                elapsed_time = time.time() - start_time
-                sleep_time = max(0, interval - elapsed_time)
-                time.sleep(sleep_time)
+            interval = 1 / self.fps
+            elapsed_time = time.time() - start_time
+            sleep_time = max(0, interval - elapsed_time)
+            time.sleep(sleep_time)
 
     def __del__(self):
         self._stop_thread = True
@@ -212,7 +211,7 @@ We also define several custom exceptions to manage specific errors related to ca
 class ServerVideoStream(pn.viewable.Viewer):
     value = param.Parameter(doc="The current snapshot as a Pillow Image")
     paused = param.Boolean(default=False, doc="Whether the video stream is paused")
-    fps = param.Number(10, doc="Frames per second", inclusive_bounds=(0, None))
+    fps = param.Number(10, doc="Frames per second", bounds=(1, None))
     camera_index = param.Integer(0, doc="The index of the active camera")
 ```
 
@@ -220,7 +219,7 @@ The `ServerVideoStream` class extends `pn.viewable.Viewer`, enabling its display
 
 - **value**: Holds the current video frame.
 - **paused**: A toggle to pause or resume the video capture.
-- **fps**: Determines the frame rate of the video stream.
+- **fps**: Determines the frame rate of the video stream. The lower bound of 1 ensures that the capture loop always sleeps between frames instead of spinning as fast as it can.
 - **camera_index**: Specifies which camera to use if multiple are available.
 
 #### Initializing and Managing Cameras
@@ -235,7 +234,7 @@ The `ServerVideoStream` class extends `pn.viewable.Viewer`, enabling its display
         self._thread = threading.Thread(target=self._take_images)
         self._thread.daemon = True
 
-    def start(self, camera_indices):
+    def start(self, camera_indices=None):
         if camera_indices:
             for index in camera_indices:
                 self.get_camera(index)
@@ -284,11 +283,10 @@ The constructor initializes a thread for capturing images and managing the strea
                     print("Error: Could not capture image.")
                     print(ex)
 
-            if self.fps > 0:
-                interval = 1 / self.fps
-                elapsed_time = time.time() - start_time
-                sleep_time = max(0, interval - elapsed_time)
-                time.sleep(sleep_time)
+            interval = 1 / self.fps
+            elapsed_time = time.time() - start_time
+            sleep_time = max(0, interval - elapsed_time)
+            time.sleep(sleep_time)
 
     def __del__(self):
         self._stop_thread = True

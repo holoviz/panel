@@ -16,7 +16,9 @@ By the end of this guide you'll be able to:
 
 ## Install the HoloViz skills
 
-The [holoviz-skills](https://holoviz-dev.github.io/holoviz-skills/) repository provides a curated collection of [Agent Skills](https://www.anthropic.com/news/skills) for the HoloViz ecosystem, including Panel. Agent Skills are folders of instructions and references that teach an assistant how to work with a library correctly.
+The [holoviz-skills](https://skills.holoviz.org/) repository provides a curated collection of [Agent Skills](https://www.anthropic.com/news/skills) for the HoloViz ecosystem, including Panel. Agent Skills are folders of instructions and references that teach an assistant how to work with a library correctly.
+
+The [Panel skill](https://github.com/holoviz-dev/holoviz-skills/tree/main/developing-with-holoviz/skills/panel) steers your assistant toward current patterns, such as `pn.viewable.Viewer` classes, `panel-material-ui` pages and `panel serve --dev`. It also includes guides for Tabulator, custom components, testing with pytest-playwright, and reviewing and troubleshooting apps.
 
 ::::{tab-set}
 
@@ -44,6 +46,8 @@ The `install` command auto-detects the AI tools on your machine. You can also ta
 holoviz-skills install --claude-code
 holoviz-skills install --copilot
 ```
+
+To share the skills with everyone working on a project, run `holoviz-skills install --agent` in the project root and commit the `.agents/skills/` folder it creates. See the [holoviz-skills README](https://github.com/holoviz-dev/holoviz-skills#readme) for the full list of supported tools.
 
 You may need to restart your assistant so it picks up the newly installed skills.
 

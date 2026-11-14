@@ -13,7 +13,7 @@ import time
 import typing as t
 import weakref
 
-from contextlib import ExitStack, contextmanager
+from contextlib import ExitStack, contextmanager, nullcontext
 from functools import partial, wraps
 from weakref import WeakKeyDictionary
 
@@ -23,7 +23,10 @@ from bokeh.document.events import (
     DocumentChangedEvent, DocumentPatchedEvent, MessageSentEvent,
     SessionCallbackAdded, SessionCallbackRemoved,
 )
-from bokeh.model.util import visit_immediate_value_references
+from bokeh.model import Model
+from bokeh.model.util import (
+    collect_models, visit_value_and_its_immediate_references,
+)
 from bokeh.models import CustomJS
 
 from ..config import config
@@ -96,11 +99,10 @@ class MockSessionContext(SessionContext):
     def request(self):
         return Request(headers={}, cookies={}, arguments={})
 
-def _cleanup_task(task):
-    for tasks in _write_tasks.values():
-        if task in tasks:
-            tasks.remove(task)
-            break
+def _cleanup_task(doc: Document, task: asyncio.Task) -> None:
+    tasks = _write_tasks.get(doc)
+    if tasks and task in tasks:
+        tasks.remove(task)
 
 def _client_has_document(doc: Document) -> bool:
     """
@@ -113,8 +115,10 @@ def _client_has_document(doc: Document) -> bool:
         comm is not None and view_doc is doc
         for _, _, view_doc, comm in state._views.values()
     ):
-        # Serializing the document, e.g. to save it, also marks models sent
-        return False
+        # Serializing the document, e.g. to save it, also marks models
+        # sent, so only an embedder that subscribed to its changes to sync
+        # them over its own transport counts as a client.
+        return bool(doc.callbacks.change_callbacks())
     live = getattr(doc.models, '_models', None)
     unsent = getattr(doc.models, '_new_models', None)
     if not live or unsent is None:
@@ -187,10 +191,37 @@ def _dispatch_unconnected_events(doc: Document) -> None:
     else:
         retrigger_events(doc, events)
 
+def _clear_document_state(doc: Document) -> None:
+    """
+    Drops the Document from the per-Document registries on ``state``.
+
+    These are WeakKeyDictionaries, but a value that refers back to the
+    Document (e.g. a Location whose model callbacks hold it, or a
+    stylesheet model attached to it) keeps its own key alive, so the
+    entries have to be removed explicitly.
+    """
+    for attr in dir(state):
+        # _param_watchers is deprecated in Param 2.0 and will raise a warning
+        if not attr.startswith('_') or attr == "_param_watchers":
+            continue
+        state_obj = getattr(state, attr)
+        if isinstance(state_obj, weakref.WeakKeyDictionary) and doc in state_obj:
+            del state_obj[doc]
+
 def _cleanup_doc(doc, destroy=True):
-    for callback in doc.session_destroyed_callbacks:
+    from ..viewable import Viewable
+    views = [(ref, view) for ref, view in state._views.items() if view[2] is doc]
+
+    # The callbacks look the Document up on the session context, so a
+    # Document without a session (e.g. one created by the liveness
+    # endpoint) is given a mock one, otherwise none of them run.
+    if destroy:
+        session_context = doc.session_context or MockSessionContext(doc)
+    else:
+        session_context = None
+    for callback in list(doc.session_destroyed_callbacks):
         try:
-            callback(None)
+            callback(session_context)
         except Exception:
             pass
     if not destroy:
@@ -199,23 +230,20 @@ def _cleanup_doc(doc, destroy=True):
         doc.callbacks._change_callbacks[None] = lambda e: e
 
     # Remove views
-    from ..viewable import Viewable
-    to_remove = []
-    for ref, (pane, root, vdoc, _comm) in list(state._views.items()):
-        if vdoc is doc:
+    for ref, (pane, root, _vdoc, _comm) in views:
+        # A root's _server_destroy callback may have cleaned it up already
+        if ref in state._views:
             pane._cleanup(root)
-            if isinstance(pane, Viewable):
-                pane._hooks = []
-                for p in pane.select():
-                    p._hooks = []
-                    p.param.watchers = {}
-                    p._documents = {}
-                    p._internal_callbacks = {}
-            pane.param.watchers = {}
-            pane._documents = {}
-            pane._internal_callbacks = {}
-            to_remove.append(ref)
-    for ref in to_remove:
+        if isinstance(pane, Viewable):
+            pane._hooks = []
+            for p in pane.select():
+                p._hooks = []
+                p.param.watchers = {}
+                p._documents = {}
+                p._internal_callbacks = {}
+        pane.param.watchers = {}
+        pane._documents = {}
+        pane._internal_callbacks = {}
         state._views.pop(ref, None)
 
     # When reusing sessions we must clean up the Panel state but we
@@ -229,6 +257,8 @@ def _cleanup_doc(doc, destroy=True):
         tmpl._documents = []
         del state._templates[doc]
 
+    _clear_document_state(doc)
+
     # Destroy document
     doc.destroy(None)
 
@@ -236,8 +266,10 @@ async def _run_write_futures(doc):
     """
     Ensure that all write_message calls are awaited and handled.
     """
+    await _await_writes(_WRITE_FUTURES.pop(doc, []))
+
+async def _await_writes(futures: Iterable[Future]) -> None:
     from tornado.websocket import WebSocketClosedError
-    futures = _WRITE_FUTURES.pop(doc, [])
     for future in futures:
         try:
             await future
@@ -260,7 +292,7 @@ def _dispatch_write_task(doc, func, *args, **kwargs):
         return
     task = loop.create_task(func(*args, **kwargs))
     _write_tasks.setdefault(doc, []).append(task)
-    task.add_done_callback(_cleanup_task)
+    task.add_done_callback(partial(_cleanup_task, doc))
 
 def _is_write_locked(conn: ServerConnection) -> bool:
     return _is_write_blocked(conn._socket)
@@ -393,6 +425,12 @@ def _destroy_document(self, session):
     self._session_context = None
 
     self.callbacks.destroy()
+    # The on_change callbacks Panel registers on the models are partials
+    # holding the Document, so a model that outlives the session (e.g.
+    # one a user kept a reference to) would otherwise keep all of it alive.
+    for model in list(getattr(self.models, '_models', {}).values()):
+        model._callbacks.clear()
+        model._event_callbacks.clear()
     self.models.destroy()
 
     # Module cleanup without trawling through referrers (as self.modules.destroy() does)
@@ -420,13 +458,7 @@ def _destroy_document(self, session):
         task.cancel()
 
     # Clean up pn.state to avoid tasks getting executed on dead session
-    for attr in dir(state):
-        # _param_watchers is deprecated in Param 2.0 and will raise a warning
-        if not attr.startswith('_') or attr == "_param_watchers":
-            continue
-        state_obj = getattr(state, attr)
-        if isinstance(state_obj, weakref.WeakKeyDictionary) and self in state_obj:
-            del state_obj[self]
+    _clear_document_state(self)
 
     # Schedule GC
     global _panel_last_cleanup
@@ -434,7 +466,8 @@ def _destroy_document(self, session):
     at = dt.datetime.now() + dt.timedelta(seconds=GC_DEBOUNCE)
     state.schedule_task('gc.collect', _garbage_collect, at=at)
 
-    del self.destroy
+    if 'destroy' in self.__dict__:
+        del self.destroy
 
 #---------------------------------------------------------------------
 # Public API
@@ -649,6 +682,50 @@ def _suppress_property_callbacks(
             event.callback_invoker = None
     return events
 
+async def _write_message(
+    doc: Document, connections: list[ServerConnection], message: Message
+) -> None:
+    for conn in connections:
+        lock = getattr(conn._socket, 'write_lock', None)
+        with (await lock.acquire()) if lock is not None else nullcontext():
+            await _await_writes(_socket_dispatcher(conn._socket)(conn, msg=message))
+
+def _write_from_worker_thread(
+    doc: Document,
+    connections: Iterable[ServerConnection],
+    events: list[DocumentChangedEvent]
+) -> bool:
+    """
+    Writes events generated by a locked callback that bokeh runs on a
+    worker thread right away, rather than leaving them to bokeh, which
+    only writes them once the callback returns, so that a long running
+    callback can still report progress.
+
+    Only safe while bokeh has no pending writes of its own and the
+    calling context owns the Document lock: the message is serialized
+    here, while the callback holds the Document lock, and
+    the write is scheduled on the event loop ahead of bokeh's, so the
+    client always receives models before they are referenced.
+    """
+    patches = [e for e in events if isinstance(e, DocumentPatchedEvent)]
+    if (
+        state._on_loop_thread or not state._document_lock_held or
+        not patches or len(patches) != len(events)
+    ):
+        return False
+    loop = state._document_loop(doc)
+    asyncio_loop = t.cast(
+        'asyncio.AbstractEventLoop | None', getattr(loop, 'asyncio_loop', loop)
+    )
+    connections = list(connections)
+    if asyncio_loop is None or asyncio_loop.is_closed() or not connections:
+        return False
+    message = connections[0].protocol.create('PATCH-DOC', patches)
+    asyncio_loop.call_soon_threadsafe(
+        _dispatch_write_task, doc, _write_message, doc, connections, message
+    )
+    return True
+
 def _flush_events(curdoc: Document, session: ServerSession) -> None:
     """
     Dispatches the events held on a Document, either by writing them to
@@ -672,6 +749,13 @@ def _flush_events(curdoc: Document, session: ServerSession) -> None:
     events = list(curdoc.callbacks._held_events or [])
     curdoc.callbacks._held_events = []
     monkeypatch_events(events)
+
+    if (
+        not queued and session._pending_writes == [] and
+        _write_from_worker_thread(curdoc, connections, events)
+    ):
+        curdoc.unhold()
+        return
 
     # If we cannot write the events ourselves we let bokeh dispatch them,
     # as long as it is inside a locked callback and will therefore write
@@ -841,7 +925,15 @@ def hold(
                 pass
             elif threaded:
                 if not held or we_held:
-                    if _client_has_document(doc):
+                    if not _client_has_document(doc):
+                        _dispatch_events(doc, _drain_unconnected_events(doc, hold_lock))
+                    elif doc.session_context is None:
+                        # Without a server loop a next tick callback never
+                        # runs, so the hold has to be released right away.
+                        with hold_lock:
+                            _suppress_property_callbacks(doc.callbacks._held_events)
+                            doc.unhold()
+                    else:
                         def _unhold(lock=hold_lock, doc=doc):
                             with lock:
                                 _suppress_property_callbacks(doc.callbacks._held_events)
@@ -854,12 +946,13 @@ def hold(
                             doc.callbacks._hold = None
                             doc.add_next_tick_callback(_unhold)
                             doc.callbacks._hold = policy
-                    else:
-                        _dispatch_events(doc, _drain_unconnected_events(doc, hold_lock))
             elif held:
                 doc.callbacks._hold = held
             elif comm is not None:
                 from .notebook import push
+
+                # Release the hold so events bokeh is still dispatching are not collected
+                doc.callbacks._hold = None
                 push(doc, comm)
             elif not _client_has_document(doc):
                 _dispatch_events(doc, _drain_unconnected_events(doc, hold_lock))
@@ -894,26 +987,96 @@ def immediate_dispatch(doc: Document | None = None):
     doc.callbacks._hold = held
     doc.callbacks._held_events = old_events
 
+def _immediate_references(value: t.Any) -> list[Model]:
+    # Layout children are flat lists of models, which bokeh's generic
+    # visitor walks slowly enough to matter for thousands of children.
+    if isinstance(value, list) and all(isinstance(v, Model) for v in value):
+        return list(value)
+    refs: list[Model] = []
+    visit_value_and_its_immediate_references(value, refs.append)
+    return refs
+
+
+def _attach_models(doc: Document, models: Iterable[Model]) -> None:
+    """
+    Attaches the models reachable from the supplied models to the
+    Document, mirroring what bokeh's recompute does for new models
+    without visiting every model already in the Document.
+    """
+    manager = doc.models
+    for model in collect_models(*models):
+        if model.id in manager._models:
+            continue
+        manager._models[model.id] = model
+        if model.name is not None:
+            manager._models_by_name.add_value(model.name, model)
+        model._attach_document(doc)
+        manager._new_models.add(model)
+
+
 @contextmanager
 def freeze_doc(doc: Document, model: HasProps, properties: dict[str, t.Any], force: bool = False):
     """
-    Freezes the document model references if any of the properties
-    are themselves a model.
+    Freezes the document model references while the properties are
+    applied to the model if any of them reference models, so bokeh
+    recomputes the model graph once rather than per property.
+
+    Recomputing visits every model in the Document, which makes
+    updating a large layout expensive, so when the properties only
+    add references (e.g. appending to a layout) and nothing else
+    changed the model graph while frozen the added models are
+    attached directly instead.
     """
     if not hasattr(doc, '_roots'):
-        dirty_count = 0
-    elif force:
-        dirty_count = 1
-    else:
-        dirty_count = 0
-        def mark_dirty(_: HasProps):
-            nonlocal dirty_count
-            dirty_count += 1
-        for key, value in properties.items():
-            visit_immediate_value_references(getattr(model, key, None), mark_dirty)
-            visit_immediate_value_references(value, mark_dirty)
-    if dirty_count:
-        doc.models._push_freeze()
-    yield
-    if dirty_count:
-        doc.models._pop_freeze()
+        yield
+        return
+
+    changed_refs = 0
+    added: list[Model] = []
+    removed = False
+    for key, value in properties.items():
+        old = getattr(model, key, None)
+        old_refs = _immediate_references(old)
+        new_refs = _immediate_references(value)
+        if not (old_refs or new_refs):
+            continue
+        # bokeh only invalidates the graph for a property it actually changed
+        descriptor = model.lookup(key, raises=False)
+        if descriptor is not None and not descriptor.property.matches(value, old):
+            changed_refs += 1
+        old_ids = {id(ref) for ref in old_refs}
+        new_ids = {id(ref) for ref in new_refs}
+        removed |= any(id(ref) not in new_ids for ref in old_refs)
+        added.extend(ref for ref in new_refs if id(ref) not in old_ids)
+
+    if not (force or changed_refs or added or removed):
+        yield
+        return
+
+    manager = doc.models
+    invalidations = 0
+    # Shadow invalidate on the instance while frozen so we learn whether
+    # anything but the properties above changed the graph. Nested
+    # freezes forward their count since their changes are not ours.
+    outer = manager.__dict__.get('invalidate')
+    def invalidate() -> None:
+        nonlocal invalidations
+        invalidations += 1
+        if outer is not None:
+            outer()
+    manager._push_freeze()
+    manager.invalidate = invalidate  # type: ignore[method-assign]
+    try:
+        yield
+    finally:
+        if outer is None:
+            del manager.invalidate
+        else:
+            manager.invalidate = outer  # type: ignore[method-assign]
+        if (manager._freeze_count == 1 and not removed and
+            invalidations == changed_refs and getattr(model, 'document', None) is doc):
+            manager._freeze_count = 0
+            if added:
+                _attach_models(doc, added)
+        else:
+            manager._pop_freeze()

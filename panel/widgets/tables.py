@@ -25,6 +25,7 @@ from bokeh.models.widgets.tables import (
     StringEditor, StringFormatter, SumAggregator, TableColumn,
 )
 from bokeh.util.serialization import convert_datetime_array
+from packaging.version import Version
 from param.parameterized import transform_reference
 from pyviz_comms import JupyterComm
 
@@ -64,6 +65,7 @@ if t.TYPE_CHECKING:
         headerFilter: str | bool
         headerFilterParams: dict[str, t.Any]
         headerFilterFunc: str
+        headerFilterFuncParams: dict[str, t.Any]
         headerFilterPlaceholder: str
 
 class ColumnSpec(t.TypedDict, total=False):
@@ -140,6 +142,19 @@ def _stringdtype_error(df: pd.DataFrame, column: str, array):
             ) from None
         raise
 
+
+@contextmanager
+def _silence_chained_assignment():
+    import pandas as pd
+
+    # pandas 3 always uses Copy-on-Write, so the option is a no-op there and deprecated in 3.1.
+    if Version(pd.__version__).major >= 3:
+        yield
+        return
+    with pd.option_context('mode.chained_assignment', None):
+        yield
+
+
 class BaseTable(ReactiveData, Widget):
 
     aggregators = param.Dict(default={}, nested_refs=True, doc="""
@@ -147,7 +162,8 @@ class BaseTable(ReactiveData, Widget):
         be used for hierarchical multi-indexes (valid aggregators
         include 'min', 'max', 'mean' and 'sum'). If separate
         aggregators for different columns are required the dictionary
-        may be nested as `{index_name: {column_name: aggregator}}`""")
+        may be nested as `{index_name: {column_name: aggregator}}`. Group
+        rows of index levels without an aggregator are left blank.""")
 
     editables = param.Dict(default={}, nested_refs=True, doc="""
         Allows to edit table's contents for a particular column.""")
@@ -219,8 +235,14 @@ class BaseTable(ReactiveData, Widget):
             self._renamed_cols.clear()
             return
         self._renamed_cols = {
-            ('_'.join(col) if isinstance(col, tuple) else str(col)) if str(col) != col else col: col for col in self._get_fields()
+            self._field_name(col): col for col in self._get_fields()
         }
+
+    @staticmethod
+    def _field_name(col):
+        if str(col) == col:
+            return col
+        return '_'.join(col) if isinstance(col, tuple) else str(col)
 
     def _reset_selection(self, event):
         if 'selectable' in self.param and not self.selectable:
@@ -408,7 +430,8 @@ class BaseTable(ReactiveData, Widget):
 
         kind = data.dtype.kind
         is_datetime = isdatetime(data) or kind == 'M'
-        date_only = is_datetime and bool(len(data)) and isinstance(data.values[0], dt.date)
+        tz_aware = isinstance(data.dtype, pd.DatetimeTZDtype)
+        date_only = is_datetime and bool(len(data)) and not tz_aware and isinstance(data.values[0], dt.date)
         return kind, is_datetime, date_only
 
     def _setup_on_change(self, *events: param.parameterized.Event):
@@ -550,8 +573,7 @@ class BaseTable(ReactiveData, Widget):
         # Revert temporary changes to DataFrames
         if rename:
             df_sorted.index.name = None
-        df_sorted.drop(columns=['_index_'], inplace=True)
-        return df_sorted
+        return df_sorted.drop(columns=['_index_'])
 
     def _filter_dataframe(
         self,
@@ -686,11 +708,12 @@ class BaseTable(ReactiveData, Widget):
 
     def _get_header_filters(self, df: pd.DataFrame) -> list[pd.Series | np.ndarray]:
         filters = []
+        header_filters = getattr(self, 'header_filters', None)
+        filt_def = header_filters if isinstance(header_filters, dict) else {}
         for filt in getattr(self, 'filters', []):
             col_name = filt['field']
             op = filt['type']
             val = filt['value']
-            filt_def = getattr(self, 'header_filters', {}) or {}
             if col_name in df.columns:
                 col = df[col_name]
             elif col_name in self.indexes:
@@ -708,7 +731,16 @@ class BaseTable(ReactiveData, Widget):
                 elif not val:
                     continue
 
-            if col.dtype.kind != 'O':
+            # Text filters read the displayed characters. A datetime or number
+            # column has no ``.str`` accessor, so ``like`` on a date header
+            # filter raised AttributeError (#4543). Compare those columns as
+            # text and leave equality and range filters on the original dtype.
+            if op in {'like', 'starts', 'ends', 'keywords'}:
+                if col.dtype.kind not in 'SUO':
+                    col = col.astype('string')
+                if not isinstance(val, str):
+                    val = str(val)
+            elif col.dtype.kind != 'O':
                 val = col.dtype.type(val)
             if op == '=':
                 filters.append(col == val)
@@ -732,8 +764,11 @@ class BaseTable(ReactiveData, Widget):
             elif op == 'ends':
                 filters.append(col.str.lower().str.endswith(val.lower()))
             elif op == 'keywords':
-                match_all = filt_def.get(col_name, {}).get('matchAll', False)
-                sep = filt_def.get(col_name, {}).get('separator', ' ')
+                col_def = filt_def.get(col_name)
+                if not isinstance(col_def, dict):
+                    col_def = {}
+                match_all = col_def.get('matchAll', False)
+                sep = col_def.get('separator', ' ')
                 matches = val.split(sep)
                 if match_all:
                     for match in matches:
@@ -876,10 +911,9 @@ class BaseTable(ReactiveData, Widget):
                 self._update_indexless(column, positions, array)
             return
 
-        import pandas as pd
         self.value[column] = array
         if self._processed is not None and self.value is not self._processed:
-            with pd.option_context('mode.chained_assignment', None):
+            with _silence_chained_assignment():
                 self._processed[column] = array
 
     def _update_indexless(self, column: str, positions: np.ndarray, array: TDataColumn):
@@ -981,10 +1015,11 @@ class BaseTable(ReactiveData, Widget):
 
         import pandas as pd
 
-        if not np.isfinite(self.value.index.max()):
-            value_index_start = 1
+        index_max = self.value.index.max()
+        if isinstance(index_max, (int, float, np.number)) and np.isfinite(index_max):
+            value_index_start = index_max + 1
         else:
-            value_index_start = self.value.index.max() + 1
+            value_index_start = 1
 
         if isinstance(stream_value, pd.DataFrame):
             if reset_index:
@@ -1178,10 +1213,16 @@ class BaseTable(ReactiveData, Widget):
                         self.value.loc[data_ind, k] = value
                     else:
                         self.value.iloc[data_ind, columns.index(k)] = value
-                    if isinstance(value, pd.Timestamp):
-                        value = datetime_as_utctimestamp(value)
-                    elif value is pd.NaT:
+                    if isinstance(value, np.datetime64):
+                        value = pd.Timestamp(value)
+                    if value is pd.NaT:
                         value = np.nan
+                    elif isinstance(value, dt.datetime):
+                        if value.tzinfo is not None:
+                            value = value.astimezone(dt.timezone.utc)
+                        value = datetime_as_utctimestamp(value)
+                    elif isinstance(value, dt.date):
+                        value = datetime_as_utctimestamp(dt.datetime.combine(value, dt.time()))
                     values.append((patch_ind, value))
                 patches[k] = values
             self._patch(patches)
@@ -1624,6 +1665,8 @@ class Tabulator(BaseTable):
         'title_formatters': None, 'sortable': None, 'initial_page_size': None
     }
 
+    _js_events: t.ClassVar[Mapping[str, str]] = {'selection': 'selection-change'}
+
     # Determines the maximum size limits beyond which (local, remote)
     # pagination is enabled
     _MAX_ROW_LIMITS: t.ClassVar[tuple[int, int]] = (200, 10000)
@@ -1940,40 +1983,10 @@ class Tabulator(BaseTable):
         if styler is None:
             return {}
 
-        # Compute offsets (not that multi-indexes are reset so don't require an offset)
-        offset = 1 + int(len(self.indexes) == 1)  + int(self.selectable in ('checkbox', 'checkbox-single')) + int(bool(self.row_content))
-
         if self.pagination == 'remote':
             page_size = self.page_size or self.initial_page_size
             start = (self.page - 1) * page_size
             end = start + page_size
-
-        # Map column indexes in the data to indexes after frozen_columns are applied
-        column_mapper = {}
-        frozen_cols = self.frozen_columns
-        column_mapper = {}
-        if isinstance(frozen_cols, list):
-            if len(self.indexes) > 1:
-                nfrozen = len(frozen_cols)
-            else:
-                nfrozen = len([col for col in frozen_cols if col not in self.indexes])
-            non_frozen = [col for col in df.columns if col not in frozen_cols]
-            for i, col in enumerate(df.columns):
-                if col in frozen_cols:
-                    column_mapper[i] = frozen_cols.index(col) - len(self.indexes)
-                else:
-                    column_mapper[i] = nfrozen + non_frozen.index(col)
-        elif isinstance(frozen_cols, dict):
-            left_cols = [col for col, p in frozen_cols.items() if p in 'left']
-            right_cols = [col for col, p in frozen_cols.items() if p in 'right']
-            non_frozen = [col for col in df.columns if col not in frozen_cols]
-            for i, col in enumerate(df.columns):
-                if col in left_cols:
-                    column_mapper[i] = left_cols.index(col) - len(self.indexes)
-                elif col in right_cols:
-                    column_mapper[i] = len(left_cols) + len(non_frozen) + right_cols.index(col)
-                else:
-                    column_mapper[i] = len(left_cols) + non_frozen.index(col)
 
         styles = {}
         for (r, c), s in styler.ctx.items():
@@ -1984,8 +1997,7 @@ class Tabulator(BaseTable):
                     r -= start
             if r not in styles:
                 styles[int(r)] = {}
-            c = column_mapper.get(int(c), int(c))
-            styles[int(r)][offset+c] = s
+            styles[int(r)][self._field_name(df.columns[int(c)])] = s
         return {'id': uuid.uuid4().hex, 'data': styles}
 
     def _get_selectable(self):
@@ -2290,7 +2302,6 @@ class Tabulator(BaseTable):
             self._fire_pending_edits(column, positions)
             return
 
-        import pandas as pd
         if remote:
             nrows = self.page_size or self.initial_page_size
             start = (self.page - 1) * nrows
@@ -2304,7 +2315,7 @@ class Tabulator(BaseTable):
 
         with _stringdtype_error(self.value, column, array):
             self.value.loc[index, column] = array
-        with pd.option_context('mode.chained_assignment', None):
+        with _silence_chained_assignment():
             if remote:
                 self._processed.loc[index, column] = array
             else:
@@ -2486,11 +2497,22 @@ class Tabulator(BaseTable):
                 filter_params = {'valuesLookup': True}
             if filter_func is None:
                 filter_func = 'in' if filter_params.get('multiselect') else 'like'
+        # Tabulator's keywords filter reads matchAll and separator from
+        # headerFilterFuncParams. headerFilterParams only configures the
+        # header input, so leaving them there makes a local table match any
+        # keyword. Remote pagination still filters in Python.
+        func_params: dict[str, t.Any] = {}
+        if filter_func == 'keywords':
+            for key in ('matchAll', 'separator'):
+                if key in filter_params:
+                    func_params[key] = filter_params.pop(key)
         fspec['headerFilter'] = filter_type
         if filter_params:
             fspec['headerFilterParams'] = filter_params
         if filter_func:
             fspec['headerFilterFunc'] = filter_func
+        if func_params:
+            fspec['headerFilterFuncParams'] = func_params
         if filter_placeholder:
             fspec['headerFilterPlaceholder'] = filter_placeholder
         return fspec

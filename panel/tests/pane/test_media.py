@@ -11,7 +11,7 @@ try:
 except Exception:
     wavfile = None
 
-from panel.pane import Audio, Video
+from panel.pane import Audio, Video, panel
 from panel.pane.media import TensorLike, _is_1_or_2dim_int_or_float_tensor
 
 ASSETS = pathlib.Path(__file__).parent / 'assets'
@@ -81,6 +81,20 @@ def test_video_applies_url_without_format():
 def test_video_applies_url_with_format_prefix_in_query():
     url = 'https://www.videoserver.com/watch?v=file.mp4extra'
     assert not Video.applies(url)
+
+@pytest.mark.parametrize('pane, asset, name', [
+    (Video, 'mp4.mp4', 'CLIP.MP4'),
+    (Audio, 'mp3.mp3', 'VOICE.MP3'),
+])
+def test_local_media_uppercase_extension(pane, asset, name, tmp_path, document, comm):
+    path = tmp_path / name
+    path.write_bytes((ASSETS / asset).read_bytes())
+
+    assert pane.applies(str(path))
+    assert isinstance(panel(str(path)), pane)
+    model = pane(str(path)).get_root(document, comm=comm)
+    fmt = asset.split('.')[0]
+    assert model.value.startswith(f'data:{pane._media_type}/{fmt};base64,')
 
 def test_local_audio(document, comm):
     audio = Audio(str(ASSETS / 'mp3.mp3'))

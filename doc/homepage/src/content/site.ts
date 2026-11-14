@@ -55,7 +55,7 @@ export const heroCode: {key: HeroKey | null; text: string}[] = [
   {key: null, text: ''},
   {key: 'bind', text: 'def series(window, sigma, ticker):'},
   {key: 'bind', text: '    rng = np.random.default_rng(sum(map(ord, ticker)))'},
-  {key: 'bind', text: '    walk = np.cumsum(rng.normal(0, sigma, 400))'},
+  {key: 'bind', text: '    walk = np.cumsum(rng.normal(0.05, sigma, 400))'},
   {key: 'bind', text: '    smooth = np.convolve(walk, np.ones(window) / window, "same")'},
   {key: 'bind', text: '    return hv.Curve(walk).opts(alpha=0.4) * hv.Curve(smooth)'},
   {key: null, text: ''},

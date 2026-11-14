@@ -25,8 +25,21 @@ function hide(element: HTMLElement): void {
 export class TabsView extends BkTabsView {
   declare model: Tabs
 
+  private _children_update: Promise<void> = Promise.resolve()
+
+  // build_views is not reentrant
+  override update_children(): Promise<void> {
+    const update = this._children_update.then(() => super.update_children())
+    this._children_update = update.catch(() => {})
+    return update
+  }
+
   override connect_signals(): void {
     super.connect_signals()
+    this.on_transitive_change(this.model.properties.tabs, () => {
+      this._update_headers()
+      this.update_active()
+    }, {signal: (tab: any) => tab.properties.title.change})
     let view: any = this
     while (view != null) {
       if (view.model.type.endsWith("Tabs")) {

@@ -234,7 +234,7 @@ import pandas as pd
 import panel as pn
 import numpy as np
 
-pn.extension()
+pn.extension(throttled=True)
 
 data_url = 'https://datasets.holoviz.org/windturbines/v1/windturbines.csv.gz'
 df = pn.cache(pd.read_csv)(data_url)
@@ -269,7 +269,7 @@ import pandas as pd
 import panel as pn
 import numpy as np
 
-pn.extension()
+pn.extension(throttled=True)
 
 data_url = 'https://datasets.holoviz.org/windturbines/v1/windturbines.csv.gz'
 df = pn.cache(pd.read_csv)(data_url)
@@ -360,7 +360,7 @@ pn.ui.Column(intslider, markdown).servable()
 
 :::{note}
 
-`pn.bind` is the predecessor of `pn.rx`. We recommend using `pn.rx` over `pn.bind` as it's much more flexible and efficient. We include this example because you will find lots of examples in the Panel documentation and in the Panel community using `pn.bind`.
+`pn.bind` and `pn.rx` are complementary. `pn.bind` is a natural fit when you already have a function and want to wire widgets to its arguments, while `pn.rx` shines when the transformation reads naturally as an expression, e.g. a chain of DataFrame operations. Choose whichever fits the shape of your code. You will also find lots of examples in the Panel documentation and in the Panel community using `pn.bind`.
 
 :::
 

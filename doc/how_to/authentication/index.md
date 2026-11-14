@@ -79,7 +79,7 @@ Discover how to configure a callback to implement custom authorization logic.
 Discover how to allow guest users to access specific endpoints or the entire application.
 :::
 
-:::{grid-item-card} {octicon}`bug-fill;2.5em;sd-mr-1 sd-animate-grow50` Troubleshooting
+:::{grid-item-card} {octicon}`bug;2.5em;sd-mr-1 sd-animate-grow50` Troubleshooting
 :link: trouble_shooting
 :link-type: doc
 

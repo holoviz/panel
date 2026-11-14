@@ -1,3 +1,4 @@
+import datetime as dt
 import time
 
 import pytest
@@ -202,6 +203,97 @@ def test_plotly_click_data(page, plotly_2d_plot):
         wait_until(check_click, page)
 
 
+def test_plotly_click_data_multicategory(page):
+    # Regression test for https://github.com/holoviz/panel/issues/7010
+    fig = go.Figure(
+        data=[go.Scatter(x=[['A', 'A', 'B', 'B'], [0, 1, 2, 3]], y=[0, 2, -1, 1], mode='markers')],
+        layout={'xaxis_type': 'multicategory'}
+    )
+    pane = Plotly(fig)
+    serve_component(page, pane)
+
+    points = page.locator('.js-plotly-plot .plot-container.plotly path.point')
+    expect(points).to_have_count(4)
+    points.nth(2).click(force=True)
+
+    def check_click():
+        assert pane.click_data is not None
+        point = pane.click_data['points'][0]
+        assert point['x'] == ['B', 2]
+        assert point['y'] == -1
+        assert point['pointNumber'] == 2
+        assert 'data' not in point and 'fullData' not in point
+        assert 'xaxis' not in point and 'yaxis' not in point
+    wait_until(check_click, page)
+
+
+def test_plotly_click_data_heatmap(page):
+    # Regression test for https://github.com/holoviz/panel/issues/7010
+    fig = go.Figure(data=[go.Heatmap(z=[[1, 2], [3, 4]], x=['A', 'B'], y=['C', 'D'])])
+    pane = Plotly(fig)
+    serve_component(page, pane)
+
+    drag = page.locator('.js-plotly-plot .nsewdrag').first
+    expect(drag).to_be_visible()
+    box = drag.bounding_box()
+    page.mouse.click(box['x'] + box['width'] * 0.75, box['y'] + box['height'] * 0.25)
+
+    def check_click():
+        assert pane.click_data is not None
+        point = pane.click_data['points'][0]
+        assert point['x'] == 'B'
+        assert point['y'] == 'D'
+        assert point['z'] == 4
+        assert point['pointNumber'] == [1, 1]
+        assert point['pointIndex'] == [1, 1]
+        assert 'data' not in point and 'fullData' not in point
+        assert 'xaxis' not in point and 'yaxis' not in point
+    wait_until(check_click, page)
+
+
+def test_plotly_click_after_resize_without_size_change(page, plotly_2d_plot):
+    serve_component(page, plotly_2d_plot)
+
+    point = page.locator('.js-plotly-plot .plot-container.plotly path.point').nth(0)
+    point.hover(force=True)
+    wait_until(lambda: (plotly_2d_plot.hover_data or {}).get('points', [{}])[0].get('pointNumber') == 0, page)
+
+    model_id = next(iter(plotly_2d_plot._models.values()))[0].id
+    page.evaluate(f"() => Bokeh.index.find_one_by_id('{model_id}').invalidate_layout()")
+    page.wait_for_timeout(60)
+    point.click(force=True)
+
+    wait_until(lambda: (plotly_2d_plot.click_data or {}).get('points', [{}])[0].get('pointNumber') == 0, page)
+
+
+@pytest.mark.parametrize('per_point', [False, True])
+def test_plotly_batch_update_leaves_unchanged_trace_properties(page, per_point):
+    fig = go.Figure([go.Scatter(x=[0, 1, 2], y=[1, 2, 3]) for _ in range(3)])
+    serve_component(page, Plotly(fig))
+
+    plot = page.locator('.js-plotly-plot .plot-container.plotly')
+    expect(plot).to_have_count(1)
+
+    def color(last):
+        return [last] * 3 if per_point else last
+
+    with fig.batch_update():
+        for trace, c in zip(fig.data, ['red', 'green', 'blue']):
+            trace.marker.color = color(c)
+    gd = page.locator('.js-plotly-plot')
+    get_colors = "gd => gd.data.map(t => t.marker && t.marker.color)"
+    wait_until(lambda: gd.evaluate(get_colors) == [color(c) for c in ['red', 'green', 'blue']], page)
+
+    with fig.batch_update():
+        for trace, c in zip(fig.data, ['red', 'green', 'orange']):
+            trace.y = [4, 5, 6]
+            trace.marker.color = color(c)
+
+    wait_until(lambda: gd.evaluate("gd => gd.data[2].marker.color") == color('orange'), page)
+    assert gd.evaluate(get_colors) == [color(c) for c in ['red', 'green', 'orange']]
+    assert gd.evaluate("gd => gd.data.map(t => t.y)") == [[4, 5, 6]] * 3
+
+
 # Can't reliably simulate the clicks so disabling
 def _test_plotly_click_data_figure_widget(page, plotly_2d_figure_widget):
     fig = go.FigureWidget(plotly_2d_figure_widget)
@@ -328,16 +420,101 @@ def test_plotly_img_plot(page, plotly_img_plot):
     point.hover(force=True)
 
     def check_hover():
-        assert plotly_img_plot.hover_data == {
-            'selector': None,
-            'device_state': {
-                'alt': False,
-                'button': 0,
-                'buttons': 0,
-                'ctrl': False,
-                'meta': False,
-                'shift': False,
-            },
-            'points': [{'curveNumber': 0, 'x': 15, 'y': 3, 'colormodel': 'rgb'}]
+        assert plotly_img_plot.hover_data is not None
+        assert plotly_img_plot.hover_data['device_state'] == {
+            'alt': False,
+            'button': 0,
+            'buttons': 0,
+            'ctrl': False,
+            'meta': False,
+            'shift': False,
         }
+        point = plotly_img_plot.hover_data['points'][0]
+        assert {k: point[k] for k in ('curveNumber', 'pointNumber', 'pointIndex', 'x', 'y', 'colormodel')} == {
+            'curveNumber': 0,
+            'pointNumber': [3, 15],
+            'pointIndex': [3, 15],
+            'x': 15,
+            'y': 3,
+            'colormodel': 'rgb',
+        }
+        assert point['z'] == point['color']
     wait_until(check_hover, page)
+
+
+def test_plotly_update_traces_keeps_date_axis(page):
+    index = [dt.datetime(2019, 1, i) for i in range(1, 11)]
+    fig = go.Figure([go.Scatter(x=index, y=np.arange(10))])
+    plot = Plotly(fig, width=400, height=300)
+
+    serve_component(page, plot)
+
+    plotly_plot = page.locator('.js-plotly-plot')
+    expect(plotly_plot).to_have_count(1)
+    wait_until(lambda: plotly_plot.evaluate('el => el._fullLayout.xaxis.type') == 'date', page)
+
+    fig.update_traces(x=np.array(index[:5]), y=np.arange(5))
+
+    wait_until(lambda: plotly_plot.evaluate('el => el.data[0].x.length') == 5, page)
+    assert plotly_plot.evaluate('el => el._fullLayout.xaxis.type') == 'date'
+
+
+def test_plotly_python_restyle_is_not_echoed(page):
+    fig = go.Figure([go.Scatter(x=[0, 1, 2], y=[1, 2, 3])])
+    pane = Plotly(fig)
+    serve_component(page, pane)
+
+    plot = page.locator('.js-plotly-plot .plot-container.plotly')
+    expect(plot).to_have_count(1)
+
+    echoes = []
+    pane.param.watch(lambda e: echoes.append(e.new), 'restyle_data')
+
+    fig.data[0].marker.color = 'red'
+    gd = page.locator('.js-plotly-plot')
+    wait_until(lambda: gd.evaluate("gd => gd.data[0].marker.color") == 'red', page)
+
+    page.wait_for_timeout(500)
+    assert echoes == []
+
+
+def test_plotly_js_layout_change_replots_without_roundtrip(page, plotly_2d_plot):
+    serve_component(page, plotly_2d_plot)
+
+    expect(page.locator('.js-plotly-plot .plot-container.plotly')).to_have_count(1)
+
+    model_id = next(iter(plotly_2d_plot._models.values()))[0].id
+    page.evaluate(f"""() => {{
+      const model = Bokeh.index.find_one_by_id('{model_id}').model
+      model.layout = {{...model.layout, title: {{text: 'Updated'}}}}
+    }}""")
+
+    expect(page.locator('.js-plotly-plot .gtitle')).to_have_text('Updated')
+
+    page.wait_for_timeout(500)
+    assert plotly_2d_plot._render_count == 0
+
+
+def test_plotly_data_update_keeps_frames(page):
+    frames = [go.Frame(name='first', data=[go.Scatter(y=[3, 4])])]
+    pane = Plotly(go.Figure(data=[go.Scatter(x=[0, 1], y=[1, 2])], frames=frames))
+
+    serve_component(page, pane)
+
+    gd = page.locator('.js-plotly-plot')
+    wait_until(lambda: gd.evaluate("gd => gd._transitionData._frames.length") == 1, page)
+
+    page.evaluate("""() => {
+      window.__addFrames = 0
+      const addFrames = window.Plotly.addFrames
+      window.Plotly.addFrames = (...args) => { window.__addFrames += 1; return addFrames(...args) }
+    }""")
+
+    pane.object = go.Figure(data=[go.Scatter(x=[0, 1], y=[5, 6])], frames=frames)
+    wait_until(lambda: gd.evaluate("gd => gd.data[0].y[0]") == 5, page)
+    assert gd.evaluate("gd => gd._transitionData._frames.length") == 1
+    assert page.evaluate("() => window.__addFrames") == 0
+
+    new_frames = frames + [go.Frame(name='second', data=[go.Scatter(y=[7, 8])])]
+    pane.object = go.Figure(data=[go.Scatter(x=[0, 1], y=[5, 6])], frames=new_frames)
+    wait_until(lambda: gd.evaluate("gd => gd._transitionData._frames.length") == 2, page)

@@ -688,7 +688,8 @@ class Dial(ValueIndicator):
         'annulus_width', 'format', 'background', 'needle_width',
         'tick_size', 'title_size', 'value_size', 'colors',
         'default_color', 'unfilled_color', 'height',
-        'width', 'nan_format', 'needle_color', 'label_color'
+        'width', 'max_width', 'max_height', 'nan_format',
+        'needle_color', 'label_color'
     ]
 
     _data_params: t.ClassVar[list[str]] = _manual_params
@@ -722,10 +723,15 @@ class Dial(ValueIndicator):
 
     def _size(self) -> tuple[int, int]:
         height = self.height or self.width or 250
-        return self.width or height, height
+        width = self.width or height
+        if self.max_width:
+            width = min(width, self.max_width)
+        if self.max_height:
+            height = min(height, self.max_height)
+        return width, height
 
     def _font_sizes(self) -> tuple[str, str, str]:
-        scale = (self._size()[1]/400)
+        scale = min(self._size())/400
         title_size = self.title_size if self.title_size else '%spt' % (scale*32)
         value_size = self.value_size if self.value_size else '%spt' % (scale*48)
         tick_size = self.tick_size if self.tick_size else '%spt' % (scale*18)
@@ -869,11 +875,13 @@ class Dial(ValueIndicator):
         from bokeh.plotting import figure
         properties = self._get_properties(doc)
         x_range, y_range = self._get_ranges()
+        width, height = self._size()
         model = figure(
             x_range=x_range, y_range=y_range, tools=[],
             outline_line_color=None, toolbar_location=None,
             border_fill_alpha=0, min_border=0,
-            width=self.width, height=self.height, **properties
+            width=width, height=height, max_width=self.max_width,
+            max_height=self.max_height, **properties
         )
         model.xaxis.visible = False
         model.yaxis.visible = False
@@ -932,8 +940,13 @@ class Dial(ValueIndicator):
     def _manual_update(self, events, model, doc, root, parent, comm):
         update_data = False
         for event in events:
-            if event.name in ('width', 'height'):
-                model.update(**{event.name: event.new})
+            if event.name in ('width', 'height', 'max_width', 'max_height'):
+                width, height = self._size()
+                model.update(
+                    width=width, height=height,
+                    max_width=self.max_width, max_height=self.max_height
+                )
+                update_data = True
             if event.name in self._data_params:
                 update_data = True
             if event.name == 'needle_color':
@@ -1044,9 +1057,14 @@ class LinearGauge(ValueIndicator):
         self.param.value.bounds = self.bounds
 
     @property
+    def _value(self) -> float:
+        # None renders like nan, the same as the Number indicator
+        return float('nan') if self.value is None else self.value
+
+    @property
     def _color_intervals(self):
         vmin, vmax = self.bounds
-        value = self.value
+        value = self._value
         ncolors = len(self.colors) if self.colors else 1
         interval = (vmax-vmin)
         if math.isfinite(value):
@@ -1075,7 +1093,7 @@ class LinearGauge(ValueIndicator):
 
     def _get_data(self, properties):
         vmin, vmax = self.bounds
-        value = self.value
+        value = self._value
         interval = (vmax-vmin)
         colors, values = [], [vmin]
         above = False
@@ -1096,7 +1114,7 @@ class LinearGauge(ValueIndicator):
         value = self.format.format(value=value).replace('nan', self.nan_format)
         return (
             {'y0': values[:-1], 'y1': values[1:], 'color': colors},
-            {'y': [self.value], 'text': [value]}
+            {'y': [self._value], 'text': [value]}
         )
 
     def _get_model(self, doc, root=None, parent=None, comm=None):

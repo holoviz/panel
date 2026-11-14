@@ -155,6 +155,31 @@ def test_basic_auth_invalid_credentials(basic_auth_client):
         assert 'user' not in r.cookies
 
 
+OFFSITE_NEXT_URLS = [
+    'https://evil.com', '//evil.com', '///evil.com', '////evil.com',
+    ' ///evil.com', '/\\evil.com', '/\t//evil.com',
+]
+
+
+@pytest.mark.parametrize('next_url', OFFSITE_NEXT_URLS)
+def test_basic_auth_rejects_offsite_next_url(basic_auth_client, next_url):
+    with basic_auth_client() as client:
+        r = client.get('/login', params={'next': next_url}, follow_redirects=False)
+        assert r.status_code == 400
+        assert 'next_url' not in client.cookies
+
+
+@pytest.mark.parametrize('next_url', [url for url in OFFSITE_NEXT_URLS if url.isprintable()])
+def test_basic_auth_rejects_offsite_next_url_cookie(basic_auth_client, next_url):
+    with basic_auth_client() as client:
+        client.cookies.set('next_url', next_url)
+        r = client.post(
+            '/login', data={'username': 'user', 'password': PASSWORD},
+            follow_redirects=False
+        )
+    assert r.status_code == 400
+
+
 def test_basic_auth_custom_endpoints(basic_auth_client):
     with basic_auth_client(login_endpoint='/signin', logout_endpoint='/signout') as client:
         r = client.get('/app', follow_redirects=False)
@@ -409,6 +434,9 @@ def refreshes(monkeypatch):
 
 def expire_access_token(client):
     expired = dt.datetime.now(dt.timezone.utc).timestamp() - 10
+    # Setting the cookie alongside the one issued at login would send both,
+    # and which one the server reads depends on the client's cookie order.
+    client.cookies.delete('oauth_expiry')
     client.cookies.set(
         'oauth_expiry',
         create_signed_value(COOKIE_SECRET, 'oauth_expiry', str(expired)).decode()
@@ -466,11 +494,7 @@ def test_oauth_code_flow(oauth_client):
 def test_oauth_refreshes_expired_access_token(oauth_client):
     with oauth_client(oauth_refresh_tokens=True) as client:
         oauth_login(client)
-        expired = dt.datetime.now(dt.timezone.utc).timestamp() - 10
-        client.cookies.set(
-            'oauth_expiry',
-            create_signed_value(COOKIE_SECRET, 'oauth_expiry', str(expired)).decode()
-        )
+        expire_access_token(client)
         assert client.get('/app').status_code == 200
         access_token = client.cookies['access_token']
     assert decode_signed_value(
@@ -484,6 +508,13 @@ def test_oauth_state_mismatch_is_rejected(oauth_client):
         r = client.get('/login?code=code&state=tampered', follow_redirects=False)
     assert r.status_code == 401
     assert 'user' not in r.cookies
+
+
+@pytest.mark.parametrize('next_url', OFFSITE_NEXT_URLS)
+def test_oauth_rejects_offsite_next_url(oauth_client, next_url):
+    with oauth_client() as client:
+        r = client.get('/login', params={'next': next_url}, follow_redirects=False)
+    assert r.status_code == 400
 
 
 def test_oauth_error_is_reported(oauth_client):

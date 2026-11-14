@@ -120,14 +120,6 @@ export class ReactComponentView extends ReactiveESMView {
       return
     }
     this._rendered = false
-    if (this.model.usesMui) {
-      if (this.model.root_node) {
-        this.style_cache = document.head
-      } else {
-        this.style_cache = document.createElement("head")
-        this.shadow_el.insertBefore(this.style_cache, this.container)
-      }
-    }
     this.accessed_properties = []
     for (const lf of this._lifecycle_handlers.keys()) {
       (this._lifecycle_handlers.get(lf) || []).splice(0)
@@ -149,6 +141,15 @@ export class ReactComponentView extends ReactiveESMView {
       throw e
     })
     this._await_ready(mounted_promise)
+  }
+
+  setup_style_cache(): void {
+    if (this.model.root_node) {
+      this.style_cache = document.head
+    } else {
+      this.style_cache = document.createElement("head")
+      this.shadow_el.insertBefore(this.style_cache, this.container)
+    }
   }
 
   override render_error(error: SyntaxError): void {
@@ -684,14 +685,14 @@ function react_wrappers(libs: ReactLibs): ReactWrappers {
 }
 
 /**
- * Returns the Component type for a view. Non-bundled components with and
+ * Returns the Component type for the libs. Non-bundled components with and
  * without MUI share one React instance from the same import map URL but load
- * different libs, so emotion is chosen per view rather than per React.
+ * different libs, so emotion is chosen by the libs rather than by React.
  */
-function component_type(view: ReactComponentView, libs: ReactLibs): any {
+function component_type(libs: ReactLibs): any {
   const wrappers = react_wrappers(libs)
   const {createCache, CacheProvider} = libs
-  if (!view.model.usesMui || createCache == null || CacheProvider == null) {
+  if (!uses_emotion(libs)) {
     return wrappers.Component
   }
   let Component = wrappers.emotion_components.get(createCache)
@@ -753,6 +754,18 @@ function css_class_name(class_name: string): string {
   return class_name.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase()
 }
 
+// A repeated model shares one view, whose element can only be mounted once.
+function unique_models(models: any[]): any[] {
+  const seen = new Set<string>()
+  return models.filter((model: any) => {
+    if (seen.has(model.id)) {
+      return false
+    }
+    seen.add(model.id)
+    return true
+  })
+}
+
 function react_model_proxy(view: ReactComponentView, libs: ReactLibs, Child: any): any {
   const {React} = libs
   const react_proxy: any = new Proxy(view, {
@@ -810,14 +823,14 @@ function react_model_proxy(view: ReactComponentView, libs: ReactLibs, Child: any
           if (!isArray(value)) {
             return React.createElement(Child, {parent: target, name: child})
           }
-          const [children_state, set_children] = React.useState(() => value.map((model: any) =>
+          const [children_state, set_children] = React.useState(() => unique_models(value).map((model: any) =>
             React.createElement(Child, {parent: target, name: child, key: model.id, id: model.id, model}),
           ))
           React.useEffect(() => {
             // Compares against the latest state, not the closure's initial
             // one, and catches lists that only shrank.
             const cb = () => {
-              const current_models = data_model.attributes[child]
+              const current_models = unique_models(data_model.attributes[child])
               set_children((previous: any[]) => {
                 if (previous.length === current_models.length &&
                     current_models.every((model: any, i: number) => model.id === previous[i].props.id)) {
@@ -846,13 +859,26 @@ function react_model_proxy(view: ReactComponentView, libs: ReactLibs, Child: any
  * React tree without its own shadow root, returns the element for the parent
  * to render.
  */
+/**
+ * Whether components rendered with these libs need an emotion cache. Libs
+ * only include emotion if the component uses MUI: a bundle only exports it
+ * if it was compiled with MUI, and is sent without an import map to tell,
+ * while the libs of other components are chosen by `usesMui`.
+ */
+function uses_emotion(libs: ReactLibs): boolean {
+  return libs.createCache != null && libs.CacheProvider != null
+}
+
 function render_react(view: ReactComponentView, libs: ReactLibs): any {
   if (view.is_destroyed) {
     return null
   }
+  if (uses_emotion(libs) && view.container != null) {
+    view.setup_style_cache()
+  }
   const {React, createRoot} = libs
   const {Child} = react_wrappers(libs)
-  const Component = component_type(view, libs)
+  const Component = component_type(libs)
   const props = {view, model: react_model_proxy(view, libs, Child), data: view.model.data, el: view.container}
   const rendered = React.createElement(Component, {...props, key: view_key(view)})
   if (!view.model.use_shadow_dom && ((view.parent as any)?.react_root !== undefined)) {

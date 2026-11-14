@@ -26,7 +26,7 @@ panel
 ```python
 import panel as pn
 
-pn.extension(sizing_mode="stretch_width", design="material")
+pn.extension(sizing_mode="stretch_width")
 
 BUTTON_WIDTH = 125
 
@@ -46,7 +46,7 @@ def remove_all_tasks(*args):
 def create_task(text):
     state = pn.ui.Checkbox(align="center", sizing_mode="fixed")
     content = pn.ui.Markdown(text)
-    remove = pn.ui.Button(width=BUTTON_WIDTH, icon="trash", sizing_mode="fixed")
+    remove = pn.ui.Button(width=BUTTON_WIDTH, icon="delete", sizing_mode="fixed")
     task = pn.ui.Row(state, content, remove, sizing_mode="stretch_width")
 
     pn.bind(remove_task, task, remove, watch=True)
@@ -93,7 +93,7 @@ submit_task = pn.ui.Button(
 clear = pn.ui.Button(
     label="Remove All",
     color="primary",
-    variant="outline",
+    variant="outlined",
     width=BUTTON_WIDTH,
     sizing_mode="fixed",
     visible=pn.bind(has_tasks, state_changed_count)
@@ -115,7 +115,7 @@ pn.ui.Column(
     status_report,
     pn.ui.Row(text_input, submit_task),
     tasks,
-    pn.ui.Row(pn.ui.Spacer(), clear),
+    pn.ui.Row(pn.ui.HSpacer(), clear),
     max_width=500,
 ).servable()
 ```
@@ -148,14 +148,20 @@ conda install -y -c conda-forge panel
 
 ## Explanation
 
-COMING UP
+The app keeps its tasks in a single `tasks` column. Each task is a `Row` created by `create_task`, holding a `Checkbox`, the task text as `Markdown` and a remove `Button` with the `delete` icon. Binding `remove_task` to the remove button with `watch=True` removes that row from `tasks` whenever the button is clicked.
+
+Checking a box changes a widget *inside* a row, which `tasks.param.objects` does not notice. We therefore keep a hidden `state_changed_count` counter and increment it whenever a task is added, removed or checked. The status report is bound to both the counter and `tasks.param.objects`, so `get_state` reruns and recounts the completed tasks on every change.
+
+The buttons react to the state in the same way. The *Add* button is `disabled` while the text input is empty, because its `disabled` parameter is bound to `can_add` and the `value_input` of the `TextInput`, which updates on every keystroke. The *Remove All* button is only `visible` while there are tasks, because `visible` is bound to `has_tasks` and the counter. Finally, the `HSpacer` pushes the *Remove All* button to the right edge of its row.
+
+The order of the `pn.bind(..., watch=True)` calls matters: callbacks run in the order they were bound, so the counter must be updated *after* a task has been added or removed, otherwise `get_state` would count the tasks before the change.
 
 Let's perform the following actions:
 
 - Remove one task
 - Remove all tasks
 - Add 3 Tasks
-- Check 1 of 3 tasks and see the `status_message` update accordingly.
+- Check 1 of 3 tasks and see the status report update accordingly.
 
 :::{note}
 A todo app can be built in many other ways. The main purpose of this example is for all of us to acquire the basic skills needed to develop *stateful*, *dynamically updating* apps like this one.

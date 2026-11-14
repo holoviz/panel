@@ -243,9 +243,6 @@ def wait_until(fn, page=None, timeout=5000, interval=100):
     # Hide this function traceback from the pytest output if the test fails
     __tracebackhide__ = True
 
-    if page:
-        page.wait_for_load_state('networkidle')
-
     start = time.time()
 
     def timed_out():
@@ -314,9 +311,6 @@ async def async_wait_until(fn, page=None, timeout=10000, interval=100):
     """
     # Hide this function traceback from the pytest output if the test fails
     __tracebackhide__ = True
-
-    if page:
-        await page.wait_for_load_state('networkidle')
 
     start = time.monotonic()
 
@@ -404,7 +398,6 @@ def serve_and_wait(app, page=None, prefix=None, port=None, proxy=None, **kwargs)
     wait_for_server(port, prefix=prefix)
     if page:
         page.wait_for_function("document.readyState === 'complete'", timeout=5000)
-        page.wait_for_load_state('networkidle')
     return port
 
 serve_and_wait.server_implementation = 'tornado'
@@ -422,7 +415,6 @@ def serve_component(page, app, suffix='', wait=True, **kwargs):
     if page and wait:
         # Heavy bundles can take over 5s to load on a busy runner.
         page.wait_for_function("document.readyState === 'complete'", timeout=15000)
-        page.wait_for_load_state('networkidle')
         # The views request their stylesheets only once they render.
         wait_until(lambda: any(
             "items were rendered successfully" in str(msg) or "Error rendering Bokeh items" in str(msg)
@@ -458,15 +450,16 @@ def wait_for_server(port, prefix=None, timeout=3):
     if not prefix.endswith('/'):
         prefix += '/'
     url = f"http://127.0.0.1:{port}{prefix}liveness"
+    error = None
     while True:
         try:
             if requests.get(url, timeout=timeout).ok:
                 return
-        except Exception:
-            pass
+        except Exception as e:
+            error = e
         time.sleep(0.05)
         if (time.time()-start) > timeout:
-            raise RuntimeError(f'{url} did not respond before timeout.')
+            raise RuntimeError(f'{url} did not respond before timeout: {error}')
 
 
 def terminate_panel_serve(p):

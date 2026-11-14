@@ -135,7 +135,8 @@ def _get_dimensions(spec, props):
 
 def _get_schema_version(obj, default_version: int = 5) -> int:
     if Vega.is_altair(obj):
-        schema = obj.to_dict().get('$schema', '')
+        import altair as alt
+        schema = alt.SCHEMA_URL
     else:
         schema = obj.get('$schema', '')
     version = schema.split('/')[-1]
@@ -170,6 +171,14 @@ def _get_selections(obj, version=None):
                 selections.update(_get_selections(subobj, version=version))
     return selections
 
+def _altair_to_dict(obj):
+    import altair as alt
+
+    # The vegafusion transformer makes Altair refuse any other format
+    if alt.data_transformers.active == 'vegafusion':
+        return obj.to_dict(format='vega')
+    return obj.to_dict()
+
 def _to_json(obj):
     if isinstance(obj, dict):
         json = dict(obj)
@@ -180,7 +189,7 @@ def _to_json(obj):
             elif isinstance(data, list):
                 json['data'] = [dict(d) for d in data]
         return json
-    return obj.to_dict()
+    return _altair_to_dict(obj)
 
 
 class Vega(ModelPane):
@@ -324,7 +333,7 @@ class Vega(ModelPane):
                 'Please install it via `pip install vl-convert-python`.'
             ) from None
 
-        spec = self.object if isinstance(self.object, dict) else self.object.to_dict()
+        spec = self.object if isinstance(self.object, dict) else _altair_to_dict(self.object)
         spec = dict(spec)
         data = spec.get('data', {})
         if isinstance(data, list):

@@ -254,6 +254,18 @@ def test_datetime_slider(document, comm, value, start, end):
         assert widget.value == 1620777600000
 
 
+def test_datetime_slider_preserves_time_in_bounds(document, comm):
+    start = datetime(2026, 8, 21, 8, 45)
+    end = datetime(2026, 8, 21, 13, 30)
+    datetime_slider = DatetimeSlider(value=start, start=start, end=end)
+
+    widget = datetime_slider.get_root(document, comm=comm)
+
+    epoch = datetime(1970, 1, 1)
+    assert widget.start == (start - epoch).total_seconds() * 1000
+    assert widget.end == (end - epoch).total_seconds() * 1000
+
+
 def test_datetime_slider_np_datetime64(document, comm):
     start = np.datetime64('2018-09-01')
     end = np.datetime64('2018-09-10')
@@ -395,6 +407,41 @@ def test_datetime_range_slider(document, comm):
 
         datetime_slider.value = (datetime(2021, 2, 12), datetime(2021, 5, 12))
         assert widget.value == (1613088000000, 1620777600000)
+
+
+def test_date_range_slider_value_none():
+    date_slider = DateRangeSlider(
+        start=date(2020, 1, 1),
+        end=date(2020, 1, 5),
+    )
+    assert date_slider.value == (date(2020, 1, 1), date(2020, 1, 5))
+    assert date_slider.value_start == date(2020, 1, 1)
+    assert date_slider.value_end == date(2020, 1, 5)
+
+    date_slider.value = None
+    assert date_slider.value is None
+    assert date_slider.value_start is None
+    assert date_slider.value_end is None
+
+    date_slider.value = (date(2020, 1, 2), date(2020, 1, 4))
+    assert date_slider.value == (date(2020, 1, 2), date(2020, 1, 4))
+    assert date_slider.value_start == date(2020, 1, 2)
+    assert date_slider.value_end == date(2020, 1, 4)
+
+
+def test_datetime_range_slider_value_none():
+    dt_slider = DatetimeRangeSlider(
+        start=datetime(2020, 1, 1),
+        end=datetime(2020, 1, 5),
+    )
+    assert dt_slider.value == (datetime(2020, 1, 1), datetime(2020, 1, 5))
+    assert dt_slider.value_start == datetime(2020, 1, 1)
+    assert dt_slider.value_end == datetime(2020, 1, 5)
+
+    dt_slider.value = None
+    assert dt_slider.value is None
+    assert dt_slider.value_start is None
+    assert dt_slider.value_end is None
 
 
 def test_discrete_slider(document, comm):
@@ -875,6 +922,61 @@ def test_editable_rangeslider_fixed_novalue():
     slider = EditableRangeSlider(fixed_end=fixed_end, step=step)
     assert slider.value == (fixed_end - step, fixed_end)
 
+
+@pytest.mark.parametrize(
+    "editableslider,value",
+    [(EditableFloatSlider, 15.0), (EditableIntSlider, 15), (EditableRangeSlider, (2.0, 15.0))],
+)
+def test_editable_slider_inner_bounds_contain_value(editableslider, value):
+    slider = editableslider(start=0, end=10, value=value)
+    assert (slider._slider.start, slider._slider.end) == (0, 15)
+    assert slider._slider.value == value
+    assert slider.end == 10
+
+    slider.end = 12
+    assert slider._slider.end == 15
+    assert slider._slider.value == value
+
+
+@pytest.mark.parametrize(
+    "editableslider,value,new_value,inner_bounds",
+    [
+        (EditableFloatSlider, 5.0, 15.0, (0, 15)),
+        (EditableIntSlider, 5, -3, (-3, 10)),
+        (EditableRangeSlider, (2.0, 5.0), (-3.0, 15.0), (-3, 15)),
+    ],
+)
+def test_editable_slider_inner_bounds_widen_on_value_update(
+    editableslider, value, new_value, inner_bounds
+):
+    slider = editableslider(start=0, end=10, value=value)
+    slider.value = new_value
+    assert (slider._slider.start, slider._slider.end) == inner_bounds
+    assert slider._slider.value == new_value
+
+
+@pytest.mark.parametrize(
+    "editableslider,value,fixed_start,fixed_end,expected",
+    [
+        (EditableFloatSlider, 15.0, None, 8, 8.0),
+        (EditableFloatSlider, -5.0, 2, None, 2.0),
+        (EditableIntSlider, 15, None, 8, 8),
+        (EditableRangeSlider, (-5.0, 15.0), 2, 8, (2.0, 8.0)),
+        (EditableRangeSlider, (3.0, 15.0), None, 8, (3.0, 8.0)),
+    ],
+)
+def test_editable_slider_fixed_bounds_clamp_value(
+    editableslider, value, fixed_start, fixed_end, expected
+):
+    slider = editableslider(start=0, end=10, value=value)
+    slider.param.update(fixed_start=fixed_start, fixed_end=fixed_end)
+    assert slider.value == expected
+    assert slider._slider.value == expected
+    if isinstance(expected, tuple):
+        assert all(isinstance(v, float) for v in slider.value)
+    else:
+        assert type(slider.value) is type(expected)
+
 @pytest.mark.parametrize(
     "editableslider",
     [EditableFloatSlider, EditableIntSlider, EditableRangeSlider],
@@ -1097,3 +1199,23 @@ def test_editable_slider_value_throttled_not_updated_while_dragging_edit(
 
     edit._process_events({'value_throttled': released_value})
     assert w.value_throttled == updated_value
+
+
+def test_editable_float_slider_default_input_format(document, comm):
+    slider = EditableFloatSlider(start=0, end=1, value=0.10000000001)
+
+    assert slider._value_edit.format == '0.0[0000]'
+    assert slider.format is None
+    assert slider.value == 0.10000000001
+
+    slider.step = 0.0000001
+    assert slider._value_edit.format == '0.0[000000]'
+
+    slider.format = '0.00'
+    assert slider._value_edit.format == '0.00'
+
+
+def test_editable_float_slider_explicit_input_format():
+    slider = EditableFloatSlider(start=0, end=1, format='1[.]000')
+
+    assert slider._value_edit.format == '1[.]000'

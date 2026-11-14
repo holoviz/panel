@@ -205,10 +205,10 @@ def test_tabulator_default(page, df_mixed, df_mixed_as_string):
     assert page.locator('text="index"').is_visible()
     assert cols.nth(1).is_visible()
 
-    # Check that the columns are sortable by default
-    assert page.locator(".tabulator-sortable").count() == expected_ncols
+    # Check that the columns except the empty one are sortable by default
+    assert page.locator(".tabulator-sortable").count() == expected_ncols - 1
     # And that none of them is sorted on start
-    for i in range(expected_ncols):
+    for i in range(expected_ncols - 1):
         assert cols.nth(i).get_attribute('aria-sort') == 'none'
 
 
@@ -645,6 +645,57 @@ def test_tabulator_editor_stays_open_during_resize_redraw(page, df_mixed):
 
     # A resize-triggered redraw should not close an active editor.
     expect(editor).to_have_count(1)
+
+
+_ENLARGE_HEADERS = """() => {
+  const view = Object.values(Bokeh.index)[0]
+  const style = document.createElement('style')
+  style.textContent = '.tabulator-col-title { font-size: 40px !important; }'
+  view.shadow_el.appendChild(style)
+}"""
+
+_STR_COLUMN_WIDTH = """() => {
+  const view = Object.values(Bokeh.index)[0]
+  return view.shadow_el.querySelector('.tabulator-col[tabulator-field="str"]').offsetWidth
+}"""
+
+
+def test_tabulator_redraws_after_web_font_loads(page, df_mixed):
+    widget = Tabulator(df_mixed)
+
+    serve_component(page, widget)
+    expect(page.locator('.tabulator-row')).to_have_count(len(df_mixed))
+
+    width = page.evaluate(_STR_COLUMN_WIDTH)
+    page.evaluate(_ENLARGE_HEADERS)
+    page.evaluate("() => document.fonts.dispatchEvent(new FontFaceSetLoadEvent('loadingdone'))")
+
+    wait_until(lambda: page.evaluate(_STR_COLUMN_WIDTH) > width, page)
+
+
+def test_tabulator_resize_redraw_not_blocked_by_pending_root_ready(page, df_mixed):
+    widget = Tabulator(df_mixed)
+
+    serve_component(page, widget)
+    expect(page.locator('.tabulator-row')).to_have_count(len(df_mixed))
+
+    width = page.evaluate(_STR_COLUMN_WIDTH)
+    # Simulates a removed view whose pending work never settles.
+    page.evaluate("() => { Object.values(Bokeh.index)[0]._ready = new Promise(() => {}) }")
+    page.evaluate(_ENLARGE_HEADERS)
+    page.evaluate("() => document.fonts.dispatchEvent(new FontFaceSetLoadEvent('loadingdone'))")
+
+    wait_until(lambda: page.evaluate(_STR_COLUMN_WIDTH) > width, page)
+
+
+def test_tabulator_empty_column_has_no_sorter(page, df_mixed):
+    widget = Tabulator(df_mixed)
+
+    serve_component(page, widget)
+    expect(page.locator('.tabulator-row')).to_have_count(len(df_mixed))
+
+    expect(page.locator('.tabulator-col.empty')).to_have_count(1)
+    expect(page.locator('.tabulator-col.empty .tabulator-col-sorter')).to_have_count(0)
 
 
 def test_tabulator_editor_jscode(page, df_mixed):
@@ -1478,6 +1529,29 @@ def test_tabulator_patch_no_horizontal_rescroll(page, df_mixed):
     wait_until(kept_position, page)
 
 
+def test_tabulator_scroll_during_resize_redraw_kept(page, df_mixed):
+    widths = 100
+    width = int(((df_mixed.shape[1] + 1) * widths) / 2)
+    widget = Tabulator(df_mixed, width=width, widths=widths)
+
+    serve_component(page, widget)
+
+    table_holder = page.locator('.pnx-tabulator .tabulator-tableholder')
+    wait_until(lambda: table_holder.evaluate("el => el.scrollWidth > el.clientWidth"), page)
+    page.evaluate("""() => {
+      const view = Object.values(Bokeh.index)[0]
+      view._resize_redraw()
+      const el = view.shadow_el.querySelector('.tabulator-tableholder')
+      el.scrollLeft = el.scrollWidth
+    }""")
+    page.evaluate("""async () => {
+      for (let i = 0; i < 20; i++) {
+        await new Promise((resolve) => requestAnimationFrame(resolve))
+      }
+    }""")
+    assert table_holder.evaluate("el => el.scrollLeft") > 0
+
+
 def test_tabulator_patch_no_vertical_rescroll(page):
     size = 10
     arr = np.random.choice(list('abcd'), size=size)
@@ -1850,6 +1924,17 @@ def test_tabulator_selection_selectable_disabled(page, df_mixed):
     assert widget.selected_dataframe.empty
     for i in range(rows.count()):
         assert 'tabulator-selected' not in rows.nth(i).get_attribute('class')
+
+
+def test_tabulator_selectable_disabled_rows_not_marked_selectable(page, df_mixed):
+    widget = Tabulator(df_mixed, selectable=False)
+
+    serve_component(page, widget)
+
+    rows = page.locator('.tabulator-row')
+    expect(rows.first).to_be_visible()
+    for i in range(rows.count()):
+        assert 'tabulator-selectable' not in rows.nth(i).get_attribute('class')
 
 
 def test_tabulator_selection_default_selection(page, df_mixed):
@@ -2728,7 +2813,7 @@ def test_tabulator_download(page, df_mixed, df_mixed_as_string):
     # Some transformations required to reform the dataframe as the original one.
     saved_df['date'] = pd.to_datetime(saved_df['date'], unit='ms')
     saved_df['date'] = [d.to_pydatetime().date() for d in saved_df['date']]
-    saved_df['datetime'] = pd.to_datetime(saved_df['datetime'], unit='ms')
+    saved_df['datetime'] = pd.to_datetime(saved_df['datetime'], unit='ms').astype(df_mixed['datetime'].dtype)
     saved_df.index.name = None
 
     pd.testing.assert_frame_equal(df_mixed, saved_df)
@@ -2936,6 +3021,43 @@ def test_tabulator_styling_init(page, df_mixed):
     expect(max_cell).to_have_count(1)
     expect(max_cell).to_have_css('background-color', _color_mapping['yellow'])
     expect(page.locator('text="false"')).to_have_css('color', _color_mapping['red'])
+
+def test_tabulator_styling_multi_index_columns(page):
+    df = pd.DataFrame(
+        [[1, 2], [3, 4]], columns=pd.MultiIndex.from_tuples([('a', 'b'), ('a', 'c')])
+    )
+    widget = Tabulator(df)
+    widget.style.map(lambda v: 'color: red', subset=[('a', 'c')])
+
+    serve_component(page, widget)
+
+    row = page.locator('.tabulator-row').first
+    expect(row.locator('.tabulator-cell[tabulator-field="a_c"]')).to_have_css('color', _color_mapping['red'])
+    expect(row.locator('.tabulator-cell[tabulator-field="a_b"]')).not_to_have_css('color', _color_mapping['red'])
+
+
+@pytest.mark.parametrize('kwargs', [
+    {'groups': {'G1': ['A', 'C'], 'G2': ['B', 'D']}},
+    {'groups': {'G1': ['A', 'C'], 'G2': ['B', 'D']}, 'hidden_columns': ['A']},
+    {'groups': {'G1': ['A', 'C'], 'G2': ['B', 'D']}, 'frozen_columns': ['D']},
+    {'groups': {'G1': ['A', 'C'], 'G2': ['B', 'D']}, 'selectable': 'checkbox'},
+    {'groups': {'G1': ['A', 'C'], 'G2': ['B', 'D']}, 'row_content': lambda row: 'content'},
+], ids=['groups', 'hidden', 'frozen', 'checkbox', 'row_content'])
+def test_tabulator_styling_with_column_groups(page, kwargs):
+    df = pd.DataFrame({'A': [1, 2], 'B': [3, 4], 'C': [5, 6], 'D': [7, 8]})
+    widget = Tabulator(df, **kwargs)
+    widget.style.map(lambda v: 'color: red', subset='C')
+
+    serve_component(page, widget)
+
+    for field in 'ABCD':
+        cell = page.locator('.tabulator-row').first.locator(f'.tabulator-cell[tabulator-field="{field}"]')
+        if field in kwargs.get('hidden_columns', []):
+            continue
+        if field == 'C':
+            expect(cell).to_have_css('color', _color_mapping['red'])
+        else:
+            expect(cell).not_to_have_css('color', _color_mapping['red'])
 
 def test_tabulator_patching_and_styling(page, df_mixed):
     df_styled = df_mixed.style.apply(highlight_max, subset=['int'])
@@ -3808,6 +3930,19 @@ def test_tabulator_loading_no_vertical_rescroll(page):
     page.wait_for_timeout(400)
     # The table should keep the same scroll position
     wait_until(lambda: target.bounding_box() == bb, page)
+
+
+def test_tabulator_loading_spinner_not_clipped_without_value(page):
+    # https://github.com/holoviz/panel/issues/8555
+    widget = Tabulator(loading=True)
+
+    serve_component(page, widget)
+
+    table = page.locator('.pn-loading')
+    expect(table).to_have_count(1)
+    # Without columns the table would be 1px wide and clip the 40px spinner
+    wait_until(lambda: table.bounding_box()['width'] >= 40, page)
+    wait_until(lambda: table.bounding_box()['height'] >= 40, page)
 
 
 def test_tabulator_trigger_value_update(page):
@@ -4787,6 +4922,29 @@ def test_tabulator_hierarchical_data_grouping(page, df, request):
     expect(employees.nth(1)).to_contain_text("Eve")
 
 
+def test_tabulator_hierarchical_no_aggregators_leaves_groups_blank(page):
+    df = pd.DataFrame(
+        {"v": [1, 2, 3, 4], "label": ["x", "y", "z", "w"]},
+        index=pd.MultiIndex.from_tuples(
+            [("A", 1), ("A", 2), ("B", 1), ("B", 2)], names=["grp", "sub"]
+        ),
+    )
+    widget = Tabulator(df, hierarchical=True)
+    serve_component(page, widget)
+
+    rows = page.locator(".tabulator-row.tabulator-tree-level-0")
+    expect(rows).to_have_count(2)
+    for i in range(2):
+        expect(rows.nth(i).locator(".tabulator-cell[tabulator-field='v']")).to_have_text("-")
+        expect(rows.nth(i).locator(".tabulator-cell[tabulator-field='label']")).to_have_text("")
+
+    rows.nth(0).locator(".tabulator-data-tree-control").click()
+    children = page.locator(".tabulator-row.tabulator-tree-level-1")
+    expect(children).to_have_count(2)
+    expect(children.nth(0).locator(".tabulator-cell[tabulator-field='v']")).to_have_text("1")
+    expect(children.nth(1).locator(".tabulator-cell[tabulator-field='label']")).to_have_text("y")
+
+
 @pytest.mark.internet
 @pytest.mark.parametrize("aggs", [
     {"region": "min", "gender": "max"},
@@ -4825,11 +4983,11 @@ def test_tabulator_aggregators_data_aggregation(page, df_agg, aggs):
     rows = page.locator('.tabulator-row')
     expect(rows).to_have_count(2)
     agged = {
-        "region1": rows.nth(0).inner_text().split("\n"),
-        "region2": rows.nth(1).inner_text().split("\n"),
+        "region1": rows.nth(0).locator(".tabulator-cell").all_inner_texts(),
+        "region2": rows.nth(1).locator(".tabulator-cell").all_inner_texts(),
     }
     region_agged = {
-        region: {col: agged[region][col_mapping[col] - 1] for col in col_mapping} for region in agged
+        region: {col: agged[region][col_mapping[col]] for col in col_mapping} for region in agged
     }
     assert region_agged == expected_results["region"]
 
@@ -4841,15 +4999,15 @@ def test_tabulator_aggregators_data_aggregation(page, df_agg, aggs):
     expect(rows).to_have_count(3)
     # gender level
     agged = {
-        "region1": {"Male": rows.nth(0).inner_text().split("\n")},
+        "region1": {"Male": rows.nth(0).locator(".tabulator-cell").all_inner_texts()},
         "region2": {
-            "Male": rows.nth(1).inner_text().split("\n"),
-            "Female": rows.nth(2).inner_text().split("\n"),
+            "Male": rows.nth(1).locator(".tabulator-cell").all_inner_texts(),
+            "Female": rows.nth(2).locator(".tabulator-cell").all_inner_texts(),
         },
     }
     gender_agged = {
         region: {
-            gender: {col: agged[region][gender][col_mapping[col] - 1] for col in col_mapping} for gender in agged[region]} for region in agged
+            gender: {col: agged[region][gender][col_mapping[col]] for col in col_mapping} for gender in agged[region]} for region in agged
     }
     assert gender_agged == expected_results["gender"]
 
@@ -4892,11 +5050,11 @@ def test_tabulator_aggregators_data_aggregation_numeric_column_names(page, df_ag
     rows = page.locator('.tabulator-row')
     expect(rows).to_have_count(2)
     agged = {
-        "region1": rows.nth(0).inner_text().split("\n"),
-        "region2": rows.nth(1).inner_text().split("\n"),
+        "region1": rows.nth(0).locator(".tabulator-cell").all_inner_texts(),
+        "region2": rows.nth(1).locator(".tabulator-cell").all_inner_texts(),
     }
     region_agged = {
-        region: {col: agged[region][col_mapping[col] - 1] for col in col_mapping} for region in agged
+        region: {col: agged[region][col_mapping[col]] for col in col_mapping} for region in agged
     }
     assert region_agged == expected_results["region"]
 
@@ -4908,15 +5066,15 @@ def test_tabulator_aggregators_data_aggregation_numeric_column_names(page, df_ag
     expect(rows).to_have_count(3)
     # gender level
     agged = {
-        "region1": {"Male": rows.nth(0).inner_text().split("\n")},
+        "region1": {"Male": rows.nth(0).locator(".tabulator-cell").all_inner_texts()},
         "region2": {
-            "Male": rows.nth(1).inner_text().split("\n"),
-            "Female": rows.nth(2).inner_text().split("\n"),
+            "Male": rows.nth(1).locator(".tabulator-cell").all_inner_texts(),
+            "Female": rows.nth(2).locator(".tabulator-cell").all_inner_texts(),
         },
     }
     gender_agged = {
         region: {
-            gender: {col: agged[region][gender][col_mapping[col] - 1] for col in col_mapping} for gender in agged[region]} for region in agged
+            gender: {col: agged[region][gender][col_mapping[col]] for col in col_mapping} for gender in agged[region]} for region in agged
     }
     assert gender_agged == expected_results["gender"]
 
@@ -4935,3 +5093,14 @@ def test_tabulator_show_index_toggle(page, show_index):
 
     page.locator('.bk-knob').first.click()
     expect(page.locator('text="index"')).to_have_count(int(show_index))
+
+
+def test_tabulator_jscallback_selection_fires_on_row_click(page, df_mixed):
+    widget = Tabulator(df_mixed)
+    widget.jscallback(selection="document.title = 'selected'")
+
+    serve_component(page, widget)
+
+    page.locator('text="idx0"').click()
+
+    wait_until(lambda: page.title() == 'selected', page)

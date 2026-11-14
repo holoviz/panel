@@ -214,3 +214,20 @@ def test_pydeck_type_string_can_be_serialized_issue_5790(document, comm):
     model = pane.get_root(document, comm=comm)
     serializer.serialize(model)
     assert Serializer._encoders.pop(pydeck.types.String)
+
+
+@pytest.mark.parametrize('paths', [
+    [[[6.1, 46.1], [6.1, 46.2], [6.2, 46.2]]] * 4,
+    [[[6.1, 46.1], [6.2, 46.2]], [[6.3, 46.3], [6.3, 46.4], [6.4, 46.4]]],
+], ids=['equal-length', 'ragged'])
+def test_deckgl_nested_path_columns_keep_row_structure_issue_3953(document, comm, paths):
+    records = [{'coordinates': path} for path in paths]
+    pane = DeckGL({'layers': [{'@@type': 'PathLayer', 'data': records}]})
+
+    model = pane.get_root(document, comm)
+
+    column = model.data_sources[0].data['coordinates']
+    assert column.dtype == object
+    assert column.shape == (len(paths),)
+    for row, path in zip(column, paths):
+        assert np.array_equal(row, path)

@@ -395,7 +395,16 @@ class _config(_base_config):
 
     _inline = param.Boolean(default=_LOCAL_DEV_VERSION, allow_None=True, doc="""
         Whether to inline JS and CSS resources. If disabled, resources
-        are loaded from CDN if one is available.""")
+        are loaded from CDN if one is available, or in a notebook from
+        the Jupyter server extension, see notebook_resources.""")
+
+    _notebook_resources: t.Literal['auto', 'jupyter', 'cdn'] = param.Selector(
+        default='auto', objects=['auto', 'jupyter', 'cdn'], doc="""
+        Where a notebook loads resources from if they are not inlined.
+        'jupyter' loads them from Panel's Jupyter server extension, 'cdn'
+        from the CDN and 'auto' from the Jupyter server extension if the
+        Jupyter server running the kernel serves it. Resources the server
+        extension cannot serve fall back to the CDN.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     _theme: t.Literal['default', 'dark'] | None = param.Selector(
         default=None, objects=['default', 'dark'], allow_None=True, doc="""
@@ -412,7 +421,8 @@ class _config(_base_config):
         'oauth_encryption_key', 'oauth_extra_params', 'npm_cdn',
         'layout_compatibility', 'oauth_refresh_tokens', 'oauth_guest_endpoints',
         'oauth_optional', 'admin', 'admin_password', 'admin_users',
-        'index_titles', 'disable_validation', 'pyodide_cdn_root', 'page_config'
+        'index_titles', 'disable_validation', 'pyodide_cdn_root', 'page_config',
+        'notebook_resources'
     }
 
     _truthy = ['True', 'true', '1', True, 1]
@@ -506,6 +516,8 @@ class _config(_base_config):
             new = {p: getattr(self, p) for p in self.param}
             restore = {k: v for k, v in values if v is not new.get(k)}
             self.param.update(**restore)
+            # Restoring a non-empty notification message re-enables notifications
+            self.notifications = dict(values)['notifications']
             for k, v in overrides:
                 setattr(self, k+'_', v)
 
@@ -565,7 +577,8 @@ class _config(_base_config):
         ensure that even on first access mutable parameters do not
         end up being modified.
         """
-        if _config_uninitialized or attr in ('_param__private', '_globals', '_parameter_set', '__class__', 'param'):
+        if (_config_uninitialized or attr in ('_param__private', '_globals', '_parameter_set', '__class__', 'param')
+            or attr in _config._globals):
             return super().__getattribute__(attr)
 
         from .io.state import state
@@ -578,7 +591,7 @@ class _config(_base_config):
             curdoc and attr not in session_config[curdoc]):
             new_obj = copy.copy(super().__getattribute__(attr))
             setattr(self, attr, new_obj)
-        if attr in _config._globals or attr == 'theme':
+        if attr == 'theme':
             return super().__getattribute__(attr)
         elif curdoc and curdoc in session_config and attr in session_config[curdoc]:
             return session_config[curdoc][attr]
@@ -619,6 +632,13 @@ class _config(_base_config):
     @property
     def admin_endpoint(self):
         return os.environ.get('PANEL_ADMIN_ENDPOINT', self._admin_endpoint)
+
+    @property
+    def _admin_path(self):
+        endpoint = self.admin_endpoint
+        if not endpoint:
+            return '/admin'
+        return endpoint if endpoint.startswith('/') else f'/{endpoint}'
 
     @property
     def admin_password(self):
@@ -693,6 +713,10 @@ class _config(_base_config):
     @property
     def inline(self):
         return os.environ.get('PANEL_INLINE', _config._inline) in self._truthy
+
+    @property
+    def notebook_resources(self):
+        return os.environ.get('PANEL_NOTEBOOK_RESOURCES', self._notebook_resources).lower()
 
     @property
     def log_level(self):

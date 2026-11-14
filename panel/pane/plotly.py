@@ -4,6 +4,7 @@ bokeh model.
 """
 from __future__ import annotations
 
+import json
 import typing as t
 
 import numpy as np
@@ -16,6 +17,8 @@ from ..util import lazy_load, try_datetime64_to_datetime
 from ..util.checks import datetime_types, isdatetime
 from ..viewable import Layoutable
 from .base import ModelPane
+
+UNDEFINED = '_undefined_'
 
 if t.TYPE_CHECKING:
     from collections.abc import Mapping
@@ -121,16 +124,18 @@ class Plotly(ModelPane):
 
     def _to_figure(self, obj):
         import plotly.graph_objs as go
+        frames = None
         if isinstance(obj, (go.Figure, go.FigureWidget)):
             return obj
         elif isinstance(obj, dict):
             data, layout = obj['data'], obj['layout']
+            frames = obj.get('frames')
         elif isinstance(obj, tuple):
             data, layout = obj
         else:
             data, layout = obj, {}
         data = data if isinstance(data, list) else [data]
-        return go.Figure(data=data, layout=layout)
+        return go.Figure(data=data, layout=layout, frames=frames)
 
     @staticmethod
     def _get_sources(json):
@@ -224,6 +229,21 @@ class Plotly(ModelPane):
             key: val for key, val in relayout_data.items() if not key.endswith("._derived")
         }
 
+    @classmethod
+    def _encode_undefined(cls, obj):
+        # Plotly marks "leave this trace unchanged" slots in batched restyle
+        # payloads with a bare object() that Bokeh cannot serialize. Use the
+        # same string plotly's own widget uses; the frontend maps it back to
+        # undefined, since null would reset the property instead.
+        from plotly.basedatatypes import Undefined
+        if obj is Undefined:
+            return UNDEFINED
+        elif isinstance(obj, dict):
+            return {k: cls._encode_undefined(v) for k, v in obj.items()}
+        elif isinstance(obj, (list, tuple)):
+            return [cls._encode_undefined(v) for v in obj]
+        return obj
+
     def _send_update_msg(
         self, restyle_data, relayout_data, trace_indexes=None, source_view_id=None
     ):
@@ -234,7 +254,18 @@ class Plotly(ModelPane):
         if relayout_data:
             msg['relayout'] = relayout_data
         if restyle_data:
-            msg['restyle'] = {'data': restyle_data, 'traces': trace_indexes}
+            # Datetimes must be sent as strings like in the initial render,
+            # otherwise they are serialized as epoch numbers and plotly.js
+            # turns the date axis into a linear one (#4850).
+            restyle_data = {
+                key: [
+                    self._convert_trace({'value': v})['value'] for v in values
+                ] if isinstance(values, list) else values
+                for key, values in restyle_data.items()
+            }
+            msg['restyle'] = {
+                'data': self._encode_undefined(restyle_data), 'traces': trace_indexes
+            }
         for ref, (m, _) in self._models.copy().items():
             self._apply_update([], msg, m, ref)
 
@@ -304,7 +335,9 @@ class Plotly(ModelPane):
             layout['shapes'] = [
                 cls._convert_trace(shape) for shape in layout['shapes']
             ]
-        return {'data': data, 'layout': layout}
+        # Frames bypass the ColumnDataSource conversions for arrays and dates.
+        frames = [json.loads(frame.to_json()) for frame in fig.frames]
+        return {'data': data, 'layout': layout, 'frames': frames}
 
     def _init_params(self):
         viewport_params = [p for p in self.param if 'viewport' in p]

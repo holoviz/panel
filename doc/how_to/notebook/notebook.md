@@ -31,6 +31,28 @@ The extension ensures that all required Javascript and CSS resources are added t
 pn.extension('vega', 'tabulator')
 ```
 
+### Where resources are loaded from
+
+By default the notebook loads Panel's JavaScript and CSS rather than embedding them in its output. Pass `inline=True` to embed them instead, which makes the notebook self-contained but larger:
+
+```python
+pn.extension(inline=True)
+```
+
+Otherwise, when the notebook is running in Jupyter, Panel's Jupyter server extension serves the resources of Panel, Bokeh and Panel extensions such as `panel-material-ui` from the environment the Jupyter server runs in, so the notebook works without access to a public CDN. Resources the server extension cannot serve fall back to the CDN, as they do when you export the notebook, e.g. to HTML. Other notebook environments, such as VS Code, Google Colab or nteract, load the resources from the CDN.
+
+To load the resources from the CDN in Jupyter as well, set the `notebook_resources` option:
+
+```python
+pn.extension(notebook_resources='cdn')
+```
+
+or set the `PANEL_NOTEBOOK_RESOURCES=cdn` environment variable. The default, `'auto'`, uses the Jupyter server extension when the Jupyter server running the kernel provides it, and `'jupyter'` uses it unconditionally, e.g. for a kernel that was not started by the Jupyter server itself.
+
+:::{note}
+The Jupyter server extension serves the resources installed alongside the Jupyter server. If you [run Panel in another notebook kernel](#run-panel-in-another-notebook-kernel), install the same versions of Panel, Bokeh and any Panel extensions in both environments, or use `notebook_resources='cdn'`.
+:::
+
 ## Display output
 
 One of the major benefits of notebook environments is that they support rich output. This means that if you place an object with rich output at the end of a cell the notebook will figure out how to render the rich representation. Panel uses this mechanism to ensure that all components return a rich representation:

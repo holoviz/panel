@@ -125,6 +125,10 @@ class ComponentMatch:
     has_color_alias: bool
     #: True if the classic class has both `button_style` and `variant`.
     has_variant_alias: bool
+    #: True if the classic `size` (a CSS font-size for the icon) corresponds
+    #: to `icon_size` on the `panel.ui` class, whose own `size` is the MUI
+    #: widget size.
+    has_icon_size_alias: bool
 
 
 def _build_component_matches() -> dict[str, ComponentMatch]:
@@ -153,6 +157,9 @@ def _build_component_matches() -> dict[str, ComponentMatch]:
             ),
             has_variant_alias=(
                 'button_style' in cls.param and 'variant' in cls.param and 'variant' in ui_params
+            ),
+            has_icon_size_alias=(
+                'size' in classic_params and 'icon_size' not in classic_params and 'icon_size' in ui_params
             ),
         )
 
@@ -230,6 +237,16 @@ BUTTON_APPEARANCE_RENAMES: dict[str, str] = {
     'button_type': 'color',
     'button_style': 'variant',
 }
+
+
+# ---------------------------------------------------------------------------
+# size -> icon_size on icon widgets
+# ---------------------------------------------------------------------------
+# The classic `size` sets the icon's CSS font-size, while the `panel.ui`
+# `size` is the MUI widget size, so the shared name hides a change in meaning.
+# Whether it applies to a class is gated by `ComponentMatch.has_icon_size_alias`.
+
+ICON_SIZE_RENAME = ('size', 'icon_size')
 
 
 # ---------------------------------------------------------------------------

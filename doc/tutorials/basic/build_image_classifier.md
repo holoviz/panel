@@ -57,7 +57,7 @@ import panel as pn
 
 IMAGE_DIM = 350
 
-pn.extension(design="material", sizing_mode="stretch_width")
+pn.extension(sizing_mode="stretch_width")
 
 ## Transformations
 
@@ -85,9 +85,7 @@ def get_image_button(url, image_pane):
     button = pn.ui.Button(
         width=100,
         height=100,
-        stylesheets=[
-            f"button {{background-image: url({url});background-size: cover;}}"
-        ],
+        sx={"backgroundImage": f"url({url})", "backgroundSize": "cover"},
     )
     pn.bind(handle_example_click, button, url, image_pane, watch=True)
     return button
@@ -117,12 +115,10 @@ def image_classification_interface(fn, examples):
         margin=0,
     )
 
-    label_view = pn.ui.JSON()
-
     ## Inputs
 
     file_input = pn.ui.FileInput(
-        accept=".png,.jpeg",
+        accept=".png,.jpg,.jpeg",
     )
     pn.bind(handle_file_upload, file_input, image_view, watch=True)
     file_input_component = pn.ui.Column("### Upload Image", file_input)

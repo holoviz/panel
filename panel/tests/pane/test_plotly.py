@@ -110,6 +110,61 @@ def test_plotly_pane_single_trace(document, comm):
 
 
 @plotly_available
+@pytest.mark.parametrize('input_type', ['figure', 'dict', 'single-trace-dict'])
+def test_plotly_animation_frames(document, comm, input_type):
+    fig = go.Figure(
+        data=[go.Scatter(x=[0, 1], y=[1, 2])],
+        layout={'width': 350},
+        frames=[
+            go.Frame(name='first', group='time', traces=[0], data=[go.Scatter(y=[3, 4])]),
+            go.Frame(
+                name='last', group='time', baseframe='first', traces=[0],
+                data=[go.Scatter(y=[5, 6])], layout={'title': {'text': 'Last frame'}},
+            ),
+        ],
+    )
+    obj = fig if input_type == 'figure' else fig.to_plotly_json()
+    if input_type == 'single-trace-dict':
+        obj['data'] = obj['data'][0]
+    pane = Plotly(obj)
+    model = pane.get_root(document, comm)
+
+    assert model.frames == [frame.to_plotly_json() for frame in fig.frames]
+    assert len(model.data) == 1
+    assert model.layout == {'width': 350}
+
+    replacement = go.Figure(data=fig.data, frames=[go.Frame(name='replacement', data=[go.Scatter(y=[7, 8])])])
+    pane.object = replacement if input_type == 'figure' else replacement.to_plotly_json()
+    assert model.frames == [frame.to_plotly_json() for frame in replacement.frames]
+
+    static = go.Figure(data=fig.data)
+    pane.object = static if input_type == 'figure' else static.to_plotly_json()
+    assert model.frames == []
+    assert len(fig.frames) == 2
+
+
+@plotly_available
+def test_plotly_animation_frame_arrays_and_datetimes(document, comm):
+    dates = np.array([dt.datetime(2024, 1, 1), dt.datetime(2024, 1, 2)])
+    fig = go.Figure(
+        data=[go.Heatmap(z=[[0, 0], [0, 0]])],
+        frames=[go.Frame(
+            name='next',
+            data=[go.Heatmap(x=dates, z=np.array([[1, 2], [3, 4]]))],
+            layout={'shapes': [{'type': 'line', 'x0': dates[0], 'x1': dates[1], 'y0': 0, 'y1': 1}]},
+        )],
+    )
+    pane = Plotly(fig)
+    model = pane.get_root(document, comm)
+
+    assert model.frames[0]['data'][0]['z'] == [[1, 2], [3, 4]]
+    assert model.frames[0]['data'][0]['x'] == ['2024-01-01T00:00:00', '2024-01-02T00:00:00']
+    assert model.frames[0]['layout']['shapes'][0]['x0'] == '2024-01-01T00:00:00'
+    np.testing.assert_array_equal(fig.frames[0].data[0].z, [[1, 2], [3, 4]])
+    np.testing.assert_array_equal(fig.frames[0].data[0].x, dates)
+
+
+@plotly_available
 def test_plotly_pane_datetime_list_transform(document, comm):
     index = [dt.datetime(2019, 1, i) for i in range(1, 11)]
     data = np.random.randn(10)
@@ -325,3 +380,67 @@ def test_plotly_datetime_converted_2d_array(document, comm):
             ['2023-01-01 00:02:00']
         ])
     )
+
+
+@plotly_available
+@pytest.mark.parametrize('values', [
+    np.array([dt.datetime(2020, 1, i) for i in range(1, 4)]),
+    [dt.datetime(2020, 1, i) for i in range(1, 4)],
+    np.array([dt.datetime(2020, 1, i) for i in range(1, 4)], dtype='M8[ns]'),
+], ids=['object-array', 'list', 'datetime64'])
+def test_plotly_update_traces_datetime_converted(document, comm, values):
+    index = [dt.datetime(2019, 1, i) for i in range(1, 11)]
+    fig = go.Figure([go.Scatter(x=index, y=np.arange(10))])
+    pane = Plotly(fig)
+    model = pane.get_root(document, comm)
+
+    fig.update_traces(x=values)
+
+    x = model.restyle['data']['x'][0]
+    assert all(isinstance(v, str) for v in x)
+    assert len(x) == 3
+
+
+@plotly_available
+def test_plotly_batch_update_datetime_converted(document, comm):
+    index = [dt.datetime(2019, 1, i) for i in range(1, 11)]
+    fig = go.Figure([go.Scatter(x=index, y=np.arange(10))])
+    pane = Plotly(fig)
+    model = pane.get_root(document, comm)
+
+    with fig.batch_update():
+        fig.data[0].x = [dt.datetime(2020, 1, i) for i in range(1, 4)]
+        fig.data[0].y = [1, 2, 3]
+
+    assert all(isinstance(v, str) for v in model.restyle['data']['x'][0])
+    assert list(model.restyle['data']['y'][0]) == [1, 2, 3]
+
+
+@plotly_available
+@pytest.mark.parametrize('per_point', [False, True])
+def test_plotly_batch_update_unchanged_marker_color_serializable(document, comm, per_point):
+    from bokeh.core.serialization import Serializer
+    from plotly.basedatatypes import Undefined
+
+    fig = go.Figure([go.Scatter(x=[0, 1, 2], y=[1, 2, 3]) for _ in range(3)])
+    pane = Plotly(fig)
+    model = pane.get_root(document, comm=comm)
+
+    def colors(last):
+        if per_point:
+            return [['red', 'green', 'blue']] * 2 + [last]
+        return ['red', 'green', last]
+
+    with fig.batch_update():
+        for trace, color in zip(fig.data, colors(['blue'] * 3 if per_point else 'blue')):
+            trace.marker.color = color
+    with fig.batch_update():
+        for trace, color in zip(fig.data, colors(['red'] * 3 if per_point else 'orange')):
+            trace.y = [4, 5, 6]
+            trace.marker.color = color
+
+    data = model.restyle['data']
+    assert not any(v is Undefined for v in data['marker.color'])
+    assert data['marker.color'][:2] == ['_undefined_'] * 2
+    assert data['marker.color'][2] == (['red'] * 3 if per_point else 'orange')
+    Serializer().encode(model.restyle)

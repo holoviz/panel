@@ -303,6 +303,8 @@ class PNG(ImageBase):
     @classmethod
     def _imgshape(cls, data):
         import struct
+        if not data.startswith(b'\x89PNG\r\n\x1a\n'):
+            raise ValueError("Data is not a valid PNG image")
         if len(data) < 24:
             raise ValueError("Could not determine dimensions of PNG image: insufficient data")
         w, h = struct.unpack('>LL', data[16:24])
@@ -331,6 +333,8 @@ class GIF(ImageBase):
     @classmethod
     def _imgshape(cls, data):
         import struct
+        if not data.startswith((b'GIF87a', b'GIF89a')):
+            raise ValueError("Data is not a valid GIF image")
         if len(data) < 10:
             raise ValueError("Could not determine dimensions of GIF image: insufficient data")
         w, h = struct.unpack("<HH", data[6:10])
@@ -365,6 +369,8 @@ class ICO(ImageBase):
     @classmethod
     def _imgshape(cls, data):
         import struct
+        if not data.startswith(b'\x00\x00\x01\x00'):
+            raise ValueError("Data is not a valid ICO image")
         if len(data) < 8:
             raise ValueError("Could not determine dimensions of ICO image: insufficient data")
         w, h = struct.unpack("<BB" , data[6:8])
@@ -396,6 +402,8 @@ class JPG(ImageBase):
     @classmethod
     def _imgshape(cls, data):
         import struct
+        if not data.startswith(b'\xff\xd8'):
+            raise ValueError("Data is not a valid JPEG image")
         b = BytesIO(data)
         b.read(2)
         c = b.read(1)
@@ -514,6 +522,11 @@ class PDF(FileBase):
         assert data.startswith(b'%PDF-')
         return 0, 0
 
+    def _process_property_change(self, props: dict[str, t.Any]) -> dict[str, t.Any]:
+        # The model flag is derived from the object and must not overwrite the parameter.
+        props.pop('embed', None)
+        return super()._process_property_change(props)
+
     def _transform_object(self, obj: t.Any) -> dict[str, t.Any]:
         if obj is None:
             return dict(object='<embed></embed>')
@@ -522,15 +535,14 @@ class PDF(FileBase):
             data = self._data(obj)
             if not isinstance(data, bytes):
                 data = data.encode('utf-8')
-            b64 = base64.b64encode(data).decode("utf-8")
-            if self.embed:
-                return dict(text=b64)
-            obj = f'data:application/pdf;base64,{b64}'
+            # Chromium does not render PDFs from data: URLs so the client
+            # has to convert local data to a blob: URL regardless of embed.
+            return dict(text=base64.b64encode(data).decode("utf-8"), embed=True)
 
         w, h = self.width or '100%', self.height or '100%'
         page = f'#page={self.start_page}' if getattr(self, 'start_page', None) else ''
         html = f'<embed src="{obj}{page}" width={w!r} height={h!r} type="application/pdf">'
-        return dict(text=escape(html))
+        return dict(text=escape(html), embed=False)
 
 class WebP(ImageBase):
     """
@@ -557,6 +569,8 @@ class WebP(ImageBase):
 
     @classmethod
     def _imgshape(cls, data):
+        if data[:4] != b'RIFF' or data[8:12] != b'WEBP':
+            raise ValueError("Data is not a valid WebP image")
         with BytesIO(data) as b:
             b.read(12)  # Skip RIFF header
             chunk_header = b.read(4).decode('utf-8')
@@ -574,9 +588,11 @@ class WebP(ImageBase):
                 w = (bits & 0x3FFF) + 1
                 h = ((bits >> 14) & 0x3FFF) + 1
             elif wptype == ' ':
+                # Skip the frame tag and start code, the top two bits
+                # of each dimension encode the upscaling factor
                 b.read(6)
-                w = int.from_bytes(b.read(2), 'little') + 1
-                h = int.from_bytes(b.read(2), 'little') + 1
+                w = int.from_bytes(b.read(2), 'little') & 0x3FFF
+                h = int.from_bytes(b.read(2), 'little') & 0x3FFF
         return int(w), int(h)
 
 class AVIF(ImageBase):
@@ -606,6 +622,11 @@ class AVIF(ImageBase):
         # The width and height position are stored within the ispe box, its format is:
         # ispe + 4 bytes + 4 bytes for width + 4 bytes for height
 
+        if data[4:8] != b"ftyp":
+            raise ValueError("Data is not a valid AVIF image")
+        ftyp = data[8:int.from_bytes(data[:4], byteorder="big")]
+        if b"avif" not in ftyp and b"avis" not in ftyp:
+            raise ValueError("Data is not a valid AVIF image")
         ispe = data.find(b"ispe")
         if ispe == -1:
             raise ValueError("Could not determine dimensions of AVIF image: no 'ispe' box found")

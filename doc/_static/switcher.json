@@ -1,6 +1,12 @@
 [
   {
+    "name": "1.10 (latest)",
+    "version": "1.10.0",
+    "url": "https://panel.holoviz.org/en/docs/latest/",
+    "preferred": true
+  },
+  {
     "version": "dev",
-    "url": "https://panel.holoviz.org/en/docs/dev/"
+    "url": "https://panel-dev.holoviz.org/en/docs/dev/"
   }
 ]

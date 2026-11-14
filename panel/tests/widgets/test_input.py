@@ -8,10 +8,12 @@ import pytest
 from bokeh.models.widgets import FileInput as BkFileInput
 
 from panel import config
+from panel.models.widgets import EnterEvent
 from panel.widgets import (
     ArrayInput, Checkbox, DatePicker, DateRangePicker, DatetimeInput,
     DatetimePicker, DatetimeRangeInput, DatetimeRangePicker, FileInput,
-    FloatInput, IntInput, LiteralInput, StaticText, TextInput, TimePicker,
+    FloatInput, IntInput, LiteralInput, PasswordInput, StaticText,
+    TextAreaInput, TextInput, TimePicker,
 )
 
 
@@ -245,6 +247,17 @@ def test_literal_input(document, comm):
     with pytest.raises(ValueError):
         literal.value = []
 
+def test_literal_input_json_string_round_trip(document, comm):
+    literal = LiteralInput(value='abc', serializer='json', label='Literal')
+
+    widget = literal.get_root(document, comm=comm)
+
+    assert widget.value == '"abc"'
+
+    literal._process_events({'value': widget.value})
+    assert literal.value == 'abc'
+    assert widget.title == 'Literal'
+
 def test_literal_input_inheritance():
     """LiteralInput should be able to be subclassed as done in panel-material-ui."""
     class DictInput(LiteralInput):
@@ -316,6 +329,38 @@ def test_text_input(document, comm):
     text.value = 'A'
     assert widget.value == 'A'
 
+@pytest.mark.parametrize('widget_type', [TextInput, TextAreaInput, PasswordInput])
+def test_text_input_set_value_none(widget_type, document, comm):
+    text = widget_type(value='ABC')
+
+    widget = text.get_root(document, comm=comm)
+
+    text.value = None
+    assert text.value is None
+    assert text.value_input is None
+    assert widget.value == ''
+    assert widget.value_input == ''
+
+def test_text_input_value_input_synced_with_value(document, comm):
+    text = TextInput(value='ABC')
+
+    widget = text.get_root(document, comm=comm)
+
+    assert text.value_input == 'ABC'
+    assert widget.value_input == 'ABC'
+
+    text.value = 'CBA'
+    assert text.value_input == 'CBA'
+    assert widget.value_input == 'CBA'
+
+    # Pressing Enter sends the model's value_input and must not revert value
+    text._process_event(EnterEvent(model=widget, value_input=widget.value_input))
+    assert text.value == 'CBA'
+
+    # Frontend changes to value leave value_input to the frontend
+    text._process_events({'value': 'XYZ'})
+    assert text.value_input == 'CBA'
+
 def test_datetime_input(document, comm):
     dt_input = DatetimeInput(value=datetime(2018, 1, 1),
                              start=datetime(2017, 12, 31),
@@ -346,6 +391,21 @@ def test_datetime_input(document, comm):
 
     with pytest.raises(ValueError):
         dt_input.value = datetime(2017, 12, 30)
+
+
+@pytest.mark.parametrize('bounds, value, message', [
+    ({'start': datetime(2020, 1, 1)}, datetime(2019, 1, 1), 'on or after 2020-01-01 00:00:00'),
+    ({'end': datetime(2022, 1, 1)}, datetime(2023, 1, 1), 'on or before 2022-01-01 00:00:00'),
+])
+def test_datetime_input_one_sided_bounds(bounds, value, message):
+    dt_input = DatetimeInput(value=datetime(2021, 1, 1), **bounds)
+
+    with pytest.raises(ValueError, match=message):
+        dt_input.value = value
+    assert dt_input.value == datetime(2021, 1, 1)
+
+    with pytest.raises(ValueError, match=message):
+        DatetimeInput(value=value, **bounds)
 
 
 def test_datetime_range_input(document, comm):

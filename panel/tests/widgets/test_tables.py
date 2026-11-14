@@ -46,6 +46,9 @@ def makeMixedDataFrame():
     return pd.DataFrame(data)
 
 
+# pytest.warns re-emits unmatched warnings without their module, so the
+# module-scoped filter for Bokeh's reset_index(inplace=True) does not apply.
+@pytest.mark.filterwarnings("ignore:The inplace keyword in DataFrame.reset_index is deprecated")
 def test_dataframe_widget_is_deprecated(dataframe):
     from panel.util.warnings import PanelDeprecationWarning
 
@@ -1087,6 +1090,33 @@ def test_tabulator_header_filters_column_config_dict(document, comm):
     assert model.configuration['selectable'] == True
 
 
+def test_tabulator_keywords_match_all_filter_config(document, comm):
+    df = makeMixedDataFrame()
+    table = Tabulator(df, header_filters={
+        'C': {
+            'type': 'input',
+            'func': 'keywords',
+            'matchAll': True,
+            'separator': ',',
+        },
+    })
+
+    model = table.get_root(document, comm)
+
+    assert model.configuration['columns'] == [
+        {'field': 'index', 'sorter': 'number'},
+        {'field': 'A', 'sorter': 'number'},
+        {'field': 'B', 'sorter': 'number'},
+        {
+            'field': 'C',
+            'headerFilter': 'input',
+            'headerFilterFunc': 'keywords',
+            'headerFilterFuncParams': {'matchAll': True, 'separator': ','},
+        },
+        {'field': 'D', 'sorter': 'timestamp'}
+    ]
+
+
 def test_tabulator_editors_default(document, comm):
     df = pd.DataFrame({
         'int': [1, 2],
@@ -1414,11 +1444,11 @@ def test_tabulator_styling(document, comm):
     model = table.get_root(document, comm)
 
     assert model.cell_styles['data'] == {
-        0: {2: [('color', 'black')]},
-        1: {2: [('color', 'black')]},
-        2: {2: [('color', 'black')]},
-        3: {2: [('color', 'red')]},
-        4: {2: [('color', 'red')]}
+        0: {'A': [('color', 'black')]},
+        1: {'A': [('color', 'black')]},
+        2: {'A': [('color', 'black')]},
+        3: {'A': [('color', 'red')]},
+        4: {'A': [('color', 'red')]}
     }
 
 def test_tabulator_empty_table(document, comm):
@@ -1979,6 +2009,61 @@ def test_tabulator_patch_with_timestamp(document, comm):
         if col != 'index':
             np.testing.assert_array_equal(table.value[col].values, expected[col])
 
+@pytest.mark.parametrize('patch_value', [
+    dt.datetime(2021, 1, 1),
+    pd.Timestamp('2021-01-01'),
+    np.datetime64('2021-01-01T00:00:00'),
+], ids=['datetime', 'Timestamp', 'datetime64'])
+@pytest.mark.parametrize('form', ['dict', 'dataframe', 'series'])
+def test_tabulator_patch_datetime_column(document, comm, patch_value, form):
+    # https://github.com/holoviz/panel/issues/4144
+    df = pd.DataFrame(dict(A=pd.to_datetime(['1980-01-01', '1980-01-02'])))
+    table = Tabulator(df)
+
+    model = table.get_root(document, comm)
+
+    if form == 'dict':
+        table.patch({'A': [(0, patch_value)]})
+    elif form == 'dataframe':
+        table.patch(pd.DataFrame({'A': [patch_value]}, index=[0]))
+    else:
+        table.patch(pd.Series([patch_value], index=[0], name='A', dtype=object))
+
+    expected = np.array(['2021-01-01T00:00:00', '1980-01-02T00:00:00'], dtype='datetime64[ns]')
+    np.testing.assert_array_equal(table.value['A'].values, expected)
+    np.testing.assert_array_equal(model.source.data['A'], expected.astype(np.int64) / 10e5)
+
+@pytest.mark.parametrize('form', ['dict', 'series'])
+def test_tabulator_patch_tz_aware_datetime_column(document, comm, form):
+    index = pd.to_datetime(['2021-01-01', '2022-01-01']).tz_localize('US/Eastern')
+    table = Tabulator(pd.DataFrame(dict(A=index)))
+
+    model = table.get_root(document, comm)
+
+    new = pd.Timestamp('2016-02-01', tz='US/Eastern')
+    if form == 'dict':
+        table.patch({'A': [(0, new)]})
+    else:
+        table.patch(pd.Series([new], index=[0], name='A'))
+
+    assert model.source.data['A'][0] == new.value / 1e6
+    assert model.source.data['A'][1] == index[1].value / 1e6
+
+@pytest.mark.parametrize('form', ['dict', 'series'])
+def test_tabulator_patch_date_column(document, comm, form):
+    df = pd.DataFrame(dict(A=[dt.date(2021, 1, 1), dt.date(2022, 1, 1)]))
+    table = Tabulator(df)
+
+    model = table.get_root(document, comm)
+
+    if form == 'dict':
+        table.patch({'A': [(0, dt.date(2016, 2, 1))]})
+    else:
+        table.patch(pd.Series([dt.date(2016, 2, 1)], index=[0], name='A'))
+
+    assert table.value['A'].iloc[0] == dt.date(2016, 2, 1)
+    assert model.source.data['A'][0] == pd.Timestamp('2016-02-01').value / 1e6
+
 def test_tabulator_patch_with_NaT(document, comm):
     df = pd.DataFrame(dict(A=pd.to_datetime(['1980-01-01', np.nan])))
     assert df.loc[1, 'A'] is pd.NaT
@@ -2091,6 +2176,19 @@ def test_tabulator_paginated_sorted_selection(document, comm):
     table.sorters = [{'field': 'A', 'sorter': 'number', 'dir': 'asc'}]
     table._process_events({'indices': [1]})
     assert table.selection == [1]
+
+
+def test_tabulator_stream_datetime_index():
+    # https://github.com/holoviz/panel/issues/4504
+    index = pd.date_range('2023-01-01', periods=6, freq='8h')
+    df = pd.DataFrame({'j': range(6)}, index=index)
+    table = Tabulator(df)
+
+    table.stream(df.copy(), follow=True)
+
+    assert len(table.value) == 12
+    assert list(table.value['j']) == [*range(6), *range(6)]
+    assert list(table.value.index[:6]) == list(index)
 
 
 def test_tabulator_stream_dataframe(document, comm):
@@ -2983,9 +3081,9 @@ def test_tabulator_styling_empty_dataframe(document, comm):
 
     assert model.cell_styles['data'] == {
         0: {
-            2: [('border-color', '#dc3545'), ('border-style', 'solid')],
-            3: [('border-color', '#dc3545'), ('border-style', 'solid')],
-            4: [('border-color', '#dc3545'), ('border-style', 'solid')]
+            'A': [('border-color', '#dc3545'), ('border-style', 'solid')],
+            'B': [('border-color', '#dc3545'), ('border-style', 'solid')],
+            'C': [('border-color', '#dc3545'), ('border-style', 'solid')]
         }
     }
 
@@ -3009,11 +3107,38 @@ def test_tabulator_style_multi_index_dataframe(document, comm):
     model = tabulator.get_root(document, comm)
 
     assert model.cell_styles['data'] == {
-        0: {4: [('background-color', '#ff0000')]},
-        1: {4: [('background-color', '#ff0000')]},
-        2: {4: [('background-color', '#ff0000')]},
-        3: {4: [('background-color', '#ff0000')]}
+        0: {'X': [('background-color', '#ff0000')]},
+        1: {'X': [('background-color', '#ff0000')]},
+        2: {'X': [('background-color', '#ff0000')]},
+        3: {'X': [('background-color', '#ff0000')]}
     }
+
+
+def test_tabulator_style_multi_index_columns_keyed_by_field(document, comm):
+    df = pd.DataFrame(
+        np.ones((2, 2)), columns=pd.MultiIndex.from_tuples([('a', 'b'), ('a', 'c')])
+    )
+    table = Tabulator(df)
+    table.style.map(lambda v: 'color: red', subset=[('a', 'b')])
+
+    model = table.get_root(document, comm)
+
+    assert 'a_b' in [col.field for col in model.columns]
+    assert model.cell_styles['data'] == {
+        0: {'a_b': [('color', 'red')]},
+        1: {'a_b': [('color', 'red')]},
+    }
+
+
+def test_tabulator_style_non_string_column_names_keyed_by_field(document, comm):
+    df = pd.DataFrame(np.ones((2, 2)), columns=[1, 2])
+    table = Tabulator(df)
+    table.style.map(lambda v: 'color: red', subset=[2])
+
+    model = table.get_root(document, comm)
+
+    assert '2' in [col.field for col in model.columns]
+    assert set(model.cell_styles['data'][0]) == {'2'}
 
 
 @mpl_available
@@ -3026,7 +3151,7 @@ def test_tabulator_style_background_gradient_with_frozen_columns(document, comm)
 
     model = table.get_root(document, comm)
 
-    assert list(model.cell_styles['data'][0]) == [1, 4, 5]
+    assert list(model.cell_styles['data'][0]) == ['A', 'C', 'D']
 
 @mpl_available
 def test_tabulator_style_background_gradient_with_frozen_columns_left_and_right(document, comm):
@@ -3038,7 +3163,7 @@ def test_tabulator_style_background_gradient_with_frozen_columns_left_and_right(
 
     model = table.get_root(document, comm)
 
-    assert list(model.cell_styles['data'][0]) == [1, 6, 4]
+    assert list(model.cell_styles['data'][0]) == ['A', 'C', 'D']
 
 @mpl_available
 def test_tabulator_style_background_with_frozen_index(document, comm):
@@ -3048,7 +3173,7 @@ def test_tabulator_style_background_with_frozen_index(document, comm):
 
     model = table.get_root(document, comm)
 
-    assert list(model.cell_styles['data'][0]) == [3]
+    assert list(model.cell_styles['data'][0]) == ['c']
 
 
 @mpl_available
@@ -3059,7 +3184,7 @@ def test_tabulator_style_background_with_frozen_indexes(document, comm):
 
     model = table.get_root(document, comm)
 
-    assert list(model.cell_styles['data'][0]) == [3]
+    assert list(model.cell_styles['data'][0]) == ['c']
 
 
 @mpl_available
@@ -3070,7 +3195,7 @@ def test_tabulator_style_background_with_frozen_index_and_column(document, comm)
 
     model = table.get_root(document, comm)
 
-    assert list(model.cell_styles['data'][0]) == [4]
+    assert list(model.cell_styles['data'][0]) == ['c']
 
 
 @mpl_available
@@ -3083,7 +3208,7 @@ def test_tabulator_style_background_gradient(document, comm):
 
     model = table.get_root(document, comm)
 
-    assert list(model.cell_styles['data'][0]) == [2, 4, 5]
+    assert list(model.cell_styles['data'][0]) == ['A', 'C', 'D']
 
 @mpl_available
 def test_tabulator_styled_df_with_background_gradient(document, comm):
@@ -3094,7 +3219,7 @@ def test_tabulator_styled_df_with_background_gradient(document, comm):
 
     model = table.get_root(document, comm)
 
-    assert list(model.cell_styles['data'][0]) == [2, 4, 5]
+    assert list(model.cell_styles['data'][0]) == ['A', 'C', 'D']
 
 def test_tabulator_editor_property_change(dataframe, document, comm):
     editor = SelectEditor(options=['A', 'B', 'C'])
@@ -3269,6 +3394,29 @@ def test_header_filter_ends_is_case_insensitive(pagination):
     assert list(widget.current_view['word']) == ['Alphanumeric']
 
 
+@pytest.mark.parametrize('header_filters', [
+    True, {'word': 'input'}, {'word': {'type': 'input', 'func': 'keywords'}}
+])
+def test_header_filter_keywords_matches_any_keyword(header_filters):
+    df = pd.DataFrame({'word': ['alpha', 'alphabet', 'beta']})
+    widget = Tabulator(df, header_filters=header_filters)
+
+    widget.filters = [{'field': 'word', 'type': 'keywords', 'value': 'lph bet'}]
+
+    assert list(widget.current_view['word']) == ['alpha', 'alphabet', 'beta']
+
+
+def test_header_filter_keywords_match_all_needs_every_keyword():
+    df = pd.DataFrame({'word': ['alpha', 'alphabet', 'beta']})
+    widget = Tabulator(df, header_filters={
+        'word': {'type': 'input', 'func': 'keywords', 'matchAll': True}
+    })
+
+    widget.filters = [{'field': 'word', 'type': 'keywords', 'value': 'lph bet'}]
+
+    assert list(widget.current_view['word']) == ['alphabet']
+
+
 @pytest.mark.parametrize(('op', 'value', 'expected'), [
     ('=', 2, [2]),
     ('!=', 2, [1, 3, 4]),
@@ -3284,6 +3432,50 @@ def test_header_filter_comparison_operators(op, value, expected):
     widget.filters = [{'field': 'n', 'type': op, 'value': value}]
 
     assert list(widget.current_view['n']) == expected
+
+
+@pytest.mark.parametrize('pagination', ['local', 'remote', None])
+def test_header_filter_like_on_datetime_matches_that_day(pagination):
+    # https://github.com/holoviz/panel/issues/4543
+    df = pd.DataFrame({
+        'dt': pd.date_range('2023-01-01', periods=6, freq='8h'),
+        'j': range(6),
+    })
+    widget = Tabulator(
+        df,
+        header_filters={'dt': {'type': 'date', 'func': 'like'}},
+        pagination=pagination,
+    )
+
+    widget.filters = [{'field': 'dt', 'type': 'like', 'value': '2023-01-01'}]
+
+    assert list(widget.current_view['j']) == [0, 1, 2]
+
+
+def test_header_filter_like_on_number_matches_the_digits():
+    widget = Tabulator(pd.DataFrame({'n': [1, 12, 20]}), header_filters=True)
+
+    widget.filters = [{'field': 'n', 'type': 'like', 'value': '1'}]
+
+    assert list(widget.current_view['n']) == [1, 12]
+
+
+def test_header_filter_like_stringifies_a_non_string_value():
+    widget = Tabulator(pd.DataFrame({'n': [1, 12, 20]}), header_filters=True)
+
+    widget.filters = [{'field': 'n', 'type': 'like', 'value': 1}]
+
+    assert list(widget.current_view['n']) == [1, 12]
+
+
+def test_header_filter_datetime_equals_keeps_that_timestamp():
+    df = pd.DataFrame({'dt': pd.date_range('2023-01-01', periods=6, freq='8h')})
+    widget = Tabulator(df, header_filters={'dt': {'type': 'date', 'func': '='}})
+
+    widget.filters = [{'field': 'dt', 'type': '=', 'value': '2023-01-01'}]
+
+    assert list(widget.current_view['dt']) == [pd.Timestamp('2023-01-01')]
+
 
 @pytest.mark.parametrize('aggs', [{}, {'Country': 'sum'}, {'Country': {'Int': 'sum', 'Float': 'mean'}}])
 def test_tabulator_aggregators(document, comm, df_agg, aggs):

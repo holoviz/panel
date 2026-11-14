@@ -67,6 +67,31 @@ class _TextInputBase(Widget):
       Width of this component. If sizing_mode is set to stretch
       or scale mode this will merely be used as a suggestion.""")
 
+    def __init__(self, **params):
+        if 'value' in params and 'value_input' not in params:
+            params['value_input'] = params['value']
+        super().__init__(**params)
+        self._internal_callbacks.append(
+            self.param.watch(self._sync_value_input, 'value')
+        )
+
+    def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
+        params = super()._process_param_change(params)
+        # The bokeh model only accepts str, None renders as an empty input
+        for key in ('value', 'value_input'):
+            if key in params and params[key] is None:
+                params[key] = ''
+        return params
+
+    def _sync_value_input(self, event):
+        # A `value` assigned from Python must also update `value_input`,
+        # otherwise pressing Enter in the browser submits the stale
+        # `value_input` and reverts `value`. Changes driven by the frontend
+        # arrive inside param's `_syncing` context and are left alone.
+        if 'value' in self._param__private.syncing:
+            return
+        self.value_input = event.new
+
     @classmethod
     def from_param(
         cls,
@@ -1253,10 +1278,10 @@ class LiteralInput(Widget):
         props = super()._process_param_change(params)
         if 'value' in props:
             value = props['value']
-            if isinstance(value, str):
-                value = repr(value)
-            elif self.serializer == 'json':
+            if self.serializer == 'json':
                 value = json.dumps(value)
+            elif isinstance(value, str):
+                value = repr(value)
             else:
                 value = '' if value is None else str(value)
             props['value'] = value
@@ -1382,11 +1407,17 @@ class DatetimeInput(LiteralInput):
         if new is not None and ((self.start is not None and self.start > new) or
                                 (self.end is not None and self.end < new)):
             value = datetime.strftime(new, self.format)
-            start = datetime.strftime(self.start, self.format)
-            end = datetime.strftime(self.end, self.format)
+            start = None if self.start is None else datetime.strftime(self.start, self.format)
+            end = None if self.end is None else datetime.strftime(self.end, self.format)
+            if start is None:
+                bounds = f'on or before {end}'
+            elif end is None:
+                bounds = f'on or after {start}'
+            else:
+                bounds = f'between {start} and {end}'
             if event:
                 self.value = event.old
-            raise ValueError(f'DatetimeInput value must be between {start} and {end}, '
+            raise ValueError(f'DatetimeInput value must be {bounds}, '
                              f'supplied value is {value}')
 
     def _process_property_change(self, props: dict[str, t.Any]) -> dict[str, t.Any]:

@@ -112,6 +112,17 @@ def test_button_appearance_renames_pair_is_bidirectional_over_known_classes(comp
     assert compat.BUTTON_APPEARANCE_RENAMES == {'button_type': 'color', 'button_style': 'variant'}
 
 
+def test_icon_size_alias_matches_live_params(compat):
+    for match in compat.COMPONENT_MATCHES.values():
+        classic_params = set(match.classic_cls.param)
+        assert match.has_icon_size_alias == (
+            'size' in classic_params and 'icon_size' not in classic_params
+            and 'icon_size' in match.ui_cls.param
+        )
+    for name in ('ToggleIcon', 'ButtonIcon'):
+        assert compat.COMPONENT_MATCHES[f'panel.widgets.{name}'].has_icon_size_alias
+
+
 def test_menu_button_split_rule_points_at_real_classes(compat):
     import panel.ui as pn_ui
     match = compat.COMPONENT_MATCHES[compat.MENU_BUTTON_CLASSIC_PATH]

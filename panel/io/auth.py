@@ -24,7 +24,7 @@ from urllib.parse import urlencode, urljoin
 
 from bokeh.server.auth import AuthPolicy
 from bokeh.server.request import Cookie
-from tornado.httputil import HTTPHeaders, HTTPServerRequest
+from tornado.httputil import HTTPHeaders, HTTPServerRequest, RequestStartLine
 from tornado.web import (
     Application as TornadoApplication, HTTPError, RequestHandler,
 )
@@ -221,12 +221,11 @@ class PanelAuthPolicy(AuthPolicy):
         headers = HTTPHeaders()
         for name, value in request.headers.items():
             headers.add(name, value)
+        headers['Host'] = request.host or '127.0.0.1'
         tornado_request = HTTPServerRequest(
-            method=request.method,
-            uri=request.uri,
+            start_line=RequestStartLine(request.method, request.uri, 'HTTP/1.0'),
             headers=headers,
             body=body,
-            host=request.host or '127.0.0.1',
             connection=t.cast('t.Any', _AuthConnection(request)),
         )
         if body:

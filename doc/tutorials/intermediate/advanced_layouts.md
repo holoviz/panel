@@ -137,7 +137,7 @@ Getting the `FlexBox` `styles` right can be tricky. If you need help try posting
 
 ### Media queries
 
-To achieve layouts depending on the overall screen/browser width, e.g. to have a different layout depending on whether we are working on a desktop or a mobile we can use *media queries*. Media queries allow us to apply different rules depending on a `min-width` or `max-width`, e.g. the example below will force the flexbow into a column layout when the viewport is below a size of 1200px:
+To achieve layouts depending on the overall screen/browser width, e.g. to have a different layout depending on whether we are working on a desktop or a mobile we can use *media queries*. Media queries allow us to apply different rules depending on a `min-width` or `max-width`. The `pn.ui.FlexBox` accepts them as part of its `sx` styling dictionary, e.g. the example below will force the flexbox into a column layout when the viewport is below a size of 1200px:
 
 ```{pyodide}
 import panel as pn
@@ -149,15 +149,11 @@ red = pn.ui.Spacer(height=200, width=400, styles={'background': 'red'})
 green = pn.ui.Spacer(height=200, width=400, styles={'background': 'green'})
 blue = pn.ui.Spacer(height=200, width=400, styles={'background': 'blue'})
 
-media_query = """
-@media screen and (max-width: 1200px) {
-  div[id^="flexbox"] {
-    flex-flow: column !important;
-  }
+media_query = {
+    "@media (max-width: 1200px)": {"flexDirection": "column"}
 }
-"""
 
-pn.ui.FlexBox(red, green, blue, stylesheets=[media_query]).servable()
+pn.ui.FlexBox(red, green, blue, sx=media_query).servable()
 ```
 
 Try changing your browser width to see how the layout changes from row based to column based.
@@ -173,6 +169,8 @@ import panel as pn
 import holoviews as hv
 import hvplot.pandas
 import pandas as pd
+
+pn.extension('tabulator', throttled=True)
 
 data_url = 'https://assets.holoviz.org/panel/tutorials/turbines.csv.gz'
 
@@ -190,13 +188,13 @@ CARD_STYLE = """
 
 manufacturers = pn.ui.MultiChoice(options=df.t_manu.unique().rx.pipe(list), label='Manufacturer')
 year = pn.ui.IntRangeSlider(start=df.p_year.min().rx.pipe(int), end=df.p_year.max().rx.pipe(int), label='Year')
-columns = ['p_name', 't_state', 't_county', 'p_year', 't_manu', 'p_cap']
+columns = ['p_name', 't_state', 't_county', 'p_year', 't_manu', 'p_cap', 't_cap']
 
 filtered = df[columns][df.t_manu.isin(manufacturers.rx.where(manufacturers, df.t_manu.unique())) & df.p_year.between(*year.rx())]
 
-count = pn.indicators.Number(label='Turbine Count', value=filtered.rx.len(), format='{value:,d} TWh', stylesheets=[CARD_STYLE])
-total_cap = pn.indicators.Number(label='Total Capacity', value=filtered.p_cap.mean(), format='{value:.2f} TWh', stylesheets=[CARD_STYLE])
-modal_year = pn.indicators.Number(label='Modal Year', value=filtered.p_year.mode().iloc[0], stylesheets=[CARD_STYLE])
+count = pn.ui.Number(label='Turbine Count', value=filtered.rx.len(), format='{value:,d}', stylesheets=[CARD_STYLE])
+total_cap = pn.ui.Number(label='Total Capacity', value=filtered.t_cap.sum() / 1e6, format='{value:,.2f} GW', stylesheets=[CARD_STYLE])
+modal_year = pn.ui.Number(label='Modal Year', value=filtered.p_year.mode().iloc[0], format='{value:.0f}', stylesheets=[CARD_STYLE])
 
 widgets = pn.ui.Column(manufacturers, year, stylesheets=[CARD_STYLE], margin=10)
 table = pn.ui.Tabulator(filtered, stylesheets=[CARD_STYLE], max_width=500)
@@ -211,8 +209,61 @@ pn.ui.Column(count, total_cap, modal_year, widgets, table, plots).servable()
 
 :::{dropdown} Solution
 
-This is just an example solution.  The exercise can be solved in many ways.
+This is just an example solution. The exercise can be solved in many ways.
 
-COMING UP
+Here we use a `pn.ui.Grid`, which arranges its items in a 12 column grid. The `size` of each item declares how many columns it spans at a given breakpoint (`xs`, `sm`, `md`, `lg` and `xl`), so the filters and indicators share a row on wide screens and stack on narrow ones, while the table and the plots sit side by side only on large screens.
+
+```{pyodide}
+import panel as pn
+import holoviews as hv
+import hvplot.pandas
+import pandas as pd
+
+pn.extension('tabulator', throttled=True)
+
+data_url = 'https://assets.holoviz.org/panel/tutorials/turbines.csv.gz'
+
+@pn.cache
+def get_data():
+    return pd.read_csv(data_url)
+
+df = pn.rx(get_data())
+
+CARD_STYLE = """
+:host {
+  box-shadow: rgba(50, 50, 93, 0.25) 0px 6px 12px -2px, rgba(0, 0, 0, 0.3) 0px 3px 7px -3px;
+  padding: 5px 10px;
+}"""
+
+manufacturers = pn.ui.MultiChoice(options=df.t_manu.unique().rx.pipe(list), label='Manufacturer')
+year = pn.ui.IntRangeSlider(start=df.p_year.min().rx.pipe(int), end=df.p_year.max().rx.pipe(int), label='Year')
+columns = ['p_name', 't_state', 't_county', 'p_year', 't_manu', 'p_cap', 't_cap']
+
+filtered = df[columns][df.t_manu.isin(manufacturers.rx.where(manufacturers, df.t_manu.unique())) & df.p_year.between(*year.rx())]
+
+count = pn.ui.Number(label='Turbine Count', value=filtered.rx.len(), format='{value:,d}', font_size='28pt', stylesheets=[CARD_STYLE], sizing_mode='stretch_width')
+total_cap = pn.ui.Number(label='Total Capacity', value=filtered.t_cap.sum() / 1e6, format='{value:,.2f} GW', font_size='28pt', stylesheets=[CARD_STYLE], sizing_mode='stretch_width')
+modal_year = pn.ui.Number(label='Modal Year', value=filtered.p_year.mode().iloc[0], format='{value:.0f}', font_size='28pt', stylesheets=[CARD_STYLE], sizing_mode='stretch_width')
+
+widgets = pn.ui.Column(manufacturers, year, stylesheets=[CARD_STYLE], sizing_mode='stretch_width')
+table = pn.ui.Tabulator(filtered, pagination='remote', page_size=10, stylesheets=[CARD_STYLE], sizing_mode='stretch_width')
+
+year_hist = filtered.hvplot.hist(y='p_year', responsive=True, height=300)
+cap_hist = filtered.hvplot.hist(y='p_cap', responsive=True, height=300)
+
+plots = pn.ui.Column(hv.DynamicMap(cap_hist), hv.DynamicMap(year_hist), stylesheets=[CARD_STYLE], sizing_mode='stretch_width')
+
+pn.ui.Grid(
+    pn.ui.Grid(widgets, size={'xs': 12, 'md': 3}),
+    pn.ui.Grid(count, size={'xs': 12, 'sm': 4, 'md': 3}),
+    pn.ui.Grid(total_cap, size={'xs': 12, 'sm': 4, 'md': 3}),
+    pn.ui.Grid(modal_year, size={'xs': 12, 'sm': 4, 'md': 3}),
+    pn.ui.Grid(table, size={'xs': 12, 'lg': 7}),
+    pn.ui.Grid(plots, size={'xs': 12, 'lg': 5}),
+    container=True,
+    spacing=2,
+    sizing_mode='stretch_width',
+).servable()
+```
 
 :::

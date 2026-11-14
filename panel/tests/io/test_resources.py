@@ -144,7 +144,16 @@ def test_bundle_resources_notebook_loads_bokeh_tables(monkeypatch):
     assert _uses_bokeh_tables(bundle_resources(None, Resources(mode='cdn')))
 
 
-def test_notebook_resources_respect_jupyterhub_base_url():
+def test_notebook_resources_without_jupyter_endpoint_keep_cdn():
+    """
+    Embedders such as nteract render with notebook=True but have no Jupyter
+    server serving Panel's endpoint, so CDN urls must stay untouched.
+    """
+    resource = f'{CDN_DIST}bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js'
+    assert Resources(mode='cdn', notebook=True).adjust_paths([resource]) == [resource]
+
+
+def test_notebook_resources_respect_jupyterhub_base_url(jupyter_endpoint):
     resource = f'{CDN_DIST}bundled/datatabulator/tabulator-tables@{TABULATOR_VERSION}/dist/js/tabulator.min.js'
     with edit_readonly(state):
         state.base_url = '/user/alice/'
@@ -160,7 +169,7 @@ def test_notebook_resources_respect_jupyterhub_base_url():
     ]
 
 
-def test_notebook_resources_do_not_double_render_endpoint_root():
+def test_notebook_resources_do_not_double_render_endpoint_root(jupyter_endpoint):
     """
     The render endpoint sets `rel_path` to its own `panel-preview` root
     already, so it must not be appended a second time on top of
@@ -382,3 +391,41 @@ def test_resolve_resource_cdn_custom_esm(panel_test_cdn):
     resources = Resources(mode='cdn')
 
     assert resources.css_files == ['https://panel-test.holoviz.org/assets/custom.css']
+
+
+def test_notebook_resources_load_bokeh_from_jupyter_endpoint(jupyter_endpoint):
+    """
+    BokehJS has to come from the endpoint's own static handler, using the
+    versioned server urls rather than the CDN urls, whose path depends on
+    the release channel and version string.
+    """
+    js_files = Resources(mode='cdn', notebook=True, minified=True).js_files
+    bokeh_files = [url for url in js_files if '/bokeh' in url]
+
+    assert bokeh_files
+    assert not any('cdn.bokeh.org' in url for url in js_files)
+    for url in bokeh_files:
+        assert re.match(r'/panel-preview/static/js/bokeh(-\w+)?\.min\.js\?v=\w+$', url)
+
+
+def test_notebook_resources_rewrite_extension_paths_to_jupyter_endpoint(jupyter_endpoint):
+    resources = Resources(mode='cdn', notebook=True)
+    assert resources.adjust_paths(['static/extensions/panel-foo/foo.bundle.js']) == [
+        '/panel-preview/static/extensions/panel-foo/foo.bundle.js'
+    ]
+
+
+def test_jupyter_cdn_map(tmp_path, monkeypatch):
+    from bokeh.embed.bundle import extension_dirs
+
+    from panel.io.resources import EXTENSION_CDN
+
+    monkeypatch.setitem(extension_dirs, 'panel-foo', tmp_path)
+    monkeypatch.setitem(EXTENSION_CDN, tmp_path, 'https://cdn.holoviz.org/panel-foo/v1.0.0')
+
+    cdn_map = dict(Resources(mode='cdn', notebook=True, minified=True).jupyter_cdn_map())
+
+    assert cdn_map['static/extensions/panel/'] == CDN_DIST
+    assert cdn_map['static/extensions/panel-foo/'] == 'https://cdn.holoviz.org/panel-foo/v1.0.0/'
+    assert cdn_map['static/js/bokeh.min.js'] == f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-{bokeh_version}.min.js'
+    assert cdn_map['static/js/bokeh-widgets.min.js'] == f'https://cdn.bokeh.org/bokeh/{bk_prefix}/bokeh-widgets-{bokeh_version}.min.js'

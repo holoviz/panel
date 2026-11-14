@@ -134,6 +134,19 @@ def test_location_sync_param_init(location):
     assert location._synced == []
     assert location.search == ""
 
+def test_location_sync_constant_parameter_raises(location):
+    class Constant(param.Parameterized):
+        fixed = param.Integer(default=1, constant=True)
+
+    with pytest.raises(ValueError, match="constant"):
+        location.sync(Constant(), {'fixed': 'fixed'})
+    assert location._synced == []
+
+def test_location_sync_unknown_parameter_keeps_param_error(location):
+    p = SyncParameterized()
+    with pytest.raises(ValueError, match="nope"):
+        location.sync(p, {'nope': 'x'})
+
 def test_location_sync_on_error(location):
     p = SyncParameterized(string='abc')
     changes = []
@@ -235,3 +248,12 @@ def test_location_sync_to_dataframe_with_initial_value(location, dataframe):
 def test_get_location_params(protocol, host, uri, expected):
     params = _get_location_params(protocol, host, uri)
     assert params==expected
+
+
+@pytest.mark.parametrize('query,expected', [('02', '02'), ('007', '007'), ('2', 2)])
+def test_location_sync_select_numeric_looking_option(location, query, expected):
+    from panel.widgets import Select
+    select = Select(options=['01', '02', '007', 2, 3])
+    location.update_query(sel=query)
+    location.sync(select, {'value': 'sel'})
+    assert select.value == expected

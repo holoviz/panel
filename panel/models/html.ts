@@ -211,7 +211,15 @@ export class DOMEvent extends ModelEvent {
   }
 }
 
+// Only the entities emitted by Python's html.escape, which is all a
+// text containing no markup needs decoding for.
+const ESCAPE_ENTITIES_ONLY = /^(?:[^&<\r\0]|&(?:amp|lt|gt|quot|#x27);)*$/
+
 export function html_decode(input: string): string | null {
+  if (ESCAPE_ENTITIES_ONLY.test(input)) {
+    // Matches the parser, which drops whitespace before the first character
+    return unescape_html(input).replace(/^[\t\n\f\r ]+/, "")
+  }
   const doc = new DOMParser().parseFromString(input, "text/html")
   return doc.documentElement.textContent
 }
@@ -257,7 +265,9 @@ export class HTMLView extends PanelMarkupView {
       this.set_html(html)
     })
     this.on_change(visible, () => {
-      if (this.model.visible) {
+      // Parents may build child views without rendering them, e.g. collapsed
+      // containers; render() then sets the visibility.
+      if (this.model.visible && this.container != null) {
         this.container.style.visibility = "visible"
       }
     })
@@ -294,18 +304,14 @@ export class HTMLView extends PanelMarkupView {
     if (dirty == null || this.container == null) {
       return
     }
-    const html = this.model.stream_text
-    if (!this.model.disable_math && this.contains_tex(html)) {
-      this.set_html(this.process_tex())
-    } else {
-      this._update_blocks(html, dirty)
-    }
+    this._update_blocks(this.model.stream_text, dirty)
   }
 
   /**
    * Re-renders only the top-level blocks at or after the first
    * modified offset, keeping the DOM (and any text selection) of the
-   * preceding blocks intact.
+   * preceding blocks intact. Math is typeset per block, so only the
+   * re-rendered blocks are searched and typeset again.
    */
   protected _update_blocks(html: string, dirty: number): void {
     let blocks = this._blocks
@@ -329,7 +335,7 @@ export class HTMLView extends PanelMarkupView {
     const parser = document.createElement("div")
     const added: ChildNode[] = []
     for (const [start, end] of split_blocks(html, from)) {
-      parser.innerHTML = html.slice(start, end)
+      parser.innerHTML = this.typeset(html.slice(start, end))
       const nodes = [...parser.childNodes]
       fragment.append(...nodes)
       added.push(...nodes)
@@ -411,42 +417,38 @@ export class HTMLView extends PanelMarkupView {
   }
 
   override style_redraw(): void {
-    if (this.model.visible) {
+    if (this.model.visible && this.container != null) {
       this.container.style.visibility = "visible"
     }
   }
 
   override process_tex(): string {
-    const decoded = html_decode(this.model.text)
-    const text = decoded ?? this.model.text
-    if (this.model.disable_math || !this.contains_tex(text)) {
-      return text
-    }
-
-    const tex_parts = this.provider.MathJax.find_tex(text)
-    const processed_text: string[] = []
-
-    let last_index: number | undefined = 0
-    for (const part of tex_parts) {
-      processed_text.push(text.slice(last_index, part.start.n))
-      processed_text.push(this.provider.MathJax.tex2svg(part.math, {display: part.display}).outerHTML)
-
-      last_index = part.end.n
-    }
-
-    if (last_index! < text.length) {
-      processed_text.push(text.slice(last_index))
-    }
-
-    return processed_text.join("")
+    return this.typeset(html_decode(this.model.text) ?? this.model.text)
   }
 
-  private contains_tex(html: string): boolean {
-    if (!this.provider.MathJax) {
-      return false
+  /**
+   * Replaces the TeX found in the text with MathJax SVG output.
+   */
+  typeset(text: string): string {
+    const {MathJax} = this.provider
+    if (this.model.disable_math || !MathJax) {
+      return text
     }
-
-    return this.provider.MathJax.find_tex(html).length > 0
+    const tex_parts = MathJax.find_tex(text)
+    if (tex_parts.length === 0) {
+      return text
+    }
+    const processed_text: string[] = []
+    let last_index = 0
+    for (const part of tex_parts) {
+      processed_text.push(text.slice(last_index, part.start.n))
+      processed_text.push(MathJax.tex2svg(part.math, {display: part.display}).outerHTML)
+      last_index = part.end.n
+    }
+    if (last_index < text.length) {
+      processed_text.push(text.slice(last_index))
+    }
+    return processed_text.join("")
   }
 
   private _remove_event_listeners(): void {

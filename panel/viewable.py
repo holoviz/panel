@@ -307,19 +307,18 @@ class Layoutable(param.Parameterized):
             params['sizing_mode'] = 'fixed'
         elif (not (self.param.sizing_mode.constant or self.param.sizing_mode.readonly) and
               type(self).sizing_mode is None and 'sizing_mode' not in params):
-            if config.sizing_mode == 'stretch_both':
+            default_sizing_mode = config.sizing_mode
+            if default_sizing_mode == 'stretch_both':
                 if params.get('height') is not None:
                     params['sizing_mode'] = 'stretch_width'
                 elif params.get('width') is not None:
                     params['sizing_mode'] = 'stretch_height'
                 else:
-                    params['sizing_mode'] = config.sizing_mode
-            elif config.sizing_mode == 'stretch_width' and 'width' not in params:
-                params['sizing_mode'] = config.sizing_mode
-            elif config.sizing_mode == 'stretch_height' and 'height' not in params:
-                params['sizing_mode'] = config.sizing_mode
-        if 'design' not in params and self.param.design.default is None:
-            params['design'] = config.design
+                    params['sizing_mode'] = default_sizing_mode
+            elif default_sizing_mode == 'stretch_width' and 'width' not in params:
+                params['sizing_mode'] = default_sizing_mode
+            elif default_sizing_mode == 'stretch_height' and 'height' not in params:
+                params['sizing_mode'] = default_sizing_mode
         super().__init__(**params)
         self._sizing_initializing = False
         # Track dynamic (post-init) updates to the sizing parameters so
@@ -728,6 +727,9 @@ class Renderable(param.Parameterized, MimeRenderMixin):
             return
         ref = root.ref['id']
         self._model_parents.pop(ref, None)
+        for doc, model in list(self._documents.items()):
+            if model is root:
+                del self._documents[doc]
         if ref in state._handles:
             del state._handles[ref]
 
@@ -787,7 +789,7 @@ class Renderable(param.Parameterized, MimeRenderMixin):
         root = self._documents[doc]
         ref = root.ref['id']
         self._cleanup(root)
-        del self._documents[doc]
+        self._documents.pop(doc, None)
         if ref in state._views:
             del state._views[ref]
 
@@ -853,30 +855,54 @@ class Viewable(Renderable, Layoutable, ServableMixin):
 
     def __init__(self, **params):
         hooks = params.pop('hooks', [])
+        # An explicit design=None opts out of the configured design.
+        explicit_none = 'design' in params and params['design'] is None
         super().__init__(**params)
         self._hooks = hooks
 
         if self.loading:
             self._update_loading()
-        self._update_design()
-        self._internal_callbacks.extend([
-            self.param.watch(self._update_design, 'design'),
-            self.param.watch(self._update_loading, 'loading')
-        ])
+        self._update_design(explicit_none)
+        self._internal_callbacks.append(
+            self.param.watch(self._update_design_or_loading, ['design', 'loading'])
+        )
+
+    def _update_design_or_loading(self, *events):
+        for event in events:
+            if event.name == 'design':
+                self._update_design()
+            else:
+                self._update_loading()
 
     @staticmethod
     @functools.cache
     def _instantiate_design(design: type[Design], theme: str) -> Design:
         return design(theme=theme)
 
-    def _update_design(self, *_):
+    @property
+    def _design(self):
+        # Without an assigned design the configuration is read when the
+        # component renders, so a design a session selects after creating
+        # the component still applies to it.
+        design = getattr(self, '_assigned_design', None)
+        if design is not None:
+            return design
+        from .theme.native import Native
+        return self._instantiate_design(config.design or Native, config.theme)
+
+    @_design.setter
+    def _design(self, design):
+        self._assigned_design = design
+
+    def _update_design(self, explicit=True):
         from .theme import Design
         from .theme.native import Native
         if isinstance(self.design, Design):
             self._design = self.design
+        elif self.design is None:
+            self._design = self._instantiate_design(Native, config.theme) if explicit else None
         else:
-            design = self.design or Native
-            self._design = self._instantiate_design(design, config.theme)
+            self._design = self._instantiate_design(self.design, config.theme)
 
     def _update_loading(self, *_) -> None:
         if self.loading:
@@ -979,10 +1005,13 @@ class Viewable(Renderable, Layoutable, ServableMixin):
             return render_model(model)
 
         if resources == 'inline':
-            for submodel in model.select({'type': UIElement}):
-                if not isinstance(submodel, UIElement):
-                    continue
-                patch_inline_stylesheets(submodel, doc)
+            # Each stylesheets update would otherwise recompute the whole
+            # model graph, making the inlining quadratic in the model count
+            with doc.models.freeze():
+                for submodel in model.select({'type': UIElement}):
+                    if not isinstance(submodel, UIElement):
+                        continue
+                    patch_inline_stylesheets(submodel, doc)
 
         bundle, meta = self._render_mimebundle(model, doc, comm, location)
 

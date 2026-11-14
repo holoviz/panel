@@ -28,6 +28,13 @@ How to effectively develop apps in a Python or Markdown file.
 How to configure static type checkers like mypy to work with Param and Panel.
 :::
 
+:::{grid-item-card} {octicon}`hubot;2.5em;sd-mr-1 sd-animate-grow50` Use an AI assistant
+:link: use_llms
+:link-type: doc
+
+How to give AI coding assistants current Panel guidance with HoloViz skills and llms.txt.
+:::
+
 ::::
 
 ## Build apps

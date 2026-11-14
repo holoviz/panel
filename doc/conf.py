@@ -194,7 +194,7 @@ nbsite_gallery_conf = {
                         },
                         {
                             'title': 'panel-graphic-walker',
-                            'url': 'https://github.com/holoviz/panel-graphic-walker',
+                            'url': 'https://github.com/panel-extensions/panel-graphic-walker',
                         },
                         {
                             'title': 'panel-reactflow',
@@ -202,11 +202,11 @@ nbsite_gallery_conf = {
                         },
                         {
                             'title': 'panel-splitjs',
-                            'url': 'https://github.com/holoviz/panel-splitjs',
+                            'url': 'https://github.com/panel-extensions/panel-splitjs',
                         },
                         {
                             'title': 'panel-web-llm',
-                            'url': 'https://github.com/holoviz/panel-web-llm',
+                            'url': 'https://panel-extensions.github.io/panel-web-llm/',
                         },
                         {
                             'title': 'panel-live-server',

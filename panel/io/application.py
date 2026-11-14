@@ -67,12 +67,6 @@ def _eval_panel(
 
     doc.on_event('document_ready', partial(state._schedule_on_load, doc))
 
-    # Set up instrumentation for logging sessions
-    logger.info(LOG_SESSION_LAUNCHING, id(doc))
-    def _log_session_destroyed(session_context):
-        logger.info(LOG_SESSION_DESTROYED, id(doc))
-    doc.on_session_destroyed(_log_session_destroyed)
-
     with set_curdoc(doc):
         if isinstance(panel, (FunctionType, MethodType)):
             panel = panel()
@@ -353,13 +347,14 @@ def build_applications(
             apps[slug] = Application(handler, admin=admin)
 
     if admin:
-        if '/admin' in apps:
+        admin_path = config._admin_path
+        if admin_path in apps:
             raise ValueError(
                 'Cannot enable admin panel because another app is being served '
-                'on the /admin endpoint'
+                f'on the {admin_path} endpoint'
             )
         from .admin import admin_panel
         admin_handler = FunctionHandler(admin_panel)
-        apps['/admin'] = mark_admin_application(Application(admin_handler))
+        apps[admin_path] = mark_admin_application(Application(admin_handler))
 
     return apps

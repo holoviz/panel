@@ -380,7 +380,7 @@ def test_resource_spec_respects_rel_path(document):
     assert all(url.startswith('../static/') for url in _spec_urls(spec))
 
 
-def test_resource_spec_ignores_stale_notebook_default_in_server_session(document):
+def test_resource_spec_ignores_stale_notebook_default_in_server_session(document, jupyter_endpoint):
     """
     A server started from within a notebook's kernel process (``pn.serve``,
     commonly with ``threaded=True``) must not inherit the notebook's

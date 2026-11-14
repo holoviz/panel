@@ -201,16 +201,16 @@ pn.ui.Row(fig, md, height=500, sizing_mode="stretch_width").servable()
 #### Finetune with Widgets
 
 :::{tip}
-**Pro Tip**: Speed up the process of fine-tuning by using interactive widgets instead of code. Panel's `pn.Param` provides an easy way to create widgets to control your Panel component.
+**Pro Tip**: Speed up the process of fine-tuning by using interactive widgets instead of code. Panel's `pn.ui.Param` provides an easy way to create widgets to control your Panel component.
 :::
 
 Continue from the previous exercise solution. Add the `settings` component below your `Row`:
 
 ```python
-settings = pn.Param(md, parameters=["sizing_mode", "min_width", "max_width"])
+settings = pn.ui.Param(md, parameters=["sizing_mode", "min_width", "max_width"])
 ```
 
-Try changing the values of the `sizing_mode`, `min_height`, and `max_height` widgets interactively. Observe the effect on the component's display as you adjust the values.
+Try changing the values of the `sizing_mode`, `min_width`, and `max_width` widgets interactively. Observe the effect on the component's display as you adjust the values.
 
 :::{dropdown} Solution
 
@@ -246,7 +246,7 @@ fig.vbar(x=data["Day"], top=data["Wind Speed (m/s)"], width=0.5, color="navy", )
 md = pn.ui.Markdown(
     text,  min_width=200, max_width=500,
 )
-settings = pn.Param(md, parameters=["sizing_mode", "min_width", "max_width"])
+settings = pn.ui.Param(md, parameters=["sizing_mode", "min_width", "max_width"])
 pn.ui.Row(fig, md, settings, height=500,).servable()
 ```
 
@@ -255,7 +255,7 @@ pn.ui.Row(fig, md, settings, height=500,).servable()
 #### Change the Defaults
 
 :::{note}
-The default `sizing_mode` of Panel is `"fixed"`. We can change the default `sizing_mode` via `pn.extension(sizing_mode=...)` or `pn.config.sizing_mode=...`.
+By default Panel does not set a global `sizing_mode`, so components keep their inherent or fixed size unless told otherwise. We can change the default `sizing_mode` via `pn.extension(sizing_mode=...)` or `pn.config.sizing_mode=...`.
 :::
 
 Let's redo the initial `sizing_mode` exercise, but this time with a default `sizing_mode` of `"stretch_width"`.

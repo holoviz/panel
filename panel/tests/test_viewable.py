@@ -119,6 +119,30 @@ def test_clone_with_non_defaults():
     assert ([(k, v) for k, v in sorted(v.param.values().items()) if k not in ('name')] ==
             [(k, v) for k, v in sorted(clone.param.values().items()) if k not in ('name')])
 
+def test_clone_skips_class_level_readonly_after_edit_constant():
+    from panel.widgets import Terminal
+
+    terminal = Terminal()
+    with param.edit_constant(terminal):
+        terminal.param.ncols.readonly = False
+        terminal.ncols = 10
+
+    clone = terminal.clone()
+
+    assert clone.ncols != 10
+    assert clone.param.ncols.readonly
+
+def test_clone_skips_readonly_subclass_parameter():
+    class ReadOnlyViewable(Viewable):
+        value = param.Integer(default=1, readonly=True)
+
+    v = ReadOnlyViewable()
+    with param.edit_constant(v):
+        v.param.value.readonly = False
+        v.value = 5
+
+    assert v.clone().value == 1
+
 def test_is_viewable_parameter():
     class Example(param.Parameterized):
         p_dict = param.Dict()
@@ -163,3 +187,24 @@ def test_is_viewable_parameter():
     assert is_viewable_param(example.param.l_item_types_viewable)
     assert not is_viewable_param(example.param.l_item_types_not_viewable)
     assert not is_viewable_param(example.param.l_item_types_not_viewable2)
+
+
+def test_viewable_design_and_loading_watchers():
+    from panel.io.loading import LOADING_INDICATOR_CSS_CLASS
+    from panel.theme import Bootstrap, Native
+
+    md = Markdown('x')
+    assert getattr(md, '_assigned_design', None) is None
+
+    md.design = Bootstrap
+    assert isinstance(md._design, Bootstrap)
+
+    md.design = None
+    assert isinstance(md._design, Native)
+
+    md.loading = True
+    assert LOADING_INDICATOR_CSS_CLASS in md.css_classes
+
+    md.param.update(loading=False, design=Bootstrap)
+    assert LOADING_INDICATOR_CSS_CLASS not in md.css_classes
+    assert isinstance(md._design, Bootstrap)

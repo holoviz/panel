@@ -54,7 +54,7 @@ Copy the code below into a file named `app.py`.
 ```python
 import panel as pn
 
-pn.extension(design="material")
+pn.extension()
 
 def handle_click(event):
     breakpoint()

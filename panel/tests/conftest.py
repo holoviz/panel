@@ -34,7 +34,7 @@ from panel.io.compile import check_cli_tool
 from panel.io.reload import (
     _local_modules, _modules, _watched_files, async_file_watcher, watch,
 )
-from panel.io.resources import EXTENSION_CDN
+from panel.io.resources import EXTENSION_CDN, JUPYTER_ENDPOINT_ENV
 from panel.io.state import set_curdoc, state
 from panel.pane import HTML, Markdown
 from panel.tests.util import (
@@ -127,6 +127,12 @@ def jupyter_preview(request):
     return f'http://127.0.0.1:{JUPYTER_PORT}/panel-preview/render/{str(rel)}'
 
 atexit.register(cleanup_jupyter)
+
+ON_WINDOWS = sys.platform == 'win32'
+
+# How Chromium and Python report WSAENOBUFS
+WINDOWS_SOCKET_ERRORS = ['ERR_NO_BUFFER_SPACE', 'WinError 10055']
+
 optional_markers = {
     "ui": {
         "help": "Runs UI related tests",
@@ -202,6 +208,11 @@ def pytest_collection_modifyitems(config, items):
     for item in selected:
         if item.get_closest_marker("internet") and not item.get_closest_marker("flaky"):
             item.add_marker(pytest.mark.flaky(reruns=3, reason="Downloads remote files, which can fail on a bad connection"))
+        elif ON_WINDOWS and item.get_closest_marker("ui") and not item.get_closest_marker("flaky"):
+            item.add_marker(pytest.mark.flaky(
+                reruns=2, only_rerun=WINDOWS_SOCKET_ERRORS,
+                reason="A loaded Windows runner can run out of socket buffers"
+            ))
 
     if 'panel_material_ui' in sys.modules:
         raise pytest.UsageError(
@@ -215,12 +226,11 @@ def pytest_collection_modifyitems(config, items):
             item.add_marker(pytest.mark.panel_ui)
 
     config.hook.pytest_deselected(items=skipped)
-    # Sorted because pytest 8.4.0 and pytest-playwright
-    # https://github.com/microsoft/playwright-pytest/pull/284
     # Tests importing panel.ui run last: its components cannot be unregistered,
     # and every later render on the same worker would include their resources.
-    items[:] = sorted(
-        selected, key=lambda x: (x.get_closest_marker('panel_ui') is not None, x.path)
+    items[:] = (
+        [item for item in selected if not item.get_closest_marker('panel_ui')] +
+        [item for item in selected if item.get_closest_marker('panel_ui')]
     )
 
 
@@ -238,10 +248,36 @@ def browser_type_launch_args(browser_type_launch_args, browser_name):
 
 
 @pytest.fixture
-def context(context):
+def context(context, request):
     # Set the default timeout to 20 secs
     context.set_default_timeout(20_000)
+    if ON_WINDOWS:
+        # A script or websocket that fails to load surfaces only as a timeout
+        errors = request.node._windows_socket_errors = []
+        pattern = re.compile('|'.join(WINDOWS_SOCKET_ERRORS))
+
+        def on_request_failed(req):
+            if pattern.search(req.failure or ''):
+                errors.append(f"{req.url}: {req.failure}")
+
+        def on_console(msg):
+            if pattern.search(msg.text):
+                errors.append(msg.text)
+
+        context.on("requestfailed", on_request_failed)
+        context.on("console", on_console)
     yield context
+
+
+@pytest.hookimpl(wrapper=True)
+def pytest_runtest_call(item):
+    try:
+        return (yield)
+    except Exception as e:
+        errors = getattr(item, '_windows_socket_errors', None)
+        if errors and not re.search('|'.join(WINDOWS_SOCKET_ERRORS), str(e)):
+            raise RuntimeError(f"The browser hit {errors[0]!r}, then: {e}") from e
+        raise
 
 PORT = [get_default_port()]
 
@@ -419,15 +455,14 @@ def tmpdir(request, tmpdir_factory):
 
 @pytest.fixture
 def html_server_session(asyncio_loop):
-    port = 5050
     html = HTML('<h1>Title</h1>')
-    server = serve(html, port=port, show=False, start=False)
+    server = serve(html, port=0, address='127.0.0.1', show=False, start=False)
     session = pull_session(
         session_id='Test',
-        url=f"http://localhost:{server.port:d}/",
+        url=f"http://127.0.0.1:{server.port:d}/",
         io_loop=server.io_loop
     )
-    yield html, server, session, port
+    yield html, server, session, server.port
     try:
         server.stop()
     except AssertionError:
@@ -435,15 +470,14 @@ def html_server_session(asyncio_loop):
 
 @pytest.fixture()
 def markdown_server_session():
-    port = 5051
     html = Markdown('#Title')
-    server = serve(html, port=port, show=False, start=False)
+    server = serve(html, port=0, address='127.0.0.1', show=False, start=False)
     session = pull_session(
         session_id='Test',
-        url=f"http://localhost:{server.port:d}/",
+        url=f"http://127.0.0.1:{server.port:d}/",
         io_loop=server.io_loop
     )
-    yield html, server, session, port
+    yield html, server, session, server.port
     try:
         server.stop()
     except AssertionError:
@@ -558,6 +592,15 @@ def classic_isolation():
             'Test imported panel.ui without the panel_ui fixture, leaking '
             f'{patched + ["config.design"] * leaked} into the classic suite.'
         )
+
+@pytest.fixture(autouse=True)
+def no_jupyter_endpoint(monkeypatch):
+    # A test run from a Jupyter terminal inherits the server's endpoint flag.
+    monkeypatch.delenv(JUPYTER_ENDPOINT_ENV, raising=False)
+
+@pytest.fixture
+def jupyter_endpoint(monkeypatch):
+    monkeypatch.setenv(JUPYTER_ENDPOINT_ENV, '1')
 
 @pytest.fixture(autouse=True)
 def cache_cleanup():

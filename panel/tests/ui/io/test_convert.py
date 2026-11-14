@@ -93,6 +93,35 @@ png = pn.pane.PNG('https://upload.wikimedia.org/wikipedia/commons/4/47/PNG_trans
 png.servable()
 """
 
+esm_msg_app = """
+import panel as pn
+from panel.custom import JSComponent
+
+class Sender(JSComponent):
+
+    _esm = '''
+    export function render({ model }) {
+      const button = document.createElement('button')
+      button.id = 'send'
+      button.onclick = () => {
+        model.send_msg({index: 0})
+        model.send_msg({index: 1, data: new Uint8Array([1, 2, 3]).buffer})
+        model.send_msg({index: 2})
+      }
+      return button
+    }
+    '''
+
+    def _handle_msg(self, msg):
+        data = msg.get('data')
+        received.append(f"{msg['index']}:{'-' if data is None else list(data)}")
+        out.object = ' '.join(received)
+
+received = []
+out = pn.pane.Str('')
+pn.Row(Sender(), out).servable();
+"""
+
 error_app = """
 import panel as pn
 
@@ -206,6 +235,19 @@ def test_pyodide_test_error_handling(http_serve, page, runtime):
 
     expect(page.locator('#loader-error')).to_have_text('RuntimeError: This app is broken', timeout=TIMEOUT)
     expect(page.locator('#loader .spinner')).to_be_hidden()
+
+
+@pytest.mark.parametrize('runtime', ['pyodide', 'pyodide-worker'])
+def test_pyodide_test_convert_esm_messages_with_binary_data(http_serve, page, runtime):
+    msgs = wait_for_app(http_serve, esm_msg_app, page, runtime)
+
+    page.click('#send')
+
+    # Each message, including the binary payload sent between the others, must
+    # arrive once and in order.
+    expect(page.locator('pre:not([class])')).to_have_text('0:- 1:[1, 2, 3] 2:-')
+
+    assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
 
 @pytest.mark.parametrize('runtime', RUNTIMES)

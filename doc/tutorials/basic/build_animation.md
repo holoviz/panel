@@ -29,7 +29,7 @@ VALUE = "p_cap"
 
 ## Extract the data
 
-@pn.cache()  # use caching to only download data once
+@pn.cache  # use caching to only download data once
 def get_data():
     return pd.read_csv("https://assets.holoviz.org/panel/tutorials/turbines.csv.gz")
 
@@ -59,7 +59,7 @@ def get_plot(year):
         alt.Chart(data)
         .encode(
             x=alt.X(VALUE, scale=alt.Scale(domain=[0, max_capacity_by_manufacturer]), title="Capacity"),
-            y=alt.Y(f"{BY}:O", sort=[BY], title="Manufacturer"),
+            y=alt.Y(f"{BY}:O", sort="-x", title="Manufacturer"),
             text=alt.Text(VALUE, format=",.0f"),
         )
         .properties(title=str(year), height=500, width="container")
@@ -89,7 +89,12 @@ pn.bind(pause_player_at_max_year, year, watch=True) # Stops the player when max_
 plot = pn.ui.Vega(pn.bind(get_plot, year))
 
 # Layout the components
-pn.ui.Column("# Wind Turbine Capacity 1982-2022", plot, year, sizing_mode="stretch_width").servable()
+pn.ui.Column(
+    f"# Wind Turbine Capacity {min_year}-{max_year}",
+    plot,
+    year,
+    sizing_mode="stretch_width",
+).servable()
 ```
 
 :::
@@ -144,9 +149,9 @@ First things first, we need to import our trusty companions: [Altair](https://al
 BY = "t_manu"
 VALUE = "p_cap"
 
-@pn.cache()
+@pn.cache
 def get_data():
-    return pd.read_csv("https://datasets.holoviz.org/windturbines/v1/windturbines.csv.gz")
+    return pd.read_csv("https://assets.holoviz.org/panel/tutorials/turbines.csv.gz")
 
 data = get_data()
 min_year = int(data.p_year.min())
@@ -185,7 +190,7 @@ def get_plot(year):
         alt.Chart(data)
         .encode(
             x=alt.X(VALUE, scale=alt.Scale(domain=[0, max_capacity_by_manufacturer]), title="Capacity"),
-            y=alt.Y(f"{BY}:O", sort=[BY], title="Manufacturer"),
+            y=alt.Y(f"{BY}:O", sort="-x", title="Manufacturer"),
             text=alt.Text(VALUE, format=",.0f"),
         )
         .properties(title=str(year), height=500, width="container")
@@ -193,7 +198,7 @@ def get_plot(year):
     return base.mark_bar() + base.mark_text(align="left", dx=2)
 ```
 
-Time to bring our visualization to life! This function generates an Altair chart based on the grouped data for a given year, encoding capacity on the x-axis, manufacturer on the y-axis, and displaying capacity as text within the bars.
+Time to bring our visualization to life! This function generates an Altair chart based on the grouped data for a given year, encoding capacity on the x-axis, manufacturer on the y-axis, and displaying capacity as text next to the bars. `sort="-x"` orders the manufacturers by descending capacity, so the bars swap places as the race unfolds.
 
 ---
 
@@ -234,10 +239,15 @@ Now, let's bind our plot function to the selected year. Whenever the user change
 🖼️ **Step 6: Layout and Presentation**
 
 ```{pyodide}
-pn.ui.Column("# Wind Turbine Capacity 1982-2022", plot, year, sizing_mode="stretch_width").servable()
+pn.ui.Column(
+    f"# Wind Turbine Capacity {min_year}-{max_year}",
+    plot,
+    year,
+    sizing_mode="stretch_width",
+).servable()
 ```
 
-Lastly, we organize our components into a neat layout. A title sets the stage, followed by our interactive plot and the year selection widget. The layout adjusts to fill the available width.
+Lastly, we organize our components into a neat layout. A title spanning the years in the dataset sets the stage, followed by our interactive plot and the year selection widget. The layout adjusts to fill the available width.
 
 ---
 

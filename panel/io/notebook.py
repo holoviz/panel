@@ -43,8 +43,10 @@ from ..util import _descendents
 from .embed import embed_state
 from .model import add_to_doc, diff
 from .resources import (
-    CDN_DIST, DIST_DIR, PANEL_DIR, Resources, _env, bundle_resources,
-    patch_model_css, set_default_resource_mode, set_resource_mode,
+    CDN_DIST, DIST_DIR, LOCAL_DIST, PANEL_DIR, Resources, _env,
+    bundle_resources, is_cdn_url, jupyter_endpoint_available,
+    notebook_extension_url, patch_model_css, set_default_resource_mode,
+    set_resource_mode,
 )
 from .state import state
 
@@ -156,7 +158,8 @@ GLOBAL_MODULE_SUFFIX = '__panel_global'
 
 def _autoload_js(
     *, bundle, configs, requirements, exports, error_id, skip_imports, require_skip,
-    check_extension=False, ipywidget, reloading=False, load_timeout=5000
+    check_extension=False, ipywidget, reloading=False, load_timeout=5000,
+    cdn_map=()
 ):
     config = {'packages': {}, 'paths': {}, 'shim': {}}
     for conf in configs:
@@ -179,6 +182,7 @@ def _autoload_js(
         reloading = reloading,
         timeout   = load_timeout,
         cdn_dist  = CDN_DIST,
+        cdn_map   = [list(pair) for pair in cdn_map],
         config    = config,
         requirements = requirements,
         require_stages = stages,
@@ -247,9 +251,13 @@ def render_model(
 
     target = model.ref['id']
 
+    dist_url = None
     if not state._is_pyodide and resources == 'server':
         # ALERT: Replace with better approach before Bokeh 3.x compatible release
         dist_url = '/panel-preview/static/extensions/panel/'
+    elif resources == 'cdn':
+        dist_url = notebook_extension_url(LOCAL_DIST)
+    if dist_url:
         patch_model_css(model, dist_url=dist_url)
         if model.document:
             model.document._template_variables['dist_url'] = dist_url
@@ -348,46 +356,102 @@ def _cdn_url_key(url):
     return url[:-3] if url.endswith('.js') else url
 
 
-def _require_covered_urls(model, model_require, resources=None):
+def _bundled_require_path(path_key, raw_key, url):
     """
-    Resolved urls of a model's scripts that RequireJS is going to load.
+    The RequireJS path for a bundled file, given the keys of the path it
+    replaces and of the resource it was bundled from, or None if the two
+    name different files.
+    """
+    stem = url[:-3] if url.endswith('.js') else None
+    if raw_key == path_key:
+        # RequireJS appends `.js` to every path unless it has a query, so a
+        # bundled file without that extension needs an (empty) one.
+        return stem if stem is not None else f'{url}?'
+    if path_key.startswith(f'{raw_key}/'):
+        # A resource url may name the package rather than a file in it
+        # (``vega@6.1.2``, which the cdn resolves to the package default),
+        # while a RequireJS path always names the file
+        # (``vega@6.1.2/build/vega.min``). Both refer to the same library.
+        return stem if stem is not None else f'{url}?'
+    rest = raw_key[len(path_key):]
+    if raw_key.startswith(f'{path_key}/') and stem is not None and stem.endswith(rest):
+        # A path naming a directory (``ace`` resolving ``ace/ace``) maps to
+        # the directory the bundled files live in.
+        return stem[:-len(rest)]
+    return None
 
-    Only those may be skipped: leaving a covered url in would fetch it
-    twice and corrupt RequireJS' resolution, while skipping an uncovered
-    one would mean nothing loads it at all.
+
+def _require_bundled_paths(model, paths, resources=None):
     """
-    paths = model_require.get('paths', {}) or {}
-    path_keys = set()
-    for value in paths.values():
+    Matches a model's RequireJS paths against its bundled resources.
+
+    Returns the resolved urls of the bundled scripts RequireJS is going to
+    load, which must not also get a script tag (that would fetch them twice
+    and corrupt RequireJS' resolution), and for each matched path the url
+    of its bundled copy. Pointing RequireJS at the bundled copy is what
+    keeps the notebook working where the public npm CDNs are unreachable.
+    """
+    path_keys = {}
+    for name, value in (paths or {}).items():
         for url in (value if isinstance(value, (list, tuple)) else (value,)):
             if isinstance(url, str):
-                path_keys.add(_cdn_url_key(url))
+                path_keys.setdefault(name, _cdn_url_key(url))
     if not path_keys:
-        return []
+        return [], {}
 
     try:
         raw = list(getattr(model, '__javascript_raw__', None) or [])
         declared = list(getattr(model, '__javascript__', None) or [])
     except Exception:
-        return []
+        return [], {}
     if len(raw) != len(declared):
-        return []
+        return [], {}
 
     resolved = resources.adjust_paths(declared) if resources is not None else declared
-    covered = []
-    for raw_url, url in zip(raw, resolved):
+    covered, bundled = [], {}
+    for raw_url, declared_url, url in zip(raw, declared, resolved):
         if not isinstance(raw_url, str):
             continue
         raw_key = _cdn_url_key(raw_url)
-        # A resource url may name the package rather than a file in it
-        # (``vega@6.1.2``, which the cdn resolves to the package default),
-        # while a RequireJS path always names the file
-        # (``vega@6.1.2/build/vega.min``). Both refer to the same library.
-        if raw_key in path_keys or any(
-            key.startswith(f'{raw_key}/') for key in path_keys
-        ):
+        matched = False
+        for name, path_key in path_keys.items():
+            path = _bundled_require_path(path_key, raw_key, url)
+            if path is None:
+                continue
+            matched = True
+            if name not in bundled and declared_url != raw_url:
+                bundled[name] = (path, declared_url)
+        if matched:
             covered.append(url)
-    return covered
+    return covered, bundled
+
+
+def _strip_require(model_require, names):
+    """
+    Removes paths from a RequireJS config, along with their exports, shims
+    and any shim dependencies on them.
+    """
+    removed = set()
+    paths = {}
+    for key, value in model_require.get('paths', {}).items():
+        if key in names:
+            removed.update(key[1] if isinstance(key, tuple) else (key,))
+        else:
+            paths[key] = value
+    model_require['paths'] = paths
+    if 'exports' in model_require:
+        model_require['exports'] = {
+            k: v for k, v in model_require['exports'].items() if k not in removed
+        }
+    if 'shim' in model_require:
+        shim = {}
+        for name, conf in model_require['shim'].items():
+            if name in removed:
+                continue
+            if conf.get('deps'):
+                conf = dict(conf, deps=[d for d in conf['deps'] if d not in removed])
+            shim[name] = conf
+        model_require['shim'] = shim
 
 
 def _resolve_js_skip(skip, resources=None):
@@ -418,12 +482,15 @@ def require_components(resources=None):
     let panel.io.resource_spec derive the rest.
 
     ``resources``, if given, resolves the ``__js_skip__`` urls so they
-    match what the bundle emits.
+    match what the bundle emits, and points RequireJS at Panel's bundled
+    copies of the libraries rather than at the npm CDN, or drops them from
+    RequireJS altogether when they are inlined.
     """
     from ..config import config, panel_extension
 
     configs, requirements, exports = [], [], {}
     js_requires = []
+    inline = resources is not None and resources.mode == 'inline'
     active_modules = tuple(
         panel_extension._imports[extension]
         for extension in panel_extension._loaded_extensions
@@ -464,9 +531,28 @@ def require_components(resources=None):
             model_require = model
         else:
             model_require = dict(model.__js_require__)
-            for url in _require_covered_urls(model, model_require, resources):
-                if url not in require_skip:
-                    require_skip.append(url)
+            paths = dict(model_require.get('paths', {}))
+            covered, bundled = _require_bundled_paths(model, paths, resources)
+            if inline:
+                # The inlined copy already assigned the global, since the
+                # bootstrap shadows `define` for inline code, so RequireJS
+                # would only fetch the library a second time.
+                _strip_require(model_require, {
+                    name for name, (_, url) in bundled.items() if is_cdn_url(url)
+                })
+                if not model_require['paths']:
+                    continue
+            else:
+                for name, (path, _) in bundled.items():
+                    original = paths[name]
+                    fallbacks = list(original) if isinstance(original, (list, tuple)) else [original]
+                    # The original url stays as a fallback for when the
+                    # bundled copy is unavailable.
+                    paths[name] = [path, *(url for url in fallbacks if url != path)]
+                model_require['paths'] = paths
+                for url in covered:
+                    if url not in require_skip:
+                        require_skip.append(url)
 
         model_exports = model_require.pop('exports', {})
         if not any(model_require == config for config in configs):
@@ -585,7 +671,12 @@ def load_notebook(
     # The Jupyter extension endpoint only exists for a plain notebook kernel:
     # 'vscode'/'colab'/'ipywidgets' render through a different mimebundle
     # path (see Renderable._repr_mimebundle_) and never hit this endpoint.
-    nb_endpoint = not state._is_pyodide and config.comms == 'default'
+    # Other frontends, e.g. nteract, also use 'default' comms, so the server
+    # has to have announced the endpoint as well.
+    nb_endpoint = (
+        not state._is_pyodide and config.comms == 'default'
+        and jupyter_endpoint_available()
+    )
 
     # Components rendered in a later cell resolve their resources outside
     # any set_resource_mode block, so the notebook mode has to become the
@@ -611,6 +702,7 @@ def load_notebook(
             skip_imports=skip_imports,
             require_skip=require_skip,
             check_extension=nb_endpoint,
+            cdn_map=resources.jupyter_cdn_map() if nb_endpoint else (),
             ipywidget=ipywidget,
             reloading=reloading,
             load_timeout=load_timeout
@@ -643,8 +735,6 @@ def show_server(panel: t.Any, notebook_url: str, port: int = 0) -> Server:
       The URL of the running Jupyter notebook server
     port: int (optional, default=0)
       Allows specifying a specific port
-    server_id: str
-      Unique ID to identify the server with
 
     Returns
     -------

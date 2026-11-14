@@ -6,10 +6,11 @@ import importlib
 import os
 import pathlib
 import typing as t
+import weakref
 
 import param
 
-from bokeh.models import ImportedStyleSheet
+from bokeh.models import ImportedStyleSheet, InlineStyleSheet
 from bokeh.themes import Theme as _BkTheme, _dark_minimal, built_in_themes
 
 from ..config import config
@@ -99,6 +100,10 @@ class DarkTheme(Theme):
                                       default=_BkTheme(json=BOKEH_DARK))
 
     _name: t.ClassVar[str] = 'dark'
+
+
+# Design and Theme stylesheets per Theme instance, see Design._theme_stylesheets
+_THEME_STYLESHEETS: weakref.WeakKeyDictionary[Theme, dict[type[Design], list[str]]] = weakref.WeakKeyDictionary()
 
 
 def _stylesheet_cache(doc: Document) -> dict[str, ImportedStyleSheet]:
@@ -230,32 +235,54 @@ class Design(param.Parameterized, ResourceComponent):
         return modifiers, child_modifiers
 
     @classmethod
-    def _get_modifiers(
-        cls, viewable: Viewable, theme: Theme | None = None, isolated: bool = True
-    ):
+    def _theme_stylesheets(cls, theme: Theme | None) -> list[str]:
+        """
+        Resolves the stylesheets of the Design and the Theme, caching
+        the result per theme instance since resolving the theme's CSS
+        paths is expensive and the result is needed for every component.
+        """
         from ..io.resources import (
             CDN_DIST, component_resource_path, resolve_custom_path,
         )
+        if theme is None:
+            return list(cls._resources.get('css', {}).values())
+        cached = _THEME_STYLESHEETS.get(theme)
+        if cached is None:
+            cached = _THEME_STYLESHEETS[theme] = {}
+            theme_ref = weakref.ref(theme)
+
+            def invalidate(*_):
+                if (owner := theme_ref()) is not None:
+                    _THEME_STYLESHEETS.pop(owner, None)
+
+            theme.param.watch(invalidate, ['base_css', 'css'])
+        elif cls in cached:
+            return cached[cls]
+        stylesheets = list(cls._resources.get('css', {}).values())
+        for p in ('base_css', 'css'):
+            css = getattr(theme, p)
+            if css is None:
+                continue
+            css = pathlib.Path(css)
+            if relative_to(css, THEME_CSS):
+                stylesheets.append(f'{CDN_DIST}bundled/theme/{css.name}')
+            elif resolve_custom_path(theme, css):
+                stylesheets.append(component_resource_path(theme, p, css))
+            else:
+                stylesheets.append(css.read_text(encoding='utf-8'))
+        cached[cls] = stylesheets
+        return stylesheets
+
+    @classmethod
+    def _get_modifiers(
+        cls, viewable: Viewable, theme: Theme | None = None, isolated: bool = True
+    ):
         theme_type = type(theme) if isinstance(theme, Theme) else theme
         is_server = bool(state.curdoc.session_context) if not state._is_pyodide and state.curdoc else False
         modifiers, child_modifiers = cls._resolve_modifiers(type(viewable), theme_type, is_server=is_server)  # type: ignore
         modifiers = dict(modifiers)
         if 'stylesheets' in modifiers:
-            if isolated:
-                pre = list(cls._resources.get('css', {}).values())
-                for p in ('base_css', 'css'):
-                    css = getattr(theme, p)
-                    if css is None:
-                        continue
-                    css = pathlib.Path(css)
-                    if relative_to(css, THEME_CSS):
-                        pre.append(f'{CDN_DIST}bundled/theme/{css.name}')
-                    elif resolve_custom_path(theme, css):
-                        pre.append(component_resource_path(theme, p, css))
-                    else:
-                        pre.append(css.read_text(encoding='utf-8'))
-            else:
-                pre = []
+            pre = cls._theme_stylesheets(theme) if isolated else []
             modifiers['stylesheets'] = pre + modifiers['stylesheets']
         return modifiers, child_modifiers
 
@@ -323,6 +350,16 @@ class Design(param.Parameterized, ResourceComponent):
         doc = model.document or document
         reactive = viewable._view__ if isinstance(viewable, PyComponent) else viewable
         reactive._resolve_stylesheets(props, doc)
+        if doc is None and 'stylesheets' in props:
+            # Without a Document the loading CSS resolves to its raw string
+            # again; keep the shared stylesheet the model already references.
+            inlined = {
+                sts.css: sts for sts in model.stylesheets if isinstance(sts, InlineStyleSheet)
+            }
+            props['stylesheets'] = [
+                inlined.get(sts, sts) if isinstance(sts, str) else sts
+                for sts in props['stylesheets']
+            ]
 
         # Do not update stylesheets if they match
         if 'stylesheets' in props and len(model.stylesheets) == len(props['stylesheets']):
@@ -685,7 +722,7 @@ def _resolve_design_alias(name: str, ref: str) -> type[Design]:
     return resolved
 
 
-def resolve_component(component: T) -> T:
+def resolve_component(component: T, design: type[Design] | None = None) -> T:
     """
     Resolves the component to render in place of the provided component
     type given the currently active design system.
@@ -694,13 +731,15 @@ def resolve_component(component: T) -> T:
     ----------
     component: type
         The component type to find the equivalent for.
+    design: type[Design] | None
+        The design to resolve against, defaults to the active design.
 
     Returns
     -------
     The equivalent component in the active design system, or the
     component itself if there is none.
     """
-    design = config.design
+    design = design or config.design
     if design is None:
         return component
     return design.resolve_component(component)
@@ -715,7 +754,9 @@ def design_template_variables() -> dict[str, t.Any]:
     return dict(design._template_variables) if design else {}
 
 
-def resolve_widget(parameter: param.Parameter) -> type[Viewable] | None:
+def resolve_widget(
+    parameter: param.Parameter, design: type[Design] | None = None
+) -> type[Viewable] | None:
     """
     Resolves the widget type to generate for a Parameter given the
     currently active design system.
@@ -724,13 +765,15 @@ def resolve_widget(parameter: param.Parameter) -> type[Viewable] | None:
     ----------
     parameter: param.Parameter
         The Parameter to resolve a widget for.
+    design: type[Design] | None
+        The design to resolve against, defaults to the active design.
 
     Returns
     -------
     The widget type declared by the active design system, or None if it
     does not override the default resolution.
     """
-    design = config.design
+    design = design or config.design
     if design is None:
         return None
     return design.resolve_widget(parameter)

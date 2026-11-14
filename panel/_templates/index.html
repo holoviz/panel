@@ -1,3 +1,4 @@
+{% from urllib.parse import unquote %}
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -26,16 +27,16 @@
         </div>
         <ul id="cards" class="pn-grid">
           {% for slug, title in items %}
-          <li class="pn-card" data-search="{{ title.lower() }} {{ slug.lower() }}">
-            <a class="pn-card-link" href=".{{ slug }}" id="{{ slug }}">
+          <li class="pn-card" data-search="{{ unquote(title).lower() }} {{ unquote(slug).lower() }}">
+            <a class="pn-card-link" href=".{{ slug }}" id="{{ unquote(slug) }}">
               <div class="pn-card-media">
                 <object data="thumbnails{{ slug }}.png" type="image/png" aria-hidden="true" tabindex="-1">
                   <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2.5 4a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1zm2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0zm1 .5a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/><path d="M2 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2zm13 2v2H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1zM2 14a1 1 0 0 1-1-1V6h14v7a1 1 0 0 1-1 1H2z"/></svg>
                 </object>
               </div>
               <div class="pn-card-content">
-                <h2 class="pn-card-title">{{ title }}</h2>
-                <span class="pn-card-path">{{ slug }}</span>
+                <h2 class="pn-card-title">{{ unquote(title) }}</h2>
+                <span class="pn-card-path">{{ unquote(slug) }}</span>
               </div>
             </a>
           </li>

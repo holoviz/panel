@@ -17,6 +17,7 @@ import re
 import sys
 import typing as t
 import urllib.parse as urlparse
+import weakref
 
 from collections import OrderedDict, defaultdict
 from collections.abc import MutableMapping, MutableSequence
@@ -30,6 +31,7 @@ import bokeh.util.callback_manager
 import numpy as np
 import param
 
+from bokeh.core import properties as bokeh_properties
 from bokeh.core.has_props import _default_resolver
 from bokeh.core.property.bases import Property
 from bokeh.model import Model
@@ -638,11 +640,46 @@ def _is_abstract(class_: type) -> bool:
         return False
 
 
+def _subclass_count(class_: type) -> int:
+    """
+    Fingerprints the subclass hierarchy of class_, defining a new subclass
+    or collecting one changes it (__subclasses__ only holds weak references).
+    """
+    count = 0
+    stack = [class_]
+    while stack:
+        cls = stack.pop()
+        count += 1
+        try:
+            stack.extend(cls.__subclasses__())
+        except TypeError:
+            continue
+    return count
+
+
+_descendents_cache: dict[tuple[type, bool], tuple[int, list[weakref.ReferenceType[type]]]] = {}
+
+
 def _descendents(class_: type, concrete: bool = False) -> list[type]:
     """Added from Param to be used instead of concrete_descendents that clobber
     class names."""
     if not isinstance(class_, type):
         raise TypeError(f"descendents expected a class object, not {type(class_).__name__}")
+    # The walk is cached because pane type resolution calls this for every
+    # pn.panel() call. Weak references keep the cache from pinning classes
+    # (e.g. ones defined in a notebook cell) that would otherwise be collected.
+    count = _subclass_count(class_)
+    cached = _descendents_cache.get((class_, concrete))
+    if cached is not None and cached[0] == count:
+        resolved = [ref() for ref in cached[1]]
+        if all(kls is not None for kls in resolved):
+            return t.cast('list[type]', resolved)
+    out = _walk_descendents(class_, concrete)
+    _descendents_cache[(class_, concrete)] = (count, [weakref.ref(kls) for kls in out])
+    return out
+
+
+def _walk_descendents(class_: type, concrete: bool = False) -> list[type]:
     q = [class_]
     out: list[type] = []
     while len(q):
@@ -672,7 +709,13 @@ def set_bokeh_validation(validate: bool):
     validate: bool
         Whether to enable validation.
     """
-    Property._should_validate = validate
+    # `Property._should_validate` is for Bokeh 3.10.1 or lower
+    # https://github.com/bokeh/bokeh/pull/15548
+    set_default = getattr(bokeh_properties, "set_validation_default", None)
+    if set_default is None:
+        Property._should_validate = validate
+    else:
+        set_default(validate)
     if validate:
         bokeh.util.callback_manager._check_callback = _orig_check_callback
         bokeh.util.callback_manager._nargs = _orig_nargs

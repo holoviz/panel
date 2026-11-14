@@ -11,14 +11,15 @@ import pytest
 
 from bokeh.document import Document
 from bokeh.io.doc import patch_curdoc
-from bokeh.models import Div, ImportedStyleSheet
+from bokeh.models import Div, ImportedStyleSheet, InlineStyleSheet
 
 from panel.depends import bind, depends
+from panel.io.loading import loading_css
 from panel.io.resources import stylesheet_url
 from panel.io.state import set_curdoc, state
 from panel.layout import Tabs, WidgetBox
 from panel.pane import Markdown
-from panel.reactive import Reactive, ReactiveHTML
+from panel.reactive import Reactive, ReactiveHTML, drop_default_properties
 from panel.viewable import Viewable
 from panel.widgets import (
     Button, Checkbox, IntInput, IntSlider, StaticText, TextInput,
@@ -133,6 +134,78 @@ def test_link_properties_server(document):
     assert isinstance(cb, partial)
     assert cb.args == (document, div.ref['id'], None)
     assert cb.func == obj._server_change
+
+
+def test_link_properties_shared_callback(document):
+
+    class ReactiveLink(Reactive):
+
+        text = param.String(default='A')
+
+        visible = param.Boolean(default=True)
+
+    obj = ReactiveLink()
+    div = Div()
+
+    obj._link_props(div, ['text', 'visible'], document, div)
+    assert div._callbacks['text'] == div._callbacks['visible']
+    assert len(div._callbacks['text']) == 1
+
+    div.text = 'B'
+    div.visible = False
+    assert obj.text == 'B'
+    assert not obj.visible
+
+
+def test_link_properties_unknown_property(document):
+    obj = Reactive()
+    div = Div()
+
+    with pytest.raises(AttributeError):
+        obj._link_props(div, ['does_not_exist'], document, div)
+
+
+def test_synced_params_cached_until_parameter_added():
+
+    class ReactiveSynced(Reactive):
+
+        a = param.Number(default=1)
+
+    obj = ReactiveSynced()
+    synced = obj._synced_params
+    assert 'a' in synced
+    assert obj._synced_params is synced
+    assert ReactiveSynced()._synced_params is synced
+
+    ReactiveSynced.param.add_parameter('b', param.Number(default=2))
+    assert 'b' in obj._synced_params
+    assert 'b' in obj._linkable_params
+
+
+def test_drop_default_properties():
+    properties = {
+        'text': 'A', 'visible': True, 'disabled': False, 'width': 100,
+        'css_classes': [], 'styles': {}, 'tags': ['tag'], 'sizing_mode': None,
+    }
+    assert drop_default_properties(Div, properties) == {
+        'text': 'A', 'width': 100, 'tags': ['tag']
+    }
+
+    # Values must match the type of the default to be dropped, bokeh
+    # validation decides what happens to them otherwise.
+    assert drop_default_properties(Div, {'visible': 1}) == {'visible': 1}
+    assert drop_default_properties(Div, {'css_classes': ()}) == {'css_classes': ()}
+
+
+def test_drop_default_properties_matches_bokeh(document):
+    widget = IntSlider(start=0, end=10)
+    properties = widget._get_properties(document)
+    dropped = drop_default_properties(widget._widget_type, properties)
+    assert dropped != properties
+
+    full = widget._widget_type(**properties)
+    filtered = widget._widget_type(**dropped)
+    assert full._property_values == filtered._property_values
 
 
 def test_text_input_controls():
@@ -473,6 +546,18 @@ def test_boomerang_value_is_skipped(document, comm):
     assert text_input.value == 'frontend'
     assert 'value' not in text_input._events
 
+def test_reactive_html_child_config_data_model_name():
+
+    class ChildConfigNaming(ReactiveHTML):
+
+        _icon_html = param.String(default='<img>')
+
+        _child_config = {'_icon_html': 'literal'}
+
+        _template = '<div id="div">${_icon_html}</div>'
+
+    assert ChildConfigNaming._data_model.__name__.startswith('ChildConfigNaming')
+
 def test_reactive_html_basic():
 
     class Test(ReactiveHTML):
@@ -808,6 +893,58 @@ def test_reactive_html_scripts_linked_properties_assignment_operator():
 
             assert TestScripts()._linked_properties == ('clicks',)
 
+@pytest.mark.parametrize('expr', [
+    'data.hb--', 'data.hb++', '--data.hb', '++data.hb', '-- data.hb', 'data.hb --',
+    'x = data.hb-- > 0', 'data.c = 0 < --data.hb ? 1 : 2',
+])
+def test_reactive_html_scripts_linked_properties_increment_decrement(expr):
+
+    class TestScripts(ReactiveHTML):
+
+        hb = param.Integer()
+
+        _template = "<div id='test'></div>"
+
+        _scripts = {'render': f'{expr}'}
+
+    assert 'hb' in TestScripts()._linked_properties
+
+@pytest.mark.parametrize('expr', [
+    'data.hb == 1', 'data.hb === 1', 'data.hb != 1', 'data.hb !== 1',
+    'data.hb <= 1', 'data.hb >= 1', 'data.hb < 1', 'data.hb > 1', 'data.hb + 1',
+])
+def test_reactive_html_scripts_linked_properties_ignores_comparison(expr):
+
+    class TestScripts(ReactiveHTML):
+
+        hb = param.Integer()
+
+        _template = "<div id='test'></div>"
+
+        _scripts = {'render': f'if ({expr}) {{ }}'}
+
+    assert TestScripts()._linked_properties == ()
+
+def test_reactive_html_scripts_update_before_init_does_not_change_shared_scripts():
+
+    class TestScripts(ReactiveHTML):
+
+        _template = '<div id="test"></div>'
+
+        _scripts = {'render': 'data.clicks += 1'}
+
+        def __init__(self, **params):
+            self._scripts.update({'render': 'data.clicks += 2'})
+            super().__init__(**params)
+
+    with pytest.raises(AttributeError):
+        TestScripts()
+
+    with pytest.raises(TypeError):
+        TestScripts._scripts['render'] = 'data.clicks += 2'
+
+    assert TestScripts._scripts['render'] == 'data.clicks += 1'
+
 def test_reactive_html_templated_literal_add_loop_id_and_for_loop_var():
 
     class TestTemplatedChildren(ReactiveHTML):
@@ -1025,6 +1162,47 @@ def test_reactive_recreates_destroyed_stylesheet(document, comm):
             assert stylesheet_url(stylesheet) is not None
             assert id(stylesheet) not in stale_ids
 
+def test_reactive_loading_css_shared_per_document(document, comm):
+    other_doc = Document()
+    widget1, widget2 = TextInput(), TextInput()
+
+    with set_curdoc(document):
+        model1 = widget1.get_root(document, comm)
+        model2 = widget2.get_root(document, comm)
+        model3 = widget1.get_root(other_doc, comm)
+        document.add_root(model1)
+        document.add_root(model2)
+        other_doc.add_root(model3)
+
+    loading1, loading2, loading3 = (m.stylesheets[0] for m in (model1, model2, model3))
+    assert isinstance(loading1, InlineStyleSheet)
+    assert loading1.css == loading_css()
+    assert loading1 is loading2
+    assert loading1 is not loading3
+    assert loading1.document is document
+    assert loading3.document is other_doc
+
+    # A stylesheets update keeps the shared instance
+    widget1.stylesheets = ['.custom { color: red; }']
+    assert model1.stylesheets[0] is loading1
+    assert model3.stylesheets[0] is loading3
+    document.to_json()
+    other_doc.to_json()
+
+def test_reactive_recreates_destroyed_loading_stylesheet(document, comm):
+    with set_curdoc(document):
+        widget1 = TextInput()
+        model1 = widget1.get_root(document, comm)
+        stale = model1.stylesheets[0]
+        assert isinstance(stale, InlineStyleSheet)
+        stale.destroy()
+
+        widget2 = TextInput()
+        model2 = widget2.get_root(document, comm)
+
+    assert model2.stylesheets[0] is not stale
+    assert model2.stylesheets[0].css == loading_css()
+
 def test_reactive_attribute_no_name(document, comm):
     # Regression: https://github.com/holoviz/panel/pull/7655
     class CustomComponent2(ReactiveHTML):
@@ -1035,3 +1213,18 @@ def test_reactive_attribute_no_name(document, comm):
     component.get_root(document, comm)
     # Should not error out
     component.groups = []
+
+
+def test_refs_enabled_for_parameter_added_after_instantiation():
+    class Custom(Reactive):
+        value = param.Integer(default=0)
+
+    Custom()
+    Custom.param.add_parameter('other', param.String(default=''))
+    source = TextInput(value='3')
+
+    obj = Custom(other=source.param.value)
+    assert obj.other == '3'
+
+    source.value = '4'
+    assert obj.other == '4'

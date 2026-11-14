@@ -299,6 +299,7 @@ class _ClickButton(Widget):
         """
         for k, v in list(callbacks.items()):
             if k == 'clicks':
+                del callbacks[k]
                 k = 'event:'+self._event
             val = self._rename.get(v, v)
             if val is not None:
@@ -526,7 +527,10 @@ class MenuButton(_ButtonBase, _ClickButton, IconMixin):
             item = event.item
         elif isinstance(event, ButtonClick):
             item = self.label
-        self.clicked = item
+        if self.clicked == item:
+            self.param.trigger('clicked')
+        else:
+            self.clicked = item
 
     def on_click(
         self, callback: Callable[[param.parameterized.Event], None]

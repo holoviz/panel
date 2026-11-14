@@ -52,7 +52,7 @@ The `FormState` class handles form inputs, validation, and state management.
 
 ```python
 class FormState(param.Parameterized):
-    name = param.String(default="", doc="The name of the user.")
+    full_name = param.String(default="", doc="The name of the user.")
     email = param.String(default="", doc="The email of the user.")
     message = param.String(default="", label="Message", doc="An optional message from the user")
 
@@ -60,14 +60,10 @@ class FormState(param.Parameterized):
     validation_errors = param.Dict()
     validation_message = param.String()
 
-    def __init__(self, **params):
-      params["name"]=params.get("name", "")
-      super().__init__(**params)
-
     def _validate(self):
         errors = {}
-        if not self.name:
-            errors["name"] = "No *Name* entered."
+        if not self.full_name:
+            errors["full_name"] = "No *Name* entered."
         if not self.email:
             errors["email"] = "No *Email* entered."
         elif "@" not in self.email or "." not in self.email:
@@ -78,10 +74,10 @@ class FormState(param.Parameterized):
         self.validation_message = "**Error**: " + " ".join(errors.values())
 
     def _to_dict(self):
-        return {"name": self.name, "email": self.email, "message": self.message}
+        return {"name": self.full_name, "email": self.email, "message": self.message}
 
     def _reset_to_defaults(self):
-        self.param.update(name="", email="", message="")
+        self.param.update(full_name="", email="", message="")
 
     def submit(self, event):
         self._validate()
@@ -92,7 +88,7 @@ class FormState(param.Parameterized):
 
 ### 4. Build the Form Layout
 
-We use `pn.ui` to create form inputs and buttons.
+We use `pn.ui` to create form inputs and buttons, and center the form in a narrow `pn.ui.Container`.
 
 ```python
 def create_form():
@@ -106,38 +102,36 @@ def create_form():
     error_pane = pn.ui.Alert(
         object=form_state.param.validation_message,
         visible=form_state.param.is_not_valid,
-        alert_type="danger",
+        severity="error",
         stylesheets=["p {margin-bottom: 0}"]
     )
 
-    name_input = pn.ui.TextInput.from_param(form_state.param.name, label="Name*", placeholder="User Name")
+    name_input = pn.ui.TextInput.from_param(form_state.param.full_name, label="Name*", placeholder="User Name")
     email_input = pn.ui.TextInput.from_param(form_state.param.email, label="Email*", placeholder="Email Address")
     message_input = pn.ui.TextAreaInput.from_param(form_state.param["message"], placeholder="An optional message")
 
     submit_button = pn.ui.Button(label="Send", on_click=form_state.submit, color="primary")
 
-    return pn.ui.Column(
+    form = pn.ui.Column(
         header,
         error_pane,
         name_input,
         email_input,
         message_input,
         submit_button,
-        sizing_mode="fixed",
-        width=500,
-        styles={"margin": "auto"}
     )
+    return pn.ui.Container(form, width_option="sm")
 ```
 
 ### 5. Serve the Application
 
-Extend Panel with notifications, create the form, and mark it `.servable()`.
+Extend Panel with notifications, create the form, wrap it in a `pn.ui.Page` and mark the page `.servable()`.
 
 ```python
-pn.extension(notifications=True, design="bootstrap", sizing_mode="stretch_width")
+pn.extension(notifications=True, sizing_mode="stretch_width")
 
 form = create_form()
-form.servable()
+pn.ui.Page(title="Panel Newsletter", main=[form]).servable()
 ```
 
 Finally you can serve the application with
@@ -167,7 +161,6 @@ Here's the complete code for reference:
 ```python
 import panel as pn
 import param
-import json
 
 FORM_TEXT = """\
 <h1>Join Newsletter</h1>
@@ -183,7 +176,7 @@ FORM_ICON = """\
 """
 
 class FormState(param.Parameterized):
-    name = param.String(default="", doc="The name of the user.")
+    full_name = param.String(default="", doc="The name of the user.")
     email = param.String(default="", doc="The email of the user.")
     message = param.String(default="", label="Message", doc="An optional message from the user")
 
@@ -191,14 +184,10 @@ class FormState(param.Parameterized):
     validation_errors = param.Dict()
     validation_message = param.String()
 
-    def __init__(self, **params):
-      params["name"]=params.get("name", "")
-      super().__init__(**params)
-
     def _validate(self):
         errors = {}
-        if not self.name:
-            errors["name"] = "No *Name* entered."
+        if not self.full_name:
+            errors["full_name"] = "No *Name* entered."
         if not self.email:
             errors["email"] = "No *Email* entered."
         elif "@" not in self.email or "." not in self.email:
@@ -209,10 +198,10 @@ class FormState(param.Parameterized):
         self.validation_message = "**Error**: " + " ".join(errors.values())
 
     def _to_dict(self):
-        return {"name": self.name, "email": self.email, "message": self.message}
+        return {"name": self.full_name, "email": self.email, "message": self.message}
 
     def _reset_to_defaults(self):
-        self.param.update(name="", email="", message="")
+        self.param.update(full_name="", email="", message="")
 
     def submit(self, event):
         self._validate()
@@ -232,30 +221,28 @@ def create_form():
     error_pane = pn.ui.Alert(
         object=form_state.param.validation_message,
         visible=form_state.param.is_not_valid,
-        alert_type="danger",
+        severity="error",
         stylesheets=["p {margin-bottom: 0}"]
     )
 
-    name_input = pn.ui.TextInput.from_param(form_state.param.name, label="Name*", placeholder="User Name")
+    name_input = pn.ui.TextInput.from_param(form_state.param.full_name, label="Name*", placeholder="User Name")
     email_input = pn.ui.TextInput.from_param(form_state.param.email, label="Email*", placeholder="Email Address")
     message_input = pn.ui.TextAreaInput.from_param(form_state.param["message"], placeholder="An optional message")
 
     submit_button = pn.ui.Button(label="Send", on_click=form_state.submit, color="primary")
 
-    return pn.ui.Column(
+    form = pn.ui.Column(
         header,
         error_pane,
         name_input,
         email_input,
         message_input,
         submit_button,
-        sizing_mode="fixed",
-        width=500,
-        styles={"margin": "auto"}
     )
+    return pn.ui.Container(form, width_option="sm")
 
-pn.extension(notifications=True, design="bootstrap", sizing_mode="stretch_width")
+pn.extension(notifications=True, sizing_mode="stretch_width")
 
 form = create_form()
-form.servable()
+pn.ui.Page(title="Panel Newsletter", main=[form]).servable()
 ```

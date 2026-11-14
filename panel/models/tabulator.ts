@@ -1,6 +1,6 @@
 import {display, undisplay} from "@bokehjs/core/dom"
 import {sum} from "@bokehjs/core/util/arrayable"
-import {defer} from "@bokehjs/core/util/defer"
+import {delay, paint} from "@bokehjs/core/util/defer"
 import {isArray, isBoolean, isFunction, isString, isNumber} from "@bokehjs/core/util/types"
 import {ModelEvent} from "@bokehjs/core/bokeh_events"
 import type {StyleSheetLike} from "@bokehjs/core/dom"
@@ -121,7 +121,7 @@ function summarize(grouped: any[], columns: any[], aggregators: any[], depth: nu
             summary[column.field] = [old_val, val]
           }
         }
-      } else {
+      } else if (agg) {
         summary[column.field] = val
       }
     }
@@ -167,7 +167,7 @@ function group_data(records: any[], columns: any[], indexes: string[], aggregato
         aggs.push(aggregators[index])
       }
     } else {
-      aggs.push("sum")
+      aggs.push("")
     }
   }
   summarize(grouped, columns, aggs)
@@ -409,6 +409,14 @@ function clone_column(group: any): any {
 /** Ignore Tabulator redraw after `after_resize` when `this.el` client size changes by at most this many pixels per axis. */
 const EL_CLIENT_RESIZE_EPSILON_PX = 3
 
+/**
+ * Upper bound on waiting for `root.ready`. A view removed before its pending work
+ * settles, e.g. a figure replaced before its scheduled paint, leaves the root's
+ * ready chain pending forever, which would otherwise block every later redraw.
+ */
+const ROOT_READY_TIMEOUT_MS = 250
+const RESIZE_BLOCKED_FRAMES = 10
+
 export class DataTabulatorView extends HTMLBoxView {
   declare model: DataTabulator
 
@@ -424,7 +432,7 @@ export class DataTabulatorView extends HTMLBoxView {
   _selection_updating: boolean = false
   _selection_pending: boolean = true
   _last_selected_row: any = null
-  _initializing: boolean
+  _initializing: boolean = true
   _lastVerticalScrollbarTopPosition: number = 0
   _lastHorizontalScrollbarLeftPosition: number = 0
   _applied_styles: boolean = false
@@ -442,6 +450,7 @@ export class DataTabulatorView extends HTMLBoxView {
   _automatic_page_size: boolean = false
   _last_after_resize_el_width: number | null = null
   _last_after_resize_el_height: number | null = null
+  _fonts_loaded: (() => void) | null = null
 
   override connect_signals(): void {
     super.connect_signals()
@@ -657,11 +666,15 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   private async _flush_resize_when_root_ready(): Promise<void> {
+    let blocked = 0
     while (true) {
       if (!this._resize_pending) {
         return
       }
-      await this.root.ready
+      await Promise.race([
+        this.root.ready,
+        new Promise((resolve) => setTimeout(resolve, ROOT_READY_TIMEOUT_MS)),
+      ])
       // `remove()` can clear `_resize_pending` while awaiting `root.ready`.
       /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- cleared asynchronously in `remove()` */
       if (!this._resize_pending) {
@@ -675,7 +688,9 @@ export class DataTabulatorView extends HTMLBoxView {
         this._has_active_editor() ||
         !this.stylesheets_settled
       ) {
-        await defer()
+        // `root.ready` is usually already resolved, so a blocking condition that persists
+        // would otherwise spin this loop; back off once it outlasts a few frames.
+        await (blocked++ < RESIZE_BLOCKED_FRAMES ? paint() : delay(ROOT_READY_TIMEOUT_MS))
         continue
       }
       this._resize_pending = false
@@ -696,11 +711,14 @@ export class DataTabulatorView extends HTMLBoxView {
     this.record_scroll()
     this._updating_scroll = true
     this.redraw(true, true)
+    this._updating_scroll = false
+    this._pending_scroll_restores += 1
     requestAnimationFrame(() => {
       this._initializing = false
       if (this._selection_pending) {
         this.setSelection()
       }
+      this._pending_scroll_restores -= 1
       this.restore_scroll()
       this.recompute_page_size()
     })
@@ -732,6 +750,7 @@ export class DataTabulatorView extends HTMLBoxView {
   }
 
   override remove(): void {
+    this.unwatch_fonts()
     this._resize_pending = false
     this._last_after_resize_el_width = null
     this._last_after_resize_el_height = null
@@ -756,7 +775,25 @@ export class DataTabulatorView extends HTMLBoxView {
     const configuration = this.getConfiguration()
     this.tabulator = new Tabulator(el, configuration)
     this.watch_stylesheets()
+    this.watch_fonts()
     this.init_callbacks()
+  }
+
+  /**
+   * Column widths are measured from the rendered text, so a web font that
+   * finishes loading after the table was built leaves them too narrow.
+   */
+  watch_fonts(): void {
+    this.unwatch_fonts()
+    this._fonts_loaded = () => this._request_resize_redraw()
+    document.fonts.addEventListener("loadingdone", this._fonts_loaded)
+  }
+
+  unwatch_fonts(): void {
+    if (this._fonts_loaded !== null) {
+      document.fonts.removeEventListener("loadingdone", this._fonts_loaded)
+      this._fonts_loaded = null
+    }
   }
 
   override style_redraw(): void {
@@ -988,7 +1025,8 @@ export class DataTabulatorView extends HTMLBoxView {
 
   getConfiguration(): any {
     // Only use selectable mode if explicitly requested otherwise manually handle selections
-    const selectableRows = this.model.select_mode === "toggle" ? true : NaN
+    // Tabulator only skips marking rows as selectable (class and hover styling) for exactly false
+    const selectableRows = this.model.select_mode === "toggle" ? true : (this.model.select_mode === false ? false : NaN)
     const configuration = {
       ...transformJsPlaceholders(this.model.configuration),
       index: "_index",
@@ -1300,7 +1338,7 @@ export class DataTabulatorView extends HTMLBoxView {
     if (this.model.container_popup && (this.model.layout !== "fit_data_stretch")) {
       // We insert an empty last column to ensure select editor is rendered in correct position
       // see: https://github.com/holoviz/panel/issues/7295
-      columns.push({width: 1, maxWidth: 1, minWidth: 1, resizable: false, cssClass: "empty", sorter: null})
+      columns.push({width: 1, maxWidth: 1, minWidth: 1, resizable: false, cssClass: "empty", headerSort: false})
     }
     return columns
   }
@@ -1449,10 +1487,9 @@ export class DataTabulatorView extends HTMLBoxView {
       if (!row) {
         continue
       }
-      const cells = row._row.cells
-      for (const c of row_style.keys()) {
-        const style = row_style.get(c)
-        const cell = cells[c]
+      const cells = new Map<string, any>(row._row.cells.map((cell: any) => [cell.column.field, cell]))
+      for (const [field, style] of Object.entries<any[]>(row_style)) {
+        const cell = cells.get(field)
         if (cell == null || !style.length) {
           continue
         }

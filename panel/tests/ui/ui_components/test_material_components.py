@@ -1,6 +1,7 @@
 import logging
 import re
 
+import pandas as pd
 import pytest
 
 from panel.tests.util import serve_component, wait_until
@@ -16,6 +17,21 @@ TERMINAL_TEXT = """() => {
   const model = [...Bokeh.documents[0].all_models].find(m => m.type.endsWith('Terminal'))
   const buffer = Bokeh.index.find_one_by_id(model.id).term.buffer.active
   return [...Array(buffer.length).keys()].map(i => buffer.getLine(i).translateToString(true)).join('\\n')
+}"""
+
+# Emulates a host like Jupyter, which owns the document element.
+STRIP_THEME_MANAGED = """
+new MutationObserver((_, observer) => {
+  if (document.documentElement) {
+    document.documentElement.removeAttribute("data-theme-managed")
+    observer.disconnect()
+  }
+}).observe(document, {childList: true})
+"""
+
+TABULATOR_HEADER_STYLE = """el => {
+  const style = getComputedStyle(el)
+  return [style.backgroundColor, style.color, style.borderBottomColor]
 }"""
 
 
@@ -60,6 +76,27 @@ def test_modal_create_button_opens_and_closes(page, panel_ui):
     wait_until(lambda: not modal.open, page)
 
 
+
+def test_modal_fits_wide_content(page, panel_ui):
+    modal = panel_ui.Modal(panel_ui.Spacer(width=800, height=120), open=True)
+    serve_component(page, modal)
+
+    paper = page.locator('.MuiDialog-paper')
+    expect(paper).to_be_visible()
+    assert paper.evaluate('element => element.getBoundingClientRect().width') >= 800
+
+
+def test_modal_explicit_width_updates_paper(page, panel_ui):
+    modal = panel_ui.Modal(panel_ui.Spacer(width=300, height=120), open=True, width=800)
+    serve_component(page, modal)
+
+    paper = page.locator('.MuiDialog-paper')
+    expect(paper).to_have_css('width', '800px')
+
+    modal.width = 700
+    expect(paper).to_have_css('width', '700px')
+
+
 def test_modal_background_close(page, panel_ui):
     modal = panel_ui.Modal('Modal content', open=True, background_close=False)
     serve_component(page, modal)
@@ -81,3 +118,48 @@ def test_widgetbox_disables_widgets(page, panel_ui):
     box.disabled = False
 
     expect(page.locator('input')).to_be_enabled()
+
+
+COUNT_DEFERRED_TASKS = """
+window.deferred_tasks = 0
+const post = MessagePort.prototype.postMessage
+MessagePort.prototype.postMessage = function(...args) {
+  window.deferred_tasks++
+  return post.apply(this, args)
+}
+"""
+
+
+def test_tabulator_in_inactive_tab_does_not_spin(page, panel_ui):
+    df = pd.DataFrame({'a': range(5)})
+    tabs = panel_ui.Tabs(('A', 'first'), ('B', panel_ui.Tabulator(df)))
+
+    page.add_init_script(COUNT_DEFERRED_TASKS)
+    serve_component(page, tabs)
+    expect(page.get_by_role('tab', name='A')).to_be_visible()
+    page.wait_for_timeout(500)
+
+    page.evaluate("() => { window.deferred_tasks = 0 }")
+    page.wait_for_timeout(500)
+    assert page.evaluate("() => window.deferred_tasks") < 100
+
+    page.get_by_role('tab', name='B').click()
+    expect(page.locator('.tabulator-row')).to_have_count(len(df))
+
+
+def test_tabulator_in_unmanaged_host_matches_served_app(page, panel_ui):
+    from panel_material_ui.layout import MaterialWrapper
+
+    design = panel_ui.MaterialUIDesign
+    df = pd.DataFrame({'a': [1, 2]})
+
+    serve_component(page, panel_ui.Column(panel_ui.Tabulator(df, design=design), design=design))
+    served = page.locator('.tabulator-header').evaluate(TABULATOR_HEADER_STYLE)
+
+    page.add_init_script(STRIP_THEME_MANAGED)
+    serve_component(page, MaterialWrapper(panel_ui.Tabulator(df, design=design), design=design))
+    assert not page.evaluate("() => document.documentElement.hasAttribute('data-theme-managed')")
+    unmanaged = page.locator('.tabulator-header').evaluate(TABULATOR_HEADER_STYLE)
+
+    assert unmanaged == served
+    assert served[0] != 'rgba(0, 0, 0, 0)'

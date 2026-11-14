@@ -73,17 +73,17 @@ def get_power_output(wind_speed):
 
 ## View Data
 
-wind_speed_view = pn.indicators.Number(
+wind_speed_view = pn.ui.Number(
     label="Wind Speed",
     value=wind_speed,
     format="{value} m/s",
     colors=[(10, "green"), (100, "red")],
 )
-power_output_view = pn.indicators.Number(
+power_output_view = pn.ui.Number(
     label="Power Output",
     value=wind_speed.rx.pipe(get_power_output),
     format="{value} MW",
-    colors=[(10, "green"), (100, "red")],
+    colors=[(0.5, "green"), (1.0, "red")],
 )
 
 # Update data periodically
@@ -107,7 +107,8 @@ Try changing the `period` from `1000` to `100`.
 The code refers to
 
 - `wind_speed = pn.rx(8.0)`: This is a *reactive expression* with an initial value of 8.0. The UI updates whenever the value `wind_speed.rx.value` is changed.
-- `pn.state.add_periodic_callback(update_wind_speed, period=1000)`: This updates the `wind_speed_rx.value` every 1000 milliseconds.
+- `colors=[(0.5, "green"), (1.0, "red")]`: The power output is shown in green up to 0.5 MW and in red above it.
+- `pn.state.add_periodic_callback(update_wind_speed, period=1000)`: This updates `wind_speed.rx.value` every 1000 milliseconds.
 :::
 
 ## Resources
@@ -118,4 +119,5 @@ The code refers to
 
 ### App Gallery
 
-- [Streaming VideoStream](../../gallery/index.md)
+- [Model Serving Monitor](../../gallery/model_serving_monitor.md)
+- [Streaming VideoStream](../../gallery/streaming_videostream.md)

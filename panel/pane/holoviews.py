@@ -20,9 +20,10 @@ from packaging.version import Version
 from param.parameterized import register_reference_transform
 from param.reactive import bind
 
+from ..config import config
 from ..io import state, unlocked
 from ..layout import (
-    Column, HSpacer, Row, WidgetBox,
+    Column, HSpacer, ListLike, Row, WidgetBox,
 )
 from ..viewable import Layoutable, Viewable
 from ..widgets import (
@@ -40,6 +41,8 @@ if t.TYPE_CHECKING:
     from bokeh.model import Model
     from holoviews.plotting.renderer import Renderer
     from pyviz_comms import Comm
+
+    from ..theme.base import Design
 
     WidgetType = type[WidgetBase]
     DimensionWidgetType = tuple[WidgetType, WidgetType] | WidgetType
@@ -136,9 +139,9 @@ class HoloViews(Pane):
         The layout of the plot and the widgets. The value refers to the
         position of the widgets relative to the plot.""")  # type: ignore[assignment, ty:invalid-assignment]
 
-    widget_layout: t.Any = param.Selector(
-        objects=[WidgetBox, Row, Column], constant=True, default=WidgetBox, doc="""
-        The layout object to display the widgets in.""")  # type: ignore[assignment, ty:invalid-assignment]
+    widget_layout = param.ClassSelector(
+        class_=ListLike, constant=True, is_instance=False, default=WidgetBox, doc="""
+        The layout object to display the widgets in.""")
 
     widget_type: t.Literal['individual', 'scrubber'] = param.Selector(
         default='individual',
@@ -630,13 +633,22 @@ class HoloViews(Pane):
     jslink.__doc__ = Pane.jslink.__doc__
 
     @classmethod
+    def _widget_design(cls) -> type[Design] | None:
+        """
+        The design the generated widgets are resolved against, which
+        defaults to the active design.
+        """
+        return config.design
+
+    @classmethod
     def _resolve_widget(
         cls, key: str, dynamic: bool, default_widgets: WidgetMapping | None = None
     ) -> WidgetType:
         from ..theme.base import resolve_component
         if default_widgets is None:
             default_widgets = {}
-        overridden = key in default_widgets
+        # Instances pass a copy of the class defaults unless the user set them
+        overridden = key in default_widgets and default_widgets != cls.default_widgets
         widget_type = default_widgets.get(key, cls.default_widgets.get(key, None))
         if widget_type is None:
             raise ValueError("No valid {key} widget type found.")
@@ -644,7 +656,7 @@ class HoloViews(Pane):
             widget_type = widget_type[int(dynamic)]
         if overridden:
             return widget_type  # type: ignore
-        return resolve_component(widget_type)  # type: ignore
+        return resolve_component(widget_type, cls._widget_design())  # type: ignore
 
     @classmethod
     def widgets_from_dimensions(
@@ -741,6 +753,8 @@ class HoloViews(Pane):
                 if len(vals) > 1 and all(isnumeric(v) or isinstance(v, datetime_types) for v in vals):
                     vals = sorted(vals)
                     labels = [str(dim.pprint_value(v)) for v in vals]
+                    if len(set(labels)) < len(labels):
+                        labels = [str(v) for v in vals]
                     options = dict(zip(labels, vals))
                     widget_type = widget_type or cls._resolve_widget('discrete_numeric', dynamic, default_widgets)
                 elif len(vals) == 1:

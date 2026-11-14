@@ -113,3 +113,107 @@ def test_holoviews_widgets_are_material(material):
     assert [type(w) for w in widgets] == [
         material.DiscreteSlider, material.Select
     ]
+
+
+def test_ui_param_widgets_are_material_without_design(panel_ui):
+    with config.set(design=None):
+        widgets = {w.label: w for w in panel_ui.Param(Params()).layout[1:]}
+
+    assert type(widgets['String']) is panel_ui.TextInput
+    assert type(widgets['Number']) is panel_ui.FloatSlider
+    assert type(widgets['Pair']) is panel_ui.TupleInput
+
+
+def test_ui_param_widget_type_is_material_without_design(panel_ui):
+    with config.set(design=None):
+        assert panel_ui.Param.widget_type(Params.param.string) is panel_ui.TextInput
+        assert Param.widget_type(Params.param.string) is TextInput
+
+
+def test_ui_param_expands_subobjects_with_ui_param(panel_ui):
+    class Outer(param.Parameterized):
+        inner = param.ClassSelector(class_=Params, default=Params())
+
+    with config.set(design=None):
+        pane = panel_ui.Param(Outer(), expand=True)
+
+    assert [type(p) for p in pane._expand_layout if isinstance(p, Param)] == [panel_ui.Param]
+
+
+def test_ui_panel_returns_ui_param(panel_ui):
+    with config.set(design=None):
+        layout = panel_ui.panel(Params().param)
+
+    assert type(layout[1]) is panel_ui.Button
+    assert type(panel_ui.panel('# Title')).__name__ == 'Markdown'
+
+
+def test_panel_does_not_return_ui_param(panel_ui):
+    from panel.pane import PaneBase
+
+    assert PaneBase.get_pane_type(Params().param) is Param
+
+
+@hv_available
+def test_ui_holoviews_widgets_are_material_without_design(panel_ui):
+    import holoviews as hv
+
+    from panel.pane import HoloViews, PaneBase
+
+    hmap = hv.HoloMap(
+        {(i, c): hv.Curve([i]) for i in range(3) for c in 'ab'},
+        kdims=['X', 'C']
+    )
+    with config.set(design=None):
+        widgets, _ = panel_ui.HoloViews.widgets_from_dimensions(hmap)
+        classic, _ = HoloViews.widgets_from_dimensions(hmap)
+        pane = panel_ui.panel(hmap)
+
+    assert [type(w) for w in widgets] == [panel_ui.DiscreteSlider, panel_ui.Select]
+    assert [type(w).__module__.split('.')[0] for w in classic] == ['panel', 'panel']
+    assert type(pane[0]) is panel_ui.HoloViews
+    assert PaneBase.get_pane_type(hmap) is HoloViews
+
+
+@hv_available
+def test_ui_holoviews_pane_widgets_are_material_without_design(panel_ui):
+    import holoviews as hv
+
+    dmap = hv.DynamicMap(
+        lambda wave, frequency: hv.Curve([]), kdims=['wave', 'frequency']
+    ).redim.values(wave=['sin', 'cos']).redim.range(frequency=(0.5, 5))
+    with config.set(design=None):
+        pane = panel_ui.HoloViews(dmap)
+
+    assert [type(w) for w in pane.widget_box] == [
+        panel_ui.Select, panel_ui.EditableFloatSlider
+    ]
+
+
+@hv_available
+def test_holoviews_pane_widgets_are_material(material):
+    import holoviews as hv
+
+    from panel.pane import HoloViews
+
+    hmap = hv.HoloMap(
+        {(i, c): hv.Curve([i]) for i in range(3) for c in 'ab'},
+        kdims=['X', 'C']
+    )
+    pane = HoloViews(hmap)
+
+    assert [type(w) for w in pane.widget_box] == [
+        material.DiscreteSlider, material.Select
+    ]
+
+
+@hv_available
+def test_ui_holoviews_pane_keeps_overridden_default_widgets(panel_ui):
+    import holoviews as hv
+
+    from panel.widgets import RadioButtonGroup
+
+    hmap = hv.HoloMap({c: hv.Curve([]) for c in 'ab'}, kdims=['C'])
+    pane = panel_ui.HoloViews(hmap, default_widgets={'discrete': RadioButtonGroup})
+
+    assert type(pane.widget_box[0]) is RadioButtonGroup

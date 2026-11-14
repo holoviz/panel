@@ -55,12 +55,15 @@ class DataStore(Viewer):
             dtype = self.data.dtypes[filt]
             if dtype.kind == "f":
                 widget = pn.ui.RangeSlider(
-                    label=filt, start=dfx[filt].min(), end=dfx[filt].max()
+                    label=filt, start=dfx[filt].min(), end=dfx[filt].max(),
+                    sizing_mode="stretch_width",
                 )
                 condition = dfx[filt].between(*widget.rx())
             else:
                 options = dfx[filt].unique().tolist()
-                widget = pn.ui.MultiChoice(label=filt, options=options)
+                widget = pn.ui.MultiChoice(
+                    label=filt, options=options, sizing_mode="stretch_width"
+                )
                 condition = dfx[filt].isin(widget.rx().rx.where(widget, options))
             dfx = dfx[condition]
             widgets.append(widget)
@@ -74,16 +77,12 @@ class DataStore(Viewer):
         )
         self._widgets = widgets
 
-    def filter(
-        self,
-    ):
-        return
-
     def __panel__(self):
         return pn.ui.Column(
             "## Filters",
             *self._widgets,
             stylesheets=[CARD_STYLE.format(padding="5px 10px")],
+            sizing_mode="stretch_width",
             margin=10
         )
 ```
@@ -112,7 +111,7 @@ class View(Viewer):
 
 class Table(View):
     columns = param.List(
-        default=["p_name", "p_year", "t_state", "t_county", "t_manu", "t_cap", "p_cap"]
+        default=["p_name", "p_year", "t_state", "t_manu", "p_cap"]
     )
 
     def __panel__(self):
@@ -120,7 +119,11 @@ class Table(View):
         return pn.ui.Tabulator(
             data,
             pagination="remote",
-            page_size=13,
+            page_size=10,
+            layout="fit_data_stretch",
+            show_index=False,
+            sizing_mode="stretch_width",
+            min_width=500,
             stylesheets=[CARD_STYLE.format(padding="10px")],
             margin=10,
         )
@@ -145,7 +148,7 @@ class Histogram(View):
             .transform_calculate(jitter="sqrt(-2*log(random()))*cos(2*PI*random())")
             .properties(
                 height=400,
-                width=600,
+                width=400,
             )
         )
         return pn.ui.Vega(
@@ -157,25 +160,25 @@ class Indicators(View):
     def __panel__(self):
         style = {"stylesheets": [CARD_STYLE.format(padding="10px")]}
         return pn.ui.FlexBox(
-            pn.indicators.Number(
+            pn.ui.Number(
                 value=self.data_store.total_capacity / 1e6,
                 label="Total Capacity (GW)",
                 format="{value:,.2f}",
                 **style
             ),
-            pn.indicators.Number(
+            pn.ui.Number(
                 value=self.data_store.count,
                 label="Count",
                 format="{value:,.0f}",
                 **style
             ),
-            pn.indicators.Number(
+            pn.ui.Number(
                 value=self.data_store.avg_capacity,
                 label="Avg. Capacity (kW)",
                 format="{value:,.2f}",
                 **style
             ),
-            pn.indicators.Number(
+            pn.ui.Number(
                 value=self.data_store.avg_rotor_diameter,
                 label="Avg. Rotor Diameter (m)",
                 format="{value:,.2f}",
@@ -218,19 +221,16 @@ class App(Viewer):
             else pn.state.curdoc.unhold()
         )
         self._views = pn.ui.FlexBox(
-            *(view(data_store=self.data_store) for view in self.views), loading=updating
+            *(view(data_store=self.data_store) for view in self.views),
+            loading=updating,
+            margin=10,
         )
-        self._template = pn.template.MaterialTemplate(title=self.title)
-        self._template.sidebar.append(self.data_store)
-        self._template.main.append(self._views)
-
-    def servable(self):
-        if pn.state.served:
-            return self._template.servable()
-        return self
+        self._page = pn.ui.Page(
+            title=self.title, sidebar=[self.data_store], main=[self._views]
+        )
 
     def __panel__(self):
-        return pn.ui.Row(self.data_store, self._views)
+        return self._page
 
 
 data = get_turbines()

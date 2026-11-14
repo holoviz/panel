@@ -58,6 +58,9 @@ export class DeckGLPlotView extends LayoutDOMView {
     const error = await await_resources(this.model)
     if (error != null) {
       render_resource_error(this, error, LayoutDOMView.prototype.render)
+    } else if (this.jsonConverter == null) {
+      // Loaded on demand, deck.gl only arrives after initialize() ran.
+      this._init_converter()
     }
   }
 
@@ -97,7 +100,11 @@ export class DeckGLPlotView extends LayoutDOMView {
     super.initialize()
     const view_timeout = this.model.throttle.view || 200
     this._view_cb = debounce((event: any) => this._on_viewState_event(event), view_timeout, false)
-    if ((window as any).deck.JSONConverter) {
+    this._init_converter()
+  }
+
+  _init_converter(): void {
+    if ((window as any).deck?.JSONConverter) {
       const {CSVLoader, Tiles3DLoader} = (window as any).loaders;
       (window as any).loaders.registerLoaders([Tiles3DLoader, CSVLoader])
       const jsonConverterConfiguration: any = {
@@ -242,7 +249,7 @@ export class DeckGLPlotView extends LayoutDOMView {
       this.jsonConverter.mergeConfiguration(configuration)
       const props = this.jsonConverter.convert(jsonInput)
       const getTooltip = makeTooltip(tooltip, props.layers)
-      if (props.mapStyle === null) {
+      if (props.mapStyle == null) {
         props.map = null
       } else if (props.mapStyle.includes("carto")) {
         this._map = new (window as any).maplibregl.Map({

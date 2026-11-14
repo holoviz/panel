@@ -6,6 +6,7 @@ import io
 import logging
 import os
 import sys
+import threading
 import time
 import typing as t
 
@@ -52,6 +53,12 @@ PROCESSES: dict[int, Process] = {}
 LOG_COLUMNS = ["datetime", "level", "app", "session", "message"]
 
 LOG_LEVELS = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+
+# Session log records kept for the admin panel; older ones are dropped.
+LOG_ROLLOVER = 10000
+
+# Interval at which admin sessions pick up buffered log records.
+LOG_FLUSH_PERIOD = 1000
 
 log_sessions: list = []
 
@@ -108,7 +115,9 @@ class LogDataHandler(logging.StreamHandler):
     def emit(self, record: logging.LogRecord):
         if 'Session ' not in record.msg:
             return
-        self._data.data.append(record)
+        records = self._data.data
+        records.append(record)
+        del records[:-LOG_ROLLOVER]
         self._data.param.trigger('data')
 
 
@@ -116,6 +125,10 @@ class _LogTabulator(Tabulator):
     """
     Collects the session log records shared by all admin sessions, each of
     which renders its own filtered view of the records.
+
+    Records are buffered as they are written and only streamed into the
+    table by ``flush_records``, which the admin sessions call periodically, so that
+    serving a session does not pay for updating a table nobody is viewing.
     """
 
     _update_defaults = {
@@ -131,12 +144,15 @@ class _LogTabulator(Tabulator):
         params["value"] = self._create_frame()
         params = {**self._update_defaults, **params}
         super().__init__(**params)
+        self._pending: list[list[t.Any]] = []
+        self._pending_lock = threading.Lock()
+        self._flush_callbacks: list[t.Callable[[pd.DataFrame], None]] = []
 
     @staticmethod
     def _create_frame(data=None):
         if data is None:
             return pd.DataFrame(columns=LOG_COLUMNS)
-        return pd.DataFrame([data], columns=LOG_COLUMNS)
+        return pd.DataFrame(data, columns=LOG_COLUMNS)
 
     def write(self, log):
         # Example of a log message:
@@ -150,9 +166,23 @@ class _LogTabulator(Tabulator):
             message = " ".join(s[7:])
         except Exception:
             return
-        # Streaming a DataFrame rather than a Series triggers the value
-        # event the admin sessions watch.
-        self.stream(self._create_frame([datetime, level, app, session, message]), follow=False)
+        with self._pending_lock:
+            self._pending.append([datetime, level, app, session, message])
+            del self._pending[:-LOG_ROLLOVER]
+
+    def flush_records(self):
+        """
+        Streams the buffered records into the table and hands them to the
+        admin sessions' flush callbacks.
+        """
+        with self._pending_lock:
+            rows, self._pending = self._pending, []
+        if not rows:
+            return
+        records = self._create_frame(rows)
+        self.stream(records, rollover=LOG_ROLLOVER, follow=False)
+        for callback in list(self._flush_callbacks):
+            callback(records)
 
 
 # Set up logging
@@ -482,6 +512,7 @@ def log_component(doc: Document | None = None) -> Viewable:
     that admin sessions do not share filter state.
     """
     ui = _ui()
+    log_terminal.flush_records()
     level_filter = ui.MultiChoice(
         label='Level', options=LOG_LEVELS, sizing_mode='stretch_width'
     )
@@ -527,32 +558,34 @@ def log_component(doc: Document | None = None) -> Viewable:
         variant='outlined', margin=(5, 10)
     )
 
-    def add_record(record):
-        session = record['session'].iloc[0]
-        if session not in session_filter.options:
-            session_filter.options = sorted([*session_filter.options, session])
-        rows = filtered(record)
+    def add_records(records):
+        new_sessions = set(records['session']) - set(session_filter.options)
+        if new_sessions:
+            session_filter.options = sorted([*session_filter.options, *new_sessions])
+        rows = filtered(records)
         if rows.empty:
             return
         elif table.value.empty:
             table.value = rows
         else:
-            table.stream(rows, follow=False)
+            table.stream(rows, rollover=LOG_ROLLOVER, follow=False)
 
-    def schedule_record(event):
+    def schedule_records(records):
         if _destroyed(doc):
-            log_terminal.param.unwatch(watcher)
+            unwatch(None)
             return
-        # Capture the new row now, by the next tick more may have been logged.
-        record = event.new.iloc[-1:]
         if doc:
-            doc.add_next_tick_callback(partial(add_record, record))
+            doc.add_next_tick_callback(partial(add_records, records))
         else:
-            add_record(record)
+            add_records(records)
 
-    watcher = log_terminal.param.watch(schedule_record, 'value')
+    def unwatch(session_context):
+        if schedule_records in log_terminal._flush_callbacks:
+            log_terminal._flush_callbacks.remove(schedule_records)
+
+    log_terminal._flush_callbacks.append(schedule_records)
     if doc:
-        doc.on_session_destroyed(lambda session_context: log_terminal.param.unwatch(watcher))
+        doc.on_session_destroyed(unwatch)
 
     filters = ui.Paper(
         ui.Grid(
@@ -598,6 +631,11 @@ def admin_template(doc):
     def _remove_log_session(session_context):
         log_sessions.remove(id(doc))
     doc.on_session_destroyed(_remove_log_session)
+    # Buffered log records only reach the log views while an admin session
+    # is open to show them.
+    flush_cb = state.add_periodic_callback(log_terminal.flush_records, period=LOG_FLUSH_PERIOD, start=False)
+    flush_cb.log = False
+    flush_cb.start()
 
     sections: list[tuple[str, str, t.Callable[[], Viewable]]] = [
         ('Overview', 'dashboard', partial(get_overview, doc)),

@@ -19,6 +19,7 @@ if t.TYPE_CHECKING:
     from collections.abc import Mapping
 
     from bokeh.model import Model
+    from typing_extensions import Self
 
 
 class Tabs(NamedListPanel):
@@ -79,6 +80,12 @@ class Tabs(NamedListPanel):
         self._rendered = defaultdict(dict)
         self.param.active.bounds = (-1, len(self)-1)
         self.param.watch(self._update_active, ['dynamic', 'active'])
+
+    def clone(self, *objects: t.Any, **params: t.Any) -> Self:
+        if 'active' not in params:
+            n = len(objects) if objects else len(params['objects']) if 'objects' in params else len(self)
+            params['active'] = min(self.active, max(n - 1, 0))
+        return super().clone(*objects, **params)
 
     def _update_names(self, event):
         # No active tabs will have a value of -1
@@ -175,15 +182,17 @@ class Tabs(NamedListPanel):
         ref = root.ref['id']
         panels = self._panels[ref]
         rendered = self._rendered[ref]
+        current_objects = list(self)
+        current_ids = {id(obj) for obj in current_objects}
         for obj in old_objects:
-            if obj in self.objects:
+            if id(obj) in current_ids:
                 continue
             obj._release_model(root, model)
             panels.pop(id(obj), None)
             rendered.pop(id(obj), None)
 
-        current_objects = list(self)
-        for i, (name, pane) in enumerate(zip(self._names, self)):
+        old_ids = {id(obj) for obj in old_objects}
+        for i, (name, pane) in enumerate(zip(self._names, current_objects)):
             pref = id(pane)
             hidden = self.dynamic and i != self.active
             panel = panels.get(pref)
@@ -195,8 +204,10 @@ class Tabs(NamedListPanel):
             # If object has not changed, we have not toggled between
             # hidden and unhidden state or the tabs are not
             # dynamic then reuse the panel
-            if (pane in old_objects and pref in panels and
+            if (pref in old_ids and pref in panels and
                 (not (hidden ^ prev_hidden) or not (self.dynamic or prev_hidden))):
+                if panel.title != name:
+                    panel.title = name
                 new_models.append(panel)
                 continue
 

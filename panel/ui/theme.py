@@ -4,7 +4,8 @@ The Material UI design and the themes it renders.
 import param
 
 from panel_material_ui.theme import (
-    MaterialDesign, MuiDarkTheme, MuiDefaultTheme,
+    MaterialDesign, MuiDarkTheme, MuiDefaultTheme, generate_palette,
+    linear_gradient,
 )
 
 from .. import widgets as _classic_widgets
@@ -108,6 +109,8 @@ class MaterialUIDesign(MaterialDesign):
     }
 
 __all__ = (
+    "generate_palette",
+    "linear_gradient",
     "MaterialDesign",
     "MaterialUIDesign",
     "MuiDarkTheme",
