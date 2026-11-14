@@ -221,6 +221,20 @@ def set_values(obj: t.Any, column: str, rows: Sequence[int], values: t.Any) -> t
     return df.with_columns(new).to_native()
 
 
+def patch_rows(index: int | slice, value: t.Any, nrows: int) -> tuple[list[int], list[t.Any]]:
+    """
+    Resolves a single (index, value) patch into the row positions it
+    applies to and their values, broadcasting scalar slice patches.
+    """
+    if isinstance(index, slice):
+        rows = list(range(*index.indices(nrows)))
+        if isinstance(value, (list, tuple, np.ndarray)):
+            return rows, list(value)
+        return rows, [value] * len(rows)
+    index = int(index)
+    return [index + nrows if index < 0 else index], [value]
+
+
 def frame_from_columns(data: Mapping[str, t.Any], template: t.Any) -> t.Any:
     """
     Builds a frame from a dictionary of columns using the backend of

@@ -53,7 +53,7 @@ from .util import (
 from .util.checks import import_available
 from .util.dataframe import (
     ROW_INDEX, coerce_frame, column_names, column_to_numpy, concat_rows,
-    copy_data, is_indexless, set_values, to_column_data,
+    copy_data, is_indexless, patch_rows, set_values, to_column_data,
 )
 from .viewable import (
     Child, Children, Layoutable, Renderable, Viewable,
@@ -1407,11 +1407,7 @@ class SyncableData(Reactive):
             nrows = len(data[next(iter(data))]) if isinstance(data, dict) and data else len(data)
             for k, v in patch_value.items():
                 for index, patch in v:
-                    if isinstance(index, slice):
-                        rows = list(range(*index.indices(nrows)))
-                        values = list(patch) if isinstance(patch, (list, tuple, np.ndarray)) else [patch] * len(rows)
-                    else:
-                        rows, values = [index], [patch]
+                    rows, values = patch_rows(index, patch, nrows)
                     if is_indexless(data):
                         data = set_values(data, k, rows, values)
                     elif pd and isinstance(data, pd.DataFrame):

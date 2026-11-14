@@ -40,8 +40,8 @@ from ..util.dataframe import (
     ROW_INDEX, add_row_index, all_of, coerce_frame, column_names,
     column_to_numpy, concat_rows, drop_row_index, dtype_kind, evaluate_mask,
     filter_expr, frame_from_columns, has_index, header_filter_exprs, is_date,
-    is_indexless, row_dict, row_position_array, row_positions, set_values,
-    sort_frame, take_rows, to_column_data, to_narwhals,
+    is_indexless, patch_rows, row_dict, row_position_array, row_positions,
+    set_values, sort_frame, take_rows, to_column_data, to_narwhals,
 )
 from ..util.warnings import deprecated, warn
 from .base import Widget
@@ -1209,12 +1209,12 @@ class BaseTable(ReactiveData, Widget):
                 )
             values = []
             for patch_ind, patch in v:
-                if isinstance(patch_ind, slice):
-                    rows = list(range(*patch_ind.indices(nrows)))
-                    new = list(patch)
-                else:
-                    rows, new = [patch_ind], [patch]
+                rows, new = patch_rows(patch_ind, patch, nrows)
                 value = set_values(value, k, rows, new)
+                if not isinstance(patch_ind, slice):
+                    patch_ind = rows[0]
+                if isinstance(patch, np.datetime64):
+                    patch = patch.astype('datetime64[us]').item()
                 if isinstance(patch, dt.datetime):
                     patch = datetime_as_utctimestamp(patch)
                 values.append((patch_ind, patch))
