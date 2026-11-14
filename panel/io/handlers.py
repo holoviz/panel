@@ -50,7 +50,7 @@ CELL_DISPLAY: list = []
 def _patch_ipython_display():
     try:
         import IPython
-        _orig_display = IPython.display
+        _orig_display = IPython.display.display
         IPython.display.display = display
     except Exception:
         pass

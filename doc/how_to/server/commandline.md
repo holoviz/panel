@@ -186,3 +186,49 @@ If you want more control over the ASGI server, or need to serve Panel apps along
 To turn a notebook into a deployable app simply append `.servable()` to one or more Panel objects, which will add the app to Bokeh's `curdoc`, ensuring it can be discovered by Bokeh server on deployment. In this way it is trivial to build dashboards that can be used interactively in a notebook and then seamlessly deployed on Bokeh server.
 
 When called on a notebook, `panel serve` first converts it to a python script using [`nbconvert.PythonExporter()`](https://nbconvert.readthedocs.io/en/stable/api/exporters.html), albeit with [IPython magics](https://ipython.readthedocs.io/en/stable/interactive/magics.html) stripped out. This means that non-code cells, such as raw cells, are entirely handled by `nbconvert` and [may modify the served app](https://nbsphinx.readthedocs.io/en/latest/raw-cells.html).
+
+## Check an app before serving
+
+A crashing app still answers with a page under `panel serve`, so a broken app can look fine from the outside. `panel check` runs each app the way `panel serve` does, on a local port and with one request, and reports where it failed:
+
+```bash
+$ panel check app.py dashboard.py
+app.py: ok
+dashboard.py:12: KeyError: 'price'
+```
+
+Each app runs in its own process, several at a time. The command exits with status 1 if any app raises while loading or in a `pn.state.onload` callback (sync, `async` or threaded), does not mark anything as servable, crashes the interpreter, or is still loading after `--timeout` seconds (60 by default), and 0 otherwise, so it can gate a CI job:
+
+```yaml
+- name: Check Panel apps
+  run: panel check apps/*.py
+```
+
+Pass `--json` to get a machine readable report, for example in a script or a coding agent loop. Anything the apps print goes to stderr, so stdout only holds the report:
+
+```bash
+$ panel check --json dashboard.py
+{
+  "ok": false,
+  "results": [
+    {
+      "file": "dashboard.py",
+      "ok": false,
+      "error": {
+        "type": "KeyError",
+        "message": "'price'",
+        "file": "dashboard.py",
+        "cell": null,
+        "line": 12,
+        "traceback": "Traceback (most recent call last): ..."
+      }
+    }
+  ]
+}
+```
+
+`--args` and `--num-threads` work as they do for `panel serve`. `--jobs` sets how many apps are checked at once, half the CPU count by default, since each one is a full Python process. The `--timeout` clock starts when the app's process starts, so it includes importing Panel.
+
+For a hang or a hard crash the report points at the line that was running. For Markdown apps the line refers to the `.md` file, and for notebooks `cell` gives the position of the cell and `line` the line within it.
+
+`panel check` does not open a browser, so it does not catch errors in JavaScript or in callbacks triggered by user interaction.
