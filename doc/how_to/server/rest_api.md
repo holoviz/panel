@@ -33,6 +33,9 @@ class Controls(param.Parameterized):
 
 controls = Controls()
 
+# Drop the session's data once it ends so the server does not keep it forever
+pn.state.on_session_destroyed(lambda ctx: frames.pop(ctx.id, None))
+
 def table(rows, scale):
     session_id = pn.state.curdoc.session_context.id
     df = pd.DataFrame({
@@ -96,7 +99,7 @@ An id the server has not created returns HTTP 404:
 {"detail":"No data for session 'nope'."}
 ```
 
-A second visit, for example a private window, gets a new session id and a new entry in `frames`. The first session's endpoint still returns the first session's rows.
+A second visit, for example a private window, gets a new session id and a new entry in `frames`. The first session's endpoint still returns the first session's rows until that session is destroyed, at which point its entry is removed.
 
 ## Arguments and OpenAPI docs
 
