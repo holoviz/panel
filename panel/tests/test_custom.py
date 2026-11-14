@@ -426,6 +426,11 @@ def test_reactive_esm_tags_nested_datamodels(document, comm):
 def test_reactive_esm_children_append_attaches_without_recompute(document, comm, monkeypatch):
     from bokeh.document.models import DocumentModelManager
 
+    from panel.config import config
+
+    # Inlining the stylesheets of new children in a notebook replaces
+    # models, which does require a recompute.
+    monkeypatch.setattr(config, 'inline', False)
     md1 = Markdown('foo')
     esm = ESMWithChildren(children=[md1])
 
