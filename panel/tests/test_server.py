@@ -13,12 +13,14 @@ import threading
 import time
 import weakref
 
+from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 
 import param
 import pytest
 import requests
 
+from bokeh.client import pull_session
 from bokeh.events import ButtonClick
 from packaging.version import Version
 from tornado.ioloop import IOLoop
@@ -43,7 +45,7 @@ from panel.template import BootstrapTemplate
 from panel.tests import util as test_util
 from panel.tests.util import (
     get_open_ports, reverse_proxy as reverse_proxy_ctx, serve_and_request,
-    serve_and_wait, unix_only, wait_until,
+    serve_and_wait, unix_only, wait_for_server, wait_until,
 )
 from panel.widgets import (
     Button, Tabulator, Terminal, TextInput,
@@ -151,6 +153,28 @@ def test_server_non_ascii_route_index_link(port):
     )
 
     assert 'href="./%E5%84%80%E8%A1%A8%E6%9D%BF"' in r.content.decode('utf-8')
+
+
+def test_server_static_dirs_etag_updates_when_file_changes(tmp_path):
+    target = tmp_path / 'app.js'
+    target.write_bytes(b'console.log(1)\n')
+
+    port = serve_and_wait(Markdown('# Title'), static_dirs={'assets': str(tmp_path)})
+    url = f'http://127.0.0.1:{port}/assets/app.js'
+
+    r1 = requests.get(url, timeout=30)
+    assert r1.status_code == 200
+    etag = r1.headers['Etag']
+    assert requests.get(url, headers={'If-None-Match': etag}, timeout=30).status_code == 304
+
+    # A different size changes the ETag even where mtimes are coarse
+    target.write_bytes(b'console.log("changed")\n')
+
+    r2 = requests.get(url, headers={'If-None-Match': etag}, timeout=30)
+    assert r2.status_code == 200
+    assert r2.text == 'console.log("changed")\n'
+    assert r2.headers['Etag'] != etag
+
 
 def test_server_non_ascii_route_index_display(port):
     r = serve_and_request(
@@ -2247,3 +2271,33 @@ def test_serve_show_opens_single_tab(num_procs):
         [sys.executable, "-c", script], capture_output=True, text=True, timeout=60
     ).stdout
     assert out.count('SHOW') == 1
+
+
+def test_serve_threaded_after_main_thread_finishes():
+    # https://github.com/holoviz/panel/issues/9044
+    port = get_open_ports()[0]
+    script = (
+        "import panel as pn\n"
+        f"pn.serve(lambda: pn.panel('x'), port={port}, show=False, threaded=True,\n"
+        "         liveness=True)\n"
+    )
+    process = subprocess.Popen([sys.executable, "-c", script])
+    try:
+        # The script's main thread finishes before the server responds
+        wait_for_server(port, timeout=60)
+        response = requests.get(f"http://127.0.0.1:{port}/", timeout=10)
+        # Session replies are handed to a separate thread pool; a broken
+        # pool leaves the client waiting forever, hence the timeout
+        def pull_roots():
+            with pull_session(url=f"http://127.0.0.1:{port}/") as session:
+                return session.document.roots
+        executor = ThreadPoolExecutor(max_workers=1)
+        try:
+            roots = executor.submit(pull_roots).result(timeout=30)
+        finally:
+            executor.shutdown(wait=False)
+    finally:
+        process.kill()
+        process.wait()
+    assert response.status_code == 200
+    assert roots

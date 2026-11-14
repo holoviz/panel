@@ -107,7 +107,10 @@ MATERIAL_DARK_THEME = {
         },
         "Title": {
             "text_font_size": "1.15em",
-        }
+        },
+        "Segment": {
+            "line_color": MATERIAL_TEXT_DIGITAL_DARK,
+        },
     }
 }
 

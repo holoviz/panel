@@ -472,7 +472,7 @@ def test_plotly_python_restyle_is_not_echoed(page):
 
     fig.data[0].marker.color = 'red'
     gd = page.locator('.js-plotly-plot')
-    wait_until(lambda: gd.evaluate("gd => gd.data[0].marker.color") == 'red', page)
+    wait_until(lambda: gd.evaluate("gd => gd.data[0].marker?.color") == 'red', page)
 
     page.wait_for_timeout(500)
     assert echoes == []

@@ -34,7 +34,10 @@ from panel.io.compile import check_cli_tool
 from panel.io.reload import (
     _local_modules, _modules, _watched_files, async_file_watcher, watch,
 )
-from panel.io.resources import EXTENSION_CDN, JUPYTER_ENDPOINT_ENV
+from panel.io.resource_spec import _DECLARED_CACHE, _SPEC_CACHE
+from panel.io.resources import (
+    _BUNDLE_CACHE, EXTENSION_CDN, JUPYTER_ENDPOINT_ENV,
+)
 from panel.io.state import set_curdoc, state
 from panel.pane import HTML, Markdown
 from panel.tests.util import (
@@ -607,6 +610,11 @@ def cache_cleanup():
     state.clear_caches()
     Design._resolve_modifiers.cache_clear()
     Design._cache.clear()
+    # Their keys cover the global state a request depends on but not what
+    # tests monkeypatch, e.g. the list of classes with resources.
+    _SPEC_CACHE.clear()
+    _DECLARED_CACHE.clear()
+    _BUNDLE_CACHE.clear()
 
 @pytest.fixture
 def autoreload():

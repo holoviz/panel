@@ -9,6 +9,8 @@ import param
 
 from bokeh.document.events import MessageSentEvent
 from bokeh.document.json import Literal, MessageSent, TypedDict
+from bokeh.io.doc import patch_curdoc
+from bokeh.io.state import curstate
 from bokeh.util.serialization import make_id
 from ipykernel.comm import CommManager
 from ipykernel.kernelbase import Kernel
@@ -238,6 +240,11 @@ class PanelKernel(Kernel):
 # per-document PanelKernel inside a session and to the original kernel
 # everywhere else.
 if not isinstance(_ORIG_KERNEL, Kernel):
-    _ORIG_KERNEL = BokehKernel()
+    # BokehKernel subscribes to messages on curdoc(). This module is usually
+    # imported lazily while a session is rendering, so without patching it
+    # would subscribe to that session's Document and close the comms its
+    # PanelKernel opens.
+    with patch_curdoc(curstate().document):
+        _ORIG_KERNEL = BokehKernel()
 ipykernel.kernelbase.Kernel._instance = classproperty(_get_kernel)  # type: ignore
 Widget.on_widget_constructed(_on_widget_constructed)
