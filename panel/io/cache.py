@@ -25,6 +25,7 @@ import typing as t
 import unittest.mock
 import uuid
 
+from collections.abc import Callable
 from contextlib import contextmanager
 
 import param
@@ -39,7 +40,7 @@ from .state import state
 #---------------------------------------------------------------------
 
 if t.TYPE_CHECKING:
-    from collections.abc import Awaitable, Callable, Hashable
+    from collections.abc import Awaitable, Hashable
     _P = t.ParamSpec("_P")
     _R = t.TypeVar("_R")
     _CallableT = t.TypeVar("_CallableT", bound=Callable)
@@ -302,12 +303,18 @@ def _io_hash(obj):
     h.update(_generate_hash(obj.getvalue()))
     return h.digest()
 
-class _HashFuncs(dict):
+_HashFuncKey: t.TypeAlias = str | type[t.Any] | tuple[type, ...] | Callable[[t.Any], bool]
+_HashFuncValue: t.TypeAlias = bytes | Callable[[t.Any], bytes]
+
+class _HashFuncs(dict[_HashFuncKey, _HashFuncValue]):
     """
     The registry of hash functions, which rebuilds the lookup tables
     derived from it whenever it is modified, since downstream libraries
     register their own hash functions by mutating it directly.
     """
+
+    def __init__(self, mapping: dict[_HashFuncKey, _HashFuncValue]) -> None:
+        super().__init__(mapping)
 
     def __setitem__(self, key, value):
         super().__setitem__(key, value)
@@ -317,7 +324,9 @@ class _HashFuncs(dict):
         super().__delitem__(key)
         _rebuild_hash_tables()
 
-    def __ior__(self, other):
+    # The same [misc] error is ignored on dict.__ior__ in typeshed, since an
+    # in-place update cannot widen the key and value types the way | can.
+    def __ior__(self, other):  # type: ignore[misc]
         super().update(other)
         _rebuild_hash_tables()
         return self
@@ -350,7 +359,7 @@ class _HashFuncs(dict):
         super().update(mapping)
         _rebuild_hash_tables()
 
-_hash_funcs: dict[str | type[t.Any] | tuple[type, ...] | Callable[[t.Any], bool], bytes | Callable[[t.Any], bytes]] = _HashFuncs({
+_hash_funcs: _HashFuncs = _HashFuncs({
     # Types
     # NOTE: Enum comes first so that IntEnum and StrEnum members are not
     # matched by plain int or str.
