@@ -3,6 +3,7 @@ Miscellaneous widgets which do not fit into the other main categories.
 """
 from __future__ import annotations
 
+import os
 import typing as t
 
 from base64 import b64encode
@@ -31,8 +32,6 @@ from .button import (
 from .indicators import Progress  # noqa
 
 if t.TYPE_CHECKING:
-    import os
-
     from collections.abc import Mapping
 
     from bokeh.model import Model
@@ -213,11 +212,11 @@ class FileDownload(IconMixin):
 
     @property
     def _is_file_path(self) -> bool:
-        return isinstance(self.file, (str, Path))
+        return isinstance(self.file, (str, os.PathLike))
 
     @property
     def _file_path(self) -> Path | None:
-        if isinstance(self.file, (str, Path)):
+        if isinstance(self.file, (str, os.PathLike)):
             return Path(self.file)
         return None
 
@@ -249,7 +248,7 @@ class FileDownload(IconMixin):
 
     def _sync_data(self, fileobj):
         filename = self.filename
-        if isinstance(fileobj, (str, Path)):
+        if isinstance(fileobj, (str, os.PathLike)):
             fileobj = Path(fileobj)
             if not fileobj.exists():
                 raise FileNotFoundError(f'File "{fileobj}" not found.')
