@@ -358,13 +358,14 @@ def test_tabulator_buttons_display(page, df_mixed):
     cols = page.locator(".tabulator-col")
     expect(cols).to_have_count(expected_ncols)
     button_col_idx = expected_ncols - 2
+    # The table stays hidden until it is built, and hidden elements have no inner text.
+    expect(cols.nth(button_col_idx)).to_be_visible()
     assert not cols.nth(button_col_idx).get_attribute('tabulator-field')
     assert cols.nth(button_col_idx).inner_text() == '\xa0'
-    assert cols.nth(button_col_idx).is_visible()
 
     # Check the button column has the right content
     icons = page.locator(f'text="{icon_text}"')
-    assert icons.all_inner_texts() == [icon_text] * nrows
+    expect(icons).to_have_text([icon_text] * nrows, use_inner_text=True)
 
     # Check the buttons are centered
     for i in range(icons.count()):
@@ -1620,7 +1621,7 @@ def test_tabulator_patch_with_filter_no_vertical_rescroll(page):
     serve_component(page, widget)
 
     tableholder = page.locator(".tabulator-tableholder")
-    expect(tableholder).to_be_attached()
+    expect(tableholder).to_be_visible()
 
     # Scrolling is a no-op until the rows have been laid out, so retry it
     wait_until(lambda: tableholder.evaluate(
@@ -1965,13 +1966,15 @@ def test_tabulator_selection_default_selection(page, df_mixed):
     serve_component(page, widget)
 
     rows = page.locator('.tabulator-row')
+    expect(rows).to_have_count(len(df_mixed))
 
-    # Check that the rows in the selection are selected in the front-end
-    for i in range(rows.count()):
+    # Check that the rows in the selection are selected in the front-end,
+    # the initial selection is only applied once the table is laid out.
+    for i in range(len(df_mixed)):
         if i in selection:
-            assert 'tabulator-selected' in rows.nth(i).get_attribute('class')
+            expect(rows.nth(i)).to_contain_class('tabulator-selected')
         else:
-            assert 'tabulator-selected' not in rows.nth(i).get_attribute('class')
+            expect(rows.nth(i)).not_to_contain_class('tabulator-selected')
     expected_selected = df_mixed.loc[['idx0', 'idx2'], :]
     assert widget.selected_dataframe.equals(expected_selected)
 
@@ -3938,6 +3941,8 @@ def test_tabulator_loading_no_horizontal_rescroll(page, df_mixed):
     serve_component(page, widget)
 
     cell = page.locator('text="target"').first
+    # A scroll made before the table has finished building is lost.
+    expect(page.locator('.pnx-tabulator.tabulator')).to_be_visible()
     # Scroll to the right
     page.wait_for_timeout(200)
 
@@ -3974,6 +3979,8 @@ def test_tabulator_loading_no_vertical_rescroll(page):
 
     # Scroll to the bottom, and give it a little extra time
     cell = page.locator('text="T"')
+    # A scroll made before the table has finished building is lost.
+    expect(page.locator('.pnx-tabulator.tabulator')).to_be_visible()
     page.wait_for_timeout(200)
 
     def _scroll_into_view():
@@ -4210,10 +4217,8 @@ def test_tabulator_sort_algorithm_by_type(page, col, vals):
     # Attempt at making this test more robust.
     page.wait_for_timeout(200)
 
-    client_index = [int(i) for i in tabulator_column_values(page, 'index')]
-
     def indexes_equal():
-        assert client_index == list(widget.current_view.index)
+        assert tabulator_column_values(page, 'index') == [str(i) for i in widget.current_view.index]
 
     wait_until(indexes_equal, page)
 
@@ -4269,8 +4274,7 @@ def test_tabulator_sorter_default_number(page):
     widget.value = df2
 
     def x_values():
-        table_values = [int(v) for v in tabulator_column_values(page, 'x')]
-        assert table_values == [116, 96, 0]
+        assert tabulator_column_values(page, 'x') == ['116', '96', '0']
 
     wait_until(x_values, page)
 
@@ -5488,7 +5492,10 @@ def test_tabulator_fit_data_fill_keeps_manually_resized_columns(page):
 
     serve_component(page, widget)
 
-    box = page.locator('.tabulator-col[tabulator-field="A"]').bounding_box()
+    header = page.locator('.tabulator-col[tabulator-field="A"]')
+    # The hidden table does not receive the mouse events of the drag.
+    expect(header).to_be_visible()
+    box = header.bounding_box()
     edge = box['x'] + box['width'] + 1
     y = box['y'] + box['height'] / 2
     page.mouse.move(edge, y)
@@ -5510,7 +5517,10 @@ def test_tabulator_fit_data_fill_refits_other_columns_after_manual_resize(page):
 
     serve_component(page, widget)
 
-    box = page.locator('.tabulator-col[tabulator-field="A"]').bounding_box()
+    header = page.locator('.tabulator-col[tabulator-field="A"]')
+    # The hidden table does not receive the mouse events of the drag.
+    expect(header).to_be_visible()
+    box = header.bounding_box()
     edge = box['x'] + box['width'] + 1
     y = box['y'] + box['height'] / 2
     page.mouse.move(edge, y)
