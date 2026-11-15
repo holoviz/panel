@@ -30,7 +30,7 @@ import param
 from bokeh.core.property.descriptors import UnsetValueError
 from bokeh.model import DataModel
 from bokeh.model.util import visit_value_and_its_immediate_references
-from bokeh.models import ImportedStyleSheet, InlineStyleSheet
+from bokeh.models import ColumnDataSource, ImportedStyleSheet, InlineStyleSheet
 from packaging.version import Version
 from param.parameterized import (
     ParameterizedMetaclass, Watcher, _syncing, iscoroutinefunction,
@@ -500,6 +500,10 @@ class Syncable(Renderable):
                 attrs.append(attr)
                 continue
             if not model.lookup(attr).property.matches(model_val, value):
+                attrs.append(attr)
+            elif attr == 'data' and isinstance(model, ColumnDataSource) and model.document is not None:
+                # Bokeh notifies on every data assignment to a source in a
+                # document, so an unchanged value still echoes back as a change.
                 attrs.append(attr)
 
         try:

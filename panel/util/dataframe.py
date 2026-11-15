@@ -131,6 +131,53 @@ def is_date(dtype: nw.dtypes.DType) -> bool:
     return dtype == nw.Date
 
 
+def indexed_column_data(df: t.Any) -> dict[str, np.ndarray]:
+    """
+    Converts a pandas-like DataFrame into a dictionary of NumPy arrays,
+    including a column for its index, which can be sent to a
+    ColumnDataSource. Produces the same columns as bokeh's
+    `ColumnDataSource.from_df`, without its frame copy and reset_index
+    for pandas DataFrames.
+    """
+    import pandas as pd
+    if not isinstance(df, pd.DataFrame):
+        from bokeh.models import ColumnDataSource
+        return t.cast("dict[str, np.ndarray]", ColumnDataSource.from_df(df))
+    columns = df.columns
+    if isinstance(columns, pd.MultiIndex):
+        try:
+            names = ['_'.join(col) for col in columns.values]
+        except TypeError:
+            raise TypeError('Could not flatten MultiIndex columns. '
+                            'use string column names or flatten manually') from None
+    else:
+        names = columns.tolist()
+    index = df.index
+    if isinstance(index.name, str):
+        index_name = index.name
+    else:
+        try:
+            index_name = '_'.join(t.cast('list[str]', index.names))
+        except TypeError:
+            index_name = 'index'
+    if index_name == 'index' and 'index' in names:
+        index_name = 'level_0'
+    # Copies keep the ColumnDataSource arrays independent of the frame's
+    # storage, which is otherwise mutated in place by edits and patches.
+    # tz-aware datetimes are sent as naive UTC datetime64 like bokeh does
+    if isinstance(index, pd.DatetimeIndex) and index.tz is not None:
+        index_values = index.tz_convert(None).to_numpy(copy=True)
+    else:
+        index_values = np.array(pd.Index(index.values))
+    data = {index_name: index_values}
+    for name, (_, col) in zip(names, df.items()):
+        if isinstance(col.dtype, pd.DatetimeTZDtype):
+            data[name] = col.dt.tz_convert(None).to_numpy(copy=True)
+        else:
+            data[name] = col.to_numpy(copy=True)
+    return data
+
+
 def add_row_index(obj: t.Any, offset: int = 0) -> t.Any:
     """
     Adds a column recording the position of each row, so rows can be
@@ -480,7 +527,8 @@ def sort_frame(obj: t.Any, fields: Sequence[str], ascending: Sequence[bool]) -> 
     Sorts a frame mirroring the sorting algorithm of Tabulator, i.e.
     strings are compared case-insensitively with missing strings
     treated as empty, other missing values are placed last and ties
-    are broken by the string representation of the row position.
+    keep their original order, like Tabulator's numeric `_index`
+    tie-breaker.
     """
     import narwhals.stable.v2 as nw
     df = to_narwhals(obj)
@@ -503,7 +551,7 @@ def sort_frame(obj: t.Any, fields: Sequence[str], ascending: Sequence[bool]) -> 
     tie = '_sort_tie_'
     sorted_df = (
         df.with_row_index(tie)
-        .with_columns(nw.col(tie).cast(nw.String), *exprs)
+        .with_columns(*exprs)
         .sort([*keys, tie], descending=[*descending, False], nulls_last=True)
         .drop([*keys, tie])
     )
@@ -525,6 +573,7 @@ __all__ = (
     "frame_from_columns",
     "has_index",
     "header_filter_exprs",
+    "indexed_column_data",
     "is_dataframe",
     "is_date",
     "is_indexless",
