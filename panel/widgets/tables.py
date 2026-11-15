@@ -858,10 +858,14 @@ class BaseTable(ReactiveData, Widget):
             if values.dtype.kind == "b":
                 # Workaround for https://github.com/bokeh/bokeh/issues/12776
                 return values.tolist()
-            if df is not None and has_index(df):
+            if df is not None and has_index(df) and col in df.columns:
                 import pandas as pd
-                if col in df.columns and isinstance(df[col].dtype, pd.StringDtype):
+                if isinstance(df[col].dtype, pd.StringDtype):
                     values[df[col].isna()] = None
+                elif values.dtype.kind in 'iu' and isinstance(df[col].dtype, pd.api.extensions.ExtensionDtype):
+                    # Nullable integers must be representable as NaN on the
+                    # frontend so that cells can be cleared even if no NA is present
+                    values = values.astype('float64')
         return values
 
     def _get_data(self) -> tuple[pd.DataFrame, DataDict]:
