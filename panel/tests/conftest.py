@@ -15,9 +15,10 @@ import tempfile
 import time
 import unittest
 
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from functools import cache
 from subprocess import PIPE, Popen
+from urllib.parse import urlparse
 
 import pandas as pd
 import pytest
@@ -250,6 +251,39 @@ def browser_type_launch_args(browser_type_launch_args, browser_name):
     return {**browser_type_launch_args, "args": args}
 
 
+_REMOTE_RESPONSES: dict[str, tuple[int, dict[str, str], bytes]] = {}
+
+# Playwright hands back the decoded body
+_DROPPED_HEADERS = ('content-encoding', 'content-length', 'transfer-encoding')
+
+
+def _is_remote(url):
+    return urlparse(url).hostname not in (None, 'localhost', '127.0.0.1')
+
+
+def _serve_cached(route):
+    request = route.request
+    if request.method != 'GET':
+        route.fallback()
+        return
+    url = request.url
+    if url not in _REMOTE_RESPONSES:
+        try:
+            response = route.fetch()
+        except Exception:
+            # Fail the request as the browser would on a network error
+            with suppress(Exception):
+                route.abort()
+            return
+        if response.status != 200:
+            route.fulfill(response=response)
+            return
+        headers = {k: v for k, v in response.headers.items() if k.lower() not in _DROPPED_HEADERS}
+        _REMOTE_RESPONSES[url] = (response.status, headers, response.body())
+    status, headers, body = _REMOTE_RESPONSES[url]
+    route.fulfill(status=status, headers=headers, body=body)
+
+
 @pytest.fixture
 def context(context, request):
     # Set the default timeout to 20 secs
@@ -270,6 +304,22 @@ def context(context, request):
         context.on("requestfailed", on_request_failed)
         context.on("console", on_console)
     yield context
+
+
+@pytest.fixture
+def cache_remote_requests(context):
+    """
+    Serves remote GET requests from a cache shared by the tests of a worker.
+
+    Every test gets a fresh browser context, which otherwise downloads CDN
+    resources such as the Pyodide runtime and esm.sh modules again. Requests
+    are only answered while the test is in a Playwright call, so tests that
+    block in time.sleep while the page loads must not use it.
+    """
+    context.route(_is_remote, _serve_cached)
+    yield
+    # A fetch still in flight would fail the next test's context
+    context.unroute_all(behavior='ignoreErrors')
 
 
 @pytest.hookimpl(wrapper=True)

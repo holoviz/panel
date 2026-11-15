@@ -20,7 +20,7 @@ from panel.layout.base import ListLike
 from panel.pane import Bokeh, Markdown
 from panel.tests.util import serve_component, wait_until
 
-pytestmark = pytest.mark.ui
+pytestmark = [pytest.mark.ui, pytest.mark.usefixtures('cache_remote_requests')]
 
 INIT = "A Markdown pane!"
 ALT = "A different Markdown pane!"

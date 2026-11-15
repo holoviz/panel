@@ -394,7 +394,8 @@ def serve_and_wait(app, page=None, prefix=None, port=None, proxy=None, **kwargs)
     # Tornado reuses the IPv4 port for IPv6, which another process may hold.
     kwargs.setdefault('address', '127.0.0.1')
     serve_app(app, port=port or 0, threaded=True, show=False, liveness=True, server_id=server_id, prefix=prefix or "", **kwargs)
-    wait_until(lambda: server_id in state._servers, page)
+    # The server registers within milliseconds, a coarse poll would dominate
+    wait_until(lambda: server_id in state._servers, page, interval=10)
     server = state._servers[server_id][0]
     if proxy:
         # The proxy answers the paths it does not route itself

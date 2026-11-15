@@ -20,7 +20,7 @@ if not (PANEL_LOCAL_WHL.is_file() and BOKEH_LOCAL_WHL.is_file()):
         allow_module_level=True
     )
 
-pytestmark = [pytest.mark.ui, pytest.mark.flaky(reruns=3)]
+pytestmark = [pytest.mark.ui, pytest.mark.flaky(reruns=3), pytest.mark.usefixtures('cache_remote_requests')]
 
 
 if os.name == "nt":
