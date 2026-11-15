@@ -82,8 +82,11 @@ function extension_tail(url: string): string | null {
  *
  * A host that embeds Panel output itself (Shiny, through jupyter_bokeh)
  * serves the extension files under its own routes, rewriting the urls the
- * eager path rendered. The bundled paths carry the package and version,
- * so a page url ending in the same path is the same file.
+ * eager path rendered. Such a url is matched on its `/bundled/...` tail,
+ * which drops the extension name, so a page url ending in the same tail
+ * counts as the same file. Not every bundled file is versioned (jquery,
+ * theme css, font-awesome), so this is only safe because the urls a spec
+ * asks for carry their package version.
  */
 function on_page(urls: Set<string>, url: string): boolean {
   if (urls.has(url_key(url))) {
@@ -209,12 +212,14 @@ type Wrapped = {url: string, src: (url: string) => string}
 
 function inject(el: HTMLScriptElement | HTMLLinkElement, wrapped?: Wrapped): Promise<void> {
   return new Promise<void>((resolve, reject) => {
+    let retried: [string, string] | null = null
     const attempt = (element: HTMLScriptElement | HTMLLinkElement) => {
       element.addEventListener("load", () => resolve(), {once: true})
       element.addEventListener("error", () => {
         const url = wrapped?.url ?? ((element as HTMLScriptElement).src || (element as HTMLLinkElement).href)
         const fallback = fallback_to_cdn(element, url)
         if (fallback != null) {
+          retried = [url, fallback]
           element.remove()
           // A script element only ever runs once, so changing its src and
           // reinserting it never fetches again.
@@ -236,7 +241,7 @@ function inject(el: HTMLScriptElement | HTMLLinkElement, wrapped?: Wrapped): Pro
           const global = globalThis as any
           global.__panel_jupyter_extension_error__?.()
         }
-        reject(new Error(`Failed to load ${url}`))
+        reject(new Error(retried == null ? `Failed to load ${url}` : `Failed to load ${retried[0]} or its CDN fallback ${retried[1]}`))
       }, {once: true})
     }
     attempt(el)
@@ -631,7 +636,7 @@ export class ResourceRegistry {
     }
     const key = url_key(url)
     const scripts = existing_urls("script[src]", "src")
-    const promise = scripts.has(key) ? Promise.resolve() : inject_script(url)
+    const promise = on_page(scripts, url) ? Promise.resolve() : inject_script(url)
     this.urls.set(key, promise)
     this._shim = promise.catch((e) => {
       this._shim = null
