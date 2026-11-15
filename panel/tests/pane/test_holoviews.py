@@ -951,3 +951,28 @@ def test_single_datetime_value():
     assert isinstance(widget, Select)
     assert widget.options == {"2020-01-01 12:15:54": ts}
     assert widget.value == ts
+
+
+@pytest.mark.usefixtures("hv_mpl")
+@mpl_available
+@hv_available
+def test_holoviews_pane_mpl_uses_default_renderer_dpi(document, comm):
+    hmap = hv.HoloMap({1: hv.Curve([1, 2, 3]), 2: hv.Curve([1, 2, 3])}, kdims="frame")
+    pane = HoloViews(hmap, backend="matplotlib")
+    pane.get_root(document, comm=comm)
+
+    _, child_pane = next(iter(pane._plots.values()))
+    assert child_pane.dpi == hv.Store.renderers["matplotlib"].dpi
+
+
+@pytest.mark.usefixtures("hv_mpl")
+@mpl_available
+@hv_available
+def test_holoviews_pane_mpl_inherits_renderer_dpi(document, comm):
+    hmap = hv.HoloMap({1: hv.Curve([1, 2, 3]), 2: hv.Curve([1, 2, 3])}, kdims="frame")
+    renderer = hv.renderer("matplotlib").instance(dpi=100)
+    pane = HoloViews(hmap, backend="matplotlib", renderer=renderer)
+    pane.get_root(document, comm=comm)
+
+    _, child_pane = next(iter(pane._plots.values()))
+    assert child_pane.dpi == 100
