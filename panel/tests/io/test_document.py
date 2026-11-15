@@ -726,6 +726,42 @@ async def test_schedule_write_events_defers_on_asgi_socket():
 
 
 @pytest.mark.asyncio
+async def test_schedule_write_events_writes_to_asgi_transport():
+    """
+    The queued write holds the transport's write lock while dispatching,
+    so the ASGI dispatcher must not acquire the (non reentrant) lock again.
+    """
+    from bokeh.server.asgi import _ASGIWebSocketTransport
+
+    import panel.io.asgi  # noqa: F401 registers the ASGI dispatcher
+
+    sent = []
+
+    async def send(event):
+        sent.append(event)
+
+    class ACKProtocol(_FakeProtocol):
+        def create(self, msgtype, events):
+            msg = Protocol().create('ACK')
+            self.created.append(msg)
+            return msg
+
+    doc = Document()
+    conn = _FakeConn(lock_held=False)
+    conn._socket = _ASGIWebSocketTransport(send, supports_close_reason=True)
+    conn.protocol = ACKProtocol()
+    try:
+        schedule_write_events(doc, [conn], [object()])
+        await asyncio.wait_for(asyncio.gather(*_write_tasks.get(doc, [])), timeout=5)
+
+        msg = conn.protocol.created[0]
+        assert [e['text'] for e in sent] == [msg.header_json, msg.metadata_json, msg.content_json]
+        assert not conn._socket.write_lock._lock.locked()
+    finally:
+        _WRITE_BLOCK.pop(doc, None)
+
+
+@pytest.mark.asyncio
 async def test_dispatch_msgs_terminates_on_document_destroy():
     """Pending _dispatch_msgs loop must stop after document is destroyed."""
     extra_socket_handlers[_FakeSocket] = lambda conn, msg=None: []
