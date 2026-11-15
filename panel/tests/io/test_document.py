@@ -17,6 +17,7 @@ from bokeh.protocol import Protocol
 
 import panel as pn
 
+from panel.io.application import _on_session_destroyed
 from panel.io.browser import BrowserInfo
 from panel.io.document import (
     _UNCONNECTED_EVENTS, _WRITE_BLOCK, MockSessionContext, _cleanup_doc,
@@ -1379,3 +1380,50 @@ def test_scheduled_updates_from_thread_are_batched_without_loss(threads, monkeyp
     assert values() == expected
     assert len(messages) == 1
     assert model.value == n
+
+
+class _RunningESM(pn.custom.JSComponent):
+
+    running = param.Boolean()
+
+    _esm = 'export function render() {}'
+
+
+def _discard_session(doc):
+    # The order of bokeh's session discard: the Document is destroyed
+    # before the session_destroyed callbacks clean up the Panel views.
+    _destroy_document(doc, None)
+    _on_session_destroyed(MockSessionContext(doc))
+
+
+def test_destroy_document_stops_periodic_callback_bound_to_esm_component():
+    doc = Document()
+    with set_curdoc(doc):
+        cb = state.add_periodic_callback(lambda: None, period=1000)
+    component = _RunningESM(running=cb.param.running)
+    component.server_doc(doc)
+    assert component.running
+    ref = weakref.ref(doc)
+
+    _discard_session(doc)
+
+    assert not cb.running
+    assert not component.running
+    assert not component._models
+    del doc
+    gc.collect()
+    assert ref() is None
+
+
+def test_esm_property_change_while_document_is_destroyed():
+    doc = Document()
+    component = _RunningESM()
+    component.server_doc(doc)
+
+    _destroy_document(doc, None)
+    component.running = True
+    component.width = 300
+    _on_session_destroyed(MockSessionContext(doc))
+
+    assert component.running
+    assert not component._models

@@ -37,7 +37,7 @@ from param.parameterized import (
     resolve_ref, resolve_value,
 )
 
-from .io.document import hold, unlocked
+from .io.document import _is_destroyed, hold, unlocked
 from .io.loading import loading_css
 from .io.notebook import push, replace_inline_css
 from .io.resource_spec import lazy_load_available, resource_spec
@@ -436,7 +436,8 @@ class Syncable(Renderable):
         root: Model, model: Model, doc: Document, comm: Comm | None,
         curdoc_events: dict[str, t.Any]
     ) -> None:
-        #
+        if _is_destroyed(doc):
+            return
         self._in_process__events[doc] = curdoc_events
         try:
             self._update_model(events, msg, root, model, doc, comm)
@@ -450,6 +451,11 @@ class Syncable(Renderable):
         if ref not in state._views or ref in state._fake_roots:
             return True
         viewable, root, doc, comm = state._views[ref]
+        # bokeh destroys the Document, clearing its models, before Panel's
+        # session_destroyed callbacks drop the views, so watchers firing in
+        # between must not touch the models.
+        if _is_destroyed(doc):
+            return True
         if isinstance(self, Reactive):
             self._resolve_stylesheets(msg, doc)
         if comm or not doc.session_context or state._unblocked(doc):
