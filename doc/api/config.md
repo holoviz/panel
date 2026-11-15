@@ -347,7 +347,7 @@ Default: None | Type: Literal | Options: 'None'
 
 ### `oauth_redirect_uri` (`PANEL_OAUTH_REDIRECT_URI`)
 
-A redirect URI to provide to the OAuth provider.
+A redirect URI to provide to the OAuth provider. Defaults to the public URL of the server, including the root path it is proxied on and its prefix.
 
 Default: None | Type: String
 

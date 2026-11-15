@@ -192,7 +192,10 @@ def add_applications(
       then this will be used as the endpoint, otherwise the endpoint
       will be hosted at /liveness.
     **kwargs:
-        Additional keyword arguments to pass to the PanelASGI application
+        Additional keyword arguments to pass to the PanelASGI application,
+        e.g. ``use_xheaders=True`` to trust the ``X-Forwarded-Prefix`` and
+        ``X-Forwarded-Host`` headers of a reverse proxy when building the
+        login redirects and the default OAuth redirect URI.
     """
     prefix = kwargs.pop('prefix', '') or ''
     if prefix:
@@ -234,7 +237,8 @@ def add_application(
     admin: boolean (default=False)
         Whether to enable the admin panel
     **kwargs:
-        Additional keyword arguments to pass to the PanelASGI application
+        Additional keyword arguments to pass to the PanelASGI application,
+        e.g. ``use_xheaders=True`` to trust the proxy headers.
     """
     def decorator(func):
         @wraps(func)

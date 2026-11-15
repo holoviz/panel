@@ -37,7 +37,7 @@ The `CLIENT_SECRET` corresponds to the `Value` below:
 
 ![CLIENT_SECRET](../../../_static/images/azure_oauth_client_secret.png)
 
-The `REDIRECT_URI` should be included in the list of Web Redirect URIs:
+The `REDIRECT_URI` should be included in the list of Web Redirect URIs. If you do not set it, Panel uses the public URL of the server, e.g. `https://example.org` or, when served with a `--prefix` or behind a [reverse proxy](../../server/proxy.md) on a sub-path, `https://example.org/myapp`. The value registered here has to match it exactly:
 
 ![REDIRECT_URI](../../../_static/images/azure_oauth_uris.png)
 

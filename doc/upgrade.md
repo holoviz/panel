@@ -105,6 +105,15 @@ The choices are `tornado` (the default, unchanged), `fastapi` and `asgi`, the la
 
 `--plugins` is supported on `--server fastapi`, but since the endpoints are no longer Tornado request handlers the plugin module has to declare a FastAPI `APIRouter` in a `ROUTER` variable rather than a list of `ROUTES`. A module may declare both and then be served on either implementation. See [Add custom endpoints](how_to/server/endpoints) for the details.
 
+### OAuth redirect URI with a prefix or behind a reverse proxy
+
+As of Panel 1.10.1 the redirect URI Panel sends to an OAuth provider by default is the public URL of the server root, built from the protocol and host of the request, the `--root-path` and the `--prefix`. Two setups produce a different redirect URI than before:
+
+- With `--prefix` the redirect URI now includes the prefix, e.g. `https://example.org/prefix` instead of `https://example.org`.
+- With `--use-xheaders` behind a reverse proxy that sends the `X-Forwarded-Host` or `X-Forwarded-Prefix` (or `X-Script-Name`) headers, the redirect URI uses the forwarded host and path prefix, e.g. `https://example.org/myapp` instead of `https://internal-host:5006`.
+
+OAuth providers require the redirect URI to match the registered one exactly. If you registered the old value, either register the new one with your provider or keep the old one by passing it with `--oauth-redirect-uri` (or `PANEL_OAUTH_REDIRECT_URI`). Deployments that already set `--oauth-redirect-uri` are not affected. Without `--use-xheaders` the forwarded headers are ignored as before. See [Configuring a reverse proxy](how_to/server/proxy) for the supported setups.
+
 ### `Tabulator` and the `bokeh-tables` bundle
 
 `Tabulator` no longer uses Bokeh's `DataTable` models, so Panel only loads Bokeh's `bokeh-tables` bundle (about 500 KB) when a page needs it, i.e. when a `pn.widgets.DataFrame`, a HoloViews `Table` or a Bokeh `DataTable` is part of the initial layout of a served app or saved file. Notebooks always load it. If such a component is only added after the page has loaded, e.g. in a callback, request the bundle up front:

@@ -183,6 +183,12 @@ pn.serve(app, oauth_encryption_key=...)
 
 Once the OAuth provider has authenticated a user it has to redirect them back to the application, this is what is known as the redirect URI. For security reasons this has to match the URL registered with the OAuth provider exactly. By default Panel will redirect the user straight back to the original URL of your app, e.g. when you're hosting your app at `https://myapp.myprovider.com` Panel will use that as the redirect URI. However in certain scenarios you may override this to provide a specific redirect URI (simply the protocol and domain `https://myapp.otherprovider.com` without the suffix `/oauth2/...`). This can be achieved with the `--oauth-redirect-uri` CLI argument or the `PANEL_OAUTH_REDIRECT_URI` environment variable.
 
+When the app is served with a `--prefix` or behind a reverse proxy the default redirect URI includes the prefix and the path the proxy serves the app on, e.g. `https://myapp.myprovider.com/prefix`. See [Configuring a reverse proxy](../server/proxy.md) for the flags and headers this relies on.
+
+:::{note}
+Before Panel 1.10.1 the default redirect URI did not include the `--prefix` and ignored the `X-Forwarded-Host` and `X-Forwarded-Prefix` headers a reverse proxy sends when Panel is started with `--use-xheaders`. If you registered that URI with your provider, update it there or pass the old value explicitly with `--oauth-redirect-uri`.
+:::
+
 Examples:
 
 ```
