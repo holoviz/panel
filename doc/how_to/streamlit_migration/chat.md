@@ -9,10 +9,10 @@ Both Streamlit and Panel provides special components to help you build conversat
 | [`status`](https://docs.streamlit.io/library/api-reference/status/st.status) | [`Status` example](https://holoviz-topics.github.io/panel-chat-examples/components/#status) | Display the output of long-running tasks in a container |
 |                      | [`ChatFeed`](../../reference/chat/ChatFeed)  | Display multiple chat messages         |
 |                      | [`ChatInterface`](../../reference/chat/ChatInterface)  | High-level, easy to use chat interface |
-| [`StreamlitCallbackHandler`](https://python.langchain.com/docs/integrations/callbacks/streamlit) | [`PanelCallbackHandler`](../../reference/chat/PanelCallbackHandler) | Display the thoughts and actions of a [LangChain](https://python.langchain.com/docs/get_started/introduction) agent |
+| [`StreamlitCallbackHandler`](https://python.langchain.com/docs/integrations/callbacks/streamlit) | [`ChatStep`](../../reference/chat/ChatStep) | Display the thoughts and actions of an agent |
 | [`StreamlitChatMessageHistory`](https://python.langchain.com/docs/integrations/memory/streamlit_chat_message_history) |  | Persist the memory of a [LangChain](https://python.langchain.com/docs/get_started/introduction) agent |
 
-The starting point for most Panel users is the *high-level* [`ChatInterface`](../../reference/chat/ChatInterface) or [`PanelCallbackHandler`](../../reference/chat/PanelCallbackHandler), not the *low-level* [`ChatMessage`](../../reference/chat/ChatMessage) and [`ChatFeed`](../../reference/chat/ChatFeed) components.
+The starting point for most Panel users is the *high-level* [`ChatInterface`](../../reference/chat/ChatInterface), not the *low-level* [`ChatMessage`](../../reference/chat/ChatMessage) and [`ChatFeed`](../../reference/chat/ChatFeed) components.
 
 ## Chat Message
 
@@ -137,30 +137,36 @@ if prompt := st.chat_input():
 
 ### Panel Search Agent with Chain of thought
 
+Panel does not ship a LangChain callback handler. Instead, show each step of the agent in a [`ChatStep`](../../reference/chat/ChatStep), added with `instance.add_step`, and stream the final answer into the chat. The steps below are placeholders for the calls your agent framework makes:
+
 ```python
-from langchain.llms import OpenAI
-from langchain.agents import AgentType, initialize_agent, load_tools
+import asyncio
+
 import panel as pn
 
-pn.extension(design="material")
+pn.extension()
 
-llm = OpenAI(temperature=0, streaming=True)
-tools = load_tools(["ddg-search"])
-agent = initialize_agent(
-    tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True,
-)
+async def search(query):
+    await asyncio.sleep(1)
+    return f"Top result for {query!r}"
 
 async def callback(contents, user, instance):
-    callback_handler = pn.chat.langchain.PanelCallbackHandler(instance)
-    await agent.arun(contents, callbacks=[callback_handler])
+    step = instance.add_step(
+        running_title=f"Searching for {contents!r}",
+        success_title="Searched the web",
+        status="running",
+    )
+    result = await search(contents)
+    step.stream(result)
+    step.status = "success"
+
+    message = None
+    for token in f"Based on my search: {result}".split(" "):
+        message = instance.stream(token + " ", message=message)
+        await asyncio.sleep(0.05)
 
 pn.chat.ChatInterface(callback=callback).servable()
 ```
-
-<video muted controls loop poster="../../_static/images/panel_callback_handler.png" style="max-height: 400px; max-width: 100%;">
-    <source src="https://assets.holoviz.org/panel/how_to/streamlit_migration/panel_callback_handler.mp4" type="video/mp4">
-    Your browser does not support the video tag.
-</video>
 
 ## More Panel Chat Examples
 

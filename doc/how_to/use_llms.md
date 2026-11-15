@@ -57,11 +57,11 @@ Panel publishes a machine-friendly index of its documentation that your assistan
 
 1. Tell your assistant to fetch the index:
 
-   `https://panel.holoviz.org/llms.txt`
+   `https://panel.holoviz.org/en/docs/latest/llms.txt`
 
 2. The index lists the most relevant pages and links to their Markdown versions under:
 
-   `https://panel.holoviz.org/markdown/`, for example `https://panel.holoviz.org/markdown/tutorials/basic/build_dashboard.md`
+   `https://panel.holoviz.org/en/docs/latest/markdown/`, for example `https://panel.holoviz.org/en/docs/latest/markdown/tutorials/basic/build_dashboard.md`
 
 3. Ask your assistant to read the pages relevant to your task before writing code. For example, to create a dashboard you might have it read the Build a Dashboard tutorial and the reference page for the method you need.
 
