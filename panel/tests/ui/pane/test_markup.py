@@ -396,15 +396,19 @@ def test_markdown_pane_stream_loads_mathjax_lazily(page):
 
 
 def test_html_pane_scroll(page):
-    html = HTMLPane('<div style="height: 500px;">Large content</div>', scroll=True, height=200, width=200)
+    html_pane = HTMLPane("<p>Line</p>" * 20, scroll=True, height=100, width=200)
 
-    serve_component(page, html)
+    serve_component(page, html_pane)
 
-    expect(page.locator(".markdown")).to_have_css('overflow', 'auto')
+    html_el = page.locator(".bk-panel-models-markup-HTML")
+    bbox = html_el.bounding_box()
+    assert bbox['height'] == 100
+    assert bbox['width'] == 200
+    expect(html_el).to_have_css('overflow', 'auto')
 
 
 def test_markdown_pane_scroll(page):
-    md = Markdown('# Title\n\n' * 50, scroll=True, height=200, width=200)
+    md = Markdown("Line\n\n" * 20, scroll=True, height=100, width=200)
 
     serve_component(page, md)
 
