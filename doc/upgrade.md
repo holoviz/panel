@@ -56,6 +56,12 @@ pn.serve(app, compress=False)
 
 See [Control when resources load](how_to/performance/resources) for more details.
 
+### CDN fallback for server resources
+
+With `resources='server'`, a page now requests a lazily loaded file from the CDN when loading it from Panel's `static/extensions/` routes fails. Panel's own files are retried from the CDN configured with `pn.config.cdn_root` (`PANEL_CDN_ROOT`), and files of other extensions from the CDN they register. Previously only Jupyter extension endpoint URLs fell back to the CDN. The fallback only fires after a failed request, so a server that serves its resources never contacts the CDN, and on an air-gapped network the CDN request simply fails as well. There is no option to turn it off, so if you chose server resources to avoid third-party requests, for example for privacy or because of intranet policies, make sure the extension routes are served for every page.
+
+As a result, hosts that embed Panel output but rewrite or do not serve Panel's extension routes, such as Shiny through jupyter_bokeh and shinywidgets, now render lazily loaded components like `ECharts` instead of leaving them blank.
+
 ### Smaller changes
 
 - The `high_dpi` option of the `Matplotlib` pane, which is enabled by default, works again for PNG output: figures are rendered at twice their `dpi` and displayed at the same size as before, so they look sharp on high-resolution screens. The images are about two to three times larger; set `high_dpi=False` to restore the previous output. This also applies to Matplotlib plots rendered by the `HoloViews` pane.
