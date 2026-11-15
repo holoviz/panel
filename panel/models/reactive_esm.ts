@@ -354,6 +354,33 @@ export class ReactiveESMView extends HTMLBoxView {
     return child_view.el.isConnected
   }
 
+  /**
+   * A child view is built, and so listed in `child_views`, as soon as its
+   * model is added, but it is only rendered once the component mounts it,
+   * which for a React component is a later commit. Bokeh assumes a child it
+   * measures has run `update_layout` (a figure reads the panels of the
+   * layout built there), so a layout pass in between, e.g. from a resize
+   * or from another child mounting, would throw on the unmounted child and
+   * abort the pass for every other view. Layout passes therefore only visit
+   * mounted children; `update_layout` still visits all of them.
+   */
+  override get layoutable_views(): LayoutDOMView[] {
+    return super.layoutable_views.filter((view) => this._is_mountable(view) && (view as unknown as {_was_built: boolean})._was_built)
+  }
+
+  override update_layout(): void {
+    this.update_style()
+    for (const child_view of this.child_views) {
+      child_view.parent_style.clear()
+    }
+    for (const child_view of this.child_views) {
+      if (child_view instanceof LayoutDOMView) {
+        child_view.update_layout()
+      }
+    }
+    this._update_layout()
+  }
+
   notify_mount(child: string, id: string, remove: boolean = false): void {
     if (!this._mounted.has(child)) {
       this._mounted.set(child, new Set())

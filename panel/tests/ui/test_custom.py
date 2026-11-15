@@ -936,6 +936,53 @@ def test_children_bokeh_plot_laid_out_after_mount(page, component):
     assert canvas.bounding_box()['height'] == 200
 
 
+# Lays out the whole page right after an ESM component builds new children,
+# before it mounts them, as a resize landing in that window does.
+LAYOUT_BEFORE_MOUNT = """
+const timer = setInterval(() => {
+  let view_classes
+  try {
+    view_classes = ['panel.models.esm.ReactiveESM', 'panel.models.esm.ReactComponent'].map(
+      (name) => Bokeh.Models.get(name).prototype.default_view
+    )
+  } catch {
+    return
+  }
+  clearInterval(timer)
+  for (const view_cls of view_classes) {
+    const build_child_views = view_cls.prototype.build_child_views
+    view_cls.prototype.build_child_views = async function(...args) {
+      const created = await build_child_views.apply(this, args)
+      if (created.length) {
+        queueMicrotask(() => this.root.compute_layout())
+      }
+      return created
+    }
+  }
+}, 1)
+"""
+
+@pytest.mark.internet
+@pytest.mark.parametrize('component', [JSChildren, ReactChildren])
+def test_children_bokeh_plot_added_with_layout_before_mount(page, component):
+    page.add_init_script(LAYOUT_BEFORE_MOUNT)
+    errors = []
+    page.on('pageerror', lambda error: errors.append(str(error)))
+    example = component(objects=['<div class="item">A</div>'])
+
+    serve_component(page, example)
+    expect(page.locator('.item')).to_have_count(1)
+
+    plot = figure(width=300, height=200)
+    plot.line([0, 1], [0, 1])
+    example.append(Bokeh(plot))
+
+    canvas = page.locator('.bk-Canvas').first
+    expect(canvas).to_be_visible()
+    wait_until(lambda: (canvas.bounding_box() or {}).get('width') == 300, page)
+    assert errors == []
+
+
 JS_CODE_BEFORE = """
 export function render() {
   const h1 = document.createElement('h1')
@@ -1658,6 +1705,39 @@ def test_react_root_ready_after_children_append(page):
             return new Promise(r => setTimeout(() => r(resolved), 100))
         }
     """, timeout=10000)
+
+
+# Re-renders the React child of a JS parent and has it removed before it can
+# mount, in either order, the way a component re-rendering its children from
+# an async callback can race a change to its children.
+RERENDER_REMOVED_CHILD = """
+async (order) => {
+    const root = Object.values(Bokeh.index)[0]
+    const child_view = root.get_child_view(root.model.data.objects[0])
+    if (order === 'remove_first') {
+        root.model.data.objects = []
+        await new Promise((resolve) => setTimeout(resolve, 100))
+        child_view.rerender_()
+    } else {
+        child_view.rerender_()
+        root.model.data.objects = []
+        await new Promise((resolve) => setTimeout(resolve, 100))
+    }
+    const timeout = new Promise((resolve) => setTimeout(() => resolve('timeout'), 2000))
+    const ready = root.ready.then(() => 'ready')
+    return [child_view.is_destroyed, await Promise.race([ready, timeout])]
+}
+"""
+
+@pytest.mark.internet
+@pytest.mark.parametrize('order', ['remove_first', 'rerender_first'])
+def test_react_child_rerendered_and_removed_before_mount_settles_root_ready(page, order):
+    example = JSChildren(objects=[ReactChildInner(text='child')])
+
+    serve_component(page, example)
+    expect(page.locator('.inner')).to_have_text('child')
+
+    assert page.evaluate(RERENDER_REMOVED_CHILD, order) == [True, 'ready']
 
 
 class ReactChildrenRace(ReactComponent):

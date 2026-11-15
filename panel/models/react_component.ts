@@ -116,7 +116,10 @@ export class ReactComponentView extends ReactiveESMView {
   }
 
   override render_esm(): void {
-    if (this.model.compiled === null || this.model.render_module === null || this.container == null) {
+    // A removed view is never mounted and has already settled its promise in
+    // `remove()`, so a new one, e.g. from a parent re-rendering a stale child
+    // view, would block the root's `ready` for good.
+    if (this.is_destroyed || this.model.compiled === null || this.model.render_module === null || this.container == null) {
       return
     }
     this._rendered = false
