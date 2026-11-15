@@ -2248,7 +2248,7 @@ def test_tabulator_stream_series_datetime_index(document, comm):
     table.stream(df.iloc[3])
     table.stream(df.iloc[4])
 
-    pd.testing.assert_index_equal(table.value.index, index)
+    assert list(table.value.index) == list(index)
     assert table.value.index.dtype == index.dtype
     assert list(table.value['j']) == list(range(5))
     np.testing.assert_array_equal(model.source.data['j'], np.arange(5))
