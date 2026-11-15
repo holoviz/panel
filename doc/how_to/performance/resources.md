@@ -69,6 +69,20 @@ pn.extension()
 pn.config.resource_timeout = 30000
 ```
 
+## MathJax
+
+MathJax is by far the largest library a page can load, so Panel only includes it when the page needs it: when `pn.extension('mathjax')` was declared, when a `Markdown` pane, or an `HTML` pane with `disable_math=False`, contains math such as `$$e^{i\pi} + 1 = 0$$`, or when a Bokeh plot uses LaTeX labels. If math only appears in a later update, for example in text streamed into a `Markdown` pane, MathJax is fetched on demand the first time it is needed. Declare `pn.extension('mathjax')` to load it with the page instead.
+
+## Compression and caching
+
+The Tornado server compresses pages, scripts, stylesheets and JSON with gzip for every browser that accepts it. Panel's own static files are compressed once and then served from memory. Resources whose url contains a version, such as Panel's and Bokeh's bundles and the libraries Panel ships for its extensions, are served with long-lived cache headers, so browsers do not request them again on later visits. Files served with `--static-dirs` and the resources of custom components are revalidated on every load, so changes to them are picked up immediately.
+
+If a reverse proxy in front of Panel already compresses responses, you can turn off Panel's compression when serving programmatically:
+
+```python
+pn.serve(app, compress=False)
+```
+
 ## Authoring components
 
 A custom component declares its resources as class attributes and gets on-demand loading for free:

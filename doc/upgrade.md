@@ -2,6 +2,79 @@
 
 Welcome to the Upgrade Guide for Panel! When we make backward-incompatible changes, we will provide a detailed guide on how you can update your application to be compatible with the latest changes.
 
+## Version 1.11
+
+Panel 1.11 makes pandas an optional dependency, lets the data components work with any DataFrame library supported by [Narwhals](https://narwhals-dev.github.io/narwhals/), and speeds up how updates and resources reach the browser. Most applications need no changes, but the sections below describe the changes in behavior you may notice.
+
+### pandas is optional
+
+pandas is no longer installed with Panel. It moved to the `recommended` extra, so `pip install "panel[recommended]"` still installs it, as does installing any library that depends on it, such as hvPlot or HoloViews. If your application uses pandas directly, declare it as a dependency of your own project or install it alongside Panel:
+
+```bash
+pip install panel pandas
+```
+
+Without pandas, `Tabulator`, the `DataFrame` widget, `Perspective` and `Vizzu` work with any eager DataFrame Narwhals supports, such as a Polars `DataFrame` or a PyArrow `Table`. A few features still require pandas: the [admin panel](how_to/profiling/admin), which raises an error asking you to install it, styling a `Tabulator` with a pandas `Styler` or its `style` accessor, `hierarchical` Tabulator tables, and the patched `pandas.read_csv` and `pandas.read_json` in Pyodide applications. The `DataFrame` pane converts other frames to pandas when it is available and otherwise renders a plain HTML table.
+
+### Polars, PyArrow and other DataFrames
+
+The data components no longer require their data to be a pandas DataFrame, and they never convert it to pandas, so `value`, `current_view` and `selected_dataframe` of a `Tabulator` return the type you passed in:
+
+```python
+import polars as pl
+import panel as pn
+
+df = pl.DataFrame({'name': ['A', 'B', 'C'], 'score': [3, 1, 2]})
+
+table = pn.widgets.Tabulator(df, selection=[1])
+table.selected_dataframe  # a polars DataFrame with the row for 'B'
+```
+
+pandas DataFrames behave exactly as before. Since Polars and PyArrow have no row index, rows of these frames are identified by their position in `value`: `selection`, `expanded`, the `row` of click and edit events and the keys of `patch` dictionaries are positions, `show_index` has no effect, `row_content` receives the row as a `dict`, and edits, `stream` and `patch` replace `value` with a new frame instead of modifying it in place. Lazy frames, e.g. a Polars `LazyFrame`, have to be collected first. The "Other DataFrame libraries" section of the [`Tabulator` reference](reference/widgets/Tabulator.md) has the details.
+
+### Event handling
+
+Panel now waits 20 ms instead of 50 ms for further changes from the browser before processing a change, which roughly halves the time between a user interaction and the resulting update. BokehJS already sends all the changes made in one browser tick as a single message, so this rarely affects batching. The value is a class attribute, so if an application depends on the old timing you can restore it globally:
+
+```python
+import panel as pn
+
+pn.reactive.Syncable._debounce = 50
+```
+
+Updates made from a thread that does not hold the Document lock, for instance in a periodic callback or an event handler running on the thread pool configured with `--num-threads`, are now applied together on the next tick of the event loop and sent to the browser in a single message. Every value is still sent, in the order it was set, so a sequence of updates is not collapsed into its last value. Updates made by a long-running synchronous callback triggered by a browser event, e.g. showing a spinner before a slow computation, once again reach the browser while the callback is still running, rather than only once it returns as in Panel 1.10. Setting `TextInput.value` from Python sends one message instead of two.
+
+### Resources, compression and caching
+
+Served pages load fewer resources. MathJax, by far the largest file, is only included when it is needed: when `pn.extension('mathjax')` was declared, when a `Markdown` pane, or an `HTML` pane with `disable_math=False`, contains math such as `$$e^{i\pi} + 1 = 0$$`, or when a Bokeh plot uses LaTeX labels. If math only appears in a later update, MathJax is loaded on demand. Templates no longer load their own JavaScript and CSS twice, and the `FastListTemplate` now also honors `font_url`. The CSS for the loading indicator is shared by all components on a page instead of being repeated on every model, so the `stylesheets` of a Bokeh model created by Panel now contain an `InlineStyleSheet` where they used to contain the raw CSS string.
+
+The Tornado server now compresses responses with gzip for clients that accept it, and Panel's versioned static resources are served with long-lived cache headers. If a reverse proxy in front of Panel already compresses responses, you can turn Panel's compression off when serving programmatically:
+
+```python
+pn.serve(app, compress=False)
+```
+
+See [Control when resources load](how_to/performance/resources) for more details.
+
+### Smaller changes
+
+- The `high_dpi` option of the `Matplotlib` pane, which is enabled by default, works again for PNG output: figures are rendered at twice their `dpi` and displayed at the same size as before, so they look sharp on high-resolution screens. The images are about two to three times larger; set `high_dpi=False` to restore the previous output. This also applies to Matplotlib plots rendered by the `HoloViews` pane.
+- When an async function or async generator is rendered with `pn.panel` (or `pn.param.ParamFunction` and `ParamMethod`) and `loading_indicator=True`, the loading indicator now stays visible until it has finished, instead of disappearing as soon as it started.
+- `pn.config.admin_endpoint` and the `PANEL_ADMIN_ENDPOINT` environment variable are now honored by `panel serve --admin` and `pn.serve(admin=True)`. If you set one of them before, the admin panel moves from `/admin` to the configured endpoint. `--admin-endpoint` still takes precedence.
+- `Tabulator` header filters enabled with `header_filters=True` now show a placeholder, e.g. "Filter by name...". Pass a `placeholder` in a per-column filter definition to change it.
+- A `jscallback` registered on a parameter that only exists in Python, such as `row_height` on a `Tabulator`, raises a `ValueError` naming the parameter when the component is rendered, where it previously failed with an `AttributeError`. `Tabulator.jscallback(selection=...)` is now supported.
+- `pn.serve(..., start=False)` and `get_server(..., start=False)` no longer install a SIGINT handler, so an application that embeds the server keeps its own Ctrl+C handling.
+- Setting `pn.state.location.reload = True` while the application is built now takes effect, and setting it back to `False` no longer reloads the page.
+- A `Param` pane renders a `param.DateRange` or `param.CalendarDateRange` with bounds but without a default as a slider spanning the bounds. The parameter stays `None` until the user selects a range.
+- The `TextEditor` widget loads Quill from the CDN configured with `pn.config.npm_cdn` (`PANEL_NPM_CDN`).
+- Panel reads and writes application, setup and template files as UTF-8 on every platform. On Windows it previously used the locale encoding, which broke files containing non-ASCII text.
+
+### Deprecations
+
+#### `TerminalSubprocess` options
+
+`Terminal.subprocess.run` now replaces the forked child process with the command instead of calling `subprocess.run` inside it, so none of the server's exit handlers run in the child. Only the `cwd`, `env`, `executable` and `shell` options in `Terminal.subprocess.kwargs` (or passed to `run`) are still supported. Any other option, such as `timeout` or `check`, emits a deprecation warning and is ignored. Support for these options will be removed entirely in Panel 2.0, so drop them from your code.
+
 ## Version 1.10
 
 Panel 1.10.0 requires Bokeh 3.10 and serves its applications on its own [ASGI](https://asgi.readthedocs.io/) application in addition to the existing Tornado server. This means the FastAPI and Django integrations are now implemented in Panel itself, so the `bokeh-fastapi` and `bokeh-django` packages are no longer used and are no longer installed by `panel[fastapi]` or the new `panel[django]` extra. If your environment pins either of them you can remove them.

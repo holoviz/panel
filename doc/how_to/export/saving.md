@@ -15,10 +15,16 @@ panel.save('test.html', resources=INLINE)
 
 Additionally the save method also allows enabling the `embed` option, which, as explained above, will embed the apps state in the app or save the state to json files which you can ship alongside the exported HTML.
 
-Finally, if a 'png' file extension is specified, the exported plot will be rendered as a PNG, which currently requires Selenium and PhantomJS to be installed:
+Finally, if a 'png' file extension is specified, the exported plot will be rendered as a PNG. Taking the screenshot requires a browser automation library, either [Selenium](https://www.selenium.dev/) with a browser and its driver, or [Playwright](https://playwright.dev/python/) with a browser installed through `playwright install chromium`:
 
 ```python
 pane.save('test.png')
+```
+
+By default Panel uses the backend Bokeh would choose, i.e. the one set with the `BOKEH_EXPORT_BACKEND` environment variable, otherwise Selenium if it is installed and Playwright if it is not. Pass `backend` to pick one explicitly:
+
+```python
+pane.save('test.png', backend='playwright')
 ```
 
 ## Customize the favicon
