@@ -402,8 +402,10 @@ def test_html_pane_scroll(page):
 
     html_el = page.locator(".bk-panel-models-markup-HTML")
     bbox = html_el.bounding_box()
-    assert bbox['height'] == 100
+
     assert bbox['width'] == 200
+    assert bbox['height'] == 100
+    expect(html_el).to_have_class('bk-panel-models-markup-HTML scrollable')
     expect(html_el).to_have_css('overflow', 'auto')
 
 
@@ -412,4 +414,10 @@ def test_markdown_pane_scroll(page):
 
     serve_component(page, md)
 
-    expect(page.locator(".markdown")).to_have_css('overflow', 'auto')
+    md_el = page.locator(".markdown")
+    bbox = md_el.bounding_box()
+
+    assert bbox['width'] == 200
+    assert bbox['height'] == 100
+    expect(md_el).to_have_class('bk-panel-models-markup-HTML markdown scrollable')
+    expect(md_el).to_have_css('overflow', 'auto')
