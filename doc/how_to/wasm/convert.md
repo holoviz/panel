@@ -99,7 +99,7 @@ Using the `--to` argument on the CLI you can control the format of the file that
 
 ## Requirements
 
-The `panel convert` command will try its best to figure out the requirements of your script based on the imports, which means that in most cases you won't have to provide the explicit `--requirements` argument. However, if some library uses an optional import that cannot be inferred from the list of imports in your app you will have to provide an explicit list of dependencies. Note that `panel` and its dependencies including NumPy and Bokeh will be added loaded automatically, e.g. the explicit requirements for the app above would look like this:
+The `panel convert` command infers requirements from your script's imports. It can use distribution metadata from the conversion environment to identify which installed package provides an imported module, including submodules of a shared namespace. Use `--requirements` when an import is ambiguous, the metadata is unavailable, or a library needs an optional dependency that your script does not import. Panel and its dependencies, including NumPy and Bokeh, are added automatically. For the app above, the explicit requirements would look like this:
 
 ```bash
 panel convert script.py --to pyodide-worker --out pyodide --requirements xgboost scikit-learn pandas
