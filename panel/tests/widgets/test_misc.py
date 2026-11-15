@@ -1,4 +1,5 @@
 import asyncio
+import os
 
 from io import StringIO
 from pathlib import Path
@@ -155,3 +156,33 @@ def test_file_path_download():
     file_download._clicks += 1
     assert file_download.data
     assert file_download._transfers == 1
+
+
+def test_file_pathlike_download(tmp_path):
+    test_file = tmp_path / "report.txt"
+    test_file.write_text("data", encoding="utf-8")
+
+    class CustomPathLike:
+        def __init__(self, path):
+            self._path = str(path)
+
+        def __fspath__(self):
+            return self._path
+
+    custom_path = CustomPathLike(test_file)
+    file_download = FileDownload(custom_path)
+
+    assert file_download.filename == "report.txt"
+    assert file_download.label == "Download report.txt"
+    file_download._clicks += 1
+    assert file_download.data.startswith("data:text/plain;charset=UTF-8;base64,")
+    assert file_download._transfers == 1
+
+    with os.scandir(tmp_path) as entries:
+        entry = next(entries)
+        entry_download = FileDownload(entry, embed=True)
+
+    assert entry_download.filename == "report.txt"
+    assert entry_download.label == "Download report.txt"
+    assert entry_download.data.startswith("data:text/plain;charset=UTF-8;base64,")
+    assert entry_download._transfers == 1
