@@ -5304,6 +5304,74 @@ def test_tabulator_patch_updates_cell_in_place(page):
     expect(page.locator('text="v2"')).to_have_count(0)
 
 
+def _filter_header(page, value):
+    header = page.locator('input[type="search"]')
+    header.fill(value)
+    header.press('Enter')
+
+
+def test_tabulator_patch_with_sorter_resorts_rows(page):
+    df = pd.DataFrame({'v': [3, 7, 1, 9, 5, 2, 8, 4, 6, 0]})
+    widget = Tabulator(df, sorters=[{'field': 'v', 'dir': 'desc'}], show_index=False)
+
+    serve_component(page, widget)
+
+    cells = page.locator('.tabulator-row .tabulator-cell[tabulator-field="v"]')
+    expect(cells).to_have_text([str(v) for v in range(9, -1, -1)])
+
+    widget.patch({'v': [(2, 10), (3, -1)]})
+
+    expect(cells).to_have_text(['10', '8', '7', '6', '5', '4', '3', '2', '0', '-1'])
+
+
+def test_tabulator_stream_with_sorter_resorts_rows(page):
+    df = pd.DataFrame({'v': [3, 7, 1, 9, 5]})
+    widget = Tabulator(df, sorters=[{'field': 'v', 'dir': 'asc'}], show_index=False)
+
+    serve_component(page, widget)
+
+    cells = page.locator('.tabulator-row .tabulator-cell[tabulator-field="v"]')
+    expect(cells).to_have_text(['1', '3', '5', '7', '9'])
+
+    widget.stream(pd.DataFrame({'v': [4, 0, 8]}), follow=False)
+
+    expect(cells).to_have_text(['0', '1', '3', '4', '5', '7', '8', '9'])
+
+
+def test_tabulator_patch_with_header_filter_refilters_rows(page):
+    df = pd.DataFrame({'s': [f'{"A" if i % 2 else "B"}{i}' for i in range(10)]})
+    widget = Tabulator(df, header_filters={'s': {'type': 'input', 'func': 'like'}}, show_index=False)
+
+    serve_component(page, widget)
+
+    _filter_header(page, 'A')
+    wait_until(lambda: len(widget.filters) == 1, page)
+
+    cells = page.locator('.tabulator-row .tabulator-cell[tabulator-field="s"]')
+    expect(cells).to_have_text(['A1', 'A3', 'A5', 'A7', 'A9'])
+
+    widget.patch({'s': [(0, 'A0'), (3, 'B3')]})
+
+    expect(cells).to_have_text(['A0', 'A1', 'A5', 'A7', 'A9'])
+
+
+def test_tabulator_stream_with_header_filter_filters_rows(page):
+    df = pd.DataFrame({'s': ['A0', 'B1', 'A2']})
+    widget = Tabulator(df, header_filters={'s': {'type': 'input', 'func': 'like'}}, show_index=False)
+
+    serve_component(page, widget)
+
+    _filter_header(page, 'A')
+    wait_until(lambda: len(widget.filters) == 1, page)
+
+    cells = page.locator('.tabulator-row .tabulator-cell[tabulator-field="s"]')
+    expect(cells).to_have_text(['A0', 'A2'])
+
+    widget.stream(pd.DataFrame({'s': ['B3', 'A4', 'B5']}), follow=False)
+
+    expect(cells).to_have_text(['A0', 'A2', 'A4'])
+
+
 def test_tabulator_selection_many_rows_scrolls_once(page):
     df = pd.DataFrame({'col': np.arange(200)})
     widget = Tabulator(df, height=200)

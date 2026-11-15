@@ -1580,7 +1580,14 @@ export class DataTabulatorView extends HTMLBoxView {
     ) {
       const records = transform_cds_rows_to_records(this.model.source, indices, true)
       if (records.length === indices.length) {
-        this.tabulator.updateData(records).catch(() => this.replaceData())
+        // Rows updated in place are not re-sorted or re-filtered, refreshing
+        // the filter re-runs the filter and sort stages of the data pipeline.
+        const refresh = this.tabulator.getSorters().length > 0 || this.tabulator.getFilters(true).length > 0
+        this.tabulator.updateData(records).then(() => {
+          if (refresh) {
+            this.tabulator.refreshFilter()
+          }
+        }).catch(() => this.replaceData())
         return
       }
     }
