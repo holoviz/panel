@@ -219,13 +219,15 @@ def set_values(obj: t.Any, column: str, rows: Sequence[int] | np.ndarray, values
     Returns a new frame with the values of the column at the supplied
     row positions replaced.
     """
+    import narwhals.stable.v2 as nw
     df = to_narwhals(obj)
     series = df[column]
     positions = np.asarray(rows, dtype=np.int64)
-    if len(positions) == len(df) and np.array_equal(positions, np.arange(len(df))):
-        new = _to_series(column, values, series.dtype, df.implementation)
-    else:
-        new = series.scatter(positions, _to_series(column, values, series.dtype, df.implementation))
+    new = _to_series(column, values, series.dtype, df.implementation)
+    if df.implementation.is_pyarrow():
+        new = nw.from_native(new.to_native().cast(series.to_native().type), series_only=True).alias(column)
+    if not (len(positions) == len(df) and np.array_equal(positions, np.arange(len(df)))):
+        new = series.scatter(positions, new)
     return df.with_columns(new).to_native()
 
 
@@ -243,6 +245,25 @@ def patch_rows(index: int | slice, value: t.Any, nrows: int) -> tuple[list[int],
     return [index + nrows if index < 0 else index], [value]
 
 
+def _restore_arrow_types(frame: t.Any, template: t.Any) -> t.Any:
+    """
+    Narwhals maps e.g. both string and large_string to a single dtype,
+    so a PyArrow table built from narwhals dtypes loses the large types
+    of the template and can no longer be concatenated with it.
+    """
+    import sys
+    pa = sys.modules.get('pyarrow')
+    if pa is None or not (isinstance(frame, pa.Table) and isinstance(template, pa.Table)):
+        return frame
+    types = {field.name: field.type for field in template.schema}
+    fields = [
+        pa.field(field.name, types.get(field.name, field.type), field.nullable)
+        for field in frame.schema
+    ]
+    schema = pa.schema(fields)
+    return frame if schema.equals(frame.schema) else frame.cast(schema)
+
+
 def frame_from_columns(data: Mapping[str, t.Any], template: t.Any) -> t.Any:
     """
     Builds a frame from a dictionary of columns using the backend of
@@ -250,7 +271,8 @@ def frame_from_columns(data: Mapping[str, t.Any], template: t.Any) -> t.Any:
     """
     import narwhals.stable.v2 as nw
     impl = to_narwhals(template).implementation
-    return nw.from_dict({str(k): list(v) for k, v in data.items()}, backend=impl).to_native()
+    frame = nw.from_dict({str(k): list(v) for k, v in data.items()}, backend=impl).to_native()
+    return _restore_arrow_types(frame, template)
 
 
 def _is_scalar(value: t.Any) -> bool:
@@ -301,10 +323,10 @@ def coerce_frame(value: t.Any, template: t.Any) -> t.Any:
                 "without losing information, ensure the new data matches "
                 "the dtypes of the existing data."
             )
-    return df.select([
+    return _restore_arrow_types(df.select([
         nw.col(col).cast(dtype) if col in df.columns else nw.lit(None).cast(dtype).alias(col)
         for col, dtype in schema.items()
-    ]).to_native()
+    ]).to_native(), template)
 
 
 def concat_rows(obj: t.Any, other: t.Any, rollover: int | None = None) -> t.Any:

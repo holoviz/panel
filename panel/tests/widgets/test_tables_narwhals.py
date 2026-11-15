@@ -561,6 +561,47 @@ def test_tabulator_edit_datetime(backend):
     assert to_dict(table.value)['a'] == [dt.datetime(2020, 1, 1), dt.datetime(2020, 1, 3)]
 
 
+def large_string_table():
+    # pandas >= 3 converts string columns to large_string, e.g. in pa.Table.from_pandas
+    return pa.table({'int': [1, 2, 3], 'str': pa.array(['A', 'B', 'C'], pa.large_string())})
+
+
+@pytest.mark.parametrize('pagination', [None, 'remote'])
+def test_tabulator_edit_pyarrow_large_string(pagination, document, comm):
+    table = Tabulator(large_string_table(), pagination=pagination)
+    table.get_root(document, comm)
+
+    table._process_events({'data': {'str': ['A', 'X', 'C']}})
+
+    assert table.value.column('str').to_pylist() == ['A', 'X', 'C']
+    assert table.value.schema == large_string_table().schema
+
+
+def test_tabulator_patch_pyarrow_large_string(document, comm):
+    table = Tabulator(large_string_table())
+    table.get_root(document, comm)
+
+    table.patch({'str': [(1, 'X')]})
+
+    assert table.value.column('str').to_pylist() == ['A', 'X', 'C']
+    assert table.value.schema == large_string_table().schema
+
+
+@pytest.mark.parametrize('stream_value', [
+    {'int': [4], 'str': ['D']},
+    pa.table({'int': [4], 'str': ['D']}),
+    pa.table({'int': [4], 'str': pa.array(['D'], pa.large_string())}),
+], ids=['dict', 'string', 'large_string'])
+def test_tabulator_stream_pyarrow_large_string(stream_value, document, comm):
+    table = Tabulator(large_string_table())
+    table.get_root(document, comm)
+
+    table.stream(stream_value)
+
+    assert table.value.column('str').to_pylist() == ['A', 'B', 'C', 'D']
+    assert table.value.schema == large_string_table().schema
+
+
 def test_tabulator_edit_event(frame):
     table = Tabulator(frame, sorters=[{'field': 'int', 'dir': 'desc'}], pagination='remote')
     events = []
