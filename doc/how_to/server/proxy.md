@@ -100,7 +100,7 @@ panel serve app.py --root-path /myapp ... --oauth-redirect-uri https://example.o
 ```
 
 :::{important}
-As of Panel 1.10.1 the default redirect URI includes the `--prefix` and, with `--use-xheaders`, follows the `X-Forwarded-Host` and `X-Forwarded-Prefix` (or `X-Script-Name`) headers of the proxy. If you registered the previous default with your provider, i.e. the URL without the prefix or with the host Panel is reachable on internally, either register the new redirect URI or keep the old one by passing it as `--oauth-redirect-uri`.
+As of Panel 1.11 the default redirect URI includes the `--prefix` and, with `--use-xheaders`, follows the `X-Forwarded-Host` and `X-Forwarded-Prefix` (or `X-Script-Name`) headers of the proxy. If you registered the previous default with your provider, i.e. the URL without the prefix or with the host Panel is reachable on internally, either register the new redirect URI or keep the old one by passing it as `--oauth-redirect-uri`.
 :::
 
 `--oauth-redirect-uri` only determines where the provider sends the user. Where Panel sends the user afterwards is determined by the root path, so a proxy which strips a prefix still needs `--root-path` or the `X-Forwarded-Prefix` header.

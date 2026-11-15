@@ -62,7 +62,7 @@ If the provider rejects the login with a redirect URI mismatch, or you land on a
 - Behind a reverse proxy that serves the app on a sub-path, Panel has to know that path. Start it with `--use-xheaders` and let the proxy send `X-Forwarded-Prefix`, or pass `--root-path`. See [Configuring a reverse proxy](../server/proxy.md).
 - If the `redirect_uri` contains an internal host such as `127.0.0.1:5006`, the proxy does not pass on the `Host` header. Let it send `Host` or `X-Forwarded-Host` and start Panel with `--use-xheaders`.
 - If it starts with `http://` although the app is served over HTTPS, let the proxy send `X-Forwarded-Proto` and start Panel with `--use-xheaders`.
-- As of Panel 1.10.1 the default redirect URI includes the `--prefix` and follows the forwarded headers. If you upgraded, register the new URI with your provider or pass the previous one with `--oauth-redirect-uri`.
+- As of Panel 1.11 the default redirect URI includes the `--prefix` and follows the forwarded headers. If you upgraded, register the new URI with your provider or pass the previous one with `--oauth-redirect-uri`.
 
 ### Could not open websocket
 
