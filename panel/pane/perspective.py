@@ -10,9 +10,10 @@ from functools import partial
 import numpy as np
 import param
 
-from bokeh.models import ColumnDataSource, ImportedStyleSheet
+from bokeh.models import ColumnDataSource
 from pyviz_comms import JupyterComm
 
+from ..io.resources import imported_stylesheet
 from ..io.state import state
 from ..reactive import ReactiveData
 from ..util import datetime_types, lazy_load
@@ -475,7 +476,7 @@ class Perspective(ModelPane, ReactiveData):
             self._get_theme(params.get('theme', self.theme))
             css = getattr(self._bokeh_model, '__css__', [])
             params['stylesheets'] = [
-                ImportedStyleSheet(url=ss) for ss in css
+                imported_stylesheet(ss) for ss in css
             ] + params.get('stylesheets', self.stylesheets)
         if 'theme' in params and 'material' in params['theme']:
             params['theme'] = params['theme'].replace('material', 'pro')

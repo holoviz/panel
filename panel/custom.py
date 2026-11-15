@@ -36,6 +36,7 @@ from .models.reactive_html import DOMEvent
 from .pane.base import PaneBase  # noqa
 from .reactive import (  # noqa
     Reactive, ReactiveCustomBase, ReactiveHTML, ReactiveMetaBase,
+    drop_default_properties,
 )
 from .util import classproperty
 from .util.checks import import_available
@@ -687,10 +688,12 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         props = self._get_properties(doc)
+        properties = drop_default_properties(self._bokeh_model, props)
         # The Bokeh model is shared across all ESM components, so the resource
-        # spec has to be derived from the Panel class that declares them.
-        props['external_resources'] = resource_spec(type(self))
-        model = self._bokeh_model(**props) # type: ignore[abstract]
+        # spec has to be derived from the Panel class that declares them. It
+        # is passed even when None, the model would derive it from itself.
+        properties['external_resources'] = resource_spec(type(self))
+        model = self._bokeh_model(**properties) # type: ignore[abstract]
         root = root or model
         children, _ = self._get_children(model.data, doc, root, model, comm)
         model.data.update(**children)

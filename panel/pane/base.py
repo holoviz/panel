@@ -12,7 +12,6 @@ from functools import partial
 import numpy as np
 import param
 
-from bokeh.models import ImportedStyleSheet
 from bokeh.models.layouts import (
     GridBox as _BkGridBox, TabPanel as _BkTabPanel, Tabs as _BkTabs,
 )
@@ -21,6 +20,7 @@ from .._param import Margin
 from ..io.cache import _generate_hash
 from ..io.document import create_doc_if_none_exists, hold, unlocked
 from ..io.notebook import push
+from ..io.resources import imported_stylesheet, stylesheet_scope
 from ..io.state import set_curdoc, state
 from ..layout.base import (
     Column, ListLike, NamedListLike, Row,
@@ -650,7 +650,8 @@ class ModelPane(Pane):
             v = getattr(self, p)
             if v is not None or p == 'object':
                 params[p] = v
-        properties = self._process_param_change(params)
+        with stylesheet_scope(doc):
+            properties = self._process_param_change(params)
         self._resolve_stylesheets(properties, doc)
         return properties
 
@@ -674,7 +675,7 @@ class ModelPane(Pane):
         if self._bokeh_model is not None and 'stylesheets' in params:
             css = getattr(self._bokeh_model, '__css__', [])
             params['stylesheets'] = [
-                ImportedStyleSheet(url=ss) for ss in css if ss
+                imported_stylesheet(ss) for ss in css if ss
             ] + params['stylesheets']
         return super()._process_param_change(params)
 

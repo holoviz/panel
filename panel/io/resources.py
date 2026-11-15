@@ -17,6 +17,7 @@ import typing as t
 import uuid
 
 from contextlib import contextmanager
+from contextvars import ContextVar
 from functools import lru_cache
 from pathlib import Path
 
@@ -416,6 +417,44 @@ def stylesheet_url(stylesheet: ImportedStyleSheet) -> str | None:
         return stylesheet.url
     except UnsetValueError:
         return None
+
+_STYLESHEET_SCOPE: ContextVar[tuple[Document, dict[str, ImportedStyleSheet]] | None] = ContextVar(
+    '_STYLESHEET_SCOPE', default=None
+)
+
+@contextmanager
+def stylesheet_scope(doc: Document | None):
+    """
+    Makes the ImportedStyleSheets already shared by the models on a
+    Document available to imported_stylesheet while the properties of
+    a component rendered into that Document are computed.
+    """
+    if doc is None:
+        yield
+        return
+    cache = state._stylesheets.get(doc)
+    if cache is None:
+        cache = state._stylesheets[doc] = {}
+    token = _STYLESHEET_SCOPE.set((doc, cache))
+    try:
+        yield
+    finally:
+        _STYLESHEET_SCOPE.reset(token)
+
+def imported_stylesheet(url: str) -> ImportedStyleSheet:
+    """
+    Returns an ImportedStyleSheet for the url. Within a stylesheet_scope
+    the stylesheet shared on the Document is returned if there is one,
+    since every component would otherwise construct its own only for it
+    to be replaced by the shared one when the stylesheets are resolved.
+    """
+    scope = _STYLESHEET_SCOPE.get()
+    if scope is not None:
+        doc, cache = scope
+        cached = cache.get(url)
+        if cached is not None and stylesheet_url(cached) is not None and cached.document in (None, doc):
+            return cached
+    return ImportedStyleSheet(url=url)
 
 def shared_inline_stylesheet(
     css: str, cache: dict[str, InlineStyleSheet], doc: Document

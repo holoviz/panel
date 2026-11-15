@@ -157,6 +157,36 @@ def test_link_properties_shared_callback(document):
     assert not obj.visible
 
 
+def test_register_events_shared_callback_without_signature_check(document, monkeypatch):
+    import bokeh.util.callback_manager as callback_manager
+
+    from bokeh.events import ButtonClick
+    from bokeh.models import Button as BkButton
+
+    def check(*args, **kwargs):
+        raise AssertionError('Callback signature should not be inspected')
+
+    obj = Reactive()
+    model = BkButton()
+    with monkeypatch.context() as m:
+        m.setattr(callback_manager, '_nargs', check)
+        m.setattr(callback_manager, '_check_callback', check)
+        obj._register_events('button_click', 'menu_item_click', model=model, doc=document, comm=None)
+
+    assert {'button_click', 'menu_item_click'} <= model.subscribed_events
+    callbacks = model._event_callbacks['button_click']
+    assert len(callbacks) == 1
+    assert callbacks == model._event_callbacks['menu_item_click']
+    assert callbacks[0].func == obj._server_event
+    assert callbacks[0].args == (document,)
+
+    events = []
+    monkeypatch.setattr(obj, '_process_event', events.append, raising=False)
+    event = ButtonClick(model)
+    model._trigger_event(event)
+    assert events == [event]
+
+
 def test_link_properties_unknown_property(document):
     obj = Reactive()
     div = Div()
@@ -1138,6 +1168,48 @@ def test_reactive_destroyed_stylesheet_dropped(document, comm):
     )
     # The Document must remain serializable
     document.to_json()
+
+def test_reactive_stylesheets_not_constructed_per_component(document, comm, monkeypatch):
+    with set_curdoc(document):
+        TextInput(stylesheets=['https://example.com/custom.css']).get_root(document, comm)
+
+        constructed = []
+        init = ImportedStyleSheet.__init__
+
+        def spy(self, *args, **kwargs):
+            constructed.append(kwargs.get('url'))
+            init(self, *args, **kwargs)
+
+        monkeypatch.setattr(ImportedStyleSheet, '__init__', spy)
+        widget = TextInput(stylesheets=['https://example.com/custom.css'])
+        model = widget.get_root(document, comm)
+        widget.stylesheets = ['https://example.com/other.css']
+
+    assert constructed == ['https://example.com/other.css']
+    urls = [stylesheet_url(sts) for sts in model.stylesheets if isinstance(sts, ImportedStyleSheet)]
+    assert 'https://example.com/other.css' in urls
+    assert 'https://example.com/custom.css' not in urls
+
+
+def test_reactive_stylesheets_shared_within_document_only(document, comm):
+    other_doc = Document()
+    with set_curdoc(document):
+        model1 = TextInput(stylesheets=['https://example.com/custom.css']).get_root(document, comm)
+        model2 = TextInput(stylesheets=['https://example.com/custom.css']).get_root(document, comm)
+    with set_curdoc(other_doc):
+        model3 = TextInput(stylesheets=['https://example.com/custom.css']).get_root(other_doc, comm)
+
+    def imported(model):
+        return {
+            stylesheet_url(sts): sts for sts in model.stylesheets
+            if isinstance(sts, ImportedStyleSheet)
+        }
+
+    sts1, sts2, sts3 = imported(model1), imported(model2), imported(model3)
+    assert sts1.keys() == sts2.keys() == sts3.keys()
+    assert all(sts1[url] is sts2[url] for url in sts1)
+    assert not any(sts1[url] is sts3[url] for url in sts1)
+
 
 def test_reactive_recreates_destroyed_stylesheet(document, comm):
     with set_curdoc(document):
