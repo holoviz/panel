@@ -463,3 +463,37 @@ def test_resource_spec_ignores_stale_notebook_default_in_server_session(document
         )
     finally:
         resources_module.NOTEBOOK_RESOURCES = old_notebook_resources
+
+
+def test_resource_spec_cdn_map_tracks_extension_registration(monkeypatch):
+    """
+    Extensions register their CDN on import, so a spec cached before that
+    must not keep serving a CDN map without it.
+    """
+    before = resource_spec(PlotlyPlot, 'server')
+    monkeypatch.setitem(
+        resources_module.EXTENSION_CDN, '/nonexistent/dist', 'https://cdn.example.com/ext/'
+    )
+    monkeypatch.setattr(
+        'panel.io.resource_spec.extension_cdn_map',
+        lambda: [('static/extensions/panel/', 'https://cdn.example.com/panel/')],
+    )
+    after = resource_spec(PlotlyPlot, 'server')
+    assert before['cdn'] != after['cdn']
+    assert after['cdn'] == [['static/extensions/panel/', 'https://cdn.example.com/panel/']]
+
+
+def test_resource_spec_tracks_notebook_resources_option(monkeypatch):
+    """
+    Switching `notebook_resources` decides whether the Jupyter endpoint
+    serves the urls, so a spec cached under one setting must not be reused
+    under the other.
+    """
+    monkeypatch.setattr(resources_module, 'NOTEBOOK_RESOURCES', True)
+    with config.set(notebook_resources='jupyter'):
+        endpoint = _spec_urls(resource_spec(PlotlyPlot, 'cdn'))
+    with config.set(notebook_resources='cdn'):
+        cdn = _spec_urls(resource_spec(PlotlyPlot, 'cdn'))
+    assert endpoint
+    assert all('panel-preview/static/extensions/panel' in url for url in endpoint)
+    assert not any('panel-preview' in url for url in cdn)

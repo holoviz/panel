@@ -27,6 +27,8 @@ import typing as t
 
 from functools import lru_cache
 
+from bokeh.embed.bundle import extension_dirs
+
 from ..config import config
 from ..util import isurl
 from .resources import (
@@ -286,6 +288,7 @@ def _declares_resources(cls: type) -> bool:
     )
 
 
+@lru_cache(maxsize=None)
 def _has_resources(cls: type) -> bool:
     # Every ESM component imports through es-module-shims, which a host
     # that renders the output itself may not have loaded.
@@ -381,10 +384,15 @@ def resource_spec(cls: type, mode: MODES | None = None) -> dict[str, t.Any] | No
     # The effective notebook default has to be part of the key too: a
     # notebook and a server started from it can share `rel_path`/`base_url`
     # while only one of them is a genuine server session (see `_resources`).
+    # Whether the Jupyter endpoint serves the urls can be toggled with
+    # `config.notebook_resources`, and the extension registries feed the
+    # server-mode `cdn` map and grow as extensions are imported.
     key = (
         cls, resolved_mode, state.rel_path, state.base_url,
         get_notebook_resources() and not state._is_server_session,
         tuple(getattr(cls, '__css_raw__', None) or ()),
+        jupyter_endpoint_available(), config.npm_cdn, len(EXTENSION_CDN),
+        len(extension_dirs),
     )
     if key in _SPEC_CACHE:
         spec = _SPEC_CACHE[key]
