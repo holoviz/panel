@@ -10,6 +10,7 @@ import pandas as pd
 import pytest
 
 from panel import config
+from panel.layout.base import _SCROLL_MAPPING
 from panel.pane import (
     HTML, JSON, DataFrame, Markdown, PaneBase, Str,
 )
@@ -697,3 +698,69 @@ def test_html_base_pane_subclass_without_transform(document, comm, enable_stream
     assert model.text == '&lt;b&gt;a&lt;/b&gt;'
     pane.object = Text('&lt;b&gt;ab&lt;/b&gt;')
     assert model.text == '&lt;b&gt;ab&lt;/b&gt;'
+
+
+def test_html_pane_scroll(document, comm):
+    pane = HTML("<h1>Test</h1>")
+    model = pane.get_root(document, comm=comm)
+    assert pane.scroll is False
+    assert model.css_classes == []
+
+    pane.scroll = True
+    assert model.css_classes == ['scrollable']
+
+    pane.object = "<h2>Updated</h2>"
+    assert model.css_classes == ['scrollable']
+
+    pane.scroll = 'y'
+    assert model.css_classes == ['scroll-vertical']
+
+    pane.css_classes = ['custom']
+    assert model.css_classes == ['custom', 'scroll-vertical']
+    assert pane.css_classes == ['custom']
+
+    pane.scroll = False
+    assert model.css_classes == ['custom']
+
+
+@pytest.mark.parametrize('scroll,scroll_cls', [
+    (True, 'scrollable'),
+    *_SCROLL_MAPPING.items(),
+])
+def test_html_pane_scroll_options(document, comm, scroll, scroll_cls):
+    pane = HTML("<h1>Test</h1>", scroll=scroll)
+    model = pane.get_root(document, comm=comm)
+    assert model.css_classes == [scroll_cls]
+
+
+def test_markdown_pane_scroll(document, comm):
+    pane = Markdown("**Markdown**")
+    model = pane.get_root(document, comm=comm)
+    assert pane.scroll is False
+    assert model.css_classes == ['markdown']
+
+    pane.scroll = True
+    assert model.css_classes == ['markdown', 'scrollable']
+
+    pane.object = "*Updated*"
+    assert model.css_classes == ['markdown', 'scrollable']
+
+    pane.scroll = 'y'
+    assert model.css_classes == ['markdown', 'scroll-vertical']
+
+    pane.css_classes = ['custom']
+    assert model.css_classes == ['markdown', 'custom', 'scroll-vertical']
+    assert pane.css_classes == ['custom']
+
+    pane.scroll = False
+    assert model.css_classes == ['markdown', 'custom']
+
+
+@pytest.mark.parametrize('scroll,scroll_cls', [
+    (True, 'scrollable'),
+    *_SCROLL_MAPPING.items(),
+])
+def test_markdown_pane_scroll_options(document, comm, scroll, scroll_cls):
+    pane = Markdown("**Markdown**", scroll=scroll)
+    model = pane.get_root(document, comm=comm)
+    assert model.css_classes == ['markdown', scroll_cls]
