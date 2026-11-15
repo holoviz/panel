@@ -1497,6 +1497,26 @@ def test_tabulator_frozen_rows(page):
     wait_until(_frozen_rows_unchanged, page)
 
 
+def test_tabulator_frozen_rows_patch_updates_styles(page):
+    df = pd.DataFrame({'v': np.arange(50)})
+    widget = Tabulator(df, frozen_rows=[0, 1], height=300)
+    widget.style.apply(
+        lambda s: ['background-color: red' if v % 3 == 0 else '' for v in s], subset=['v']
+    )
+
+    serve_component(page, widget)
+
+    frozen = page.locator('.tabulator-frozen-rows-holder .tabulator-cell[tabulator-field="v"]')
+    expect(frozen).to_have_count(2)
+    expect(frozen.first).to_have_css('background-color', 'rgb(255, 0, 0)')
+
+    widget.patch({'v': [(0, 1), (1, 3)]})
+
+    expect(frozen.first).to_have_text('1')
+    expect(frozen.first).not_to_have_css('background-color', 'rgb(255, 0, 0)')
+    expect(frozen.nth(1)).to_have_css('background-color', 'rgb(255, 0, 0)')
+
+
 def test_tabulator_patch_no_horizontal_rescroll(page, df_mixed):
     widths = 100
     width = int(((df_mixed.shape[1] + 1) * widths) / 2)
@@ -2414,6 +2434,21 @@ def test_tabulator_hierarchical(page, df_multiindex):
         subgr = page.locator(f'text="subgroup{i}"')
         expect(subgr).to_have_count(1)
         expect(subgr).to_be_visible()
+
+
+def test_tabulator_groupby_patch_regroups(page):
+    df = pd.DataFrame({'g': ['a', 'b'] * 10, 'v': np.arange(20)})
+    widget = Tabulator(df, groupby=['g'], height=600)
+
+    serve_component(page, widget)
+
+    groups = page.locator('.pnx-tabulator .tabulator-group')
+    expect(groups).to_have_count(2)
+
+    widget.patch({'g': [(0, 'b'), (2, 'b')]})
+
+    expect(groups.filter(has_text='g: a')).to_contain_text('(8 items)')
+    expect(groups.filter(has_text='g: b')).to_contain_text('(12 items)')
 
 
 def test_tabulator_cell_click_event(page, df_mixed):
@@ -4273,6 +4308,40 @@ def test_tabulator_update_hidden_columns(page):
     wait_until(aligned, page)
 
 
+@pytest.mark.parametrize('layout', ['fit_columns', 'fit_data_stretch'])
+@pytest.mark.parametrize('start,target', [(['b'], []), ([], ['b'])])
+def test_tabulator_update_hidden_columns_layout(page, layout, start, target):
+    df = pd.DataFrame({'a': ['aaaa'] * 3, 'b': ['b' * 24] * 3, 'c': ['c'] * 3})
+    updated = Tabulator(df, hidden_columns=start, layout=layout, width=600)
+    fresh = Tabulator(df, hidden_columns=target, layout=layout, width=600)
+
+    serve_component(page, Column(updated, fresh, width=800))
+
+    tables = page.locator('.pnx-tabulator')
+    expect(tables.locator('.tabulator-row')).to_have_count(6)
+
+    updated.hidden_columns = target
+
+    measure = """(t) => {
+      const left = t.getBoundingClientRect().x;
+      const out = {};
+      for (const f of ['a', 'b', 'c']) {
+        const h = t.querySelector(`.tabulator-col[tabulator-field="${f}"]`);
+        const c = t.querySelector(`.tabulator-row .tabulator-cell[tabulator-field="${f}"]`);
+        if (h.offsetParent === null) continue;
+        out[f] = [
+          Math.round(h.getBoundingClientRect().x - left), h.offsetWidth,
+          Math.round(c.getBoundingClientRect().x - left), c.offsetWidth
+        ];
+      }
+      return out
+    }"""
+
+    def same_layout():
+        assert tables.nth(0).evaluate(measure) == tables.nth(1).evaluate(measure)
+    wait_until(same_layout, page)
+
+
 def test_tabulator_remote_pagination_auto_page_size_grow(page, df_mixed):
     nrows, ncols = df_mixed.shape
     widget = Tabulator(df_mixed, pagination='remote', initial_page_size=1, height=200)
@@ -5151,6 +5220,204 @@ def test_tabulator_jscallback_selection_fires_on_row_click(page, df_mixed):
     page.locator('text="idx0"').click()
 
     wait_until(lambda: page.title() == 'selected', page)
+
+
+def test_tabulator_stream_appends_rows_in_place(page):
+    df = pd.DataFrame({'col': np.arange(30)})
+    widget = Tabulator(df, height=200, selection=[2, 3])
+
+    serve_component(page, widget)
+
+    expect(page.locator('.tabulator-row.tabulator-selected')).to_have_count(2)
+
+    # Tag a rendered row so a rebuild of the table can be detected
+    page.locator('.tabulator-row').first.evaluate("el => el.setAttribute('data-kept', '1')")
+    table = page.locator('.pnx-tabulator .tabulator-table')
+    height_before = table.evaluate("el => el.offsetHeight")
+
+    holder = page.locator('.pnx-tabulator .tabulator-tableholder')
+    holder.evaluate("el => { el.scrollTop = 50 }")
+    wait_until(lambda: holder.evaluate("el => el.scrollTop") > 0, page)
+    scroll_top = holder.evaluate("el => el.scrollTop")
+
+    widget.stream(pd.DataFrame({'col': np.arange(30, 35)}), follow=False)
+
+    wait_until(lambda: table.evaluate("el => el.offsetHeight") > height_before, page)
+
+    expect(page.locator('.tabulator-row[data-kept="1"]')).to_have_count(1)
+    expect(page.locator('.tabulator-row.tabulator-selected')).to_have_count(2)
+    assert widget.selection == [2, 3]
+    assert holder.evaluate("el => el.scrollTop") == scroll_top
+
+
+def test_tabulator_stream_pagination_appends_at_end(page):
+    df = pd.DataFrame({'col': [f'v{i}' for i in range(30)]})
+    widget = Tabulator(df, pagination='local', page_size=10)
+
+    serve_component(page, widget)
+
+    expect(page.locator('.tabulator-row')).to_have_count(10)
+
+    widget.stream(pd.DataFrame({'col': [f'v{i}' for i in range(30, 35)]}))
+
+    # The streamed rows are appended after the existing rows, not on the page shown
+    expect(page.locator('.tabulator-page.active')).to_have_text('4')
+    expect(page.locator('.tabulator-row')).to_have_count(5)
+    expect(page.locator('.tabulator-row')).to_contain_text([f'v{i}' for i in range(30, 35)])
+
+    widget.page = 1
+    expect(page.locator('.tabulator-row')).to_contain_text([f'v{i}' for i in range(10)])
+
+
+def test_tabulator_stream_rollover_rebuilds_rows(page):
+    df = pd.DataFrame({'col': [f'v{i}' for i in range(10)]})
+    widget = Tabulator(df, height=400)
+
+    serve_component(page, widget)
+
+    expect(page.locator('.tabulator-row')).to_have_count(10)
+
+    widget.stream(pd.DataFrame({'col': [f'v{i}' for i in range(10, 15)]}), rollover=12)
+
+    expect(page.locator('.tabulator-row')).to_have_count(12)
+    expect(page.locator('text="v3"')).to_have_count(1)
+    expect(page.locator('text="v2"')).to_have_count(0)
+    expect(page.locator('text="v14"')).to_have_count(1)
+    assert len(widget.value) == 12
+
+
+def test_tabulator_patch_updates_cell_in_place(page):
+    df = pd.DataFrame({'col': [f'v{i}' for i in range(30)]})
+    widget = Tabulator(df, height=200)
+
+    serve_component(page, widget)
+
+    cell = page.locator('.tabulator-cell', has=page.locator('text="v2"'))
+    expect(cell).to_have_count(1)
+    cell.evaluate("el => el.setAttribute('data-kept', '1')")
+
+    widget.patch({'col': [(2, 'patched')]})
+
+    expect(page.locator('text="patched"')).to_have_count(1)
+    # The cell element was updated rather than the table rebuilt
+    expect(page.locator('.tabulator-cell[data-kept="1"]')).to_have_text('patched')
+    expect(page.locator('text="v2"')).to_have_count(0)
+
+
+def _filter_header(page, value):
+    header = page.locator('input[type="search"]')
+    header.fill(value)
+    header.press('Enter')
+
+
+def test_tabulator_patch_with_sorter_resorts_rows(page):
+    df = pd.DataFrame({'v': [3, 7, 1, 9, 5, 2, 8, 4, 6, 0]})
+    widget = Tabulator(df, sorters=[{'field': 'v', 'dir': 'desc'}], show_index=False)
+
+    serve_component(page, widget)
+
+    cells = page.locator('.tabulator-row .tabulator-cell[tabulator-field="v"]')
+    expect(cells).to_have_text([str(v) for v in range(9, -1, -1)])
+
+    widget.patch({'v': [(2, 10), (3, -1)]})
+
+    expect(cells).to_have_text(['10', '8', '7', '6', '5', '4', '3', '2', '0', '-1'])
+
+
+def test_tabulator_stream_with_sorter_resorts_rows(page):
+    df = pd.DataFrame({'v': [3, 7, 1, 9, 5]})
+    widget = Tabulator(df, sorters=[{'field': 'v', 'dir': 'asc'}], show_index=False)
+
+    serve_component(page, widget)
+
+    cells = page.locator('.tabulator-row .tabulator-cell[tabulator-field="v"]')
+    expect(cells).to_have_text(['1', '3', '5', '7', '9'])
+
+    widget.stream(pd.DataFrame({'v': [4, 0, 8]}), follow=False)
+
+    expect(cells).to_have_text(['0', '1', '3', '4', '5', '7', '8', '9'])
+
+
+def test_tabulator_patch_with_header_filter_refilters_rows(page):
+    df = pd.DataFrame({'s': [f'{"A" if i % 2 else "B"}{i}' for i in range(10)]})
+    widget = Tabulator(df, header_filters={'s': {'type': 'input', 'func': 'like'}}, show_index=False)
+
+    serve_component(page, widget)
+
+    _filter_header(page, 'A')
+    wait_until(lambda: len(widget.filters) == 1, page)
+
+    cells = page.locator('.tabulator-row .tabulator-cell[tabulator-field="s"]')
+    expect(cells).to_have_text(['A1', 'A3', 'A5', 'A7', 'A9'])
+
+    widget.patch({'s': [(0, 'A0'), (3, 'B3')]})
+
+    expect(cells).to_have_text(['A0', 'A1', 'A5', 'A7', 'A9'])
+
+
+def test_tabulator_stream_with_header_filter_filters_rows(page):
+    df = pd.DataFrame({'s': ['A0', 'B1', 'A2']})
+    widget = Tabulator(df, header_filters={'s': {'type': 'input', 'func': 'like'}}, show_index=False)
+
+    serve_component(page, widget)
+
+    _filter_header(page, 'A')
+    wait_until(lambda: len(widget.filters) == 1, page)
+
+    cells = page.locator('.tabulator-row .tabulator-cell[tabulator-field="s"]')
+    expect(cells).to_have_text(['A0', 'A2'])
+
+    widget.stream(pd.DataFrame({'s': ['B3', 'A4', 'B5']}), follow=False)
+
+    expect(cells).to_have_text(['A0', 'A2', 'A4'])
+
+
+def test_tabulator_selection_many_rows_scrolls_once(page):
+    df = pd.DataFrame({'col': np.arange(200)})
+    widget = Tabulator(df, height=200)
+
+    serve_component(page, widget)
+
+    expect(page.locator('.tabulator-row')).not_to_have_count(0)
+
+    page.evaluate("""() => {
+      const view = Bokeh.index.query_one((view) => view.model.type.endsWith('DataTabulator'))
+      const scrollToRow = view.tabulator.scrollToRow.bind(view.tabulator)
+      window.__scroll_calls = 0
+      view.tabulator.scrollToRow = (...args) => {
+        window.__scroll_calls += 1
+        return scrollToRow(...args)
+      }
+    }""")
+
+    widget.selection = list(range(50, 150))
+
+    # The last selected row is scrolled into view
+    expect(page.locator('.tabulator-row.tabulator-selected', has_text='149')).to_have_count(1)
+    assert page.evaluate("window.__scroll_calls") == 1
+
+
+def test_tabulator_sorters_kept_across_rerender(page):
+    df = pd.DataFrame({
+        'col1': [1, 2, 3, 4],
+        'col2': [1, 4, 3, 2],
+    })
+    sorters = [{'field': 'col1', 'dir': 'desc'}, {'field': 'col2', 'dir': 'asc'}]
+    widget = Tabulator(df, sorters=sorters)
+
+    serve_component(page, widget)
+
+    first_cell = page.locator('.tabulator-cell:visible').first
+    expect(first_cell).to_have_text('3')
+
+    page.locator('.pnx-tabulator').evaluate("el => el.setAttribute('data-old', '1')")
+
+    # Changing the layout re-renders the table, which must keep the sort order
+    widget.layout = 'fit_data_fill'
+
+    expect(page.locator('.pnx-tabulator[data-old="1"]')).to_have_count(0)
+    expect(page.locator('.tabulator-cell:visible').first).to_have_text('3')
+    assert widget.sorters == sorters
 
 
 def test_tabulator_edit_after_value_trigger_is_processed(page, df_mixed):
