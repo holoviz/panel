@@ -393,3 +393,19 @@ def test_markdown_pane_stream_loads_mathjax_lazily(page):
     md.object += ' $$e^{i\\pi}+1=0$$'
 
     expect(page.locator('.markdown mjx-container')).to_have_count(1)
+
+
+def test_html_pane_scroll(page):
+    html = HTMLPane('<div style="height: 500px;">Large content</div>', scroll=True, height=200, width=200)
+
+    serve_component(page, html)
+
+    expect(page.locator(".markdown")).to_have_css('overflow', 'auto')
+
+
+def test_markdown_pane_scroll(page):
+    md = Markdown('# Title\n\n' * 50, scroll=True, height=200, width=200)
+
+    serve_component(page, md)
+
+    expect(page.locator(".markdown")).to_have_css('overflow', 'auto')
