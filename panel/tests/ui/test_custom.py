@@ -135,6 +135,8 @@ def test_react_use_state_update_before_effect_not_reverted(page):
 
 
     example = ReactSlowUpdate(text='initial')
+    values = []
+    example.param.watch(lambda e: values.append(e.new), 'text')
 
     serve_component(page, example)
 
@@ -170,6 +172,201 @@ def test_react_use_state_update_before_effect_not_reverted(page):
 
     expect(page.locator('h1')).to_have_text('second')
     wait_until(lambda: example.text == 'second', page)
+    page.wait_for_timeout(200)
+    # Client changes may be coalesced, but none may follow the newest value.
+    assert values[values.index('second'):] == ['second']
+
+
+def test_react_use_state_model_change_before_subscription(page):
+    class ReactMountUpdate(ReactComponent):
+        text = param.String()
+
+        # A layout effect runs after the first commit but before the passive
+        # effects in which subscriptions are registered.
+        _esm = """
+        export function render({ model }) {
+          const [text] = model.useState("text")
+          React.useLayoutEffect(() => {
+            model.text = "changed"
+          }, [])
+          return <h1>{text}</h1>
+        }
+        """
+
+    example = ReactMountUpdate(text='initial')
+
+    serve_component(page, example)
+
+    expect(page.locator('h1')).to_have_text('changed')
+    wait_until(lambda: example.text == 'changed', page)
+
+
+def test_react_use_state_set_value(page):
+    class ReactSetValue(ReactComponent):
+        count = param.Integer(default=0)
+
+        _esm = """
+        export function render({ model }) {
+          const [count, setCount] = model.useState("count")
+          return (
+            <div>
+              <h1>{count}</h1>
+              <button id="set" onClick={() => setCount(10)}>set</button>
+              <button id="increment" onClick={() => { setCount(c => c + 1); setCount(c => c + 1) }}>+2</button>
+            </div>
+          )
+        }
+        """
+
+    example = ReactSetValue()
+
+    serve_component(page, example)
+
+    expect(page.locator('h1')).to_have_text('0')
+
+    page.locator('#set').click()
+    expect(page.locator('h1')).to_have_text('10')
+    wait_until(lambda: example.count == 10, page)
+
+    page.locator('#increment').click()
+    expect(page.locator('h1')).to_have_text('12')
+    wait_until(lambda: example.count == 12, page)
+
+
+def test_react_use_state_shared_property(page):
+    class ReactSharedState(ReactComponent):
+        count = param.Integer(default=0)
+
+        _esm = """
+        function Counter({ model, id }) {
+          const [count, setCount] = model.useState("count")
+          return <button id={id} onClick={() => setCount(c => c + 1)}>{count}</button>
+        }
+
+        export function render({ model }) {
+          return <div><Counter model={model} id="a"/><Counter model={model} id="b"/></div>
+        }
+        """
+
+    example = ReactSharedState()
+
+    serve_component(page, example)
+
+    page.locator('#a').click()
+    expect(page.locator('#a')).to_have_text('1')
+    expect(page.locator('#b')).to_have_text('1')
+
+    page.locator('#b').click()
+    expect(page.locator('#a')).to_have_text('2')
+    expect(page.locator('#b')).to_have_text('2')
+    wait_until(lambda: example.count == 2, page)
+
+
+def test_react_use_state_unchanged_value_does_not_rerender(page):
+    class ReactRenderCount(ReactComponent):
+        text = param.String()
+
+        _esm = """
+        export function render({ model }) {
+          const [text, setText] = model.useState("text")
+          const commits = React.useRef(0)
+          const ref = React.useRef(null)
+          React.useLayoutEffect(() => {
+            commits.current += 1
+            ref.current.dataset.commits = String(commits.current)
+          })
+          return (
+            <div>
+              <h1 ref={ref}>{text}</h1>
+              <button id="set" onClick={() => setText("user")}>set</button>
+            </div>
+          )
+        }
+        """
+
+    example = ReactRenderCount(text='initial')
+
+    serve_component(page, example)
+
+    h1 = page.locator('h1')
+    expect(h1).to_have_text('initial')
+    expect(h1).to_have_attribute('data-commits', '1')
+
+    page.locator('#set').click()
+    expect(h1).to_have_text('user')
+    wait_until(lambda: example.text == 'user', page)
+    expect(h1).to_have_attribute('data-commits', '2')
+
+    page.locator('#set').click()
+    example.text = 'user'
+    page.wait_for_timeout(200)
+    expect(h1).to_have_attribute('data-commits', '2')
+
+    example.text = 'server'
+    expect(h1).to_have_text('server')
+    expect(h1).to_have_attribute('data-commits', '3')
+
+
+def test_react_use_state_model_change_after_set_value_not_reverted(page):
+    class ReactSlowSetValue(ReactComponent):
+        text = param.String()
+
+        # React flushes the effects of updates from discrete events like
+        # clicks synchronously, so the update is made from a timer. A render
+        # over React's 5ms time slice makes the scheduler yield between the
+        # commit and the passive effects.
+        _esm = """
+        export function render({ model }) {
+          const [text, setText] = model.useState("text")
+          if (text === "user") {
+            const end = performance.now() + 20
+            while (performance.now() < end) {}
+          }
+          return (
+            <div>
+              <h1>{text}</h1>
+              <button id="set" onClick={() => setTimeout(() => setText("user"))}>set</button>
+            </div>
+          )
+        }
+        """
+
+    example = ReactSlowSetValue(text='initial')
+    values = []
+    example.param.watch(lambda e: values.append(e.new), 'text')
+
+    serve_component(page, example)
+
+    expect(page.locator('h1')).to_have_text('initial')
+
+    # The MutationObserver fires after React commits the user value but
+    # before its passive effects run.
+    page.evaluate("""() => {
+        const data = [...Bokeh.documents[0]._all_models.values()].find(
+            (m) => m.data && 'text' in m.data.properties
+        ).data
+        function find(root) {
+            const h1 = root.querySelector('h1')
+            if (h1) return h1
+            for (const el of root.querySelectorAll('*')) {
+                const found = el.shadowRoot && find(el.shadowRoot)
+                if (found) return found
+            }
+            return null
+        }
+        const h1 = find(document)
+        const observer = new MutationObserver(() => {
+            observer.disconnect()
+            data.setv({text: 'model'})
+        })
+        observer.observe(h1, {childList: true, subtree: true, characterData: true})
+    }""")
+    page.locator('#set').click()
+
+    expect(page.locator('h1')).to_have_text('model')
+    wait_until(lambda: example.text == 'model', page)
+    page.wait_for_timeout(200)
+    assert values[values.index('model'):] == ['model']
 
 
 class JSEventUpdate(JSComponent):
@@ -566,6 +763,23 @@ def test_gather_input(page, component):
     inp.press('Enter')
 
     wait_until(lambda: example.text == 'Foo!', page)
+
+
+def test_react_use_state_controlled_input_keeps_caret(page):
+    example = ReactInput(text='Hello')
+
+    serve_component(page, example)
+
+    inp = page.locator('#input')
+    inp.click()
+    inp.press('End')
+    for _ in range(2):
+        inp.press('ArrowLeft')
+    inp.press_sequentially('XY')
+
+    expect(inp).to_have_value('HelXYlo')
+    assert inp.evaluate('(el) => el.selectionStart') == 5
+    wait_until(lambda: example.text == 'HelXYlo', page)
 
 
 class JSNestedInput(JSComponent):
