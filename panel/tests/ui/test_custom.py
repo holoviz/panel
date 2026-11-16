@@ -116,60 +116,57 @@ def test_update(page, component):
     expect(page.locator('h1')).to_have_text('Foo!')
 
 
-class ReactSlowUpdate(ReactComponent):
-
-    text = param.String()
-
-    # A render over React's 5ms time slice makes the scheduler yield
-    # between the commit and the passive effects.
-    _esm = """
-    export function render({ model }) {
-      const [text, setText ] = model.useState("text")
-      if (text === "first") {
-        const end = performance.now() + 20
-        while (performance.now() < end) {}
-      }
-      return <h1>{text}</h1>
-    }
-    """
-
-
-# The MutationObserver fires after React commits the DOM but before its
-# passive effects run.
-_UPDATE_BETWEEN_RENDER_AND_EFFECT = """() => {
-    const data = [...Bokeh.documents[0]._all_models.values()].find(
-        (m) => m.data && 'text' in m.data.properties
-    ).data
-    function find(root) {
-        const h1 = root.querySelector('h1')
-        if (h1) return h1
-        for (const el of root.querySelectorAll('*')) {
-            const found = el.shadowRoot && find(el.shadowRoot)
-            if (found) return found
-        }
-        return null
-    }
-    const h1 = find(document)
-    return new Promise((resolve) => {
-        const observer = new MutationObserver(() => {
-            observer.disconnect()
-            data.setv({text: 'second'})
-            resolve()
-        })
-        observer.observe(h1, {childList: true, subtree: true, characterData: true})
-        data.setv({text: 'first'})
-    })
-}"""
-
-
 def test_react_use_state_update_before_effect_not_reverted(page):
+    class ReactSlowUpdate(ReactComponent):
+        text = param.String()
+
+        # A render over React's 5ms time slice makes the scheduler yield
+        # between the commit and the passive effects.
+        _esm = """
+        export function render({ model }) {
+          const [text, setText ] = model.useState("text")
+          if (text === "first") {
+            const end = performance.now() + 20
+            while (performance.now() < end) {}
+          }
+          return <h1>{text}</h1>
+        }
+        """
+
+
     example = ReactSlowUpdate(text='initial')
 
     serve_component(page, example)
 
     expect(page.locator('h1')).to_have_text('initial')
 
-    page.evaluate(_UPDATE_BETWEEN_RENDER_AND_EFFECT)
+    # The MutationObserver fires after React commits the DOM but before its
+    # passive effects run.
+    update_between_render_and_effect_js = """() => {
+        const data = [...Bokeh.documents[0]._all_models.values()].find(
+            (m) => m.data && 'text' in m.data.properties
+        ).data
+        function find(root) {
+            const h1 = root.querySelector('h1')
+            if (h1) return h1
+            for (const el of root.querySelectorAll('*')) {
+                const found = el.shadowRoot && find(el.shadowRoot)
+                if (found) return found
+            }
+            return null
+        }
+        const h1 = find(document)
+        return new Promise((resolve) => {
+            const observer = new MutationObserver(() => {
+                observer.disconnect()
+                data.setv({text: 'second'})
+                resolve()
+            })
+            observer.observe(h1, {childList: true, subtree: true, characterData: true})
+            data.setv({text: 'first'})
+        })
+    }"""
+    page.evaluate(update_between_render_and_effect_js)
 
     expect(page.locator('h1')).to_have_text('second')
     wait_until(lambda: example.text == 'second', page)
