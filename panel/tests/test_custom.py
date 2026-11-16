@@ -8,6 +8,7 @@ from bokeh.document import Document
 from bokeh.models import ImportedStyleSheet
 from bokeh.plotting import figure
 
+from panel.config import config
 from panel.custom import PyComponent, ReactComponent, ReactiveESM
 from panel.io.state import set_curdoc, state
 from panel.layout import Row
@@ -421,6 +422,205 @@ def test_reactive_esm_tags_nested_datamodels(document, comm):
     assert ref in model.data.child.tags
     assert model.data.children[0].text == 'c'
     assert ref in model.data.children[0].tags
+
+
+def test_reactive_esm_tags_nested_datamodels_without_query(document, comm, monkeypatch):
+    from bokeh.model import DataModel
+
+    def query(*args, **kwargs):
+        raise AssertionError('DataModel properties should not be queried')
+
+    monkeypatch.setattr(DataModel, 'properties_with_values', query)
+    esm = ESMWithNested(child=Inner(), children=[Inner(), Inner()])
+
+    model = esm.get_root(document, comm)
+
+    ref = f"__ref:{model.ref['id']}"
+    assert ref in model.data.tags
+    assert ref in model.data.child.tags
+    assert all(ref in child.tags for child in model.data.children)
+
+
+def test_reactive_esm_ref_properties():
+    from panel.reactive import _ref_properties
+
+    class ESMWithScalars(ESMWithNested):
+
+        value = param.Integer(default=1)
+
+        label = param.String(default='a')
+
+    ref_props = _ref_properties(ESMWithScalars._data_model)
+    assert 'child' in ref_props
+    assert 'children' in ref_props
+    assert 'value' not in ref_props
+    assert 'label' not in ref_props
+
+
+class ESMWithDefaults(ReactiveESM):
+
+    value = param.Integer(default=1)
+
+    _esm = 'export function render() {}'
+
+
+def test_reactive_esm_get_model_drops_default_properties(document, comm, monkeypatch):
+    from panel.models import ReactiveESM as BkReactiveESM
+
+    kwargs = {}
+    init = BkReactiveESM.__init__
+
+    def spy(self, *args, **kw):
+        kwargs.update(kw)
+        init(self, *args, **kw)
+
+    monkeypatch.setattr(BkReactiveESM, '__init__', spy)
+    esm = ESMWithDefaults(value=2)
+    model = esm.get_root(document, comm)
+    monkeypatch.undo()
+
+    for prop in ('css_classes', 'dev', 'events', 'styles', 'tags', 'use_shadow_dom', 'visible'):
+        assert prop not in kwargs
+    # Even a None spec must be passed so the model does not resolve its own
+    assert 'external_resources' in kwargs
+    assert model.data.value == 2
+    assert model.class_name == 'ESMWithDefaults'
+    assert model.esm == esm._render_esm(not config.autoreload)
+
+    # Defaults are not filtered from updates, they must reach the frontend
+    esm.visible = False
+    assert model.visible is False
+    esm.visible = True
+    assert model.visible is True
+
+
+def test_reactive_esm_get_model_matches_unfiltered_model(document, comm):
+    from panel.io.resource_spec import resource_spec
+
+    esm = ESMWithDefaults(value=2, css_classes=['foo'])
+    model = esm.get_root(document, comm)
+
+    props = esm._get_properties(document)
+    props['external_resources'] = resource_spec(ESMWithDefaults)
+    full = type(model)(**props)
+    # Events are subscribed to after the model is constructed
+    values = {k: v for k, v in model._property_values.items() if k != 'subscribed_events'}
+    assert set(values) == set(full._property_values)
+    for name, value in values.items():
+        if name == 'data':
+            data = value.properties_with_values()
+            full_data = full.data.properties_with_values()
+            assert data.pop('tags') == [f"__ref:{model.ref['id']}"]
+            assert full_data.pop('tags') == []
+            assert data == full_data
+        else:
+            assert value == full._property_values[name]
+
+
+class ESMWithDataDefaults(ReactiveESM):
+
+    count = param.Integer(default=1)
+
+    direction: param.Selector[str] = param.Selector(default='ltr', objects=['ltr', 'rtl'])
+
+    disabled = param.Boolean(default=False)
+
+    label = param.String(default=None, allow_None=True)
+
+    items = param.List(default=[])
+
+    number = param.Number(default=0.5)
+
+    options = param.Dict(default={})
+
+    _esm = 'export function render() {}'
+
+
+class ESMWithDataDefaultsSubclass(ESMWithDataDefaults):
+
+    count = param.Integer(default=5)
+
+
+def _spy_data_model_kwargs(monkeypatch, cls):
+    kwargs = {}
+    init = cls._data_model.__init__
+
+    def spy(self, *args, **kw):
+        kwargs.update(kw)
+        init(self, *args, **kw)
+
+    monkeypatch.setattr(cls._data_model, '__init__', spy)
+    return kwargs
+
+
+def test_reactive_esm_data_model_drops_default_properties(document, comm, monkeypatch):
+    from bokeh.core.serialization import Serializer
+
+    kwargs = _spy_data_model_kwargs(monkeypatch, ESMWithDataDefaults)
+    esm = ESMWithDataDefaults(count=2, direction='ltr', disabled=False, number=0.5)
+    model = esm.get_root(document, comm)
+
+    assert set(kwargs) == {'count', 'esm_constants', 'name'}
+    assert model.data.count == 2
+
+    # The frontend DataModel is generated from the serialized definition,
+    # so omitted properties must resolve to the same defaults there.
+    serializer = Serializer()
+    modeldef = serializer.encode(ESMWithDataDefaults._data_model)
+    defaults = {prop['name']: prop.get('default') for prop in modeldef['properties']}
+    for name in ('direction', 'disabled', 'label', 'items', 'number', 'options'):
+        assert defaults[name] == serializer.encode(getattr(esm, name))
+        assert getattr(model.data, name) == getattr(esm, name)
+
+
+def test_reactive_esm_data_model_respects_subclass_defaults(document, comm, monkeypatch):
+    kwargs = _spy_data_model_kwargs(monkeypatch, ESMWithDataDefaultsSubclass)
+    esm = ESMWithDataDefaultsSubclass(count=1)
+    model = esm.get_root(document, comm)
+
+    assert kwargs['count'] == 1
+    assert model.data.count == 1
+
+    kwargs.clear()
+    model = ESMWithDataDefaultsSubclass().get_root(Document(), comm)
+
+    assert 'count' not in kwargs
+    assert model.data.count == 5
+
+
+def test_reactive_esm_data_model_matches_unfiltered_model(document, comm, monkeypatch):
+    from bokeh.model import DataModel
+
+    import panel.custom
+
+    esm = ESMWithDataDefaults(count=2, label='foo', items=[1], options={})
+    data = esm.get_root(document, comm).data
+
+    drop = panel.custom.drop_default_properties
+    monkeypatch.setattr(
+        panel.custom, 'drop_default_properties',
+        lambda model_type, props: props if issubclass(model_type, DataModel) else drop(model_type, props)
+    )
+    kwargs = _spy_data_model_kwargs(monkeypatch, ESMWithDataDefaults)
+    full = esm.get_root(Document(), comm).data
+
+    assert {'direction', 'disabled', 'number'} <= set(kwargs)
+    assert data.properties_with_values(include_defaults=False).keys() == full.properties_with_values(include_defaults=False).keys()
+    values, full_values = data.properties_with_values(), full.properties_with_values()
+    assert values.pop('tags') != full_values.pop('tags')
+    assert values == full_values
+
+
+def test_reactive_esm_data_model_syncs_reset_to_default(document, comm):
+    esm = ESMWithDataDefaults(count=2, disabled=True, label='foo')
+    model = esm.get_root(document, comm)
+
+    esm.param.update(count=1, disabled=False, label=None)
+
+    assert model.data.count == 1
+    assert model.data.disabled is False
+    assert model.data.label is None
+    assert {'count', 'disabled', 'label'} <= set(model.data._property_values)
 
 
 def test_reactive_esm_children_append_attaches_without_recompute(document, comm, monkeypatch):

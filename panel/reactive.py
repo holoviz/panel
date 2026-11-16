@@ -22,6 +22,7 @@ from functools import lru_cache, partial
 from html import escape
 from pprint import pformat
 from types import MappingProxyType
+from weakref import WeakKeyDictionary
 
 import jinja2
 import numpy as np
@@ -42,8 +43,9 @@ from .io.loading import loading_css
 from .io.notebook import push, replace_inline_css
 from .io.resource_spec import lazy_load_available, resource_spec
 from .io.resources import (
-    CDN_DIST, get_dist_path, patch_stylesheet, process_raw_css,
-    resolve_stylesheet, shared_inline_stylesheet, stylesheet_url,
+    CDN_DIST, get_dist_path, imported_stylesheet, patch_stylesheet,
+    process_raw_css, resolve_stylesheet, shared_inline_stylesheet,
+    stylesheet_scope, stylesheet_url,
 )
 from .io.state import set_curdoc, state
 from .models.reactive_html import (
@@ -95,6 +97,35 @@ _CLASS_PARAM_CACHE: dict[tuple[type, str], tuple[int, t.Any]] = {}
 _BOKEH_DEFAULTS: dict[type[Model], dict[str, t.Any]] = {}
 
 _IMMUTABLE_TYPES = (bool, int, float, str, tuple)
+
+# Properties per bokeh model class whose type can hold a model reference
+_REF_PROPERTIES: WeakKeyDictionary[type[Model], tuple[str, ...]] = WeakKeyDictionary()
+
+
+def _ref_properties(model_type: type[Model]) -> tuple[str, ...]:
+    props = _REF_PROPERTIES.get(model_type)
+    if props is None:
+        _REF_PROPERTIES[model_type] = props = tuple(
+            name for name in model_type.properties()
+            if model_type.lookup(name).has_ref
+        )
+    return props
+
+
+def _reference_values(model: Model) -> list[t.Any]:
+    """
+    Returns the values of a model that may hold references to other
+    models, i.e. what properties_with_values(include_defaults=False)
+    returns for the properties whose type can hold a reference, without
+    querying all properties.
+    """
+    set_values = model._property_values
+    unstable = model._unstable_default_values
+    return [
+        set_values[attr] if attr in set_values else unstable[attr]
+        for attr in _ref_properties(type(model))
+        if attr in set_values or attr in unstable
+    ]
 
 
 def _bokeh_defaults(model_type: type[Model]) -> dict[str, t.Any]:
@@ -159,6 +190,24 @@ def _on_change(model: Model, attr: str, callback: Callable[..., None]) -> None:
     attr_callbacks = callbacks.setdefault(attr, [])
     if callback not in attr_callbacks:
         attr_callbacks.append(callback)
+
+
+def _on_event(model: Model, events: Sequence[str], callback: Callable[[Event], None]) -> None:
+    """
+    Registers an event callback on a model. Like on_change, bokeh's
+    on_event inspects the signature of the callback on every
+    registration, so the callback, which is known to accept the event,
+    is appended directly, subscribing the model to the events as
+    bokeh does.
+    """
+    event_callbacks = getattr(model, '_event_callbacks', None)
+    if event_callbacks is None:
+        for event in events:
+            model.on_event(event, callback)
+        return
+    for event in events:
+        event_callbacks.setdefault(event, []).append(callback)
+    model.subscribed_events.update(events)
 
 
 class Syncable(Renderable):
@@ -332,7 +381,7 @@ class Syncable(Renderable):
                 if not stylesheet:
                     continue
                 if isinstance(stylesheet, str) and (stylesheet.split('?')[0].endswith('.css') or stylesheet.startswith('http')):
-                    stylesheet = ImportedStyleSheet(url=stylesheet)
+                    stylesheet = imported_stylesheet(stylesheet)
                 wrapped.append(stylesheet)
             properties['stylesheets'] = wrapped
         return properties
@@ -578,7 +627,7 @@ class Syncable(Renderable):
             # Resolve the design and config of the session the model was
             # rendered in, not the session that triggered the change.
             doc = state._views[ref][2] if ref in state._views else model.document
-            with set_curdoc(doc):
+            with set_curdoc(doc), stylesheet_scope(doc):
                 properties = self._update_properties(*events, doc=doc)
             if not properties:
                 return
@@ -714,9 +763,8 @@ class Syncable(Renderable):
                 state._handle_exception(e)
 
     def _register_events(self, *event_names: str, model: Model, doc: Document, comm: Comm | None) -> None:
-        for event_name in event_names:
-            method = self._comm_event if comm else self._server_event
-            model.on_event(event_name, partial(method, doc))
+        method = self._comm_event if comm else self._server_event
+        _on_event(model, event_names, partial(method, doc))
 
     def _server_event(self, doc: Document, event: Event) -> None:
         if doc.session_context and (not state._unblocked(doc) or doc in state._change_callbacks):
@@ -826,7 +874,8 @@ class Reactive(Syncable, Viewable):
                 params[k] = v = params[k] + v
             elif k not in params or self.param[k].default is not v:
                 params[k] = v
-        properties = self._process_param_change(params)
+        with stylesheet_scope(doc):
+            properties = self._process_param_change(params)
         self._resolve_stylesheets(properties, doc)
         return properties
 
@@ -1872,7 +1921,7 @@ class ReactiveCustomBase(Reactive):
                     for ss in css
                 ]
             props['stylesheets'] = [
-                ImportedStyleSheet(url=ss) for ss in css if ss
+                imported_stylesheet(ss) for ss in css if ss
             ] + props['stylesheets']
         return props
 
@@ -1887,6 +1936,8 @@ class ReactiveCustomBase(Reactive):
         attributes): child components tag the DataModels they own
         themselves, so walking into their models, as a select over all
         references would, costs time proportional to the whole tree.
+        Of the remaining properties only those whose type can hold a
+        reference and which differ from their default can contain one.
         """
         ref_str = f"__ref:{ref}"
         models = [props]
@@ -1899,7 +1950,7 @@ class ReactiveCustomBase(Reactive):
             if ref_str not in m.tags:
                 m.tags.append(ref_str)
             if attrs is None:
-                values = m.properties_with_values(include_defaults=False).values()
+                values = _reference_values(m)
             else:
                 values = [getattr(m, attr) for attr in attrs]
                 attrs = None
@@ -2178,7 +2229,7 @@ class ReactiveHTML(ReactiveCustomBase, metaclass=ReactiveHTMLMetaclass):
                     for ss in css
                 ]
             props['stylesheets'] = [
-                ImportedStyleSheet(url=ss) for ss in css if ss
+                imported_stylesheet(ss) for ss in css if ss
             ] + props['stylesheets']
         return props
 

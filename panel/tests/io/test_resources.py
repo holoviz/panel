@@ -7,15 +7,17 @@ from urllib.parse import urljoin
 import bokeh
 import pytest
 
+from bokeh.document import Document
+from bokeh.models import ImportedStyleSheet
 from packaging.version import Version
 
 from panel.config import config, panel_extension as extension
 from panel.custom import JSComponent
 from panel.io.resources import (
     CDN_DIST, DIST_DIR, JS_RESOURCES, JS_VERSION, PANEL_DIR, Resources,
-    bundle_resources, component_resource_path, module_tags,
-    resolve_custom_path, resolve_resource_cdn, resolve_stylesheet,
-    set_resource_mode,
+    bundle_resources, component_resource_path, imported_stylesheet,
+    module_tags, resolve_custom_path, resolve_resource_cdn, resolve_stylesheet,
+    set_resource_mode, stylesheet_scope,
 )
 from panel.io.state import set_curdoc, state
 from panel.models.tabulator import TABULATOR_VERSION
@@ -504,3 +506,37 @@ def test_dedupe_template_resources():
         'css': {'roboto': 'https://fonts.googleapis.com/css?family=Roboto'},
         'raw_css': ['body {}'],
     }
+
+
+def test_imported_stylesheet_reuses_document_stylesheet(document):
+    url = 'https://example.com/custom.css'
+    assert imported_stylesheet(url) is not imported_stylesheet(url)
+
+    with stylesheet_scope(document):
+        stylesheet = imported_stylesheet(url)
+        assert stylesheet.url == url
+        assert imported_stylesheet(url) is not stylesheet
+        state._stylesheets[document][url] = stylesheet
+        assert imported_stylesheet(url) is stylesheet
+    assert imported_stylesheet(url) is not stylesheet
+
+    with stylesheet_scope(Document()):
+        assert imported_stylesheet(url) is not stylesheet
+
+
+def test_imported_stylesheet_skips_stale_document_stylesheet(document):
+    url = 'https://example.com/custom.css'
+    other = Document()
+    attached = ImportedStyleSheet(url=url)
+    other.add_root(attached)
+    state._stylesheets[document] = {url: attached}
+    with stylesheet_scope(document):
+        assert imported_stylesheet(url) is not attached
+
+    destroyed = ImportedStyleSheet(url=url)
+    destroyed.destroy()
+    state._stylesheets[document] = {url: destroyed}
+    with stylesheet_scope(document):
+        stylesheet = imported_stylesheet(url)
+    assert stylesheet is not destroyed
+    assert stylesheet.url == url
