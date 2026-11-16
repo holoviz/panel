@@ -27,7 +27,7 @@ from ipykernel.comm import Comm
 from ..util import edit_readonly
 from .application import build_single_handler_application
 from .resources import Resources
-from .server import server_html_page_for_session
+from .server import _skip_patch_connection, server_html_page_for_session
 from .state import set_curdoc, state
 
 if t.TYPE_CHECKING:
@@ -54,6 +54,7 @@ class JupyterServerSession(ServerSession):
 
     _tasks: set[asyncio.Task] = set()
 
+    @_skip_patch_connection
     def _document_patched(self, event: DocumentPatchedEvent) -> None:
         may_suppress = event.setter is self
         connections = [

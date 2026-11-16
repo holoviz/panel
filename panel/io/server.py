@@ -796,17 +796,58 @@ def _track_document_lock(func):
     wrapper._panel_tracks_lock = True  # type: ignore[attr-defined]
     return wrapper
 
+
+def _tag_held_patch_events(func):
+    """
+    Records the connection a patch was received on on the frontend
+    changes it leaves held on the Document. Bokeh only skips the
+    originating connection while the patch is being applied, so when a
+    hold dispatches the change later it would otherwise be echoed back
+    to the client and revert anything changed there since.
+    """
+    @wraps(func)
+    async def wrapper(self, message, connection):
+        try:
+            return await func(self, message, connection)
+        finally:
+            for event in list(self.document.callbacks._held_events):
+                if getattr(event, 'setter', None) is self and getattr(event, '_panel_patch_connection', None) is None:
+                    event._panel_patch_connection = connection
+    return wrapper
+
+
+def _skip_patch_connection(document_patched):
+    @wraps(document_patched)
+    def wrapper(self, event):
+        connection = getattr(event, '_panel_patch_connection', None)
+        if connection is None:
+            return document_patched(self, event)
+        current = self._current_patch_connection
+        self._current_patch_connection = connection
+        try:
+            return document_patched(self, event)
+        finally:
+            self._current_patch_connection = current
+    wrapper._panel_skips_patch_connection = True  # type: ignore[attr-defined]
+    return wrapper
+
 # Record which context holds the document lock so state._unblocked can
 # tell the holder apart from other threads while the lock is taken.
 if not getattr(ServerSession.with_document_locked.__wrapped__, '_panel_tracks_lock', False):  # type: ignore[attr-defined]
     ServerSession.with_document_locked = _needs_document_lock(  # type: ignore[method-assign]
         _track_document_lock(ServerSession.with_document_locked.__wrapped__)  # type: ignore[attr-defined]
     )
-    for _method in ('_handle_push', '_handle_patch'):
-        setattr(ServerSession, _method, _needs_document_lock_on_loop(
-            _track_document_lock(getattr(ServerSession, _method).__wrapped__)
-        ))
-    del _method
+    ServerSession._handle_push = _needs_document_lock_on_loop(  # type: ignore[method-assign]
+        _track_document_lock(ServerSession._handle_push.__wrapped__)  # type: ignore[attr-defined]
+    )
+    ServerSession._handle_patch = _needs_document_lock_on_loop(  # type: ignore[method-assign]
+        _track_document_lock(_tag_held_patch_events(ServerSession._handle_patch.__wrapped__))  # type: ignore[attr-defined]
+    )
+
+if not getattr(ServerSession._document_patched, '_panel_skips_patch_connection', False):
+    ServerSession._document_patched = _skip_patch_connection(  # type: ignore[method-assign]
+        ServerSession._document_patched
+    )
 
 
 # Patch Server to attach task factory to asyncio loop and handle Admin server context

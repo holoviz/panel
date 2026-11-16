@@ -613,6 +613,71 @@ def test_threaded_hold_does_not_boomerang_python_changes():
     assert received == []
 
 
+@pytest.mark.xdist_group(name="server")
+def test_frontend_patch_applied_while_held_is_not_echoed():
+    """
+    A client patch applied while a worker thread holds the Document is
+    collected by the hold and dispatched when it is released, after the
+    patch has finished. It must still reach Python, but must not be sent
+    back to the connection it came from, where it would overwrite
+    anything the user typed since, e.g. dropping characters from a text
+    input on a high latency connection.
+    """
+    slider = IntSlider()
+
+    serve_and_request(slider)
+    wait_until(lambda: bool(slider._documents))
+
+    doc, model = list(slider._documents.items())[0]
+    session = doc.session_context.session
+    asyncio_loop = doc.session_context.server_context.application_context.io_loop.asyncio_loop
+    state._connected[doc] = True
+
+    class Connection:
+        protocol = Protocol()
+
+        def __init__(self):
+            self.values = []
+
+        async def send_message(self, message):
+            if message.msgtype == 'PATCH-DOC':
+                self.values += [
+                    event['new'] for event in message.content['events']
+                    if event.get('attr') == 'value'
+                ]
+
+        def ok(self, message):
+            return None
+
+    origin, other = Connection(), Connection()
+    session.subscribe(origin)
+    session.subscribe(other)
+
+    patch = Protocol().create('PATCH-DOC', [ModelChangedEvent(doc, model, 'value', 5)])
+
+    def worker():
+        with set_curdoc(doc), hold(doc):
+            asyncio.run_coroutine_threadsafe(
+                session._handle_patch(patch, origin), asyncio_loop
+            ).result(timeout=5)
+            assert doc.callbacks.hold_value
+
+    try:
+        thread = threading.Thread(target=worker)
+        thread.start()
+        thread.join()
+
+        wait_until(lambda: slider.value == 5 and not doc.callbacks.hold_value)
+        # Leave time for an echo to be written
+        time.sleep(0.2)
+    finally:
+        session.unsubscribe(origin)
+        session.unsubscribe(other)
+
+    assert origin.values == []
+    assert other.values == [5]
+
+
 def test_suppress_property_callbacks_keeps_frontend_changes():
     doc = Document()
     model = IntSlider().get_root(doc)
