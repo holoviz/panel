@@ -253,6 +253,10 @@ def _dispatch_unconnected_events(doc: Document) -> None:
     else:
         retrigger_events(doc, events)
 
+def _is_destroyed(doc: Document) -> bool:
+    # bokeh has no destroyed flag, Document.destroy deletes the roots
+    return not hasattr(doc, '_roots')
+
 def _clear_document_state(doc: Document) -> None:
     """
     Drops the Document from the per-Document registries on ``state``.
@@ -532,6 +536,11 @@ def _destroy_document(self, session):
     del self._template
     self._session_context = None
 
+    # Stopping a callback fires watchers on its parameters, which must run
+    # before the callbacks and models below are torn down.
+    for cb in state._periodic.get(self, []):
+        cb.stop()
+
     self.callbacks.destroy()
     # The on_change callbacks Panel registers on the models are partials
     # holding the Document, so a model that outlives the session (e.g.
@@ -551,10 +560,6 @@ def _destroy_document(self, session):
         module.__dict__.clear()
         del module
     self.modules._modules = []
-
-    # Clear periodic callbacks
-    for cb in state._periodic.get(self, []):
-        cb.stop()
 
     # Cancel any pending write tasks for this document
     with _WRITE_LOCK:
@@ -1187,7 +1192,7 @@ def freeze_doc(doc: Document, model: HasProps, properties: dict[str, t.Any], for
     changed the model graph while frozen the added models are
     attached directly instead.
     """
-    if not hasattr(doc, '_roots'):
+    if _is_destroyed(doc):
         yield
         return
 

@@ -322,6 +322,16 @@ def test_esm_python_update_not_suppressed_by_stale_frontend_event(document, comm
     assert model.data.value == 'C'
 
 
+def test_esm_model_only_update_does_not_read_data_model(document, comm):
+    esm = ESMWithValue()
+    model = esm.get_root(document, comm)
+    model.destroy()
+
+    esm.width = 300
+
+    assert model.width == 300
+
+
 def test_esm_boomerang_suppresses_model_update(document, comm):
     esm = ESMWithValue(value='A')
 

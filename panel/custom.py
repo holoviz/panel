@@ -778,7 +778,11 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
                 # The children live on the data model, so that is what is
                 # frozen, with the resolved child models, for the document to
                 # attach only the added models instead of recomputing.
-                with freeze_doc(doc, model.data, data_msg, force=update_children):
+                if data_msg or update_children:
+                    frozen = freeze_doc(doc, model.data, data_msg, force=update_children)
+                else:
+                    frozen = freeze_doc(doc, model, model_msg)
+                with frozen:
                     if model_msg:
                         changing += self._set_on_model(model_msg, root, model)
                     if data_msg:
