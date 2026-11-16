@@ -37,6 +37,7 @@ test:
     - panel.io
   requires:
     - pip
+    - pandas
     - pytest-asyncio
     - pytest-rerunfailures
     - pytest-timeout
