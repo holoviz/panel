@@ -2995,6 +2995,34 @@ def test_tabulator_value_event_old_with_filter(dataframe):
     assert list(events[0].new['int']) == [5, 2, 3]
 
 
+@pytest.mark.parametrize('pagination', [None, 'local', 'remote'])
+@pytest.mark.parametrize('filter_kind', ['function', 'widget'])
+def test_tabulator_edit_with_selection_and_filter(document, comm, pagination, filter_kind):
+    # issue https://github.com/holoviz/panel/issues/7525
+    df = pd.DataFrame({'col': ['a', 'a', 'b', 'b', 'b'], 'num': [0, 1, 2, 3, 4]})
+    table = Tabulator(df, selectable=1, pagination=pagination, page_size=2)
+    if filter_kind == 'function':
+        table.add_filter(bind(lambda df, pattern: df[df.col == pattern], pattern=TextInput(value='b')))
+    else:
+        table.add_filter(TextInput(value='b'), 'col')
+    model = table.get_root(document, comm)
+    if pagination == 'remote':
+        table.page = 2
+    table.selection = [4]
+
+    events = []
+    table.param.watch(events.append, 'value')
+    data = {k: list(v) for k, v in model.source.data.items()}
+    data['num'][0] = 10
+    table._process_events({'data': data})
+
+    assert table.selection == [4]
+    assert len(table.value) == 5
+    assert table.value.num.max() == 10
+    assert len(events) == 1
+    assert len(events[0].old) == 5
+
+
 def test_tabulator_patch_event():
     df = makeMixedDataFrame()
     table = Tabulator(df)

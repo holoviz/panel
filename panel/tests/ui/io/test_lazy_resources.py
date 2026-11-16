@@ -501,6 +501,256 @@ def test_notebook_extension_resource_urls(page, state):
         assert stylesheet.endswith('/cdn-test/model.css')
 
 
+def test_library_loaded_by_host_under_rewritten_url(page):
+    """
+    A host that serves the extension files under its own routes (Shiny,
+    through jupyter_bokeh) has already loaded the library, so the registry
+    must not fetch it again from a server url nothing answers.
+    """
+    serve_component(page, lambda: pn.pane.Markdown('host'))
+    requests = []
+    page.on('request', lambda request: requests.append(request.url))
+    page.route('**/host-lib/**', lambda route: route.fulfill(
+        status=200, content_type='text/javascript',
+        body='window.hostTestLoaded = (window.hostTestLoaded ?? 0) + 1',
+    ))
+    loaded = page.evaluate("""async () => {
+        const path = 'bundled/echarts/host-test@1.0.0/dist/host-test.min.js'
+        await new Promise((resolve, reject) => {
+            const el = document.createElement('script')
+            el.src = '/host-lib/' + path
+            el.onload = resolve
+            el.onerror = reject
+            document.head.appendChild(el)
+        })
+        await window.__panel_resources__.ensure({
+            v: 1, libs: [{name: 'host-test', js: ['static/extensions/panel/' + path]}],
+        })
+        return window.hostTestLoaded
+    }""")
+    assert loaded == 1
+    assert not [url for url in requests if 'static/extensions/panel/bundled/echarts/host-test' in url]
+
+
+def test_unbundled_extension_file_not_matched_by_name(page):
+    """
+    Only bundled paths carry a package and version, so an extension's
+    own `index.js` must not be mistaken for a host file of the same name.
+    """
+    serve_component(page, lambda: pn.pane.Markdown('host'))
+    page.route('**/host-lib/index.js', lambda route: route.fulfill(
+        status=200, content_type='text/javascript', body='',
+    ))
+    page.route('**/static/extensions/panel-host-test/index.js', lambda route: route.fulfill(
+        status=200, content_type='text/javascript', body='window.hostExtLoaded = true',
+    ))
+    loaded = page.evaluate("""async () => {
+        await new Promise((resolve, reject) => {
+            const el = document.createElement('script')
+            el.src = '/host-lib/index.js'
+            el.onload = resolve
+            el.onerror = reject
+            document.head.appendChild(el)
+        })
+        await window.__panel_resources__.ensure({
+            v: 1, libs: [{name: 'host-ext-test', js: ['static/extensions/panel-host-test/index.js']}],
+        })
+        return window.hostExtLoaded
+    }""")
+    assert loaded
+
+
+def test_server_url_falls_back_to_spec_cdn(page):
+    """
+    A host that does not serve Panel's extension routes at all gets the
+    library from the CDN the spec maps the server path to.
+    """
+    serve_component(page, lambda: pn.pane.Markdown('host'))
+    requests = []
+    page.on('request', lambda request: requests.append(request.url))
+    page.route('**/static/extensions/panel-host-test/**', lambda route: route.fulfill(status=404))
+    page.route('**/cdn-host-test/**', lambda route: route.fulfill(
+        status=200, content_type='text/javascript', body='window.hostCdnLoaded = true',
+    ))
+    loaded = page.evaluate("""async () => {
+        await window.__panel_resources__.ensure({
+            v: 1,
+            libs: [{name: 'host-cdn-test', js: ['static/extensions/panel-host-test/lib.js']}],
+            cdn: [['static/extensions/panel-host-test/', location.origin + '/cdn-host-test/']],
+        })
+        return window.hostCdnLoaded
+    }""")
+    assert loaded
+    assert any(url.endswith('/cdn-host-test/lib.js') for url in requests)
+
+
+def test_exported_module_falls_back_to_spec_cdn(page):
+    serve_component(page, lambda: pn.pane.Markdown('host'))
+    page.route('**/static/extensions/panel-host-test/**', lambda route: route.fulfill(status=404))
+    page.route('**/cdn-host-test/**', lambda route: route.fulfill(
+        status=200, content_type='text/javascript', body='export default 42',
+    ))
+    exported = page.evaluate("""async () => {
+        await window.__panel_resources__.ensure({
+            v: 1,
+            libs: [{name: 'host-module-test', modules: [
+                {url: 'static/extensions/panel-host-test/lib.js', export: 'HostModuleTest'},
+            ]}],
+            cdn: [['static/extensions/panel-host-test/', location.origin + '/cdn-host-test/']],
+        })
+        return window.HostModuleTest
+    }""")
+    assert exported == 42
+
+
+
+@pytest.mark.parametrize('kind', ['js', 'module'])
+def test_server_and_cdn_failure_rejects_promptly(page, kind):
+    """
+    When neither the server url nor its CDN equivalent answers, ensure
+    rejects as soon as the retry failed, having asked each url once, and
+    the error names both.
+    """
+    serve_component(page, lambda: pn.pane.Markdown('host'))
+    requests = []
+    page.on('request', lambda request: requests.append(request.url))
+    page.route('**/static/extensions/panel-host-test/**', lambda route: route.fulfill(status=404))
+    page.route('**/cdn-host-test/**', lambda route: route.fulfill(status=404))
+    lib = (
+        "{name: 'host-fail-test', js: ['static/extensions/panel-host-test/lib.js']}"
+        if kind == 'js' else
+        "{name: 'host-fail-test', modules: [{url: 'static/extensions/panel-host-test/lib.js', export: 'HostFailTest'}]}"
+    )
+    result = page.evaluate(f"""async () => {{
+        const start = performance.now()
+        try {{
+            await window.__panel_resources__.ensure({{
+                v: 1, timeout: 20000, libs: [{lib}],
+                cdn: [['static/extensions/panel-host-test/', location.origin + '/cdn-host-test/']],
+            }})
+            return {{error: null, elapsed: performance.now() - start}}
+        }} catch (e) {{
+            return {{error: String(e), elapsed: performance.now() - start}}
+        }}
+    }}""")
+    assert result['error'] is not None
+    assert result['elapsed'] < 5000
+    assert 'static/extensions/panel-host-test/lib.js' in result['error']
+    assert '/cdn-host-test/lib.js' in result['error']
+    assert len([url for url in requests if 'static/extensions/panel-host-test/lib.js' in url]) == 1
+    assert len([url for url in requests if url.endswith('/cdn-host-test/lib.js')]) == 1
+
+
+
+def test_shim_loaded_by_host_under_rewritten_url(page):
+    """
+    A host may have put es-module-shims on the page under its own route
+    without it having run yet, and a second copy would break shim mode.
+    """
+    serve_component(page, lambda: pn.pane.Markdown('host'))
+    requests = []
+    page.on('request', lambda request: requests.append(request.url))
+    path = 'bundled/reactiveesm/es-module-shims@9.9.9/dist/es-module-shims.min.js'
+    page.evaluate(f"""async () => {{
+        // Stands in for a shim that is on the page but has not run yet.
+        const shim = window.importShim
+        window.importShim = undefined
+        const el = document.createElement('script')
+        el.type = 'text/plain'
+        el.src = '/host-lib/{path}'
+        document.head.appendChild(el)
+        try {{
+            await window.__panel_resources__.ensure_shim('static/extensions/panel/{path}')
+        }} finally {{
+            window.importShim = shim
+        }}
+    }}""")
+    assert not [url for url in requests if f'static/extensions/panel/{path}' in url]
+
+def test_host_library_of_other_version_not_matched(page):
+    """
+    The bundled tail carries the version, so a host page that loaded a
+    different version of the library does not satisfy the spec.
+    """
+    serve_component(page, lambda: pn.pane.Markdown('host'))
+    requests = []
+    page.on('request', lambda request: requests.append(request.url))
+    page.route('**/host-lib/**', lambda route: route.fulfill(
+        status=200, content_type='text/javascript', body='window.hostOldVersion = true',
+    ))
+    page.route('**/static/extensions/panel/bundled/echarts/host-version-test@2.0.9/**', lambda route: route.fulfill(
+        status=200, content_type='text/javascript', body='window.hostNewVersion = true',
+    ))
+    loaded = page.evaluate("""async () => {
+        await new Promise((resolve, reject) => {
+            const el = document.createElement('script')
+            el.src = '/host-lib/bundled/echarts/host-version-test@2.0.8/dist/lib.min.js'
+            el.onload = resolve
+            el.onerror = reject
+            document.head.appendChild(el)
+        })
+        await window.__panel_resources__.ensure({
+            v: 1, libs: [{name: 'host-version-test', js: [
+                'static/extensions/panel/bundled/echarts/host-version-test@2.0.9/dist/lib.min.js',
+            ]}],
+        })
+        return [window.hostOldVersion, window.hostNewVersion]
+    }""")
+    assert loaded == [True, True]
+    assert [url for url in requests if 'host-version-test@2.0.9' in url]
+
+
+def test_server_stylesheet_falls_back_to_spec_cdn(page):
+    serve_component(page, lambda: pn.pane.Markdown('host'))
+    requests = []
+    page.on('request', lambda request: requests.append(request.url))
+    page.route('**/static/extensions/panel-host-test/**', lambda route: route.fulfill(status=404))
+    page.route('**/cdn-host-test/**', lambda route: route.fulfill(
+        status=200, content_type='text/css', body=':root { --host-css-test: loaded; }',
+    ))
+    value = page.evaluate("""async () => {
+        await window.__panel_resources__.ensure({
+            v: 1,
+            css: ['static/extensions/panel-host-test/style.css'],
+            cdn: [['static/extensions/panel-host-test/', location.origin + '/cdn-host-test/']],
+        })
+        return getComputedStyle(document.documentElement).getPropertyValue('--host-css-test').trim()
+    }""")
+    assert value == 'loaded'
+    assert len([url for url in requests if url.endswith('/cdn-host-test/style.css')]) == 1
+
+
+def test_component_renders_when_host_does_not_serve_extension_routes(page):
+    """
+    End to end through the Python side: the spec a real component gets in
+    `server` mode has to carry the CDN map, or nothing loads on a host
+    that does not serve Panel's bundled extension files.
+    """
+    from panel.io.resources import CDN_DIST, DIST_DIR
+
+    def serve_dist(route):
+        path = DIST_DIR / route.request.url[len(CDN_DIST):].split('?')[0]
+        if path.is_file():
+            content_type = 'text/css' if path.suffix == '.css' else 'text/javascript'
+            route.fulfill(status=200, content_type=content_type, body=path.read_bytes())
+        else:
+            route.fulfill(status=404)
+
+    requests = []
+    page.on('request', lambda request: requests.append(request.url))
+    page.route('**/static/extensions/panel/bundled/**', lambda route: route.fulfill(status=404))
+    page.route(f'{CDN_DIST}**', serve_dist)
+
+    def app():
+        extension()
+        return _echarts()
+
+    msgs, _ = serve_component(page, app)
+
+    expect(page.locator('canvas').first).to_be_visible(timeout=20000)
+    assert [url for url in requests if url.startswith(f'{CDN_DIST}bundled/echarts/')]
+
+
 def test_library_not_loaded_until_module_exports_assigned(page):
     def app():
         extension()
