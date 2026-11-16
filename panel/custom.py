@@ -617,6 +617,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             else:
                 bundle_hash = _bundle_hash(str(bundle_path))
                 css_bundle = None
+        data_props = drop_default_properties(self._data_model, data_props)
         data_props['esm_constants'] = self._constants
         if cls._data_model__initialized:
             defs = []

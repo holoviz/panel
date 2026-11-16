@@ -517,6 +517,112 @@ def test_reactive_esm_get_model_matches_unfiltered_model(document, comm):
             assert value == full._property_values[name]
 
 
+class ESMWithDataDefaults(ReactiveESM):
+
+    count = param.Integer(default=1)
+
+    direction = param.Selector(default='ltr', objects=['ltr', 'rtl'])
+
+    disabled = param.Boolean(default=False)
+
+    label = param.String(default=None, allow_None=True)
+
+    items = param.List(default=[])
+
+    number = param.Number(default=0.5)
+
+    options = param.Dict(default={})
+
+    _esm = 'export function render() {}'
+
+
+class ESMWithDataDefaultsSubclass(ESMWithDataDefaults):
+
+    count = param.Integer(default=5)
+
+
+def _spy_data_model_kwargs(monkeypatch, cls):
+    kwargs = {}
+    init = cls._data_model.__init__
+
+    def spy(self, *args, **kw):
+        kwargs.update(kw)
+        init(self, *args, **kw)
+
+    monkeypatch.setattr(cls._data_model, '__init__', spy)
+    return kwargs
+
+
+def test_reactive_esm_data_model_drops_default_properties(document, comm, monkeypatch):
+    from bokeh.core.serialization import Serializer
+
+    kwargs = _spy_data_model_kwargs(monkeypatch, ESMWithDataDefaults)
+    esm = ESMWithDataDefaults(count=2, direction='ltr', disabled=False, number=0.5)
+    model = esm.get_root(document, comm)
+
+    assert set(kwargs) == {'count', 'esm_constants', 'name'}
+    assert model.data.count == 2
+
+    # The frontend DataModel is generated from the serialized definition,
+    # so omitted properties must resolve to the same defaults there.
+    serializer = Serializer()
+    modeldef = serializer.encode(ESMWithDataDefaults._data_model)
+    defaults = {prop['name']: prop.get('default') for prop in modeldef['properties']}
+    for name in ('direction', 'disabled', 'label', 'items', 'number', 'options'):
+        assert defaults[name] == serializer.encode(getattr(esm, name))
+        assert getattr(model.data, name) == getattr(esm, name)
+
+
+def test_reactive_esm_data_model_respects_subclass_defaults(document, comm, monkeypatch):
+    kwargs = _spy_data_model_kwargs(monkeypatch, ESMWithDataDefaultsSubclass)
+    esm = ESMWithDataDefaultsSubclass(count=1)
+    model = esm.get_root(document, comm)
+
+    assert kwargs['count'] == 1
+    assert model.data.count == 1
+
+    kwargs.clear()
+    model = ESMWithDataDefaultsSubclass().get_root(Document(), comm)
+
+    assert 'count' not in kwargs
+    assert model.data.count == 5
+
+
+def test_reactive_esm_data_model_matches_unfiltered_model(document, comm, monkeypatch):
+    from bokeh.model import DataModel
+
+    import panel.custom
+
+    esm = ESMWithDataDefaults(count=2, label='foo', items=[1], options={})
+    data = esm.get_root(document, comm).data
+
+    drop = panel.custom.drop_default_properties
+    monkeypatch.setattr(
+        panel.custom, 'drop_default_properties',
+        lambda model_type, props: props if issubclass(model_type, DataModel) else drop(model_type, props)
+    )
+    kwargs = _spy_data_model_kwargs(monkeypatch, ESMWithDataDefaults)
+    full = esm.get_root(Document(), comm).data
+
+    assert {'direction', 'disabled', 'number'} <= set(kwargs)
+    assert data.properties_with_values(include_defaults=False).keys() == full.properties_with_values(include_defaults=False).keys()
+    values, full_values = data.properties_with_values(), full.properties_with_values()
+    assert values.pop('tags') != full_values.pop('tags')
+    assert values == full_values
+
+
+def test_reactive_esm_data_model_syncs_reset_to_default(document, comm):
+    esm = ESMWithDataDefaults(count=2, disabled=True, label='foo')
+    model = esm.get_root(document, comm)
+
+    esm.param.update(count=1, disabled=False, label=None)
+
+    assert model.data.count == 1
+    assert model.data.disabled is False
+    assert model.data.label is None
+    assert {'count', 'disabled', 'label'} <= set(model.data._property_values)
+
+
 def test_reactive_esm_children_append_attaches_without_recompute(document, comm, monkeypatch):
     from bokeh.document.models import DocumentModelManager
 
