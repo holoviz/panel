@@ -769,6 +769,53 @@ function unique_models(models: any[]): any[] {
   })
 }
 
+function model_value(model: any, attr: string): any {
+  const prop = model.property(attr)
+  return prop.is_unset ? undefined : prop.get_value()
+}
+
+/**
+ * Binds a model property to React through `useSyncExternalStore`, so the
+ * model is the only source of truth: the setter writes to the model and every
+ * render reads the model's current value, including changes that landed
+ * before the subscription was registered.
+ */
+function use_model_state(React: any, react_proxy: any, prop: string, model: any, attr: string): [any, (update: any) => void] {
+  const subscribe = React.useCallback((notify: () => void) => {
+    react_proxy.on(prop, notify, true)
+    return () => react_proxy.off(prop, notify)
+  }, [model, prop])
+  const value = React.useSyncExternalStore(subscribe, () => model_value(model, attr))
+  const setValue = React.useCallback((update: any) => {
+    const current = model_value(model, attr)
+    const next = typeof update === "function" ? update(current) : update
+    if (!Object.is(next, current)) {
+      model.setv({[attr]: next})
+    }
+  }, [model, attr])
+  return [value, setValue]
+}
+
+/**
+ * A param.Event is a trigger, not a value, so it is exposed as a local
+ * counter that increments each time the event fires and is never written
+ * back to the model.
+ */
+function use_event_state(React: any, react_proxy: any, prop: string, model: any, attr: string): [any, (update: any) => void] {
+  const [count, setCount] = React.useState(() => model_value(model, attr))
+  React.useEffect(() => {
+    const cb = () => {
+      if (model_value(model, attr)) {
+        setCount((v: number) => v + 1)
+        model.setv({[attr]: false})
+      }
+    }
+    react_proxy.on(prop, cb, true)
+    return () => react_proxy.off(prop, cb)
+  }, [model, prop])
+  return [count, setCount]
+}
+
 function react_model_proxy(view: ReactComponentView, libs: ReactLibs, Child: any): any {
   const {React} = libs
   const react_proxy: any = new Proxy(view, {
@@ -794,30 +841,10 @@ function react_model_proxy(view: ReactComponentView, libs: ReactLibs, Child: any
           if (model == null || model.attributes == null || !(attr in model.attributes)) {
             throw ReferenceError(`Could not resolve ${prop} on ${target.model.class_name}`)
           }
-          const [value, setValue] = React.useState(model.attributes[attr])
-
-          React.useEffect(() => {
-            const cb = () => {
-              if (target.model.events.includes(attr)) {
-                model.attributes[attr] && (setValue((v: number) => v+1) || model.setv({[attr]: false}))
-              } else {
-                setValue(model.attributes[attr])
-              }
-            }
-            react_proxy.on(prop, cb, true)
-            return () => react_proxy.off(prop, cb)
-          }, [])
-
-          const initialized = React.useRef(false)
-          React.useEffect(() => {
-            if (!target.model.events.includes(attr) && initialized.current) {
-              model.setv({[attr]: value})
-            } else {
-              initialized.current = true
-            }
-          }, [value])
-
-          return [value, setValue]
+          if (target.model.events.includes(attr)) {
+            return use_event_state(React, react_proxy, prop, model, attr)
+          }
+          return use_model_state(React, react_proxy, prop, model, attr)
         }
       } else if (name === "get_child") {
         return (child: string) => {
