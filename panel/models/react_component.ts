@@ -794,30 +794,36 @@ function react_model_proxy(view: ReactComponentView, libs: ReactLibs, Child: any
           if (model == null || model.attributes == null || !(attr in model.attributes)) {
             throw ReferenceError(`Could not resolve ${prop} on ${target.model.class_name}`)
           }
-          const [value, setValue] = React.useState(model.attributes[attr])
+          // Values that came from the model are not written back: the write-back
+          // runs in a deferred effect and would revert a newer model value.
+          const [state, setState] = React.useState(() => ({value: model.attributes[attr], from_model: true}))
+
+          const setValue = React.useCallback((update: any) => {
+            setState((prev: any) => {
+              const value = typeof update === "function" ? update(prev.value) : update
+              return Object.is(value, prev.value) ? prev : {value, from_model: false}
+            })
+          }, [])
 
           React.useEffect(() => {
             const cb = () => {
               if (target.model.events.includes(attr)) {
-                model.attributes[attr] && (setValue((v: number) => v+1) || model.setv({[attr]: false}))
+                model.attributes[attr] && (setState((prev: any) => ({value: prev.value+1, from_model: true})) || model.setv({[attr]: false}))
               } else {
-                setValue(model.attributes[attr])
+                setState({value: model.attributes[attr], from_model: true})
               }
             }
             react_proxy.on(prop, cb, true)
             return () => react_proxy.off(prop, cb)
           }, [])
 
-          const initialized = React.useRef(false)
           React.useEffect(() => {
-            if (!target.model.events.includes(attr) && initialized.current) {
-              model.setv({[attr]: value})
-            } else {
-              initialized.current = true
+            if (!state.from_model && !target.model.events.includes(attr)) {
+              model.setv({[attr]: state.value})
             }
-          }, [value])
+          }, [state])
 
-          return [value, setValue]
+          return [state.value, setValue]
         }
       } else if (name === "get_child") {
         return (child: string) => {
