@@ -521,7 +521,7 @@ class ESMWithDataDefaults(ReactiveESM):
 
     count = param.Integer(default=1)
 
-    direction = param.Selector(default='ltr', objects=['ltr', 'rtl'])
+    direction: param.Selector[str] = param.Selector(default='ltr', objects=['ltr', 'rtl'])
 
     disabled = param.Boolean(default=False)
 
