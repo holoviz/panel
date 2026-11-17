@@ -903,6 +903,17 @@ def test_editable_slider_fixed_novalue(editableslider, fixed_start, fixed_end):
     assert slider.value == fixed_end - 1
 
 
+@pytest.mark.parametrize(
+    "editableslider", [EditableFloatSlider, EditableIntSlider, EditableRangeSlider]
+)
+@pytest.mark.parametrize("bound", ["fixed_start", "fixed_end"])
+def test_editable_slider_fixed_bound_none(editableslider, bound):
+    slider = editableslider(**{bound: None})
+    default = editableslider()
+    assert getattr(slider, bound) is None
+    assert (slider.start, slider.end, slider.value) == (default.start, default.end, default.value)
+
+
 def test_editable_rangeslider_fixed_novalue():
     fixed_start, fixed_end, step = 5, 10, 0.01
     slider = EditableRangeSlider(

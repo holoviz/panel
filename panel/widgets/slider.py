@@ -944,7 +944,7 @@ class _EditableContinuousSlider(CompositeWidget):
                 start = params["fixed_start"]
             elif "end" in params:
                 start = params.get("end") - params.get("step", 1)
-            elif "fixed_end" in params:
+            elif params.get("fixed_end") is not None:
                 start = params.get("fixed_end") - params.get("step", 1)
 
         if "end" not in params:
@@ -952,7 +952,7 @@ class _EditableContinuousSlider(CompositeWidget):
                 end = params["fixed_end"]
             elif "start" in params:
                 end = params["start"] + params.get("step", 1)
-            elif "fixed_start" in params:
+            elif params.get("fixed_start") is not None:
                 end = params["fixed_start"] + params.get("step", 1)
 
         if start is not None:
@@ -1225,7 +1225,7 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
                 start = params["fixed_start"]
             elif "end" in params:
                 start = params.get("end") - params.get("step", 1)
-            elif "fixed_end" in params:
+            elif params.get("fixed_end") is not None:
                 start = params.get("fixed_end") - params.get("step", 1)
 
         if "end" not in params:
@@ -1233,7 +1233,7 @@ class EditableRangeSlider(CompositeWidget, _SliderBase):
                 end = params["fixed_end"]
             elif "start" in params:
                 end = params["start"] + params.get("step", 1)
-            elif "fixed_start" in params:
+            elif params.get("fixed_start") is not None:
                 end = params["fixed_start"] + params.get("step", 1)
 
         if start is not None:
