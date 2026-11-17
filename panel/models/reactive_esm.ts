@@ -15,6 +15,7 @@ import {LayoutDOMView} from "@bokehjs/models/layouts/layout_dom"
 import {isArray} from "@bokehjs/core/util/types"
 import {UIElementView} from "@bokehjs/models/ui/ui_element"
 import type {UIElement} from "@bokehjs/models/ui/ui_element"
+import {Model} from "@bokehjs/model"
 
 import {serializeEvent} from "./event-to-object"
 import {DOMEvent} from "./html"
@@ -448,7 +449,7 @@ export class ReactiveESMView extends HTMLBoxView {
 
   render_error(error: SyntaxError): void {
     const error_div = div({class: "error"})
-    error_div.innerHTML = formatError(error, this.model.esm)
+    error_div.innerHTML = formatError(error, this.model.esm_source)
     this.container.appendChild(error_div)
   }
 
@@ -817,6 +818,22 @@ export class ReactiveESMView extends HTMLBoxView {
 
 export const RenderPolicy = Enum("manual", "children")
 
+export namespace ESMBundle {
+  export type Props = Model.Props & {source: p.Property<string>}
+}
+
+export interface ESMBundle extends p.AttrsOf<ESMBundle.Props> {}
+
+export class ESMBundle extends Model {
+  declare properties: ESMBundle.Props
+
+  static override __module__ = "panel.models.esm"
+
+  static {
+    this.define<ESMBundle.Props>(({Str}) => ({source: [Str, ""]}))
+  }
+}
+
 export namespace ReactiveESM {
   export type Attrs = p.AttrsOf<Props>
 
@@ -828,7 +845,7 @@ export namespace ReactiveESM {
     class_name: p.Property<string>
     data: p.Property<any>
     dev: p.Property<boolean>
-    esm: p.Property<string>
+    esm: p.Property<string | ESMBundle>
     events: p.Property<string[]>
     importmap: p.Property<any>
     render_policy: p.Property<typeof RenderPolicy["__type__"]>
@@ -1071,14 +1088,18 @@ export class ReactiveESM extends HTMLBox {
     return module
   }
 
+  get esm_source(): string {
+    return typeof this.esm === "string" ? this.esm : this.esm.source
+  }
+
   compile(): string | null {
     if (this.bundle != null) {
-      return this.esm
+      return this.esm_source
     }
     let compiled
     try {
       compiled = transform(
-        this.esm, {
+        this.esm_source, {
           transforms: this.sucrase_transforms,
           filePath: "render.tsx",
         },
@@ -1100,6 +1121,10 @@ export class ReactiveESM extends HTMLBox {
   }
 
   get _module_cache_key(): string {
+    if (this.esm instanceof ESMBundle) {
+      // A rebuilt bundle can have the same path hash and different source.
+      return `${this.bundle}-${source_id(this.esm.source)}`
+    }
     if (this.bundle === "url") {
       return this.esm
     }
@@ -1139,7 +1164,7 @@ export class ReactiveESM extends HTMLBox {
         MODULE_CACHE.set(cache_key, new Promise((res) => { resolve = res }))
       }
       if (this.bundle === "url") {
-        esm_module = declared.then(() => resources.import_module(this.esm, this.external_resources?.shim))
+        esm_module = declared.then(() => resources.import_module(this.esm_source, this.external_resources?.shim))
       } else {
         esm_module = declared.then(() => this._import_source(compiled))
       }
@@ -1181,7 +1206,7 @@ export class ReactiveESM extends HTMLBox {
 
   static {
     this.prototype.default_view = ReactiveESMView
-    this.define<ReactiveESM.Props>(({Any, Array, Bool, Nullable, Str}) => ({
+    this.define<ReactiveESM.Props>(({Any, Array, Bool, Nullable, Or, Ref, Str}) => ({
       _defs:       [ Array(Any),          [] ],
       css_bundle:  [ Nullable(Str),     null ],
       bundle:      [ Nullable(Str),     null ],
@@ -1189,7 +1214,7 @@ export class ReactiveESM extends HTMLBox {
       class_name:  [ Str,                 "" ],
       data:        [ Any                     ],
       dev:         [ Bool,             false ],
-      esm:         [ Str,                 "" ],
+      esm:         [ Or(Str, Ref(ESMBundle)), "" ],
       events:      [ Array(Str),          [] ],
       importmap:   [ Any,                 {} ],
       render_policy: [ RenderPolicy, "children"],
