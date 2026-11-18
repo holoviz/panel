@@ -1542,23 +1542,24 @@ def _undefined_references(messages, known):
     Returns the ids of models a sequence of PATCH-DOC messages refers to
     before any message, or the initial Document, defined them.
     """
-    def definitions(obj):
+    def walk(obj, defined, referenced):
         if isinstance(obj, dict):
             if obj.get('type') == 'object' and 'id' in obj:
-                yield obj['id']
+                defined.append(obj['id'])
+            elif set(obj) == {'id'}:
+                referenced.append(obj['id'])
             for value in obj.values():
-                yield from definitions(value)
-        elif isinstance(obj, list):
+                walk(value, defined, referenced)
+        elif isinstance(obj, (list, tuple)):
             for value in obj:
-                yield from definitions(value)
+                walk(value, defined, referenced)
 
     known, undefined = set(known), []
     for msg in messages:
-        known |= set(definitions(msg.content))
-        for event in msg.content['events']:
-            ref = event.get('model')
-            if ref is not None and ref['id'] not in known:
-                undefined.append(ref['id'])
+        defined, referenced = [], []
+        walk(msg.content, defined, referenced)
+        known |= set(defined)
+        undefined += [ref for ref in referenced if ref not in known]
     return undefined
 
 
@@ -1882,3 +1883,93 @@ def test_unlocked_change_to_property_the_lock_holder_changed_is_written_after(mo
     texts = [event['new'] for event in _text_changes(messages)]
     assert ['unlocked' in text for text in texts] == [False, True]
     assert md.object == 'unlocked'
+
+
+@pytest.mark.xdist_group(name="server")
+def test_unlocked_change_referring_to_model_in_unwritten_message_is_written_after(monkeypatch):
+    """
+    An unlocked change whose new value refers to a model that only a
+    serialized but unwritten message of the lock holder defines must not
+    be written ahead of that message.
+    """
+    col = pn.Column(pn.pane.Markdown('a'))
+    doc, messages, known = _serve_with_message_log(col, monkeypatch)
+    session = doc.session_context.session
+    asyncio_loop = doc.session_context.server_context.application_context.io_loop.asyncio_loop
+    conn = next(iter(session._subscribed_connections))
+    send_message = conn.send_message
+    changed = []
+
+    def change():
+        with set_curdoc(doc), unlocked():
+            doc.roots[0].children[0].tags = [doc.roots[0].children[-1]]
+
+    async def send_after_changing(message):
+        if not changed:
+            changed.append(True)
+            contextvars.Context().run(change)
+        await send_message(message)
+
+    conn.send_message = send_after_changing
+
+    def holder():
+        with set_curdoc(doc):
+            doc.roots[0].css_classes = ['pending']
+            col.append(pn.pane.Markdown('b'))
+
+    async def trigger():
+        await session.with_document_locked(holder)
+
+    asyncio.run_coroutine_threadsafe(trigger(), asyncio_loop).result(timeout=5)
+
+    wait_until(lambda: any(
+        event.get('attr') == 'tags' for msg in messages for event in msg.content['events']
+    ))
+    assert _undefined_references(messages, known) == []
+
+
+@pytest.mark.xdist_group(name="server")
+def test_unlocked_message_to_model_attached_by_lock_holder_is_written_after(monkeypatch):
+    """
+    A message sent from an unlocked context to a model the lock holder
+    has attached but not written yet must follow the holder's changes.
+    """
+    from panel.models.layout import ScrollToEvent
+
+    col = pn.Column(pn.pane.Markdown('a'))
+    doc, messages, known = _serve_with_message_log(col, monkeypatch)
+    session = doc.session_context.session
+    asyncio_loop = doc.session_context.server_context.application_context.io_loop.asyncio_loop
+    new = pn.Column('b')
+    paused, resume = threading.Event(), threading.Event()
+
+    def pause():
+        paused.set()
+        resume.wait(timeout=5)
+
+    def change():
+        with set_curdoc(doc), unlocked():
+            doc.callbacks.send_event(ScrollToEvent(model=doc.roots[0].children[-1], index=0))
+
+    def holder():
+        with set_curdoc(doc):
+            # Block the event loop so the message is sent before the loop
+            # writes the attached model.
+            asyncio_loop.call_soon_threadsafe(pause)
+            assert paused.wait(timeout=5)
+            col.append(new)
+            asyncio_loop.call_soon_threadsafe(change, context=contextvars.Context())
+            resume.set()
+
+    async def trigger():
+        await session.with_document_locked(holder)
+
+    try:
+        asyncio.run_coroutine_threadsafe(trigger(), asyncio_loop).result(timeout=5)
+    finally:
+        resume.set()
+
+    wait_until(lambda: any(
+        event['kind'] == 'MessageSent' for msg in messages for event in msg.content['events']
+    ))
+    assert _undefined_references(messages, known) == []

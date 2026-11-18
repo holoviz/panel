@@ -80,7 +80,7 @@ _write_tasks: WeakKeyDictionary[Document, list[asyncio.Task]] = WeakKeyDictionar
 
 extra_socket_handlers: dict[type, Callable[..., Sequence[Future]]] = {}
 
-@dataclasses.dataclass
+@dataclasses.dataclass(eq=False)
 class _Unwritten:
     """
     The models a message serialized but not yet written defines (or may
@@ -405,6 +405,16 @@ def _run_with_document_lock(session: ServerSession, func: Callable[..., t.Any], 
     return _run_owning_document_lock(session, func, *args, **kwargs)
 
 
+def _unsent_models(doc: Document) -> set[Model]:
+    # Copied in one step, since the lock holder may add to it meanwhile
+    return set(getattr(doc.models, '_new_models', ()))
+
+def _event_target(event: DocumentChangedEvent) -> Model | None:
+    model = getattr(event, 'model', None)
+    if model is None and isinstance(event, MessageSentEvent):
+        model = getattr(event.msg_data, 'model', None)
+    return model if isinstance(model, Model) else None
+
 def _change_key(event: DocumentChangedEvent) -> tuple[str, str] | None:
     model, attr = getattr(event, 'model', None), getattr(event, 'attr', None)
     if model is None or attr is None:
@@ -435,7 +445,7 @@ async def _send_pending_patches_tracked(send_pending_patches, session: ServerSes
     when it starts may be defined by them.
     """
     doc = session.document
-    unsent = [model.id for model in getattr(doc.models, '_new_models', ())]
+    unsent = [model.id for model in _unsent_models(doc)]
     record = _track_unwritten(doc, unsent, (patch.event for patch in pending))
     try:
         await send_pending_patches(session, pending)
@@ -448,7 +458,7 @@ def _refers_to(doc: Document, value: t.Any, ids: set[str]) -> bool:
     client has not been sent are serialized in full, so their references
     are followed, while any other model is only referenced.
     """
-    unsent = getattr(doc.models, '_new_models', set())
+    unsent = _unsent_models(doc)
     seen: set[str] = set()
     stack = _immediate_references(value)
     while stack:
@@ -478,18 +488,24 @@ def _split_unknown_to_client(
     pending = session._pending_writes or []
     if not (records or deferred or pending or _is_locked_elsewhere(session)):
         return events, []
-    unsent = {model.id for model in getattr(doc.models, '_new_models', ())}
+    unsent = {model.id for model in _unsent_models(doc)}
     unwritten = set().union(*(record.models for record in records))
     changes = set().union(*(record.changes for record in records))
     changes |= {key for event in deferred if (key := _change_key(event))}
     changes |= {key for patch in list(pending) if (key := _change_key(patch.event))}
     immediate, held = [], []
     for event in events:
-        model = getattr(event, 'model', None)
+        model = _event_target(event)
+        if isinstance(event, ModelChangedEvent):
+            value = event.new
+        elif isinstance(event, MessageSentEvent):
+            value = event.msg_data
+        else:
+            value = None
         if (
             (model is not None and (model.id in unsent or model.id in unwritten)) or
             _change_key(event) in changes or
-            (unwritten and isinstance(event, ModelChangedEvent) and _refers_to(doc, event.new, unwritten))
+            (unwritten and value is not None and _refers_to(doc, value, unwritten))
         ):
             held.append(event)
         else:
@@ -509,6 +525,7 @@ def _defer_until_unlocked(doc: Document, events: list[DocumentChangedEvent]) -> 
     Holds back events until the context holding the document lock has
     released it, and with it written everything it changed.
     """
+    events = _suppress_property_callbacks(events)
     with _WRITE_LOCK:
         if (deferred := _DEFERRED_EVENTS.get(doc)) is not None:
             deferred.extend(events)
@@ -1071,13 +1088,20 @@ def _write_from_worker_thread(
     connections = list(connections)
     if asyncio_loop is None or asyncio_loop.is_closed() or not connections:
         return False
-    unsent = set(getattr(doc.models, '_new_models', ()))
+    unsent = _unsent_models(doc)
+    # Tracked before serializing, which marks the models it defines as sent
+    record = _track_unwritten(doc, (model.id for model in unsent), patches)
     message = connections[0].protocol.create('PATCH-DOC', patches)
-    defined = unsent - set(getattr(doc.models, '_new_models', ()))
-    record = _track_unwritten(doc, (model.id for model in defined), patches)
-    asyncio_loop.call_soon_threadsafe(
-        _dispatch_write_task, doc, _write_message, doc, connections, message, record
-    )
+    defined = {model.id for model in unsent - _unsent_models(doc)}
+    with _WRITE_LOCK:
+        record.models = defined
+    try:
+        asyncio_loop.call_soon_threadsafe(
+            _dispatch_write_task, doc, _write_message, doc, connections, message, record
+        )
+    except RuntimeError:
+        _untrack_unwritten(doc, record)
+        raise
     return True
 
 def _flush_events(curdoc: Document, session: ServerSession) -> None:
@@ -1114,6 +1138,14 @@ def _flush_events(curdoc: Document, session: ServerSession) -> None:
         if held:
             if session._pending_writes is not None:
                 curdoc.callbacks._held_events += _suppress_property_callbacks(held)
+                try:
+                    curdoc.unhold()
+                except RuntimeError:
+                    # The holder finished writing in the meantime
+                    curdoc.callbacks._hold = None
+                    _defer_until_unlocked(curdoc, held)
+                if events:
+                    _hold_doc(curdoc, 'collect')
             else:
                 _defer_until_unlocked(curdoc, held)
         if not events:
