@@ -14,6 +14,7 @@ from ..reactive import Syncable
 from ..util import edit_readonly, isIn as is_in, parse_query
 from .cache import is_equal
 from .document import create_doc_if_none_exists
+from .proxy import normalize_root_path
 from .resources import LOCAL_DIST
 from .state import state
 
@@ -125,7 +126,9 @@ class Location(Syncable):
         super().__init__(**params)
         self._synced = []
         self._syncing = False
+        self._browser_pathname = False
         self.param.watch(self._update_synced, ['search'])
+        self.param.watch(self._sync_pathname, ['pathname'])
 
     def _get_model(
         self, doc: Document, root: Model | None = None,
@@ -137,8 +140,15 @@ class Location(Syncable):
         self._link_props(model, self._linked_properties, doc, root, comm)
         return model
 
-    @param.depends("pathname", watch=True)
-    def _sync_pathname(self):
+    @staticmethod
+    def _pathname_depth(pathname: str) -> int:
+        """
+        The number of directories a page relative url has to climb from
+        the pathname to reach the root it is served under.
+        """
+        return max(pathname.count('/') - 1, 0)
+
+    def _sync_pathname(self, event: param.parameterized.Event):
         """
         When in a server context and the pathname is overridden dynamically
         we need to keep the state.rel_path and the Document dist_url template
@@ -149,15 +159,31 @@ class Location(Syncable):
         session_context = doc.session_context if doc else None
         if not (session_context and session_context.server_context):
             return
+        # The initial pathname, whether taken from the request or reported
+        # by the frontend once it has rendered (e.g. including the prefix
+        # of a proxy the server never sees), is the page rel_path was
+        # computed for, not a navigation.
+        if 'pathname' in self._param__private.syncing:
+            self._browser_pathname = True
+            return
+        elif not event.old:
+            return
+        old = event.old
+        if not self._browser_pathname:
+            # Until the frontend reports it, the pathname is the one the
+            # server received, which lacks the root path of a proxy.
+            root = normalize_root_path(state._base_url)
+            if root and old != root and not old.startswith(f'{root}/'):
+                old = f'{root}{old}'
         # Only a page relative path, as set up for a server session, can
         # follow the pathname, not e.g. the absolute url of an autoload script.
-        if any(part != '..' for part in (state.rel_path or '').split('/') if part):
+        rel_parts = [part for part in (state.rel_path or '').split('/') if part]
+        if any(part != '..' for part in rel_parts):
             return
-        base_url = state.base_url or '/'
-        pathname = self.pathname
-        if pathname.startswith(base_url):
-            pathname = pathname[len(base_url):]
-        state.rel_path = rel_path = '/'.join(['..'] * pathname.strip('/').count('/'))
+        # The depth is taken relative to the previous pathname so that it
+        # does not depend on the prefix the app is served under.
+        depth = len(rel_parts) + self._pathname_depth(event.new) - self._pathname_depth(old)
+        state.rel_path = rel_path = '/'.join(['..'] * max(depth, 0))
         if 'static/extensions/panel/' in doc._template_variables.get('dist_url', ''):
             doc._template_variables['dist_url'] = f"{rel_path}/{LOCAL_DIST}" if rel_path else LOCAL_DIST
         state._stylesheets.pop(doc, None)

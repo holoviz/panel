@@ -341,8 +341,7 @@ def get_server(
     server = uvicorn.Server(uv_config)
 
     # uvicorn.Server does not expose the address, port or prefix it is
-    # serving on, so record them for the benefit of state._servers consumers
-    # such as Location._sync_pathname.
+    # serving on, so record them for the benefit of state._servers consumers.
     server.address = address  # type: ignore[attr-defined]
     server.port = port  # type: ignore[attr-defined]
     server.prefix = application.core.prefix  # type: ignore[attr-defined]

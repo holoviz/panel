@@ -13,8 +13,8 @@ except ImportError:
 import panel as pn
 
 from panel.tests.util import (
-    _STYLESHEETS_SETTLED, linux_only, run_panel_serve, serve_component,
-    wait_for_port, wait_until, write_file,
+    _STYLESHEETS_SETTLED, linux_only, proxied_oauth_provider, run_panel_serve,
+    serve_component, wait_for_port, wait_until, write_file,
 )
 from panel.util import parse_query
 from panel.widgets import FloatSlider, RangeSlider, TextInput
@@ -139,36 +139,79 @@ def test_set_nested_pathname_then_load_markdown_no_console_errors(page):
     ] == []
 
 
-@linux_only
-def test_set_nested_pathname_with_panel_serve_resolves_resources_from_root(py_file, port, page):
-    app = """
+_NAVIGATING_APP = """
 import panel as pn
 
-layout = pn.Column(pn.pane.Markdown("Initial markdown"))
+button = pn.widgets.Button(name="Navigate")
+at = pn.widgets.StaticText(value=pn.bind(lambda p: f"At {{p}}", pn.state.location.param.pathname))
+layout = pn.Column(button, at, pn.pane.Markdown("Initial markdown"))
 
-def cb():
-    pn.state.location.pathname = "/foo/bar"
+def navigate(*_):
+    pn.state.location.pathname = {pathname!r}
     layout.append(pn.pane.Markdown("Dynamically loaded markdown"))
 
-pn.state.onload(cb)
+if {on_click!r}:
+    button.on_click(navigate)
+else:
+    pn.state.onload(navigate)
 layout.servable()
 """
-    write_file(app, py_file.file)
-    app_name = os.path.basename(py_file.name)[:-3]
 
+
+@linux_only
+@pytest.mark.parametrize('pathname,proxy_mode,on_click', [
+    ('/foo/bar', None, False),
+    ('/foo/bar/', None, False),
+    ('/foo/', None, False),
+    ('/foo/bar', None, True),
+    # Once the browser reported the url it loaded the proxy prefix is known
+    ('/foo/bar/', 'stripped', True),
+    # Before that only a configured root path declares it
+    ('/foo/bar/', 'root_path', False),
+], ids=['onload', 'trailing_slash', 'shallow', 'click', 'proxy', 'proxy_root_path'])
+def test_set_nested_pathname_with_panel_serve_resolves_resources_from_root(
+    py_file, port, page, pathname, proxy_mode, on_click
+):
+    app_name = os.path.basename(py_file.name)[:-3]
     requests = []
     page.on('response', lambda r: requests.append((r.status, r.url)))
     page.on('requestfailed', lambda r: requests.append(('failed', r.url)))
-    with run_panel_serve(["--port", str(port), py_file.name]) as p:
-        port = wait_for_port(p.stdout)
-        page.goto(f"http://localhost:{port}/{app_name}")
 
-        expect(page.locator(".markdown")).to_have_count(2)
-        wait_until(lambda: page.url.endswith("/foo/bar"), page)
-        page.wait_for_function(_STYLESHEETS_SETTLED, timeout=15000)
+    with proxied_oauth_provider() as proxy:
+        # The proxy strips its prefix, so the server only sees it if it is
+        # configured as the root path.
+        prefix = '/proxy' if proxy_mode else ''
+        write_file(_NAVIGATING_APP.format(pathname=f'{prefix}{pathname}', on_click=on_click), py_file.file)
+        args = ["--port", str(port), py_file.name]
+        if proxy_mode:
+            args += ["--allow-websocket-origin", f"localhost:{proxy['port']}"]
+        if proxy_mode == 'root_path':
+            args += ["--root-path", "/proxy/"]
+        with run_panel_serve(args) as p:
+            port = wait_for_port(p.stdout)
+            if proxy_mode:
+                proxy['upstream'] = port
+                url = f"http://localhost:{proxy['port']}/proxy/{app_name}"
+            else:
+                url = f"http://localhost:{port}/{app_name}"
+            msgs = []
+            page.on("console", lambda msg: msgs.append(msg.text))
+            page.goto(url)
+            if on_click:
+                wait_until(lambda: any("Websocket connection 0 is now open" in msg for msg in msgs), page)
+                page.wait_for_function(_STYLESHEETS_SETTLED, timeout=15000)
+                # The server has to know the url the browser loaded
+                expect(page.get_by_text(f"At {prefix}/{app_name}")).to_be_visible()
+                page.locator(".bk-btn").click()
+
+            expect(page.locator(".markdown")).to_have_count(2)
+            wait_until(lambda: page.url.endswith(f'{prefix}{pathname}'), page)
+            page.wait_for_function(_STYLESHEETS_SETTLED, timeout=15000)
 
     assert [(status, url) for status, url in requests if status == 'failed' or status >= 400] == []
     assert [url for _, url in requests if '/foo/' in url] == []
+    if proxy_mode:
+        assert [url for _, url in requests if url.startswith('http') and '/proxy/' not in url] == []
 
 
 def test_reload_set_at_build_time_navigates_on_pathname_change(page):

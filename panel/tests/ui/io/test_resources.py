@@ -1,3 +1,6 @@
+import pathlib
+
+import param
 import pytest
 
 try:
@@ -9,10 +12,24 @@ except ImportError:
 
 from panel.config import panel_extension as extension
 from panel.pane import Markdown
-from panel.tests.util import (
-    _STYLESHEETS_SETTLED, serve_component, wait_until,
-)
-from panel.theme import Design, Inherit
+from panel.tests.util import _STYLESHEETS_SETTLED, serve_component, wait_until
+from panel.theme import DefaultTheme, Design, Inherit
+
+
+class RelativeTheme(DefaultTheme):
+
+    css = param.Filename(default=pathlib.Path(__file__).parent / 'assets' / 'theme.css')
+
+
+class RelativeThemeDesign(Design):
+
+    modifiers = {
+        Markdown: {
+            'stylesheets': [Inherit]
+        }
+    }
+
+    _themes = {'default': RelativeTheme}
 
 
 class RelativeDesign(Design):
@@ -45,15 +62,18 @@ def test_serve_page_on_nested_route(page):
     assert [msg for msg in msgs if msg.type == "error"] == []
 
 
-def test_design_stylesheets_resolve_against_each_route_depth(page):
+@pytest.mark.parametrize('design,filename', [
+    (RelativeDesign, 'design.css'), (RelativeThemeDesign, 'theme.css')
+], ids=['modifiers', 'theme'])
+def test_design_stylesheets_resolve_against_each_route_depth(page, design, filename):
     def app():
-        return Markdown("Styled", design=RelativeDesign)
+        return Markdown("Styled", design=design)
 
     failed = _failed_requests(page)
     requested = []
-    page.on('request', lambda r: requested.append(r.url) if 'design.css' in r.url else None)
+    page.on('request', lambda r: requested.append(r.url) if filename in r.url else None)
 
-    # The root page resolves the Design modifiers first, the nested route
+    # The root page resolves the Design stylesheets first, the nested route
     # must not reuse urls computed relative to the root.
     _, port = serve_component(page, {"/": app, "/foo/bar": app})
     page.goto(f"http://127.0.0.1:{port}/foo/bar")
