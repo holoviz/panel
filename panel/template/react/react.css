@@ -5,6 +5,8 @@ body {
 }
 
 #container {
+  display: flex;
+  flex-direction: column;
   padding: 0px;
   height: 100vh;
   width: 100vw;
@@ -74,7 +76,7 @@ img.app-logo {
   color: var(--text-color);
   display: flex;
   flex-direction: row;
-  height: 100%;
+  flex-grow: 1;
   margin: 0px;
   overflow: hidden;
   width: 100vw;
@@ -91,6 +93,9 @@ img.app-logo {
 }
 
 #sidebar > ul {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
   height: 100%;
 }
 
@@ -164,6 +169,8 @@ img.app-logo {
 
 .nav.flex-column {
   padding-inline-start: 0px;
+  margin-block-start: 0px;
+  margin-block-end: 0px;
 }
 
 .pn-modal {

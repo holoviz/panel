@@ -143,7 +143,11 @@ img.app-logo {
   padding: 15px 10px 15px 5px;
 }
 
+/* .nav wraps by default, which spills items into a second column once the list has a fixed height */
 #sidebar > ul {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
   height: 100%;
 }
 
