@@ -22,8 +22,9 @@ from panel.io.application import _on_session_destroyed
 from panel.io.browser import BrowserInfo
 from panel.io.document import (
     _UNCONNECTED_EVENTS, _WRITE_BLOCK, MockSessionContext, _cleanup_doc,
-    _client_has_document, _destroy_document, _is_write_blocked,
-    _keep_unsent_models_new, _socket_dispatcher, _suppress_property_callbacks,
+    _client_has_document, _defer_until_unlocked, _destroy_document,
+    _is_write_blocked, _keep_unsent_models_new, _socket_dispatcher,
+    _suppress_property_callbacks, _track_unwritten, _untrack_unwritten,
     _write_tasks, dispatch_django, dispatch_tornado, extra_socket_handlers,
     hold, init_doc, schedule_write_events, unlocked, write_events,
 )
@@ -1840,6 +1841,93 @@ def test_unrelated_unlocked_change_is_written_while_locked_callback_runs(monkeyp
     future.result(timeout=5)
 
     assert seen == [True]
+    assert 'progress' in _text_changes(messages)[0]['new']
+
+
+def _hold_lock(session, asyncio_loop):
+    """
+    Starts a locked callback that holds the document lock until the
+    returned event is set.
+    """
+    entered, release = threading.Event(), threading.Event()
+
+    def holder():
+        entered.set()
+        release.wait(timeout=5)
+
+    async def trigger():
+        await session.with_document_locked(holder)
+
+    future = asyncio.run_coroutine_threadsafe(trigger(), asyncio_loop)
+    assert entered.wait(timeout=5)
+    return future, release
+
+
+@pytest.mark.xdist_group(name="server")
+def test_deferred_change_is_written_once_the_message_it_waits_for_is_written(monkeypatch):
+    """
+    A change held back until an unwritten message is written goes out as
+    soon as that message is, rather than waiting for the document lock,
+    which a busy lock holder may hardly ever release. Only the latest of
+    several held back values of a property is written.
+    """
+    md = pn.pane.Markdown('a')
+    doc, messages, _ = _serve_with_message_log(md, monkeypatch)
+    session = doc.session_context.session
+    asyncio_loop = doc.session_context.server_context.application_context.io_loop.asyncio_loop
+    model = doc.roots[0]
+
+    future, release = _hold_lock(session, asyncio_loop)
+    try:
+        record = []
+
+        def defer():
+            record.append(_track_unwritten(doc, [], []))
+            _defer_until_unlocked(doc, [
+                ModelChangedEvent(doc, model, 'text', text) for text in ('one', 'two')
+            ])
+
+        _run_on_loop_unlocked(asyncio_loop, defer)
+        assert _text_changes(messages) == []
+        _run_on_loop_unlocked(asyncio_loop, lambda: _untrack_unwritten(doc, record[0]))
+        wait_until(lambda: len(_text_changes(messages)) == 1)
+        assert session._lock.locked()
+    finally:
+        release.set()
+    future.result(timeout=5)
+
+    assert [event['new'] for event in _text_changes(messages)] == ['two']
+
+
+@pytest.mark.xdist_group(name="server")
+def test_unlocked_change_while_socket_is_written_does_not_wait_for_lock_holder(monkeypatch):
+    """
+    An unlocked change made while the socket is being written to is
+    queued, rather than joining the writes of a callback holding the
+    lock, which would also hold back all later changes to the property
+    until that callback finished.
+    """
+    md = pn.pane.Markdown('a')
+    doc, messages, _ = _serve_with_message_log(md, monkeypatch)
+    session = doc.session_context.session
+    asyncio_loop = doc.session_context.server_context.application_context.io_loop.asyncio_loop
+    conn = next(iter(session._subscribed_connections))
+
+    def change():
+        with set_curdoc(doc):
+            md.object = 'progress'
+
+    future, release = _hold_lock(session, asyncio_loop)
+    try:
+        conn._socket.write_lock._block._value = 0
+        _run_on_loop_unlocked(asyncio_loop, change)
+        _run_on_loop_unlocked(asyncio_loop, conn._socket.write_lock.release)
+        wait_until(lambda: len(_text_changes(messages)) == 1)
+        assert session._lock.locked()
+    finally:
+        release.set()
+    future.result(timeout=5)
+
     assert 'progress' in _text_changes(messages)[0]['new']
 
 
