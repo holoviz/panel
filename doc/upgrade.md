@@ -62,6 +62,15 @@ With `resources='server'`, a page now requests a lazily loaded file from the CDN
 
 As a result, hosts that embed Panel output but rewrite or do not serve Panel's extension routes, such as Shiny through jupyter_bokeh and shinywidgets, now render lazily loaded components like `ECharts` instead of leaving them blank.
 
+### OAuth redirect URI with a prefix or behind a reverse proxy
+
+As of Panel 1.11 the redirect URI Panel sends to an OAuth provider by default is the public URL of the server root, built from the protocol and host of the request, the `--root-path` and the `--prefix`. Two setups produce a different redirect URI than before:
+
+- With `--prefix` the redirect URI now includes the prefix, e.g. `https://example.org/prefix` instead of `https://example.org`.
+- With `--use-xheaders` behind a reverse proxy that sends the `X-Forwarded-Host` or `X-Forwarded-Prefix` (or `X-Script-Name`) headers, the redirect URI uses the forwarded host and path prefix, e.g. `https://example.org/myapp` instead of `https://internal-host:5006`.
+
+OAuth providers require the redirect URI to match the registered one exactly. If you registered the old value, either register the new one with your provider or keep the old one by passing it with `--oauth-redirect-uri` (or `PANEL_OAUTH_REDIRECT_URI`). Deployments that already set `--oauth-redirect-uri` are not affected. Without `--use-xheaders` the forwarded headers are ignored as before. See [Configuring a reverse proxy](how_to/server/proxy) for the supported setups.
+
 ### Smaller changes
 
 - The `high_dpi` option of the `Matplotlib` pane, which is enabled by default, works again for PNG output: figures are rendered at twice their `dpi` and displayed at the same size as before, so they look sharp on high-resolution screens. The images are about two to three times larger; set `high_dpi=False` to restore the previous output. This also applies to Matplotlib plots rendered by the `HoloViews` pane.
@@ -183,15 +192,6 @@ panel serve app.py --server fastapi
 The choices are `tornado` (the default, unchanged), `fastapi` and `asgi`, the latter running Panel's ASGI application under uvicorn without importing FastAPI. The ASGI implementations support everything the Tornado server does apart from the deprecated `--rest-provider`, `--enable-xsrf-cookies` and `--num-procs`, each of which fails with an error naming the option. Authentication, including all the OAuth providers, works on either implementation and the cookies are interoperable, so you can move between them without invalidating existing sessions.
 
 `--plugins` is supported on `--server fastapi`, but since the endpoints are no longer Tornado request handlers the plugin module has to declare a FastAPI `APIRouter` in a `ROUTER` variable rather than a list of `ROUTES`. A module may declare both and then be served on either implementation. See [Add custom endpoints](how_to/server/endpoints) for the details.
-
-### OAuth redirect URI with a prefix or behind a reverse proxy
-
-As of Panel 1.10.1 the redirect URI Panel sends to an OAuth provider by default is the public URL of the server root, built from the protocol and host of the request, the `--root-path` and the `--prefix`. Two setups produce a different redirect URI than before:
-
-- With `--prefix` the redirect URI now includes the prefix, e.g. `https://example.org/prefix` instead of `https://example.org`.
-- With `--use-xheaders` behind a reverse proxy that sends the `X-Forwarded-Host` or `X-Forwarded-Prefix` (or `X-Script-Name`) headers, the redirect URI uses the forwarded host and path prefix, e.g. `https://example.org/myapp` instead of `https://internal-host:5006`.
-
-OAuth providers require the redirect URI to match the registered one exactly. If you registered the old value, either register the new one with your provider or keep the old one by passing it with `--oauth-redirect-uri` (or `PANEL_OAUTH_REDIRECT_URI`). Deployments that already set `--oauth-redirect-uri` are not affected. Without `--use-xheaders` the forwarded headers are ignored as before. See [Configuring a reverse proxy](how_to/server/proxy) for the supported setups.
 
 ### `Tabulator` and the `bokeh-tables` bundle
 
