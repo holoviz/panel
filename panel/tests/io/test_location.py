@@ -257,3 +257,24 @@ def test_location_sync_select_numeric_looking_option(location, query, expected):
     location.update_query(sel=query)
     location.sync(select, {'value': 'sel'})
     assert select.value == expected
+
+
+@pytest.mark.parametrize('prefix,app_path,pathnames,expected', [
+    ('', '/', ['/foo/bar', '/foo/bar/', '/foo/', '/'], ['..', '../..', '..', '']),
+    ('', '/app', ['/foo/bar', '/app'], ['..', '']),
+    # Navigating above the root the app is served under and back
+    ('/pfx', '/app', ['/', '/pfx/a/b', '/pfx/app'], ['', '..', '']),
+], ids=['root', 'app', 'prefix'])
+def test_location_pathname_updates_rel_path(prefix, app_path, pathnames, expected):
+    rel_paths = []
+
+    def app():
+        for pathname in pathnames:
+            state.location.pathname = pathname
+            rel_paths.append(state.rel_path)
+        return '# Location Test'
+
+    serve_and_request({app_path: app}, prefix=prefix, suffix=f'{prefix}{app_path}')
+
+    wait_until(lambda: len(rel_paths) == len(pathnames))
+    assert rel_paths == expected

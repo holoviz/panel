@@ -661,7 +661,7 @@ def jupyter_endpoint(monkeypatch):
 @pytest.fixture(autouse=True)
 def cache_cleanup():
     state.clear_caches()
-    Design._resolve_modifiers.cache_clear()
+    Design._resolve_modifiers_cached.cache_clear()
     Design._cache.clear()
     # Their keys cover the global state a request depends on but not what
     # tests monkeypatch, e.g. the list of classes with resources.

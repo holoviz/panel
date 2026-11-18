@@ -14,6 +14,8 @@ from ..reactive import Syncable
 from ..util import edit_readonly, isIn as is_in, parse_query
 from .cache import is_equal
 from .document import create_doc_if_none_exists
+from .proxy import normalize_root_path
+from .resources import LOCAL_DIST
 from .state import state
 
 if t.TYPE_CHECKING:
@@ -124,7 +126,10 @@ class Location(Syncable):
         super().__init__(**params)
         self._synced = []
         self._syncing = False
+        # The pathname and rel_path depth of the page as it was loaded
+        self._anchor: tuple[int, int] | None = None
         self.param.watch(self._update_synced, ['search'])
+        self.param.watch(self._sync_pathname, ['pathname'])
 
     def _get_model(
         self, doc: Document, root: Model | None = None,
@@ -136,28 +141,54 @@ class Location(Syncable):
         self._link_props(model, self._linked_properties, doc, root, comm)
         return model
 
-    @param.depends("pathname", watch=True)
-    def _sync_pathname(self):
+    @staticmethod
+    def _pathname_depth(pathname: str) -> int:
+        """
+        The number of directories a page relative url has to climb from
+        the pathname to reach the root it is served under.
+        """
+        return max(pathname.count('/') - 1, 0)
+
+    def _sync_pathname(self, event: param.parameterized.Event):
         """
         When in a server context and the pathname is overridden dynamically
         we need to keep the state.rel_path and the Document dist_url template
         variable in sync to ensure that resources are resolved relative to the new URL.
         Additionally we clear the stylesheets cache which holds now outdated URLs.
         """
-        session_context = state.curdoc.session_context
-        if not (state._servers and session_context and session_context.server_context):
+        doc = state.curdoc
+        if doc is None or not (doc.session_context and doc.session_context.server_context):
             return
-        for server, _, _ in state._servers.values():
-            server_port = server.port if hasattr(server, 'port') else server.config.port
-            if self.port == str(server_port):
-                break
-        else:
+        # Only a page relative path, as set up for a server session, can
+        # follow the pathname, not e.g. the absolute url of an autoload script.
+        rel_parts = [part for part in (state.rel_path or '').split('/') if part]
+        if any(part != '..' for part in rel_parts):
             return
-        prefix = getattr(server, 'prefix', '')
-        state.rel_path = rel_path = '/'.join(['..'] * self.pathname.replace(prefix, '').strip('/').count('/'))
-        if 'static/extensions/panel/' in state.curdoc._template_variables.get('dist_url', ''):
-            state.curdoc._template_variables['dist_url'] =  f"{rel_path}/static/extensions/panel/"
-        state._stylesheets.pop(state.curdoc, None)
+        # The initial pathname, whether taken from the request or reported
+        # by the frontend once it has rendered (e.g. including the prefix
+        # of a proxy the server never sees), is the page rel_path was
+        # computed for, not a navigation. Depths are taken relative to it,
+        # so they do not depend on the prefix the app is served under.
+        if 'pathname' in self._param__private.syncing:
+            rel_depth = len(rel_parts) if self._anchor is None else self._anchor[1]
+            self._anchor = (self._pathname_depth(event.new), rel_depth)
+            return
+        elif not event.old:
+            return
+        if self._anchor is None:
+            # Until the frontend reports it, the pathname is the one the
+            # server received, which lacks the root path of a proxy.
+            old = event.old
+            root = normalize_root_path(state._base_url)
+            if root and old != root and not old.startswith(f'{root}/'):
+                old = f'{root}{old}'
+            self._anchor = (self._pathname_depth(old), len(rel_parts))
+        anchor_depth, anchor_rel_depth = self._anchor
+        depth = anchor_rel_depth + self._pathname_depth(event.new) - anchor_depth
+        state.rel_path = rel_path = '/'.join(['..'] * max(depth, 0))
+        if 'static/extensions/panel/' in doc._template_variables.get('dist_url', ''):
+            doc._template_variables['dist_url'] = f"{rel_path}/{LOCAL_DIST}" if rel_path else LOCAL_DIST
+        state._stylesheets.pop(doc, None)
 
     def get_root(
         self, doc: Document | None = None, comm: Comm | None = None,

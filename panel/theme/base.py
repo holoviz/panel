@@ -106,7 +106,7 @@ class DarkTheme(Theme):
 
 
 # Design and Theme stylesheets per Theme instance, see Design._theme_stylesheets
-_THEME_STYLESHEETS: weakref.WeakKeyDictionary[Theme, dict[type[Design], list[str]]] = weakref.WeakKeyDictionary()
+_THEME_STYLESHEETS: weakref.WeakKeyDictionary[Theme, dict[tuple[type[Design], str], list[str]]] = weakref.WeakKeyDictionary()
 
 
 def _stylesheet_cache(doc: Document) -> dict[str, ImportedStyleSheet]:
@@ -215,12 +215,20 @@ class Design(param.Parameterized, ResourceComponent):
         return stylesheets
 
     @classmethod
-    @functools.lru_cache
     def _resolve_modifiers(cls, vtype, theme, is_server=False):
         """
         Iterate over the class hierarchy in reverse order and accumulate
         all modifiers that apply to the objects class and its super classes.
         """
+        # Stylesheets defined relative to the Design resolve to urls
+        # relative to the page, so sessions served at different depths,
+        # e.g. / and /dash/<id>, must not share the resolved modifiers.
+        rel_path = (state.rel_path or '') if is_server else ''
+        return cls._resolve_modifiers_cached(vtype, theme, is_server, rel_path)
+
+    @classmethod
+    @functools.lru_cache(maxsize=1024)
+    def _resolve_modifiers_cached(cls, vtype, theme, is_server, rel_path):
         modifiers, child_modifiers = {}, {}
         for scls in vtype.__mro__[::-1]:
             cls_modifiers = cls.modifiers.get(scls, {})
@@ -249,6 +257,9 @@ class Design(param.Parameterized, ResourceComponent):
         )
         if theme is None:
             return list(cls._resources.get('css', {}).values())
+        # Custom theme CSS resolves to a page relative url, and Theme
+        # instances are shared between sessions on different routes.
+        key = (cls, state.rel_path or '')
         cached = _THEME_STYLESHEETS.get(theme)
         if cached is None:
             cached = _THEME_STYLESHEETS[theme] = {}
@@ -259,8 +270,8 @@ class Design(param.Parameterized, ResourceComponent):
                     _THEME_STYLESHEETS.pop(owner, None)
 
             theme.param.watch(invalidate, ['base_css', 'css'])
-        elif cls in cached:
-            return cached[cls]
+        elif key in cached:
+            return cached[key]
         stylesheets = list(cls._resources.get('css', {}).values())
         for p in ('base_css', 'css'):
             css = getattr(theme, p)
@@ -273,7 +284,7 @@ class Design(param.Parameterized, ResourceComponent):
                 stylesheets.append(component_resource_path(theme, p, css))
             else:
                 stylesheets.append(css.read_text(encoding='utf-8'))
-        cached[cls] = stylesheets
+        cached[key] = stylesheets
         return stylesheets
 
     @classmethod
