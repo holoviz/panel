@@ -171,6 +171,16 @@ export class PanelMarkupView extends WidgetView {
   }
 }
 
+/**
+ * Like `set_size`, for a model whose sizes changed: `set_size` only sets the
+ * sizes that are given, so the sizes that were unset are cleared first.
+ */
+export function reset_size(el: HTMLElement, model: LayoutDOM, adjust_margin: boolean = true): void {
+  const {style} = el
+  style.width = style.height = style.minWidth = style.maxWidth = style.minHeight = style.maxHeight = ""
+  set_size(el, model, adjust_margin)
+}
+
 export function set_size(el: HTMLElement, model: LayoutDOM, adjust_margin: boolean = true): void {
   let width_policy = model.width != null ? "fixed" : "fit"
   let height_policy = model.height != null ? "fixed" : "fit"
@@ -260,9 +270,9 @@ export abstract class HTMLBoxView extends LayoutDOMView {
 
   override connect_signals(): void {
     super.connect_signals()
-    const {width, height, min_height, max_height, margin, sizing_mode} = this.model.properties
-    this.on_change([width, height, min_height, max_height, margin, sizing_mode], () => {
-      set_size(this.el, this.model)
+    const {width, height, min_width, max_width, min_height, max_height, margin, sizing_mode} = this.model.properties
+    this.on_change([width, height, min_width, max_width, min_height, max_height, margin, sizing_mode], () => {
+      reset_size(this.el, this.model)
     })
   }
 

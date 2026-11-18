@@ -116,6 +116,87 @@ def test_update(page, component):
     expect(page.locator('h1')).to_have_text('Foo!')
 
 
+# The sizes of the element a component renders into and of its host.
+SIZES = """
+(el) => {
+  while (!(el.parentNode instanceof ShadowRoot)) {
+    el = el.parentElement
+  }
+  const container = el.getBoundingClientRect()
+  const host = el.getRootNode().host.getBoundingClientRect()
+  return {width: container.width, height: container.height, host_width: host.width}
+}
+"""
+
+
+def _sizes(page):
+    return page.locator('h1').evaluate(SIZES)
+
+
+@pytest.mark.parametrize('component', [JSUpdate, ReactUpdate, AnyWidgetUpdate])
+def test_resize_updates_container(page, component):
+    example = component(text='Hello World!', width=100)
+
+    serve_component(page, example)
+
+    expect(page.locator('h1')).to_have_text('Hello World!')
+    wait_until(lambda: _sizes(page)['width'] == 100, page)
+
+    example.width = 300
+
+    wait_until(lambda: _sizes(page)['width'] == 300, page)
+
+
+@pytest.mark.parametrize('component', [JSUpdate, ReactUpdate, AnyWidgetUpdate])
+def test_resize_updates_container_height(page, component):
+    example = component(text='Hello World!', width=200, height=50)
+
+    serve_component(page, example)
+
+    expect(page.locator('h1')).to_have_text('Hello World!')
+    wait_until(lambda: _sizes(page)['height'] == 50, page)
+
+    example.height = 150
+
+    wait_until(lambda: _sizes(page)['height'] == 150, page)
+
+
+@pytest.mark.parametrize('component', [JSUpdate, ReactUpdate, AnyWidgetUpdate])
+def test_resize_clears_unset_max_width(page, component):
+    example = component(text='Hello World!', sizing_mode='stretch_width')
+
+    serve_component(page, Column(example, width=600))
+
+    expect(page.locator('h1')).to_have_text('Hello World!')
+    wait_until(lambda: _sizes(page)['width'] == 600, page)
+
+    example.max_width = 250
+
+    wait_until(lambda: _sizes(page)['width'] == 250, page)
+
+    example.max_width = None
+
+    wait_until(lambda: _sizes(page)['width'] == 600, page)
+
+
+@pytest.mark.parametrize('component', [JSUpdate, ReactUpdate, AnyWidgetUpdate])
+def test_resize_min_width_resizes_host_and_container(page, component):
+    example = component(text='Hello World!', sizing_mode='stretch_width')
+
+    serve_component(page, Column(example, width=600))
+
+    expect(page.locator('h1')).to_have_text('Hello World!')
+    wait_until(lambda: _sizes(page)['width'] == 600, page)
+
+    example.min_width = 700
+
+    wait_until(lambda: (sizes := _sizes(page))['width'] == sizes['host_width'] == 700, page)
+
+    example.min_width = None
+
+    wait_until(lambda: (sizes := _sizes(page))['width'] == sizes['host_width'] == 600, page)
+
+
 def test_react_use_state_update_before_effect_not_reverted(page):
     class ReactSlowUpdate(ReactComponent):
         text = param.String()
