@@ -365,7 +365,10 @@ def _owning_document_lock(session: ServerSession) -> Iterator[None]:
     """
     with state._own_document_lock(session):
         if session.document in _DEFERRED_EVENTS:
-            _dispatch_deferred_events(session.document)
+            try:
+                _dispatch_deferred_events(session.document)
+            except Exception:
+                logger.exception('Failed to dispatch deferred events')
         yield
 
 def _run_owning_document_lock(session: ServerSession, func: Callable[..., t.Any], *args, **kwargs) -> t.Any:

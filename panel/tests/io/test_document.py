@@ -1762,5 +1762,5 @@ def test_deferred_unlocked_change_precedes_later_locked_callback(monkeypatch):
 
     wait_until(lambda: len(_text_changes(messages)) == 2)
     assert md.object == 'locked'
-    assert 'locked' in _text_changes(messages)[-1]['new']
-    assert 'unlocked' in _text_changes(messages)[0]['new']
+    texts = [event['new'] for event in _text_changes(messages)]
+    assert ['unlocked' in text for text in texts] == [True, False]
