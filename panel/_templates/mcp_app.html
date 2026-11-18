@@ -1,0 +1,187 @@
+{#
+Renders a Panel application as an MCP App View (SEP-1865).
+
+Extends the base template with:
+  - the `ui/initialize` handshake, run before Panel's JS so the host's
+    `tool-input` notification is never missed
+  - a spinner covering the gap between the HTML arriving and Bokeh painting
+  - an error state with an "open in browser" escape hatch, for hosts whose CSP
+    blocks the WebSocket back to the Panel server
+
+:param mcp_bridge_js: contents of _templates/mcp_bridge.js
+:param mcp_app_url: absolute URL of the app, for the fallback link
+:param mcp_timeout: ms to wait for a render before showing the error state
+#}
+{% extends "base.html" %}
+
+{% block preamble %}
+{{ super() }}
+<script>{{ mcp_bridge_js }}</script>
+{% endblock %}
+
+{% block resources %}
+{{ super() }}
+<style>
+  /* Fall back to sensible values when the host provides no style variables:
+     the spec requires Views to degrade gracefully rather than render unstyled.
+     Layered so the host's own variables, which the bridge injects unlayered,
+     always win regardless of where in <head> they land. */
+  @layer pn-mcp-fallback {
+    :root {
+      color-scheme: light dark;
+      --color-background-primary: light-dark(#ffffff, #171717);
+      --color-text-primary: light-dark(#171717, #fafafa);
+      --color-text-secondary: light-dark(#525252, #a3a3a3);
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+  }
+
+  html, body {
+    background: var(--color-background-primary);
+    color: var(--color-text-primary);
+    font-family: var(--font-sans);
+  }
+
+  #pn-mcp-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    box-sizing: border-box;
+    text-align: center;
+    background: var(--color-background-primary);
+    transition: opacity 150ms ease-out;
+  }
+
+  #pn-mcp-overlay[hidden] {
+    display: none;
+  }
+
+  #pn-mcp-overlay.pn-mcp-fading {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  #pn-mcp-spinner {
+    width: 2rem;
+    height: 2rem;
+    border: 2px solid color-mix(in srgb, var(--color-text-primary) 20%, transparent);
+    border-top-color: var(--color-text-primary);
+    border-radius: 50%;
+    animation: pn-mcp-spin 700ms linear infinite;
+  }
+
+  @keyframes pn-mcp-spin {
+    to { transform: rotate(360deg); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #pn-mcp-spinner { animation-duration: 2s; }
+  }
+
+  #pn-mcp-message {
+    margin: 0;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    max-width: 34rem;
+    color: var(--color-text-secondary);
+  }
+
+  #pn-mcp-link {
+    font-size: 0.85rem;
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  #pn-mcp-overlay.pn-mcp-error #pn-mcp-spinner {
+    display: none;
+  }
+</style>
+{% endblock %}
+
+{% block contents %}
+<div id="pn-mcp-overlay" role="status" aria-live="polite">
+  <div id="pn-mcp-spinner"></div>
+  <p id="pn-mcp-message">Loading…</p>
+  <a id="pn-mcp-link" hidden target="_blank" rel="noopener">Open in browser ↗</a>
+</div>
+{#
+  Deliberately in the body rather than the `postamble` block: base.html renders
+  `postamble` inside <head>, where the overlay does not exist yet. Placing it
+  here also puts it ahead of `plot_script`, so the listeners are attached before
+  any Bokeh code can run.
+#}
+<script>
+  (function() {
+    var overlay = document.getElementById("pn-mcp-overlay");
+    var message = document.getElementById("pn-mcp-message");
+    var link = document.getElementById("pn-mcp-link");
+    var appUrl = {{ mcp_app_url | tojson }};
+    var timeoutMs = {{ mcp_timeout | default(15000) }};
+    var settled = false;
+    var timer = null;
+
+    function hide() {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      clearTimeout(timer);
+      overlay.classList.add("pn-mcp-fading");
+      setTimeout(function() { overlay.hidden = true; }, 150);
+    }
+
+    function fail(text) {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      clearTimeout(timer);
+      overlay.classList.add("pn-mcp-error");
+      message.textContent = text;
+      if (appUrl) {
+        link.href = appUrl;
+        link.hidden = false;
+      }
+    }
+
+    // The MCPApp view dispatches this once it renders, which only happens after
+    // the WebSocket delivered the document. That is the real "the user can see
+    // something" signal; the HTML shell arriving is not.
+    window.addEventListener("pn-mcp-rendered", hide);
+
+    timer = setTimeout(function() {
+      // The app may have painted without the MCP root ever rendering (an app
+      // error, say). Anything on screen beats a spinner over a live app.
+      var docs = (window.Bokeh && window.Bokeh.documents) || [];
+      for (var i = 0; i < docs.length; i++) {
+        if (docs[i].roots().length) {
+          hide();
+          return;
+        }
+      }
+      fail(
+        "The app could not be reached. The host may block connections to this " +
+        "server's origin."
+      );
+    }, timeoutMs);
+
+    var bridge = window.__panelMCP__;
+    if (bridge && bridge.ready) {
+      bridge.ready.catch(function() {
+        // Handshake failure alone is not fatal, the app may still render.
+        if (!settled) {
+          message.textContent = "Loading (no host connection)…";
+        }
+      });
+    }
+  })();
+</script>
+{{ super() }}
+{% endblock %}

@@ -232,7 +232,7 @@ async def test_resolve_session_reuses_session(sessions):
     assert second is first
     # A reused session must not expire while it is being handed out
     assert first.expiration_blocked
-    assert state._session_key_funcs['/app'](request) == ('/app', 'default')
+    assert state._session_key_funcs['/app'](request) == ('/app', 'default', False)
 
 
 @pytest.mark.asyncio
