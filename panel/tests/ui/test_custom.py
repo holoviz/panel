@@ -116,6 +116,21 @@ def test_update(page, component):
     expect(page.locator('h1')).to_have_text('Foo!')
 
 
+@pytest.mark.parametrize('component', [JSUpdate, ReactUpdate])
+def test_resize_updates_container(page, component):
+    example = component(text='Hello World!', width=100)
+
+    serve_component(page, example)
+
+    heading = page.locator('h1')
+    expect(heading).to_have_text('Hello World!')
+    wait_until(lambda: heading.bounding_box()['width'] == 100, page)
+
+    example.width = 300
+
+    wait_until(lambda: heading.bounding_box()['width'] == 300, page)
+
+
 def test_react_use_state_update_before_effect_not_reverted(page):
     class ReactSlowUpdate(ReactComponent):
         text = param.String()
