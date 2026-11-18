@@ -856,6 +856,66 @@ async def test_dispatch_msgs_terminates_on_document_destroy():
         extra_socket_handlers.pop(_FakeSocket, None)
 
 
+class _ClosingWSConnection:
+    """
+    Mimics a Tornado websocket whose peer disconnects during a write: the
+    first frame fails asynchronously and aborts the connection, so the
+    following writes raise synchronously.
+    """
+
+    def __init__(self):
+        self.closing = False
+
+    def is_closing(self):
+        return self.closing
+
+    def write_message(self, message, binary=False):
+        from tornado.websocket import WebSocketClosedError
+
+        async def fail():
+            raise WebSocketClosedError()
+
+        self.closing = True
+        return asyncio.ensure_future(fail())
+
+
+@pytest.mark.asyncio
+async def test_write_message_handles_connection_closed_mid_message(caplog):
+    from tornado.websocket import WebSocketHandler
+
+    from panel.io.document import _dispatch_write_task, _write_message
+
+    class ClosingSocket(WebSocketHandler):
+        def __init__(self):
+            self.write_lock = tornado.locks.Lock()
+            self.ws_connection = _ClosingWSConnection()
+
+    conn = _FakeConn(lock_held=False)
+    conn._socket = ClosingSocket()
+    doc = Document()
+    message = Protocol().create('ACK')
+
+    loop = asyncio.get_running_loop()
+    unhandled = []
+    handler = loop.get_exception_handler()
+    loop.set_exception_handler(lambda loop, context: unhandled.append(context))
+    try:
+        with caplog.at_level('WARNING', logger='panel.io.document'):
+            _dispatch_write_task(doc, _write_message, doc, [conn], message)
+            tasks = list(_write_tasks.get(doc, []))
+            await asyncio.wait(tasks, timeout=5)
+            del tasks
+            await asyncio.sleep(0.01)
+            gc.collect()
+    finally:
+        loop.set_exception_handler(handler)
+
+    assert unhandled == []
+    assert [r.getMessage() for r in caplog.records] == [
+        "Failed sending message as connection was closed"
+    ]
+
+
 def test_keep_unsent_models_new_across_client_patch():
     doc = Document()
     column = pn.Column()
