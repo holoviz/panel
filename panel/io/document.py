@@ -375,7 +375,12 @@ def _run_owning_document_lock(session: ServerSession, func: Callable[..., t.Any]
     with _owning_document_lock(session):
         result = func(*args, **kwargs)
     if inspect.isawaitable(result):
-        return _await_owning_document_lock(session, result)
+        awaiting = _await_owning_document_lock(session, result)
+        if inspect.iscoroutine(result):
+            # Bokeh closes the callback's coroutine if it is cancelled
+            # before awaiting it, which only reaches ours.
+            weakref.finalize(awaiting, result.close)
+        return awaiting
     return result
 
 async def _await_owning_document_lock(session: ServerSession, awaitable: t.Awaitable) -> t.Any:

@@ -1764,3 +1764,20 @@ def test_deferred_unlocked_change_precedes_later_locked_callback(monkeypatch):
     assert md.object == 'locked'
     texts = [event['new'] for event in _text_changes(messages)]
     assert ['unlocked' in text for text in texts] == [True, False]
+
+
+def test_owning_document_lock_closes_callback_coroutine_closed_before_awaiting():
+    from panel.io.document import _run_owning_document_lock
+
+    class Session:
+        document = Document()
+
+    async def callback():
+        pass
+
+    coroutine = callback()
+    awaiting = _run_owning_document_lock(Session(), lambda: coroutine)
+    awaiting.close()
+    del awaiting
+    gc.collect()
+    assert coroutine.cr_frame is None
