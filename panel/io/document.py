@@ -70,6 +70,8 @@ _WRITE_LOCK = threading.Lock()
 _UNCONNECTED_EVENTS: WeakKeyDictionary[Document, list[DocumentChangedEvent]] = WeakKeyDictionary()
 _SCHEDULED_UPDATES: WeakKeyDictionary[Document, deque[Callable[[], t.Any]]] = WeakKeyDictionary()
 _SCHEDULED_UPDATES_LOCK = threading.Lock()
+# Events held back until another context releases the document lock
+_DEFERRED_EVENTS: WeakKeyDictionary[Document, list[DocumentChangedEvent]] = WeakKeyDictionary()
 
 _panel_last_cleanup = None
 _write_tasks: WeakKeyDictionary[Document, list[asyncio.Task]] = WeakKeyDictionary()
@@ -356,7 +358,43 @@ def _track_task(doc: Document, task: asyncio.Task) -> None:
 
 @_needs_document_lock_on_loop
 def _run_with_document_lock(session: ServerSession, func: Callable[..., t.Any], *args, **kwargs) -> t.Any:
-    return func(*args, **kwargs)
+    with state._own_document_lock(session):
+        result = func(*args, **kwargs)
+    if inspect.isawaitable(result):
+        return _await_with_document_lock(session, result)
+    return result
+
+async def _await_with_document_lock(session: ServerSession, awaitable: t.Awaitable) -> t.Any:
+    with state._own_document_lock(session):
+        return await awaitable
+
+def _is_locked_elsewhere(session: ServerSession) -> bool:
+    """
+    Whether a context other than the calling one holds the session's
+    document lock.
+    """
+    lock = getattr(session, '_lock', None)
+    return bool(lock is not None and lock.locked() and not state._document_lock_held)
+
+def _defer_until_unlocked(doc: Document, events: list[DocumentChangedEvent]) -> None:
+    """
+    Holds back events until the context holding the document lock has
+    released it, and with it written everything it changed.
+    """
+    with _WRITE_LOCK:
+        if (deferred := _DEFERRED_EVENTS.get(doc)) is not None:
+            deferred.extend(events)
+            return
+        _DEFERRED_EVENTS[doc] = list(events)
+    _schedule_locked(doc, _dispatch_deferred_events, doc)
+
+def _dispatch_deferred_events(doc: Document) -> None:
+    with _WRITE_LOCK:
+        events = _DEFERRED_EVENTS.pop(doc, [])
+    if not events or _is_destroyed(doc):
+        return
+    with set_curdoc(doc), unlocked(policy='collect'):
+        doc.callbacks._held_events += events
 
 def _schedule_locked(doc: Document, func: Callable[..., t.Any], *args, **kwargs) -> None:
     """
@@ -565,6 +603,7 @@ def _destroy_document(self, session):
     with _WRITE_LOCK:
         _WRITE_EVENTS.pop(self, None)
         _WRITE_BLOCK.pop(self, None)
+        _DEFERRED_EVENTS.pop(self, None)
     _UNCONNECTED_EVENTS.pop(self, None)
     _HOLD_POLICY.pop(self, None)
     with _SCHEDULED_UPDATES_LOCK:
@@ -918,6 +957,24 @@ def _flush_events(curdoc: Document, session: ServerSession) -> None:
 
     events = _take_held_events(curdoc)
     monkeypatch_events(events)
+
+    # A context that does not hold the document lock, e.g. an unlocked
+    # async callback on the event loop, must not write ahead of the
+    # changes of the context that does, since those may attach the very
+    # models these events refer to. While the holder is running its
+    # events are appended to the holder's pending writes so both are
+    # written in the order they were made. Once the holder is writing
+    # its pending changes the events are held back until it is done.
+    if curdoc in _DEFERRED_EVENTS and not state._document_lock_held:
+        _defer_until_unlocked(curdoc, events)
+        curdoc.unhold()
+        return
+    elif _is_locked_elsewhere(session):
+        if session._pending_writes is None:
+            _defer_until_unlocked(curdoc, events)
+            curdoc.unhold()
+            return
+        locked, queued = True, False
 
     if (
         not queued and session._pending_writes == [] and
