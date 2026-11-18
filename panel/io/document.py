@@ -1042,7 +1042,7 @@ def dispatch_tornado(
     events: list[DocumentPatchedEvent] | None = None,
     msg: Message | None = None
 ) -> Sequence[Future]:
-    from tornado.websocket import WebSocketHandler
+    from tornado.websocket import WebSocketClosedError, WebSocketHandler
     socket = conn._socket
     # _socket_dispatcher only resolves to dispatch_tornado for a socket
     # that is a WebSocketHandler.
@@ -1055,18 +1055,20 @@ def dispatch_tornado(
             msg = conn.protocol.create('PATCH-DOC', events)
         else:
             return []
-    futures = [
-        WebSocketHandler.write_message(socket, msg.header_json),
-        WebSocketHandler.write_message(socket, msg.metadata_json),
-        WebSocketHandler.write_message(socket, msg.content_json)
+    frames: list[tuple[str | bytes, bool]] = [
+        (msg.header_json, False), (msg.metadata_json, False), (msg.content_json, False)
     ]
     for buffer in msg._buffers:
-        header = json.dumps(buffer.ref)
-        payload = buffer.to_bytes()
-        futures.extend([
-            WebSocketHandler.write_message(socket, header),
-            WebSocketHandler.write_message(socket, payload, binary=True)
-        ])
+        frames.extend([(json.dumps(buffer.ref), False), (buffer.to_bytes(), True)])
+    futures: list[Future] = []
+    for frame, binary in frames:
+        try:
+            futures.append(WebSocketHandler.write_message(socket, frame, binary=binary))
+        except WebSocketClosedError:
+            # A frame write failing aborts the connection, so the later
+            # frames raise. The futures of the earlier frames are still
+            # returned so the caller retrieves their errors.
+            break
     return futures
 
 def dispatch_django(
@@ -1134,6 +1136,9 @@ async def _write_message(
             lock = getattr(conn._socket, 'write_lock', None)
             with (await lock.acquire()) if lock is not None else nullcontext():
                 await _await_writes(_socket_dispatcher(conn._socket)(conn, msg=message))
+    except Exception as e:
+        # Nothing awaits this task, so the error has to be handled here
+        logger.warning(f"Failed sending message due to following error: {e}")
     finally:
         if record is not None:
             _untrack_unwritten(doc, record)
