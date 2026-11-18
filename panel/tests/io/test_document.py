@@ -1492,3 +1492,45 @@ def test_esm_property_change_while_document_is_destroyed():
 
     assert component.running
     assert not component._models
+
+
+@pytest.mark.xdist_group(name="server")
+def test_held_batch_handed_to_bokeh_is_written_in_one_message(monkeypatch):
+    """
+    A held batch that cannot be written right away because the socket is
+    being written to is left to Bokeh, which must still write it to the
+    client in one message.
+    """
+    col = pn.Column(*(pn.pane.Markdown('a') for _ in range(5)))
+
+    serve_and_request(col)
+    wait_until(lambda: bool(col._documents))
+
+    doc = list(col._documents)[0]
+    session = doc.session_context.session
+    asyncio_loop = doc.session_context.server_context.application_context.io_loop.asyncio_loop
+    monkeypatch.setitem(state._loaded, doc, True)
+    monkeypatch.setitem(state._connected, doc, True)
+
+    messages = []
+
+    async def send_message(message):
+        messages.append(message)
+
+    conn = _FakeConn(lock_held=True)
+    conn.protocol = Protocol()
+    conn.send_message = send_message
+    monkeypatch.setattr(session, '_subscribed_connections', {conn})
+
+    async def callback():
+        with set_curdoc(doc), hold():
+            for md in col:
+                md.object = 'b'
+
+    async def trigger():
+        await session.with_document_locked(callback)
+
+    asyncio.run_coroutine_threadsafe(trigger(), asyncio_loop).result(timeout=5)
+
+    assert len(messages) == 1
+    assert [event['attr'] for event in messages[0].content['events']] == ['text'] * 5
