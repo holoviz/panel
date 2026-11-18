@@ -505,7 +505,7 @@ def test_unlocked_writes_immediately_only_for_document_lock_holder(monkeypatch):
         release.set()
     future.result(timeout=5)
 
-    assert written == [True, False]
+    assert written[0] and not any(written[1:])
     assert pending == {'holder': 0, 'other': 1}
     wait_until(lambda: len(socket_writes) == 1 and len(bokeh_writes) == 1)
 
@@ -1596,6 +1596,8 @@ def _serve_with_message_log(obj, monkeypatch):
         extra_socket_handlers, _FakeSocket,
         lambda conn, msg=None: messages.append(msg) or []
     )
+    # The client has been sent the Document
+    doc.models.flush_synced()
     known = {model.id for model in doc.models}
     return doc, messages, known
 
@@ -1781,3 +1783,102 @@ def test_owning_document_lock_closes_callback_coroutine_closed_before_awaiting()
     del awaiting
     gc.collect()
     assert coroutine.cr_frame is None
+
+
+def _run_on_loop_unlocked(asyncio_loop, func):
+    # A fresh context, so the change does not inherit the lock holder's
+    done = threading.Event()
+
+    def run():
+        try:
+            func()
+        finally:
+            done.set()
+
+    asyncio_loop.call_soon_threadsafe(run, context=contextvars.Context())
+    assert done.wait(timeout=5)
+
+
+@pytest.mark.xdist_group(name="server")
+def test_unrelated_unlocked_change_is_written_while_locked_callback_runs(monkeypatch):
+    """
+    An unlocked change to a model the client has is written right away
+    even while another callback holds the lock and has unwritten changes.
+    """
+    md = pn.pane.Markdown('a')
+    col = pn.Column(md)
+    doc, messages, _ = _serve_with_message_log(col, monkeypatch)
+    session = doc.session_context.session
+    asyncio_loop = doc.session_context.server_context.application_context.io_loop.asyncio_loop
+
+    entered, release = threading.Event(), threading.Event()
+    seen = []
+
+    def change():
+        with set_curdoc(doc):
+            md.object = 'progress'
+
+    def holder():
+        with set_curdoc(doc):
+            doc.roots[0].css_classes = ['pending']
+            col.append(pn.pane.Markdown('new'))
+        entered.set()
+        release.wait(timeout=5)
+
+    async def trigger():
+        await session.with_document_locked(holder)
+
+    future = asyncio.run_coroutine_threadsafe(trigger(), asyncio_loop)
+    try:
+        assert entered.wait(timeout=5)
+        _run_on_loop_unlocked(asyncio_loop, change)
+        wait_until(lambda: len(_text_changes(messages)) == 1)
+        seen.append(session._lock.locked())
+    finally:
+        release.set()
+    future.result(timeout=5)
+
+    assert seen == [True]
+    assert 'progress' in _text_changes(messages)[0]['new']
+
+
+@pytest.mark.xdist_group(name="server")
+def test_unlocked_change_to_property_the_lock_holder_changed_is_written_after(monkeypatch):
+    """
+    An unlocked change to a property the lock holder has changed but not
+    written yet must follow the holder's change, otherwise the client
+    ends up with the holder's older value.
+    """
+    md = pn.pane.Markdown('a')
+    doc, messages, _ = _serve_with_message_log(md, monkeypatch)
+    session = doc.session_context.session
+    asyncio_loop = doc.session_context.server_context.application_context.io_loop.asyncio_loop
+
+    entered, release = threading.Event(), threading.Event()
+
+    def change():
+        with set_curdoc(doc):
+            md.object = 'unlocked'
+
+    def holder():
+        with set_curdoc(doc):
+            doc.roots[0].css_classes = ['pending']
+            md.object = 'holder'
+        entered.set()
+        release.wait(timeout=5)
+
+    async def trigger():
+        await session.with_document_locked(holder)
+
+    future = asyncio.run_coroutine_threadsafe(trigger(), asyncio_loop)
+    try:
+        assert entered.wait(timeout=5)
+        _run_on_loop_unlocked(asyncio_loop, change)
+    finally:
+        release.set()
+    future.result(timeout=5)
+
+    wait_until(lambda: len(_text_changes(messages)) == 2)
+    texts = [event['new'] for event in _text_changes(messages)]
+    assert ['unlocked' in text for text in texts] == [False, True]
+    assert md.object == 'unlocked'

@@ -83,8 +83,8 @@ from .admin_auth import (
 from .application import build_applications
 from .auth import configure_auth
 from .document import (  # noqa
-    _cleanup_doc, _owning_document_lock, _run_owning_document_lock, init_doc,
-    unlocked, with_lock,
+    _cleanup_doc, _owning_document_lock, _run_owning_document_lock,
+    _send_pending_patches_tracked, init_doc, unlocked, with_lock,
 )
 from .liveness import LivenessHandler
 from .loading import _loading_css_classes
@@ -873,6 +873,16 @@ def _serialize_patches(pending):
 
 if hasattr(bk_session, '_PendingPatch') and hasattr(bk_session, '_serialize_patches'):
     bk_session._serialize_patches = _serialize_patches
+
+if not getattr(ServerSession._send_pending_patches, '_panel_tracks_unwritten', False):
+    _bk_send_pending_patches = ServerSession._send_pending_patches
+
+    @wraps(_bk_send_pending_patches)
+    async def _send_pending_patches(self, pending):
+        await _send_pending_patches_tracked(_bk_send_pending_patches, self, pending)
+
+    _send_pending_patches._panel_tracks_unwritten = True  # type: ignore[attr-defined]
+    ServerSession._send_pending_patches = _send_pending_patches  # type: ignore[method-assign]
 
 if not getattr(ServerSession._document_patched, '_panel_skips_patch_connection', False):
     ServerSession._document_patched = _skip_patch_connection(  # type: ignore[method-assign]
