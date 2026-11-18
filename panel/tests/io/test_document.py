@@ -1,4 +1,5 @@
 import asyncio
+import contextvars
 import gc
 import threading
 import time
@@ -504,7 +505,7 @@ def test_unlocked_writes_immediately_only_for_document_lock_holder(monkeypatch):
         release.set()
     future.result(timeout=5)
 
-    assert written == [True, False]
+    assert written[0] and not any(written[1:])
     assert pending == {'holder': 0, 'other': 1}
     wait_until(lambda: len(socket_writes) == 1 and len(bokeh_writes) == 1)
 
@@ -1534,3 +1535,441 @@ def test_held_batch_handed_to_bokeh_is_written_in_one_message(monkeypatch):
 
     assert len(messages) == 1
     assert [event['attr'] for event in messages[0].content['events']] == ['text'] * 5
+
+
+def _undefined_references(messages, known):
+    """
+    Returns the ids of models a sequence of PATCH-DOC messages refers to
+    before any message, or the initial Document, defined them.
+    """
+    def walk(obj, defined, referenced):
+        if isinstance(obj, dict):
+            if obj.get('type') == 'object' and 'id' in obj:
+                defined.append(obj['id'])
+            elif set(obj) == {'id'}:
+                referenced.append(obj['id'])
+            for value in obj.values():
+                walk(value, defined, referenced)
+        elif isinstance(obj, (list, tuple)):
+            for value in obj:
+                walk(value, defined, referenced)
+
+    known, undefined = set(known), []
+    for msg in messages:
+        defined, referenced = [], []
+        walk(msg.content, defined, referenced)
+        known |= set(defined)
+        undefined += [ref for ref in referenced if ref not in known]
+    return undefined
+
+
+def _text_changes(messages):
+    return [
+        event for msg in messages for event in msg.content['events']
+        if event['kind'] == 'ModelChanged' and event['attr'] == 'text'
+    ]
+
+
+def _serve_with_message_log(obj, monkeypatch):
+    """
+    Serves obj and records every message written to a fake connection,
+    whether Panel writes it to the socket directly or Bokeh sends it
+    after a locked callback, in the order they are written.
+    """
+    serve_and_request(obj)
+    wait_until(lambda: bool(obj._documents))
+
+    doc = list(obj._documents)[0]
+    session = doc.session_context.session
+    monkeypatch.setitem(state._loaded, doc, True)
+    monkeypatch.setitem(state._connected, doc, True)
+
+    messages = []
+
+    async def send_message(message):
+        messages.append(message)
+
+    conn = _FakeConn(lock_held=False)
+    conn.protocol = Protocol()
+    conn.send_message = send_message
+    monkeypatch.setattr(session, '_subscribed_connections', {conn})
+    monkeypatch.setitem(
+        extra_socket_handlers, _FakeSocket,
+        lambda conn, msg=None: messages.append(msg) or []
+    )
+    # The client has been sent the Document
+    doc.models.flush_synced()
+    known = {model.id for model in doc.models}
+    return doc, messages, known
+
+
+@pytest.mark.xdist_group(name="server")
+@pytest.mark.parametrize('pending', [False, True])
+def test_unlocked_change_on_loop_is_ordered_after_locked_callback(pending, monkeypatch):
+    """
+    An unlocked change made on the event loop, e.g. by an async
+    callback, while a locked callback on a worker thread attaches the
+    model it changes must not reach the client ahead of the model.
+    """
+    col = pn.Column(pn.pane.Markdown('a'))
+    doc, messages, known = _serve_with_message_log(col, monkeypatch)
+    session = doc.session_context.session
+    asyncio_loop = doc.session_context.server_context.application_context.io_loop.asyncio_loop
+
+    md = pn.pane.Markdown('b')
+    entered, release = threading.Event(), threading.Event()
+    paused, resume = threading.Event(), threading.Event()
+
+    def pause():
+        paused.set()
+        resume.wait(timeout=5)
+
+    def change():
+        with set_curdoc(doc):
+            md.object = 'c'
+
+    def holder():
+        with set_curdoc(doc):
+            if pending:
+                # A change Bokeh writes once the callback has returned
+                doc.roots[0].css_classes = ['pending']
+            # Block the event loop so that the unlocked change is queued
+            # to run before the loop writes the attached model.
+            asyncio_loop.call_soon_threadsafe(pause)
+            assert paused.wait(timeout=5)
+            # A fresh context, so the change does not inherit the lock
+            asyncio_loop.call_soon_threadsafe(change, context=contextvars.Context())
+            col.append(md)
+            resume.set()
+        entered.set()
+        release.wait(timeout=5)
+
+    async def trigger():
+        await session.with_document_locked(holder)
+
+    future = asyncio.run_coroutine_threadsafe(trigger(), asyncio_loop)
+    try:
+        assert entered.wait(timeout=5)
+    finally:
+        resume.set()
+        release.set()
+    future.result(timeout=5)
+
+    wait_until(lambda: len(_text_changes(messages)) == 1)
+    assert _undefined_references(messages, known) == []
+
+
+@pytest.mark.xdist_group(name="server")
+def test_unlocked_change_while_locked_callback_writes_is_deferred(monkeypatch):
+    """
+    An unlocked change made while the context holding the document lock
+    is writing the changes of its callback must be written after them.
+    """
+    col = pn.Column(pn.pane.Markdown('a'))
+    doc, messages, known = _serve_with_message_log(col, monkeypatch)
+    session = doc.session_context.session
+    asyncio_loop = doc.session_context.server_context.application_context.io_loop.asyncio_loop
+
+    md = pn.pane.Markdown('b')
+    send_pending_patches = session._send_pending_patches
+
+    def change():
+        with set_curdoc(doc):
+            md.object = 'c'
+
+    async def send_while_changing(pending):
+        contextvars.Context().run(change)
+        await send_pending_patches(pending)
+
+    monkeypatch.setattr(session, '_send_pending_patches', send_while_changing)
+
+    def holder():
+        with set_curdoc(doc):
+            doc.roots[0].css_classes = ['pending']
+            col.append(md)
+
+    async def trigger():
+        await session.with_document_locked(holder)
+
+    asyncio.run_coroutine_threadsafe(trigger(), asyncio_loop).result(timeout=5)
+
+    wait_until(lambda: len(_text_changes(messages)) == 1)
+    assert _undefined_references(messages, known) == []
+
+
+@pytest.mark.xdist_group(name="server")
+def test_async_locked_callback_writes_while_it_awaits(monkeypatch):
+    """
+    An async callback holding the document lock owns it across awaits,
+    so its changes are written before it returns.
+    """
+    md = pn.pane.Markdown('a')
+    doc, messages, _ = _serve_with_message_log(md, monkeypatch)
+    session = doc.session_context.session
+    asyncio_loop = doc.session_context.server_context.application_context.io_loop.asyncio_loop
+
+    seen = []
+
+    async def holder():
+        with set_curdoc(doc):
+            md.object = 'progress'
+        await asyncio.sleep(0.2)
+        seen.append(len(_text_changes(messages)))
+
+    async def trigger():
+        await session.with_document_locked(holder)
+
+    asyncio.run_coroutine_threadsafe(trigger(), asyncio_loop).result(timeout=5)
+    assert seen == [1]
+
+
+@pytest.mark.xdist_group(name="server")
+def test_deferred_unlocked_change_precedes_later_locked_callback(monkeypatch):
+    """
+    Events held back while the lock holder writes its changes are written
+    before the changes of the next context to take the lock.
+    """
+    md = pn.pane.Markdown('a')
+    doc, messages, _ = _serve_with_message_log(md, monkeypatch)
+    session = doc.session_context.session
+    asyncio_loop = doc.session_context.server_context.application_context.io_loop.asyncio_loop
+
+    send_pending_patches = session._send_pending_patches
+    later = {}
+
+    def change():
+        with set_curdoc(doc):
+            md.object = 'unlocked'
+
+    def locked_later():
+        with set_curdoc(doc):
+            md.object = 'locked'
+
+    async def send_while_changing(pending):
+        later['future'] = asyncio.ensure_future(session.with_document_locked(locked_later))
+        await asyncio.sleep(0)
+        contextvars.Context().run(change)
+        await send_pending_patches(pending)
+
+    monkeypatch.setattr(session, '_send_pending_patches', send_while_changing)
+
+    def holder():
+        with set_curdoc(doc):
+            doc.roots[0].css_classes = ['pending']
+
+    async def trigger():
+        await session.with_document_locked(holder)
+        await later['future']
+
+    asyncio.run_coroutine_threadsafe(trigger(), asyncio_loop).result(timeout=5)
+
+    wait_until(lambda: len(_text_changes(messages)) == 2)
+    assert md.object == 'locked'
+    texts = [event['new'] for event in _text_changes(messages)]
+    assert ['unlocked' in text for text in texts] == [True, False]
+
+
+def test_owning_document_lock_closes_callback_coroutine_closed_before_awaiting():
+    from panel.io.document import _run_owning_document_lock
+
+    class Session:
+        document = Document()
+
+    async def callback():
+        pass
+
+    coroutine = callback()
+    awaiting = _run_owning_document_lock(Session(), lambda: coroutine)
+    awaiting.close()
+    del awaiting
+    gc.collect()
+    assert coroutine.cr_frame is None
+
+
+def _run_on_loop_unlocked(asyncio_loop, func):
+    # A fresh context, so the change does not inherit the lock holder's
+    done = threading.Event()
+
+    def run():
+        try:
+            func()
+        finally:
+            done.set()
+
+    asyncio_loop.call_soon_threadsafe(run, context=contextvars.Context())
+    assert done.wait(timeout=5)
+
+
+@pytest.mark.xdist_group(name="server")
+def test_unrelated_unlocked_change_is_written_while_locked_callback_runs(monkeypatch):
+    """
+    An unlocked change to a model the client has is written right away
+    even while another callback holds the lock and has unwritten changes.
+    """
+    md = pn.pane.Markdown('a')
+    col = pn.Column(md)
+    doc, messages, _ = _serve_with_message_log(col, monkeypatch)
+    session = doc.session_context.session
+    asyncio_loop = doc.session_context.server_context.application_context.io_loop.asyncio_loop
+
+    entered, release = threading.Event(), threading.Event()
+    seen = []
+
+    def change():
+        with set_curdoc(doc):
+            md.object = 'progress'
+
+    def holder():
+        with set_curdoc(doc):
+            doc.roots[0].css_classes = ['pending']
+            col.append(pn.pane.Markdown('new'))
+        entered.set()
+        release.wait(timeout=5)
+
+    async def trigger():
+        await session.with_document_locked(holder)
+
+    future = asyncio.run_coroutine_threadsafe(trigger(), asyncio_loop)
+    try:
+        assert entered.wait(timeout=5)
+        _run_on_loop_unlocked(asyncio_loop, change)
+        wait_until(lambda: len(_text_changes(messages)) == 1)
+        seen.append(session._lock.locked())
+    finally:
+        release.set()
+    future.result(timeout=5)
+
+    assert seen == [True]
+    assert 'progress' in _text_changes(messages)[0]['new']
+
+
+@pytest.mark.xdist_group(name="server")
+def test_unlocked_change_to_property_the_lock_holder_changed_is_written_after(monkeypatch):
+    """
+    An unlocked change to a property the lock holder has changed but not
+    written yet must follow the holder's change, otherwise the client
+    ends up with the holder's older value.
+    """
+    md = pn.pane.Markdown('a')
+    doc, messages, _ = _serve_with_message_log(md, monkeypatch)
+    session = doc.session_context.session
+    asyncio_loop = doc.session_context.server_context.application_context.io_loop.asyncio_loop
+
+    entered, release = threading.Event(), threading.Event()
+
+    def change():
+        with set_curdoc(doc):
+            md.object = 'unlocked'
+
+    def holder():
+        with set_curdoc(doc):
+            doc.roots[0].css_classes = ['pending']
+            md.object = 'holder'
+        entered.set()
+        release.wait(timeout=5)
+
+    async def trigger():
+        await session.with_document_locked(holder)
+
+    future = asyncio.run_coroutine_threadsafe(trigger(), asyncio_loop)
+    try:
+        assert entered.wait(timeout=5)
+        _run_on_loop_unlocked(asyncio_loop, change)
+    finally:
+        release.set()
+    future.result(timeout=5)
+
+    wait_until(lambda: len(_text_changes(messages)) == 2)
+    texts = [event['new'] for event in _text_changes(messages)]
+    assert ['unlocked' in text for text in texts] == [False, True]
+    assert md.object == 'unlocked'
+
+
+@pytest.mark.xdist_group(name="server")
+def test_unlocked_change_referring_to_model_in_unwritten_message_is_written_after(monkeypatch):
+    """
+    An unlocked change whose new value refers to a model that only a
+    serialized but unwritten message of the lock holder defines must not
+    be written ahead of that message.
+    """
+    col = pn.Column(pn.pane.Markdown('a'))
+    doc, messages, known = _serve_with_message_log(col, monkeypatch)
+    session = doc.session_context.session
+    asyncio_loop = doc.session_context.server_context.application_context.io_loop.asyncio_loop
+    conn = next(iter(session._subscribed_connections))
+    send_message = conn.send_message
+    changed = []
+
+    def change():
+        with set_curdoc(doc), unlocked():
+            doc.roots[0].children[0].tags = [doc.roots[0].children[-1]]
+
+    async def send_after_changing(message):
+        if not changed:
+            changed.append(True)
+            contextvars.Context().run(change)
+        await send_message(message)
+
+    conn.send_message = send_after_changing
+
+    def holder():
+        with set_curdoc(doc):
+            doc.roots[0].css_classes = ['pending']
+            col.append(pn.pane.Markdown('b'))
+
+    async def trigger():
+        await session.with_document_locked(holder)
+
+    asyncio.run_coroutine_threadsafe(trigger(), asyncio_loop).result(timeout=5)
+
+    wait_until(lambda: any(
+        event.get('attr') == 'tags' for msg in messages for event in msg.content['events']
+    ))
+    assert _undefined_references(messages, known) == []
+
+
+@pytest.mark.xdist_group(name="server")
+def test_unlocked_message_to_model_attached_by_lock_holder_is_written_after(monkeypatch):
+    """
+    A message sent from an unlocked context to a model the lock holder
+    has attached but not written yet must follow the holder's changes.
+    """
+    from panel.models.layout import ScrollToEvent
+
+    col = pn.Column(pn.pane.Markdown('a'))
+    doc, messages, known = _serve_with_message_log(col, monkeypatch)
+    session = doc.session_context.session
+    asyncio_loop = doc.session_context.server_context.application_context.io_loop.asyncio_loop
+    new = pn.Column('b')
+    paused, resume = threading.Event(), threading.Event()
+
+    def pause():
+        paused.set()
+        resume.wait(timeout=5)
+
+    def change():
+        with set_curdoc(doc), unlocked():
+            doc.callbacks.send_event(ScrollToEvent(model=doc.roots[0].children[-1], index=0))
+
+    def holder():
+        with set_curdoc(doc):
+            # Block the event loop so the message is sent before the loop
+            # writes the attached model.
+            asyncio_loop.call_soon_threadsafe(pause)
+            assert paused.wait(timeout=5)
+            col.append(new)
+            asyncio_loop.call_soon_threadsafe(change, context=contextvars.Context())
+            resume.set()
+
+    async def trigger():
+        await session.with_document_locked(holder)
+
+    try:
+        asyncio.run_coroutine_threadsafe(trigger(), asyncio_loop).result(timeout=5)
+    finally:
+        resume.set()
+
+    wait_until(lambda: any(
+        event['kind'] == 'MessageSent' for msg in messages for event in msg.content['events']
+    ))
+    assert _undefined_references(messages, known) == []

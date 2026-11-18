@@ -45,6 +45,7 @@ if t.TYPE_CHECKING:
 
     from bokeh.core.enums import HoldPolicyType
     from bokeh.core.has_props import HasProps
+    from bokeh.core.types import ID
     from bokeh.protocol.message import Message
     from bokeh.server.connection import ServerConnection
     from bokeh.server.session import ServerSession
@@ -70,11 +71,26 @@ _WRITE_LOCK = threading.Lock()
 _UNCONNECTED_EVENTS: WeakKeyDictionary[Document, list[DocumentChangedEvent]] = WeakKeyDictionary()
 _SCHEDULED_UPDATES: WeakKeyDictionary[Document, deque[Callable[[], t.Any]]] = WeakKeyDictionary()
 _SCHEDULED_UPDATES_LOCK = threading.Lock()
+# Events held back until another context releases the document lock
+_DEFERRED_EVENTS: WeakKeyDictionary[Document, list[DocumentChangedEvent]] = WeakKeyDictionary()
+# Messages serialized but not yet written to the client
+_UNWRITTEN: WeakKeyDictionary[Document, list[_Unwritten]] = WeakKeyDictionary()
 
 _panel_last_cleanup = None
 _write_tasks: WeakKeyDictionary[Document, list[asyncio.Task]] = WeakKeyDictionary()
 
 extra_socket_handlers: dict[type, Callable[..., Sequence[Future]]] = {}
+
+@dataclasses.dataclass(eq=False)
+class _Unwritten:
+    """
+    The models a message serialized but not yet written defines (or may
+    define) and the properties it changes.
+    """
+
+    models: set[ID]
+    changes: set[tuple[str, str]]
+
 
 @dataclasses.dataclass
 class Request:
@@ -354,9 +370,185 @@ def _track_task(doc: Document, task: asyncio.Task) -> None:
     _write_tasks.setdefault(doc, []).append(task)
     task.add_done_callback(partial(_cleanup_task, doc))
 
+@contextmanager
+def _owning_document_lock(session: ServerSession) -> Iterator[None]:
+    """
+    Marks the calling context as holding the session's document lock and
+    first writes the events other contexts held back while it was taken
+    by someone else, so they precede the changes made under this lock.
+    """
+    with state._own_document_lock(session):
+        if session.document in _DEFERRED_EVENTS:
+            try:
+                _dispatch_deferred_events(session.document)
+            except Exception:
+                logger.exception('Failed to dispatch deferred events')
+        yield
+
+def _run_owning_document_lock(session: ServerSession, func: Callable[..., t.Any], *args, **kwargs) -> t.Any:
+    with _owning_document_lock(session):
+        result = func(*args, **kwargs)
+    if inspect.isawaitable(result):
+        awaiting = _await_owning_document_lock(session, result)
+        if inspect.iscoroutine(result):
+            # Bokeh closes the callback's coroutine if it is cancelled
+            # before awaiting it, which only reaches ours.
+            weakref.finalize(awaiting, result.close)
+        return awaiting
+    return result
+
+async def _await_owning_document_lock(session: ServerSession, awaitable: t.Awaitable) -> t.Any:
+    with state._own_document_lock(session):
+        return await awaitable
+
 @_needs_document_lock_on_loop
 def _run_with_document_lock(session: ServerSession, func: Callable[..., t.Any], *args, **kwargs) -> t.Any:
-    return func(*args, **kwargs)
+    return _run_owning_document_lock(session, func, *args, **kwargs)
+
+
+def _unsent_models(doc: Document) -> set[Model]:
+    # Copied in one step, since the lock holder may add to it meanwhile
+    return set(getattr(doc.models, '_new_models', ()))
+
+def _event_target(event: DocumentChangedEvent) -> Model | None:
+    model = getattr(event, 'model', None)
+    if model is None and isinstance(event, MessageSentEvent):
+        model = getattr(event.msg_data, 'model', None)
+    return model if isinstance(model, Model) else None
+
+def _change_key(event: DocumentChangedEvent) -> tuple[str, str] | None:
+    model, attr = getattr(event, 'model', None), getattr(event, 'attr', None)
+    if model is None or attr is None:
+        return None
+    return (model.id, attr)
+
+def _track_unwritten(
+    doc: Document, models: Iterable[ID], events: Iterable[DocumentChangedEvent]
+) -> _Unwritten:
+    changes = {key for event in events if (key := _change_key(event))}
+    record = _Unwritten(set(models), changes)
+    with _WRITE_LOCK:
+        _UNWRITTEN.setdefault(doc, []).append(record)
+    return record
+
+def _untrack_unwritten(doc: Document, record: _Unwritten) -> None:
+    with _WRITE_LOCK:
+        records = _UNWRITTEN.get(doc, [])
+        if record in records:
+            records.remove(record)
+        if not records:
+            _UNWRITTEN.pop(doc, None)
+
+async def _send_pending_patches_tracked(send_pending_patches, session: ServerSession, pending) -> None:
+    """
+    Tracks the changes a lock holder writes once its callback returned.
+    Bokeh serializes them in a worker thread, so any model not yet sent
+    when it starts may be defined by them.
+    """
+    doc = session.document
+    unsent = [model.id for model in _unsent_models(doc)]
+    record = _track_unwritten(doc, unsent, (patch.event for patch in pending))
+    try:
+        await send_pending_patches(session, pending)
+    finally:
+        _untrack_unwritten(doc, record)
+
+def _refers_to(doc: Document, value: t.Any, ids: set[ID]) -> bool:
+    """
+    Whether serializing value refers to one of the models. Models the
+    client has not been sent are serialized in full, so their references
+    are followed, while any other model is only referenced.
+    """
+    unsent = _unsent_models(doc)
+    seen: set[ID] = set()
+    stack = _immediate_references(value)
+    while stack:
+        model = stack.pop()
+        if model.id in ids:
+            return True
+        if model.id in seen or model not in unsent:
+            continue
+        seen.add(model.id)
+        for attr in model.properties_with_refs():
+            stack.extend(_immediate_references(getattr(model, attr, None)))
+    return False
+
+def _split_unknown_to_client(
+    doc: Document, session: ServerSession, events: list[DocumentChangedEvent]
+) -> tuple[list[DocumentChangedEvent], list[DocumentChangedEvent]]:
+    """
+    Splits off the events that must wait for changes another context
+    has not written yet: changes to a model the client does not have,
+    changes whose value refers to a model only an unwritten message
+    defines, and changes to a property the unwritten changes also set,
+    whose older value would otherwise overwrite the newer one.
+    """
+    with _WRITE_LOCK:
+        records = list(_UNWRITTEN.get(doc, []))
+        deferred = list(_DEFERRED_EVENTS.get(doc, []))
+    pending = session._pending_writes or []
+    if not (records or deferred or pending or _is_locked_elsewhere(session)):
+        return events, []
+    unsent = {model.id for model in _unsent_models(doc)}
+    unwritten = set().union(*(record.models for record in records))
+    changes = set().union(*(record.changes for record in records))
+    changes |= {key for event in deferred if (key := _change_key(event))}
+    changes |= {key for patch in list(pending) if (key := _change_key(patch.event))}
+    immediate, held = [], []
+    for event in events:
+        model = _event_target(event)
+        if isinstance(event, ModelChangedEvent):
+            value = event.new
+        elif isinstance(event, MessageSentEvent):
+            value = event.msg_data
+        else:
+            value = None
+        if (
+            (model is not None and (model.id in unsent or model.id in unwritten)) or
+            _change_key(event) in changes or
+            (unwritten and value is not None and _refers_to(doc, value, unwritten))
+        ):
+            held.append(event)
+        else:
+            immediate.append(event)
+    return immediate, held
+
+def _is_locked_elsewhere(session: ServerSession) -> bool:
+    """
+    Whether a context other than the calling one holds the session's
+    document lock.
+    """
+    lock = getattr(session, '_lock', None)
+    return bool(lock is not None and lock.locked() and not state._document_lock_held)
+
+def _defer_until_unlocked(doc: Document, events: list[DocumentChangedEvent]) -> None:
+    """
+    Holds back events until the context holding the document lock has
+    released it, and with it written everything it changed.
+    """
+    events = _suppress_property_callbacks(events)
+    with _WRITE_LOCK:
+        if (deferred := _DEFERRED_EVENTS.get(doc)) is not None:
+            deferred.extend(events)
+            return
+        _DEFERRED_EVENTS[doc] = list(events)
+    # The next context taking the lock writes them first, this callback
+    # only does so if no other context is waiting for the lock.
+    _schedule_locked(doc, _dispatch_deferred_events, doc)
+
+def _dispatch_deferred_events(doc: Document) -> None:
+    with _WRITE_LOCK:
+        events = _DEFERRED_EVENTS.pop(doc, [])
+    session = getattr(doc.session_context, 'session', None)
+    if not events or _is_destroyed(doc) or session is None:
+        return
+    with set_curdoc(doc):
+        if doc.callbacks.hold_value:
+            doc.callbacks._held_events += events
+            return
+        _hold_doc(doc, 'collect')
+        doc.callbacks._held_events += events
+        _flush_events(doc, session)
 
 def _schedule_locked(doc: Document, func: Callable[..., t.Any], *args, **kwargs) -> None:
     """
@@ -565,6 +757,8 @@ def _destroy_document(self, session):
     with _WRITE_LOCK:
         _WRITE_EVENTS.pop(self, None)
         _WRITE_BLOCK.pop(self, None)
+        _DEFERRED_EVENTS.pop(self, None)
+        _UNWRITTEN.pop(self, None)
     _UNCONNECTED_EVENTS.pop(self, None)
     _HOLD_POLICY.pop(self, None)
     with _SCHEDULED_UPDATES_LOCK:
@@ -853,12 +1047,17 @@ def _suppress_property_callbacks(
     return events
 
 async def _write_message(
-    doc: Document, connections: list[ServerConnection], message: Message
+    doc: Document, connections: list[ServerConnection], message: Message,
+    record: _Unwritten | None = None
 ) -> None:
-    for conn in connections:
-        lock = getattr(conn._socket, 'write_lock', None)
-        with (await lock.acquire()) if lock is not None else nullcontext():
-            await _await_writes(_socket_dispatcher(conn._socket)(conn, msg=message))
+    try:
+        for conn in connections:
+            lock = getattr(conn._socket, 'write_lock', None)
+            with (await lock.acquire()) if lock is not None else nullcontext():
+                await _await_writes(_socket_dispatcher(conn._socket)(conn, msg=message))
+    finally:
+        if record is not None:
+            _untrack_unwritten(doc, record)
 
 def _write_from_worker_thread(
     doc: Document,
@@ -890,10 +1089,20 @@ def _write_from_worker_thread(
     connections = list(connections)
     if asyncio_loop is None or asyncio_loop.is_closed() or not connections:
         return False
+    unsent = _unsent_models(doc)
+    # Tracked before serializing, which marks the models it defines as sent
+    record = _track_unwritten(doc, (model.id for model in unsent), patches)
     message = connections[0].protocol.create('PATCH-DOC', patches)
-    asyncio_loop.call_soon_threadsafe(
-        _dispatch_write_task, doc, _write_message, doc, connections, message
-    )
+    defined = {model.id for model in unsent - _unsent_models(doc)}
+    with _WRITE_LOCK:
+        record.models = defined
+    try:
+        asyncio_loop.call_soon_threadsafe(
+            _dispatch_write_task, doc, _write_message, doc, connections, message, record
+        )
+    except RuntimeError:
+        _untrack_unwritten(doc, record)
+        raise
     return True
 
 def _flush_events(curdoc: Document, session: ServerSession) -> None:
@@ -918,6 +1127,31 @@ def _flush_events(curdoc: Document, session: ServerSession) -> None:
 
     events = _take_held_events(curdoc)
     monkeypatch_events(events)
+
+    # A context that does not hold the document lock, e.g. an unlocked
+    # async callback on the event loop, writes right away, except for
+    # changes that would reach the client ahead of unwritten changes of
+    # the lock holder they depend on. Those join the holder's pending
+    # writes while its callback runs, or are held back until it has
+    # written them, so they follow the holder's changes in order.
+    if not state._document_lock_held:
+        events, held = _split_unknown_to_client(curdoc, session, events)
+        if held:
+            if session._pending_writes is not None:
+                curdoc.callbacks._held_events += _suppress_property_callbacks(held)
+                try:
+                    curdoc.unhold()
+                except RuntimeError:
+                    # The holder finished writing in the meantime
+                    curdoc.callbacks._hold = None
+                    _defer_until_unlocked(curdoc, held)
+                if events:
+                    _hold_doc(curdoc, 'collect')
+            else:
+                _defer_until_unlocked(curdoc, held)
+        if not events:
+            curdoc.unhold()
+            return
 
     if (
         not queued and session._pending_writes == [] and
