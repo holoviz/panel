@@ -45,6 +45,17 @@ from .spacer import (  # noqa
 from .swipe import Swipe  # noqa
 from .tabs import Tabs  # noqa
 
+# NOTE: `overlay` must be imported last -- the `isort:skip` pins it here
+# (same pattern as `custom`/`chat` in panel/__init__.py) so `ruff --fix`
+# can't sort it back up. It's the only layout module that reaches into
+# `..custom` (for `JSComponent`), which transitively imports `..pane` ->
+# `pane.holoviews`, which reaches back into `panel.layout` for `HSpacer`,
+# `Row`, etc. Since `panel/__init__.py` imports `layout` before `pane`,
+# that reach-back hits a partially-initialized `panel.layout`; importing
+# `overlay` before `spacer` (which defines `HSpacer`) would raise a
+# circular ImportError.
+from .overlay import Overlay  # isort:skip # noqa
+
 __all__ = (
     "Accordion",
     "Card",
@@ -60,6 +71,7 @@ __all__ = (
     "ListLike",
     "ListPanel",
     "Modal",
+    "Overlay",
     "Panel",
     "Row",
     "Spacer",
