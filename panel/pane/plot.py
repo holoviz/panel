@@ -86,16 +86,21 @@ class Bokeh(Pane):
         'autodispatch': None, 'theme': None
     }
 
+    # The design styles the Panel wrapper and has no Bokeh model property.
+    _synced_layout_params: t.ClassVar[tuple[str, ...]] = tuple(
+        p for p in Layoutable.param if p != 'design'
+    )
+
     def __init__(self, object=None, **params):
         super().__init__(object, **params)
         self._syncing_props = False
         self._overrides = [
             p for p, v in params.items()
-            if p in Layoutable.param and v != self.param[p].default
+            if p in self._synced_layout_params and v != self.param[p].default
         ]
 
     def _param_change(self, *events: param.parameterized.Event) -> None:
-        self._track_overrides(*(e for e in events if e.name in Layoutable.param))
+        self._track_overrides(*(e for e in events if e.name in self._synced_layout_params))
         super()._param_change(*(e for e in events if e.name in self._overrides+['css_classes', 'visible']))
 
     @classmethod
@@ -152,7 +157,7 @@ class Bokeh(Pane):
         try:
             self.param.update({
                 p: v for p, v in self.object.properties_with_values().items()
-                if p not in self._overrides and p in Layoutable.param and
+                if p not in self._overrides and p in self._synced_layout_params and
                 p not in ('css_classes', 'name')
             })
             props = {

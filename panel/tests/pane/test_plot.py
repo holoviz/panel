@@ -1,13 +1,18 @@
+from unittest.mock import Mock
+
 from bokeh.models import Div, Row as BkRow
 from bokeh.plotting import figure
 from bokeh.themes import Theme
 
 import panel as pn
 
+from panel.config import config
+from panel.io.state import set_curdoc, state
 from panel.pane import (
     PNG, Bokeh, Matplotlib, PaneBase,
 )
 from panel.tests.util import mpl_available, mpl_figure
+from panel.theme import Fast, Material
 
 
 def test_get_bokeh_pane_type():
@@ -58,6 +63,32 @@ def test_bokeh_pane_theme_update_after_render(document, comm):
     pane.theme = Theme(json={'attrs': {'Plot': {'background_fill_color': 'red'}}})
 
     assert fig.background_fill_color == 'red'
+
+
+def test_bokeh_pane_design_not_synced_to_model(document):
+    fig = figure()
+    pane = pn.pane.Bokeh(fig, design=Fast)
+    pane.get_root(document)
+
+    pane.design = Material
+    pane.width = 300
+
+    assert fig.width == 300
+    assert 'design' not in pane._overrides
+
+
+def test_bokeh_pane_servable_with_global_template(document):
+    fig = figure()
+    pane = pn.pane.Bokeh(fig)
+    session_context = Mock()
+    session_context.request.arguments = {}
+    document._session_context = lambda: session_context
+
+    with config.set(template='fast'), set_curdoc(document):
+        pane.servable()
+        assert pane in state.template.main.objects
+
+    assert pane.design is Fast
 
 
 @mpl_available
