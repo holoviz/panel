@@ -43,7 +43,7 @@ TOOLBAR_CSS = """
 .bk-OnOffButton.bk-active.bk-left { border-right-color: var(--accent-foreground-active); }
 """
 
-FONT_URL = "//fonts.googleapis.com/css?family=Open+Sans"
+FONT_URL = "https://fonts.googleapis.com/css?family=Open+Sans"
 
 
 class FastStyle(param.Parameterized):
@@ -261,7 +261,7 @@ class Fast(Design):
 
     _resources = {
         'font': {
-            'opensans': f'https:{FONT_URL}',
+            'opensans': FONT_URL,
         },
         'js_modules': {
             'fast': f'{config.npm_cdn}/@microsoft/fast-components@2.30.6/dist/fast-components.min.js',

@@ -24,7 +24,9 @@ from panel.layout import Column
 from panel.models.state import State
 from panel.models.vega import VegaPlot
 from panel.pane import Alert, Vega
-from panel.template import BootstrapTemplate
+from panel.template import (
+    BootstrapTemplate, FastGridTemplate, FastListTemplate,
+)
 from panel.tests.util import hv_available
 from panel.widgets import IntSlider
 
@@ -219,6 +221,31 @@ def test_save_template():
     for doc in template._documents:
         for root in doc.roots:
             assert f"data-root-id=\"{root.ref['id']}\"" in html
+
+
+def _font_links(html):
+    return re.findall(r'href="([^"]*fonts\.googleapis\.com[^"]*)"', html)
+
+
+@pytest.mark.parametrize('template', [FastListTemplate, FastGridTemplate])
+@pytest.mark.parametrize('resources', ['cdn', 'inline'])
+def test_save_fast_template_single_https_font_link(template, resources):
+    sio = StringIO()
+    template(title='Fast').save(sio, resources=resources)
+
+    assert _font_links(sio.getvalue()) == ['https://fonts.googleapis.com/css?family=Open+Sans']
+
+
+def test_save_template_scheme_relative_font_url():
+    sio = StringIO()
+    FastListTemplate(
+        title='Fast', font_url='//fonts.googleapis.com/css?family=Lato'
+    ).save(sio)
+
+    assert _font_links(sio.getvalue()) == [
+        'https://fonts.googleapis.com/css?family=Open+Sans',
+        'https://fonts.googleapis.com/css?family=Lato',
+    ]
 
 
 @pytest.fixture
