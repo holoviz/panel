@@ -356,17 +356,32 @@ def _track_task(doc: Document, task: asyncio.Task) -> None:
     _write_tasks.setdefault(doc, []).append(task)
     task.add_done_callback(partial(_cleanup_task, doc))
 
-@_needs_document_lock_on_loop
-def _run_with_document_lock(session: ServerSession, func: Callable[..., t.Any], *args, **kwargs) -> t.Any:
+@contextmanager
+def _owning_document_lock(session: ServerSession) -> Iterator[None]:
+    """
+    Marks the calling context as holding the session's document lock and
+    first writes the events other contexts held back while it was taken
+    by someone else, so they precede the changes made under this lock.
+    """
     with state._own_document_lock(session):
+        if session.document in _DEFERRED_EVENTS:
+            _dispatch_deferred_events(session.document)
+        yield
+
+def _run_owning_document_lock(session: ServerSession, func: Callable[..., t.Any], *args, **kwargs) -> t.Any:
+    with _owning_document_lock(session):
         result = func(*args, **kwargs)
     if inspect.isawaitable(result):
-        return _await_with_document_lock(session, result)
+        return _await_owning_document_lock(session, result)
     return result
 
-async def _await_with_document_lock(session: ServerSession, awaitable: t.Awaitable) -> t.Any:
+async def _await_owning_document_lock(session: ServerSession, awaitable: t.Awaitable) -> t.Any:
     with state._own_document_lock(session):
         return await awaitable
+
+@_needs_document_lock_on_loop
+def _run_with_document_lock(session: ServerSession, func: Callable[..., t.Any], *args, **kwargs) -> t.Any:
+    return _run_owning_document_lock(session, func, *args, **kwargs)
 
 def _is_locked_elsewhere(session: ServerSession) -> bool:
     """
@@ -386,15 +401,23 @@ def _defer_until_unlocked(doc: Document, events: list[DocumentChangedEvent]) -> 
             deferred.extend(events)
             return
         _DEFERRED_EVENTS[doc] = list(events)
+    # The next context taking the lock writes them first, this callback
+    # only does so if no other context is waiting for the lock.
     _schedule_locked(doc, _dispatch_deferred_events, doc)
 
 def _dispatch_deferred_events(doc: Document) -> None:
     with _WRITE_LOCK:
         events = _DEFERRED_EVENTS.pop(doc, [])
-    if not events or _is_destroyed(doc):
+    session = getattr(doc.session_context, 'session', None)
+    if not events or _is_destroyed(doc) or session is None:
         return
-    with set_curdoc(doc), unlocked(policy='collect'):
+    with set_curdoc(doc):
+        if doc.callbacks.hold_value:
+            doc.callbacks._held_events += events
+            return
+        _hold_doc(doc, 'collect')
         doc.callbacks._held_events += events
+        _flush_events(doc, session)
 
 def _schedule_locked(doc: Document, func: Callable[..., t.Any], *args, **kwargs) -> None:
     """

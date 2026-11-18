@@ -83,7 +83,8 @@ from .admin_auth import (
 from .application import build_applications
 from .auth import configure_auth
 from .document import (  # noqa
-    _cleanup_doc, init_doc, unlocked, with_lock,
+    _cleanup_doc, _owning_document_lock, _run_owning_document_lock, init_doc,
+    unlocked, with_lock,
 )
 from .liveness import LivenessHandler
 from .loading import _loading_css_classes
@@ -789,13 +790,14 @@ def _track_document_lock(func):
     if inspect.iscoroutinefunction(func):
         @wraps(func)
         async def wrapper(self, *args, **kwargs):
-            with state._own_document_lock(self):
+            with _owning_document_lock(self):
                 return await func(self, *args, **kwargs)
     else:
+        # An async callback is awaited after this returns, so its
+        # coroutine has to own the lock while it runs too.
         @wraps(func)
         def wrapper(self, *args, **kwargs):
-            with state._own_document_lock(self):
-                return func(self, *args, **kwargs)
+            return _run_owning_document_lock(self, func, self, *args, **kwargs)
     wrapper._panel_tracks_lock = True  # type: ignore[attr-defined]
     return wrapper
 
