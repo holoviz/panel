@@ -154,6 +154,9 @@ img.app-logo {
 }
 
 #sidebar > ul {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
   height: 100%;
 }
 
