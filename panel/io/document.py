@@ -45,6 +45,7 @@ if t.TYPE_CHECKING:
 
     from bokeh.core.enums import HoldPolicyType
     from bokeh.core.has_props import HasProps
+    from bokeh.core.types import ID
     from bokeh.protocol.message import Message
     from bokeh.server.connection import ServerConnection
     from bokeh.server.session import ServerSession
@@ -87,7 +88,7 @@ class _Unwritten:
     define) and the properties it changes.
     """
 
-    models: set[str]
+    models: set[ID]
     changes: set[tuple[str, str]]
 
 
@@ -422,7 +423,7 @@ def _change_key(event: DocumentChangedEvent) -> tuple[str, str] | None:
     return (model.id, attr)
 
 def _track_unwritten(
-    doc: Document, models: Iterable[str], events: Iterable[DocumentChangedEvent]
+    doc: Document, models: Iterable[ID], events: Iterable[DocumentChangedEvent]
 ) -> _Unwritten:
     changes = {key for event in events if (key := _change_key(event))}
     record = _Unwritten(set(models), changes)
@@ -452,14 +453,14 @@ async def _send_pending_patches_tracked(send_pending_patches, session: ServerSes
     finally:
         _untrack_unwritten(doc, record)
 
-def _refers_to(doc: Document, value: t.Any, ids: set[str]) -> bool:
+def _refers_to(doc: Document, value: t.Any, ids: set[ID]) -> bool:
     """
     Whether serializing value refers to one of the models. Models the
     client has not been sent are serialized in full, so their references
     are followed, while any other model is only referenced.
     """
     unsent = _unsent_models(doc)
-    seen: set[str] = set()
+    seen: set[ID] = set()
     stack = _immediate_references(value)
     while stack:
         model = stack.pop()
