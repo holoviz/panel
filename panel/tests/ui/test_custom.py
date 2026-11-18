@@ -1675,7 +1675,9 @@ class JS2(JSBase):
     pass
 
 
-def test_saved_inline_bundle_resolves_each_export_offline(page, tmp_path):
+def test_saved_inline_bundle_resolves_each_export_offline(page, tmp_path, monkeypatch):
+    from bokeh.embed.bundle import extension_dirs
+
     bundle = tmp_path / 'shared.bundle.js'
     bundle.write_text("""
     function component(label) {
@@ -1683,6 +1685,8 @@ def test_saved_inline_bundle_resolves_each_export_offline(page, tmp_path):
     }
     export default {First: component('First export'), Second: component('Second export')}
     """)
+    # The temporary directory may be on a different drive from this module.
+    monkeypatch.setitem(extension_dirs, 'panel-test-ext', tmp_path)
 
     class First(JSComponent):
         _bundle = bundle

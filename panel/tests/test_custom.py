@@ -112,10 +112,14 @@ class ESMBundle(ReactiveESM):
     _bundle_path = "esm.js"  # type: ignore[assignment]
 
 
-def test_inline_bundle_serialized_once_per_document(tmp_path):
+def test_inline_bundle_serialized_once_per_document(tmp_path, monkeypatch):
+    from bokeh.embed.bundle import extension_dirs
+
     bundle = tmp_path / 'shared.bundle.js'
     source = 'export function render() { /* shared bundle */ }'
     bundle.write_text(source)
+    # The temporary directory may be on a different drive from this module.
+    monkeypatch.setitem(extension_dirs, 'panel-test-ext', tmp_path)
 
     class BundledComponent(ReactiveESM):
         _bundle = bundle
@@ -132,9 +136,13 @@ def test_inline_bundle_serialized_once_per_document(tmp_path):
             assert source not in Protocol().create('PATCH-DOC', events).content_json
 
 
-def test_esm_extension_can_select_bundle_url_after_model_creation(tmp_path):
+def test_esm_extension_can_select_bundle_url_after_model_creation(tmp_path, monkeypatch):
+    from bokeh.embed.bundle import extension_dirs
+
     bundle = tmp_path / 'extension.bundle.js'
     bundle.write_text('export function render() {}')
+    # The temporary directory may be on a different drive from this module.
+    monkeypatch.setitem(extension_dirs, 'panel-test-ext', tmp_path)
     url = '/assets/extension.bundle.js'
 
     class ExtensionComponent(ReactiveESM):
