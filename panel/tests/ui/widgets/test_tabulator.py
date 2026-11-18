@@ -5273,6 +5273,73 @@ def test_tabulator_stream_pagination_appends_at_end(page):
     expect(page.locator('.tabulator-row')).to_contain_text([f'v{i}' for i in range(10)])
 
 
+def _serve_paginated_stream_table(page, pagination, start_page):
+    widget = Tabulator(
+        pd.DataFrame({'col': [f'v{i}' for i in range(25)]}),
+        pagination=pagination, page_size=10
+    )
+    errors = []
+    page.on('pageerror', lambda e: errors.append(str(e)))
+    msgs, _ = serve_component(page, widget)
+    widget.page = start_page
+    expect(page.locator('.tabulator-page.active')).to_have_text(str(start_page))
+    return widget, msgs, errors
+
+
+def _assert_page(page, widget, number, values, msgs, errors):
+    expect(page.locator('.tabulator-page.active')).to_have_text(str(number))
+    expect(page.locator('[tabulator-field=col][role=gridcell]')).to_have_text(values)
+    assert widget.page == number
+    page.wait_for_timeout(200)
+    assert errors == []
+    assert [
+        msg.text for msg in msgs
+        if msg.type in ('error', 'warning') and 'favicon' not in msg.location['url']
+    ] == []
+
+
+@pytest.mark.parametrize('pagination', ['local', 'remote'])
+@pytest.mark.parametrize('start_page', [1, 3])
+def test_tabulator_stream_follow_pagination_to_new_page(page, pagination, start_page):
+    widget, msgs, errors = _serve_paginated_stream_table(page, pagination, start_page)
+
+    widget.stream(pd.DataFrame({'col': [f'v{i}' for i in range(25, 33)]}))
+
+    _assert_page(page, widget, 4, ['v30', 'v31', 'v32'], msgs, errors)
+
+
+@pytest.mark.parametrize('pagination', ['local', 'remote'])
+def test_tabulator_stream_follow_pagination_onto_current_page(page, pagination):
+    widget, msgs, errors = _serve_paginated_stream_table(page, pagination, 3)
+
+    widget.stream(pd.DataFrame({'col': ['v25', 'v26', 'v27']}))
+
+    _assert_page(page, widget, 3, [f'v{i}' for i in range(20, 28)], msgs, errors)
+
+
+@pytest.mark.parametrize('pagination', ['local', 'remote'])
+@pytest.mark.parametrize('as_dict', [False, True])
+def test_tabulator_stream_no_follow_pagination_keeps_page(page, pagination, as_dict):
+    widget, msgs, errors = _serve_paginated_stream_table(page, pagination, 1)
+
+    value = {'col': [f'v{i}' for i in range(25, 33)]}
+    widget.stream(value if as_dict else pd.DataFrame(value), follow=False)
+
+    _assert_page(page, widget, 1, [f'v{i}' for i in range(10)], msgs, errors)
+
+    widget.page = 4
+    _assert_page(page, widget, 4, ['v30', 'v31', 'v32'], msgs, errors)
+
+
+@pytest.mark.parametrize('pagination', ['local', 'remote'])
+def test_tabulator_stream_no_follow_pagination_onto_current_page(page, pagination):
+    widget, msgs, errors = _serve_paginated_stream_table(page, pagination, 3)
+
+    widget.stream(pd.DataFrame({'col': [f'v{i}' for i in range(25, 33)]}), follow=False)
+
+    _assert_page(page, widget, 3, [f'v{i}' for i in range(20, 30)], msgs, errors)
+
+
 def test_tabulator_stream_rollover_rebuilds_rows(page):
     df = pd.DataFrame({'col': [f'v{i}' for i in range(10)]})
     widget = Tabulator(df, height=400)

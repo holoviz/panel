@@ -1506,16 +1506,23 @@ export class DataTabulatorView extends HTMLBoxView {
     } else {
       update = this.setData()
     }
-    void update.then(() => {
-      if (this.model.follow) {
+    void update.then(async () => {
+      try {
+        if (!this.model.follow) {
+          return
+        }
         if (this.model.pagination) {
-          this.tabulator.setPage(Math.ceil(this.tabulator.rowManager.getDataCount() / (this.model.page_size || 20)))
+          await this.tabulator.setPage(Math.max(1, Math.ceil(this.tabulator.rowManager.getDataCount() / (this.model.page_size || 20))))
         }
-        if (last_row) {
-          this.tabulator.scrollToRow(start, "top", false)
+        // With pagination the previous last row is often on an earlier page than
+        // the one now shown, and Tabulator rejects scrolling to a row not displayed.
+        const row = last_row ? this.tabulator.rowManager.findRow(start) : false
+        if (row && this.tabulator.rowManager.getDisplayRows().includes(row)) {
+          await this.tabulator.scrollToRow(start, "top", false)
         }
+      } finally {
+        this._updating_page = false
       }
-      this._updating_page = false
     })
   }
 

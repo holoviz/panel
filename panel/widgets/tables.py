@@ -1102,7 +1102,8 @@ class BaseTable(ReactiveData, Widget):
                     stream_value = pd.DataFrame(stream_value)
                 except ValueError:
                     stream_value = pd.Series(stream_value)
-                self.stream(stream_value, rollover)
+                # self.stream would reset subclass options such as Tabulator's follow.
+                BaseTable.stream(self, stream_value, rollover)
         else:
             raise ValueError("The stream value provided is not a DataFrame, Series or Dict!")
 
@@ -2204,13 +2205,9 @@ class Tabulator(BaseTable):
             self._apply_update([], msg, m, ref)
 
     @updating
-    def _stream(self, stream, rollover=None, follow=True):
+    def _stream(self, stream, rollover=None):
         if self.pagination == 'remote':
-            length = self._length
-            nrows = self.page_size or self.initial_page_size
-            max_page = max(length//nrows + bool(length%nrows), 1)
-            if self.page != max_page and not follow:
-                return
+            # The frontend only holds the current page, which stream() refreshes if needed.
             self._processed, _ = self._get_data()
             return
         super()._stream(stream, rollover)
@@ -2220,13 +2217,24 @@ class Tabulator(BaseTable):
     def stream(self, stream_value, rollover=None, reset_index=True, follow=True):
         for ref, (model, _) in self._models.copy().items():
             self._apply_update([], {'follow': follow}, model, ref)
+        nrows = self.page_size or self.initial_page_size
+        # Streamed rows only land on the current page if it is not full,
+        # while a rollover shifts the rows of every page.
+        refresh_page = rollover is not None or (
+            self._processed is None or self._length < self.page * nrows
+        )
         super().stream(stream_value, rollover, reset_index)
-        if follow and self.pagination:
-            self._update_max_page()
-        if follow and self.pagination:
+        if not self.pagination:
+            return
+        self._update_max_page()
+        if follow:
             length = self._length
-            nrows = self.page_size or self.initial_page_size
-            self.page = max(length//nrows + bool(length%nrows), 1)
+            last_page = max(length//nrows + bool(length%nrows), 1)
+            if self.page != last_page:
+                self.page = last_page
+                return
+        if self.pagination == 'remote' and refresh_page:
+            self._update_cds()
 
     def _map_patch_to_page(self, patch):
         """
