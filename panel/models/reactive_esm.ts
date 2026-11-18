@@ -19,7 +19,7 @@ import {Model} from "@bokehjs/model"
 
 import {serializeEvent} from "./event-to-object"
 import {DOMEvent} from "./html"
-import {HTMLBox, HTMLBoxView, rerender_view, set_size} from "./layout"
+import {HTMLBox, HTMLBoxView, rerender_view, reset_size, set_size} from "./layout"
 import {resource_url, resources} from "./resources"
 import {convertUndefined, formatError} from "./util"
 
@@ -297,9 +297,7 @@ export class ReactiveESMView extends HTMLBoxView {
     const {esm, importmap, class_name} = this.model.properties
     const {width, height, min_width, max_width, min_height, max_height, sizing_mode} = this.model.properties
     this.on_change([width, height, min_width, max_width, min_height, max_height, sizing_mode], () => {
-      if (this.container != null) {
-        set_size(this.container, this.model, false)
-      }
+      reset_size(this.container, this.model, false)
     })
     this.on_change([esm, importmap], async () => {
       this.compiled_module = await this.model.compiled_module
