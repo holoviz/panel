@@ -25,6 +25,7 @@ from html import escape
 from urllib.parse import quote, urlparse
 
 import bokeh
+import bokeh.server.session as bk_session
 import param
 import tornado
 
@@ -37,6 +38,7 @@ from bokeh.embed.bundle import Script
 from bokeh.embed.elements import script_for_render_items
 from bokeh.embed.util import RenderItem
 from bokeh.embed.wrappers import wrap_in_script_tag
+from bokeh.io.doc import patch_curdoc
 from bokeh.server.contexts import _RequestProxy as BkRequestProxy
 from bokeh.server.server import Server as BokehServer
 from bokeh.server.session import (
@@ -110,6 +112,7 @@ if t.TYPE_CHECKING:
     )
     from bokeh.core.types import ID
     from bokeh.document.document import DocJson
+    from bokeh.document.events import DocumentPatchedEvent
     from bokeh.embed.bundle import Bundle
     from jinja2 import Template
 
@@ -843,6 +846,31 @@ if not getattr(ServerSession.with_document_locked.__wrapped__, '_panel_tracks_lo
     ServerSession._handle_patch = _needs_document_lock_on_loop(  # type: ignore[method-assign]
         _track_document_lock(_tag_held_patch_events(ServerSession._handle_patch.__wrapped__))  # type: ignore[attr-defined]
     )
+
+def _serialize_patches(pending):
+    """
+    Serializes the changes a locked callback made into one message per
+    run of consecutive changes written to the same connections, rather
+    than Bokeh's one message per change, so changes Panel hands to Bokeh
+    (e.g. a held batch that could not be written immediately) still
+    reach the client together.
+    """
+    groups: list[tuple[t.Any, list[DocumentPatchedEvent]]] = []
+    for patch in pending:
+        if groups and groups[-1][0].connections == patch.connections and groups[-1][0].protocol is patch.protocol:
+            groups[-1][1].append(patch.event)
+        else:
+            groups.append((patch, [patch.event]))
+    messages = []
+    for patch, events in groups:
+        with patch_curdoc(patch.event.document):
+            message = patch.protocol.create('PATCH-DOC', events)
+            message.prepare()
+        messages.append((message, patch.connections))
+    return messages
+
+if getattr(bk_session, '_PendingPatch', None) is not None:
+    bk_session._serialize_patches = _serialize_patches
 
 if not getattr(ServerSession._document_patched, '_panel_skips_patch_connection', False):
     ServerSession._document_patched = _skip_patch_connection(  # type: ignore[method-assign]
