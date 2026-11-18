@@ -5,7 +5,7 @@ import typing as t
 import bokeh.core.properties as bp
 
 from bokeh.events import ModelEvent
-from bokeh.model import DataModel
+from bokeh.model import DataModel, Model
 
 from ..config import config
 from ..io.resources import bundled_files
@@ -30,6 +30,11 @@ class ESMEvent(DataEvent):
     event_name = 'esm_event'
 
 
+class ESMBundle(Model):
+
+    source = bp.String()
+
+
 class ReactiveESM(HTMLBox):
 
     _defs = bp.List(bp.Any)
@@ -46,7 +51,7 @@ class ReactiveESM(HTMLBox):
 
     dev = bp.Bool(False)
 
-    esm = bp.String()
+    esm = bp.Either(bp.String, bp.Instance(ESMBundle), default="")
 
     events = bp.List(bp.String)
 

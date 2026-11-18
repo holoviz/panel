@@ -4,9 +4,11 @@ import numpy as np
 import pandas as pd
 import param
 
+from bokeh.core.json_encoder import serialize_json
 from bokeh.document import Document
 from bokeh.models import ImportedStyleSheet
 from bokeh.plotting import figure
+from bokeh.protocol import Protocol
 
 from panel.config import config
 from panel.custom import PyComponent, ReactComponent, ReactiveESM
@@ -108,6 +110,57 @@ def test_reactive_esm_stylesheet_updates_across_documents(document, comm):
 class ESMBundle(ReactiveESM):
 
     _bundle_path = "esm.js"  # type: ignore[assignment]
+
+
+def test_inline_bundle_serialized_once_per_document(tmp_path, monkeypatch):
+    from bokeh.embed.bundle import extension_dirs
+
+    bundle = tmp_path / 'shared.bundle.js'
+    source = 'export function render() { /* shared bundle */ }'
+    bundle.write_text(source)
+    # The temporary directory may be on a different drive from this module.
+    monkeypatch.setitem(extension_dirs, 'panel-test-ext', tmp_path)
+
+    class BundledComponent(ReactiveESM):
+        _bundle = bundle
+
+    with config.set(inline=True):
+        for doc in (Document(), Document()):
+            components = Row(BundledComponent(), BundledComponent())
+            doc.add_root(components.get_root(doc))
+            assert serialize_json(doc.to_json()).count(source) == 1
+            events = []
+            doc.on_change(events.append)
+            with set_curdoc(doc):
+                components.append(BundledComponent())
+            assert source not in Protocol().create('PATCH-DOC', events).content_json
+
+
+def test_esm_extension_can_select_bundle_url_after_model_creation(tmp_path, monkeypatch):
+    from bokeh.embed.bundle import extension_dirs
+
+    bundle = tmp_path / 'extension.bundle.js'
+    bundle.write_text('export function render() {}')
+    # The temporary directory may be on a different drive from this module.
+    monkeypatch.setitem(extension_dirs, 'panel-test-ext', tmp_path)
+    url = '/assets/extension.bundle.js'
+
+    class ExtensionComponent(ReactiveESM):
+        _bundle = bundle
+
+        @classmethod
+        def _render_esm(cls, compiled=True, server=False):
+            return url
+
+        def _get_model(self, *args, **kwargs):
+            model = super()._get_model(*args, **kwargs)
+            if model.esm is url:
+                model.bundle = 'url'
+            return model
+
+    model = ExtensionComponent().get_root(Document())
+    assert model.bundle == 'url'
+    assert model.esm == url
 
 
 def test_esm_bundle_resource_path():

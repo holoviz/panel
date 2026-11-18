@@ -616,7 +616,7 @@ def test_notebook_esm_bundle_respects_render_esm_override(
     assert url_model.bundle == 'url'
     assert url_model.esm == '/panel-preview/static/extensions/panel-test-ext/test.bundle.js?abc'
     assert source_model.bundle not in (None, 'url')
-    assert source_model.esm == 'export function render() {}'
+    assert source_model.esm.source == 'export function render() {}'
     assert source_model.css_bundle is None
 
 

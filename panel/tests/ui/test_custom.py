@@ -1675,6 +1675,34 @@ class JS2(JSBase):
     pass
 
 
+def test_saved_inline_bundle_resolves_each_export_offline(page, tmp_path, monkeypatch):
+    from bokeh.embed.bundle import extension_dirs
+
+    bundle = tmp_path / 'shared.bundle.js'
+    bundle.write_text("""
+    function component(label) {
+      return {render: () => Object.assign(document.createElement('span'), {textContent: label})}
+    }
+    export default {First: component('First export'), Second: component('Second export')}
+    """)
+    # The temporary directory may be on a different drive from this module.
+    monkeypatch.setitem(extension_dirs, 'panel-test-ext', tmp_path)
+
+    class First(JSComponent):
+        _bundle = bundle
+
+    class Second(First):
+        pass
+
+    path = tmp_path / 'components.html'
+    with config.set(inline=True):
+        Row(First(), Second()).save(path, resources='inline')
+    page.context.set_offline(True)
+    page.goto(path.as_uri())
+    expect(page.get_by_text('First export', exact=True)).to_be_visible()
+    expect(page.get_by_text('Second export', exact=True)).to_be_visible()
+
+
 class AnyWidgetBase(AnyWidgetComponent):
 
     _bundle = 'anywidget.bundle.js'

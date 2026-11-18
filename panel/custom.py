@@ -12,7 +12,7 @@ import typing as t
 from abc import abstractmethod
 from collections import defaultdict
 from functools import lru_cache, partial
-from weakref import WeakKeyDictionary
+from weakref import WeakKeyDictionary, WeakValueDictionary
 
 import param
 
@@ -31,7 +31,7 @@ from .models import (
     AnyWidgetComponent as _BkAnyWidgetComponent,
     ReactComponent as _BkReactComponent, ReactiveESM as _BkReactiveESM,
 )
-from .models.esm import DataEvent, ESMEvent
+from .models.esm import DataEvent, ESMBundle, ESMEvent
 from .models.reactive_html import DOMEvent
 from .pane.base import PaneBase  # noqa
 from .reactive import (  # noqa
@@ -75,6 +75,9 @@ _LINKED_PROPERTIES: WeakKeyDictionary[type, tuple[str, ...]] = WeakKeyDictionary
 
 # Dedented ESM sources by path, together with the mtime they were read at.
 _ESM_SOURCES: dict[str, tuple[int, str]] = {}
+
+# Weak values keep an attached bundle from keeping its Document alive.
+_INLINE_BUNDLES: WeakKeyDictionary[Document, WeakValueDictionary[str, ESMBundle]] = WeakKeyDictionary()
 
 
 class _ESMSpec(t.NamedTuple):
@@ -520,6 +523,7 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
             doc = state._views[ref][2]
             is_session = doc.session_context and doc.session_context.server_context
             esm = self._render_esm(not config.autoreload, server=is_session)
+            esm = self._bundle_esm(doc, model.bundle, esm)
             if esm == model.esm:
                 continue
             self._apply_update({}, {'esm': esm}, model, ref)
@@ -689,6 +693,8 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         parent: Model | None = None, comm: Comm | None = None
     ) -> Model:
         props = self._get_properties(doc)
+        if 'esm' in props:
+            props['esm'] = self._bundle_esm(doc, props.get('bundle'), props['esm'])
         properties = drop_default_properties(self._bokeh_model, props)
         # The Bokeh model is shared across all ESM components, so the resource
         # spec has to be derived from the Panel class that declares them. It
@@ -706,6 +712,28 @@ class ReactiveESM(ReactiveCustomBase, metaclass=ReactiveESMMetaclass):
         self._register_events('dom_event', 'data_event', model=model, doc=doc, comm=comm)
         self._setup_autoreload()
         return model
+
+    @classmethod
+    def _bundle_esm(cls, doc: Document, bundle: str | None, esm: str) -> str | ESMBundle:
+        # Extensions can return a module URL and select URL mode after
+        # super()._get_model(). Only share the actual compiled file contents.
+        if bundle in (None, 'url') or not esm or esm.startswith(('https://', 'http://')):
+            return esm
+        path = cls._bundle_path
+        if path is None:
+            return esm
+        try:
+            if esm != _read_esm_source(pathlib.Path(path)):
+                return esm
+        except (OSError, UnicodeError):
+            return esm
+        bundles = _INLINE_BUNDLES.get(doc)
+        if bundles is None:
+            _INLINE_BUNDLES[doc] = bundles = WeakValueDictionary()
+        shared = bundles.get(esm)
+        if shared is None or shared.document not in (None, doc) or shared.source != esm:
+            bundles[esm] = shared = ESMBundle(source=esm)
+        return shared
 
     def _process_event(self, event: Event) -> None:
         if isinstance(event, DataEvent):
