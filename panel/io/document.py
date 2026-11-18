@@ -613,14 +613,17 @@ def _release_deferred_events(doc: Document) -> None:
     the lock, which a busy lock holder may hardly ever release.
     """
     loop = state._document_loop(doc)
-    asyncio_loop = getattr(loop, 'asyncio_loop', loop)
+    asyncio_loop = t.cast(
+        'asyncio.AbstractEventLoop | None', getattr(loop, 'asyncio_loop', loop)
+    )
+    if asyncio_loop is None:
+        _schedule_locked(doc, _dispatch_deferred_events, doc)
+        return
     try:
         # A fresh context, since the writer may still own the lock
         asyncio_loop.call_soon_threadsafe(
             _dispatch_deferred_events, doc, context=contextvars.Context()
         )
-    except AttributeError:
-        _schedule_locked(doc, _dispatch_deferred_events, doc)
     except RuntimeError:
         # The loop is closed, so is the session
         pass
