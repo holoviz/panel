@@ -291,6 +291,9 @@ class HTML(HTMLBasePane):
 
     def _transform_object(self, obj: t.Any) -> dict[str, t.Any]:
         text = '' if obj is None else obj
+        if not hasattr(text, '_repr_html_') and hasattr(text, 'to_frame'):
+            # A pandas Series has no HTML repr of its own
+            text = text.to_frame()
         if hasattr(text, '_repr_html_'):
             text = text._repr_html_()
         if self.sanitize_html:
