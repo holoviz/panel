@@ -27,7 +27,7 @@ from .embed import embed_state
 from .model import add_to_doc
 from .resources import (
     BASE_TEMPLATE, CDN_DIST, DEFAULT_TITLE, Resources, bundle_resources,
-    set_resource_mode,
+    dedupe_template_resources, set_resource_mode,
 )
 from .state import state
 
@@ -42,7 +42,7 @@ if t.TYPE_CHECKING:
 
     from ..template.base import BaseTemplate
     from ..viewable import Viewable
-    from .resources import MODES
+    from .resources import MODES, ResourcesType
 
 #---------------------------------------------------------------------
 # Private API
@@ -176,6 +176,21 @@ def _title_from_models(models: Iterable[Model], title: str) -> str:
 
     return DEFAULT_TITLE
 
+def _absolute_template_resources(template_resources: ResourcesType) -> ResourcesType:
+    """
+    A saved file may be opened from disk, where a scheme-relative url
+    resolves against file:// and fails to load, so give it https.
+    """
+    resources = t.cast('ResourcesType', dict(template_resources))
+    for rtype in ('js', 'js_modules', 'css'):
+        urls = template_resources.get(rtype)
+        if urls:
+            resources[rtype] = {  # type: ignore
+                name: f'https:{url}' if str(url).startswith('//') else url
+                for name, url in urls.items()  # type: ignore
+            }
+    return resources
+
 def file_html(
     models: Model | Document | list[Model],
     resources: BkResources,
@@ -204,6 +219,10 @@ def file_html(
         )
         title = _title_from_models(models_seq, title or 'Panel Application')
         bundle = bundle_resources(models_seq, resources)
+        if template_resources := template_variables.get('template_resources'):
+            template_variables['template_resources'] = _absolute_template_resources(
+                dedupe_template_resources(template_resources, bundle)
+            )
         return html_page_for_render_items(
             bundle, docs_json, render_items, title=title, template=template,
             template_variables=template_variables
