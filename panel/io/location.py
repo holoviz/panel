@@ -126,7 +126,8 @@ class Location(Syncable):
         super().__init__(**params)
         self._synced = []
         self._syncing = False
-        self._browser_pathname = False
+        # The pathname and rel_path depth of the page as it was loaded
+        self._anchor: tuple[int, int] | None = None
         self.param.watch(self._update_synced, ['search'])
         self.param.watch(self._sync_pathname, ['pathname'])
 
@@ -156,33 +157,34 @@ class Location(Syncable):
         Additionally we clear the stylesheets cache which holds now outdated URLs.
         """
         doc = state.curdoc
-        session_context = doc.session_context if doc else None
-        if not (session_context and session_context.server_context):
+        if doc is None or not (doc.session_context and doc.session_context.server_context):
             return
-        # The initial pathname, whether taken from the request or reported
-        # by the frontend once it has rendered (e.g. including the prefix
-        # of a proxy the server never sees), is the page rel_path was
-        # computed for, not a navigation.
-        if 'pathname' in self._param__private.syncing:
-            self._browser_pathname = True
-            return
-        elif not event.old:
-            return
-        old = event.old
-        if not self._browser_pathname:
-            # Until the frontend reports it, the pathname is the one the
-            # server received, which lacks the root path of a proxy.
-            root = normalize_root_path(state._base_url)
-            if root and old != root and not old.startswith(f'{root}/'):
-                old = f'{root}{old}'
         # Only a page relative path, as set up for a server session, can
         # follow the pathname, not e.g. the absolute url of an autoload script.
         rel_parts = [part for part in (state.rel_path or '').split('/') if part]
         if any(part != '..' for part in rel_parts):
             return
-        # The depth is taken relative to the previous pathname so that it
-        # does not depend on the prefix the app is served under.
-        depth = len(rel_parts) + self._pathname_depth(event.new) - self._pathname_depth(old)
+        # The initial pathname, whether taken from the request or reported
+        # by the frontend once it has rendered (e.g. including the prefix
+        # of a proxy the server never sees), is the page rel_path was
+        # computed for, not a navigation. Depths are taken relative to it,
+        # so they do not depend on the prefix the app is served under.
+        if 'pathname' in self._param__private.syncing:
+            rel_depth = len(rel_parts) if self._anchor is None else self._anchor[1]
+            self._anchor = (self._pathname_depth(event.new), rel_depth)
+            return
+        elif not event.old:
+            return
+        if self._anchor is None:
+            # Until the frontend reports it, the pathname is the one the
+            # server received, which lacks the root path of a proxy.
+            old = event.old
+            root = normalize_root_path(state._base_url)
+            if root and old != root and not old.startswith(f'{root}/'):
+                old = f'{root}{old}'
+            self._anchor = (self._pathname_depth(old), len(rel_parts))
+        anchor_depth, anchor_rel_depth = self._anchor
+        depth = anchor_rel_depth + self._pathname_depth(event.new) - anchor_depth
         state.rel_path = rel_path = '/'.join(['..'] * max(depth, 0))
         if 'static/extensions/panel/' in doc._template_variables.get('dist_url', ''):
             doc._template_variables['dist_url'] = f"{rel_path}/{LOCAL_DIST}" if rel_path else LOCAL_DIST
