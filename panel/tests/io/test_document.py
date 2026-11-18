@@ -90,6 +90,41 @@ def test_hold_does_not_get_stuck_with_threaded_callbacks(threads):
     wait_until(lambda: not doc.callbacks.hold_value, timeout=5000)
 
 
+def test_hold_on_loop_does_not_restore_hold_released_by_other_thread(monkeypatch):
+    """
+    A hold on the event loop that starts while a worker thread holds the
+    Document must not put the hold back after the worker released it,
+    since nothing would release it again.
+    """
+    doc = Document()
+    model = pn.pane.Markdown("a").get_root(doc)
+    doc.add_root(model)
+    loop_thread = threading.current_thread()
+    monkeypatch.setattr(
+        type(state), '_on_loop_thread',
+        property(lambda self: threading.current_thread() is loop_thread)
+    )
+    worker_held, loop_held, worker_released = threading.Event(), threading.Event(), threading.Event()
+
+    def worker():
+        with hold(doc):
+            worker_held.set()
+            loop_held.wait(5)
+        worker_released.set()
+
+    thread = threading.Thread(target=worker)
+    thread.start()
+    assert worker_held.wait(5)
+    with hold(doc):
+        loop_held.set()
+        assert worker_released.wait(5)
+    thread.join()
+
+    assert not doc.callbacks.hold_value
+    model.text = "b"
+    assert not doc.callbacks._held_events
+
+
 def test_hold_before_connected_does_not_strand_events():
     """
     A hold exiting before the session connects must leave nothing queued
