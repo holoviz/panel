@@ -869,7 +869,7 @@ def _serialize_patches(pending):
         messages.append((message, patch.connections))
     return messages
 
-if getattr(bk_session, '_PendingPatch', None) is not None:
+if hasattr(bk_session, '_PendingPatch') and hasattr(bk_session, '_serialize_patches'):
     bk_session._serialize_patches = _serialize_patches
 
 if not getattr(ServerSession._document_patched, '_panel_skips_patch_connection', False):
