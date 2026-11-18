@@ -23,9 +23,8 @@ from panel.io.browser import BrowserInfo
 from panel.io.document import (
     _UNCONNECTED_EVENTS, _WRITE_BLOCK, MockSessionContext, _cleanup_doc,
     _client_has_document, _defer_until_unlocked, _destroy_document,
-    _is_write_blocked,
-    _keep_unsent_models_new, _socket_dispatcher, _suppress_property_callbacks,
-    _track_unwritten, _untrack_unwritten,
+    _is_write_blocked, _keep_unsent_models_new, _socket_dispatcher,
+    _suppress_property_callbacks, _track_unwritten, _untrack_unwritten,
     _write_tasks, dispatch_django, dispatch_tornado, extra_socket_handlers,
     hold, init_doc, schedule_write_events, unlocked, write_events,
 )
