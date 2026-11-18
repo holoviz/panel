@@ -9,7 +9,26 @@ except ImportError:
 
 from panel.config import panel_extension as extension
 from panel.pane import Markdown
-from panel.tests.util import serve_component
+from panel.tests.util import (
+    _STYLESHEETS_SETTLED, serve_component, wait_until,
+)
+from panel.theme import Design, Inherit
+
+
+class RelativeDesign(Design):
+
+    modifiers = {
+        Markdown: {
+            'stylesheets': [Inherit, 'assets/design.css']
+        }
+    }
+
+
+def _failed_requests(page):
+    failed = []
+    page.on('response', lambda r: failed.append((r.status, r.url)) if r.status >= 400 else None)
+    page.on('requestfailed', lambda r: failed.append(('failed', r.url)))
+    return failed
 
 
 def test_serve_page_on_nested_route(page):
@@ -24,6 +43,26 @@ def test_serve_page_on_nested_route(page):
     expect(page.locator(".markdown").locator("div")).to_have_text("Updated\n")
 
     assert [msg for msg in msgs if msg.type == "error"] == []
+
+
+def test_design_stylesheets_resolve_against_each_route_depth(page):
+    def app():
+        return Markdown("Styled", design=RelativeDesign)
+
+    failed = _failed_requests(page)
+    requested = []
+    page.on('request', lambda r: requested.append(r.url) if 'design.css' in r.url else None)
+
+    # The root page resolves the Design modifiers first, the nested route
+    # must not reuse urls computed relative to the root.
+    _, port = serve_component(page, {"/": app, "/foo/bar": app})
+    page.goto(f"http://127.0.0.1:{port}/foo/bar")
+    expect(page.locator(".markdown").locator("div")).to_have_text("Styled\n")
+    page.wait_for_function(_STYLESHEETS_SETTLED, timeout=15000)
+
+    wait_until(lambda: len(requested) >= 2, page)
+    assert all('/components/' in url and '/foo/' not in url for url in requested)
+    assert failed == []
 
 
 @pytest.mark.internet

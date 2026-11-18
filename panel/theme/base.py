@@ -215,12 +215,20 @@ class Design(param.Parameterized, ResourceComponent):
         return stylesheets
 
     @classmethod
-    @functools.lru_cache
     def _resolve_modifiers(cls, vtype, theme, is_server=False):
         """
         Iterate over the class hierarchy in reverse order and accumulate
         all modifiers that apply to the objects class and its super classes.
         """
+        # Stylesheets defined relative to the Design resolve to urls
+        # relative to the page, so sessions served at different depths,
+        # e.g. / and /dash/<id>, must not share the resolved modifiers.
+        rel_path = (state.rel_path or '') if is_server else ''
+        return cls._resolve_modifiers_cached(vtype, theme, is_server, rel_path)
+
+    @classmethod
+    @functools.lru_cache
+    def _resolve_modifiers_cached(cls, vtype, theme, is_server, rel_path):
         modifiers, child_modifiers = {}, {}
         for scls in vtype.__mro__[::-1]:
             cls_modifiers = cls.modifiers.get(scls, {})

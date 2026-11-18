@@ -1,3 +1,4 @@
+import os
 import time
 
 import pytest
@@ -11,7 +12,10 @@ except ImportError:
 
 import panel as pn
 
-from panel.tests.util import serve_component, wait_until
+from panel.tests.util import (
+    _STYLESHEETS_SETTLED, linux_only, run_panel_serve, serve_component,
+    wait_for_port, wait_until, write_file,
+)
 from panel.util import parse_query
 from panel.widgets import FloatSlider, RangeSlider, TextInput
 
@@ -133,6 +137,38 @@ def test_set_nested_pathname_then_load_markdown_no_console_errors(page):
         msg for msg in msgs
         if msg.type == 'error' and 'favicon' not in msg.location['url']
     ] == []
+
+
+@linux_only
+def test_set_nested_pathname_with_panel_serve_resolves_resources_from_root(py_file, port, page):
+    app = """
+import panel as pn
+
+layout = pn.Column(pn.pane.Markdown("Initial markdown"))
+
+def cb():
+    pn.state.location.pathname = "/foo/bar"
+    layout.append(pn.pane.Markdown("Dynamically loaded markdown"))
+
+pn.state.onload(cb)
+layout.servable()
+"""
+    write_file(app, py_file.file)
+    app_name = os.path.basename(py_file.name)[:-3]
+
+    requests = []
+    page.on('response', lambda r: requests.append((r.status, r.url)))
+    page.on('requestfailed', lambda r: requests.append(('failed', r.url)))
+    with run_panel_serve(["--port", str(port), py_file.name]) as p:
+        port = wait_for_port(p.stdout)
+        page.goto(f"http://localhost:{port}/{app_name}")
+
+        expect(page.locator(".markdown")).to_have_count(2)
+        wait_until(lambda: page.url.endswith("/foo/bar"), page)
+        page.wait_for_function(_STYLESHEETS_SETTLED, timeout=15000)
+
+    assert [(status, url) for status, url in requests if status == 'failed' or status >= 400] == []
+    assert [url for _, url in requests if '/foo/' in url] == []
 
 
 def test_reload_set_at_build_time_navigates_on_pathname_change(page):
