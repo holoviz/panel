@@ -843,6 +843,7 @@ def _destroy_document(self, session):
         _UNWRITTEN.pop(self, None)
     _UNCONNECTED_EVENTS.pop(self, None)
     _HOLD_POLICY.pop(self, None)
+    _HOLD_THREAD.pop(self, None)
     with _SCHEDULED_UPDATES_LOCK:
         _SCHEDULED_UPDATES.pop(self, None)
     for future in _WRITE_FUTURES.pop(self, []):
@@ -1431,11 +1432,8 @@ def hold(
                                 _release_held_events(doc)
                         _schedule_locked(doc, _unhold)
             elif held:
-                # A hold another thread established, e.g. a locked callback
-                # running on a worker thread while this context runs on the
-                # event loop, may have been released in the meantime, which
-                # dispatched the events collected so far. Holding again
-                # would collect every later event with nothing to release them.
+                # Another thread may have released its hold meanwhile;
+                # restoring it would collect events nothing releases.
                 if doc.callbacks.hold_value or holder == threading.get_ident():
                     doc.callbacks._hold = held
             elif comm is not None:
