@@ -23,7 +23,7 @@ export class AcePlotView extends HTMLBoxView {
   override connect_signals(): void {
     super.connect_signals()
 
-    const {code, theme, language, filename, print_margin, annotations, soft_tabs, indent, readonly} = this.model.properties
+    const {code, theme, language, filename, print_margin, annotations, soft_tabs, indent, readonly, keyboard_accessible, soft_wrap} = this.model.properties
     this.on_change(code, () => this._update_code_from_model())
     this.on_change(theme, () => this._update_theme())
     this.on_change(language, () => this._update_language())
@@ -32,6 +32,8 @@ export class AcePlotView extends HTMLBoxView {
     this.on_change(annotations, () => this._add_annotations())
     this.on_change(indent, () => this._editor.setOptions({tabSize: this.model.indent}))
     this.on_change(soft_tabs, () => this._editor.setOptions({useSoftTabs: this.model.soft_tabs}))
+    this.on_change(keyboard_accessible, () => this._editor.setOptions({enableKeyboardAccessibility: this.model.keyboard_accessible}))
+    this.on_change(soft_wrap, () => this._editor.setOptions({wrap: this.model.soft_wrap}))
     this.on_change(readonly, () => {
       this._editor.setReadOnly(this.model.readonly)
     })
@@ -58,6 +60,8 @@ export class AcePlotView extends HTMLBoxView {
       enableBasicAutocompletion: true,
       tabSize: this.model.indent,
       useSoftTabs: this.model.soft_tabs,
+      enableKeyboardAccessibility: this.model.keyboard_accessible,
+      wrap: this.model.soft_wrap,
       enableSnippets: true,
       fontFamily: "monospace", //hack for cursor position
     })
@@ -176,6 +180,8 @@ export namespace AcePlot {
     print_margin: p.Property<boolean>
     readonly: p.Property<boolean>
     soft_tabs: p.Property<boolean>
+    soft_wrap: p.Property<boolean>
+    keyboard_accessible: p.Property<boolean>
   }
 }
 
@@ -205,6 +211,8 @@ export class AcePlot extends HTMLBox {
       theme:        [ Str, "github_light_default" ],
       readonly:     [ Bool,         false ],
       soft_tabs:    [ Bool,         false ],
+      soft_wrap:    [ Bool,         false ],
+      keyboard_accessible: [ Bool,  false ],
     }))
 
     this.override<AcePlot.Props>({

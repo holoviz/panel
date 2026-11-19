@@ -42,6 +42,11 @@ class CodeEditor(Widget):
 
     indent = param.Integer(default=4, doc="The default indent size.")
 
+    keyboard_accessible = param.Boolean(default=False, doc="""
+        Whether Tab moves the focus out of the editor rather than indenting.
+        The editor is entered with Enter and left with Escape, so a keyboard
+        user is not trapped in it.""")
+
     on_keyup = param.Boolean(default=True, doc="""
         Whether to update the value on every key press or only upon loss of focus / hotkeys.""")
 
@@ -52,6 +57,8 @@ class CodeEditor(Widget):
         Define if editor content can be modified. Alias for disabled.""")
 
     soft_tabs = param.Boolean(default=False, doc="Whether to use spaces instead of tabs.")
+
+    soft_wrap = param.Boolean(default=False, doc="Whether to wrap long lines.")
 
     theme: str = param.Selector(
         default="github_light_default", objects=list(ace_themes), doc="""

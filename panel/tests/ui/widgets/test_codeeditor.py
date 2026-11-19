@@ -358,3 +358,19 @@ def test_code_editor_worker_resumes_after_clear(page):
     assert any(a["type"] == "error" for a in resumed_annotations)
     # Verify these are worker-produced, not our cleared user annotations
     assert all(a["text"] != "user note" for a in resumed_annotations)
+
+
+def test_code_editor_keyboard_accessible_escape_then_tab_leaves(page):
+    editor = CodeEditor(value="print(1)", keyboard_accessible=True)
+    serve_component(page, editor)
+    ace_input = page.locator(".ace_content")
+    expect(ace_input).to_have_count(1)
+    ace_input.click()
+    page.wait_for_timeout(300)
+
+    page.keyboard.press("Escape")
+    page.keyboard.press("Tab")
+    page.keyboard.type("x")
+
+    expect(page.locator(".ace_content")).to_have_text("print(1)", use_inner_text=True)
+    assert editor.value == "print(1)"
