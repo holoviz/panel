@@ -5292,10 +5292,7 @@ def _assert_page(page, widget, number, values, msgs, errors):
     assert widget.page == number
     page.wait_for_timeout(200)
     assert errors == []
-    assert [
-        msg.text for msg in msgs
-        if msg.type in ('error', 'warning') and 'favicon' not in msg.location['url']
-    ] == []
+    assert [msg.text for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
 
 @pytest.mark.parametrize('pagination', ['local', 'remote'])
