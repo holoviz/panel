@@ -68,4 +68,6 @@ class Terminal(HTMLBox):
 
     options = Dict(String, Any)
 
+    history = String()
+
     output = String()
