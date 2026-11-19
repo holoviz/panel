@@ -28,9 +28,11 @@ from panel.depends import bind
 from panel.layout import (
     Column, FlexBox, HSpacer, Row,
 )
-from panel.pane import HoloViews, PaneBase, panel
+from panel.pane import (
+    HoloViews, Interactive, PaneBase, panel,
+)
 from panel.tests.util import hv_available, mpl_available
-from panel.theme import Native
+from panel.theme import Fast, Material, Native
 from panel.util.warnings import PanelDeprecationWarning
 from panel.widgets import (
     Checkbox, DiscreteSlider, EditableFloatSlider, FloatInput, IntInput,
@@ -261,6 +263,24 @@ def test_holoviews_pane_inherits_design_stylesheets(document, comm):
     plotly_model = row.children[0]
 
     assert len(plotly_model.stylesheets) == 6
+
+@hv_available
+def test_holoviews_pane_design_change_after_render(document):
+    pane = HoloViews(hv.Curve([1, 2, 3]), backend='bokeh', design=Fast)
+    row = pane.get_root(document)
+
+    pane.design = Material
+    pane.width = 300
+
+    assert row.children[0].width == 300
+
+
+def test_interactive_pane_empty_with_design(document):
+    pane = Interactive(design=Fast)
+    row = pane.get_root(document)
+
+    assert isinstance(row.children[0], BkSpacer)
+
 
 @hv_available
 def test_holoviews_widgets_from_dynamicmap(document, comm):

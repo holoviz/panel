@@ -38,7 +38,7 @@ from panel.io.server import (
 from panel.layout import Row
 from panel.models import HTML as BkHTML
 from panel.models.tabulator import TABULATOR_VERSION, TableEditEvent
-from panel.pane import Markdown
+from panel.pane import Bokeh, Markdown
 from panel.param import ParamFunction
 from panel.reactive import ReactiveHTML
 from panel.template import BootstrapTemplate
@@ -424,6 +424,22 @@ def test_server_template_static_resources_with_subpath_and_prefix_relative_url()
     r = serve_and_request({'/subpath/template': template}, prefix='/prefix', suffix="/prefix/subpath/template")
 
     assert f'href="../static/extensions/panel/bundled/bootstraptemplate/bootstrap.css?v={JS_VERSION}"' in r.content.decode('utf-8')
+
+
+def test_server_bokeh_pane_servable_with_global_template():
+    from bokeh.plotting import figure
+
+    panes = []
+
+    def app():
+        pane = Bokeh(figure())
+        panes.append(pane)
+        pane.servable()
+
+    with config.set(template='fast'):
+        serve_and_request(app)
+
+    wait_until(lambda: len(panes) == 1 and bool(panes[0]._models))
 
 
 def test_server_template_resources_not_duplicated():

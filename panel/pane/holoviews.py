@@ -843,7 +843,8 @@ class Interactive(Pane):
             return self.get_root(doc, comm)
         if self._layout_panel is None:
             model = _BkSpacer(**{
-                p: getattr(self, p) for p in Layoutable.param if p != 'name'
+                p: getattr(self, p) for p in Layoutable.param
+                if p not in ('name', 'design')
             })
         else:
             model = self._layout_panel._get_model(doc, root, parent, comm)
