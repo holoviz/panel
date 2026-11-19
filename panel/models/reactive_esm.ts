@@ -19,7 +19,7 @@ import {Model} from "@bokehjs/model"
 
 import {serializeEvent} from "./event-to-object"
 import {DOMEvent} from "./html"
-import {HTMLBox, HTMLBoxView, rerender_view, reset_size, set_size} from "./layout"
+import {HTMLBox, HTMLBoxView, prepare_nested_layouts, rerender_view, reset_size, set_size} from "./layout"
 import {resource_url, resources} from "./resources"
 import {convertUndefined, formatError} from "./util"
 
@@ -380,6 +380,9 @@ export class ReactiveESMView extends HTMLBoxView {
     }
     for (const child_view of this.child_views) {
       if (child_view instanceof LayoutDOMView) {
+        if (!(child_view instanceof ReactiveESMView)) {
+          prepare_nested_layouts(child_view)
+        }
         child_view.update_layout()
       }
     }

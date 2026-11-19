@@ -7,6 +7,7 @@ import pytest
 
 pytest.importorskip("playwright")
 
+from bokeh.models import SizeBar
 from bokeh.plotting import figure
 from playwright.sync_api import expect
 
@@ -1332,6 +1333,34 @@ def test_children_bokeh_plot_added_with_layout_before_mount(page, component):
     expect(canvas).to_be_visible()
     wait_until(lambda: (canvas.bounding_box() or {}).get('width') == 300, page)
     assert errors == []
+
+
+@pytest.mark.internet
+@pytest.mark.parametrize('component', [JSChildren, ReactChildren])
+def test_children_bokeh_plot_with_size_bar(page, component):
+    errors, msgs = [], []
+    page.on('pageerror', lambda error: errors.append(str(error)))
+    page.on('console', lambda msg: msgs.append(msg))
+    plot = figure(height=300, sizing_mode='stretch_width')
+    renderer = plot.circle([1, 2, 3], [1, 2, 3], radius=[0.1, 0.2, 0.3])
+    plot.add_layout(SizeBar(renderer=renderer), 'right')
+    example = component(objects=[Bokeh(plot, sizing_mode='stretch_width')], sizing_mode='stretch_width')
+
+    page.set_viewport_size({'width': 900, 'height': 500})
+    serve_component(page, example)
+
+    size_bar = page.locator('.bk-SizeBar .bk-Canvas')
+    expect(size_bar).to_be_visible()
+    wait_until(lambda: (box := size_bar.bounding_box()) and box['width'] > 0 and box['height'] > 0, page)
+    x = size_bar.bounding_box()['x']
+
+    page.set_viewport_size({'width': 600, 'height': 500})
+
+    wait_until(lambda: size_bar.bounding_box()['x'] <= x - 250, page)
+    box = size_bar.bounding_box()
+    assert box['width'] > 0 and box['height'] > 0
+    assert errors == []
+    assert [msg for msg in msgs if msg.type == 'error' and 'favicon' not in msg.location['url']] == []
 
 
 JS_CODE_BEFORE = """

@@ -1,5 +1,6 @@
 import {div, px} from "@bokehjs/core/dom"
 import type {DOMView} from "@bokehjs/core/dom_view"
+import type {View} from "@bokehjs/core/view"
 import {isArray} from "@bokehjs/core/util/types"
 import {unreachable} from "@bokehjs/core/util/assert"
 import {WidgetView} from "@bokehjs/models/widgets/widget"
@@ -13,6 +14,36 @@ import {
   await_resources, define_external_resources, load_resources,
   render_resource_error,
 } from "./resources"
+
+function* unmanaged_layout_views(view: View): Generator<LayoutDOMView> {
+  for (const child of view.children()) {
+    if (child instanceof LayoutDOMView && !(view instanceof LayoutDOMView)) {
+      yield child
+    }
+    yield* unmanaged_layout_views(child)
+  }
+}
+
+/**
+ * Lays out the layout views nested in `view` that no layout manages, e.g.
+ * the internal plot of a `SizeBar`, if they have not been laid out yet.
+ *
+ * Such a view only builds its layout in its own `after_render`, but the view
+ * containing it may read that layout in its `update_layout`, which here can
+ * run first. Once the view has been laid out it builds a fresh layout on
+ * every `after_render`, so the caller must lay out `view` again if any of
+ * the returned views ends up with a different layout. Can be removed once
+ * https://github.com/bokeh/bokeh/issues/15794 is fixed.
+ */
+export function prepare_nested_layouts(view: View): LayoutDOMView[] {
+  const nested = [...unmanaged_layout_views(view)]
+  for (const nested_view of nested) {
+    if (nested_view.layout == null) {
+      nested_view.update_layout()
+    }
+  }
+  return nested
+}
 
 /**
  * Re-renders a view, including its layout.
@@ -36,8 +67,13 @@ import {
 export function rerender_view(view: DOMView, layout: boolean = true): void {
   if (view instanceof LayoutDOMView) {
     view.render()
+    const nested = prepare_nested_layouts(view)
     view.update_layout()
+    const nested_layouts = nested.map((nested_view) => nested_view.layout)
     view.r_after_render()
+    if (nested.some((nested_view, i) => nested_view.layout !== nested_layouts[i])) {
+      view.update_layout()
+    }
     if (layout) {
       view.compute_layout()
     }
