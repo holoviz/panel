@@ -26,7 +26,15 @@ async function startApplication() {
   try {
     await self.pyodide.runPythonAsync(`
       import micropip
+{% if fallback_env_spec %}
+      try:
+          await micropip.install([{{ env_spec }}])
+      except Exception as e:
+          print(f'Retrying with Bokeh from PyPI, since installing from the CDN failed: {e}')
+          await micropip.install([{{ fallback_env_spec }}])
+{% else %}
       await micropip.install([{{ env_spec }}]);
+{% endif %}
     `);
   } catch(e) {
     console.log(e)
