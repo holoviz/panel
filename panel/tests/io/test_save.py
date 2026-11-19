@@ -1,4 +1,6 @@
+import ast
 import re
+import textwrap
 
 from io import BytesIO, StringIO
 from pathlib import Path
@@ -15,8 +17,8 @@ import panel.io.save as save_module
 from panel import bind
 from panel.config import config
 from panel.io.convert import (
-    PYODIDE_MODULE_URL, PYODIDE_PYC_MODULE_URL, PYODIDE_VERSION,
-    script_to_html,
+    BOKEH_CDN_WHL, BOKEH_VERSION, PANEL_CDN_WHL, PYODIDE_MODULE_URL,
+    PYODIDE_PYC_MODULE_URL, PYODIDE_VERSION, script_to_html,
 )
 from panel.io.resources import CDN_DIST
 from panel.io.state import state
@@ -81,6 +83,40 @@ def test_pyodide_compiled_worker_uses_module_loader():
     )
 
     assert f'import {{ loadPyodide }} from "{PYODIDE_PYC_MODULE_URL}"' in worker
+
+
+def _install_code(source):
+    """Extracts the Python code that installs the environment."""
+    start = source.rindex('\n', 0, source.index('import micropip')) + 1
+    return textwrap.dedent(source[start:source.index('`', start)])
+
+
+@pytest.mark.parametrize('runtime', ['pyodide', 'pyodide-worker'])
+def test_pyodide_falls_back_to_bokeh_from_pypi(runtime):
+    """The CDN may not host a wheel for the installed Bokeh release."""
+    html, worker = script_to_html(
+        StringIO("import panel as pn\npn.pane.Str('Ready').servable()"),
+        requirements=[BOKEH_CDN_WHL, PANEL_CDN_WHL],
+        runtime=runtime, prerender=False
+    )
+    code = _install_code(worker if runtime == 'pyodide-worker' else html)
+
+    ast.parse(code)
+    assert f"await micropip.install([{BOKEH_CDN_WHL!r}, {PANEL_CDN_WHL!r}])" in code
+    assert f"await micropip.install(['bokeh=={BOKEH_VERSION}', {PANEL_CDN_WHL!r}])" in code
+
+
+@pytest.mark.parametrize('runtime', ['pyodide', 'pyodide-worker'])
+def test_pyodide_without_bokeh_cdn_wheel_has_no_fallback(runtime):
+    html, worker = script_to_html(
+        StringIO("import panel as pn\npn.pane.Str('Ready').servable()"),
+        requirements=[f'bokeh=={BOKEH_VERSION}', 'panel'],
+        runtime=runtime, prerender=False
+    )
+    code = _install_code(worker if runtime == 'pyodide-worker' else html)
+
+    ast.parse(code)
+    assert 'try:' not in code
 
 
 def test_pyodide_worker_uses_configured_cdn_root():

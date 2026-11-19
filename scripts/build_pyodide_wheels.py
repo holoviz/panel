@@ -17,6 +17,7 @@ except ModuleNotFoundError:
     # Can be removed after 3.11 is the minimum version
     import tomli as tomllib
 
+from bokeh_wheel import strip_bokeh_wheel
 from packaging.requirements import Requirement
 
 PANEL_BASE = pathlib.Path(__file__).parent.parent
@@ -107,20 +108,6 @@ if not bokeh_wheels:
     raise RuntimeError("Bokeh wheel not found.")
 bokeh_wheel = sorted(bokeh_wheels)[-1]
 
-zin = zipfile.ZipFile(bokeh_wheel, "r")
-
-zout = zipfile.ZipFile(out / os.path.basename(bokeh_wheel), "w")
-exts = [".js", ".d.ts", ".tsbuildinfo"]
-for item in zin.infolist():
-    filename = item.filename
-    buffer = zin.read(filename)
-    if not filename.startswith("bokeh/core/_templates") and (
-        filename.endswith("bokeh.json") or any(filename.endswith(ext) for ext in exts)
-    ):
-        continue
-    zout.writestr(item, buffer)
-
-zout.close()
-zin.close()
+strip_bokeh_wheel(bokeh_wheel, out)
 
 print(f"\nWheels where successfully written to {out}")
