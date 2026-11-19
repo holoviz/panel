@@ -28,7 +28,9 @@ from panel.depends import bind
 from panel.layout import (
     Column, FlexBox, HSpacer, Row,
 )
-from panel.pane import HoloViews, Interactive, PaneBase, panel
+from panel.pane import (
+    HoloViews, Interactive, PaneBase, panel,
+)
 from panel.tests.util import hv_available, mpl_available
 from panel.theme import Fast, Material, Native
 from panel.util.warnings import PanelDeprecationWarning
