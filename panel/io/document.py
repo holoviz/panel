@@ -22,6 +22,7 @@ from weakref import WeakKeyDictionary
 from bokeh.application.application import SessionContext
 from bokeh.document.document import Document
 from bokeh.document.events import (
+    ColumnDataChangedEvent, ColumnsPatchedEvent, ColumnsStreamedEvent,
     DocumentChangedEvent, DocumentPatchedEvent, MessageSentEvent,
     ModelChangedEvent, SessionCallbackAdded, SessionCallbackRemoved,
     TitleChangedEvent,
@@ -61,6 +62,7 @@ logger = logging.getLogger(__name__)
 #---------------------------------------------------------------------
 
 GC_DEBOUNCE = 5
+_MODEL_CHANGE_EVENTS = (ModelChangedEvent, ColumnDataChangedEvent, ColumnsStreamedEvent, ColumnsPatchedEvent)
 _HOLD_LOCK: WeakKeyDictionary[Document, threading.Lock] = WeakKeyDictionary()
 # The policy requested for a hold Panel established; the Document itself
 # always collects, see _hold_doc.
@@ -180,6 +182,27 @@ def _combine_events(events: Iterable[DocumentChangedEvent]) -> list[DocumentChan
         first.callback_invoker = event.callback_invoker
     return combined
 
+def _drop_unsent_model_changes(
+    doc: Document, events: list[DocumentChangedEvent]
+) -> list[DocumentChangedEvent]:
+    """
+    Drops changes to models the client has not been sent yet, since the
+    message that first defines a model serializes its current state.
+
+    Combining merges a later change into the slot of an earlier one,
+    which can discard the only definition of a model that a change
+    between the two refers to, leaving the client unable to decode the
+    patch. Skipped while no model counts as sent, e.g. for an embedder
+    that never serialized the Document, whose bookkeeping is unreliable.
+    """
+    unsent = getattr(doc.models, '_new_models', None)
+    if not unsent or len(unsent) >= len(doc.models):
+        return events
+    return [
+        event for event in events
+        if not (isinstance(event, _MODEL_CHANGE_EVENTS) and event.model in unsent)
+    ]
+
 def _take_held_events(doc: Document) -> list[DocumentChangedEvent]:
     """
     Removes the events held on the Document and returns them, combined
@@ -188,7 +211,7 @@ def _take_held_events(doc: Document) -> list[DocumentChangedEvent]:
     events = list(doc.callbacks._held_events or [])
     doc.callbacks._held_events = []
     if _HOLD_POLICY.pop(doc, 'combine') == 'combine':
-        events = _combine_events(events)
+        events = _combine_events(_drop_unsent_model_changes(doc, events))
     return events
 
 def _client_has_document(doc: Document) -> bool:

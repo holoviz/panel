@@ -1,6 +1,7 @@
 import asyncio
 import contextvars
 import gc
+import json
 import threading
 import time
 import weakref
@@ -12,8 +13,11 @@ import param
 import pytest
 import tornado.locks
 
+from bokeh.core.serialization import Deserializer
 from bokeh.document import Document
 from bokeh.document.events import MessageSentEvent, ModelChangedEvent
+from bokeh.models import Column as BkColumn, Range1d
+from bokeh.plotting import figure
 from bokeh.protocol import Protocol
 
 import panel as pn
@@ -1666,6 +1670,16 @@ def _text_changes(messages):
     ]
 
 
+def _sends_text(messages, text):
+    """
+    Whether a message sets a Markdown to ``text``, either as a change or
+    in the definition of a model the client was not sent yet, which
+    already carries changes made before it was written.
+    """
+    html = f'&lt;p&gt;{text}&lt;/p&gt;'
+    return any(html in json.dumps(msg.content, default=str) for msg in messages)
+
+
 def _serve_with_message_log(obj, monkeypatch):
     """
     Serves obj and records every message written to a fake connection,
@@ -1751,7 +1765,7 @@ def test_unlocked_change_on_loop_is_ordered_after_locked_callback(pending, monke
         release.set()
     future.result(timeout=5)
 
-    wait_until(lambda: len(_text_changes(messages)) == 1)
+    wait_until(lambda: _sends_text(messages, 'c'))
     assert _undefined_references(messages, known) == []
 
 
@@ -1789,8 +1803,73 @@ def test_unlocked_change_while_locked_callback_writes_is_deferred(monkeypatch):
 
     asyncio.run_coroutine_threadsafe(trigger(), asyncio_loop).result(timeout=5)
 
-    wait_until(lambda: len(_text_changes(messages)) == 1)
+    wait_until(lambda: _sends_text(messages, 'c'))
     assert _undefined_references(messages, known) == []
+
+
+def _rerender_with_linked_range(holder, other):
+    """
+    Re-renders ``holder`` twice, linking ``other`` to a range that only
+    the first render defined, like two HoloViews plots with a shared axis.
+    Combining folds the second render into the first, discarding the
+    only definition of the range ahead of the change to its start.
+    """
+    shared = Range1d(0, 1)
+    holder.children = [figure(x_range=shared)]
+    shared.start = 5
+    other.x_range = shared
+    holder.children = [figure()]
+
+
+@pytest.mark.xdist_group(name="server")
+@pytest.mark.parametrize('threaded', [False, True])
+def test_hold_drops_changes_to_unsent_models_when_combining(threaded, monkeypatch):
+    holder, other = BkColumn(children=[figure()]), figure()
+    pane = pn.pane.Bokeh(BkColumn(children=[holder, other]))
+    doc, messages, _ = _serve_with_message_log(pane, monkeypatch)
+    client_models = list(doc.models)
+    asyncio_loop = doc.session_context.server_context.application_context.io_loop.asyncio_loop
+    holder, other = doc.select_one({'id': holder.id}), doc.select_one({'id': other.id})
+
+    def rerender():
+        with set_curdoc(doc), hold(doc):
+            _rerender_with_linked_range(holder, other)
+
+    if threaded:
+        thread = threading.Thread(target=rerender)
+        thread.start()
+        thread.join()
+    else:
+        async def run():
+            rerender()
+        asyncio.run_coroutine_threadsafe(run(), asyncio_loop).result(timeout=5)
+
+    wait_until(lambda: any(
+        event.get('attr') == 'x_range'
+        for msg in messages for event in msg.content['events']
+    ))
+    # Bokeh resolves references in order, even within one message
+    deserializer = Deserializer(references=client_models)
+    for msg in messages:
+        deserializer.decode(msg.content)
+
+
+def test_hold_with_comm_drops_changes_to_unsent_models_when_combining(monkeypatch):
+    sent = []
+    monkeypatch.setattr('panel.io.notebook.send', lambda comm, msg: sent.append(msg))
+    holder, other = BkColumn(children=[figure()]), figure()
+    doc = Document()
+    doc.add_root(BkColumn(children=[holder, other]))
+    doc.models.flush_synced()
+    client_models = list(doc.models)
+    comm = state._comm_manager.get_server_comm()
+    comm._comm = object()
+
+    with hold(doc, comm=comm):
+        _rerender_with_linked_range(holder, other)
+
+    [msg] = sent
+    Deserializer(references=client_models).decode(msg.content)
 
 
 @pytest.mark.xdist_group(name="server")
