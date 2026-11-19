@@ -175,13 +175,13 @@ export namespace AcePlot {
     language: p.Property<string>
     filename: p.Property<string | null>
     indent: p.Property<number>
+    keyboard_accessible: p.Property<boolean>
     theme: p.Property<string>
     annotations: p.Property<any[]>
     print_margin: p.Property<boolean>
     readonly: p.Property<boolean>
     soft_tabs: p.Property<boolean>
     soft_wrap: p.Property<boolean>
-    keyboard_accessible: p.Property<boolean>
   }
 }
 
@@ -205,6 +205,7 @@ export class AcePlot extends HTMLBox {
       code_input:   [ Str,            ""  ],
       filename:     [ Nullable(Str), null ],
       indent:       [ Int,              4 ],
+      keyboard_accessible: [ Bool,         false ],
       language:     [ Str,             "" ],
       on_keyup:     [ Bool,          true ],
       print_margin: [ Bool,         false ],
@@ -212,7 +213,6 @@ export class AcePlot extends HTMLBox {
       readonly:     [ Bool,         false ],
       soft_tabs:    [ Bool,         false ],
       soft_wrap:    [ Bool,         false ],
-      keyboard_accessible: [ Bool,  false ],
     }))
 
     this.override<AcePlot.Props>({
