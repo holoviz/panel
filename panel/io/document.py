@@ -65,6 +65,8 @@ _HOLD_LOCK: WeakKeyDictionary[Document, threading.Lock] = WeakKeyDictionary()
 # The policy requested for a hold Panel established; the Document itself
 # always collects, see _hold_doc.
 _HOLD_POLICY: WeakKeyDictionary[Document, HoldPolicyType] = WeakKeyDictionary()
+# The thread that established the hold Panel put on a Document.
+_HOLD_THREAD: WeakKeyDictionary[Document, int] = WeakKeyDictionary()
 _WRITE_FUTURES: WeakKeyDictionary[Document, list[Future]] = WeakKeyDictionary()
 _WRITE_EVENTS: WeakKeyDictionary[Document, deque[EventBatch]] = WeakKeyDictionary()
 _WRITE_BLOCK: WeakKeyDictionary[Document, bool] = WeakKeyDictionary()
@@ -143,6 +145,7 @@ def _hold_doc(doc: Document, policy: HoldPolicyType = 'combine') -> None:
     combined when they are released, see ``_combine_events``.
     """
     _HOLD_POLICY[doc] = policy
+    _HOLD_THREAD[doc] = threading.get_ident()
     doc.hold('collect')
 
 def _combine_events(events: Iterable[DocumentChangedEvent]) -> list[DocumentChangedEvent]:
@@ -840,6 +843,7 @@ def _destroy_document(self, session):
         _UNWRITTEN.pop(self, None)
     _UNCONNECTED_EVENTS.pop(self, None)
     _HOLD_POLICY.pop(self, None)
+    _HOLD_THREAD.pop(self, None)
     with _SCHEDULED_UPDATES_LOCK:
         _SCHEDULED_UPDATES.pop(self, None)
     for future in _WRITE_FUTURES.pop(self, []):
@@ -1397,6 +1401,7 @@ def hold(
             stack.enter_context(doc.models.freeze())
         threaded = not state._on_loop_thread
         held = doc.callbacks.hold_value
+        holder = _HOLD_THREAD.get(doc) if held else None
         we_held = False
         try:
             if policy is None:
@@ -1432,7 +1437,10 @@ def hold(
                                 _release_held_events(doc)
                         _schedule_locked(doc, _unhold)
             elif held:
-                doc.callbacks._hold = held
+                # Another thread may have released its hold meanwhile;
+                # restoring it would collect events nothing releases.
+                if doc.callbacks.hold_value or holder == threading.get_ident():
+                    doc.callbacks._hold = held
             elif comm is not None:
                 from .notebook import push
 
