@@ -58,6 +58,8 @@ class AcePlot(HTMLBox):
 
     indent = Int(default=4)
 
+    keyboard_accessible = Bool(default=False)
+
     language = String(default='')
 
     on_keyup = Bool(default=True)
@@ -67,6 +69,8 @@ class AcePlot(HTMLBox):
     readonly = Bool(default=False)
 
     soft_tabs = Bool(default=False)
+
+    soft_wrap = Bool(default=False)
 
     theme = Enum(ace_themes, default='github_light_default')
 

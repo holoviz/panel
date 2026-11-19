@@ -17,6 +17,15 @@ def test_ace(document, comm):
     assert editor.value == "Hi there!"
 
 
+def test_ace_keyboard_accessible_and_soft_wrap(document, comm):
+    editor = CodeEditor(value="x", keyboard_accessible=True, soft_wrap=True)
+    model = editor.get_root(document, comm=comm)
+    assert model.keyboard_accessible and model.soft_wrap
+
+    editor.param.update(keyboard_accessible=False, soft_wrap=False)
+    assert not model.keyboard_accessible and not model.soft_wrap
+
+
 def test_ace_input(document, comm):
     editor = CodeEditor(value="", language="python")
     editor.value = "Hello World!"
