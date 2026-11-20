@@ -97,6 +97,31 @@ def _convert_datetime_array_ignore_list(v):
         return convert_datetime_array(v)
     return v
 
+def _is_missing(value) -> bool:
+    if value is None:
+        return True
+    # pd.NA and pd.NaT can only exist once pandas was imported, and Tabulator
+    # must work on polars or pyarrow data without importing it.
+    pd = sys.modules.get('pandas')
+    if pd is not None and pd.api.types.is_scalar(value):
+        return bool(pd.isna(value))
+    try:
+        return bool(value != value)
+    except (TypeError, ValueError):
+        return False
+
+def _values_equal(a, b) -> bool:
+    # A cleared cell may come back as NaN, None, NaT or pd.NA depending on
+    # the dtype, and none of these compare equal to each other.
+    a_missing, b_missing = _is_missing(a), _is_missing(b)
+    if a_missing or b_missing:
+        return a_missing and b_missing
+    try:
+        return bool(a == b)
+    except (TypeError, ValueError):
+        # Array-like cells compare elementwise.
+        return False
+
 def _get_value_from_keys(d:dict, key1, key2, default=None):
     if key1 in d:
         return d[key1]
@@ -1863,7 +1888,15 @@ class Tabulator(BaseTable):
             # on_edit only fires once self.value/current_view reflect it,
             # without depending on the relative order these two independently
             # dispatched messages (this event and that patch) are handled in.
-            self._pending_edits.setdefault((event_col, idx), []).append(event)
+            # An event deferred while the document is busy is only processed
+            # after the pending changes, so the patch may have landed already.
+            # While an earlier edit to the cell is queued, the current value
+            # may match only because that patch has not landed yet (A -> B -> A).
+            key = (event_col, idx)
+            if key not in self._pending_edits and self._edit_applied(event, event_col, indexed):
+                self._fire_edits([event])
+            else:
+                self._pending_edits.setdefault(key, []).append(event)
             return
 
         if event_col not in self.buttons:
@@ -1879,17 +1912,28 @@ class Tabulator(BaseTable):
         for cb in self._on_click_callbacks.get(event_col, []):
             state.execute(partial(cb, event), schedule=False)
 
+    def _edit_applied(self, event: TableEditEvent, column: str, indexed: bool) -> bool:
+        if _values_equal(event.old, event.value) or not (0 <= event.row < len(self.value)):
+            return False
+        if indexed:
+            current = self.value[column].iloc[event.row]
+        else:
+            current = to_narwhals(self.value).item(event.row, column)
+        return _values_equal(current, event.value)
+
     def _fire_pending_edits(self, column: str, index) -> None:
         if not self._pending_edits:
             return
         for ind in index:
             events = self._pending_edits.pop((column, ind), None)
-            if not events:
-                continue
-            for event in events:
-                for cb in self._on_edit_callbacks:
-                    state.execute(partial(cb, event), schedule=False)
-            self._update_style()
+            if events:
+                self._fire_edits(events)
+
+    def _fire_edits(self, events: list[TableEditEvent]) -> None:
+        for event in events:
+            for cb in self._on_edit_callbacks:
+                state.execute(partial(cb, event), schedule=False)
+        self._update_style()
 
     def _get_theme(self, theme, resources=None):
         from ..models.tabulator import _TABULATOR_THEMES_MAPPING, THEME_PATH
