@@ -63,22 +63,50 @@ def _basemap_center(page):
     }""")
 
 
-def test_deckgl_basemap_follows_initial_view_state_update(page):
-    def spec(longitude, latitude, zoom):
-        return {
-            'initialViewState': {'longitude': longitude, 'latitude': latitude, 'zoom': zoom},
-            'mapStyle': 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
-            'layers': [{
-                '@@type': 'ScatterplotLayer', 'data': [{'p': [longitude, latitude]}],
-                'getPosition': '@@=p', 'getRadius': 1000
-            }]
-        }
-    pane = pn.pane.DeckGL(spec(-100, 40, 3), height=400, width=600)
+# Stands in for a deck.gl that has not initialized its WebGL device yet,
+# which is when it first reports a view state change.
+_NO_VIEW_STATE_CHANGE = """
+const interval = setInterval(() => {
+  const proto = window.deck?.DeckGL?.prototype
+  if (proto == null) { return }
+  clearInterval(interval)
+  const handler = proto._onViewStateChange
+  proto._onViewStateChange = function (params) {
+    const props = this.props
+    this.props = {...props, onViewStateChange: () => null}
+    try { return handler.call(this, params) } finally { this.props = props }
+  }
+}, 0)
+"""
+
+
+def _basemap_spec(longitude, latitude, zoom):
+    return {
+        'initialViewState': {'longitude': longitude, 'latitude': latitude, 'zoom': zoom},
+        'mapStyle': 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
+        'layers': [{
+            '@@type': 'ScatterplotLayer', 'data': [{'p': [longitude, latitude]}],
+            'getPosition': '@@=p', 'getRadius': 1000
+        }]
+    }
+
+
+def test_deckgl_basemap_starts_at_initial_view_state(page):
+    page.add_init_script(_NO_VIEW_STATE_CHANGE)
+    pane = pn.pane.DeckGL(_basemap_spec(-100, 40, 3), height=400, width=600)
 
     serve_component(page, pane)
 
     wait_until(lambda: _basemap_center(page) == pytest.approx([-100, 40, 3]), page)
 
-    pane.object = spec(-120, 37, 6)
+
+def test_deckgl_basemap_follows_initial_view_state_update(page):
+    pane = pn.pane.DeckGL(_basemap_spec(-100, 40, 3), height=400, width=600)
+
+    serve_component(page, pane)
+
+    wait_until(lambda: _basemap_center(page) == pytest.approx([-100, 40, 3]), page)
+
+    pane.object = _basemap_spec(-120, 37, 6)
 
     wait_until(lambda: _basemap_center(page) == pytest.approx([-120, 37, 6]), page)
