@@ -42,7 +42,8 @@ _IGNORED_PKGS = ['js', 'pyodide', 'PIL']
 _PANDAS_AUTODETECT = ['bokeh.sampledata', 'as_frame']
 
 def _distribution_modules(distribution: str) -> tuple[set[str], set[str]]:
-    modules, namespaces = set(), set()
+    modules = set()
+    namespaces: set[str] = set()
     for file in metadata.files(distribution) or ():
         if file.suffix not in ('.py', '.pyc', '.pyd', '.so'):
             continue
@@ -95,7 +96,7 @@ def find_requirements(code: str) -> list[str]:
     code = dedent(code)
 
     mod = ast.parse(code)
-    imports = set()
+    imports: set[tuple[str, str]] = set()
     for node in ast.walk(mod):
         if isinstance(node, ast.Import):
             imports.update((name.name, '') for name in node.names)
