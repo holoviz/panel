@@ -22,7 +22,9 @@ import traceback
 import typing as t
 
 from contextlib import redirect_stderr, redirect_stdout
+from functools import cache
 from html import escape
+from importlib import metadata
 from textwrap import dedent
 
 #---------------------------------------------------------------------
@@ -38,6 +40,37 @@ _PACKAGE_MAP = {
 }
 _IGNORED_PKGS = ['js', 'pyodide', 'PIL']
 _PANDAS_AUTODETECT = ['bokeh.sampledata', 'as_frame']
+
+def _distribution_modules(distribution: str) -> tuple[set[str], set[str]]:
+    modules = set()
+    namespaces: set[str] = set()
+    for file in metadata.files(distribution) or ():
+        if file.suffix not in ('.py', '.pyc', '.pyd', '.so'):
+            continue
+        parents = file.parts[:-1]
+        name = file.name.split('.', 1)[0]
+        parts = parents if name == '__init__' else (*parents, name)
+        modules.add('.'.join(parts))
+        namespaces.update('.'.join(parts[:i]) for i in range(1, len(parts)))
+    return modules, namespaces
+
+def _find_distribution(
+    module: str, member: str, root: str, distributions: list[str],
+    get_modules: t.Callable[[str], tuple[set[str], set[str]]],
+) -> str:
+    if not distributions or distributions == [root]:
+        return root
+    providers = {name: get_modules(name) for name in distributions}
+    owners = {name for name, (modules, _) in providers.items() if module in modules}
+    if not owners and member and member != '*':
+        submodule = f'{module}.{member}'
+        owners = {
+            name for name, (modules, namespaces) in providers.items()
+            if submodule in modules or submodule in namespaces
+        }
+    if not owners:
+        owners = {name for name, (_, namespaces) in providers.items() if module in namespaces}
+    return next(iter(owners)) if len(owners) == 1 else root
 
 def find_requirements(code: str) -> list[str]:
     """
@@ -56,37 +89,40 @@ def find_requirements(code: str) -> list[str]:
     Examples
     --------
     >>> code = "import numpy as np; import scipy.stats"
-    >>> find_imports(code)
+    >>> find_requirements(code)
     ['numpy', 'scipy']
     """
     # handle mis-indented input from multi-line strings
     code = dedent(code)
 
     mod = ast.parse(code)
-    imports = set()
+    imports: set[tuple[str, str]] = set()
     for node in ast.walk(mod):
         if isinstance(node, ast.Import):
-            for name in node.names:
-                node_name = name.name
-                imports.add(node_name.split(".")[0])
-        elif isinstance(node, ast.ImportFrom):
-            module_name = node.module
-            if module_name is None:
-                continue
-            imports.add(module_name.split(".")[0])
+            imports.update((name.name, '') for name in node.names)
+        elif isinstance(node, ast.ImportFrom) and not node.level and node.module is not None:
+            module = node.module
+            imports.update((module, name.name) for name in node.names)
 
     packages = []
-    for pkg in sorted(imports):
-        pkg = _PACKAGE_MAP.get(pkg, pkg)
-        if pkg in _STDLIBS:
+    distributions = None
+    get_modules = cache(_distribution_modules)
+    for module, member in sorted(imports):
+        root = module.split('.', 1)[0]
+        if root in _STDLIBS or root in _IGNORED_PKGS:
             continue
-        elif isinstance(pkg, list):
+        pkg = _PACKAGE_MAP.get(root)
+        if pkg is None:
+            if distributions is None:
+                distributions = metadata.packages_distributions()
+            pkg = _find_distribution(module, member, root, distributions.get(root, []), get_modules)
+        if isinstance(pkg, list):
             packages.extend(pkg)
         else:
             packages.append(pkg)
     if any(pdd in code for pdd in _PANDAS_AUTODETECT) and 'pandas' not in packages:
         packages.append('pandas')
-    return [pkg for pkg in packages if pkg not in _IGNORED_PKGS]
+    return list(dict.fromkeys(pkg for pkg in packages if pkg not in _IGNORED_PKGS))
 
 #---------------------------------------------------------------------
 # Execution API
