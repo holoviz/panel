@@ -15,7 +15,7 @@ else:
     pn.state.cache['data'] = data = ... # Load some data or perform an expensive computation
 ```
 
-Alternatively, the `as_cached` helper function provides a slightly cleaner way to write the caching logic. Instead of writing a conditional statement you write a function that is executed only when the inputs to the function change. If provided, the `args` and `kwargs` will also be hashed making it easy to cache (or memoize) on the arguments to the function:
+Alternatively, the `as_cached` helper function provides a slightly cleaner way to write the caching logic. Instead of writing a conditional statement you write a function that is executed only when the inputs to the function change. Panel forwards positional and keyword arguments to the function and hashes them as part of the cache key. Pass `ttl` by keyword to set the cache lifetime.
 
 ```python
 def load_data(*args, **kwargs):

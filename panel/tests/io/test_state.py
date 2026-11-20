@@ -32,6 +32,68 @@ def test_as_cached_key_and_kwarg():
     assert state.as_cached('test', test_fn, a=1) == 1
     assert state.as_cached('test', test_fn, a=2) == 2
 
+def test_as_cached_positional_args():
+    calls = []
+
+    def load(path):
+        calls.append(path)
+        return path
+
+    assert state.as_cached('data', load, 'my_file.csv') == 'my_file.csv'
+    assert state.as_cached('data', load, 'my_file.csv') == 'my_file.csv'
+    assert state.as_cached('data', load, 'other.csv') == 'other.csv'
+    assert calls == ['my_file.csv', 'other.csv']
+
+def test_as_cached_positional_args_and_ttl():
+    calls = []
+
+    def fn(val):
+        calls.append(val)
+        return val, len(calls)
+
+    assert state.as_cached('data', fn, 'a', ttl=0.1) == ('a', 1)
+    assert state.as_cached('data', fn, 'a', ttl=0.1) == ('a', 1)
+    time.sleep(0.11)
+    assert state.as_cached('data', fn, 'a', ttl=0.1) == ('a', 2)
+    assert calls == ['a', 'a']
+
+def test_as_cached_mixed_positional_and_keyword_args():
+    calls = []
+
+    def fn(a, b=0):
+        calls.append((a, b))
+        return a, b, len(calls)
+
+    assert state.as_cached('data', fn, 'a', b=1) == ('a', 1, 1)
+    assert state.as_cached('data', fn, 'a', b=1) == ('a', 1, 1)
+    assert state.as_cached('data', fn, 'a', b=2) == ('a', 2, 2)
+    assert state.as_cached('data', fn, 'a', b=1) == ('a', 1, 1)
+    assert state.as_cached('data', fn, a='a', b=1) == ('a', 1, 3)
+    assert state.as_cached('data', fn, ('a', 1)) == (('a', 1), 0, 4)
+    assert state.as_cached('data', fn, a=1) == (1, 0, 5)
+    assert len(state.cache) == 5
+
+def test_as_cached_positional_args_errors():
+    calls = []
+
+    def fn_list(items):
+        calls.append(items)
+        return items
+
+    with pytest.raises(TypeError):
+        state.as_cached('data', fn_list, [1, 2])
+    assert calls == []
+    assert state.cache == {}
+
+    def fn_no_args():
+        calls.append('called')
+        return 'ok'
+
+    with pytest.raises(TypeError):
+        state.as_cached('data', fn_no_args, 1)
+    assert calls == []
+    assert state.cache == {}
+
 def test_as_cached_thread_locks():
     def test_fn(i=[0]):
         i[0] += 1

@@ -18,6 +18,7 @@ Many thanks to the contributors to this release: @philippjfr, @hoxbro, @maximlt,
 
 ### ✨ Enhancements
 
+* Accept positional arguments to the cached function in `pn.state.as_cached`.
 * Show a default `Filter by <column>...` placeholder in `Tabulator` header filters ([#8452](https://github.com/holoviz/panel/pull/8452))
 * Add a `widget_placeholder` parameter to `ChatInterface` that sets, and later updates, the placeholder of its default input widget ([#9040](https://github.com/holoviz/panel/pull/9040))
 * Add `max_completions` to `AutocompleteInput` to limit the number of suggestions shown ([#9031](https://github.com/holoviz/panel/pull/9031))
@@ -157,6 +158,7 @@ This release removes much of the fixed cost of serving a Panel app, from the byt
 
 ### ⚙️ Compatibility
 
+* Behaviour change: `pn.state.as_cached` now requires `ttl` to be passed by keyword.
 * **Behaviour change:** pandas is no longer a required dependency and moves to the `recommended` extra, as announced in the 1.9.0 release notes. `Tabulator`, the `DataFrame` widget, `Perspective`, `Vizzu` and `ChatMessage` work without it; the admin dashboard still requires pandas and raises a clear error without it ([#8841](https://github.com/holoviz/panel/pull/8841))
 * Add compatibility with Bokeh 3.10.2, which clamps slider values to their range; editable sliders now widen their range in Python, and changing `fixed_start` or `fixed_end` clamps the value into the new bounds ([#8927](https://github.com/holoviz/panel/pull/8927))
 * Stop passing the `HTTPServerRequest` arguments that Tornado 6.7 removed ([#9046](https://github.com/holoviz/panel/pull/9046))
