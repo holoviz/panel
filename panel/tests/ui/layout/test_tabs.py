@@ -25,7 +25,9 @@ def test_tabs_toggle_visible(page):
 
     expect(tab_panels.first).to_have_text("Foo")
 
-    tabs_root.locator('.bk-tab').last.click(force=True)
+    # Not forced: the click must wait until the header receives pointer
+    # events, else it can land on content still overlapping it.
+    tabs_root.locator('.bk-tab').last.click()
 
     expect(tab_panels.last).to_have_text("Bar")
 

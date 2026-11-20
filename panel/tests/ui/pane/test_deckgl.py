@@ -56,7 +56,8 @@ def _basemap_center(page):
           if (child) { return child }
         }
       }
-      const map = find(Object.values(Bokeh.index))._map
+      const map = find(Object.values(Bokeh.index))?._map
+      if (map == null) { return null }
       const {lng, lat} = map.getCenter()
       return [lng, lat, map.getZoom()]
     }""")

@@ -4,6 +4,8 @@ A module containing testing utilities and fixtures.
 import asyncio
 import atexit
 import datetime as dt
+import hashlib
+import json
 import os
 import pathlib
 import re
@@ -41,9 +43,10 @@ from panel.io.resources import (
 from panel.io.state import set_curdoc, state
 from panel.pane import HTML, Markdown
 from panel.tests.util import (
-    RemoteRequests, get_open_ports, global_design, import_panel_ui, is_remote,
-    restore_classic_globals, reverse_proxy as reverse_proxy_ctx,
-    serve_and_wait, set_global_design,
+    CDN_DIST_PATTERN, REMOTE_PATTERN, RemoteRequests, get_open_ports,
+    global_design, import_panel_ui, restore_classic_globals,
+    reverse_proxy as reverse_proxy_ctx, serve_and_wait, serve_local_dist,
+    set_global_design,
 )
 from panel.theme import Design
 
@@ -179,6 +182,12 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "panel_ui: mark test as importing panel.ui")
 
 
+def pytest_sessionfinish(session):
+    is_xdist_worker = hasattr(session.config, 'workerinput')
+    if not is_xdist_worker and (cache_dir := _remote_cache_dir(session.config)) is not None:
+        _prune_remote_cache(cache_dir)
+
+
 def pytest_generate_tests(metafunc):
     repeat = getattr(metafunc.config.option, 'repeat', None)
     if repeat is not None:
@@ -256,13 +265,60 @@ _REMOTE_RESPONSES: dict[str, tuple[int, dict[str, str], bytes]] = {}
 # Playwright hands back the decoded body
 _DROPPED_HEADERS = ('content-encoding', 'content-length', 'transfer-encoding')
 
+# Entries no test has read for this long belong to dependency versions the
+# tests no longer load.
+REMOTE_CACHE_MAX_AGE = dt.timedelta(days=14)
 
-def _serve_cached(route, remote_requests):
+
+def _remote_cache_dir(config):
+    cache = getattr(config, 'cache', None)
+    return None if cache is None else cache.mkdir('remote-requests')
+
+
+def _read_remote_cache(cache_dir, url):
+    key = hashlib.sha256(url.encode()).hexdigest()
+    meta_path = cache_dir / f'{key}.json'
+    try:
+        meta = json.loads(meta_path.read_text())
+        body = (cache_dir / f'{key}.body').read_bytes()
+    except (OSError, ValueError):
+        return None
+    if meta.get('url') != url:
+        return None
+    with suppress(OSError):
+        os.utime(meta_path)
+    return meta['status'], meta['headers'], body
+
+
+def _write_remote_cache(cache_dir, url, status, headers, body):
+    key = hashlib.sha256(url.encode()).hexdigest()
+    # Written to a temporary file and renamed, so another xdist worker never
+    # reads a partial entry; the metadata goes last since readers look it up first.
+    for suffix, data in (('body', body), ('json', json.dumps({'url': url, 'status': status, 'headers': headers}).encode())):
+        tmp = cache_dir / f'{key}.{suffix}.{os.getpid()}.tmp'
+        with suppress(OSError):
+            tmp.write_bytes(data)
+            os.replace(tmp, cache_dir / f'{key}.{suffix}')
+
+
+def _prune_remote_cache(cache_dir):
+    cutoff = time.time() - REMOTE_CACHE_MAX_AGE.total_seconds()
+    for meta_path in cache_dir.glob('*.json'):
+        with suppress(OSError):
+            if meta_path.stat().st_mtime < cutoff:
+                meta_path.unlink()
+                meta_path.with_suffix('.body').unlink(missing_ok=True)
+
+
+def _serve_cached(route, remote_requests, cache_dir):
     request = route.request
     if request.method != 'GET':
         route.fallback()
         return
     url = request.url
+    if url not in _REMOTE_RESPONSES and cache_dir is not None:
+        if (cached := _read_remote_cache(cache_dir, url)) is not None:
+            _REMOTE_RESPONSES[url] = cached
     if url not in _REMOTE_RESPONSES:
         try:
             response = route.fetch()
@@ -277,6 +333,8 @@ def _serve_cached(route, remote_requests):
             return
         headers = {k: v for k, v in response.headers.items() if k.lower() not in _DROPPED_HEADERS}
         _REMOTE_RESPONSES[url] = (response.status, headers, response.body())
+        if cache_dir is not None:
+            _write_remote_cache(cache_dir, url, *_REMOTE_RESPONSES[url])
     status, headers, body = _REMOTE_RESPONSES[url]
     route.fulfill(status=status, headers=headers, body=body)
 
@@ -285,6 +343,7 @@ def _serve_cached(route, remote_requests):
 def context(context, request):
     # Set the default timeout to 20 secs
     context.set_default_timeout(20_000)
+    context.route(CDN_DIST_PATTERN, serve_local_dist)
     request.node._remote_requests = RemoteRequests(context)
     if ON_WINDOWS:
         # A script or websocket that fails to load surfaces only as a timeout
@@ -307,15 +366,18 @@ def context(context, request):
 @pytest.fixture
 def cache_remote_requests(context, request):
     """
-    Serves remote GET requests from a cache shared by the tests of a worker.
+    Serves remote GET requests from a cache kept in the pytest cache
+    directory, which CI restores between runs.
 
     Every test gets a fresh browser context, which otherwise downloads CDN
-    resources such as the Pyodide runtime and esm.sh modules again. Requests
-    are only answered while the test is in a Playwright call, so tests that
-    block in time.sleep while the page loads must not use it.
+    resources such as the Pyodide runtime and esm.sh modules again, and an
+    outage of one of these hosts would fail every test that loads from it.
+    Requests are only answered while the test is in a Playwright call, so
+    tests that block in time.sleep while the page loads must not use it.
     """
     remote_requests = request.node._remote_requests
-    context.route(is_remote, lambda route: _serve_cached(route, remote_requests))
+    cache_dir = _remote_cache_dir(request.config)
+    context.route(REMOTE_PATTERN, lambda route: _serve_cached(route, remote_requests, cache_dir))
     yield
     # A fetch still in flight would fail the next test's context
     context.unroute_all(behavior='ignoreErrors')

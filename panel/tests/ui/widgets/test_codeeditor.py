@@ -378,6 +378,9 @@ def test_code_editor_keyboard_accessible_escape_then_tab_leaves(page):
     expect(ace_input).to_have_count(1)
     ace_input.click()
     expect(page.locator(".ace_editor.ace_focus")).to_have_count(1)
+    # Ace refocuses the editor in a timeout queued on mousedown, which
+    # would undo the Escape below; a later timeout runs after it.
+    page.evaluate("() => new Promise((resolve) => setTimeout(resolve))")
 
     page.keyboard.press("Escape")
     page.keyboard.press("Tab")

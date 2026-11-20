@@ -138,6 +138,44 @@ def wait_for_data_synced(page, widget):
     wait_until(_synced, page)
 
 
+def apply_header_filter(page, widget, header, value):
+    # The server resends the data whenever the filters change, which matches
+    # the data the table holds and closes an editor opened before it arrives.
+    page.evaluate("""() => {
+      const view = Bokeh.index.query_one((view) => view.model.type.endsWith('DataTabulator'))
+      window.__data_changes = 0
+      view.model.source.properties.data.change.connect(() => { window.__data_changes += 1 })
+    }""")
+    header.click()
+    header.fill(value)
+    header.press('Enter')
+    wait_until(lambda: len(widget.filters) == 1, page)
+    wait_until(lambda: page.evaluate("""() => {
+      const view = Bokeh.index.query_one((view) => view.model.type.endsWith('DataTabulator'))
+      return window.__data_changes > 0 && !view._updating_data
+    }"""), page)
+    wait_for_data_synced(page, widget)
+
+
+def wait_for_table(page):
+    # Cells exist while the table is still hidden being built and styled, and
+    # once shown it is redrawn to fit, which rebuilds the cells and resets the
+    # scroll, so interacting earlier races with both.
+    wait_until(lambda: page.evaluate("""async () => {
+      const view = Bokeh.index.query_one((view) => view.model.type.endsWith('DataTabulator'))
+      const settled = () => (
+        view?.tabulator?.element.style.visibility === 'visible' && !view._initializing &&
+        !view.is_drawing && !view._resize_pending && view._resize_flush === null &&
+        view._pending_scroll_restores === 0
+      )
+      if (!settled()) {
+        return false
+      }
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+      return settled()
+    }"""), page)
+
+
 def tabulator_column_values(page, col_name: str) -> list[str]:
     """Get the values of a column.
 
@@ -1526,7 +1564,7 @@ def test_tabulator_patch_no_horizontal_rescroll(page, df_mixed):
 
     serve_component(page, widget)
 
-    expect(page.locator('text="target"')).to_be_attached()
+    wait_for_table(page)
 
     # Scroll to the right
     table_holder = page.locator('.pnx-tabulator .tabulator-tableholder')
@@ -1586,7 +1624,7 @@ def test_tabulator_patch_no_vertical_rescroll(page):
 
     serve_component(page, widget)
 
-    expect(page.locator(f'text="{target}"')).to_be_attached()
+    wait_for_table(page)
 
     table_holder = page.locator('.pnx-tabulator .tabulator-tableholder')
     table_holder.evaluate("el => { el.scrollTop = el.scrollHeight; }")
@@ -1620,8 +1658,8 @@ def test_tabulator_patch_with_filter_no_vertical_rescroll(page):
 
     serve_component(page, widget)
 
+    wait_for_table(page)
     tableholder = page.locator(".tabulator-tableholder")
-    expect(tableholder).to_be_visible()
 
     # Scrolling is a no-op until the rows have been laid out, so retry it
     wait_until(lambda: tableholder.evaluate(
@@ -1710,8 +1748,8 @@ def test_tabulator_header_filter_no_horizontal_rescroll(page, df_mixed, paginati
 
     serve_component(page, widget)
 
+    wait_for_table(page)
     table_holder = page.locator('.pnx-tabulator .tabulator-tableholder')
-    expect(table_holder).to_have_count(1)
     # Setting scrollLeft is a no-op before the layout settles and a redraw
     # can reset it, so retry it.
     wait_until(lambda: table_holder.evaluate(
@@ -2519,6 +2557,7 @@ def test_tabulator_edit_event_empty_to_nan(page, df_mixed):
 
     serve_component(page, widget)
 
+    wait_for_table(page)
     cell = page.locator('text="3.14"')
     cell.click()
     editable_cell = page.locator('input[type="number"]')
@@ -3099,10 +3138,12 @@ def test_tabulator_styling_bar_keeps_column_width(page):
 
     serve_component(page, widget)
 
+    wait_for_table(page)
     cell = page.locator('.tabulator-row').first.locator('.tabulator-cell[tabulator-field="A"]')
     expect(cell).to_have_css('background-image', re.compile('linear-gradient'))
     header = page.locator('.tabulator-col[tabulator-field="A"]')
-    assert cell.bounding_box()['width'] == header.bounding_box()['width']
+    cell_box, header_box = bounding_boxes(page, cell, header)
+    assert cell_box['width'] == header_box['width']
 
 
 @pytest.mark.parametrize('kwargs', [
@@ -3448,11 +3489,7 @@ def test_tabulator_edit_event_and_header_filters_last_row(page):
 
     # Set a filter on col1
     str_header = page.locator('input[type="search"]')
-    str_header.click()
-    str_header.fill('D')
-    str_header.press('Enter')
-    wait_until(lambda: len(widget.filters) == 1, page)
-    wait_for_data_synced(page, widget)
+    apply_header_filter(page, widget, str_header, 'D')
 
     # Click on the last cell
     cell = page.locator('text="Z"')
@@ -3487,11 +3524,7 @@ def test_tabulator_edit_event_and_header_filters(page):
 
     # Set a filter on col1
     str_header = page.locator('input[type="search"]')
-    str_header.click()
-    str_header.fill('a')
-    str_header.press('Enter')
-    wait_until(lambda: len(widget.filters) == 1, page)
-    wait_for_data_synced(page, widget)
+    apply_header_filter(page, widget, str_header, 'a')
 
     # Change the cell that contains B to BB
     cell = page.locator('text="B"')
@@ -3529,11 +3562,7 @@ def test_tabulator_edit_event_and_header_filters_same_column(page, show_index, i
     serve_component(page, widget)
 
     header = page.locator('input[type="search"]')
-    header.click()
-    header.fill('B')
-    header.press('Enter')
-    wait_until(lambda: len(widget.filters) == 1, page)
-    wait_for_data_synced(page, widget)
+    apply_header_filter(page, widget, header, 'B')
 
     # Check the table has the right number of rows
     expect(page.locator('.tabulator-row')).to_have_count(2)
@@ -3608,11 +3637,7 @@ def test_tabulator_edit_event_and_header_filters_same_column_pagination(page, pa
     serve_component(page, widget)
 
     header = page.locator('input[type="search"]')
-    header.click()
-    header.fill('B')
-    header.press('Enter')
-    wait_until(lambda: len(widget.filters) == 1, page)
-    wait_for_data_synced(page, widget)
+    apply_header_filter(page, widget, header, 'B')
 
     wait_until(lambda: widget.current_view is not None and widget.current_view.equals(df[df['values'] == 'B']))
 
@@ -5360,8 +5385,8 @@ def test_tabulator_patch_updates_cell_in_place(page):
 
     serve_component(page, widget)
 
+    wait_for_table(page)
     cell = page.locator('.tabulator-cell', has=page.locator('text="v2"'))
-    expect(cell).to_have_count(1)
     cell.evaluate("el => el.setAttribute('data-kept', '1')")
 
     widget.patch({'col': [(2, 'patched')]})
@@ -5446,7 +5471,7 @@ def test_tabulator_selection_many_rows_scrolls_once(page):
 
     serve_component(page, widget)
 
-    expect(page.locator('.tabulator-row')).not_to_have_count(0)
+    wait_for_table(page)
 
     page.evaluate("""() => {
       const view = Bokeh.index.query_one((view) => view.model.type.endsWith('DataTabulator'))

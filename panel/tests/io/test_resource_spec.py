@@ -235,13 +235,21 @@ def test_resource_spec_esm_component_without_resources_carries_shim():
     assert spec['shim'] == expected
 
 
+def _patch_resource_classes(monkeypatch, classes):
+    monkeypatch.setattr('panel.io.resource_spec._resource_classes', lambda: classes)
+    # A server thread left over from an earlier test can render a page and
+    # cache the declarations of the real classes under the same key.
+    key = tuple(classes)
+    monkeypatch.setattr('panel.io.resource_spec._declared_key', lambda mode: (key, mode))
+
+
 def test_declared_specs_skips_esm_component_without_resources(monkeypatch):
     class Custom(JSComponent):
         _extension_name = 'test-lazy-resources'
         _esm = "export function render() {}"
 
     built = []
-    monkeypatch.setattr('panel.io.resource_spec._resource_classes', lambda: [Custom])
+    _patch_resource_classes(monkeypatch, [Custom])
     monkeypatch.setattr('panel.io.resource_spec._build_spec', lambda cls, mode: built.append(cls))
     assert declared_specs('server') == {}
     assert built == []
@@ -316,9 +324,7 @@ def test_declared_specs_omits_empty_keys(monkeypatch):
     An empty ``css`` or ``libs`` key would make the declare payload bigger
     for no reason, and the registry treats a missing key the same way.
     """
-    monkeypatch.setattr(
-        'panel.io.resource_spec._resource_classes', lambda: [ECharts]
-    )
+    _patch_resource_classes(monkeypatch, [ECharts])
     declared = declared_specs('cdn')
     assert set(declared) == {'libs'}
     assert [lib['name'] for lib in declared['libs']] == ['echarts', 'echarts:extra']
