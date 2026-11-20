@@ -60,7 +60,7 @@ export class TerminalView extends HTMLBoxView {
       }
     })
 
-    this.write()
+    this.write(this.model.history)
 
     this.shadow_el.appendChild(this.container)
   }
@@ -83,8 +83,7 @@ export class TerminalView extends HTMLBoxView {
     this.model.trigger_event(new KeystrokeEvent(value))
   }
 
-  write(): void {
-    const text = this.model.output
+  write(text: string = this.model.output): void {
     if (text == null || !text.length) {
       return
     }
@@ -129,6 +128,7 @@ export namespace Terminal {
   export type Attrs = p.AttrsOf<Props>
   export type Props = HTMLBox.Props & {
     options: p.Property<any>
+    history: p.Property<string>
     output: p.Property<string>
     ncols: p.Property<number>
     nrows: p.Property<number>
@@ -154,6 +154,7 @@ export class Terminal extends HTMLBox {
     this.define<Terminal.Props>(({Any, Int, Str}) => ({
       _clears:        [ Int,     0 ],
       options:        [ Any,    {} ],
+      history:        [ Str, "" ],
       output:         [ Str, "" ],
       ncols:          [ Int,     0 ],
       nrows:          [ Int,     0 ],
