@@ -1501,7 +1501,7 @@ class DatetimeRangeInput(CompositeWidget):
         self._start = DatetimeInput(sizing_mode='stretch_width', margin=(5, 0, 0, 0))
         self._end = DatetimeInput(sizing_mode='stretch_width', margin=(5, 0, 0, 0))
         if 'value' not in params:
-            params['value'] = (params['start'], params['end'])
+            params['value'] = (params.get('start'), params.get('end'))
         super().__init__(**params)
         self._msg = ''
         self._composite.extend([self._text, self._start, self._end])
