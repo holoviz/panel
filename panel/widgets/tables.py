@@ -97,13 +97,23 @@ def _convert_datetime_array_ignore_list(v):
         return convert_datetime_array(v)
     return v
 
-def _values_equal(a, b) -> bool:
-    import pandas as pd
+def _is_missing(value) -> bool:
+    if value is None:
+        return True
+    # pd.NA and pd.NaT can only exist once pandas was imported, and Tabulator
+    # must work on polars or pyarrow data without importing it.
+    pd = sys.modules.get('pandas')
+    if pd is not None and pd.api.types.is_scalar(value):
+        return bool(pd.isna(value))
+    try:
+        return bool(value != value)
+    except (TypeError, ValueError):
+        return False
 
+def _values_equal(a, b) -> bool:
     # A cleared cell may come back as NaN, None, NaT or pd.NA depending on
     # the dtype, and none of these compare equal to each other.
-    a_missing = pd.api.types.is_scalar(a) and pd.isna(a)
-    b_missing = pd.api.types.is_scalar(b) and pd.isna(b)
+    a_missing, b_missing = _is_missing(a), _is_missing(b)
     if a_missing or b_missing:
         return a_missing and b_missing
     try:
