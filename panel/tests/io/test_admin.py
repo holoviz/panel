@@ -100,6 +100,30 @@ def test_log_component_filters_and_streams_records():
     assert {'rendered', 'created'} <= set(table.value['message'])
 
 
+def test_log_component_of_stopped_server_does_not_break_flush():
+    class StoppedDocument:
+        session_context = object()
+
+        def on_session_destroyed(self, callback):
+            pass
+
+        def add_next_tick_callback(self, callback):
+            raise RuntimeError('Event loop is closed')
+
+    callbacks = list(log_terminal._flush_callbacks)
+    try:
+        log_component(StoppedDocument())
+        stale = log_terminal._flush_callbacks[-1]
+        _, table = log_component().objects
+
+        _log(9002, 'rendered')
+
+        assert table.value['session'].tolist()[-1:] == [9002]
+        assert stale not in log_terminal._flush_callbacks
+    finally:
+        log_terminal._flush_callbacks[:] = callbacks
+
+
 def test_log_components_do_not_share_filters():
     first, second = log_component(), log_component()
     first_level = first.objects[0].objects[0].objects[0].objects[0]

@@ -9,9 +9,27 @@ from PIL import Image
 from panel.pane import (
     HoloViews, Markdown, Perspective, Vega,
 )
-from panel.tests.util import hv_available
+from panel.tests.util import (
+    CDN_DIST_PATTERN, hv_available, serve_local_dist_async,
+)
 
 pytestmark = pytest.mark.ui
+
+
+@pytest.fixture(autouse=True)
+def local_panel_dist(monkeypatch):
+    # Bokeh exports from its own browser, which the context fixture's route
+    # to the local panel/dist does not cover.
+    from bokeh.io.browser import playwright_control
+
+    get_page = playwright_control.get_page
+
+    async def get_routed_page(**kwargs):
+        page = await get_page(**kwargs)
+        await page.route(CDN_DIST_PATTERN, serve_local_dist_async)
+        return page
+
+    monkeypatch.setattr(playwright_control, 'get_page', get_routed_page)
 
 VEGA = {
     'data': {'values': [{'x': 'A', 'y': 5}, {'x': 'B', 'y': 3}]},

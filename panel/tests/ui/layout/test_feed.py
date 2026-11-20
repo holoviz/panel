@@ -236,8 +236,10 @@ def test_feed_dynamic_objects(page):
 
     feed.objects = list(range(ITEMS))
 
-    wait_until(lambda: expect(page.locator('pre').first).to_have_text('0'))
     wait_until(lambda: page.locator('pre').count() > 10, page)
+    # Filling an empty Feed must not scroll it to the latest object
+    expect(page.locator('pre').first).to_have_text('0')
+    expect(page.locator('.bk-panel-models-feed-Feed')).to_have_js_property('scrollTop', 0)
 
 
 def test_feed_reset_visible_range(page):
