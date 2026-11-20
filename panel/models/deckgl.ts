@@ -262,10 +262,17 @@ export class DeckGLPlotView extends LayoutDOMView {
       if (props.mapStyle == null) {
         props.map = null
       } else if (props.mapStyle.includes("carto")) {
+        // Position the basemap up front: deck.gl only reports its view state
+        // after its WebGL device has initialized, which can take seconds.
+        const {longitude, latitude, zoom, bearing, pitch} = this.model.initialViewState ?? {}
         this._map = new (window as any).maplibregl.Map({
           container,
           style: props.mapStyle,
           interactive: false,
+          ...(longitude != null && latitude != null ? {center: [longitude, latitude]} : {}),
+          ...(zoom != null ? {zoom} : {}),
+          ...(bearing != null ? {bearing} : {}),
+          ...(pitch != null ? {pitch} : {}),
         })
         props.controller = true
         props.map = null
