@@ -214,12 +214,20 @@ export class DeckGLPlotView extends LayoutDOMView {
     this._view_cb(event)
   }
 
+  _map_camera(view_state: any): any {
+    if (view_state?.longitude == null || view_state?.latitude == null) {
+      return {}
+    }
+    const {longitude, latitude, ...rest} = view_state
+    return {center: [longitude, latitude], ...rest}
+  }
+
   _jump_map(view_state: any): void {
     // deck.gl does not emit onViewStateChange when a new initialViewState is
     // applied, so the separate MapLibre basemap has to be moved explicitly.
-    if (this._map && view_state?.longitude != null && view_state?.latitude != null) {
-      const {longitude, latitude, ...rest} = view_state
-      this._map.jumpTo({center: [longitude, latitude], ...rest})
+    const camera = this._map_camera(view_state)
+    if (this._map && camera.center) {
+      this._map.jumpTo(camera)
     }
   }
 
@@ -262,10 +270,13 @@ export class DeckGLPlotView extends LayoutDOMView {
       if (props.mapStyle == null) {
         props.map = null
       } else if (props.mapStyle.includes("carto")) {
+        // Positioned up front rather than on deck.gl's first view state
+        // change, which only comes once its WebGL device has initialized.
         this._map = new (window as any).maplibregl.Map({
           container,
           style: props.mapStyle,
           interactive: false,
+          ...this._map_camera(props.initialViewState),
         })
         props.controller = true
         props.map = null
