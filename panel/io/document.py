@@ -1124,8 +1124,8 @@ def dispatch_django(
 
 def _release_held_events(doc: Document) -> None:
     """
-    Releases a hold established by ``hold`` on a worker thread, letting
-    bokeh dispatch the (combined) events it collected.
+    Releases a hold established by ``hold``, letting bokeh dispatch the
+    (combined) events it collected.
     """
     doc.callbacks._held_events = _suppress_property_callbacks(_take_held_events(doc))
     doc.unhold()
@@ -1474,8 +1474,7 @@ def hold(
             elif not _client_has_document(doc):
                 _dispatch_events(doc, _drain_unconnected_events(doc, hold_lock))
             else:
-                doc.callbacks._held_events = _take_held_events(doc)
-                doc.unhold()
+                _release_held_events(doc)
 
 @contextmanager
 def immediate_dispatch(doc: Document | None = None):
