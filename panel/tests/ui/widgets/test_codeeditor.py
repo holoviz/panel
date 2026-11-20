@@ -25,8 +25,8 @@ def test_code_editor_on_keyup(page):
     page.keyboard.type('print("Hello Panel!")')
 
     expect(page.locator(".ace_content")).to_have_text("print('Hello World!')\nprint(\"Hello Panel!\")", use_inner_text=True)
-    wait_until(lambda: editor.value_input == "print('Hello World!')\nprint(\"Hello Panel!\")", page)
-    assert editor.value == "print('Hello World!')\nprint(\"Hello Panel!\")"
+    expected = "print('Hello World!')\nprint(\"Hello Panel!\")"
+    wait_until(lambda: editor.value_input == expected and editor.value == expected, page)
 
     # clear the editor
     editor.value = ""
