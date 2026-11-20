@@ -475,6 +475,19 @@ def test_datetime_range_input(document, comm):
     assert label.text == '<b>Datetime</b>: '
 
 
+@pytest.mark.parametrize('bounds', [
+    {},
+    {'start': datetime(2018, 1, 1)},
+    {'end': datetime(2018, 1, 10)},
+], ids=['no_bounds', 'start_only', 'end_only'])
+def test_datetime_range_input_without_value(bounds):
+    dt_input = DatetimeRangeInput(**bounds)
+
+    expected = (bounds.get('start'), bounds.get('end'))
+    assert dt_input.value == expected
+    assert (dt_input._start.value, dt_input._end.value) == expected
+
+
 def test_int_input(document, comm):
     int_input = IntInput(label='Int input')
     widget = int_input.get_root(document, comm=comm)
