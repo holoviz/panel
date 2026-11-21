@@ -22,7 +22,8 @@ from panel.pane import Markdown
 from panel.reactive import Reactive, ReactiveHTML, drop_default_properties
 from panel.viewable import Viewable
 from panel.widgets import (
-    Button, Checkbox, IntInput, IntSlider, StaticText, TextInput,
+    Button, Checkbox, IntInput, IntRangeSlider, IntSlider, RangeSlider,
+    StaticText, TextInput,
 )
 
 
@@ -236,6 +237,23 @@ def test_drop_default_properties_matches_bokeh(document):
     full = widget._widget_type(**properties)
     filtered = widget._widget_type(**dropped)
     assert full._property_values == filtered._property_values
+
+
+@pytest.mark.parametrize('slider_type', [RangeSlider, IntRangeSlider])
+@pytest.mark.parametrize('jslink', [True, False])
+def test_range_slider_controls_json(slider_type, jslink):
+    slider = slider_type(start=0, end=10, value=(2, 5))
+    controls = slider.controls(['value'], jslink=jslink)
+    value_input = controls[-1]
+    value_input.serializer = 'json'
+
+    value_input._process_events({'value': '[3, 7]'})
+
+    assert slider.value == (3, 7)
+    assert value_input.value == (3, 7)
+
+    slider.value = (4, 8)
+    assert value_input.value == (4, 8)
 
 
 def test_text_input_controls():
