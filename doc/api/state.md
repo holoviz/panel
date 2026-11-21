@@ -61,7 +61,7 @@ The `pn.state` object makes various global state available and provides methods 
 : Schedules a periodic callback to be run at an interval set by the period
 
 `as_cached`
-: Allows caching data across sessions by memoizing on the provided key and keyword arguments to the provided function.
+: Caches data across sessions by memoizing on the key and the function’s positional and keyword arguments. Pass `ttl` by keyword.
 
 `cancel_scheduled`
 : Cancel a scheduled task by name.

@@ -794,15 +794,16 @@ class _state(param.Parameterized):
     # Public Methods
     #----------------------------------------------------------------
 
-    def as_cached(self, key: str, fn: Callable[[], T], ttl: int | None = None, **kwargs) -> T:
+    def as_cached(self, key: str, fn: Callable[..., T], *args, ttl: int | None = None, **kwargs) -> T:
         """
         Caches the return value of a function globally across user sessions, memoizing on the given
-        key and supplied keyword arguments.
+        key and supplied positional and keyword arguments.
 
-        Note: Keyword arguments must be hashable.
+        Note: Positional and keyword arguments must be hashable.
 
         Pandas Example:
 
+        >>> data = pn.state.as_cached('data', pd.read_csv, 'my_file.csv')
         >>> data = pn.state.as_cached('data', pd.read_csv, filepath_or_buffer=DATA_URL)
 
         Function Example:
@@ -818,7 +819,9 @@ class _state(param.Parameterized):
           The key to cache the return value under.
         fn: (callable)
           The function or callable whose return value will be cached.
-        ttl: (int)
+        *args: tuple
+          Positional arguments to supply to the function.
+        ttl: (int, keyword-only)
           The number of seconds to keep an item in the cache, or None
           if the cache should not expire. The default is None.
         **kwargs: dict
@@ -830,7 +833,7 @@ class _state(param.Parameterized):
         Returns the value returned by the cache or the value in
         the cache.
         """
-        cache_key = (key,)+tuple((k, v) for k, v in sorted(kwargs.items()))
+        cache_key = (key, args, tuple(sorted(kwargs.items())))
         new_expiry = time.monotonic() + ttl if ttl else None
         with self._cache_locks['main']:
             if cache_key in self._cache_locks:
@@ -844,7 +847,7 @@ class _state(param.Parameterized):
                 else:
                     ret, expiry = _Undefined, None
                 if ret is _Undefined or (expiry is not None and expiry < time.monotonic()):
-                    ret, _ = self.cache[cache_key] = (fn(**kwargs), new_expiry)
+                    ret, _ = self.cache[cache_key] = (fn(*args, **kwargs), new_expiry)
         finally:
             if not lock.locked() and cache_key in self._cache_locks:
                 del self._cache_locks[cache_key]
