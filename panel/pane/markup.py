@@ -22,6 +22,7 @@ from ..io.document import unlocked
 from ..io.notebook import push
 from ..io.resources import CDN_DIST
 from ..io.state import state
+from ..layout.base import _SCROLL_MAPPING
 from ..models.markup import HTML as _BkHTML, JSON as _BkJSON, HTMLStreamEvent
 from ..util import HTML_SANITIZER, splice_diff, utf16_offset
 from .base import ModelPane
@@ -102,9 +103,32 @@ class HTMLBasePane(ModelPane):
         Whether to enable streaming of text snippets. This is useful
         when updating a string step by step, e.g. in a chat message.""")
 
+    scroll: t.Literal[
+        False, True, "both-auto", "y-auto", "x-auto", "both", "x", "y"
+    ] = param.Selector(
+        default=False,
+        objects=[False, True, "both-auto", "y-auto", "x-auto", "both", "x", "y"],
+        doc="""Whether to add scrollbars if the content overflows the size
+        of the container. If "both-auto", will only add scrollbars if
+        the content overflows in either directions. If "x-auto" or "y-auto",
+        will only add scrollbars if the content overflows in the
+        respective direction. If "both", will always add scrollbars.
+        If "x" or "y", will always add scrollbars in the respective
+        direction. If False, overflowing content will be clipped.
+        If True, will only add scrollbars if the content overflows in
+        either direction.""")  # type: ignore[assignment, ty:invalid-assignment]
+
     _bokeh_model: t.ClassVar[type[Model]] = _BkHTML
 
-    _rename: t.ClassVar[Mapping[str, str | None]] = {'object': 'text', 'enable_streaming': None}
+    _rename: t.ClassVar[Mapping[str, str | None]] = {
+        'object': 'text', 'enable_streaming': None, 'scroll': None
+    }
+
+    _source_transforms: t.ClassVar[Mapping[str, str | None]] = {'scroll': None}
+
+    _stylesheets: t.ClassVar[list[str]] = [
+        f'{CDN_DIST}css/listpanel.css'
+    ]
 
     _updates: t.ClassVar[bool] = True
 
@@ -122,6 +146,15 @@ class HTMLBasePane(ModelPane):
         self._stream_pending: dict[str, float] = {}
         self._stream_last: dict[str, float] = {}
         super().__init__(object=object, **params)
+
+    def _process_param_change(self, params: dict[str, t.Any]) -> dict[str, t.Any]:
+        if 'css_classes' in params or 'scroll' in params:
+            css_classes = params.get('css_classes', self.css_classes)
+            if (scroll := params.get('scroll', self.scroll)):
+                scroll_class = _SCROLL_MAPPING.get(scroll, 'scrollable')
+                css_classes = css_classes + [scroll_class]
+            params['css_classes'] = css_classes
+        return super()._process_param_change(params)
 
     def _escape_html(self, html: str) -> dict[str, t.Any]:
         # Keeping the unescaped HTML saves unescaping it when streaming
@@ -405,7 +438,7 @@ class DataFrame(HTML):
     }
 
     _stylesheets: t.ClassVar[list[str]] = [
-        f'{CDN_DIST}css/dataframe.css'
+        f'{CDN_DIST}css/dataframe.css', f'{CDN_DIST}css/listpanel.css'
     ]
 
     def __init__(self, object=None, **params):
@@ -690,7 +723,7 @@ class Markdown(HTMLBasePane):
     }
 
     _stylesheets: t.ClassVar[list[str]] = [
-        f'{CDN_DIST}css/markdown.css'
+        f'{CDN_DIST}css/markdown.css', f'{CDN_DIST}css/listpanel.css'
     ]
 
     @classmethod
@@ -859,8 +892,8 @@ class Markdown(HTMLBasePane):
         return prefix_html + stable_html + tail_html
 
     def _process_param_change(self, params):
-        if 'css_classes' in params:
-            params['css_classes'] = ['markdown'] + params['css_classes']
+        if 'css_classes' in params or 'scroll' in params:
+            params['css_classes'] = ['markdown'] + params.get('css_classes', self.css_classes)
         return super()._process_param_change(params)
 
 class JSON(HTMLBasePane):
@@ -906,7 +939,7 @@ class JSON(HTMLBasePane):
     ]
 
     _stylesheets: t.ClassVar[list[str]] = [
-        f'{CDN_DIST}css/json.css'
+        f'{CDN_DIST}css/json.css', f'{CDN_DIST}css/listpanel.css'
     ]
 
     THEME_CONFIGURATION: t.ClassVar[dict[str,str]] = {"default": "light", "dark": "dark"}

@@ -45,7 +45,7 @@ class Alert(Markdown):
     _rename: t.ClassVar[Mapping[str, str | None]] = {'alert_type': None}
 
     _stylesheets: t.ClassVar[list[str]] = [
-        f'{CDN_DIST}css/alerts.css'
+        f'{CDN_DIST}css/alerts.css', f'{CDN_DIST}css/listpanel.css'
     ]
 
     @classmethod
@@ -59,7 +59,7 @@ class Alert(Markdown):
         super().__init__(object, **params)
 
     def _process_param_change(self, params):
-        if 'css_classes' in params or 'alert_type' in params:
+        if 'css_classes' in params or 'alert_type' in params or 'scroll' in params:
             params['css_classes'] = self.css_classes + [
                 'alert', f'alert-{self.alert_type}'
             ]
