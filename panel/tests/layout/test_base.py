@@ -927,3 +927,27 @@ def test_sizing_props_match_property_reads_for_themed_values(document):
     div.min_width = 10
 
     assert _sizing_props(div) == tuple(getattr(div, p) for p in _SIZING_PROPS)
+
+
+@pytest.mark.parametrize('layout', [Column, Row])
+def test_layout_keeps_explicit_min_size_over_inferred_one(document, comm, layout):
+    wide = Markdown('wide', min_width=420, min_height=300, sizing_mode='stretch_both')
+    container = layout(wide, min_width=0, min_height=0, sizing_mode='stretch_both')
+
+    model = container.get_root(document, comm=comm)
+
+    assert (model.min_width, model.min_height) == (0, 0)
+
+    container.append(Markdown('more', min_width=500, min_height=400, sizing_mode='stretch_both'))
+
+    assert (model.min_width, model.min_height) == (0, 0)
+
+
+@pytest.mark.parametrize('layout', [Column, Row])
+def test_layout_infers_min_size_without_explicit_one(document, comm, layout):
+    wide = Markdown('wide', min_width=420, min_height=300, sizing_mode='stretch_both')
+    container = layout(wide, sizing_mode='stretch_both')
+
+    model = container.get_root(document, comm=comm)
+
+    assert (model.min_width, model.min_height) == (420, 300)
