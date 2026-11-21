@@ -27,7 +27,7 @@ from panel.tests.util import (
     async_wait_until, mpl_available, serve_and_request, wait_until,
 )
 from panel.widgets import Button, TextInput
-from panel.widgets.tables import DataFrame, Tabulator
+from panel.widgets.tables import DataFrame, Tabulator, _values_equal
 
 pd_old = pytest.mark.skipif(Version(pd.__version__) < Version('1.3'),
                             reason="Requires latest pandas")
@@ -3069,6 +3069,86 @@ def test_server_edit_event():
     wait_until(lambda: len(events) == 1)
     assert events[0].value == 3.14
     assert events[0].old == 1
+
+
+@pytest.mark.parametrize('value', [3.14, np.nan])
+def test_tabulator_edit_event_after_patch(document, comm, value):
+    # An edit event deferred while the document is busy is processed after the patch.
+    table = Tabulator(makeMixedDataFrame())
+    model = table.get_root(document, comm)
+
+    events = []
+    table.on_edit(lambda e: events.append(e))
+
+    new_data = dict(model.source.data)
+    new_data['B'] = new_data['B'].copy()
+    new_data['B'][1] = value
+    table._process_events({'data': new_data})
+    assert events == []
+
+    table._process_event(TableEditEvent(model, 'B', 1, value=value, old=1))
+
+    assert len(events) == 1
+    assert events[0].old == 1
+    np.testing.assert_equal(events[0].value, value)
+
+    table._process_events({'data': new_data})
+    assert len(events) == 1
+    assert table._pending_edits == {}
+
+
+@pytest.mark.parametrize('dtype', ['Float64', 'Int64'])
+def test_tabulator_edit_event_after_patch_masked_na(document, comm, dtype):
+    table = Tabulator(pd.DataFrame({'A': pd.array([1, 2, 3], dtype=dtype)}))
+    model = table.get_root(document, comm)
+    events = []
+    table.on_edit(events.append)
+
+    table._process_events({'data': dict(model.source.data, A=np.array([1, np.nan, 3]))})
+    table._process_event(TableEditEvent(model, 'A', 1, value=np.nan, old=2))
+
+    assert len(events) == 1
+    assert table._pending_edits == {}
+
+
+def test_tabulator_edit_event_revert_before_patch(document, comm):
+    # The cell holds the reverted value only because the first patch has not
+    # landed, so the second edit must wait instead of firing first.
+    table = Tabulator(pd.DataFrame({'A': [1, 2, 3]}))
+    model = table.get_root(document, comm)
+    events = []
+    table.on_edit(events.append)
+
+    table._process_event(TableEditEvent(model, 'A', 1, value=5, old=2))
+    table._process_event(TableEditEvent(model, 'A', 1, value=2, old=5))
+    assert events == []
+
+    table._process_events({'data': dict(model.source.data, A=np.array([1, 5, 3]))})
+    assert [e.value for e in events] == [5, 2]
+    assert table._pending_edits == {}
+
+
+@pytest.mark.parametrize('a, b, expected', [
+    (1.5, 1.5, True),
+    (1.5, 2.5, False),
+    ('a', 'a', True),
+    ('a', 'b', False),
+    (np.nan, np.nan, True),
+    (np.nan, None, True),
+    (pd.NA, np.nan, True),
+    (pd.NA, pd.NA, True),
+    (pd.NaT, np.datetime64('NaT', 'ns'), True),
+    (pd.NA, 1, False),
+    (np.nan, 0.0, False),
+    (None, 'a', False),
+    (pd.Timestamp('2020-01-01'), np.datetime64('2020-01-01'), True),
+    (dt.datetime(2020, 1, 1), pd.Timestamp('2020-01-01'), True),
+    (pd.Timestamp('2020-01-01'), pd.NaT, False),
+    (np.array([1, 2]), np.array([1, 2]), False),
+    ([1, 2], np.nan, False),
+])
+def test_tabulator_values_equal(a, b, expected):
+    assert _values_equal(a, b) is expected
 
 
 def test_server_edit_event_from_param():

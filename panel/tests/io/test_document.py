@@ -27,10 +27,11 @@ from panel.io.browser import BrowserInfo
 from panel.io.document import (
     _UNCONNECTED_EVENTS, _WRITE_BLOCK, MockSessionContext, _cleanup_doc,
     _client_has_document, _defer_until_unlocked, _destroy_document,
-    _is_write_blocked, _keep_unsent_models_new, _socket_dispatcher,
-    _suppress_property_callbacks, _track_unwritten, _untrack_unwritten,
-    _write_tasks, dispatch_django, dispatch_tornado, extra_socket_handlers,
-    hold, init_doc, schedule_write_events, unlocked, write_events,
+    _is_write_blocked, _keep_unsent_models_new, _schedule_locked,
+    _socket_dispatcher, _suppress_property_callbacks, _track_unwritten,
+    _untrack_unwritten, _write_tasks, dispatch_django, dispatch_tornado,
+    extra_socket_handlers, hold, init_doc, schedule_write_events, unlocked,
+    write_events,
 )
 from panel.io.state import _state, set_curdoc, state
 from panel.tests.util import serve_and_request, wait_until
@@ -651,6 +652,43 @@ def test_threaded_hold_does_not_boomerang_python_changes():
     time.sleep(0.5)
 
     assert seen['on_loop'] is False
+    assert received == []
+
+
+@pytest.mark.xdist_group(name="server")
+def test_loop_hold_before_load_does_not_boomerang_python_changes():
+    """
+    Before the session has loaded, ``hold`` on the loop thread releases
+    the events itself, after ``Syncable._changing`` is torn down.
+    """
+    slider = IntSlider()
+
+    serve_and_request(slider)
+    wait_until(lambda: bool(slider._documents))
+
+    doc, model = list(slider._documents.items())[0]
+    state._connected[doc] = True
+
+    received = []
+    process_events = slider._process_events
+    slider._process_events = lambda events: received.append(events) or process_events(events)
+
+    seen = {}
+
+    def callback():
+        with set_curdoc(doc):
+            seen['on_loop'] = state._on_loop_thread
+            seen['loaded'] = state.loaded
+            with hold(doc):
+                slider.value = 3
+
+    _schedule_locked(doc, callback)
+
+    wait_until(lambda: model.value == 3 and not doc.callbacks.hold_value)
+    # Leave time for a boomerang to pass through the change debounce
+    time.sleep(0.5)
+
+    assert seen == {'on_loop': True, 'loaded': False}
     assert received == []
 
 

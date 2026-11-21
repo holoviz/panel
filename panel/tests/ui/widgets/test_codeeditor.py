@@ -25,8 +25,8 @@ def test_code_editor_on_keyup(page):
     page.keyboard.type('print("Hello Panel!")')
 
     expect(page.locator(".ace_content")).to_have_text("print('Hello World!')\nprint(\"Hello Panel!\")", use_inner_text=True)
-    wait_until(lambda: editor.value_input == "print('Hello World!')\nprint(\"Hello Panel!\")", page)
-    assert editor.value == "print('Hello World!')\nprint(\"Hello Panel!\")"
+    expected = "print('Hello World!')\nprint(\"Hello Panel!\")"
+    wait_until(lambda: editor.value_input == expected and editor.value == expected, page)
 
     # clear the editor
     editor.value = ""
@@ -378,6 +378,9 @@ def test_code_editor_keyboard_accessible_escape_then_tab_leaves(page):
     expect(ace_input).to_have_count(1)
     ace_input.click()
     expect(page.locator(".ace_editor.ace_focus")).to_have_count(1)
+    # Ace refocuses the editor in a timeout queued on mousedown, which
+    # would undo the Escape below; a later timeout runs after it.
+    page.evaluate("() => new Promise((resolve) => setTimeout(resolve))")
 
     page.keyboard.press("Escape")
     page.keyboard.press("Tab")

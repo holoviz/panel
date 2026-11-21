@@ -70,10 +70,17 @@ export class AcePlotView extends HTMLBoxView {
     this._update_language()
     this._editor.setReadOnly(this.model.readonly)
     this._editor.setShowPrintMargin(this.model.print_margin)
-    // if on keyup, update code from editor
-    if (this.model.on_keyup) {
-      this._editor.on("change", () => this._update_code_from_editor())
-    } else {
+    const {on_keyup} = this.model
+    this._editor.on("change", () => {
+      // code_input must reach the server before code: the server copies
+      // value into value_input, so a trailing code_input could overwrite
+      // a newer value_input set from Python.
+      this._update_code_input_from_editor()
+      if (on_keyup) {
+        this._update_code_from_editor()
+      }
+    })
+    if (!on_keyup) {
       this._editor.on("blur", () => this._update_code_from_editor())
       this._editor.commands.addCommand({
         name: "updateCodeFromEditor",
@@ -83,7 +90,6 @@ export class AcePlotView extends HTMLBoxView {
         },
       })
     }
-    this._editor.on("change", () => this._update_code_input_from_editor())
   }
 
   _update_code_from_model(): void {

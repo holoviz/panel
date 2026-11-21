@@ -6,6 +6,7 @@ The doc_available tests check that python in markdown files can be run top to bo
 
 """
 import ast
+import re
 import runpy
 
 from inspect import isclass
@@ -22,7 +23,9 @@ pytestmark = pytest.mark.docs
 REF_PATH = Path(__file__).parents[2] / "examples" / "reference"
 ref_available = pytest.mark.skipif(not REF_PATH.is_dir(), reason="folder 'examples/reference' not found")
 
-DOC_PATH = Path(__file__).parents[2] / "doc"
+REPO_PATH = Path(__file__).parents[2]
+REPO_RAW_URL = "https://raw.githubusercontent.com/holoviz/panel/main/"
+DOC_PATH = REPO_PATH / "doc"
 IGNORED = ['vtk']
 doc_files = [df for df in sorted(DOC_PATH.rglob("*.md")) if not any(ig in str(df).lower() for ig in IGNORED)]
 doc_available = pytest.mark.skipif(not DOC_PATH.is_dir(), reason="folder 'doc' not found")
@@ -137,6 +140,13 @@ async def test_markdown_codeblocks(file, tmp_path, panel_ui):
 
     if any(w in lines for w in exceptions):
         return
+
+    # GitHub rate limits the parallel workers of a CI runner
+    lines = re.sub(
+        re.escape(REPO_RAW_URL) + r'''([^"'\s]+)''',
+        lambda m: (REPO_PATH / m[1]).as_posix() if (REPO_PATH / m[1]).is_file() else m[0],
+        lines
+    )
 
     mod = tmp_path / f'{file.stem}.py'
 

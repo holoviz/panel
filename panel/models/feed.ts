@@ -118,7 +118,9 @@ export class FeedView extends ColumnView {
   }
 
   override async update_children(): Promise<void> {
-    const at_latest = this.distance_from_latest <= 1
+    // An empty Feed has no latest child to follow, so filling it must not
+    // jump to the end.
+    const at_latest = this.child_views.length > 0 && this.distance_from_latest <= 1
     const update = this._rebuild_children()
     this._children_update = update
     try {
@@ -151,12 +153,13 @@ export class FeedView extends ColumnView {
   }
 
   protected async _rebuild_children(): Promise<void> {
+    this._sync = false
+    const created = await this.build_child_views()
+    // Measured after the build, since the Feed may scroll while it awaits
     const last = this._last_visible
     const scroll_top = this.el.scrollTop
     this._reference_view = last
     this._reference = last?.el.offsetTop || 0
-    this._sync = false
-    const created = await this.build_child_views()
     const created_children = new Set(created)
     const createdLength = created.length
     const views_length = this.child_views.length
