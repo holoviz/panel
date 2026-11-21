@@ -237,7 +237,7 @@ class Param(Pane):
     input_widgets: t.ClassVar[dict[t.Any, type[WidgetBase] | Callable[[param.Parameter], type[WidgetBase]]]]  = {
         float: FloatInput,
         int: IntInput,
-        "literal": LiteralInput,
+        "literal": LiteralInputTyped,
     }
 
     if hasattr(param, 'Event'):
