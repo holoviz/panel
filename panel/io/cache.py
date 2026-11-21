@@ -380,6 +380,7 @@ _hash_funcs: _HashFuncs = _HashFuncs({
     unittest.mock.Mock : lambda obj: _int_to_bytes(id(obj)),
     (io.StringIO, io.BytesIO): _io_hash,
     dt.date      : lambda obj: f'{type(obj).__name__}{obj}'.encode(),
+    (dt.time, dt.timedelta): lambda obj: f'{type(obj).__name__}{obj}'.encode(),
     # Value types that would otherwise fall through to id(), which a
     # temporary argument hands on to the next call once it is freed
     uuid.UUID          : lambda obj: b'uuid:' + obj.bytes,
