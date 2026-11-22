@@ -47,6 +47,17 @@ class CodeEditor(Widget):
         The editor is entered with Enter and left with Escape, so a keyboard
         user is not trapped in it.""")
 
+    markers: list[dict[str, t.Any]] = param.List(default=[], item_type=dict, doc="""
+        List of markers highlighting ranges of rows. Each marker is a dict
+        with a zero-based ``start_row``, an optional inclusive ``end_row``
+        (defaults to ``start_row``), an optional CSS ``class`` for the
+        highlight (defaults to ``pn-ace-marker``, set it to ``None`` to only
+        mark the gutter), an optional ``gutter_class`` added to the gutter
+        cell of every marked row, and an optional ``type``: ``'fullLine'``
+        (default), ``'screenLine'`` or ``'text'``, where a text marker spans
+        ``start_column`` to ``end_column``. Setting the parameter replaces
+        all previous markers.""")  # type: ignore[assignment, ty:invalid-assignment]
+
     on_keyup = param.Boolean(default=True, doc="""
         Whether to update the value on every key press or only upon loss of focus / hotkeys.""")
 
@@ -92,6 +103,26 @@ class CodeEditor(Widget):
             self.param.watch(self._update_disabled, ['disabled', 'readonly'])
         )
         self.jslink(self, readonly='disabled', bidirectional=True)
+
+    _marker_types: t.ClassVar[tuple[str, ...]] = ('fullLine', 'screenLine', 'text')
+
+    @param.depends("markers", watch=True, on_init=True)
+    def _validate_markers(self):
+        for marker in self.markers:
+            start = marker.get('start_row')
+            if not isinstance(start, int):
+                raise ValueError(
+                    f"CodeEditor markers require an integer 'start_row', got {marker!r}."
+                )
+            end = marker.get('end_row', start)
+            if not isinstance(end, int) or end < start:
+                raise ValueError(
+                    f"CodeEditor marker 'end_row' must be an integer >= 'start_row', got {marker!r}."
+                )
+            if marker.get('type', 'fullLine') not in self._marker_types:
+                raise ValueError(
+                    f"CodeEditor marker 'type' must be one of {self._marker_types}, got {marker!r}."
+                )
 
     @param.depends("value", watch=True)
     def _update_value_input(self):

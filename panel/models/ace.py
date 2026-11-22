@@ -62,6 +62,8 @@ class AcePlot(HTMLBox):
 
     language = String(default='')
 
+    markers = List(Dict(String, Any), default=[])
+
     on_keyup = Bool(default=True)
 
     print_margin = Bool(default=False)

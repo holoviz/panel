@@ -1,5 +1,6 @@
 import type * as p from "@bokehjs/core/properties"
 import {div} from "@bokehjs/core/dom"
+import type {StyleSheetLike} from "@bokehjs/core/dom"
 import {HTMLBox, HTMLBoxView} from "./layout"
 
 import type {Ace} from "ace-code"
@@ -7,6 +8,18 @@ import type * as AceCode from "ace-code"
 declare const ace: typeof AceCode
 
 import {ID} from "./util"
+
+import ace_css from "styles/models/ace.css"
+
+type Marker = {
+  start_row: number
+  end_row?: number
+  start_column?: number
+  end_column?: number
+  class?: string | null
+  gutter_class?: string | null
+  type?: "fullLine" | "screenLine" | "text"
+}
 
 declare type ModeList = {
   getModeForPath(path: string): {mode: string}
@@ -19,24 +32,29 @@ export class AcePlotView extends HTMLBoxView {
   protected _langTools: unknown
   protected _modelist: ModeList
   protected _container: HTMLDivElement
+  protected _marker_ids: number[] = []
+  protected _gutter_marks: [number, string][] = []
 
   override connect_signals(): void {
     super.connect_signals()
 
-    const {code, theme, language, filename, print_margin, annotations, soft_tabs, indent, readonly, keyboard_accessible, soft_wrap} = this.model.properties
+    const {code, theme, language, filename, print_margin, annotations, markers, soft_tabs, indent, readonly, keyboard_accessible, soft_wrap} = this.model.properties
     this.on_change(code, () => this._update_code_from_model())
     this.on_change(theme, () => this._update_theme())
     this.on_change(language, () => this._update_language())
     this.on_change(filename, () => this._update_filename())
     this.on_change(print_margin, () => this._update_print_margin())
     this.on_change(annotations, () => this._add_annotations())
+    this.on_change(markers, () => this._update_markers())
     this.on_change(indent, () => this._editor.setOptions({tabSize: this.model.indent}))
     this.on_change(soft_tabs, () => this._editor.setOptions({useSoftTabs: this.model.soft_tabs}))
     this.on_change(keyboard_accessible, () => this._editor.setOptions({enableKeyboardAccessibility: this.model.keyboard_accessible}))
     this.on_change(soft_wrap, () => this._editor.setOptions({wrap: this.model.soft_wrap}))
-    this.on_change(readonly, () => {
-      this._editor.setReadOnly(this.model.readonly)
-    })
+    this.on_change(readonly, () => this._update_readonly())
+  }
+
+  override stylesheets(): StyleSheetLike[] {
+    return [...super.stylesheets(), ace_css]
   }
 
   override render(): void {
@@ -68,7 +86,8 @@ export class AcePlotView extends HTMLBoxView {
     this._update_theme()
     this._update_filename()
     this._update_language()
-    this._editor.setReadOnly(this.model.readonly)
+    this._update_readonly()
+    this._update_markers()
     this._editor.setShowPrintMargin(this.model.print_margin)
     const {on_keyup} = this.model
     this._editor.on("change", () => {
@@ -116,6 +135,53 @@ export class AcePlotView extends HTMLBoxView {
       this._editor.clearSelection()
       this._editor.session.setScrollTop(scrollTop)
       this._editor.session.setScrollLeft(scrollLeft)
+    }
+  }
+
+  _update_readonly(): void {
+    this._editor.setReadOnly(this.model.readonly)
+    // Ace creates the "Editing is disabled" tooltip on document.body, outside
+    // the shadow root holding Ace's CSS, unless the editor already has one.
+    // It drops the tooltip whenever read-only is turned off, so attach a new
+    // one to the shadow root each time it is turned on.
+    const editor = this._editor as any
+    if (this.model.readonly && editor.hoverTooltip == null) {
+      const {HoverTooltip} = (ace as any).require("ace/tooltip")
+      editor.hoverTooltip = new HoverTooltip(this.shadow_el)
+    }
+  }
+
+  _update_markers(): void {
+    const session = this._editor.session
+    for (const id of this._marker_ids) {
+      session.removeMarker(id)
+    }
+    for (const [row, cls] of this._gutter_marks) {
+      session.removeGutterDecoration(row, cls)
+    }
+    this._marker_ids = []
+    this._gutter_marks = []
+    const {Range} = (ace as any).require("ace/range")
+    for (const marker of this.model.markers as Marker[]) {
+      const start = marker.start_row
+      if (typeof start !== "number") {
+        continue
+      }
+      const end = marker.end_row ?? start
+      const cls = marker.class === undefined ? "pn-ace-marker" : marker.class
+      if (cls != null && cls !== "") {
+        const type = marker.type ?? "fullLine"
+        const range = type === "text"
+          ? new Range(start, marker.start_column ?? 0, end, marker.end_column ?? Infinity)
+          : new Range(start, 0, end, Infinity)
+        this._marker_ids.push(session.addMarker(range, cls, type, false))
+      }
+      if (marker.gutter_class != null && marker.gutter_class !== "") {
+        for (let row = start; row <= end; row++) {
+          session.addGutterDecoration(row, marker.gutter_class)
+          this._gutter_marks.push([row, marker.gutter_class])
+        }
+      }
     }
   }
 
@@ -179,6 +245,7 @@ export namespace AcePlot {
     code_input: p.Property<string>
     on_keyup: p.Property<boolean>
     language: p.Property<string>
+    markers: p.Property<any[]>
     filename: p.Property<string | null>
     indent: p.Property<number>
     keyboard_accessible: p.Property<boolean>
@@ -213,6 +280,7 @@ export class AcePlot extends HTMLBox {
       indent:       [ Int,              4 ],
       keyboard_accessible: [ Bool,         false ],
       language:     [ Str,             "" ],
+      markers:      [ List(Any),      []  ],
       on_keyup:     [ Bool,          true ],
       print_margin: [ Bool,         false ],
       theme:        [ Str, "github_light_default" ],
