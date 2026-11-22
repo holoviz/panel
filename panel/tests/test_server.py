@@ -1436,6 +1436,35 @@ def test_async_execute_without_running_loop_reuses_thread_loop():
     assert loops[0] not in getattr(IOLoop, '_ioloop_for_asyncio', {})
 
 
+def test_async_execute_without_running_loop_survives_asyncio_run(monkeypatch):
+    import gc
+
+    unraisable = []
+    monkeypatch.setattr(sys, "unraisablehook", unraisable.append)
+    loops = []
+
+    async def cb():
+        loops.append(asyncio.get_running_loop())
+
+    def run():
+        async_execute(cb)
+        # asyncio.run resets the thread's current loop to None on exit
+        asyncio.run(asyncio.sleep(0))
+        gc.collect()
+        async_execute(cb)
+
+    thread = threading.Thread(target=run)
+    thread.start()
+    thread.join()
+    del thread
+    gc.collect()
+
+    assert len(loops) == 2
+    assert loops[0] is loops[1]
+    assert loops[0].is_closed()
+    assert not unraisable
+
+
 def test_threaded_server_stop_does_not_leave_unstarted_tasks(monkeypatch):
     import gc
     import sys
