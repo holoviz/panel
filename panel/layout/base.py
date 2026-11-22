@@ -249,7 +249,7 @@ class SizingModeMixin:
 
         properties = {'sizing_mode': sizing_mode}
         if (sizing_mode.endswith(("_width", "_both")) and
-            widths and 'min_width' not in properties):
+            widths and getattr(self, 'min_width', None) is None):
             width_op = max if self._direction in ('vertical', None) else sum
             min_width = width_op(widths)
             op_widths = [min_width]
@@ -257,7 +257,7 @@ class SizingModeMixin:
                 op_widths.append(properties['max_width'])
             properties['min_width'] = min(op_widths)
         if (sizing_mode.endswith(("_height", "_both")) and
-            heights and 'min_height' not in properties):
+            heights and getattr(self, 'min_height', None) is None):
             height_op = max if self._direction in ('horizontal', None) else sum
             min_height = height_op(heights)
             op_heights = [min_height]
