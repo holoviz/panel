@@ -14,6 +14,35 @@ from ..models.enums import ace_themes
 from ..util import lazy_load
 from .base import Widget
 
+_MARKER_TYPES = ('fullLine', 'screenLine', 'text')
+
+
+def _is_row(value: t.Any) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool) and value >= 0
+
+
+class _Markers(param.List):
+    """A list of CodeEditor markers, validated before it is stored."""
+
+    def _validate(self, val):
+        super()._validate(val)
+        for marker in val or []:
+            start = marker.get('start_row')
+            if not _is_row(start):
+                raise ValueError(
+                    f"CodeEditor markers require a non-negative integer 'start_row', got {marker!r}."
+                )
+            end = marker.get('end_row', start)
+            if not _is_row(end) or end < start:
+                raise ValueError(
+                    f"CodeEditor marker 'end_row' must be an integer >= 'start_row', got {marker!r}."
+                )
+            if marker.get('type', 'fullLine') not in _MARKER_TYPES:
+                raise ValueError(
+                    f"CodeEditor marker 'type' must be one of {_MARKER_TYPES}, got {marker!r}."
+                )
+
+
 if t.TYPE_CHECKING:
     from collections.abc import Mapping
 
@@ -47,7 +76,7 @@ class CodeEditor(Widget):
         The editor is entered with Enter and left with Escape, so a keyboard
         user is not trapped in it.""")
 
-    markers: list[dict[str, t.Any]] = param.List(default=[], item_type=dict, doc="""
+    markers: list[dict[str, t.Any]] = _Markers(default=[], item_type=dict, doc="""
         List of markers highlighting ranges of rows. Each marker is a dict
         with a zero-based ``start_row``, an optional inclusive ``end_row``
         (defaults to ``start_row``), an optional CSS ``class`` for the
@@ -56,7 +85,9 @@ class CodeEditor(Widget):
         cell of every marked row, and an optional ``type``: ``'fullLine'``
         (default), ``'screenLine'`` or ``'text'``, where a text marker spans
         ``start_column`` to ``end_column``. Setting the parameter replaces
-        all previous markers.""")  # type: ignore[assignment, ty:invalid-assignment]
+        all previous markers. Markers stay at the rows they were set on and
+        do not follow edits, so recompute and set them when the text
+        changes.""")  # type: ignore[assignment, ty:invalid-assignment]
 
     on_keyup = param.Boolean(default=True, doc="""
         Whether to update the value on every key press or only upon loss of focus / hotkeys.""")
@@ -103,26 +134,6 @@ class CodeEditor(Widget):
             self.param.watch(self._update_disabled, ['disabled', 'readonly'])
         )
         self.jslink(self, readonly='disabled', bidirectional=True)
-
-    _marker_types: t.ClassVar[tuple[str, ...]] = ('fullLine', 'screenLine', 'text')
-
-    @param.depends("markers", watch=True, on_init=True)
-    def _validate_markers(self):
-        for marker in self.markers:
-            start = marker.get('start_row')
-            if not isinstance(start, int):
-                raise ValueError(
-                    f"CodeEditor markers require an integer 'start_row', got {marker!r}."
-                )
-            end = marker.get('end_row', start)
-            if not isinstance(end, int) or end < start:
-                raise ValueError(
-                    f"CodeEditor marker 'end_row' must be an integer >= 'start_row', got {marker!r}."
-                )
-            if marker.get('type', 'fullLine') not in self._marker_types:
-                raise ValueError(
-                    f"CodeEditor marker 'type' must be one of {self._marker_types}, got {marker!r}."
-                )
 
     @param.depends("value", watch=True)
     def _update_value_input(self):

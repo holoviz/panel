@@ -68,9 +68,20 @@ def test_ace_markers(document, comm):
 @pytest.mark.parametrize("marker", [
     {"end_row": 1},
     {"start_row": "1"},
+    {"start_row": -1},
+    {"start_row": True},
+    {"start_row": 0, "end_row": False},
     {"start_row": 2, "end_row": 1},
     {"start_row": 0, "type": "block"},
 ])
 def test_ace_markers_invalid(marker):
     with pytest.raises(ValueError):
         CodeEditor(markers=[marker])
+
+
+def test_ace_markers_invalid_not_stored():
+    markers = [{"start_row": 1}]
+    editor = CodeEditor(markers=markers)
+    with pytest.raises(ValueError):
+        editor.markers = [{"start_row": -1}]
+    assert editor.markers == markers

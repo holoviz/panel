@@ -87,6 +87,8 @@ export class AcePlotView extends HTMLBoxView {
     this._update_filename()
     this._update_language()
     this._update_readonly()
+    this._marker_ids = []
+    this._gutter_marks = []
     this._update_markers()
     this._editor.setShowPrintMargin(this.model.print_margin)
     const {on_keyup} = this.model
