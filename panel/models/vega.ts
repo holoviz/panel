@@ -41,8 +41,8 @@ export class VegaPlotView extends LayoutDOMView {
   _replot: any
   _replot_pending: boolean = false
   _embed_id: number = 0
-  _resize: any
-  _rendered: boolean = false
+  _resize_frame: number | null = null
+  _last_size: [number, number] | null = null
 
   override async lazy_initialize(): Promise<void> {
     await super.lazy_initialize()
@@ -124,6 +124,10 @@ export class VegaPlotView extends LayoutDOMView {
   override remove(): void {
     // Also discards the result of an embed still in flight
     this._embed_id++
+    if (this._resize_frame != null) {
+      cancelAnimationFrame(this._resize_frame)
+      this._resize_frame = null
+    }
     this.vega_view?.finalize()
     this.vega_view = null
     super.remove()
@@ -192,7 +196,6 @@ export class VegaPlotView extends LayoutDOMView {
 
   override render(): void {
     super.render()
-    this._rendered = false
     this.container = div()
     set_size(this.container, this.model)
     this._plot()
@@ -223,9 +226,11 @@ export class VegaPlotView extends LayoutDOMView {
         return
       }
       this.vega_view = result.view
-      this._resize = debounce(() => this.resize_view(result.view), 50)
+      // The container may have changed size while the spec was compiling
+      this._last_size = null
       this._add_listeners()
       this._update_data()
+      this._schedule_resize()
     })
   }
 
@@ -247,20 +252,54 @@ export class VegaPlotView extends LayoutDOMView {
 
   override after_layout(): void {
     super.after_layout()
-    if (this.vega_view != null) {
-      this._resize()
-    }
+    this._schedule_resize()
   }
 
-  resize_view(view: any): void {
-    const canvas = view._renderer.canvas()
-    if (!this._rendered && canvas !== null) {
-      for (const listener of view._eventListeners) {
-        if (listener.type === "resize") {
-          listener.handler(new Event("resize"))
-        }
+  // Bokeh's ResizeObserver calls this whenever the element's box changes,
+  // including CSS-driven changes (flex, splitters) that skip after_layout.
+  protected override _after_resize(): void {
+    super._after_resize()
+    this._schedule_resize()
+  }
+
+  _container_size(): [number, number] {
+    return [this.container.clientWidth, this.container.clientHeight]
+  }
+
+  _schedule_resize(): void {
+    if (this._resize_frame != null) {
+      return
+    }
+    this._resize_frame = requestAnimationFrame(() => {
+      this._resize_frame = null
+      this._resize()
+    })
+  }
+
+  /**
+   * Container-sized specs only measure their container on window resize
+   * events, so replay those whenever the container itself changes size.
+   * Remembering the measured size breaks the loop where the redraw
+   * resizes the container again.
+   */
+  _resize(): void {
+    const view = this.vega_view
+    if (view == null) {
+      return
+    }
+    const [width, height] = this._container_size()
+    if (width === 0 || height === 0) {
+      return
+    }
+    const last = this._last_size
+    if (last != null && last[0] === width && last[1] === height) {
+      return
+    }
+    this._last_size = [width, height]
+    for (const listener of view._eventListeners) {
+      if (listener.type === "resize") {
+        listener.handler(new Event("resize"))
       }
-      this._rendered = true
     }
   }
 }
