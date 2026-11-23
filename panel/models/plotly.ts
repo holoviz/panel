@@ -244,22 +244,18 @@ export class PlotlyPlotView extends HTMLBoxView {
       this._schedule_plot(true)
     })
     this.on_change(relayout, () => {
-      if (this.model.relayout == null) {
+      // Before render the pending relayout and restyle are applied once plotted
+      if (this.model.relayout == null || this.container == null) {
         return
       }
       (window as any).Plotly.relayout(this.container, this.model.relayout)
       this.model.relayout = null
     })
     this.on_change(restyle, () => {
-      if (this.model.restyle == null) {
+      if (this.model.restyle == null || this.container == null) {
         return
       }
-      const data = decodeUndefined(this.model.restyle.data)
-      this._model_restyles += 1
-      ;(window as any).Plotly.restyle(this.container, data, this.model.restyle.traces).finally(() => {
-        this._model_restyles -= 1
-      })
-      this.model.restyle = null
+      this._apply_restyle()
     })
 
     this.on_change(viewport_update_policy, () => {
@@ -316,7 +312,19 @@ export class PlotlyPlotView extends HTMLBoxView {
       if (this.model.relayout != null) {
         (window as any).Plotly.relayout(this.container, this.model.relayout)
       }
+      if (this.model.restyle != null) {
+        this._apply_restyle()
+      }
     })
+  }
+
+  _apply_restyle(): void {
+    const data = decodeUndefined(this.model.restyle.data)
+    this._model_restyles += 1
+    ;(window as any).Plotly.restyle(this.container, data, this.model.restyle.traces).finally(() => {
+      this._model_restyles -= 1
+    })
+    this.model.restyle = null
   }
 
   /**

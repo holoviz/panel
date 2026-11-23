@@ -239,6 +239,81 @@ def test_resize_unmounted_child_does_not_abort_patch(page):
     wait_until(lambda: _sizes(page)['width'] == 200, page)
 
 
+def test_resize_unmounted_no_shadow_dom_child_does_not_abort_patch(page):
+    child = ReactUpdate(text='Child', width=100, use_shadow_dom=False)
+    parent = ReactToggle(child=child, text='Before')
+
+    serve_component(page, parent)
+
+    expect(page.locator('h2')).to_have_text('Before')
+
+    with hold(next(iter(parent._documents))):
+        child.width = 200
+        parent.text = 'After'
+
+    expect(page.locator('h2')).to_have_text('After')
+
+    parent.show = True
+
+    expect(page.locator('h1')).to_have_text('Child')
+    wait_until(lambda: page.locator('h1').evaluate(
+        "(el) => el.parentElement.getBoundingClientRect().width"
+    ) == 200, page)
+
+
+def test_resize_unmounted_markdown_child_does_not_abort_patch(page):
+    child = Markdown('Child', width=100)
+    parent = ReactToggle(child=child, text='Before')
+
+    serve_component(page, parent)
+
+    expect(page.locator('h2')).to_have_text('Before')
+
+    with hold(next(iter(parent._documents))):
+        child.width = 200
+        parent.text = 'After'
+
+    expect(page.locator('h2')).to_have_text('After')
+
+    parent.show = True
+
+    expect(page.locator('.markdown')).to_have_text('Child')
+    wait_until(lambda: page.locator('.markdown').evaluate(
+        "(el) => el.getBoundingClientRect().width"
+    ) == 200, page)
+
+
+def test_restyle_unmounted_plotly_child_does_not_abort_patch(page):
+    go = pytest.importorskip('plotly.graph_objs')
+    from panel.pane import Plotly
+
+    fig = go.Figure([go.Scatter(x=[0, 1, 2], y=[1, 2, 3])])
+    parent = ReactToggle(child=Plotly(fig), text='Before')
+
+    serve_component(page, parent)
+
+    expect(page.locator('h2')).to_have_text('Before')
+
+    doc = next(iter(parent._documents))
+
+    def update():
+        with hold(doc):
+            fig.data[0].marker.color = 'red'
+            fig.layout.title = 'Relayout'
+            parent.text = 'After'
+
+    doc.add_next_tick_callback(update)
+
+    expect(page.locator('h2')).to_have_text('After')
+
+    parent.show = True
+
+    gd = page.locator('.js-plotly-plot')
+    expect(gd).to_have_count(1)
+    wait_until(lambda: gd.evaluate("gd => gd.data[0].marker?.color") == 'red', page)
+    expect(page.locator('.js-plotly-plot .gtitle')).to_have_text('Relayout')
+
+
 def test_react_use_state_update_before_effect_not_reverted(page):
     class ReactSlowUpdate(ReactComponent):
         text = param.String()
