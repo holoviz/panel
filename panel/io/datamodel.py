@@ -50,9 +50,10 @@ class PolarsDataFrame(Property):
     def validate(self, value: t.Any, detail: bool = True) -> None:
         super().validate(value, detail)
 
-        import polars as pl
-        if isinstance(value, (pl.DataFrame, pl.LazyFrame)):
-            return
+        if 'polars' in sys.modules:
+            import polars as pl
+            if isinstance(value, (pl.DataFrame, pl.LazyFrame)):
+                return
 
         msg = "" if not detail else f"expected Pandas DataFrame, got {value!r}"
         raise ValueError(msg)
