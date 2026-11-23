@@ -268,7 +268,9 @@ class BaseFileNavigator(BaseFileSelector, CompositeWidget):
 
     def _dir_change(self, event: param.parameterized.Event):
         path = fullpath(event.new)
-        if not path.startswith(self._root_directory):
+        root = self._root_directory
+        sep = self._provider.sep
+        if path != root and not path.startswith(root.rstrip(sep) + sep):
             self.directory = fullpath(event.old)
             return
         elif path != self.directory:
