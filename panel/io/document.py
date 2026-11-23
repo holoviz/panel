@@ -24,8 +24,8 @@ from bokeh.document.document import Document
 from bokeh.document.events import (
     ColumnDataChangedEvent, ColumnsPatchedEvent, ColumnsStreamedEvent,
     DocumentChangedEvent, DocumentPatchedEvent, MessageSentEvent,
-    ModelChangedEvent, SessionCallbackAdded, SessionCallbackRemoved,
-    TitleChangedEvent,
+    ModelChangedEvent, RootAddedEvent, SessionCallbackAdded,
+    SessionCallbackRemoved, TitleChangedEvent,
 )
 from bokeh.model import Model
 from bokeh.model.util import (
@@ -194,14 +194,52 @@ def _drop_unsent_model_changes(
     between the two refers to, leaving the client unable to decode the
     patch. Skipped while no model counts as sent, e.g. for an embedder
     that never serialized the Document, whose bookkeeping is unreliable.
+
+    Changes to a model that a message still being serialized or written
+    may already have defined are kept, since bokeh only marks a model
+    sent once the whole message is serialized, so that definition can
+    predate the change. They are held until the message is written.
     """
     unsent = getattr(doc.models, '_new_models', None)
     if not unsent or len(unsent) >= len(doc.models):
         return events
+    with _WRITE_LOCK:
+        records = list(_UNWRITTEN.get(doc, []))
+    in_flight = {
+        event.model.id for event in events
+        if isinstance(event, _MODEL_CHANGE_EVENTS) and event.model in unsent
+        and _is_unwritten(event.model, records)
+    }
+    if in_flight:
+        in_flight -= _defined_by(events, unsent)
     return [
         event for event in events
-        if not (isinstance(event, _MODEL_CHANGE_EVENTS) and event.model in unsent)
+        if not (
+            isinstance(event, _MODEL_CHANGE_EVENTS) and event.model in unsent
+            and event.model.id not in in_flight
+        )
     ]
+
+def _defined_by(events: list[DocumentChangedEvent], unsent: set[Model]) -> set[ID]:
+    """
+    The ids of the unsent models the events would define, i.e. those
+    their values refer to directly or through other unsent models.
+    """
+    stack: list[Model] = []
+    for event in events:
+        if isinstance(event, ModelChangedEvent):
+            stack.extend(_immediate_references(event.new))
+        elif isinstance(event, RootAddedEvent):
+            stack.append(event.model)
+    defined: set[ID] = set()
+    while stack:
+        model = stack.pop()
+        if model.id in defined or model not in unsent:
+            continue
+        defined.add(model.id)
+        for attr in model.properties_with_refs():
+            stack.extend(_immediate_references(getattr(model, attr, None)))
+    return defined
 
 def _take_held_events(doc: Document) -> list[DocumentChangedEvent]:
     """

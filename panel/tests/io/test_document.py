@@ -1911,6 +1911,38 @@ def test_hold_with_comm_drops_changes_to_unsent_models_when_combining(monkeypatc
 
 
 @pytest.mark.xdist_group(name="server")
+def test_unlocked_keeps_change_to_model_a_message_is_serializing(monkeypatch):
+    """
+    Bokeh marks the models a message defines as sent only once it has
+    serialized the whole message, so a change made meanwhile to a model
+    the message already serialized must not be dropped as one to a model
+    the client was not sent, but written after the message.
+    """
+    md = pn.pane.Markdown('b')
+    col = pn.Column(md)
+    doc, messages, known = _serve_with_message_log(col, monkeypatch)
+    asyncio_loop = doc.session_context.server_context.application_context.io_loop.asyncio_loop
+    root = col._models[doc.roots[0].ref['id']][0]
+    model = md._models[root.ref['id']][0]
+
+    # A message serializing the model on another thread, not yet flushed
+    doc.models._new_models.add(model)
+    record = _track_unwritten(doc, [model.id], [])
+
+    async def change():
+        with set_curdoc(doc), unlocked():
+            model.text = model.text.replace('&lt;p&gt;b', '&lt;p&gt;c')
+
+    asyncio.run_coroutine_threadsafe(change(), asyncio_loop).result(timeout=5)
+    assert not _sends_text(messages, 'c')
+
+    doc.models._new_models.discard(model)
+    _untrack_unwritten(doc, record)
+
+    wait_until(lambda: _sends_text(messages, 'c'))
+
+
+@pytest.mark.xdist_group(name="server")
 def test_async_locked_callback_writes_while_it_awaits(monkeypatch):
     """
     An async callback holding the document lock owns it across awaits,
