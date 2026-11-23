@@ -1,5 +1,14 @@
 # Releases
 
+## Version 1.10.1
+
+Panel 1.10.1 is a security release that fixes two vulnerabilities in the Panel server, and we recommend that everyone running `panel serve` or the ASGI server upgrades. Many thanks to @fizzbeom and @morgan-coded for reporting these issues responsibly.
+
+### 🔒 Security
+
+* Stop importing the module named in `/components/` resource URLs, which let any client, including when authentication is enabled, make the server import installed modules and shut it down with a single request ([GHSA-wfhv-r23p-8x9w](https://github.com/holoviz/panel/security/advisories/GHSA-wfhv-r23p-8x9w))
+* Apply `authorize_callback` to `autoload.js` and websocket connections, which previously let a logged-in user open a session of an app they were denied access to ([GHSA-9cgh-cwhr-4rhg](https://github.com/holoviz/panel/security/advisories/GHSA-9cgh-cwhr-4rhg))
+
 ## Version 1.10.0
 
 Panel 1.10.0 is a major step towards Panel 2.0. The headline is `panel.ui`, a single namespace that combines the Material UI components from `panel-material-ui` with the classic Panel components that have no Material equivalent, together with a `panel migrate` codemod that rewrites existing apps to use it. Panel now also ships its own native ASGI server, replacing `bokeh-fastapi` and `bokeh-django`, so `panel serve --server fastapi|asgi` works out of the box and OAuth behaves identically across transports.
