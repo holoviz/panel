@@ -268,12 +268,9 @@ class BaseFileNavigator(BaseFileSelector, CompositeWidget):
 
     def _dir_change(self, event: param.parameterized.Event):
         path = fullpath(event.new)
-        # ``startswith`` alone is a prefix match: ``/app/data2`` passes for
-        # root ``/app/data`` yet escapes it. Require an exact match or a
-        # genuine subdirectory (followed by a separator) so users cannot
-        # navigate beyond ``root_directory``.
-        if not (path == self._root_directory
-                or path.startswith(self._root_directory + os.sep)):
+        root = self._root_directory
+        sep = self._provider.sep
+        if path != root and not path.startswith(root.rstrip(sep) + sep):
             self.directory = fullpath(event.old)
             return
         elif path != self.directory:
