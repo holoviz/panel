@@ -178,6 +178,7 @@ This release removes much of the fixed cost of serving a Panel app, from the byt
 * Resize a container-sized `Vega` chart whenever its container changes size ([#9138](https://github.com/holoviz/panel/pull/9138))
 * Keep other query parameters unchanged when updating the URL query, so e.g. `02134` no longer becomes `2134` ([#9141](https://github.com/holoviz/panel/pull/9141))
 * Select the matching option when a `Select` is created with a `None` value ([#9143](https://github.com/holoviz/panel/pull/9143))
+* Keep tuple values when editing the value input generated for a range parameter, e.g. by `RangeSlider.controls(jslink=True)`, which raised a `ValueError` ([#9135](https://github.com/holoviz/panel/pull/9135))
 
 ### ⚙️ Compatibility
 
