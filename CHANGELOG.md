@@ -1,5 +1,14 @@
 # Releases
 
+## Version 1.9.5
+
+Panel 1.9.5 is a security release that fixes two vulnerabilities in the Panel server, and we recommend that everyone running `panel serve` or the ASGI server upgrades. Many thanks to @fizzbeom and @morgan-coded for reporting these issues responsibly.
+
+### 🔒 Security
+
+* Stop importing the module named in `/components/` resource URLs, which let any client, including when authentication is enabled, make the server import installed modules and shut it down with a single request ([GHSA-wfhv-r23p-8x9w](https://github.com/holoviz/panel/security/advisories/GHSA-wfhv-r23p-8x9w))
+* Apply `authorize_callback` to `autoload.js` and websocket connections, which previously let a logged-in user open a session of an app they were denied access to ([GHSA-9cgh-cwhr-4rhg](https://github.com/holoviz/panel/security/advisories/GHSA-9cgh-cwhr-4rhg))
+
 ## Version 1.9.4
 
 Panel 1.9.4 is a patch release focused on rendering robustness for ESM/React components, several `Tabulator` and `Pipeline` fixes, OAuth hardening, and stylesheet/loading reliability improvements. It also adds support for movable `Tabulator` columns. Many thanks to @TheoMathurin, @rimsha152007-dotcom, @ebarkhordar, @SimonHeybrock, @ahuang11, @Kkkakania, @EltonChang1, @hoxbro, @MarcSkovMadsen, @Coderambling, @SuMayaBee, @youdie006, @kyo5uke, @ghostiee-11 and @philippjfr for contributing to this release.
