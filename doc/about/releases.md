@@ -10,7 +10,7 @@ The release also contains a large number of bug fixes, many of them for long-sta
 
 A few changes may affect you after upgrading. `pip install panel` no longer installs pandas; install `panel[recommended]` or pandas itself if your app or the admin dashboard needs it. Frontend changes are now debounced for 20 ms instead of 50 ms, and served responses are gzipped by default (`pn.serve(..., compress=False)` turns this off). The default OAuth redirect URI now includes `--prefix` and, with `--use-xheaders`, follows the `X-Forwarded-Host` and `X-Forwarded-Prefix` headers, so you may have to register the new URI with your provider or pass the old one with `--oauth-redirect-uri`. With `resources='server'`, a lazily loaded file that fails to load from Panel's `static/extensions/` routes is now retried from the CDN. Hierarchical `Tabulator` group rows for index levels without an entry in `aggregators` are now left blank instead of showing a sum; pass `aggregators` explicitly (e.g. `aggregators={'col': 'sum'}`) to keep the sums. `ReactiveHTML` children declared as `'literal'` in `_child_config` are now rendered as (sanitized) HTML markup, where previously only their text content was shown. `pn.serve(..., start=False)` and `get_server(start=False)` no longer install Panel's SIGINT handler. Smaller changes are marked as behaviour changes in the entries below.
 
-Many thanks to @fizzbeom and @morgan-coded for responsibly reporting the security issues fixed in this release, and to the contributors to this release: @philippjfr, @hoxbro, @maximlt, @aarab-malik, @AaryanRS, @benjibunbun, @Cherith1222, @chiruu12, @Jojoussef, @SAMARTHJAISWAL, @Web4everyone32, @YashAnand69, @Adithya6721, @Adititodekar, @ahuang11, @Alpenj, @compiler-segfault, @JoeyTan21, @Kkkakania, @MarcSkovMadsen, @mmporong, @mvanhorn, @nightcityblade, @nojaf, @prabhushreyas, @ryandesign, @SuMayaBee, @sushan5140 and @tmichela.
+Many thanks to @fizzbeom and @morgan-coded for responsibly reporting the security issues fixed in this release, and to the contributors to this release: @philippjfr, @hoxbro, @maximlt, @aarab-malik, @AaryanRS, @benjibunbun, @Cherith1222, @chiruu12, @Jojoussef, @SAMARTHJAISWAL, @Web4everyone32, @YashAnand69, @Adithya6721, @Adititodekar, @ahuang11, @Alpenj, @compiler-segfault, @danishkumar26, @JoeyTan21, @Kkkakania, @MarcSkovMadsen, @mmporong, @mvanhorn, @nightcityblade, @nojaf, @prabhushreyas, @ryandesign, @SuMayaBee, @sushan5140 and @tmichela.
 
 ### 🚀 Features
 
@@ -58,6 +58,7 @@ This release removes much of the fixed cost of serving a Panel app, from the byt
 * Reject `next_url` values such as `///evil.com` or ones containing control characters, which browsers resolve to another site, in the basic auth and OAuth login redirects ([#8938](https://github.com/holoviz/panel/pull/8938))
 * Stop importing the module named in `/components/` resource URLs, which let any client, including when authentication is enabled, make the server import installed modules and shut it down with a single request ([GHSA-wfhv-r23p-8x9w](https://github.com/holoviz/panel/security/advisories/GHSA-wfhv-r23p-8x9w))
 * Apply `authorize_callback` to `autoload.js` and websocket connections, which previously let a logged-in user open a session of an app they were denied access to ([GHSA-9cgh-cwhr-4rhg](https://github.com/holoviz/panel/security/advisories/GHSA-9cgh-cwhr-4rhg))
+* Stop `FileSelector` from navigating into sibling directories whose name starts with the name of `root_directory`, such as `/app/data2` for a root of `/app/data` ([#9149](https://github.com/holoviz/panel/pull/9149))
 
 ### 🐛 Bug Fixes
 
@@ -205,6 +206,7 @@ This release removes much of the fixed cost of serving a Panel app, from the byt
 * Restore the Architecture and Styling sections in the Explanation navigation ([#8977](https://github.com/holoviz/panel/pull/8977))
 * Remove nonexistent parameters from the `on_msg` and `show_server` docstrings ([#8926](https://github.com/holoviz/panel/pull/8926))
 * Show which library version Panel loads in the reference pages of JavaScript-backed panes ([#9134](https://github.com/holoviz/panel/pull/9134))
+* Note that templates are trusted code that runs on the server and that values passed with `Template.add_variable` are not escaped ([#9148](https://github.com/holoviz/panel/pull/9148))
 
 ## Version 1.10.1
 
