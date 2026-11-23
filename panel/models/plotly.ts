@@ -79,6 +79,68 @@ const decodeUndefined = (obj: any): any => {
   return obj
 }
 
+type PlotlyUpdate = {[key: string]: unknown}
+
+/**
+ * A relayout, or a restyle of a single trace, sent before the plot rendered.
+ * Applied in order once plotted, they leave the plot as it would be had they
+ * been applied as they arrived.
+ */
+type PendingUpdate = {kind: "relayout", data: PlotlyUpdate} | {kind: "restyle", trace: number, data: PlotlyUpdate}
+
+const is_descendant = (key: string, of: string): boolean => {
+  return key.startsWith(`${of}.`) || key.startsWith(`${of}[`)
+}
+
+const parent_path = (key: string): string => {
+  const index = Math.max(key.lastIndexOf("."), key.lastIndexOf("["))
+  return index < 0 ? "" : key.slice(0, index)
+}
+
+/**
+ * Whether `key` must be applied after `other` rather than together with it:
+ * keys under a written ancestor, and keys next to a sibling such as
+ * `xaxis.range` and `xaxis.autorange` that Plotly resolves together.
+ */
+const conflicts = (key: string, other: string): boolean => {
+  if (is_descendant(key, other) || is_descendant(other, key)) {
+    return true
+  }
+  const parent = parent_path(key)
+  return parent !== "" && parent === parent_path(other)
+}
+
+/**
+ * Adds an update to the queue, dropping earlier writes it supersedes (the
+ * same key or a descendant) and merging it into the last entry when that
+ * entry is of the same kind and target and none of its keys conflict.
+ * Every key is then pending at most once, which bounds the queue.
+ */
+export function queue_update(queue: PendingUpdate[], update: PendingUpdate): PendingUpdate[] {
+  const keys = Object.keys(update.data)
+  const same_target = (entry: PendingUpdate) => {
+    return entry.kind == update.kind && (entry.kind == "relayout" || entry.trace == (update as any).trace)
+  }
+  const pending = queue.filter((entry) => {
+    if (!same_target(entry)) {
+      return true
+    }
+    for (const key of Object.keys(entry.data)) {
+      if (keys.some((k) => key == k || is_descendant(key, k))) {
+        delete entry.data[key]
+      }
+    }
+    return Object.keys(entry.data).length > 0
+  })
+  const last = pending.at(-1)
+  if (last != null && same_target(last) && !Object.keys(last.data).some((key) => keys.some((k) => conflicts(k, key)))) {
+    Object.assign(last.data, update.data)
+  } else {
+    pending.push({...update, data: {...update.data}})
+  }
+  return pending
+}
+
 const filterEventData = (gd: any, eventData: any, event: string) => {
   // Ported from dash-core-components/src/components/Graph.react.js
   const filteredEventData: {[k: string]: any} = Array.isArray(eventData)? []: {}
@@ -212,6 +274,7 @@ export class PlotlyPlotView extends HTMLBoxView {
   _reacting: boolean = false
   _relayouting: boolean = false
   _model_restyles: number = 0
+  _pending_updates: PendingUpdate[] = []
   _hoverdata: any = null
   container: PlotlyHTMLElement
   _end_relayouting = debounce(() => {
@@ -238,28 +301,37 @@ export class PlotlyPlotView extends HTMLBoxView {
     } = this.model.properties
 
     this.on_change([data, data_sources, layout, _render_count], () => {
+      // The new state already includes any update sent before render
+      this._pending_updates = []
       this._schedule_plot()
     })
     this.on_change(frames, () => {
       this._schedule_plot(true)
     })
     this.on_change(relayout, () => {
-      if (this.model.relayout == null) {
+      const {relayout} = this.model
+      if (relayout == null) {
         return
       }
-      (window as any).Plotly.relayout(this.container, this.model.relayout)
       this.model.relayout = null
+      if (this.container == null) {
+        this._pending_updates = queue_update(this._pending_updates, {kind: "relayout", data: relayout})
+      } else {
+        (window as any).Plotly.relayout(this.container, relayout)
+      }
     })
     this.on_change(restyle, () => {
-      if (this.model.restyle == null) {
+      const {restyle} = this.model
+      if (restyle == null) {
         return
       }
-      const data = decodeUndefined(this.model.restyle.data)
-      this._model_restyles += 1
-      ;(window as any).Plotly.restyle(this.container, data, this.model.restyle.traces).finally(() => {
-        this._model_restyles -= 1
-      })
       this.model.restyle = null
+      const data = decodeUndefined(restyle.data)
+      if (this.container == null) {
+        this._queue_restyle(data, restyle.traces)
+      } else {
+        this._restyle(data, restyle.traces)
+      }
     })
 
     this.on_change(viewport_update_policy, () => {
@@ -315,8 +387,67 @@ export class PlotlyPlotView extends HTMLBoxView {
       this.resize_layout()
       if (this.model.relayout != null) {
         (window as any).Plotly.relayout(this.container, this.model.relayout)
+        this.model.relayout = null
+      }
+      return this._apply_pending_updates()
+    })
+  }
+
+  _restyle(data: PlotlyUpdate, traces: number | number[] | null): Promise<unknown> {
+    this._model_restyles += 1
+    return (window as any).Plotly.restyle(this.container, data, traces).finally(() => {
+      this._model_restyles -= 1
+    })
+  }
+
+  /**
+   * Splits a restyle into one update per trace, resolving values the way
+   * Plotly does: arrays are indexed (and wrapped) by position in `traces`,
+   * and undefined values leave the trace unchanged.
+   */
+  _queue_restyle(data: PlotlyUpdate, traces: number | number[] | null): void {
+    const ntraces = this.model.data.length
+    const indices = traces == null ? [...Array(ntraces).keys()] : Array.isArray(traces) ? traces : [traces]
+    indices.forEach((index, position) => {
+      const trace = index < 0 ? ntraces + index : index
+      const update: PlotlyUpdate = {}
+      for (const [key, value] of Object.entries(data)) {
+        const trace_value = Array.isArray(value) ? value[position % value.length] : value
+        if (trace_value !== undefined) {
+          update[key] = trace_value
+        }
+      }
+      if (Object.keys(update).length > 0) {
+        this._pending_updates = queue_update(this._pending_updates, {kind: "restyle", trace, data: update})
       }
     })
+  }
+
+  async _apply_pending_updates(): Promise<void> {
+    const pending = this._pending_updates
+    this._pending_updates = []
+    let i = 0
+    while (i < pending.length) {
+      const entry = pending[i]
+      if (entry.kind == "relayout") {
+        await (window as any).Plotly.relayout(this.container, entry.data)
+        i++
+        continue
+      }
+      // Consecutive restyles of the same keys on different traces go in one call
+      const keys = Object.keys(entry.data).join("\0")
+      const batch = [entry]
+      while (i + batch.length < pending.length) {
+        const next = pending[i + batch.length]
+        if (next.kind != "restyle" || Object.keys(next.data).join("\0") != keys || batch.some((e) => e.trace == next.trace)) {
+          break
+        }
+        batch.push(next)
+      }
+      const data = Object.fromEntries(Object.keys(entry.data).map((key) => [key, batch.map((e) => e.data[key])]))
+      await this._restyle(data, batch.map((e) => e.trace))
+      i += batch.length
+    }
   }
 
   /**
