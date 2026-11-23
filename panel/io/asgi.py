@@ -23,7 +23,7 @@ from urllib.parse import parse_qs, urljoin, urlparse
 from bokeh.server.asgi import BokehASGI, _ASGIWebSocketTransport
 from bokeh.server.core import SessionError
 from bokeh.util.token import (
-    generate_jwt_token, generate_session_id, get_token_payload,
+    generate_jwt_token, generate_session_id, get_session_id, get_token_payload,
 )
 from tornado.web import HTTPError
 
@@ -44,7 +44,8 @@ from .logging import LOG_SESSION_CREATED
 from .reload import record_modules
 from .resources import COMPONENT_PATH, DIST_DIR, Resources
 from .server import (
-    INDEX_HTML, _sanitize_route_context, authorize_request, autoload_js_script,
+    INDEX_HTML, _app_route_path, _sanitize_route_context,
+    authorize_app_request, authorize_request, autoload_js_script,
     compile_route_template, index_redirect, render_auth_error,
     render_index_page, resolve_component_resource, resolve_session,
     server_html_page_for_session, token_payload_for_request,
@@ -400,6 +401,8 @@ class PanelASGI(BokehASGI):
         # ServerRequest is a plain dataclass, so the route context can be
         # attached to it directly for RequestProxy and Application to pick up.
         request.route_params, request.app_path = _sanitize_route_context(params, app_path)  # type: ignore[attr-defined]
+        subprotocols = scope.get('subprotocols') or []
+        request.websocket_token = subprotocols[1] if len(subprotocols) == 2 else None  # type: ignore[attr-defined]
         request.response_headers = []  # type: ignore[attr-defined]
         return request
 
@@ -630,7 +633,26 @@ class PanelASGI(BokehASGI):
             return True
         if (resolved := self._resolve_route(route)) is None:
             return True
-        return self._admin_access(resolved[0], request).allowed
+        context = resolved[0]
+        if not self._admin_access(context, request).allowed:
+            return False
+        return await self._authorize_websocket(context, request)
+
+    async def _authorize_websocket(self, context: ApplicationContext, request: ServerRequest) -> bool:
+        # Session tokens are not bound to an application, so the
+        # authorization callback must also run when the websocket connects.
+        payload = t.cast('dict[str, t.Any]', token_payload_for_request(self._core, request))
+        if not authorize_app_request(context.application, request, payload, '/ws').authorized:
+            return False
+        token = getattr(request, 'websocket_token', None)
+        if token is None:
+            return True
+        session = await self._core.create_session_if_needed(
+            context, get_session_id(token), request, token
+        )
+        with set_curdoc(session.document):
+            result = authorize_request(_app_route_path(request.path, '/ws'), session=True)
+        return bool(result.authorized)
 
     def _route_path_of(self, request: ServerRequest) -> str | None:
         return self._route_path({'path': request.path, 'root_path': request.root_path})
@@ -784,6 +806,15 @@ class PanelASGI(BokehASGI):
                 'text/plain', head=head
             )
             return
+        payload = t.cast('dict[str, t.Any]', token_payload_for_request(self._core, request))
+        payload.update(await context.application.process_request_async(request))
+        if not authorize_app_request(context.application, request, payload, '/autoload.js').authorized:
+            await self._respond(
+                request, send, 403, b'Not authorized to access this application',
+                'text/plain', head=head
+            )
+            return
+
         app_path = self._argument(request, 'bokeh-app-path') or '/'
         absolute_url = self._argument(request, 'bokeh-absolute-url')
         server_url = None
@@ -799,6 +830,14 @@ class PanelASGI(BokehASGI):
             )
             return
 
+        with set_curdoc(session.document):
+            result = authorize_request(_app_route_path(request.path, '/autoload.js'), session=True)
+        if not result.authorized:
+            await self._respond(
+                request, send, 403, b'Not authorized to access this application',
+                'text/plain', head=head
+            )
+            return
         with set_curdoc(session.document):
             resources = Resources.from_bokeh(
                 self._core.resources(server_url, root_path=request.root_path), absolute=True
