@@ -1,4 +1,5 @@
 import io
+import json
 
 import numpy as np
 import pytest
@@ -12,6 +13,13 @@ import panel as pn
 from panel.tests.util import serve_component, wait_until
 
 pytestmark = pytest.mark.ui
+
+
+def _require_webgl2(page):
+    # Linux CI runs headless Chromium without a GPU, where neither deck.gl
+    # nor the MapLibre basemap can create a WebGL context.
+    if not page.evaluate("() => !!document.createElement('canvas').getContext('webgl2')"):
+        pytest.skip('WebGL2 is not available in this browser')
 
 
 def _red_pixels(page):
@@ -36,9 +44,7 @@ def test_deckgl_path_layer_equal_length_paths_issue_3953(page):
     pane = pn.pane.DeckGL(spec, height=500, width=800)
 
     serve_component(page, pane)
-
-    if not page.evaluate("() => !!document.createElement('canvas').getContext('webgl2')"):
-        pytest.skip('WebGL2 is not available in this browser')
+    _require_webgl2(page)
 
     wait_until(lambda: _red_pixels(page).any(), page, timeout=15000)
     red = _red_pixels(page)
@@ -80,10 +86,22 @@ const interval = setInterval(() => {
 """
 
 
+_CARTO_STYLE = 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json'
+
+
+def _stub_basemap_style(page):
+    # The tests only check the camera, so the CARTO style and its tiles are
+    # not fetched; the URL still has to name CARTO for the pane to use MapLibre.
+    page.route(_CARTO_STYLE, lambda route: route.fulfill(
+        content_type='application/json',
+        body=json.dumps({'version': 8, 'sources': {}, 'layers': []}),
+    ))
+
+
 def _basemap_spec(longitude, latitude, zoom):
     return {
         'initialViewState': {'longitude': longitude, 'latitude': latitude, 'zoom': zoom},
-        'mapStyle': 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
+        'mapStyle': _CARTO_STYLE,
         'layers': [{
             '@@type': 'ScatterplotLayer', 'data': [{'p': [longitude, latitude]}],
             'getPosition': '@@=p', 'getRadius': 1000
@@ -93,17 +111,21 @@ def _basemap_spec(longitude, latitude, zoom):
 
 def test_deckgl_basemap_starts_at_initial_view_state(page):
     page.add_init_script(_NO_VIEW_STATE_CHANGE)
+    _stub_basemap_style(page)
     pane = pn.pane.DeckGL(_basemap_spec(-100, 40, 3), height=400, width=600)
 
     serve_component(page, pane)
+    _require_webgl2(page)
 
     wait_until(lambda: _basemap_center(page) == pytest.approx([-100, 40, 3]), page)
 
 
 def test_deckgl_basemap_follows_initial_view_state_update(page):
+    _stub_basemap_style(page)
     pane = pn.pane.DeckGL(_basemap_spec(-100, 40, 3), height=400, width=600)
 
     serve_component(page, pane)
+    _require_webgl2(page)
 
     wait_until(lambda: _basemap_center(page) == pytest.approx([-100, 40, 3]), page)
 

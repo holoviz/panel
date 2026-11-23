@@ -4,6 +4,7 @@ Django integrations as well as ``panel serve --server asgi``.
 """
 import json
 import pathlib
+import sys
 
 from contextlib import contextmanager
 
@@ -199,6 +200,15 @@ def test_asgi_component_resource_not_found(asgi_client):
     with asgi_client() as client:
         assert client.get(f'/{COMPONENT_PATH}not.a.module/Nope/_css/x.css').status_code == 404
         assert client.get(f'/{COMPONENT_PATH}malformed').status_code == 400
+
+
+def test_asgi_component_resource_does_not_import_module(asgi_client, tmp_path, monkeypatch):
+    (tmp_path / 'panel_unimported_mod.py').write_text('raise SystemExit(1)\n')
+    monkeypatch.syspath_prepend(str(tmp_path))
+    with asgi_client() as client:
+        r = client.get(f'/{COMPONENT_PATH}panel_unimported_mod/x/_css/y.css')
+    assert r.status_code == 404
+    assert 'panel_unimported_mod' not in sys.modules
 
 
 def test_asgi_liveness_endpoint(asgi_client):

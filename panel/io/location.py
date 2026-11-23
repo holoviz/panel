@@ -293,7 +293,9 @@ class Location(Syncable):
         return parse_query(self.search)
 
     def update_query(self, **kwargs: Mapping[str, t.Any]) -> None:
-        query = self.query_params
+        # query_params holds parsed values, encoding those again would
+        # rewrite parameters this call does not touch (e.g. 02134 -> 2134)
+        query: dict[str, t.Any] = dict(urlparse.parse_qsl(self.search[1:]))
         query.update(kwargs)
         self.search = '?' + urlparse.urlencode(query)
 
@@ -384,5 +386,8 @@ class Location(Syncable):
                 new_watcher = parameterized.param.watch(watcher.fn, list(new_params))
                 synced.append((p, new_params, new_watcher, on_error))
         self._synced = synced
-        query = {k: v for k, v in self.query_params.items() if k not in unsynced}
+        query = {
+            k: v for k, v in urlparse.parse_qsl(self.search[1:])
+            if k not in unsynced
+        }
         self.search = '?' + urlparse.urlencode(query) if query else ''

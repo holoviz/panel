@@ -95,7 +95,7 @@ from .wrappers import (
     Badge, Clickable, Skeleton, Tooltip, Transition, Wrapper,
 )
 
-__all__ = (
+__all__: tuple[str, ...] = (
     "Accordion",
     "Alert",
     "AppBar",
@@ -286,6 +286,10 @@ __all__ = (
     "Wrapper",
     "YT",
 )
+
+if hasattr(wrappers, 'Fullscreen'):
+    from .wrappers import Fullscreen  # noqa: F401
+    __all__ = tuple(sorted((*__all__, "Fullscreen"), key=str.lower))
 
 
 def _select_design():
