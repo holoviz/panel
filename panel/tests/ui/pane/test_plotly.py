@@ -524,20 +524,20 @@ def test_plotly_data_update_keeps_frames(page):
 
 
 class PlotlyToggle(ReactComponent):
-    """Renders its child only once `show` is set."""
+    """Renders its child only once `mounted` is set."""
 
     child = Child()
 
-    show = param.Boolean(default=False)
+    mounted = param.Boolean(default=False)
 
     text = param.String()
 
     _esm = """
     export function render({ model }) {
-      const [show] = model.useState("show")
+      const [mounted] = model.useState("mounted")
       const [text] = model.useState("text")
       const child = model.get_child("child")
-      return <div><h2>{text}</h2>{show ? child : null}</div>
+      return <div><h2>{text}</h2>{mounted ? child : null}</div>
     }
     """
 
@@ -642,7 +642,7 @@ def _serve_mounted_and_unmounted(page):
     ]
     mounted, unmounted = Plotly(figures[0]), Plotly(figures[1])
     toggle = PlotlyToggle(child=unmounted, text='Unmounted')
-    layout = Column(PlotlyToggle(child=mounted, text='Mounted', show=True), toggle)
+    layout = Column(PlotlyToggle(child=mounted, text='Mounted', mounted=True), toggle)
     serve_component(page, layout)
     gd = page.locator('.js-plotly-plot')
     expect(gd).to_have_count(1)
@@ -665,7 +665,7 @@ def test_plotly_restyles_before_render_match_mounted_plot(page, name):
     for data, traces in RESTYLES[name]:
         _send(page, doc, models, 'restyle', {'data': data, 'traces': traces})
 
-    toggle.show = True
+    toggle.mounted = True
     expect(gd).to_have_count(2)
     wait_until(lambda: gd.nth(1).evaluate(READ_TRACES) == gd.nth(0).evaluate(READ_TRACES), page)
 
@@ -677,27 +677,28 @@ def test_plotly_relayouts_before_render_match_mounted_plot(page, name):
     for relayout in RELAYOUTS[name]:
         _send(page, doc, models, 'relayout', relayout)
 
-    toggle.show = True
+    toggle.mounted = True
     expect(gd).to_have_count(2)
     wait_until(lambda: gd.nth(1).evaluate(READ_LAYOUT) == gd.nth(0).evaluate(READ_LAYOUT), page)
 
 
 def test_plotly_updates_before_render_stay_bounded(page):
-    gd, toggle, doc, models, unmounted = _serve_mounted_and_unmounted(page)
+    gd, toggle, doc, models, _ = _serve_mounted_and_unmounted(page)
+    model = models[1]
 
     def send():
         for i in range(200):
-            for model in models:
-                model.restyle = {'data': {'y': [list(range(i, i+1000))]}, 'traces': [0]}
-                model.relayout = {'title.text': f'Title {i}'}
+            model.restyle = {'data': {'y': [list(range(i, i+1000))]}, 'traces': [0]}
+            model.relayout = {'title.text': f'Title {i}'}
+        toggle.text = 'Sent'
     doc.add_next_tick_callback(send)
-    wait_until(lambda: all(m.restyle is None and m.relayout is None for m in models), page)
 
-    model_id = models[1].id
-    pending = page.evaluate(f"() => Bokeh.index.find_one_by_id('{model_id}')._pending_updates.length")
-    assert pending <= 2
+    # The text arrives in the same patch, after all the updates
+    expect(page.locator('h2').nth(1)).to_have_text('Sent')
+    pending = page.evaluate(f"() => Bokeh.index.find_one_by_id('{model.id}')._pending_updates.length")
+    assert pending == 2
 
-    toggle.show = True
+    toggle.mounted = True
     expect(gd).to_have_count(2)
     wait_until(lambda: gd.nth(1).evaluate("gd => [gd.data[0].y[0], gd.data[0].y.length]") == [199, 1000], page)
     expect(gd.nth(1).locator('.gtitle')).to_have_text('Title 199')
