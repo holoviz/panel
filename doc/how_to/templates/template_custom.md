@@ -7,6 +7,10 @@ This guide addresses how to build a custom template. A custom template gives you
 2. The [How to > Customize Template Theme](./template_theme) guide addresses how to customize the theme of a template, which may be sufficient in many cases.
 ```
 
+```{warning}
+A template is part of your app's code. It is rendered with the full Jinja2 language, which can run Python on the server, and its output is not escaped. Never build a template, or any part of one, from user input, and escape untrusted values you pass to it with `add_variable` using Jinja2's `e` filter, e.g. `{{ name | e }}`.
+```
+
 ## Building a Template in a Single File
 
 ### The Foundation: Panel's Base Template
