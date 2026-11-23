@@ -283,18 +283,30 @@ def test_resize_unmounted_markdown_child_does_not_abort_patch(page):
     ) == 200, page)
 
 
-def test_restyle_unmounted_plotly_child_does_not_abort_patch(page):
+def _serve_unmounted_plotly(page):
     go = pytest.importorskip('plotly.graph_objs')
     from panel.pane import Plotly
 
     fig = go.Figure([go.Scatter(x=[0, 1, 2], y=[1, 2, 3])])
-    parent = ReactToggle(child=Plotly(fig), text='Before')
+    pane = Plotly(fig)
+    parent = ReactToggle(child=pane, text='Before')
 
     serve_component(page, parent)
 
     expect(page.locator('h2')).to_have_text('Before')
+    return go, fig, pane, parent, next(iter(parent._documents))
 
-    doc = next(iter(parent._documents))
+
+def _mount_plotly(page, parent):
+    expect(page.locator('h2')).to_have_text('After')
+    parent.show = True
+    gd = page.locator('.js-plotly-plot')
+    expect(gd).to_have_count(1)
+    return gd
+
+
+def test_restyle_unmounted_plotly_child_does_not_abort_patch(page):
+    _, fig, pane, parent, doc = _serve_unmounted_plotly(page)
 
     def update():
         with hold(doc):
@@ -304,14 +316,67 @@ def test_restyle_unmounted_plotly_child_does_not_abort_patch(page):
 
     doc.add_next_tick_callback(update)
 
-    expect(page.locator('h2')).to_have_text('After')
-
-    parent.show = True
-
-    gd = page.locator('.js-plotly-plot')
-    expect(gd).to_have_count(1)
+    gd = _mount_plotly(page, parent)
     wait_until(lambda: gd.evaluate("gd => gd.data[0].marker?.color") == 'red', page)
     expect(page.locator('.js-plotly-plot .gtitle')).to_have_text('Relayout')
+
+    model = next(iter(pane._models.values()))[0]
+    wait_until(lambda: model.relayout is None and model.restyle is None, page)
+
+
+def test_restyles_unmounted_plotly_child_applied_in_order(page):
+    _, fig, _, parent, doc = _serve_unmounted_plotly(page)
+
+    doc.add_next_tick_callback(lambda: setattr(fig.data[0].marker, 'color', 'red'))
+    page.wait_for_timeout(300)
+
+    def update():
+        fig.data[0].opacity = 0.5
+        parent.text = 'After'
+
+    doc.add_next_tick_callback(update)
+
+    gd = _mount_plotly(page, parent)
+    wait_until(lambda: gd.evaluate(
+        "gd => [gd.data[0].marker?.color, gd.data[0].opacity]"
+    ) == ['red', 0.5], page)
+
+
+def test_restyle_unmounted_plotly_child_dropped_for_new_figure(page):
+    go, fig, pane, parent, doc = _serve_unmounted_plotly(page)
+
+    doc.add_next_tick_callback(lambda: setattr(fig.data[0].marker, 'color', 'red'))
+    page.wait_for_timeout(300)
+
+    def update():
+        pane.object = go.Figure([go.Scatter(x=[0, 1], y=[5, 6], marker=dict(color='green'))])
+        parent.text = 'After'
+
+    doc.add_next_tick_callback(update)
+
+    gd = _mount_plotly(page, parent)
+    wait_until(lambda: gd.evaluate("gd => gd.data[0].y?.length") == 2, page)
+    page.wait_for_timeout(500)
+    assert gd.evaluate("gd => gd.data[0].marker?.color") == 'green'
+
+
+def test_relayout_unmounted_plotly_child_cleared_after_mount(page):
+    _, fig, pane, parent, doc = _serve_unmounted_plotly(page)
+
+    def update():
+        fig.layout.title = 'R1'
+        parent.text = 'After'
+
+    doc.add_next_tick_callback(update)
+
+    _mount_plotly(page, parent)
+    expect(page.locator('.js-plotly-plot .gtitle')).to_have_text('R1')
+    model = next(iter(pane._models.values()))[0]
+    wait_until(lambda: model.relayout is None, page)
+
+    doc.add_next_tick_callback(lambda: setattr(fig.layout, 'title', 'R2'))
+
+    expect(page.locator('.js-plotly-plot .gtitle')).to_have_text('R2')
 
 
 def test_react_use_state_update_before_effect_not_reverted(page):

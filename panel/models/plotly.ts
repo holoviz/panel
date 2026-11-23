@@ -212,6 +212,7 @@ export class PlotlyPlotView extends HTMLBoxView {
   _reacting: boolean = false
   _relayouting: boolean = false
   _model_restyles: number = 0
+  _pending_updates: {relayout?: any, restyle?: any}[] = []
   _hoverdata: any = null
   container: PlotlyHTMLElement
   _end_relayouting = debounce(() => {
@@ -238,24 +239,35 @@ export class PlotlyPlotView extends HTMLBoxView {
     } = this.model.properties
 
     this.on_change([data, data_sources, layout, _render_count], () => {
+      this._pending_updates = []
       this._schedule_plot()
     })
     this.on_change(frames, () => {
       this._schedule_plot(true)
     })
     this.on_change(relayout, () => {
-      // Before render the pending relayout and restyle are applied once plotted
-      if (this.model.relayout == null || this.container == null) {
+      const {relayout} = this.model
+      if (relayout == null) {
         return
       }
-      (window as any).Plotly.relayout(this.container, this.model.relayout)
       this.model.relayout = null
+      if (this.container == null) {
+        this._pending_updates.push({relayout})
+      } else {
+        (window as any).Plotly.relayout(this.container, relayout)
+      }
     })
     this.on_change(restyle, () => {
-      if (this.model.restyle == null || this.container == null) {
+      const {restyle} = this.model
+      if (restyle == null) {
         return
       }
-      this._apply_restyle()
+      this.model.restyle = null
+      if (this.container == null) {
+        this._pending_updates.push({restyle})
+      } else {
+        this._apply_restyle(restyle)
+      }
     })
 
     this.on_change(viewport_update_policy, () => {
@@ -311,20 +323,27 @@ export class PlotlyPlotView extends HTMLBoxView {
       this.resize_layout()
       if (this.model.relayout != null) {
         (window as any).Plotly.relayout(this.container, this.model.relayout)
+        this.model.relayout = null
       }
-      if (this.model.restyle != null) {
-        this._apply_restyle()
+      // Relayouts and restyles sent before render, minus those superseded by newer data or layout
+      const pending = this._pending_updates
+      this._pending_updates = []
+      for (const {relayout, restyle} of pending) {
+        if (relayout != null) {
+          (window as any).Plotly.relayout(this.container, relayout)
+        } else {
+          this._apply_restyle(restyle)
+        }
       }
     })
   }
 
-  _apply_restyle(): void {
-    const data = decodeUndefined(this.model.restyle.data)
+  _apply_restyle(restyle: any): void {
+    const data = decodeUndefined(restyle.data)
     this._model_restyles += 1
-    ;(window as any).Plotly.restyle(this.container, data, this.model.restyle.traces).finally(() => {
+    ;(window as any).Plotly.restyle(this.container, data, restyle.traces).finally(() => {
       this._model_restyles -= 1
     })
-    this.model.restyle = null
   }
 
   /**
