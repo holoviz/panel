@@ -182,7 +182,8 @@ jobs:
       - name: npm main deploy
         if: (!(contains(github.ref_name, 'a') || contains(github.ref_name, 'b') || contains(github.ref_name, 'rc')))
         run: |
-          npm publish --tag latest *.tgz
+          # A maintenance release must not move the latest tag
+          npm publish --tag release-1.9 *.tgz
 
   cdn_build:
     name: Build CDN
@@ -264,4 +265,5 @@ jobs:
             --title "Version ${TAG#v}" \
             --notes-file RELEASE_BODY.md \
             --draft \
+            --latest=false \
             artifacts/*
