@@ -244,14 +244,14 @@ export class PlotlyPlotView extends HTMLBoxView {
       this._schedule_plot(true)
     })
     this.on_change(relayout, () => {
-      if (this.model.relayout == null) {
+      if (this.model.relayout == null || this.container == null) {
         return
       }
       (window as any).Plotly.relayout(this.container, this.model.relayout)
       this.model.relayout = null
     })
     this.on_change(restyle, () => {
-      if (this.model.restyle == null) {
+      if (this.model.restyle == null || this.container == null) {
         return
       }
       const data = decodeUndefined(this.model.restyle.data)

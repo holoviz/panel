@@ -131,7 +131,9 @@ export class PanelMarkupView extends WidgetView {
     const {width, height, min_height, max_height, margin, sizing_mode} = this.model.properties
     this.on_change([width, height, min_height, max_height, margin, sizing_mode], () => {
       set_size(this.el, this.model)
-      set_size(this.container, this.model, false)
+      if (this.container != null) {
+        set_size(this.container, this.model, false)
+      }
     })
   }
 
