@@ -590,6 +590,11 @@ RESTYLES = {
         ({'marker.color': ['red']}, [0]),
         ({'marker.color': [U, 'green', 'blue']}, [0, 1, 2]),
     ],
+    'negative_trace_index': [
+        ({'marker.color': ['red']}, [-1]),
+        ({'marker.color': ['blue']}, [2]),
+        ({'opacity': [0.4]}, [-1]),
+    ],
 }
 
 RELAYOUTS = {
@@ -599,19 +604,40 @@ RELAYOUTS = {
     'title_text_then_title': [{'title.text': 'A'}, {'title': {'text': 'B', 'x': 0.2}}, {'title.text': 'C'}],
     'range_then_autorange': [{'xaxis.range': [0, 5]}, {'xaxis.autorange': True}],
     'autorange_then_range': [{'xaxis.autorange': True}, {'xaxis.range': [0, 5]}],
+    'annotation_insert': [
+        {'annotations[0].text': 'x0'},
+        {'annotations[1].text': 'x1'},
+        {'annotations[0]': {'x': 0, 'y': 0, 'text': 'new0'}},
+        {'annotations[0].text': 'y0'},
+        {'annotations[1].x': 2},
+    ],
+    'annotation_remove': [
+        {'annotations[1].text': 'x1'},
+        {'annotations[0]': None},
+        {'annotations[0].text': 'y0'},
+    ],
+    'annotations_then_item': [
+        {'annotations[0].text': 'x0'},
+        {'annotations': [{'x': 0, 'y': 0, 'text': 'w0'}]},
+        {'annotations[0].text': 'z0'},
+    ],
 }
 
 READ_TRACES = "gd => gd.data.map(t => [t.marker?.color ?? null, t.marker?.size ?? null, t.opacity ?? null])"
 
 READ_LAYOUT = """gd => [
   gd.layout.xaxis?.range ?? null, gd.layout.xaxis?.title?.text ?? null, gd.layout.title?.text ?? null,
-  gd.layout.title?.x ?? null, gd.layout.xaxis?.autorange ?? null
+  gd.layout.title?.x ?? null, gd.layout.xaxis?.autorange ?? null,
+  (gd.layout.annotations ?? []).map(a => [a.text, a.x])
 ]"""
 
 
 def _serve_mounted_and_unmounted(page):
     figures = [
-        go.Figure([go.Scatter(x=[0, 1], y=[i, i + 1], mode='markers') for i in range(3)])
+        go.Figure(
+            [go.Scatter(x=[0, 1], y=[i, i + 1], mode='markers') for i in range(3)],
+            layout={'annotations': [{'x': 0, 'y': 0, 'text': 'a0'}, {'x': 1, 'y': 1, 'text': 'a1'}]}
+        )
         for _ in range(2)
     ]
     mounted, unmounted = Plotly(figures[0]), Plotly(figures[1])
