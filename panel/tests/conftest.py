@@ -256,7 +256,13 @@ def pytest_runtest_setup(item):
 def browser_type_launch_args(browser_type_launch_args, browser_name):
     if browser_name != "chromium":
         return browser_type_launch_args
-    args = [*browser_type_launch_args.get("args", []), "--host-resolver-rules=MAP localhost 127.0.0.1"]
+    args = [
+        *browser_type_launch_args.get("args", []),
+        "--host-resolver-rules=MAP localhost 127.0.0.1",
+        # Without a GPU, as on the Linux CI runners, Chromium only falls back
+        # to software WebGL (SwiftShader) when this is set.
+        "--enable-unsafe-swiftshader",
+    ]
     return {**browser_type_launch_args, "args": args}
 
 
