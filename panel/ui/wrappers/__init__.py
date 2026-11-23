@@ -5,7 +5,7 @@ from panel_material_ui.wrappers import (
     Badge, Clickable, Skeleton, Tooltip, Transition, Wrapper,
 )
 
-__all__ = (
+__all__: tuple[str, ...] = (
     "Badge",
     "Clickable",
     "Skeleton",

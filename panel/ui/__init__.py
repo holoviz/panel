@@ -95,7 +95,7 @@ from .wrappers import (
     Badge, Clickable, Skeleton, Tooltip, Transition, Wrapper,
 )
 
-__all__ = (
+__all__: tuple[str, ...] = (
     "Accordion",
     "Alert",
     "AppBar",
