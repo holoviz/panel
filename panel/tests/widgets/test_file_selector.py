@@ -209,7 +209,7 @@ def test_file_selector_cannot_escape_root_directory(test_dir):
 
 
 def test_file_selector_filesystem_root_directory(test_dir):
-    root = os.path.abspath(os.sep)
+    root = Path(test_dir).anchor
     selector = FileSelector(root, root_directory=root)
     selector._directory.value = test_dir
     assert selector.directory == test_dir
