@@ -592,7 +592,7 @@ def _app_route_path(path: str, suffix: str) -> str:
 
 
 def authorize_app_request(
-    application: t.Any, request: t.Any, payload: dict[str, t.Any], suffix: str = ''
+    application: t.Any, request: t.Any, payload: TokenPayload | dict[str, t.Any], suffix: str = ''
 ) -> AuthorizationResult:
     """
     Run the global authorization callback for a request to an application
@@ -1186,13 +1186,13 @@ class AutoloadJsHandler(BkAutoloadJsHandler):
     '''
 
     @authenticated
-    async def get(self, *args, **kwargs) -> None:
+    async def get(self, *args, **kwargs) -> None:  # type: ignore[override]
         _set_request_route_context(self, *args, suffix='/autoload.js', **kwargs)
         if not _admin_access(self).allowed:
             self.send_error(status_code=403, reason='Not authorized to access the admin panel')
             return
         payload = token_payload_for_request(self.application, self.request)
-        payload.update(self.application_context.application.process_request(self.request))  # type: ignore[attr-defined]
+        payload.update(self.application_context.application.process_request(self.request))  # type: ignore[attr-defined,typeddict-item]
         if not authorize_app_request(self.application, self.request, payload, '/autoload.js').authorized:
             self.send_error(status_code=403, reason='Not authorized to access this application')
             return
