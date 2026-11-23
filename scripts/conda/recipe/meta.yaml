@@ -36,6 +36,9 @@ test:
     - panel
     - panel.io
   requires:
+    # Panel 1.9 predates Python 3.15 and pandas 3.1
+    - python <3.15
+    - pandas <3.1
     - pip
     - pytest-asyncio
     - pytest-rerunfailures <16
