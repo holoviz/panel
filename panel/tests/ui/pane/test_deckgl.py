@@ -16,8 +16,8 @@ pytestmark = pytest.mark.ui
 
 
 def _require_webgl2(page):
-    # Without a GPU neither deck.gl nor the MapLibre basemap can create a
-    # WebGL context unless Chromium falls back to SwiftShader (see conftest).
+    # Linux CI runs headless Chromium without a GPU, where neither deck.gl
+    # nor the MapLibre basemap can create a WebGL context.
     if not page.evaluate("() => !!document.createElement('canvas').getContext('webgl2')"):
         pytest.skip('WebGL2 is not available in this browser')
 
