@@ -2055,6 +2055,22 @@ def test_server_component_custom_resources(port):
         assert f.read() == r.content.decode('utf-8').replace('\r\n', '\n')
 
 
+def test_server_component_resource_does_not_import_module(port, tmp_path, monkeypatch):
+    (tmp_path / 'panel_unimported_mod.py').write_text('raise SystemExit(1)\n')
+    monkeypatch.syspath_prepend(str(tmp_path))
+    serve_and_wait({'component': CustomComponent()}, port=port)
+    r = requests.get(f"http://127.0.0.1:{port}/components/panel_unimported_mod/x/__css__/y.css", timeout=10)
+    assert r.status_code == 404
+    assert 'panel_unimported_mod' not in sys.modules
+    assert requests.get(f"http://127.0.0.1:{port}/liveness", timeout=10).ok
+
+
+def test_server_component_resource_non_class(port):
+    serve_and_wait({'component': CustomComponent()}, port=port)
+    r = requests.get(f"http://127.0.0.1:{port}/components/panel.tests.test_server/pathlib/__css__/y.css", timeout=10)
+    assert r.status_code == 404
+
+
 def test_server_component_custom_resources_with_prefix(port):
     component = CustomComponent()
 
