@@ -237,6 +237,12 @@ class Select(SingleSelectBase):
         self._validate_options_groups()
         self._validate_disabled_options()
 
+    def _init_params(self) -> dict[str, t.Any]:
+        params = super()._init_params()
+        if self.value is None and isIn(None, self.values):
+            params['value'] = None
+        return params
+
     def _validate_disabled_options(self, *events):
         if self.disabled_options and self.disabled_options == self.values:
             raise ValueError(
