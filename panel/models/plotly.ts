@@ -212,7 +212,8 @@ export class PlotlyPlotView extends HTMLBoxView {
   _reacting: boolean = false
   _relayouting: boolean = false
   _model_restyles: number = 0
-  _pending_updates: {relayout?: any, restyle?: any}[] = []
+  _pending_relayout: {[key: string]: unknown} | null = null
+  _pending_restyles: {data: {[key: string]: unknown}, traces: number[] | null}[] = []
   _hoverdata: any = null
   container: PlotlyHTMLElement
   _end_relayouting = debounce(() => {
@@ -239,7 +240,8 @@ export class PlotlyPlotView extends HTMLBoxView {
     } = this.model.properties
 
     this.on_change([data, data_sources, layout, _render_count], () => {
-      this._pending_updates = []
+      this._pending_relayout = null
+      this._pending_restyles = []
       this._schedule_plot()
     })
     this.on_change(frames, () => {
@@ -252,7 +254,7 @@ export class PlotlyPlotView extends HTMLBoxView {
       }
       this.model.relayout = null
       if (this.container == null) {
-        this._pending_updates.push({relayout})
+        this._queue_relayout(relayout)
       } else {
         (window as any).Plotly.relayout(this.container, relayout)
       }
@@ -264,7 +266,7 @@ export class PlotlyPlotView extends HTMLBoxView {
       }
       this.model.restyle = null
       if (this.container == null) {
-        this._pending_updates.push({restyle})
+        this._queue_restyle(restyle)
       } else {
         this._apply_restyle(restyle)
       }
@@ -325,17 +327,69 @@ export class PlotlyPlotView extends HTMLBoxView {
         (window as any).Plotly.relayout(this.container, this.model.relayout)
         this.model.relayout = null
       }
-      // Relayouts and restyles sent before render, minus those superseded by newer data or layout
-      const pending = this._pending_updates
-      this._pending_updates = []
-      for (const {relayout, restyle} of pending) {
-        if (relayout != null) {
-          (window as any).Plotly.relayout(this.container, relayout)
-        } else {
-          this._apply_restyle(restyle)
-        }
+      // Restyles and relayouts sent before render, unless newer data or layout superseded them
+      const restyles = this._pending_restyles
+      const relayout = this._pending_relayout
+      this._pending_restyles = []
+      this._pending_relayout = null
+      for (const restyle of restyles) {
+        this._apply_restyle(restyle)
+      }
+      if (relayout != null) {
+        (window as any).Plotly.relayout(this.container, relayout)
       }
     })
+  }
+
+  _queue_relayout(relayout: {[key: string]: unknown}): void {
+    const pending = this._pending_relayout ??= {}
+    for (const [key, value] of Object.entries(relayout)) {
+      // Re-inserting moves the key to the end, so a later "xaxis.range" still applies after "xaxis"
+      delete pending[key]
+      pending[key] = value
+    }
+  }
+
+  /**
+   * Coalesces restyles sent before render so the queue stays bounded.
+   * Keys superseded for all of an earlier restyle's traces are dropped from it,
+   * and a restyle of the same traces is merged into the last one unless a
+   * restyle in between sets one of its keys on an overlapping trace.
+   */
+  _queue_restyle(restyle: {data: {[key: string]: unknown}, traces?: number | number[] | null}): void {
+    const traces = restyle.traces == null ? null : Array.isArray(restyle.traces) ? restyle.traces : [restyle.traces]
+    const keys = Object.keys(restyle.data)
+    const covers = (other: number[] | null) => traces == null || (other != null && other.every((t) => traces.includes(t)))
+    const overlaps = (other: number[] | null) => traces == null || other == null || other.some((t) => traces.includes(t))
+    const same = (other: number[] | null) => {
+      return other == null ? traces == null : traces != null && other.length == traces.length && other.every((t, i) => t === traces[i])
+    }
+    const pending = this._pending_restyles.filter((entry) => {
+      if (same(entry.traces) || !covers(entry.traces)) {
+        return true
+      }
+      for (const key of keys) {
+        delete entry.data[key]
+      }
+      return Object.keys(entry.data).length > 0
+    })
+    let index = pending.length - 1
+    while (index >= 0 && !same(pending[index].traces)) {
+      index--
+    }
+    const blocked = index < 0 || pending.slice(index + 1).some((entry) => {
+      return overlaps(entry.traces) && keys.some((key) => key in entry.data)
+    })
+    if (blocked) {
+      pending.push({data: {...restyle.data}, traces})
+    } else {
+      const {data} = pending[index]
+      for (const key of keys) {
+        delete data[key]
+        data[key] = restyle.data[key]
+      }
+    }
+    this._pending_restyles = pending
   }
 
   _apply_restyle(restyle: any): void {

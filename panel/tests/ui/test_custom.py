@@ -379,6 +379,31 @@ def test_relayout_unmounted_plotly_child_cleared_after_mount(page):
     expect(page.locator('.js-plotly-plot .gtitle')).to_have_text('R2')
 
 
+def test_restyles_unmounted_plotly_child_coalesced(page):
+    _, fig, pane, parent, doc = _serve_unmounted_plotly(page)
+
+    def update():
+        for i in range(200):
+            fig.data[0].y = list(range(i, i+1000))
+            fig.layout.title = f'Title {i}'
+
+    doc.add_next_tick_callback(update)
+    wait_until(lambda: fig.layout.title.text == 'Title 199', page)
+
+    model_id = next(iter(pane._models.values()))[0].id
+    pending = f"""() => {{
+      const view = Bokeh.index.find_one_by_id('{model_id}')
+      return view._pending_restyles.length + (view._pending_relayout == null ? 0 : 1)
+    }}"""
+    wait_until(lambda: page.evaluate(pending) == 2, page)
+
+    parent.text = 'After'
+    gd = _mount_plotly(page, parent)
+    wait_until(lambda: gd.evaluate("gd => [gd.data[0].y[0], gd.data[0].y.length]") == [199, 1000], page)
+    expect(page.locator('.js-plotly-plot .gtitle')).to_have_text('Title 199')
+    assert page.evaluate(pending) == 0
+
+
 def test_react_use_state_update_before_effect_not_reverted(page):
     class ReactSlowUpdate(ReactComponent):
         text = param.String()
