@@ -5,7 +5,6 @@ from __future__ import annotations
 
 import asyncio
 import datetime as dt
-import importlib
 import inspect
 import logging
 import os
@@ -959,14 +958,13 @@ class ComponentResourceHandler(StaticFileHandler):
         if len(parts) < 4:
             raise HTTPError(400, 'Malformed URL')
         mod, cls, rtype, *subpath = parts
-        try:
-            module = importlib.import_module(mod)
-        except ModuleNotFoundError:
-            raise HTTPError(404, 'Module not found') from None
-        try:
-            component = getattr(module, cls)
-        except AttributeError:
-            raise HTTPError(404, 'Component not found') from None
+        # Importing the module named in the URL would run arbitrary code
+        module = sys.modules.get(mod)
+        if module is None:
+            raise HTTPError(404, 'Module not found')
+        component = getattr(module, cls, None)
+        if not isinstance(component, type):
+            raise HTTPError(404, 'Component not found')
 
         # May only access resources listed in specific attributes
         if rtype not in self._resource_attrs:
