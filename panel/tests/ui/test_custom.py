@@ -16,6 +16,7 @@ from panel.custom import (
     AnyWidgetComponent, Child, Children, JSComponent, ReactComponent,
 )
 from panel.io.compile import compile_components
+from panel.io.document import hold
 from panel.layout import Column, Row
 from panel.layout.base import ListLike
 from panel.pane import Bokeh, Markdown
@@ -196,6 +197,46 @@ def test_resize_min_width_resizes_host_and_container(page, component):
     example.min_width = None
 
     wait_until(lambda: (sizes := _sizes(page))['width'] == sizes['host_width'] == 600, page)
+
+
+class ReactToggle(ReactComponent):
+
+    child = Child()
+
+    show = param.Boolean(default=False)
+
+    text = param.String()
+
+    _esm = """
+    export function render({ model }) {
+      const [show] = model.useState("show")
+      const [text] = model.useState("text")
+      const child = model.get_child("child")
+      return <div><h2>{text}</h2>{show ? child : null}</div>
+    }
+    """
+
+
+def test_resize_unmounted_child_does_not_abort_patch(page):
+    child = ReactUpdate(text='Child', width=100)
+    parent = ReactToggle(child=child, text='Before')
+
+    serve_component(page, parent)
+
+    expect(page.locator('h2')).to_have_text('Before')
+    expect(page.locator('h1')).to_have_count(0)
+
+    # One patch, in which the size change reaches the child's view before it rendered
+    with hold(next(iter(parent._documents))):
+        child.width = 200
+        parent.text = 'After'
+
+    expect(page.locator('h2')).to_have_text('After')
+
+    parent.show = True
+
+    expect(page.locator('h1')).to_have_text('Child')
+    wait_until(lambda: _sizes(page)['width'] == 200, page)
 
 
 def test_react_use_state_update_before_effect_not_reverted(page):

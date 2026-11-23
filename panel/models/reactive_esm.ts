@@ -296,7 +296,11 @@ export class ReactiveESMView extends HTMLBoxView {
     super.connect_signals()
     const {esm, importmap, class_name} = this.model.properties
     const {width, height, min_width, max_width, min_height, max_height, sizing_mode} = this.model.properties
+    // render() applies the current size and class to a fresh container
     this.on_change([width, height, min_width, max_width, min_height, max_height, sizing_mode], () => {
+      if (this.container == null) {
+        return
+      }
       reset_size(this.container, this.model, false)
     })
     this.on_change([esm, importmap], async () => {
@@ -304,6 +308,9 @@ export class ReactiveESMView extends HTMLBoxView {
       this.invalidate_render()
     })
     this.on_change(class_name, () => {
+      if (this.container == null) {
+        return
+      }
       this.container.className = this.model.class_name.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase()
     })
     const child_props = this.model.children.map((child: string) => this.model.data.properties[child])
