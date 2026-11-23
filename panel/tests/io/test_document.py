@@ -16,7 +16,7 @@ import tornado.locks
 from bokeh.core.serialization import Deserializer
 from bokeh.document import Document
 from bokeh.document.events import MessageSentEvent, ModelChangedEvent
-from bokeh.models import Column as BkColumn, Range1d
+from bokeh.models import Column as BkColumn, Div, Range1d
 from bokeh.plotting import figure
 from bokeh.protocol import Protocol
 
@@ -27,11 +27,11 @@ from panel.io.browser import BrowserInfo
 from panel.io.document import (
     _UNCONNECTED_EVENTS, _WRITE_BLOCK, MockSessionContext, _cleanup_doc,
     _client_has_document, _defer_until_unlocked, _destroy_document,
-    _is_write_blocked, _keep_unsent_models_new, _schedule_locked,
-    _socket_dispatcher, _suppress_property_callbacks, _track_unwritten,
-    _untrack_unwritten, _write_tasks, dispatch_django, dispatch_tornado,
-    extra_socket_handlers, hold, init_doc, schedule_write_events, unlocked,
-    write_events,
+    _drop_undefined_changes, _is_write_blocked, _keep_unsent_models_new,
+    _schedule_locked, _socket_dispatcher, _suppress_property_callbacks,
+    _track_unwritten, _untrack_unwritten, _write_tasks, dispatch_django,
+    dispatch_tornado, extra_socket_handlers, hold, init_doc,
+    schedule_write_events, unlocked, write_events,
 )
 from panel.io.state import _state, set_curdoc, state
 from panel.tests.util import serve_and_request, wait_until
@@ -1422,7 +1422,6 @@ def test_combine_events_matches_bokeh_combine_policy():
 
     from bokeh.document.callbacks import _combine_document_events
     from bokeh.document.events import RootAddedEvent, TitleChangedEvent
-    from bokeh.models import Div
 
     from panel.io.document import _combine_events
 
@@ -1910,36 +1909,90 @@ def test_hold_with_comm_drops_changes_to_unsent_models_when_combining(monkeypatc
     Deserializer(references=client_models).decode(msg.content)
 
 
+def _serialize_append_blocked_before_flush(doc, col, md, monkeypatch):
+    """
+    Appends md in a locked callback with a pending write, so Bokeh
+    serializes it once the callback returned, and blocks that
+    serialization after encoding the message but before marking the
+    models it defines as sent.
+    """
+    session = doc.session_context.session
+    asyncio_loop = doc.session_context.server_context.application_context.io_loop.asyncio_loop
+    encoded, resume = threading.Event(), threading.Event()
+    flush_synced = doc.models.flush_synced
+
+    def blocking_flush_synced(*args, **kwargs):
+        if not encoded.is_set():
+            encoded.set()
+            resume.wait(timeout=5)
+        return flush_synced(*args, **kwargs)
+
+    monkeypatch.setattr(doc.models, 'flush_synced', blocking_flush_synced)
+
+    def holder():
+        with set_curdoc(doc):
+            doc.roots[0].css_classes = ['pending']
+            col.append(md)
+
+    async def trigger():
+        await session.with_document_locked(holder)
+
+    future = asyncio.run_coroutine_threadsafe(trigger(), asyncio_loop)
+    return future, encoded, resume
+
+
 @pytest.mark.xdist_group(name="server")
-def test_unlocked_keeps_change_to_model_a_message_is_serializing(monkeypatch):
+@pytest.mark.parametrize('append', [False, True])
+def test_unlocked_keeps_change_to_model_a_message_is_serializing(append, monkeypatch):
     """
     Bokeh marks the models a message defines as sent only once it has
     serialized the whole message, so a change made meanwhile to a model
-    the message already serialized must not be dropped as one to a model
-    the client was not sent, but written after the message.
+    it already encoded must not be dropped as one to an unsent model,
+    also when the same changes refer to that model again.
     """
-    md = pn.pane.Markdown('b')
-    col = pn.Column(md)
+    col = pn.Column(pn.pane.Markdown('a'))
     doc, messages, known = _serve_with_message_log(col, monkeypatch)
     asyncio_loop = doc.session_context.server_context.application_context.io_loop.asyncio_loop
-    root = col._models[doc.roots[0].ref['id']][0]
-    model = md._models[root.ref['id']][0]
-
-    # A message serializing the model on another thread, not yet flushed
-    doc.models._new_models.add(model)
-    record = _track_unwritten(doc, [model.id], [])
+    md = pn.pane.Markdown('b')
+    future, encoded, resume = _serialize_append_blocked_before_flush(doc, col, md, monkeypatch)
 
     async def change():
         with set_curdoc(doc), unlocked():
             model.text = model.text.replace('&lt;p&gt;b', '&lt;p&gt;c')
+            if append:
+                col.append(pn.pane.Markdown('z'))
 
-    asyncio.run_coroutine_threadsafe(change(), asyncio_loop).result(timeout=5)
-    assert not _sends_text(messages, 'c')
-
-    doc.models._new_models.discard(model)
-    _untrack_unwritten(doc, record)
+    try:
+        assert encoded.wait(timeout=5)
+        model = next(iter(md._models.values()))[0]
+        assert model in doc.models._new_models
+        asyncio.run_coroutine_threadsafe(change(), asyncio_loop).result(timeout=5)
+    finally:
+        resume.set()
+    future.result(timeout=5)
 
     wait_until(lambda: _sends_text(messages, 'c'))
+    if append:
+        wait_until(lambda: _sends_text(messages, 'z'))
+    assert _undefined_references(messages, known) == []
+
+
+def test_drop_undefined_changes_keeps_changes_to_models_the_events_define():
+    holder = BkColumn()
+    doc = Document()
+    doc.add_root(BkColumn(children=[holder]))
+    doc.models.flush_synced()
+
+    doc.hold('collect')
+    div = Div(text='a')
+    holder.children = [div]
+    div.text = 'b'
+    attach, change = doc.callbacks._held_events
+    doc.callbacks._held_events = []
+    doc.callbacks._hold = None
+
+    assert _drop_undefined_changes(doc, [attach, change]) == [attach, change]
+    assert _drop_undefined_changes(doc, [change]) == []
 
 
 @pytest.mark.xdist_group(name="server")
