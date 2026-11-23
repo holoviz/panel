@@ -1,5 +1,6 @@
 import asyncio
 import datetime as dt
+import json
 import logging
 import os
 import pathlib
@@ -193,6 +194,82 @@ def test_unauthenticated_websocket_returns_403(port):
             return e.code
 
     assert asyncio.run(_connect()) == 403
+
+def _autoload_args(port, app):
+    return (
+        f"bokeh-autoload-element=1002&bokeh-app-path=/{app}"
+        f"&bokeh-absolute-url=http://localhost:{port}/{app}"
+    )
+
+
+def _page_token(port, app):
+    r = requests.get(f"http://localhost:{port}/{app}", timeout=10)
+    assert r.status_code == 200
+    return r.text.split('"token":')[1].split('"')[1]
+
+
+async def _ws_open(port, app, token):
+    """
+    Opens the websocket of an app with the given session token and returns
+    the HTTP status of a rejected handshake, 'ACK' if the session was opened
+    or None if the server closed the connection.
+    """
+    from tornado.httpclient import HTTPClientError
+    from tornado.websocket import websocket_connect
+
+    try:
+        ws = await websocket_connect(
+            f"ws://localhost:{port}/{app}/ws", subprotocols=['bokeh', token],
+            connect_timeout=10
+        )
+    except HTTPClientError as e:
+        return e.code
+    header = await ws.read_message()
+    ws.close()
+    return None if header is None else json.loads(header)['msgtype']
+
+
+def _session_denied_admin():
+    config.authorize_callback = lambda user_info: False
+    return Markdown('# Admin')
+
+
+def test_authorize_callback_applies_to_autoload_js(port):
+    paths = []
+
+    def authorize(user_info, path):
+        paths.append(path)
+        return path == '/user'
+
+    with config.set(authorize_callback=authorize):
+        serve_and_wait({'user': Markdown('user'), 'admin': Markdown('admin')}, port=port)
+        r = requests.get(f"http://localhost:{port}/admin/autoload.js?{_autoload_args(port, 'admin')}", timeout=10)
+        assert r.status_code == 403
+        r = requests.get(f"http://localhost:{port}/user/autoload.js?{_autoload_args(port, 'user')}", timeout=10)
+        assert r.status_code == 200
+    assert paths == ['/admin', '/user']
+
+
+def test_authorize_callback_applies_to_websocket(port):
+    with config.set(authorize_callback=lambda user_info, path: path == '/user'):
+        serve_and_wait({'user': Markdown('user'), 'admin': Markdown('admin')}, port=port)
+        token = _page_token(port, 'user')
+        assert asyncio.run(_ws_open(port, 'admin', token)) == 403
+        assert asyncio.run(_ws_open(port, 'user', token)) == 'ACK'
+
+
+def test_session_authorize_callback_applies_to_autoload_js(port):
+    serve_and_wait({'admin': _session_denied_admin}, port=port)
+    r = requests.get(f"http://localhost:{port}/admin/autoload.js?{_autoload_args(port, 'admin')}", timeout=10)
+    assert r.status_code == 403
+
+
+def test_session_authorize_callback_applies_to_websocket(port):
+    serve_and_wait({'user': Markdown('user'), 'admin': _session_denied_admin}, port=port)
+    token = _page_token(port, 'user')
+    assert asyncio.run(_ws_open(port, 'admin', token)) is None
+    assert asyncio.run(_ws_open(port, 'user', token)) == 'ACK'
+
 
 def test_server_static_dirs_index():
     html = Markdown('# Title')

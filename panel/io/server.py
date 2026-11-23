@@ -529,6 +529,73 @@ def _set_request_route_context(handler: t.Any, *args, suffix: str = '', **kwargs
     request.route_params, request.app_path = _sanitize_route_context(raw_route_params, raw_app_path)
 
 
+def _app_route_path(path: str, suffix: str) -> str:
+    if suffix and path.endswith(suffix):
+        return path[:-len(suffix)] or '/'
+    return path
+
+
+def _request_token_payload(app: t.Any, request: t.Any) -> TokenPayload:
+    if app.include_headers is None:
+        excluded_headers = (app.exclude_headers or [])
+        allowed_headers = [header for header in request.headers
+                           if header not in excluded_headers]
+    else:
+        allowed_headers = app.include_headers
+    headers = {k: v for k, v in request.headers.items()
+               if k in allowed_headers}
+
+    if app.include_cookies is None:
+        excluded_cookies = (app.exclude_cookies or [])
+        allowed_cookies = [cookie for cookie in request.cookies
+                           if cookie not in excluded_cookies]
+    else:
+        allowed_cookies = app.include_cookies
+    cookies = {k: v.value for k, v in request.cookies.items()
+               if k in allowed_cookies}
+
+    if cookies and 'Cookie' in headers and 'Cookie' not in (app.include_headers or []):
+        # Do not include Cookie header since cookies can be restored from cookies dict
+        del headers['Cookie']
+
+    arguments = {} if request.arguments is None else request.arguments
+    return {'headers': headers, 'cookies': cookies, 'arguments': arguments}
+
+
+def _is_authorized(path: str, session: bool = False) -> bool:
+    """
+    Whether the current user is authorized to access the app at the
+    given path. A redirect returned by the callback denies access.
+    """
+    auth_cb = config.authorize_callback
+    if not auth_cb or (session and auth_cb is config._param__private.values['authorize_callback']):
+        return True
+    if len(inspect.signature(auth_cb).parameters) == 1:
+        auth_args: tuple[t.Any, ...] = (state.user_info,)
+    else:
+        auth_args = (state.user_info, path)
+    try:
+        authorized = auth_cb(*auth_args)
+    except Exception:
+        logger.warning(f'Authorization callback errored. Could not validate user {state.user}.')
+        return False
+    return bool(authorized) and not isinstance(authorized, str)
+
+
+def _authorize_app_request(handler: t.Any, suffix: str) -> bool:
+    """
+    Runs the global authorization callback for a request to an
+    application route other than its document, e.g. its autoload.js
+    or websocket, passing the path of the application itself.
+    """
+    if not config.authorize_callback:
+        return True
+    payload = _request_token_payload(handler.application, handler.request)
+    temp_session = generate_session(handler.application, handler.request, payload, initialize=False)
+    with set_curdoc(temp_session.document):
+        return _is_authorized(_app_route_path(handler.request.path, suffix))
+
+
 class DocHandler(LoginUrlMixin, BkDocHandler):
 
     @authenticated  # type: ignore
@@ -551,31 +618,7 @@ class DocHandler(LoginUrlMixin, BkDocHandler):
         return session
 
     def _generate_token_payload(self) -> TokenPayload:
-        app = self.application
-        if app.include_headers is None:
-            excluded_headers = (app.exclude_headers or [])
-            allowed_headers = [header for header in self.request.headers
-                               if header not in excluded_headers]
-        else:
-            allowed_headers = app.include_headers
-        headers = {k: v for k, v in self.request.headers.items()
-                   if k in allowed_headers}
-
-        if app.include_cookies is None:
-            excluded_cookies = (app.exclude_cookies or [])
-            allowed_cookies = [cookie for cookie in self.request.cookies
-                               if cookie not in excluded_cookies]
-        else:
-            allowed_cookies = app.include_cookies
-        cookies = {k: v.value for k, v in self.request.cookies.items()
-                   if k in allowed_cookies}
-
-        if cookies and 'Cookie' in headers and 'Cookie' not in (app.include_headers or []):
-            # Do not include Cookie header since cookies can be restored from cookies dict
-            del headers['Cookie']
-
-        arguments = {} if self.request.arguments is None else self.request.arguments
-        payload: TokenPayload = {'headers': headers, 'cookies': cookies, 'arguments': arguments}
+        payload = _request_token_payload(self.application, self.request)
         payload.update(self.application_context.application.process_request(self.request))  # type: ignore
         return payload
 
@@ -719,8 +762,12 @@ class AutoloadJsHandler(BkAutoloadJsHandler):
 
     '''
 
+    @authenticated
     async def get(self, *args, **kwargs) -> None:
         _set_request_route_context(self, *args, suffix='/autoload.js', **kwargs)
+        if not _authorize_app_request(self, '/autoload.js'):
+            self.send_error(status_code=403, reason='Not authorized to access this application')
+            return
         element_id = self.get_argument("bokeh-autoload-element", default=None)
         if not element_id:
             self.send_error(status_code=400, reason='No bokeh-autoload-element query parameter')
@@ -736,6 +783,9 @@ class AutoloadJsHandler(BkAutoloadJsHandler):
 
         session = await self.get_session()  # type: ignore
         with set_curdoc(session.document):
+            if not _is_authorized(_app_route_path(self.request.path, '/autoload.js'), session=True):
+                self.send_error(status_code=403, reason='Not authorized to access this application')
+                return
             resources = Resources.from_bokeh(
                 self.application.resources(server_url), absolute=True
             )
@@ -760,6 +810,15 @@ class WSHandler(BkWSHandler):
         if self.current_user is None:
             logger.debug(
                 "Rejecting unauthenticated WebSocket connection to %r with 403.",
+                self.request.path
+            )
+            self.set_status(403)
+            self.finish()
+        # Session tokens are not bound to an application, so the
+        # authorization callback must also run when the websocket connects.
+        elif not _authorize_app_request(self, '/ws'):
+            logger.debug(
+                "Rejecting unauthorized WebSocket connection to %r with 403.",
                 self.request.path
             )
             self.set_status(403)
@@ -790,6 +849,15 @@ class WSHandler(BkWSHandler):
             expiration=min(self.application.session_token_expiration, expires_in),
             extra_payload=payload
         )
+        session = await self.application_context.create_session_if_needed(
+            t.cast("ID", session_id), self.request, token
+        )
+        with set_curdoc(session.document):
+            authorized = _is_authorized(_app_route_path(self.request.path, '/ws'), session=True)
+        if not authorized:
+            logger.debug("Closing unauthorized WebSocket connection to %r.", self.request.path)
+            self.close(1008, 'Not authorized to access this application')
+            return
         return await super()._async_open(token)
 
 
