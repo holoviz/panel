@@ -16,6 +16,44 @@ def test_list_constructor(widget):
     select = widget(options=['A', 1], value=1)
     assert select.options == ['A', 1]
 
+@pytest.mark.parametrize('size', [1, 3])
+@pytest.mark.parametrize(('options', 'expected'), [
+    ({'All': None, 'A': 'A'}, 'None'),
+    ([None, 'A'], 'None'),
+    ({'All': None, 'Text': 'None', 'A': 'A'}, 'All'),
+])
+def test_select_none_option(options, expected, size, document, comm):
+    select = Select(options=options, value=None, size=size)
+
+    widget = select.get_root(document, comm=comm)
+
+    assert select.value is None
+    assert widget.value == expected
+
+    select.value = 'A'
+    assert widget.value == 'A'
+
+    select.value = None
+    assert widget.value == expected
+
+    select._process_events({'value': 'A'})
+    assert select.value == 'A'
+
+    select._process_events({'value': expected})
+    assert select.value is None
+
+@pytest.mark.parametrize('groups', [
+    {'First': {'All': None}, 'Second': {'A': 'A'}},
+    {'First': [None], 'Second': ['A']},
+])
+def test_select_none_group_option(groups, document, comm):
+    select = Select(groups=groups, value=None)
+
+    widget = select.get_root(document, comm=comm)
+
+    assert select.value is None
+    assert widget.value == 'None'
+
 @pytest.mark.parametrize('widget', [AutocompleteInput, Select])
 def test_select_float_option_with_equality(widget):
     opts = {'A': 3.14, '1': 2.0}
