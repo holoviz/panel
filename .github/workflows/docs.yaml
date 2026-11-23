@@ -1,12 +1,8 @@
 name: docs
 
 on:
-  push:
-    tags:
-      - "v[0-9]+.[0-9]+.[0-9]+"
-      - "v[0-9]+.[0-9]+.[0-9]+a[0-9]+"
-      - "v[0-9]+.[0-9]+.[0-9]+b[0-9]+"
-      - "v[0-9]+.[0-9]+.[0-9]+rc[0-9]+"
+  # Releases from this maintenance branch must not replace the docs of
+  # the current release, so the site is only deployed manually.
   workflow_dispatch:
     inputs:
       target:
