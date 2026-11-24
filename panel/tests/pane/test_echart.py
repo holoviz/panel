@@ -57,3 +57,30 @@ def test_echart_js_event_with_arg(document, comm):
     handler = model.js_events['click'][0]
     assert handler['callback'].code == 'console.log(cb_data)'
     assert handler['callback'].args == {'md': md._models[ref][0]}
+
+def test_echart_js_event_after_adding_item(document, comm):
+    layout = Row(Markdown('A'))
+    root = layout.get_root(document, comm)
+    ref = root.ref['id']
+
+    echart = ECharts(ECHART, width=500, height=500)
+    echart.js_on_event('click', 'console.log(cb_data)')
+    layout.append(Row(echart))
+
+    model = echart._models[ref][0]
+    assert len(model.js_events['click']) == 1
+    assert model.js_events['click'][0]['callback'].code == 'console.log(cb_data)'
+
+def test_echart_js_event_with_arg_added_later(document, comm):
+    echart = ECharts(ECHART, width=500, height=500)
+    md = Markdown()
+    echart.js_on_event('click', 'console.log(cb_data)', md=md)
+    layout = Row(echart)
+    root = layout.get_root(document, comm)
+    ref = root.ref['id']
+    model = echart._models[ref][0]
+    assert model.js_events['click'][0]['callback'].args == {}
+
+    layout.append(md)
+
+    assert model.js_events['click'][0]['callback'].args == {'md': md._models[ref][0]}

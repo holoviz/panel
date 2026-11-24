@@ -29,7 +29,7 @@ from panel.layout import (
     Column, FlexBox, HSpacer, Row,
 )
 from panel.pane import (
-    HoloViews, Interactive, PaneBase, panel,
+    HoloViews, Interactive, Markdown, PaneBase, panel,
 )
 from panel.tests.util import hv_available, mpl_available
 from panel.theme import Fast, Material, Native
@@ -873,6 +873,60 @@ def test_holoviews_link_after_adding_item(document, comm):
     range_tool = row.select_one({'type': RangeTool})
     assert isinstance(range_tool, RangeTool)
     assert range_tool.x_range == p2.x_range
+
+
+@pytest.mark.usefixtures("hv_bokeh")
+@hv_available
+def test_holoviews_link_after_adding_nested_item(document, comm):
+    from bokeh.models.tools import RangeTool
+    from holoviews.plotting.links import RangeToolLink
+
+    c1 = hv.Curve([])
+    c2 = hv.Curve([])
+
+    RangeToolLink(c1, c2)
+
+    layout = Row(pn.panel(c1, backend='bokeh'), Markdown('A'))
+    row = layout.get_root(document, comm=comm)
+    assert row.select_one({'type': RangeTool}) is None
+
+    layout.append(Column(Markdown('B'), pn.panel(c2, backend='bokeh')))
+
+    p2 = row.children[-1].children[-1]
+    range_tool = row.select_one({'type': RangeTool})
+    assert isinstance(range_tool, RangeTool)
+    assert range_tool.x_range == p2.x_range
+
+
+@pytest.mark.usefixtures("hv_bokeh")
+@hv_available
+def test_holoviews_linked_axes_after_adding_item(document, comm):
+    c1 = hv.Curve([1, 2, 3])
+    c2 = hv.Curve([1, 2, 3])
+
+    layout = Row(HoloViews(c1, backend='bokeh'), Markdown('A'))
+    row_model = layout.get_root(document, comm=comm)
+
+    layout.append(Column(HoloViews(c2, backend='bokeh')))
+
+    p1, p2 = row_model.select({'type': figure})
+    assert p1.x_range is p2.x_range
+    assert p1.y_range is p2.y_range
+
+
+@pytest.mark.usefixtures("hv_bokeh")
+@hv_available
+def test_holoviews_linked_axes_unaffected_by_unrelated_append(document, comm):
+    c1 = hv.Curve([1, 2, 3])
+    c2 = hv.Curve([1, 2, 3])
+
+    layout = Row(HoloViews(c1, backend='bokeh'), HoloViews(c2, backend='bokeh'))
+    row_model = layout.get_root(document, comm=comm)
+    layout.append(Markdown('A'))
+
+    p1, p2 = row_model.select({'type': figure})
+    assert p1.x_range is p2.x_range
+    assert p1.y_range is p2.y_range
 
 
 @pytest.mark.usefixtures("hv_bokeh")
