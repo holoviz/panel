@@ -47,11 +47,11 @@ def edit_readonly(parameterized: param.Parameterized) -> Iterator:
     # Only touch the locked parameters: this runs on every value sync and
     # toggling every parameter of a widget dominated its cost.
     locked = [
-        (p, p.readonly, p.constant)
-        for p in parameterized.param.objects("existing").values()
+        (name, p, p.readonly, p.constant)
+        for name, p in parameterized.param.objects("existing").items()
         if p.readonly or p.constant
     ]
-    for p, _, _ in locked:
+    for _, p, _, _ in locked:
         p.readonly = False
         p.constant = False
     try:
@@ -60,8 +60,8 @@ def edit_readonly(parameterized: param.Parameterized) -> Iterator:
         # Setting a value while unlocked can create a per-instance copy of a
         # class-level parameter, which has to be locked again as well.
         current = parameterized.param.objects("existing")
-        for p, readonly, constant in locked:
-            for q in {p, current.get(p.name, p)}:
+        for name, p, readonly, constant in locked:
+            for q in {p, current.get(name, p)}:
                 q.readonly = readonly
                 q.constant = constant
 
