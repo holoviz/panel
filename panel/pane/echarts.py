@@ -12,7 +12,7 @@ from bokeh.models import CustomJS
 from pyviz_comms import JupyterComm
 
 from ..util import lazy_load
-from ..viewable import Viewable
+from ..viewable import Viewable, _added_subtrees
 from .base import ModelPane
 
 if t.TYPE_CHECKING:
@@ -59,6 +59,8 @@ class ECharts(ModelPane):
     _rerender_params: t.ClassVar[list[str]] = []
 
     _updates: t.ClassVar[bool] = True
+
+    _js_args: t.ClassVar[bool] = False
 
     def __init__(self, object=None, **params):
         super().__init__(object, **params)
@@ -196,17 +198,26 @@ class ECharts(ModelPane):
             of the object.
         """
         self._js_callbacks[event].append((query, callback, args))
+        if args:
+            ECharts._js_args = True
         for ref, (model, _) in self._models.copy().items():
             js_events = self._get_js_events(ref)
             self._apply_update({}, {'js_events': js_events}, model, ref)
 
 
-def setup_js_callbacks(root_view, root_model):
+def setup_js_callbacks(root_view, root_model, changed=None, old_models=None):
     if 'panel.models.echarts' not in sys.modules:
         return
     ref = root_model.ref['id']
-    for pane in root_view.select(ECharts):
-        if ref in pane._models:
-            pane._models[ref][0].js_events = pane._get_js_events(ref)
+    # Callback args may reference newly rendered components, so panes
+    # using them are refreshed wherever they live in the tree.
+    if ECharts._js_args:
+        subtrees = [root_view]
+    else:
+        subtrees = _added_subtrees(root_view, changed, ref, old_models)
+    for obj in subtrees:
+        for pane in obj.select(ECharts):
+            if ref in pane._models:
+                pane._models[ref][0].js_events = pane._get_js_events(ref)
 
 Viewable._preprocessing_hooks.append(setup_js_callbacks)

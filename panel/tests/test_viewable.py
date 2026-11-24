@@ -208,3 +208,83 @@ def test_viewable_design_and_loading_watchers():
     md.param.update(loading=False, design=Bootstrap)
     assert LOADING_INDICATOR_CSS_CLASS not in md.css_classes
     assert isinstance(md._design, Bootstrap)
+
+
+@pytest.fixture
+def preprocess_hooks_active(monkeypatch):
+    # Make every default preprocessing hook consider walking the tree
+    import panel.models.echarts  # noqa
+
+    from panel.pane.echarts import ECharts
+    from panel.pane.holoviews import HoloViews
+    monkeypatch.setattr(HoloViews, '_instantiated', True)
+    monkeypatch.setattr(ParamMethod, '_instantiated', True)
+    monkeypatch.setattr(ECharts, '_js_args', False)
+
+
+@pytest.fixture
+def select_spy(monkeypatch):
+    called = []
+    original = Markdown.select
+
+    def select(self, selector=None):
+        called.append(self)
+        return original(self, selector)
+
+    monkeypatch.setattr(Markdown, 'select', select)
+    return called
+
+
+@pytest.mark.usefixtures('preprocess_hooks_active')
+def test_preprocess_append_does_not_walk_unchanged_children(document, comm, select_spy):
+    from panel.layout import Column
+
+    old = [Markdown(f'{i}') for i in range(10)]
+    layout = Column(*old)
+    layout.get_root(document, comm)
+
+    select_spy.clear()
+    new = Markdown('new')
+    layout.append(new)
+
+    assert new in select_spy
+    assert not any(md in old for md in select_spy)
+
+
+@pytest.mark.usefixtures('preprocess_hooks_active')
+def test_preprocess_esm_children_does_not_walk_unchanged_children(document, comm, select_spy):
+    from panel.custom import JSComponent
+
+    class ChildrenComponent(JSComponent):
+
+        objects = Children()
+
+        _esm = 'export function render({ model }) {}'
+
+    old = [Markdown(f'{i}') for i in range(10)]
+    component = ChildrenComponent(objects=old)
+    component.get_root(document, comm)
+
+    select_spy.clear()
+    new = Markdown('new')
+    component.objects = old + [new]
+
+    assert new in select_spy
+    assert not any(md in old for md in select_spy)
+
+
+def test_preprocess_caches_hook_signature(document, comm, monkeypatch):
+    import inspect
+
+    from panel.layout import Column
+
+    layout = Column(Markdown('a'))
+    layout.get_root(document, comm)
+    layout.append(Markdown('b'))
+
+    calls = []
+    signature = inspect.signature
+    monkeypatch.setattr(inspect, 'signature', lambda *a, **kw: calls.append(a) or signature(*a, **kw))
+    layout.append(Markdown('c'))
+
+    assert not calls

@@ -52,7 +52,7 @@ from .util import (
     param_name, recursive_parameterized, to_async_gen,
 )
 from .util.checks import is_dataframe, is_mpl_axes, is_series
-from .viewable import Layoutable, Viewable
+from .viewable import Layoutable, Viewable, _added_subtrees
 from .widgets import (
     ArrayInput, Button, Checkbox, ColorPicker, DatePicker, DateRangeSlider,
     DatetimeInput, DatetimeRangeSlider, DiscreteSlider, FileInput,
@@ -1092,6 +1092,13 @@ class ParamMethod(ParamRef):
 
     priority: t.ClassVar[float | bool | None] = 0.5
 
+    # Lets link_param_method skip walking the model tree in apps without ParamMethod panes
+    _instantiated: t.ClassVar[bool] = False
+
+    def __init__(self, object=None, **params):
+        ParamMethod._instantiated = True
+        super().__init__(object, **params)
+
     @param.depends('object', watch=True)
     def _validate_object(self):
         dependencies = getattr(self.object, '_dinfo', {})
@@ -1448,14 +1455,32 @@ class JSONInit(param.Parameterized):
                 warnobj.warning(str(e))
 
 
-def link_param_method(root_view, root_model):
+def _is_loading_method(obj):
+    return isinstance(obj, ParamMethod) and obj.loading_indicator
+
+
+def _is_param_widget(obj):
+    return isinstance(obj, Widget) and getattr(obj, '_param_pane', None) is not None
+
+
+def link_param_method(root_view, root_model, changed=None, old_models=None):
     """
     This preprocessor jslinks ParamMethod loading parameters to any
     widgets generated from those parameters ensuring that the loading
     indicator is enabled client side.
     """
-    methods = root_view.select(lambda p: isinstance(p, ParamMethod) and p.loading_indicator)
-    widgets = root_view.select(lambda w: isinstance(w, Widget) and getattr(w, '_param_pane', None) is not None)
+    if not ParamMethod._instantiated:
+        return
+    subtrees = _added_subtrees(root_view, changed, root_model.ref['id'], old_models)
+    # A new widget or method may pair with one anywhere else in the tree,
+    # so the full pass only runs when either was added.
+    if subtrees != [root_view] and not any(
+        obj.select(lambda o: _is_loading_method(o) or _is_param_widget(o))
+        for obj in subtrees
+    ):
+        return
+    methods = root_view.select(_is_loading_method)
+    widgets = root_view.select(_is_param_widget)
 
     for widget in widgets:
         for method in methods:

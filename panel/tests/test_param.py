@@ -2411,3 +2411,48 @@ def test_param_selector_objects_update_with_parameterized_options():
     test.param.sel.objects = new
 
     assert row[0].options == new
+
+
+class LoadingView(param.Parameterized):
+
+    a = param.Integer(default=1)
+
+    @param.depends('a')
+    def view(self):
+        return self.a
+
+
+def _loading_links(method):
+    from panel.links import Link
+    return [
+        (source, link) for source, links in Link.registry.items()
+        for link in links if getattr(link, 'target', None) is method._inner_layout
+    ]
+
+
+def test_param_method_loading_indicator_linked(document, comm):
+    obj = LoadingView()
+    method = ParamMethod(obj.view, loading_indicator=True)
+    widgets = Param(obj.param)
+
+    Row(widgets, method).get_root(document, comm)
+
+    (source, link), = _loading_links(method)
+    assert source is widgets._widgets['a']
+    assert link.properties == {'value': 'loading'}
+
+
+@pytest.mark.parametrize('add_method', [True, False])
+def test_param_method_loading_indicator_linked_after_adding_item(document, comm, add_method):
+    obj = LoadingView()
+    method = ParamMethod(obj.view, loading_indicator=True)
+    widgets = Param(obj.param)
+
+    layout = Row(widgets if add_method else method)
+    layout.get_root(document, comm)
+    assert not _loading_links(method)
+
+    layout.append(Row(method if add_method else widgets))
+
+    (source, _), = _loading_links(method)
+    assert source is widgets._widgets['a']
