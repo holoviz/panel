@@ -147,10 +147,19 @@ _SCATTER_SPEC = {
 }
 
 
-def _assert_unavailable_message(page, msgs):
-    expect(page.locator('.deckgl-unavailable')).to_have_text(_WEBGL_UNAVAILABLE)
+def _watch_errors(page):
+    errors = []
+    page.on('console', lambda msg: msg.type == 'error' and errors.append(msg.text))
+    page.on('pageerror', lambda exc: errors.append(str(exc)))
+    return errors
+
+
+def _assert_unavailable_message(page, errors):
+    message = page.locator('.deckgl-unavailable')
+    expect(message).to_have_text(_WEBGL_UNAVAILABLE)
+    expect(message).to_have_attribute('role', 'status')
     assert page.locator('.deckgl canvas').count() == 0
-    assert not [msg.text for msg in msgs if msg.type == 'error']
+    assert not errors
 
 
 def test_deckgl_without_webgl_shows_message(browser_type, browser_type_launch_args):
@@ -161,38 +170,41 @@ def test_deckgl_without_webgl_shows_message(browser_type, browser_type_launch_ar
     try:
         page = browser.new_page()
         _stub_basemap_style(page)
-        msgs = []
-        page.on('console', lambda msg: msgs.append(msg))
+        errors = _watch_errors(page)
         pane = pn.pane.DeckGL(_SCATTER_SPEC, height=400, width=600)
         serve_component(page, pane)
         assert not page.evaluate("() => !!document.createElement('canvas').getContext('webgl2')")
-        _assert_unavailable_message(page, msgs)
+        _assert_unavailable_message(page, errors)
 
         pane.object = dict(_SCATTER_SPEC, initialViewState={'latitude': 47, 'longitude': 7, 'zoom': 9})
         page.wait_for_timeout(500)
-        _assert_unavailable_message(page, msgs)
+        _assert_unavailable_message(page, errors)
         assert page.locator('.deckgl-unavailable').count() == 1
     finally:
         browser.close()
 
 
-# A context that passes a WebGL2 probe but that deck.gl cannot create a
-# device from, as on a browser whose GPU process refuses the context later.
+# The pane's WebGL2 probe gets a context, every later request none, as on a
+# browser whose GPU process refuses contexts after the first.
 _BROKEN_WEBGL = """
 const getContext = HTMLCanvasElement.prototype.getContext
 HTMLCanvasElement.prototype.getContext = function (kind, ...args) {
   if (String(kind).startsWith('webgl')) {
-    return {getExtension: () => null}
+    return new Error().stack.includes('webgl2_available') ? {getExtension: () => null} : null
   }
   return getContext.call(this, kind, ...args)
 }
 """
 
-
-def test_deckgl_device_failure_shows_message(page):
+@pytest.mark.parametrize('map_style', [None, _CARTO_STYLE], ids=['no-basemap', 'carto'])
+def test_deckgl_device_failure_shows_message(page, map_style):
     page.add_init_script(_BROKEN_WEBGL)
-    msgs = []
-    page.on('console', lambda msg: msgs.append(msg))
-    spec = dict(_SCATTER_SPEC, mapStyle=None)
-    serve_component(page, pn.pane.DeckGL(spec, height=400, width=600))
-    _assert_unavailable_message(page, msgs)
+    _stub_basemap_style(page)
+    errors = _watch_errors(page)
+    pane = pn.pane.DeckGL(dict(_SCATTER_SPEC, mapStyle=map_style), height=400, width=600)
+    serve_component(page, pane)
+    _assert_unavailable_message(page, errors)
+
+    pane.object = dict(pane.object, initialViewState={'latitude': 47, 'longitude': 7, 'zoom': 9})
+    page.wait_for_timeout(500)
+    _assert_unavailable_message(page, errors)

@@ -35,9 +35,19 @@ function webgl2_available(): boolean {
   return _webgl2
 }
 
+// deck.gl reports a failed device to onError and then rethrows it from a
+// promise nobody awaits, which would surface as an uncaught page error.
+const _reported = new WeakSet<object>()
+window.addEventListener("unhandledrejection", (event) => {
+  if (event.reason instanceof Object && _reported.has(event.reason)) {
+    event.preventDefault()
+  }
+})
+
 function unavailable_el(): HTMLElement {
   const el = div({class: "deckgl-unavailable"})
   el.style.cssText = "display: flex; align-items: center; justify-content: center; text-align: center; width: 100%; height: 100%; padding: 1em; box-sizing: border-box; opacity: 0.7;"
+  el.setAttribute("role", "status")
   el.textContent = WEBGL_UNAVAILABLE
   return el
 }
@@ -78,6 +88,7 @@ export class DeckGLPlotView extends LayoutDOMView {
   _layer_map: any
   _view_cb: any
   _initialized: boolean = false
+  _unavailable: boolean = false
 
   override async lazy_initialize(): Promise<void> {
     await super.lazy_initialize()
@@ -108,6 +119,7 @@ export class DeckGLPlotView extends LayoutDOMView {
 
   override remove(): void {
     this.deckGL?.finalize()
+    this._map?.remove()
     super.remove()
   }
 
@@ -298,12 +310,21 @@ export class DeckGLPlotView extends LayoutDOMView {
       } else if (props.mapStyle.includes("carto")) {
         // Positioned up front rather than on deck.gl's first view state
         // change, which only comes once its WebGL device has initialized.
-        this._map = new (window as any).maplibregl.Map({
-          container,
-          style: props.mapStyle,
-          interactive: false,
-          ...this._map_camera(props.initialViewState),
-        })
+        try {
+          this._map = new (window as any).maplibregl.Map({
+            container,
+            style: props.mapStyle,
+            interactive: false,
+            ...this._map_camera(props.initialViewState),
+          })
+        } catch (err) {
+          if (!/webgl/i.test(String(err))) {
+            throw err
+          }
+          console.warn(err)
+          this._unavailable = true
+          return
+        }
         props.controller = true
         props.map = null
         delete props.mapStyle
@@ -329,18 +350,25 @@ export class DeckGLPlotView extends LayoutDOMView {
     // Without a device deck.gl could not create its WebGL context, so
     // nothing will ever be drawn.
     if (layer == null && this.deckGL != null && this.deckGL.device == null) {
-      _webgl2 = false
+      console.warn(error)
+      if (error instanceof Object) {
+        _reported.add(error)
+      }
       this._render_unavailable()
     } else {
       console.error(error)
     }
   }
 
-  _render_unavailable(): void {
+  _dispose(): void {
     this.deckGL?.finalize()
     this.deckGL = null
     this._map?.remove()
     this._map = null
+  }
+
+  _render_unavailable(): void {
+    this._dispose()
     const container = div({class: "deckgl"})
     set_size(container, this.model, false)
     container.appendChild(unavailable_el())
@@ -350,6 +378,7 @@ export class DeckGLPlotView extends LayoutDOMView {
 
   override render(): void {
     super.render()
+    this._dispose()
     if (!webgl2_available()) {
       this._render_unavailable()
       return
@@ -373,6 +402,11 @@ export class DeckGLPlotView extends LayoutDOMView {
         jsonInput: data,
         tooltip,
       })
+    }
+    if (this._unavailable) {
+      this._unavailable = false
+      this._render_unavailable()
+      return
     }
     this.shadow_el.appendChild(container)
     this._initialized = false
