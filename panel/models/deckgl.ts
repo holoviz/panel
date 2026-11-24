@@ -118,8 +118,7 @@ export class DeckGLPlotView extends LayoutDOMView {
   }
 
   override remove(): void {
-    this.deckGL?.finalize()
-    this._map?.remove()
+    this._dispose()
     super.remove()
   }
 
@@ -294,7 +293,7 @@ export class DeckGLPlotView extends LayoutDOMView {
   }
 
   createDeck({mapboxApiKey, container, jsonInput, tooltip}: any): void {
-    let deckgl
+    let deckgl: any
     try {
       let configuration
       if (this.model.configuration) {
@@ -336,7 +335,7 @@ export class DeckGLPlotView extends LayoutDOMView {
         ...props,
         container,
         getTooltip,
-        onError: (error: any, layer: any) => this._on_deck_error(error, layer),
+        onError: (error: any, layer: any) => this._on_deck_error(deckgl, error, layer),
         height: "100%",
         width: "100%",
       })
@@ -346,22 +345,28 @@ export class DeckGLPlotView extends LayoutDOMView {
     return deckgl
   }
 
-  _on_deck_error(error: any, layer: any): void {
+  _on_deck_error(deck: any, error: any, layer: any): void {
     // Without a device deck.gl could not create its WebGL context, so
     // nothing will ever be drawn.
-    if (layer == null && this.deckGL != null && this.deckGL.device == null) {
+    if (layer == null && deck != null && deck.device == null) {
       console.warn(error)
       if (error instanceof Object) {
         _reported.add(error)
       }
-      this._render_unavailable()
+      if (deck === this.deckGL) {
+        this._render_unavailable()
+      }
     } else {
       console.error(error)
     }
   }
 
   _dispose(): void {
+    // finalize() leaves deck.gl's context alive until it is collected, and
+    // Chrome evicts the oldest contexts, e.g. another pane's, past its limit.
+    const gl = this.deckGL?.device?.gl
     this.deckGL?.finalize()
+    gl?.getExtension("WEBGL_lose_context")?.loseContext()
     this.deckGL = null
     this._map?.remove()
     this._map = null

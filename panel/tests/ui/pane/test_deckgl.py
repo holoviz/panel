@@ -208,3 +208,38 @@ def test_deckgl_device_failure_shows_message(page, map_style):
     pane.object = dict(pane.object, initialViewState={'latitude': 47, 'longitude': 7, 'zoom': 9})
     page.wait_for_timeout(500)
     _assert_unavailable_message(page, errors)
+
+
+_COUNT_CONTEXTS = """
+window._webglContexts = []
+const getContext = HTMLCanvasElement.prototype.getContext
+HTMLCanvasElement.prototype.getContext = function (kind, ...args) {
+  const context = getContext.call(this, kind, ...args)
+  if (String(kind).startsWith('webgl') && context != null && !window._webglContexts.includes(context)) {
+    window._webglContexts.push(context)
+  }
+  return context
+}
+"""
+
+_LIVE_CONTEXTS = "() => window._webglContexts.filter((gl) => !gl.isContextLost()).length"
+
+
+def test_deckgl_rerender_releases_webgl_contexts(page):
+    page.add_init_script(_COUNT_CONTEXTS)
+    _stub_basemap_style(page)
+    pane = pn.pane.DeckGL(_SCATTER_SPEC, height=400, width=600)
+    serve_component(page, pane)
+    _require_webgl2(page)
+    expect(page.locator('.deckgl canvas')).to_have_count(2)
+    page.wait_for_timeout(500)
+    live = page.evaluate(_LIVE_CONTEXTS)
+
+    for i in range(20):
+        # Each re-render creates a new deck.gl canvas and MapLibre basemap
+        with page.expect_request_finished(lambda request: request.url == _CARTO_STYLE):
+            pane.tooltips = {'text': f'{i}'}
+    page.wait_for_timeout(500)
+    expect(page.locator('.deckgl canvas')).to_have_count(2)
+    assert page.evaluate("() => window._webglContexts.length") >= live + 40
+    assert page.evaluate(_LIVE_CONTEXTS) <= live
