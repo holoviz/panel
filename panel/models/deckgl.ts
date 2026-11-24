@@ -16,6 +16,32 @@ import {
 } from "./resources"
 import {makeTooltip} from "./tooltips"
 
+const WEBGL_UNAVAILABLE = "This browser can't draw this map: WebGL is unavailable"
+
+let _webgl2: boolean | null = null
+
+// deck.gl 9 and MapLibre both need WebGL2. The probe context is released
+// straight away because browsers cap the number of live contexts per page.
+function webgl2_available(): boolean {
+  if (_webgl2 == null) {
+    try {
+      const gl = document.createElement("canvas").getContext("webgl2")
+      _webgl2 = gl != null
+      gl?.getExtension("WEBGL_lose_context")?.loseContext()
+    } catch {
+      _webgl2 = false
+    }
+  }
+  return _webgl2
+}
+
+function unavailable_el(): HTMLElement {
+  const el = div({class: "deckgl-unavailable"})
+  el.style.cssText = "display: flex; align-items: center; justify-content: center; text-align: center; width: 100%; height: 100%; padding: 1em; box-sizing: border-box; opacity: 0.7;"
+  el.textContent = WEBGL_UNAVAILABLE
+  return el
+}
+
 function extractClasses() {
   // Get classes for registration from standalone deck.gl
   const classesDict: any = {}
@@ -289,6 +315,7 @@ export class DeckGLPlotView extends LayoutDOMView {
         ...props,
         container,
         getTooltip,
+        onError: (error: any, layer: any) => this._on_deck_error(error, layer),
         height: "100%",
         width: "100%",
       })
@@ -298,8 +325,35 @@ export class DeckGLPlotView extends LayoutDOMView {
     return deckgl
   }
 
+  _on_deck_error(error: any, layer: any): void {
+    // Without a device deck.gl could not create its WebGL context, so
+    // nothing will ever be drawn.
+    if (layer == null && this.deckGL != null && this.deckGL.device == null) {
+      _webgl2 = false
+      this._render_unavailable()
+    } else {
+      console.error(error)
+    }
+  }
+
+  _render_unavailable(): void {
+    this.deckGL?.finalize()
+    this.deckGL = null
+    this._map?.remove()
+    this._map = null
+    const container = div({class: "deckgl"})
+    set_size(container, this.model, false)
+    container.appendChild(unavailable_el())
+    this.shadow_el.querySelector(".deckgl")?.remove()
+    this.shadow_el.appendChild(container)
+  }
+
   override render(): void {
     super.render()
+    if (!webgl2_available()) {
+      this._render_unavailable()
+      return
+    }
     const container = div({class: "deckgl"})
     set_size(container, this.model, false)
     const MAPBOX_API_KEY = this.model.mapbox_api_key

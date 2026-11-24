@@ -7,6 +7,7 @@ import pytest
 pytest.importorskip("playwright")
 
 from PIL import Image
+from playwright.sync_api import expect
 
 import panel as pn
 
@@ -132,3 +133,66 @@ def test_deckgl_basemap_follows_initial_view_state_update(page):
     pane.object = _basemap_spec(-120, 37, 6)
 
     wait_until(lambda: _basemap_center(page) == pytest.approx([-120, 37, 6]), page)
+
+
+_WEBGL_UNAVAILABLE = "This browser can't draw this map: WebGL is unavailable"
+
+_SCATTER_SPEC = {
+    'initialViewState': {'latitude': 46.03, 'longitude': 6.2, 'zoom': 11},
+    'mapStyle': _CARTO_STYLE,
+    'layers': [{
+        '@@type': 'ScatterplotLayer', 'data': [{'p': [6.2, 46.03]}],
+        'getPosition': '@@=p', 'getFillColor': [255, 0, 0], 'getRadius': 500
+    }]
+}
+
+
+def _assert_unavailable_message(page, msgs):
+    expect(page.locator('.deckgl-unavailable')).to_have_text(_WEBGL_UNAVAILABLE)
+    assert page.locator('.deckgl canvas').count() == 0
+    assert not [msg.text for msg in msgs if msg.type == 'error']
+
+
+def test_deckgl_without_webgl_shows_message(browser_type, browser_type_launch_args):
+    if browser_type.name != 'chromium':
+        pytest.skip('Only Chromium can be launched with WebGL disabled')
+    args = [*browser_type_launch_args.get('args', []), '--disable-webgl', '--disable-gpu']
+    browser = browser_type.launch(**{**browser_type_launch_args, 'args': args})
+    try:
+        page = browser.new_page()
+        _stub_basemap_style(page)
+        msgs = []
+        page.on('console', lambda msg: msgs.append(msg))
+        pane = pn.pane.DeckGL(_SCATTER_SPEC, height=400, width=600)
+        serve_component(page, pane)
+        assert not page.evaluate("() => !!document.createElement('canvas').getContext('webgl2')")
+        _assert_unavailable_message(page, msgs)
+
+        pane.object = dict(_SCATTER_SPEC, initialViewState={'latitude': 47, 'longitude': 7, 'zoom': 9})
+        page.wait_for_timeout(500)
+        _assert_unavailable_message(page, msgs)
+        assert page.locator('.deckgl-unavailable').count() == 1
+    finally:
+        browser.close()
+
+
+# A context that passes a WebGL2 probe but that deck.gl cannot create a
+# device from, as on a browser whose GPU process refuses the context later.
+_BROKEN_WEBGL = """
+const getContext = HTMLCanvasElement.prototype.getContext
+HTMLCanvasElement.prototype.getContext = function (kind, ...args) {
+  if (String(kind).startsWith('webgl')) {
+    return {getExtension: () => null}
+  }
+  return getContext.call(this, kind, ...args)
+}
+"""
+
+
+def test_deckgl_device_failure_shows_message(page):
+    page.add_init_script(_BROKEN_WEBGL)
+    msgs = []
+    page.on('console', lambda msg: msgs.append(msg))
+    spec = dict(_SCATTER_SPEC, mapStyle=None)
+    serve_component(page, pn.pane.DeckGL(spec, height=400, width=600))
+    _assert_unavailable_message(page, msgs)
