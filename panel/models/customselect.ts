@@ -28,6 +28,9 @@ export class CustomSelectView extends SelectView {
     const values = Array.isArray(options) ? options : Object.values(options).flat()
     elements.forEach((element, index) => {
       const option = values[index]
+      if (option === undefined) {
+        return
+      }
       const value = typeof option === "string" ? option : option[0]
       element.disabled = disabled_options.includes(String(value))
     })
