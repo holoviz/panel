@@ -249,3 +249,22 @@ def test_get_pane_type_picks_up_late_subclass_and_releases_it():
     gc.collect()
     assert ref() is None, 'the dispatch cache must not keep pane classes alive'
     assert PaneBase.get_pane_type(1j) is Str
+
+
+def test_get_pane_type_reuses_dispatch_order_until_panes_change(monkeypatch):
+    import panel.pane.base as pane_base
+
+    PaneBase.get_pane_type('text')
+    calls = []
+    descendents = pane_base._descendents
+    monkeypatch.setattr(pane_base, '_descendents', lambda *args, **kwargs: calls.append(args) or descendents(*args, **kwargs))
+
+    for _ in range(3):
+        assert PaneBase.get_pane_type('text') is PaneBase.get_pane_type('text')
+    assert calls == []
+
+    class LatePane(Str):
+        priority = 0
+
+    PaneBase.get_pane_type('text')
+    assert len(calls) == 1

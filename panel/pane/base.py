@@ -315,33 +315,49 @@ class PaneBase(Layoutable):
                 return pane_type
         raise TypeError(f'{type(obj).__name__} type could not be rendered.')
 
-    # Resolved dispatch order: weak references to the concrete panes in
-    # _descendents order, the (priority, index) of the panes with a static
-    # priority sorted highest first and the indices of the panes with a
-    # dynamic priority. Rebuilt when the set of pane classes changes;
-    # a priority reassigned on an existing class is not picked up.
+    # Resolved dispatch order: the generation it was built for, weak
+    # references to the concrete panes in _descendents order, the
+    # (priority, index) of the panes with a static priority sorted highest
+    # first and the indices of the panes with a dynamic priority. A
+    # priority reassigned on an existing class is not picked up.
     _dispatch_cache: t.ClassVar[
-        tuple[list[weakref.ReferenceType[type]], list[tuple[float, int]], list[int]] | None
+        tuple[int, list[weakref.ReferenceType[type]], list[tuple[float, int]], list[int]] | None
     ] = None
+
+    # Bumped whenever a pane class is defined or collected, so the dispatch
+    # order is only rebuilt when the set of pane classes changed, instead
+    # of walking the class hierarchy on every dispatch.
+    _dispatch_generation: t.ClassVar[int] = 0
+
+    def __init_subclass__(cls, **kwargs: t.Any) -> None:
+        super().__init_subclass__(**kwargs)
+        _invalidate_pane_dispatch()
+        weakref.finalize(cls, _invalidate_pane_dispatch)
 
     @classmethod
     def _dispatch_order(cls) -> tuple[list[type[PaneBase]], list[tuple[float, int]], list[int]]:
-        panes = t.cast('list[type[PaneBase]]', _descendents(PaneBase, concrete=True))
         cache = PaneBase._dispatch_cache
-        if (cache is None or len(cache[0]) != len(panes) or
-            any(ref() is not p for ref, p in zip(cache[0], panes, strict=True))):
-            static, dynamic = [], []
-            for idx, p in enumerate(panes):
-                if p.priority is None:
-                    dynamic.append(idx)
-                else:
-                    static.append((p.priority, idx))
-            # Ties keep the reversed _descendents order, matching the
-            # reversed stable sort this replaces.
-            static.sort(reverse=True)
-            cache = ([weakref.ref(p) for p in panes], static, dynamic)
-            PaneBase._dispatch_cache = cache
-        return panes, cache[1], cache[2]
+        if cache is not None and cache[0] == PaneBase._dispatch_generation:
+            panes = [ref() for ref in cache[1]]
+            if all(p is not None for p in panes):
+                return t.cast('list[type[PaneBase]]', panes), cache[2], cache[3]
+        generation = PaneBase._dispatch_generation
+        panes = t.cast('list[type[PaneBase]]', _descendents(PaneBase, concrete=True))
+        static, dynamic = [], []
+        for idx, p in enumerate(panes):
+            if p.priority is None:
+                dynamic.append(idx)
+            else:
+                static.append((p.priority, idx))
+        # Ties keep the reversed _descendents order, matching the
+        # reversed stable sort this replaces.
+        static.sort(reverse=True)
+        PaneBase._dispatch_cache = (generation, [weakref.ref(p) for p in panes], static, dynamic)
+        return panes, static, dynamic
+
+
+def _invalidate_pane_dispatch() -> None:
+    PaneBase._dispatch_generation += 1
 
 
 class Pane(PaneBase, Reactive):
