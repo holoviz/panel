@@ -13,24 +13,27 @@ export class CustomSelectView extends SelectView {
 
   protected override options_el(): HTMLOptionElement[] | HTMLOptGroupElement[] {
     const opts = super.options_el()
-    const {disabled_options} = this.model
-    opts.forEach((element) => {
-      // XXX: what about HTMLOptGroupElement?
-      if (element instanceof HTMLOptionElement && disabled_options.includes(element.value)) {
-        element.setAttribute("disabled", "true")
-      }
-    })
+    const elements = opts.flatMap((element) => element instanceof HTMLOptGroupElement
+      ? Array.from(element.querySelectorAll("option")) : [element])
+    this._set_disabled_options(elements)
     return opts
   }
 
   protected _update_disabled_options(): void {
-    for (const element of this.input_el.options) {
-      if (this.model.disabled_options.includes(element.value)) {
-        element.setAttribute("disabled", "true")
-      } else {
-        element.removeAttribute("disabled")
+    this._set_disabled_options(Array.from(this.input_el.options))
+  }
+
+  private _set_disabled_options(elements: HTMLOptionElement[]): void {
+    const {options, disabled_options} = this.model
+    const values = Array.isArray(options) ? options : Object.values(options).flat()
+    elements.forEach((element, index) => {
+      const option = values[index]
+      if (option === undefined) {
+        return
       }
-    }
+      const value = typeof option === "string" ? option : option[0]
+      element.disabled = disabled_options.includes(String(value))
+    })
   }
 }
 
