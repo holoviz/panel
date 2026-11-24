@@ -338,9 +338,9 @@ class PaneBase(Layoutable):
     def _dispatch_order(cls) -> tuple[list[type[PaneBase]], list[tuple[float, int]], list[int]]:
         cache = PaneBase._dispatch_cache
         if cache is not None and cache[0] == PaneBase._dispatch_generation:
-            panes = [ref() for ref in cache[1]]
-            if all(p is not None for p in panes):
-                return t.cast('list[type[PaneBase]]', panes), cache[2], cache[3]
+            cached = [ref() for ref in cache[1]]
+            if all(p is not None for p in cached):
+                return t.cast('list[type[PaneBase]]', cached), cache[2], cache[3]
         generation = PaneBase._dispatch_generation
         panes = t.cast('list[type[PaneBase]]', _descendents(PaneBase, concrete=True))
         static, dynamic = [], []
