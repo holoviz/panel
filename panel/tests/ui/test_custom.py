@@ -227,9 +227,14 @@ def test_resize_unmounted_child_does_not_abort_patch(page):
     expect(page.locator('h1')).to_have_count(0)
 
     # One patch, in which the size change reaches the child's view before it rendered
-    with hold(next(iter(parent._documents))):
-        child.width = 200
-        parent.text = 'After'
+    doc = next(iter(parent._documents))
+
+    def update():
+        with hold(doc):
+            child.width = 200
+            parent.text = 'After'
+
+    doc.add_next_tick_callback(update)
 
     expect(page.locator('h2')).to_have_text('After')
 
@@ -247,9 +252,14 @@ def test_resize_unmounted_no_shadow_dom_child_does_not_abort_patch(page):
 
     expect(page.locator('h2')).to_have_text('Before')
 
-    with hold(next(iter(parent._documents))):
-        child.width = 200
-        parent.text = 'After'
+    doc = next(iter(parent._documents))
+
+    def update():
+        with hold(doc):
+            child.width = 200
+            parent.text = 'After'
+
+    doc.add_next_tick_callback(update)
 
     expect(page.locator('h2')).to_have_text('After')
 
@@ -269,9 +279,14 @@ def test_resize_unmounted_markdown_child_does_not_abort_patch(page):
 
     expect(page.locator('h2')).to_have_text('Before')
 
-    with hold(next(iter(parent._documents))):
-        child.width = 200
-        parent.text = 'After'
+    doc = next(iter(parent._documents))
+
+    def update():
+        with hold(doc):
+            child.width = 200
+            parent.text = 'After'
+
+    doc.add_next_tick_callback(update)
 
     expect(page.locator('h2')).to_have_text('After')
 
