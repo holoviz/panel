@@ -75,13 +75,27 @@ def _sizing_props(child: t.Any) -> tuple[t.Any, ...]:
             )
         _SIZING_DEFAULTS[cls] = defaults = tuple(resolved)
     values = child._property_values
-    themed = child.themed_values()
+    # HasProps.themed_values() looks the attribute up through
+    # HasProps.__getattr__, which raises and catches an AttributeError
+    # for the common unthemed model and costs more than everything else
+    # here combined; apply_theme stores it in the instance __dict__.
+    themed = child.__dict__.get('__themed_values__')
     if themed:
         return tuple(
             values[prop] if prop in values else themed.get(prop, default)
             for prop, default in zip(_SIZING_PROPS, defaults)
         )
-    return tuple(values.get(prop, default) for prop, default in zip(_SIZING_PROPS, defaults))
+    # Most children never set a sizing property on their model, so a
+    # single C-level membership check usually settles all five values.
+    if values.keys().isdisjoint(_SIZING_PROPS):
+        return defaults
+    get = values.get
+    sizing_mode, width, min_width, height, min_height = defaults
+    return (
+        get('sizing_mode', sizing_mode), get('width', width),
+        get('min_width', min_width), get('height', height),
+        get('min_height', min_height)
+    )
 
 
 class SizingModeMixin:

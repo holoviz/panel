@@ -951,3 +951,133 @@ def test_layout_infers_min_size_without_explicit_one(document, comm, layout):
     model = container.get_root(document, comm=comm)
 
     assert (model.min_width, model.min_height) == (420, 300)
+
+
+def test_sizing_props_track_theme_changes(document):
+    from bokeh.themes import Theme
+
+    from panel.layout.base import _SIZING_PROPS, _sizing_props
+
+    div = Div(text='themed', height=40)
+    document.add_root(div)
+    assert _sizing_props(div) == tuple(getattr(div, p) for p in _SIZING_PROPS)
+
+    document.theme = Theme(json={'attrs': {'Div': {'width': 123, 'height': 10}}})
+    assert _sizing_props(div) == tuple(getattr(div, p) for p in _SIZING_PROPS)
+
+    document.theme = None
+    assert div.width is None
+    assert _sizing_props(div) == tuple(getattr(div, p) for p in _SIZING_PROPS)
+
+
+_LAYOUT_SIZING = ('sizing_mode', 'width', 'height', 'min_width', 'min_height')
+
+def _sizing_children():
+    return [
+        Markdown('fixed', width=120, height=40),
+        Markdown('unsized'),
+        Markdown('min', min_width=90, min_height=30),
+    ]
+
+def _append(layout, extra):
+    layout.append(extra[0])
+
+def _extend(layout, extra):
+    layout.extend(extra)
+
+def _insert(layout, extra):
+    layout.insert(1, extra[0])
+
+def _pop(layout, extra):
+    layout.append(extra[0])
+    layout.pop(0)
+
+def _remove(layout, extra):
+    layout.extend(extra)
+    layout.remove(extra[0])
+
+def _setitem(layout, extra):
+    layout[1] = extra[0]
+
+def _clear(layout, extra):
+    layout.clear()
+    layout.extend(extra)
+
+def _replace_objects(layout, extra):
+    layout.objects = extra + list(layout.objects)
+
+def _child_sizing_mode(layout, extra):
+    layout[1].sizing_mode = 'stretch_width'
+    layout.append(extra[0])
+
+def _child_width(layout, extra):
+    layout[0].width = 400
+    layout.append(extra[0])
+
+def _child_height(layout, extra):
+    layout[0].height = 300
+    layout.append(extra[0])
+
+def _child_min_width(layout, extra):
+    layout[2].min_width = 500
+    layout.append(extra[0])
+
+_MUTATIONS = [
+    _append, _extend, _insert, _pop, _remove, _setitem, _clear,
+    _replace_objects, _child_sizing_mode, _child_width, _child_height,
+    _child_min_width
+]
+
+_LAYOUT_PARAMS = [
+    {},
+    {'sizing_mode': 'stretch_width'},
+    {'sizing_mode': 'fixed'},
+    {'width': 600},
+    {'min_width': 50, 'min_height': 20},
+    {'margin': (5, 10)},
+]
+
+_EXTRA_SIZING = [
+    {'width': 250},
+    {'sizing_mode': 'stretch_width', 'min_width': 300},
+    {'sizing_mode': 'stretch_both', 'min_height': 150},
+]
+
+def _mutated_layout_sizing(layout, params, mutate, extra_sizing):
+    from bokeh.document import Document
+
+    mutated = layout(*_sizing_children(), **params)
+    model = mutated.get_root(Document())
+    mutate(mutated, [Markdown('extra', **extra_sizing), Markdown('more', height=60)])
+    return mutated, {p: getattr(model, p) for p in _LAYOUT_SIZING}
+
+@pytest.mark.parametrize('layout', [Column, Row])
+@pytest.mark.parametrize('params', _LAYOUT_PARAMS)
+@pytest.mark.parametrize('mutate', _MUTATIONS)
+@pytest.mark.parametrize('extra_sizing', _EXTRA_SIZING)
+def test_layout_sizing_after_mutation_matches_bokeh_property_reads(
+    layout, params, mutate, extra_sizing, monkeypatch
+):
+    import panel.layout.base as base
+
+    _, fast = _mutated_layout_sizing(layout, params, mutate, extra_sizing)
+    monkeypatch.setattr(base, '_sizing_props', _reference_sizing_props)
+    _, reference = _mutated_layout_sizing(layout, params, mutate, extra_sizing)
+
+    assert fast == reference
+
+@pytest.mark.parametrize('layout', [Column, Row])
+@pytest.mark.parametrize('params', _LAYOUT_PARAMS)
+@pytest.mark.parametrize('mutate', [m for m in _MUTATIONS if m not in (_remove, _clear)])
+@pytest.mark.parametrize('extra_sizing', _EXTRA_SIZING)
+def test_layout_sizing_after_mutation_matches_fresh_layout(
+    layout, params, mutate, extra_sizing
+):
+    from bokeh.document import Document
+
+    # Removing a responsive child does not revert a sizing_mode that was
+    # inferred from it, so removals are only covered by the test above.
+    mutated, sizing = _mutated_layout_sizing(layout, params, mutate, extra_sizing)
+    fresh_model = layout(*mutated.objects, **params).get_root(Document())
+
+    assert sizing == {p: getattr(fresh_model, p) for p in _LAYOUT_SIZING}
