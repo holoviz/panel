@@ -206,6 +206,8 @@ def render_svg(value, meta, mime):
     return value, 'text/html'
 
 def render_image(value, meta, mime):
+    if isinstance(value, bytes):
+        value = base64.b64encode(value).decode("utf-8")
     data = f"data:{mime};charset=utf-8;base64,{value}"
     attrs = " ".join([f'{k}="{v}"' for k, v in meta.items()])
     return f'<img src="{data}" {attrs}</img>', 'text/html'

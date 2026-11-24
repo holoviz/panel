@@ -1,3 +1,4 @@
+import base64
 import pathlib
 
 from panel.io.convert import BOKEH_VERSION, collect_python_requirements
@@ -106,6 +107,11 @@ def test_format_mime_repr_png():
     img, mime_type = format_mime(PNG())
     assert mime_type == 'text/html'
     assert img.startswith('<img src="data:image/png')
+
+def test_format_mime_repr_png_bytes_are_base64_encoded():
+    img, _ = format_mime(PNG())
+    payload = img.split('base64,')[1].split('"')[0]
+    assert base64.b64decode(payload, validate=True) == PNG()._repr_png_()
 
 def test_format_mime_type():
     string, mime_type = format_mime(HTML)
