@@ -1729,7 +1729,22 @@ def serve(
         )
         server_id = kwargs['server_id']
         state._threads[server_id] = server
+        ready: threading.Event | None = None
+        if start:
+            running_loop = None
+            if not owns_loop:
+                try:
+                    running_loop = asyncio.get_running_loop()
+                except RuntimeError:
+                    pass
+            if running_loop is None or running_loop is not getattr(loop, 'asyncio_loop', loop):
+                # Wait for the first IOLoop turn so helper threads (e.g. Tornado's
+                # SelectorThread) start before the caller can trigger interpreter shutdown.
+                ready = threading.Event()
+                loop.add_callback(ready.set)
         server.start()
+        if ready is not None and not ready.wait(timeout=5):
+            logger.warning("Timed out waiting for threaded server IOLoop to start.")
     else:
         return get_server(panels, **kwargs)
     return server

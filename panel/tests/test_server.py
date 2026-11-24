@@ -2479,3 +2479,30 @@ def test_serve_threaded_after_main_thread_finishes():
         process.wait()
     assert response.status_code == 200
     assert roots
+
+
+def test_threaded_serve_waits_until_ioloop_running(monkeypatch):
+    import panel as pn
+
+    loop_cls = IOLoop.configured_class()
+    orig_start = loop_cls.start
+    entered = threading.Event()
+
+    def delayed_start(self):
+        entered.set()
+        time.sleep(0.3)
+        orig_start(self)
+
+    monkeypatch.setattr(loop_cls, "start", delayed_start)
+
+    t0 = time.monotonic()
+    thread = pn.serve(
+        lambda: pn.panel("x"), threaded=True, show=False, port=0, verbose=False
+    )
+    elapsed = time.monotonic() - t0
+    try:
+        assert entered.is_set()
+        assert elapsed >= 0.25
+        assert thread.asyncio_loop.is_running()
+    finally:
+        state.kill_all_servers()
