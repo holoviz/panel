@@ -203,16 +203,16 @@ class ReactToggle(ReactComponent):
 
     child = Child()
 
-    show = param.Boolean(default=False)
+    mounted = param.Boolean(default=False)
 
     text = param.String()
 
     _esm = """
     export function render({ model }) {
-      const [show] = model.useState("show")
+      const [mounted] = model.useState("mounted")
       const [text] = model.useState("text")
       const child = model.get_child("child")
-      return <div><h2>{text}</h2>{show ? child : null}</div>
+      return <div><h2>{text}</h2>{mounted ? child : null}</div>
     }
     """
 
@@ -233,7 +233,7 @@ def test_resize_unmounted_child_does_not_abort_patch(page):
 
     expect(page.locator('h2')).to_have_text('After')
 
-    parent.show = True
+    parent.mounted = True
 
     expect(page.locator('h1')).to_have_text('Child')
     wait_until(lambda: _sizes(page)['width'] == 200, page)
@@ -253,7 +253,7 @@ def test_resize_unmounted_no_shadow_dom_child_does_not_abort_patch(page):
 
     expect(page.locator('h2')).to_have_text('After')
 
-    parent.show = True
+    parent.mounted = True
 
     expect(page.locator('h1')).to_have_text('Child')
     wait_until(lambda: page.locator('h1').evaluate(
@@ -275,7 +275,7 @@ def test_resize_unmounted_markdown_child_does_not_abort_patch(page):
 
     expect(page.locator('h2')).to_have_text('After')
 
-    parent.show = True
+    parent.mounted = True
 
     expect(page.locator('.markdown')).to_have_text('Child')
     wait_until(lambda: page.locator('.markdown').evaluate(
@@ -306,7 +306,7 @@ def test_restyle_unmounted_plotly_child_does_not_abort_patch(page):
 
     expect(page.locator('h2')).to_have_text('After')
 
-    parent.show = True
+    parent.mounted = True
 
     expect(page.locator('.js-plotly-plot')).to_have_count(1)
     expect(page.locator('.js-plotly-plot .gtitle')).to_have_text('Relayout')
