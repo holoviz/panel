@@ -28,6 +28,42 @@ def test_select_option(page):
 
     wait_until(lambda: page.locator('select').evaluate("(sel)=>sel.value") == 'B', page)
 
+@pytest.mark.parametrize('groups', [
+    {'First': ['A', 'B'], 'Second': ['C', 'D']},
+    {'First': {'Alpha': 'A', 'Beta': 'B'}, 'Second': {'Gamma': 'C', 'Delta': 'D'}},
+])
+def test_select_disabled_group_options(page, groups):
+    select = Select(groups=groups, value='A', disabled_options=['C'])
+    serve_component(page, select)
+
+    options = page.locator('option')
+    expect(options.nth(2)).to_be_disabled()
+    expect(options.nth(1)).to_be_enabled()
+
+    select.disabled_options = ['B']
+    expect(options.nth(1)).to_be_disabled()
+    expect(options.nth(2)).to_be_enabled()
+
+    select.groups = {'Updated': ['A', 'B', 'C', 'D']}
+    expect(options.nth(1)).to_be_disabled()
+    expect(options.nth(2)).to_be_enabled()
+
+@pytest.mark.parametrize('choices', [
+    ['A', 'B', 'C', 'D'],
+    {'Alpha': 'A', 'Beta': 'B', 'Gamma': 'C', 'Delta': 'D'},
+])
+def test_select_disabled_options(page, choices):
+    select = Select(options=choices, value='A', disabled_options=['C'])
+    serve_component(page, select)
+
+    options = page.locator('option')
+    expect(options.nth(2)).to_be_disabled()
+    expect(options.nth(1)).to_be_enabled()
+
+    select.disabled_options = ['B']
+    expect(options.nth(1)).to_be_disabled()
+    expect(options.nth(2)).to_be_enabled()
+
 def test_multi_select_double_click(page):
     clicks = []
     select = MultiSelect(options=['A', 'B', 'C'], on_double_click=clicks.append)

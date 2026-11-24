@@ -24,8 +24,8 @@ from bokeh.document.document import Document
 from bokeh.document.events import (
     ColumnDataChangedEvent, ColumnsPatchedEvent, ColumnsStreamedEvent,
     DocumentChangedEvent, DocumentPatchedEvent, MessageSentEvent,
-    ModelChangedEvent, SessionCallbackAdded, SessionCallbackRemoved,
-    TitleChangedEvent,
+    ModelChangedEvent, RootAddedEvent, SessionCallbackAdded,
+    SessionCallbackRemoved, TitleChangedEvent,
 )
 from bokeh.model import Model
 from bokeh.model.util import (
@@ -194,14 +194,70 @@ def _drop_unsent_model_changes(
     between the two refers to, leaving the client unable to decode the
     patch. Skipped while no model counts as sent, e.g. for an embedder
     that never serialized the Document, whose bookkeeping is unreliable.
+
+    Changes to a model that a message still being serialized or written
+    may already have defined are kept, since bokeh only marks a model
+    sent once the whole message is serialized, so that definition can
+    predate the change. They wait for the message to be written, see
+    _drop_undefined_changes.
     """
     unsent = getattr(doc.models, '_new_models', None)
     if not unsent or len(unsent) >= len(doc.models):
         return events
+    with _WRITE_LOCK:
+        records = list(_UNWRITTEN.get(doc, []))
     return [
         event for event in events
-        if not (isinstance(event, _MODEL_CHANGE_EVENTS) and event.model in unsent)
+        if not (
+            isinstance(event, _MODEL_CHANGE_EVENTS) and event.model in unsent
+            and not _is_unwritten(event.model, records)
+        )
     ]
+
+def _drop_undefined_changes(
+    doc: Document, events: list[DocumentChangedEvent]
+) -> list[DocumentChangedEvent]:
+    """
+    Drops changes to models that are still unsent once the messages
+    they waited for were written, unless the events themselves define
+    the model, since the client could not resolve them and the message
+    that defines the model later serializes its current state.
+    """
+    unsent = getattr(doc.models, '_new_models', None)
+    if not unsent:
+        return events
+    targets = {
+        event.model.id for event in events
+        if isinstance(event, _MODEL_CHANGE_EVENTS) and event.model in unsent
+    }
+    if not targets:
+        return events
+    undefined = targets - _defined_by(events, unsent)
+    return [
+        event for event in events
+        if not (isinstance(event, _MODEL_CHANGE_EVENTS) and event.model.id in undefined)
+    ]
+
+def _defined_by(events: list[DocumentChangedEvent], unsent: set[Model]) -> set[ID]:
+    """
+    The ids of the unsent models the events would define, i.e. those
+    their values refer to directly or through other unsent models.
+    """
+    stack: list[Model] = []
+    for event in events:
+        if isinstance(event, ModelChangedEvent):
+            stack.extend(_immediate_references(event.new))
+        elif isinstance(event, RootAddedEvent):
+            stack.append(event.model)
+    defined: set[ID] = set()
+    while stack:
+        model = stack.pop()
+        if model.id in defined or model not in unsent:
+            continue
+        defined.add(model.id)
+        for attr in model.properties_with_refs():
+            stack.extend(_immediate_references(getattr(model, attr, None)))
+    return defined
 
 def _take_held_events(doc: Document) -> list[DocumentChangedEvent]:
     """
@@ -622,6 +678,9 @@ def _dispatch_deferred_events(doc: Document) -> None:
         _DEFERRED_KEYS.pop(doc, None)
     session = getattr(doc.session_context, 'session', None)
     if not events or _is_destroyed(doc) or session is None:
+        return
+    events = _drop_undefined_changes(doc, events)
+    if not events:
         return
     with set_curdoc(doc):
         if doc.callbacks.hold_value:
@@ -1203,7 +1262,11 @@ def _write_from_worker_thread(
     unsent = _unsent_models(doc)
     # Tracked before serializing, which marks the models it defines as sent
     record = _track_unwritten(doc, (model.id for model in unsent), patches)
-    message = connections[0].protocol.create('PATCH-DOC', patches)
+    try:
+        message = connections[0].protocol.create('PATCH-DOC', patches)
+    except Exception:
+        _untrack_unwritten(doc, record)
+        raise
     defined = {model.id for model in unsent - _unsent_models(doc)}
     with _WRITE_LOCK:
         record.models = defined
