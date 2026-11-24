@@ -52,12 +52,15 @@ This release removes much of the fixed cost of serving a Panel app, from the byt
 * Stop rebuilding every `Tabulator` column on each edit when column names are not strings (e.g. years after a pivot), which also closed the editor when tabbing to the next cell ([#9054](https://github.com/holoviz/panel/pull/9054))
 * **Behaviour change:** Reduce `pn.cache` per-call overhead (a hit on `f(1)` went from 22.5 µs to 1.4 µs), give decorations with different settings separate caches and let an exact type in `hash_funcs` take precedence over the defaults. Hashes of flat containers change, so existing `to_disk=True` caches are recomputed once ([#9063](https://github.com/holoviz/panel/pull/9063))
 * Release Documents cleaned up without a session (liveness checks, warm-up, the ASGI server) and cut references from models to their Document when it is destroyed, so they no longer stay alive forever ([#9059](https://github.com/holoviz/panel/pull/9059))
+* Only unlock the parameters that are actually readonly or constant when syncing a widget value, instead of toggling every parameter of the widget; setting a value from Python is 2.9× faster for a classic `IntSlider` and 1.7× for `pn.ui.IntSlider`, and a value change from the browser about 1.9× faster. Also stops a constant parameter from staying writable on an instance after it was set inside `edit_readonly` ([#9158](https://github.com/holoviz/panel/pull/9158))
+* Read the sizing properties of a layout's children without Bokeh's theme lookup, making the sizing inference on each layout change about 2.7× cheaper ([#9160](https://github.com/holoviz/panel/pull/9160))
+* Skip the full-tree preprocessing walks on layout changes that do not add the components they handle (HoloViews, ECharts, param methods); appending to a `Column` of 500 items is 13 to 14% faster ([#9162](https://github.com/holoviz/panel/pull/9162))
 
 ### 🔒 Security
 
 * Reject `next_url` values such as `///evil.com` or ones containing control characters, which browsers resolve to another site, in the basic auth and OAuth login redirects ([#8938](https://github.com/holoviz/panel/pull/8938))
 * Stop importing the module named in `/components/` resource URLs, which let any client, including when authentication is enabled, make the server import installed modules and shut it down with a single request ([GHSA-wfhv-r23p-8x9w](https://github.com/holoviz/panel/security/advisories/GHSA-wfhv-r23p-8x9w))
-* Apply `authorize_callback` to `autoload.js` and websocket connections, which previously let a logged-in user open a session of an app they were denied access to ([GHSA-9cgh-cwhr-4rhg](https://github.com/holoviz/panel/security/advisories/GHSA-9cgh-cwhr-4rhg))
+* Apply `authorize_callback` to `autoload.js` and websocket connections, which previously let a logged-in user open a session of an app they were denied access to ([GHSA-9cgh-cwhr-4rhg](https://github.com/holoviz/panel/security/advisories/GHSA-9cgh-cwhr-4rhg), [#9152](https://github.com/holoviz/panel/pull/9152))
 * Stop `FileSelector` from navigating into sibling directories whose name starts with the name of `root_directory`, such as `/app/data2` for a root of `/app/data` ([#9149](https://github.com/holoviz/panel/pull/9149))
 
 ### 🐛 Bug Fixes
@@ -160,7 +163,7 @@ This release removes much of the fixed cost of serving a Panel app, from the byt
 * Fix `pn.cache` returning the result for a different float with the same hash, such as `-1.0` for `-2.0` ([#8922](https://github.com/holoviz/panel/pull/8922))
 * Avoid a `RecursionError` when passing self-referential containers to a `pn.cache` function ([#8923](https://github.com/holoviz/panel/pull/8923))
 * Fix typos in `panel compile` messages ([#8880](https://github.com/holoviz/panel/pull/8880))
-* Drop held changes to models the client has not been sent yet, which made the browser reject the whole patch with `reference ... isn't known` ([#8906](https://github.com/holoviz/panel/pull/8906))
+* Drop held changes to models the client has not been sent yet, which made the browser reject the whole patch with `reference ... isn't known` ([#8906](https://github.com/holoviz/panel/pull/8906), [#9155](https://github.com/holoviz/panel/pull/9155))
 * Resize the container of ESM components, including the `panel-material-ui` ones, when their size changes after they rendered ([#9108](https://github.com/holoviz/panel/pull/9108))
 * Resolve relative stylesheet urls against the route a session is on, so apps on nested routes load all their stylesheets ([#9109](https://github.com/holoviz/panel/pull/9109))
 * Fix serving a Bokeh figure under a global template, which failed with `unexpected attribute 'design' to figure` ([#9110](https://github.com/holoviz/panel/pull/9110))
@@ -179,6 +182,9 @@ This release removes much of the fixed cost of serving a Panel app, from the byt
 * Keep other query parameters unchanged when updating the URL query, so e.g. `02134` no longer becomes `2134` ([#9141](https://github.com/holoviz/panel/pull/9141))
 * Select the matching option when a `Select` is created with a `None` value ([#9143](https://github.com/holoviz/panel/pull/9143))
 * Keep tuple values when editing the value input generated for a range parameter, e.g. by `RangeSlider.controls(jslink=True)`, which raised a `ValueError` ([#9135](https://github.com/holoviz/panel/pull/9135))
+* Apply changes that reach a view before it has rendered, e.g. the child of a React component that is not mounted, instead of aborting the rest of the patch, and apply Plotly relayouts and restyles sent before the plot rendered once it does ([#9154](https://github.com/holoviz/panel/pull/9154), [#9156](https://github.com/holoviz/panel/pull/9156))
+* Allow defining a custom component with a pandas `param.DataFrame` default without polars installed ([#9157](https://github.com/holoviz/panel/pull/9157))
+* Apply `disabled_options` to options inside groups of a `Select` ([#9165](https://github.com/holoviz/panel/pull/9165))
 
 ### ⚙️ Compatibility
 
