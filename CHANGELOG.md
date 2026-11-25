@@ -1,5 +1,16 @@
 # Releases
 
+## Version 1.11.1
+
+Panel 1.11.1 is a patch release that restores compatibility with `panel-material-ui` versions older than 0.17, where every session of an app using `pn.ui.Page` raised a `TypeError` as soon as the app became busy. It also fixes images returned from Pyodide and PyScript cells.
+
+Many thanks to @TheoMathurin for reporting the regression, and to the contributors to this release: @philippjfr and @JoeyTan21.
+
+### 🐛 Bug Fixes
+
+* Keep parameters linked to a reference writable after `edit_readonly`, which fixes `TypeError: Read-only parameter 'busy' cannot be modified` raised by `pn.ui.Page` with `panel-material-ui` < 0.17 ([#9170](https://github.com/holoviz/panel/pull/9170))
+* Base64 encode the raw bytes returned by `_repr_png_` and `_repr_jpeg_` in `format_mime`, so a Pyodide or PyScript cell ending in a PIL image renders the image ([#9169](https://github.com/holoviz/panel/pull/9169))
+
 ## Version 1.11.0
 
 Panel 1.11.0 is a release about speed and about working with any DataFrame library. `Tabulator`, the `DataFrame` widget, `Perspective` and `Vizzu` now accept Polars, PyArrow and any other eager DataFrame supported by Narwhals without converting it to pandas, and pandas is no longer a required dependency of Panel.
