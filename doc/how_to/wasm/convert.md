@@ -79,6 +79,10 @@ The app should look like this
 
 You can now add the `script.html` (and `script.js` file if you used the `pyodide-worker` target) to your Github pages or similar. **no separate server needed!**
 
+:::{warning}
+When you reconvert an app and redeploy it to the same URL, the browser may keep using a cached copy of the old `script.js` worker. The app then requests Panel, Bokeh or other wheels from the previous build, even though the newly generated files reference the updated versions. To check whether stale cached content is the cause, open the app in a fresh private window. To load the updated worker in your original browser session, reload the page with the browser cache disabled, e.g. by enabling "Disable cache" in the network tab of the developer tools.
+:::
+
 ## Tips & Tricks for development
 
 - While developing you should run the script locally in dev mode (enabling autoreload): `panel serve script.py --dev`.
