@@ -58,10 +58,17 @@ def edit_readonly(parameterized: param.Parameterized) -> Iterator:
         yield
     finally:
         # Setting a value while unlocked can create a per-instance copy of a
-        # class-level parameter, which has to be locked again as well.
+        # class-level parameter, which has to be locked again as well. Copies
+        # bound to a reference stay writable so the reference can keep
+        # updating them (panel-material-ui<0.17 links Page.busy this way).
         current = parameterized.param.objects("existing")
+        refs = getattr(parameterized._param__private, 'refs', {})
         for name, p, readonly, constant in locked:
-            for q in {p, current.get(name, p)}:
+            targets = [p]
+            copy = current.get(name, p)
+            if copy is not p and name not in refs:
+                targets.append(copy)
+            for q in targets:
                 q.readonly = readonly
                 q.constant = constant
 

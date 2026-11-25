@@ -285,3 +285,17 @@ def test_edit_readonly_does_not_write_unlocked_parameters(monkeypatch):
         obj.plain = 5
     assert writes == []
     assert obj.plain == 5
+
+
+def test_edit_readonly_reference_keeps_syncing():
+    # Mirrors how panel-material-ui<0.17 links Page.busy to state.busy
+    class Linked(param.Parameterized):
+        source = param.Boolean(default=False)
+        busy = param.Boolean(default=False, readonly=True, allow_refs=True)
+
+    source = Linked()
+    obj = Linked()
+    with edit_readonly(obj):
+        obj.busy = source.param.source
+    source.source = True
+    assert obj.busy is True
