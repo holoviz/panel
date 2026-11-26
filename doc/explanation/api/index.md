@@ -44,7 +44,7 @@ Next let us contrast the different APIs offered by Panel by applying them to a p
 :link: reactive
 :link-type: doc
 
-Linking functions or methods to widgets using `pn.bind` or the equivalent `pn.depends` decorator.
+Linking functions or methods to widgets with `pn.bind` or declaring their dependencies with `pn.depends`.
 :::
 
 :::{grid-item-card} {octicon}`codespaces;2.5em;sd-mr-1 sd-animate-grow50` 2. Declarative API
