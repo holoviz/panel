@@ -1,6 +1,9 @@
 import json
 
+from unittest import mock
+
 import pytest
+import requests
 
 from bokeh.model import Model
 
@@ -24,6 +27,55 @@ def clean_licenses():
     compiler._LICENSE_SOURCES.clear()
     yield
     compiler._LICENSE_SOURCES.clear()
+
+
+@pytest.fixture
+def session(monkeypatch):
+    session = mock.Mock()
+    monkeypatch.setattr(compiler, '_session', lambda: session)
+    return session
+
+
+def test_download_returns_response(monkeypatch, session):
+    monkeypatch.delenv('PANEL_BUNDLE_INSECURE', raising=False)
+    response, error = compiler._download('https://example.com/a.js')
+    assert response is session.get.return_value
+    assert error is None
+    session.get.assert_called_once_with('https://example.com/a.js', timeout=10)
+
+
+def test_download_does_not_retry_without_verification(monkeypatch, session):
+    monkeypatch.delenv('PANEL_BUNDLE_INSECURE', raising=False)
+    exc = requests.exceptions.SSLError('certificate verify failed')
+    session.get.side_effect = exc
+    response, error = compiler._download('https://example.com/a.js')
+    assert response is None
+    assert error is exc
+    session.get.assert_called_once_with('https://example.com/a.js', timeout=10)
+
+
+@pytest.mark.parametrize('value', ['', '0', 'false', 'no', 'off'])
+def test_download_verifies_for_falsy_insecure_env(monkeypatch, session, value):
+    monkeypatch.setenv('PANEL_BUNDLE_INSECURE', value)
+    compiler._download('https://example.com/a.js')
+    session.get.assert_called_once_with('https://example.com/a.js', timeout=10)
+
+
+@pytest.mark.parametrize('value', ['1', 'true', 'True', 'YES'])
+def test_download_insecure_env_disables_verification(monkeypatch, session, value):
+    monkeypatch.setenv('PANEL_BUNDLE_INSECURE', value)
+    with pytest.warns(UserWarning, match='certificate verification is disabled'):
+        response, error = compiler._download('https://example.com/a.js')
+    assert response is session.get.return_value
+    assert error is None
+    session.get.assert_called_once_with('https://example.com/a.js', timeout=10, verify=False)
+
+
+def test_write_bundled_files_hints_at_ca_bundle_on_ssl_error(monkeypatch):
+    error = requests.exceptions.SSLError('certificate verify failed')
+    monkeypatch.setattr(compiler, '_download', lambda url: (None, error))
+    with pytest.raises(ConnectionError, match='REQUESTS_CA_BUNDLE.*PANEL_BUNDLE_INSECURE'):
+        compiler._write_bundled_files('Bootstrap', [f'{NPM_CDN}/jquery@3.7.1/dist/jquery.min.js'])
 
 
 def test_write_bundled_files_skips_panel_cdn(no_download):
