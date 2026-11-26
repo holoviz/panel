@@ -1,6 +1,10 @@
 import base64
 import pathlib
 
+from io import StringIO
+
+import pytest
+
 from panel.io.convert import BOKEH_VERSION, collect_python_requirements
 from panel.io.mime_render import (
     WriteCallbackStream, exec_with_return, find_requirements, format_mime,
@@ -61,6 +65,42 @@ def test_find_import_replacement():
     import transformers_js
     """
     assert find_requirements(code) == ['transformers-js-py']
+
+@pytest.fixture
+def namespace_packages(tmp_path, monkeypatch):
+    for name, module_file in (
+        ('test-rpc', 'panel_test_namespace/api/rpc/__init__.py'),
+        ('test-utilities', 'panel_test_namespace/api/utilities.py'),
+    ):
+        module = tmp_path / module_file
+        module.parent.mkdir(parents=True, exist_ok=True)
+        module.touch()
+        dist_info = tmp_path / f"{name.replace('-', '_')}-1.0.dist-info"
+        dist_info.mkdir()
+        (dist_info / 'METADATA').write_text(f'Name: {name}\nVersion: 1.0\n', encoding='utf-8')
+        (dist_info / 'RECORD').write_text(f'{module_file},,\n', encoding='utf-8')
+    monkeypatch.syspath_prepend(str(tmp_path))
+
+@pytest.mark.parametrize(('code', 'expected'), [
+    ('import panel_test_namespace.api.rpc', ['test-rpc']),
+    ('from panel_test_namespace.api import rpc as r, utilities', ['test-rpc', 'test-utilities']),
+    ('from panel_test_namespace.api.rpc import connect', ['test-rpc']),
+    ('import panel_test_namespace.api', ['panel_test_namespace']),
+    ('from panel_test_namespace.api import unavailable', ['panel_test_namespace']),
+    ('from .api import rpc', []),
+])
+def test_find_namespace_requirements(namespace_packages, code, expected):
+    assert find_requirements(code) == expected
+
+def test_convert_namespace_requirements(namespace_packages):
+    code = StringIO("""
+    import panel_test_namespace.api.rpc
+    import panel_test_namespace.api.utilities
+    from panel_test_namespace.api import rpc
+    """)
+    assert collect_python_requirements(code, panel_version='1.10.0') == [
+        f'bokeh=={BOKEH_VERSION}', 'panel==1.10.0', 'test-rpc', 'test-utilities',
+    ]
 
 def test_exec_with_return_multi_line():
     assert exec_with_return('a = 1\nb = 2\na + b') == 3
