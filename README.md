@@ -26,7 +26,7 @@ or `conda install -c conda-forge panel`.
   </picture>
 </a>
 
-Create the controls, define the plot, then connect the controls and arrange the app. The same code renders in a notebook cell and serves as an app with `panel serve app.py`.
+To run the example below, install its plotting dependencies with `pip install holoviews numpy`. Create the controls, define the plot, then connect the controls and arrange the app. The same code renders in a notebook cell and serves as an app with `panel serve app.py`.
 
 ```python
 import numpy as np, panel as pn
