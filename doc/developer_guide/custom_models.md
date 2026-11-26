@@ -356,3 +356,5 @@ The bundled resources have to be collected whenever they change, so rerun `pip i
 - A new model is added with a `__javascript_raw__` declaration or an existing model is updated
 - A new template with a `_resources` declaration is added or an existing template is updated
 - A CSS file in one of template directories (`panel/template/*/`) is added or modified
+
+Bundling downloads the external resources over HTTPS and verifies their certificates. If you build behind a TLS-inspecting proxy, point `REQUESTS_CA_BUNDLE` or `SSL_CERT_FILE` at a CA bundle that trusts it. As a last resort, set `PANEL_BUNDLE_INSECURE=1` to disable certificate verification for the build.
