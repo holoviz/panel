@@ -1111,113 +1111,124 @@ class OAuthProvider(BasicAuthProvider):
             if not config.oauth_refresh_tokens or user is None:
                 return user
 
-            # Try to obtain user oauth overrides from WS headers
-            # in case the HTTP handler refreshed tokens
             is_ws = is_websocket(handler)
-            if is_ws and 'Sec-Websocket-Protocol' in handler.request.headers:
-                protocol_header = handler.request.headers['Sec-Websocket-Protocol']
-                _, token = protocol_header.split(', ')
-                payload = get_token_payload(token)
-                if 'user_data' in payload:
-                    user_data = payload['user_data']
-                    if state.encryption:
-                        user_data = state.encryption.decrypt(user_data).decode('utf-8')
-                    user_data = json.loads(user_data)
-                    state._oauth_user_overrides[user] = user_data
-
-            now_ts = dt.datetime.now(dt.timezone.utc).timestamp()
-            expiry = None
-            if user in state._oauth_user_overrides:
-                while not state._oauth_user_overrides[user]:
-                    await asyncio.sleep(0.1)
-                user_state = state._oauth_user_overrides[user]
-                access_token = user_state['access_token']
-                if user_state['expiry']:
-                    expiry = user_state['expiry']
-            else:
-                access_cookie = handler.get_secure_cookie('access_token', max_age_days=config.oauth_expiry)
-                if not access_cookie:
-                    log.debug("No access token available, forcing user to reauthenticate.")
-                    return
-                access_token = state._decrypt_cookie(access_cookie)
-
-            # Try to get expiry directly from the token since that is
-            # the real source of truth
             try:
-                access_json = decode_token(access_token)
-                expiry = access_json['exp']
-            except Exception:
-                pass
-
-            # Try casting expiry to float as it may be stored as bytes
-            try:
-                expiry = float(expiry)
-            except Exception:
-                expiry = None
-
-            if expiry is None:
-                expiry_cookie = handler.get_secure_cookie('oauth_expiry', max_age_days=config.oauth_expiry)
-                if expiry_cookie is None:
-                    # Token does not have content and therefore does not expire
-                    log.debug("access_token is not a valid JWT token. Expiry cannot be determined.")
-                    return user
-                try:
-                    expiry = float(expiry_cookie.decode('utf-8'))
-                except (ValueError, UnicodeDecodeError):
-                    log.debug("oauth_expiry cookie could not be parsed as a number.")
-                    return user
-
-            if user in state._oauth_user_overrides:
-                refresh_token = state._oauth_user_overrides[user]['refresh_token']
-            else:
-                refresh_cookie = handler.get_secure_cookie('refresh_token', max_age_days=config.oauth_expiry)
-                if refresh_cookie:
-                    refresh_token = state._decrypt_cookie(refresh_cookie)
-                else:
-                    refresh_token = None
-
-            if expiry > now_ts and refresh_token:
-                log.debug("Fully authenticated and tokens still valid.")
+                authenticated_user = await self._authenticate_oauth_user(handler, user, is_ws)
+            except BaseException:
                 if is_ws:
-                    self._schedule_refresh(expiry, user, refresh_token, handler.application, handler.request)
-                expires_in = expiry - now_ts
-                OAuthLoginHandler.set_auth_cookies(
-                    handler, None, access_token, refresh_token, expires_in
-                )
+                    self._decrement_active_user(user)
+                raise
+            if authenticated_user is None and is_ws:
+                self._decrement_active_user(user)
+            return authenticated_user
+        return get_user
+
+    async def _authenticate_oauth_user(self, handler, user, is_ws):
+        # Try to obtain user oauth overrides from WS headers
+        # in case the HTTP handler refreshed tokens
+        if is_ws and 'Sec-Websocket-Protocol' in handler.request.headers:
+            protocol_header = handler.request.headers['Sec-Websocket-Protocol']
+            _, token = protocol_header.split(', ')
+            payload = get_token_payload(token)
+            if 'user_data' in payload:
+                user_data = payload['user_data']
+                if state.encryption:
+                    user_data = state.encryption.decrypt(user_data).decode('utf-8')
+                user_data = json.loads(user_data)
+                state._oauth_user_overrides[user] = user_data
+
+        now_ts = dt.datetime.now(dt.timezone.utc).timestamp()
+        expiry = None
+        if user in state._oauth_user_overrides:
+            while not state._oauth_user_overrides[user]:
+                await asyncio.sleep(0.1)
+            user_state = state._oauth_user_overrides[user]
+            access_token = user_state['access_token']
+            if user_state['expiry']:
+                expiry = user_state['expiry']
+        else:
+            access_cookie = handler.get_secure_cookie('access_token', max_age_days=config.oauth_expiry)
+            if not access_cookie:
+                log.debug("No access token available, forcing user to reauthenticate.")
+                return
+            access_token = state._decrypt_cookie(access_cookie)
+
+        # Try to get expiry directly from the token since that is
+        # the real source of truth
+        try:
+            access_json = decode_token(access_token)
+            expiry = access_json['exp']
+        except Exception:
+            pass
+
+        # Try casting expiry to float as it may be stored as bytes
+        try:
+            expiry = float(expiry)
+        except Exception:
+            expiry = None
+
+        if expiry is None:
+            expiry_cookie = handler.get_secure_cookie('oauth_expiry', max_age_days=config.oauth_expiry)
+            if expiry_cookie is None:
+                # Token does not have content and therefore does not expire
+                log.debug("access_token is not a valid JWT token. Expiry cannot be determined.")
+                return user
+            try:
+                expiry = float(expiry_cookie.decode('utf-8'))
+            except (ValueError, UnicodeDecodeError):
+                log.debug("oauth_expiry cookie could not be parsed as a number.")
                 return user
 
-            if refresh_token:
-                try:
-                    refresh_json = decode_token(refresh_token)
-                    if refresh_json['exp'] < now_ts:
-                        refresh_token = None
-                except Exception:
-                    # If refresh token is not a valid JWT token then it does not expire
-                    pass
-
-            if refresh_token is None:
-                handler.clear_cookie('state')
-                log.debug("%s access_token is expired and refresh_token not available, forcing user to reauthenticate.", type(self).__name__)
-                return
-
-            log.debug("access_token has expired, %s using refresh_token to obtain new tokens.", type(self).__name__)
-            access_token, refresh_token, expiry = await self._scheduled_refresh(
-                user, refresh_token, handler.application, handler.request,
-                reschedule=is_ws
-            )
-            if access_token is None:
-                # Refresh failed, user needs to fully reauthenticate
-                return
-
-            if expiry is not None:
-                expires_in = expiry - now_ts
+        if user in state._oauth_user_overrides:
+            refresh_token = state._oauth_user_overrides[user]['refresh_token']
+        else:
+            refresh_cookie = handler.get_secure_cookie('refresh_token', max_age_days=config.oauth_expiry)
+            if refresh_cookie:
+                refresh_token = state._decrypt_cookie(refresh_cookie)
             else:
-                expires_in = None
+                refresh_token = None
+
+        if expiry > now_ts and refresh_token:
+            log.debug("Fully authenticated and tokens still valid.")
+            if is_ws:
+                self._schedule_refresh(expiry, user, refresh_token, handler.application, handler.request)
+            expires_in = expiry - now_ts
             OAuthLoginHandler.set_auth_cookies(
                 handler, None, access_token, refresh_token, expires_in
             )
             return user
-        return get_user
+
+        if refresh_token:
+            try:
+                refresh_json = decode_token(refresh_token)
+                if refresh_json['exp'] < now_ts:
+                    refresh_token = None
+            except Exception:
+                # If refresh token is not a valid JWT token then it does not expire
+                pass
+
+        if refresh_token is None:
+            handler.clear_cookie('state')
+            log.debug("%s access_token is expired and refresh_token not available, forcing user to reauthenticate.", type(self).__name__)
+            return
+
+        log.debug("access_token has expired, %s using refresh_token to obtain new tokens.", type(self).__name__)
+        access_token, refresh_token, expiry = await self._scheduled_refresh(
+            user, refresh_token, handler.application, handler.request,
+            reschedule=is_ws
+        )
+        if access_token is None:
+            # Refresh failed, user needs to fully reauthenticate
+            return
+
+        if expiry is not None:
+            expires_in = expiry - now_ts
+        else:
+            expires_in = None
+        OAuthLoginHandler.set_auth_cookies(
+            handler, None, access_token, refresh_token, expires_in
+        )
+        return user
 
     @property
     def login_handler(self):
@@ -1243,9 +1254,18 @@ class OAuthProvider(BasicAuthProvider):
             user = None
         if not user:
             return
+        self._decrement_active_user(user)
+
+    def _decrement_active_user(self, user):
+        if user not in state._active_users:
+            return
         state._active_users[user] -= 1
         if not state._active_users[user]:
             del state._active_users[user]
+            try:
+                state.cancel_task(f'{user}-refresh-access-tokens')
+            except KeyError:
+                pass
             # Don't remove the user override when it is empty
             # as this means it is being refreshed.
             if state._oauth_user_overrides.get(user, False):
@@ -1289,7 +1309,7 @@ class OAuthProvider(BasicAuthProvider):
             expiry = user_state['expiry']
         else:
             expiry = decode_token(access_token)['exp']
-        if reschedule:
+        if reschedule and state._active_users.get(user):
             self._schedule_refresh(expiry, user, refresh_token, application, request)
         return access_token, refresh_token, expiry
 
