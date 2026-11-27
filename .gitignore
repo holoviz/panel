@@ -167,7 +167,7 @@ app_streamlit.py
 
 # pixi
 .pixi
-pixi.lock
+!pixi.lock
 panel/_version.py
 .uicoveragerc
 mario_button.*

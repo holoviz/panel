@@ -2,6 +2,33 @@
 name = "panel"
 channels = ["pyviz/label/dev", "bokeh/label/rc", "conda-forge"]
 platforms = ["linux-64", "osx-arm64", "win-64"]
+preview = ["pixi-build"]
+requires-pixi = ">=0.68.1"
+
+[package]
+name = "panel"
+version = "9999.0.0" # dynamic versioning: https://github.com/prefix-dev/pixi/issues/5360
+
+[package.build]
+backend = { name = "pixi-build-python", version = ">=0.4.4" }
+
+[package.build.config]
+extra-input-globs = [
+    "panel/package.json",
+    "panel/package-lock.json",
+    "panel/tsconfig.json",
+]
+
+[package.host-dependencies]
+hatchling = "*"
+hatch-vcs = "*"
+bokeh = "3.10.*"
+esbuild = "*"
+nodejs = ">=20"
+packaging = "*"
+param = ">=2.1.0"
+pyviz_comms = ">=0.7.4"
+requests = "*"
 
 [activation.env]
 MPLBACKEND = "Agg"
@@ -12,6 +39,7 @@ COVERAGE_CORE = "sysmon"
 default = [
     "py312",
     "required",
+    "editable",
     "optional",
     "test-core",
     "test-example",
@@ -24,27 +52,27 @@ default = [
 ]
 
 [environments.test-312]
-features = ["py312", "required", "test-core", "optional", "test-example", "test-unit-task"]
+features = ["py312", "required", "editable", "test-core", "optional", "test-example", "test-unit-task"]
 no-default-feature = true
 
 [environments.test-313]
-features = ["py313", "required", "test-core", "optional", "test-example", "test-unit-task"]
+features = ["py313", "required", "editable", "test-core", "optional", "test-example", "test-unit-task"]
 no-default-feature = true
 
 [environments.test-314]
-features = ["py314", "required", "test-core", "optional", "test-example", "test-unit-task"]
+features = ["py314", "required", "editable", "test-core", "optional", "test-example", "test-unit-task"]
 no-default-feature = true
 
 [environments.test-315]
-features = ["py315", "required", "test-core", "optional-315", "test-example", "test-unit-task"]
+features = ["py315", "required", "editable", "test-core", "optional-315", "test-example", "test-unit-task"]
 no-default-feature = true
 
 [environments.test-ui]
-features = ["py313", "required", "test-core", "optional", "test-ui"]
+features = ["py313", "required", "editable", "test-core", "optional", "test-ui"]
 no-default-feature = true
 
 [environments.test-core]
-features = ["py314", "required", "test-core", "test-unit-task"]
+features = ["py314", "required", "editable", "test-core", "test-unit-task"]
 no-default-feature = true
 
 [environments.test-type]
@@ -52,7 +80,7 @@ features = ["py312", "required", "type", "optional"]
 no-default-feature = true
 
 [environments.docs]
-features = ["py312", "required", "optional", "doc"]
+features = ["py312", "required", "editable", "optional", "doc"]
 no-default-feature = true
 
 # The homepage builds with Node and deploys to the site root on a different schedule than
@@ -73,6 +101,10 @@ no-default-feature = true
 [environments.lite]
 features = ["py312", "required", "lite"]
 no-default-feature = true
+
+# in-source build leaves files that break `--verify-clean`
+[feature.editable.dependencies]
+panel = { path = "." }
 
 [feature.required.dependencies]
 nodejs = ">=18"
@@ -98,7 +130,6 @@ tqdm = ">=4.48.0"
 typing_extensions = "*"
 
 [feature.required.tasks]
-install = { cmd = 'python -m pip install --no-deps --disable-pip-version-check -e .', description = "Install Panel in editable mode" }
 # Rebuilds panel/dist/ui without a full reinstall; watch-ui additionally
 # recompiles on every JSX change for the `panel serve --dev` loop.
 build-ui = { cmd = 'panel compile panel.ui --file-loaders woff woff2', description = "Rebuild the panel.ui bundle" }
@@ -249,7 +280,7 @@ setuptools_scm = ">=6"
 [feature.dev.tasks]
 lab = { cmd = 'jupyter lab', description = "Start JupyterLab" }
 sync-git-tags = { cmd = 'python scripts/sync_git_tags.py param', description = "Sync git tags from upstream to your fork" }
-setup-dev = { depends-on = ["install", "lint-install"], description = "Set up the development environment" }
+setup-dev = { depends-on = ["lint-install"], description = "Set up the development environment" }
 
 # =============================================
 # =================== TESTS ===================
@@ -330,14 +361,12 @@ lxml = "*"
 nbsite = ">=0.10.0a12"
 nodejs = ">=18"
 panel-material-ui = ">=0.16.6,<0.18"
-pip = "*"
 selenium = "*"
 numpydoc = "*"
 pydeck = ">=0.8"  # Add back to examples, when it support ipywidgets 8.0
 sphinx = ">=9"
 
 [feature.doc.tasks]
-install = { cmd = 'python -m pip install --no-deps --disable-pip-version-check -e .', description = "Install Panel in editable mode" }
 _docs-pyodide-npm = 'npm install --no-save --no-package-lock --prefix . pyodide@314.0.7'
 _docs-pyodide-wheels = 'python scripts/docs_pyodide.py wheels'
 _docs-refmanual = 'sphinx-apidoc -e -o doc/api/ panel/ panel/tests --ext-autodoc --ext-intersphinx'

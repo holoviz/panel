@@ -36,15 +36,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  pixi_lock:
-    name: Pixi lock
-    runs-on: ubuntu-latest
-    steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-lock@11eb638302f76ec64217e2eeddfb11df1f788b54 # v1.0.2
-
   homepage_build:
     name: Build homepage (${{ matrix.site }})
-    needs: [pixi_lock]
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
@@ -56,7 +49,7 @@ jobs:
       # panel-dev has no latest docs build, only dev.
       VITE_DOCS_PATH: ${{ matrix.site == 'dev' && '/en/docs/dev' || '/en/docs/latest' }}
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@11eb638302f76ec64217e2eeddfb11df1f788b54 # v1.0.2
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@17107a157b32cc1bd2a09c71fbdbc74603efdb40 # v1.0.15
         with:
           environments: homepage
           install: false

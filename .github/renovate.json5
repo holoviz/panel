@@ -1,0 +1,85 @@
+{
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  extends: ["config:recommended", ":enablePreCommit"],
+  enabledManagers: ["github-actions", "pre-commit", "pixi", "npm"],
+  lockFileMaintenance: { enabled: true },
+  schedule: ["* * 1 * *"],
+
+  automerge: true,
+  commitMessagePrefix: "chore(bot):",
+  prConcurrentLimit: 0,
+  prCreation: "immediate",
+  prHourlyLimit: 0,
+
+  internalChecksFilter: "strict",
+  minimumReleaseAge: "7 days",
+  separateMajorMinor: false,
+
+  packageRules: [
+    {
+      groupName: "GitHub Actions",
+      matchManagers: ["github-actions"],
+      pinDigests: true,
+    },
+    {
+      groupName: "HoloViz Github Actions",
+      matchManagers: ["github-actions"],
+      matchPackageNames: ["holoviz-dev/holoviz_tasks"],
+      minimumReleaseAge: null,
+      schedule: ["before 5am"],
+      pinDigests: true,
+    },
+    {
+      groupName: "pre-commit",
+      matchManagers: ["pre-commit"],
+    },
+    {
+      matchManagers: ["pixi"],
+      enabled: false, // We don't want updates pixi.toml
+    },
+    {
+      groupName: "Pixi Lock",
+      matchManagers: ["pixi"],
+      matchUpdateTypes: ["lockFileMaintenance"],
+      description: "Weekly update of Pixi Lock",
+      schedule: ["before 5am on monday"],
+      minimumReleaseAge: null,
+      commitMessageAction: "Update",
+      commitMessageTopic: "pixi.lock",
+      branchTopic: "pixi-lock",
+      labels: ["run-build-ci", "run-docs-ci"],
+      enabled: true,
+    },
+    {
+      groupName: "NPM",
+      matchManagers: ["npm"],
+      labels: ["run-build-ci"],
+    },
+    {
+      matchManagers: ["npm"],
+      matchPackageNames: ["@bokeh/bokehjs"],
+      enabled: false, // BokehJS is update manually
+    },
+    {
+      groupName: "NPM Lock",
+      matchManagers: ["npm"],
+      matchUpdateTypes: ["lockFileMaintenance"],
+      description: "Monthly update of NPM Lock",
+      schedule: ["before 5am on the 1st day of the month"],
+      labels: ["run-build-ci"],
+      commitMessageAction: "Update",
+      commitMessageTopic: "package-lock.json",
+      branchTopic: "npm-lock",
+    },
+    {
+      matchManagers: ["npm"],
+      matchFileNames: ["scripts/jupyterlite/**"],
+      enabled: false, // Pyodide needs to match PYODIDE_VERSION in panel/io/convert.py
+    },
+  ],
+  vulnerabilityAlerts: {
+    enabled: true,
+    minimumReleaseAge: null,
+    vulnerabilityFixStrategy: "lowest",
+  },
+}
