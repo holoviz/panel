@@ -312,3 +312,23 @@ def test_terminal_writes_are_not_combined_away_by_a_hold(document):
     terminal.write('third')
     assert model.output == 'third'
     assert terminal.output == 'first secondthird'
+
+
+def test_terminal_history_is_separate_from_incremental_output(document):
+    terminal = pn.widgets.Terminal('initial\n')
+    terminal.write('before model\n')
+    model = terminal.get_root(document)
+
+    assert model.history == 'initial\nbefore model\n'
+
+    for _ in range(2):
+        terminal.write('next\n')
+        assert model.output == 'next\n'
+        assert model.history == terminal.output
+    assert model.history == 'initial\nbefore model\nnext\nnext\n'
+
+    terminal.clear()
+    assert model.history == ''
+
+    terminal.write('after clear\n')
+    assert model.history == model.output == 'after clear\n'
