@@ -3,7 +3,8 @@ from io import StringIO
 import pytest
 
 from panel.io.handlers import (
-    _create_copy_button, capture_code_cell, extract_code, parse_notebook,
+    _create_copy_button, _patch_ipython_display, capture_code_cell,
+    extract_code, parse_notebook,
 )
 from panel.widgets import ButtonIcon
 
@@ -228,3 +229,11 @@ def test_create_copy_button():
     # Test the styling
     styles = copy_button.styles
     assert styles['position'] == 'absolute'
+
+
+def test_patch_ipython_display_restores_display():
+    display = pytest.importorskip('IPython.display')
+    original = display.display
+    with _patch_ipython_display():
+        assert display.display is not original
+    assert display.display is original
