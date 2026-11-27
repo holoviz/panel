@@ -16,6 +16,42 @@ import {
 } from "./resources"
 import {makeTooltip} from "./tooltips"
 
+const WEBGL_UNAVAILABLE = "This browser can't draw this map: WebGL is unavailable"
+
+let _webgl2: boolean | null = null
+
+// deck.gl 9 and MapLibre both need WebGL2. The probe context is released
+// straight away because browsers cap the number of live contexts per page.
+function webgl2_available(): boolean {
+  if (_webgl2 == null) {
+    try {
+      const gl = document.createElement("canvas").getContext("webgl2")
+      _webgl2 = gl != null
+      gl?.getExtension("WEBGL_lose_context")?.loseContext()
+    } catch {
+      _webgl2 = false
+    }
+  }
+  return _webgl2
+}
+
+// deck.gl reports a failed device to onError and then rethrows it from a
+// promise nobody awaits, which would surface as an uncaught page error.
+const _reported = new WeakSet<object>()
+window.addEventListener("unhandledrejection", (event) => {
+  if (event.reason instanceof Object && _reported.has(event.reason)) {
+    event.preventDefault()
+  }
+})
+
+function unavailable_el(): HTMLElement {
+  const el = div({class: "deckgl-unavailable"})
+  el.style.cssText = "display: flex; align-items: center; justify-content: center; text-align: center; width: 100%; height: 100%; padding: 1em; box-sizing: border-box; opacity: 0.7;"
+  el.setAttribute("role", "status")
+  el.textContent = WEBGL_UNAVAILABLE
+  return el
+}
+
 function extractClasses() {
   // Get classes for registration from standalone deck.gl
   const classesDict: any = {}
@@ -52,6 +88,7 @@ export class DeckGLPlotView extends LayoutDOMView {
   _layer_map: any
   _view_cb: any
   _initialized: boolean = false
+  _unavailable: boolean = false
 
   override async lazy_initialize(): Promise<void> {
     await super.lazy_initialize()
@@ -81,7 +118,7 @@ export class DeckGLPlotView extends LayoutDOMView {
   }
 
   override remove(): void {
-    this.deckGL?.finalize()
+    this._dispose()
     super.remove()
   }
 
@@ -256,7 +293,7 @@ export class DeckGLPlotView extends LayoutDOMView {
   }
 
   createDeck({mapboxApiKey, container, jsonInput, tooltip}: any): void {
-    let deckgl
+    let deckgl: any
     try {
       let configuration
       if (this.model.configuration) {
@@ -272,12 +309,21 @@ export class DeckGLPlotView extends LayoutDOMView {
       } else if (props.mapStyle.includes("carto")) {
         // Positioned up front rather than on deck.gl's first view state
         // change, which only comes once its WebGL device has initialized.
-        this._map = new (window as any).maplibregl.Map({
-          container,
-          style: props.mapStyle,
-          interactive: false,
-          ...this._map_camera(props.initialViewState),
-        })
+        try {
+          this._map = new (window as any).maplibregl.Map({
+            container,
+            style: props.mapStyle,
+            interactive: false,
+            ...this._map_camera(props.initialViewState),
+          })
+        } catch (err) {
+          if (!/webgl/i.test(String(err))) {
+            throw err
+          }
+          console.warn(err)
+          this._unavailable = true
+          return
+        }
         props.controller = true
         props.map = null
         delete props.mapStyle
@@ -289,6 +335,7 @@ export class DeckGLPlotView extends LayoutDOMView {
         ...props,
         container,
         getTooltip,
+        onError: (error: any, layer: any) => this._on_deck_error(deckgl, error, layer),
         height: "100%",
         width: "100%",
       })
@@ -298,8 +345,49 @@ export class DeckGLPlotView extends LayoutDOMView {
     return deckgl
   }
 
+  _on_deck_error(deck: any, error: any, layer: any): void {
+    // Without a device deck.gl could not create its WebGL context, so
+    // nothing will ever be drawn.
+    if (layer == null && deck != null && deck.device == null) {
+      console.warn(error)
+      if (error instanceof Object) {
+        _reported.add(error)
+      }
+      if (deck === this.deckGL) {
+        this._render_unavailable()
+      }
+    } else {
+      console.error(error)
+    }
+  }
+
+  _dispose(): void {
+    // finalize() leaves deck.gl's context alive until it is collected, and
+    // Chrome evicts the oldest contexts, e.g. another pane's, past its limit.
+    const gl = this.deckGL?.device?.gl
+    this.deckGL?.finalize()
+    gl?.getExtension("WEBGL_lose_context")?.loseContext()
+    this.deckGL = null
+    this._map?.remove()
+    this._map = null
+  }
+
+  _render_unavailable(): void {
+    this._dispose()
+    const container = div({class: "deckgl"})
+    set_size(container, this.model, false)
+    container.appendChild(unavailable_el())
+    this.shadow_el.querySelector(".deckgl")?.remove()
+    this.shadow_el.appendChild(container)
+  }
+
   override render(): void {
     super.render()
+    this._dispose()
+    if (!webgl2_available()) {
+      this._render_unavailable()
+      return
+    }
     const container = div({class: "deckgl"})
     set_size(container, this.model, false)
     const MAPBOX_API_KEY = this.model.mapbox_api_key
@@ -319,6 +407,11 @@ export class DeckGLPlotView extends LayoutDOMView {
         jsonInput: data,
         tooltip,
       })
+    }
+    if (this._unavailable) {
+      this._unavailable = false
+      this._render_unavailable()
+      return
     }
     this.shadow_el.appendChild(container)
     this._initialized = false

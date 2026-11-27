@@ -7,6 +7,7 @@ import pytest
 pytest.importorskip("playwright")
 
 from PIL import Image
+from playwright.sync_api import expect
 
 import panel as pn
 
@@ -132,3 +133,113 @@ def test_deckgl_basemap_follows_initial_view_state_update(page):
     pane.object = _basemap_spec(-120, 37, 6)
 
     wait_until(lambda: _basemap_center(page) == pytest.approx([-120, 37, 6]), page)
+
+
+_WEBGL_UNAVAILABLE = "This browser can't draw this map: WebGL is unavailable"
+
+_SCATTER_SPEC = {
+    'initialViewState': {'latitude': 46.03, 'longitude': 6.2, 'zoom': 11},
+    'mapStyle': _CARTO_STYLE,
+    'layers': [{
+        '@@type': 'ScatterplotLayer', 'data': [{'p': [6.2, 46.03]}],
+        'getPosition': '@@=p', 'getFillColor': [255, 0, 0], 'getRadius': 500
+    }]
+}
+
+
+def _watch_errors(page):
+    errors = []
+    page.on('console', lambda msg: msg.type == 'error' and errors.append(msg.text))
+    page.on('pageerror', lambda exc: errors.append(str(exc)))
+    return errors
+
+
+def _assert_unavailable_message(page, errors):
+    message = page.locator('.deckgl-unavailable')
+    expect(message).to_have_text(_WEBGL_UNAVAILABLE)
+    expect(message).to_have_attribute('role', 'status')
+    assert page.locator('.deckgl canvas').count() == 0
+    assert not errors
+
+
+def test_deckgl_without_webgl_shows_message(browser_type, browser_type_launch_args):
+    if browser_type.name != 'chromium':
+        pytest.skip('Only Chromium can be launched with WebGL disabled')
+    args = [*browser_type_launch_args.get('args', []), '--disable-webgl', '--disable-gpu']
+    browser = browser_type.launch(**{**browser_type_launch_args, 'args': args})
+    try:
+        page = browser.new_page()
+        _stub_basemap_style(page)
+        errors = _watch_errors(page)
+        pane = pn.pane.DeckGL(_SCATTER_SPEC, height=400, width=600)
+        serve_component(page, pane)
+        assert not page.evaluate("() => !!document.createElement('canvas').getContext('webgl2')")
+        _assert_unavailable_message(page, errors)
+
+        pane.object = dict(_SCATTER_SPEC, initialViewState={'latitude': 47, 'longitude': 7, 'zoom': 9})
+        page.wait_for_timeout(500)
+        _assert_unavailable_message(page, errors)
+        assert page.locator('.deckgl-unavailable').count() == 1
+    finally:
+        browser.close()
+
+
+# The pane's WebGL2 probe gets a context, every later request none, as on a
+# browser whose GPU process refuses contexts after the first.
+_BROKEN_WEBGL = """
+const getContext = HTMLCanvasElement.prototype.getContext
+HTMLCanvasElement.prototype.getContext = function (kind, ...args) {
+  if (String(kind).startsWith('webgl')) {
+    return new Error().stack.includes('webgl2_available') ? {getExtension: () => null} : null
+  }
+  return getContext.call(this, kind, ...args)
+}
+"""
+
+@pytest.mark.parametrize('map_style', [None, _CARTO_STYLE], ids=['no-basemap', 'carto'])
+def test_deckgl_device_failure_shows_message(page, map_style):
+    page.add_init_script(_BROKEN_WEBGL)
+    _stub_basemap_style(page)
+    errors = _watch_errors(page)
+    pane = pn.pane.DeckGL(dict(_SCATTER_SPEC, mapStyle=map_style), height=400, width=600)
+    serve_component(page, pane)
+    _assert_unavailable_message(page, errors)
+
+    pane.object = dict(pane.object, initialViewState={'latitude': 47, 'longitude': 7, 'zoom': 9})
+    page.wait_for_timeout(500)
+    _assert_unavailable_message(page, errors)
+
+
+_COUNT_CONTEXTS = """
+window._webglContexts = []
+const getContext = HTMLCanvasElement.prototype.getContext
+HTMLCanvasElement.prototype.getContext = function (kind, ...args) {
+  const context = getContext.call(this, kind, ...args)
+  if (String(kind).startsWith('webgl') && context != null && !window._webglContexts.includes(context)) {
+    window._webglContexts.push(context)
+  }
+  return context
+}
+"""
+
+_LIVE_CONTEXTS = "() => window._webglContexts.filter((gl) => !gl.isContextLost()).length"
+
+
+def test_deckgl_rerender_releases_webgl_contexts(page):
+    page.add_init_script(_COUNT_CONTEXTS)
+    _stub_basemap_style(page)
+    pane = pn.pane.DeckGL(_SCATTER_SPEC, height=400, width=600)
+    serve_component(page, pane)
+    _require_webgl2(page)
+    expect(page.locator('.deckgl canvas')).to_have_count(2)
+    page.wait_for_timeout(500)
+    live = page.evaluate(_LIVE_CONTEXTS)
+
+    for i in range(20):
+        # Each re-render creates a new deck.gl canvas and MapLibre basemap
+        with page.expect_request_finished(lambda request: request.url == _CARTO_STYLE):
+            pane.tooltips = {'text': f'{i}'}
+    page.wait_for_timeout(500)
+    expect(page.locator('.deckgl canvas')).to_have_count(2)
+    assert page.evaluate("() => window._webglContexts.length") >= live + 40
+    assert page.evaluate(_LIVE_CONTEXTS) <= live
