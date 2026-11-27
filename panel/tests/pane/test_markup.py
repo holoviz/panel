@@ -264,6 +264,16 @@ def test_html_pane_sanitize_html(document, comm):
 
     assert model.text.endswith('&lt;h1&gt;&lt;strong&gt;HTML&lt;/h1&gt;&lt;/strong&gt;&lt;script&gt;&lt;/script&gt;')
 
+def test_html_pane_pandas_series(document, comm):
+    pane = HTML(pd.Series([1, 2, 3], name="A"))
+
+    model = pane.get_root(document, comm=comm)
+    assert model.text.startswith('&lt;div')
+    assert '&lt;th&gt;A&lt;/th&gt;' in model.text
+
+    pane.object = pd.Series([4, 5], name="B")
+    assert '&lt;th&gt;B&lt;/th&gt;' in model.text
+
 def test_dataframe_pane_pandas(document, comm):
     pane = DataFrame(pd.DataFrame({"A": [1, 2, 3]}))
 
