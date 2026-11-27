@@ -357,7 +357,11 @@ def get_timeline(doc=None):
             return
         new = event.new[-1]
         if doc:
-            doc.add_next_tick_callback(partial(update_cds, new))
+            try:
+                doc.add_next_tick_callback(partial(update_cds, new))
+            except RuntimeError:
+                # The server was stopped without destroying the session
+                log_data_handler._data.param.unwatch(watcher)
         else:
             update_cds(new, nb=True)
 
@@ -575,7 +579,12 @@ def log_component(doc: Document | None = None) -> Viewable:
             unwatch(None)
             return
         if doc:
-            doc.add_next_tick_callback(partial(add_records, records))
+            try:
+                doc.add_next_tick_callback(partial(add_records, records))
+            except RuntimeError:
+                # The server was stopped without destroying the session,
+                # which must not break flushing records to other sessions.
+                unwatch(None)
         else:
             add_records(records)
 

@@ -974,6 +974,10 @@ class Template(BaseTemplate):
     amount of screen space a Template may given separate template
     and nb_template objects. This allows for different layouts when
     served as a standalone server and when used in the notebook.
+
+    A template is code, not data: it is rendered with the full Jinja2
+    language, can run Python on the server and is inserted into the
+    page without escaping. Never build a template from user input.
     """
 
     def __init__(
@@ -1016,6 +1020,9 @@ class Template(BaseTemplate):
         """
         Add parameters to the template, which may then be referenced
         by the given name in the Jinja2 template.
+
+        Values are inserted into the page without HTML escaping, so
+        escape untrusted strings in the template, e.g. ``{{ name | e }}``.
 
         Parameters
         ----------

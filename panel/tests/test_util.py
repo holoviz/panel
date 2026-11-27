@@ -12,8 +12,9 @@ from panel.io.notebook import render_mimebundle
 from panel.pane import PaneBase
 from panel.tests.util import mpl_available
 from panel.util import (
-    abbreviated_repr, extract_dependencies, get_method_owner, parse_query,
-    parse_timedelta, splice_diff, styler_update, suffix_length, utf16_offset,
+    abbreviated_repr, edit_readonly, extract_dependencies, get_method_owner,
+    parse_query, parse_timedelta, splice_diff, styler_update, suffix_length,
+    utf16_offset,
 )
 
 
@@ -238,3 +239,63 @@ def test_descendents_tracks_new_and_collected_subclasses():
     gc.collect()
     assert ref() is None, 'the cache must not keep classes alive'
     assert _descendents(Root) == [Root, Child]
+
+
+class _Locked(param.Parameterized):
+
+    plain = param.Integer(default=0)
+
+    frozen = param.Integer(default=1, constant=True)
+
+    fixed = param.Integer(default=2, readonly=True)
+
+
+def test_edit_readonly_unlocks_and_restores_locked_parameters():
+    obj = _Locked()
+    with edit_readonly(obj):
+        obj.frozen = 10
+        obj.fixed = 20
+    assert (obj.frozen, obj.fixed) == (10, 20)
+    assert obj.param.frozen.constant and not obj.param.frozen.readonly
+    assert obj.param.fixed.readonly and obj.param.fixed.constant
+
+
+def test_edit_readonly_restores_locked_parameters_on_error():
+    obj = _Locked()
+    with pytest.raises(ValueError):
+        with edit_readonly(obj):
+            raise ValueError
+    assert obj.param.frozen.constant
+    assert obj.param.fixed.readonly
+
+
+def test_edit_readonly_does_not_write_unlocked_parameters(monkeypatch):
+    obj = _Locked()
+    plain = obj.param.plain
+    writes = []
+    original = type(plain).__setattr__
+
+    def record(self, name, value):
+        if self is plain and name in ('readonly', 'constant'):
+            writes.append(name)
+        return original(self, name, value)
+
+    monkeypatch.setattr(type(plain), '__setattr__', record)
+    with edit_readonly(obj):
+        obj.plain = 5
+    assert writes == []
+    assert obj.plain == 5
+
+
+def test_edit_readonly_reference_keeps_syncing():
+    # Mirrors how panel-material-ui<0.17 links Page.busy to state.busy
+    class Linked(param.Parameterized):
+        source = param.Boolean(default=False)
+        busy = param.Boolean(default=False, readonly=True, allow_refs=True)
+
+    source = Linked()
+    obj = Linked()
+    with edit_readonly(obj):
+        obj.busy = source.param.source
+    source.source = True
+    assert obj.busy is True

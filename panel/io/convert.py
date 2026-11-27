@@ -121,7 +121,15 @@ async function main() {
   await pyodide.loadPackage("micropip");
   await pyodide.runPythonAsync(`
     import micropip
+{% if fallback_env_spec %}
+    try:
+        await micropip.install([{{ env_spec }}])
+    except Exception as e:
+        print(f'Retrying with Bokeh from PyPI, since installing from the CDN failed: {e}')
+        await micropip.install([{{ fallback_env_spec }}])
+{% else %}
     await micropip.install([{{ env_spec }}]);
+{% endif %}
   `);
   window.panelLoader?.status('Executing code');
   code = `{{ code }}`
@@ -193,6 +201,17 @@ def build_pwa_manifest(files, title=None, **kwargs) -> str:
         path=path,
         **kwargs
     )
+
+
+def _bokeh_fallback_requirements(requirements: list[str]) -> list[str] | None:
+    """
+    Returns the requirements with the Bokeh wheel on the CDN replaced by
+    the release on PyPI, which is used if the CDN does not host a wheel
+    for the installed Bokeh version. Returns None without a CDN wheel.
+    """
+    if BOKEH_CDN_WHL not in requirements:
+        return None
+    return [f'bokeh=={BOKEH_VERSION}' if req == BOKEH_CDN_WHL else req for req in requirements]
 
 
 def collect_python_requirements(
@@ -398,6 +417,8 @@ def script_to_html(
             css_resources = []
         data_archives = f'{repr(app_resources)}' if app_resources else ''
         env_spec = ', '.join([repr(req) for req in requirements])
+        fallback = _bokeh_fallback_requirements(requirements)
+        fallback_env_spec = ', '.join([repr(req) for req in fallback]) if fallback else ''
         code = code.encode('unicode_escape').decode('utf-8').replace('`', r'\`')
         if runtime == 'pyodide-worker':
             if js_resources == 'auto':
@@ -407,6 +428,7 @@ def script_to_html(
                 'PYODIDE_URL': _pyodide_url(compiled=compiled, module=True),
                 'data_archives': data_archives,
                 'env_spec': env_spec,
+                'fallback_env_spec': fallback_env_spec,
                 'code': code
             })
             plot_script = wrap_in_script_tag(worker_handler)
@@ -417,6 +439,7 @@ def script_to_html(
             plot_script = script_template.render({
                 'data_archives': data_archives,
                 'env_spec': env_spec,
+                'fallback_env_spec': fallback_env_spec,
                 'code': code
             })
 

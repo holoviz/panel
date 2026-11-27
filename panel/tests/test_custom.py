@@ -1,4 +1,6 @@
+import builtins
 import os
+import sys
 
 import numpy as np
 import pandas as pd
@@ -74,6 +76,29 @@ def test_reactive_esm_sync_dataframe(document, comm):
     expected = {"index": np.array([0]), "1": np.array([2])}
     for col, values in model.data.df.items():
         np.testing.assert_array_equal(values, expected.get(col))
+
+
+def test_reactive_esm_dataframe_default_without_polars(monkeypatch):
+    real_import = builtins.__import__
+
+    def import_without_polars(name, *args, **kwargs):
+        if name == 'polars':
+            raise ModuleNotFoundError("No module named 'polars'")
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.delitem(sys.modules, 'polars', raising=False)
+    monkeypatch.setattr(builtins, '__import__', import_without_polars)
+
+    class ESMDataFrameDefault(ReactiveESM):
+
+        df = param.DataFrame(default=pd.DataFrame({"1": [2]}))
+
+    default = ESMDataFrameDefault._data_model.lookup('df').property._default
+    assert isinstance(default, dict)
+    expected = {"index": np.array([0]), "1": np.array([2])}
+    assert set(default) == set(expected)
+    for col, values in default.items():
+        np.testing.assert_array_equal(values, expected[col])
 
 
 def test_reactive_esm_stylesheet_updates_across_documents(document, comm):

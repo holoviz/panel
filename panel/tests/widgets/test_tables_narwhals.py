@@ -634,6 +634,25 @@ def test_tabulator_edit_event(frame):
     assert to_dict(table.value)['str'] == ['A', 'B', 'Z']
 
 
+@pytest.mark.parametrize('value', ['Z', None])
+def test_tabulator_edit_event_after_patch_remote_pagination(frame, value):
+    table = Tabulator(frame, sorters=[{'field': 'int', 'dir': 'desc'}], pagination='remote', page_size=2)
+    table.page = 2
+    events = []
+    table.on_edit(events.append)
+
+    table._process_events({'data': {'str': [value]}})
+    assert events == []
+
+    # A cleared cell arrives as NaN while the frame stores None.
+    table._process_event(TableEditEvent(model=None, column='str', row=0, value=value or np.nan, old='A'))
+
+    assert len(events) == 1
+    assert events[0].row == 0
+    assert to_dict(table.value)['str'] == [value, 'B', 'C']
+    assert table._pending_edits == {}
+
+
 def test_tabulator_cell_click_event(frame):
     table = Tabulator(frame, sorters=[{'field': 'int', 'dir': 'desc'}], pagination='remote')
     values = []

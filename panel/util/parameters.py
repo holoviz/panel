@@ -44,21 +44,33 @@ def edit_readonly(parameterized: param.Parameterized) -> Iterator:
     Temporarily set parameters on Parameterized object to readonly=False
     to allow editing them.
     """
-    params = parameterized.param.objects("existing").values()
-    readonlys = [p.readonly for p in params]
-    constants = [p.constant for p in params]
-    for p in params:
+    # Only touch the locked parameters: this runs on every value sync and
+    # toggling every parameter of a widget dominated its cost.
+    locked = [
+        (name, p, p.readonly, p.constant)
+        for name, p in parameterized.param.objects("existing").items()
+        if p.readonly or p.constant
+    ]
+    for _, p, _, _ in locked:
         p.readonly = False
         p.constant = False
     try:
         yield
-    except Exception:
-        raise
     finally:
-        for (p, readonly) in zip(params, readonlys):
-            p.readonly = readonly
-        for (p, constant) in zip(params, constants):
-            p.constant = constant
+        # Setting a value while unlocked can create a per-instance copy of a
+        # class-level parameter, which has to be locked again as well. Copies
+        # bound to a reference stay writable so the reference can keep
+        # updating them (panel-material-ui<0.17 links Page.busy this way).
+        current = parameterized.param.objects("existing")
+        refs = getattr(parameterized._param__private, 'refs', {})
+        for name, p, readonly, constant in locked:
+            targets = [p]
+            copy = current.get(name, p)
+            if copy is not p and name not in refs:
+                targets.append(copy)
+            for q in targets:
+                q.readonly = readonly
+                q.constant = constant
 
 
 def extract_dependencies(function):

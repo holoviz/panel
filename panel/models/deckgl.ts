@@ -68,7 +68,11 @@ export class DeckGLPlotView extends LayoutDOMView {
     super.connect_signals()
     const {data, mapbox_api_key, tooltip, configuration, layers, initialViewState, data_sources} = this.model.properties
     this.on_change([mapbox_api_key, tooltip, configuration], () => this.rerender_())
-    this.on_change([data, initialViewState], () => this.updateDeck())
+    this.on_change([data], () => this.updateDeck())
+    this.on_change([initialViewState], () => {
+      this.updateDeck()
+      this._jump_map(this.model.initialViewState)
+    })
     this.on_change([layers], () => this._update_layers())
     this.on_change([data_sources], () => this._connect_sources(true))
     this._layer_map = {}
@@ -206,11 +210,25 @@ export class DeckGLPlotView extends LayoutDOMView {
   }
 
   _sync_viewstate(event: any): void {
-    if (this._map) {
-      const {longitude, latitude, ...rest} = event.viewState
-      this._map.jumpTo({center: [longitude, latitude], ...rest})
-    }
+    this._jump_map(event.viewState)
     this._view_cb(event)
+  }
+
+  _map_camera(view_state: any): any {
+    if (view_state?.longitude == null || view_state?.latitude == null) {
+      return {}
+    }
+    const {longitude, latitude, ...rest} = view_state
+    return {center: [longitude, latitude], ...rest}
+  }
+
+  _jump_map(view_state: any): void {
+    // deck.gl does not emit onViewStateChange when a new initialViewState is
+    // applied, so the separate MapLibre basemap has to be moved explicitly.
+    const camera = this._map_camera(view_state)
+    if (this._map && camera.center) {
+      this._map.jumpTo(camera)
+    }
   }
 
   rerender_(): void {
@@ -252,10 +270,13 @@ export class DeckGLPlotView extends LayoutDOMView {
       if (props.mapStyle == null) {
         props.map = null
       } else if (props.mapStyle.includes("carto")) {
+        // Positioned up front rather than on deck.gl's first view state
+        // change, which only comes once its WebGL device has initialized.
         this._map = new (window as any).maplibregl.Map({
           container,
           style: props.mapStyle,
           interactive: false,
+          ...this._map_camera(props.initialViewState),
         })
         props.controller = true
         props.map = null

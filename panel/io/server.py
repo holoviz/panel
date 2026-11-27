@@ -6,7 +6,6 @@ from __future__ import annotations
 import asyncio
 import datetime as dt
 import gzip
-import importlib
 import inspect
 import json
 import logging
@@ -586,6 +585,30 @@ def authorize_request(path: str, session: bool = False) -> AuthorizationResult:
     return AuthorizationResult(bool(authorized), auth_error)
 
 
+def _app_route_path(path: str, suffix: str) -> str:
+    if suffix and path.endswith(suffix):
+        return path[:-len(suffix)] or '/'
+    return path
+
+
+def authorize_app_request(
+    application: t.Any, request: t.Any, payload: TokenPayload | dict[str, t.Any], suffix: str = ''
+) -> AuthorizationResult:
+    """
+    Run the global authorization callback for a request to an application
+    route, e.g. its document, ``autoload.js`` or websocket.
+
+    The callback receives the path of the application itself, i.e. the
+    request path without the route ``suffix``, and reads the user from a
+    temporary session built from the request ``payload``.
+    """
+    if not config.authorize_callback:
+        return AuthorizationResult(True, None)
+    temp_session = generate_session(application, request, payload, initialize=False)
+    with set_curdoc(temp_session.document):
+        return authorize_request(_app_route_path(request.path, suffix))
+
+
 def render_auth_error(auth_error: str) -> str:
     """
     Render the authorization error page for the given message.
@@ -1162,10 +1185,16 @@ class AutoloadJsHandler(BkAutoloadJsHandler):
 
     '''
 
-    async def get(self, *args, **kwargs) -> None:
+    @authenticated
+    async def get(self, *args, **kwargs) -> None:  # type: ignore[override]
         _set_request_route_context(self, *args, suffix='/autoload.js', **kwargs)
         if not _admin_access(self).allowed:
             self.send_error(status_code=403, reason='Not authorized to access the admin panel')
+            return
+        payload = token_payload_for_request(self.application, self.request)
+        payload.update(self.application_context.application.process_request(self.request))  # type: ignore[attr-defined,typeddict-item]
+        if not authorize_app_request(self.application, self.request, payload, '/autoload.js').authorized:
+            self.send_error(status_code=403, reason='Not authorized to access this application')
             return
         element_id = self.get_argument("bokeh-autoload-element", default=None)
         if not element_id:
@@ -1183,6 +1212,9 @@ class AutoloadJsHandler(BkAutoloadJsHandler):
         session = await self.get_session()  # type: ignore
         _warn_if_ws_token_too_large(self.application_context.url, session.token)
         with set_curdoc(session.document):
+            if not authorize_request(_app_route_path(self.request.path, '/autoload.js'), session=True).authorized:
+                self.send_error(status_code=403, reason='Not authorized to access this application')
+                return
             resources = Resources.from_bokeh(
                 self.application.resources(server_url), absolute=True
             )
@@ -1218,6 +1250,18 @@ class WSHandler(BkWSHandler):
             )
             self.set_status(403)
             self.finish()
+        # Session tokens are not bound to an application, so the
+        # authorization callback must also run when the websocket connects.
+        elif not authorize_app_request(
+            self.application, self.request,
+            token_payload_for_request(self.application, self.request), '/ws'
+        ).authorized:
+            logger.debug(
+                "Rejecting unauthorized WebSocket connection to %r with 403.",
+                self.request.path
+            )
+            self.set_status(403)
+            self.finish()
 
     def open(self, *args, **kwargs):
         _set_request_route_context(self, *args, suffix='/ws', **kwargs)
@@ -1244,6 +1288,15 @@ class WSHandler(BkWSHandler):
             expiration=min(self.application.session_token_expiration, expires_in),
             extra_payload=payload
         )
+        session = await self.application_context.create_session_if_needed(
+            t.cast("ID", session_id), self.request, token
+        )
+        with set_curdoc(session.document):
+            result = authorize_request(_app_route_path(self.request.path, '/ws'), session=True)
+        if not result.authorized:
+            logger.debug("Closing unauthorized WebSocket connection to %r.", self.request.path)
+            self.close(1008, 'Not authorized to access this application')
+            return
         return await super()._async_open(token)
 
 
@@ -1527,14 +1580,13 @@ class ComponentResourceHandler(PrecompressedStaticMixin, StaticFileHandler):
         if len(parts) < 4:
             raise HTTPError(400, 'Malformed URL')
         mod, cls, rtype, *subpath = parts
-        try:
-            module = importlib.import_module(mod)
-        except ModuleNotFoundError:
-            raise HTTPError(404, 'Module not found') from None
-        try:
-            component = getattr(module, cls)
-        except AttributeError:
-            raise HTTPError(404, 'Component not found') from None
+        # Importing the module named in the URL would run arbitrary code
+        module = sys.modules.get(mod)
+        if module is None:
+            raise HTTPError(404, 'Module not found')
+        component = getattr(module, cls, None)
+        if not isinstance(component, type):
+            raise HTTPError(404, 'Component not found')
 
         # May only access resources listed in specific attributes
         if rtype not in self._resource_attrs:

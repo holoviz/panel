@@ -25,7 +25,7 @@ from ..io import state, unlocked
 from ..layout import (
     Column, HSpacer, ListLike, Row, WidgetBox,
 )
-from ..viewable import Layoutable, Viewable
+from ..viewable import Layoutable, Viewable, _added_subtrees
 from ..widgets import (
     DatetimeInput, DiscreteSlider, EditableFloatSlider, EditableIntSlider,
     FloatSlider, IntSlider, Player, Select, WidgetBase,
@@ -184,12 +184,16 @@ class HoloViews(Pane):
 
     _rerender_params = ['object', 'backend', 'format']
 
+    # Lets the linking hooks skip walking the model tree in apps without HoloViews panes
+    _instantiated: t.ClassVar[bool] = False
+
     _skip_layoutable = (
         'css_classes', 'margin', 'name', 'sizing_mode',
         'width', 'height', 'max_width', 'max_height'
     )
 
     def __init__(self, object=None, **params):
+        HoloViews._instantiated = True
         self._initialized = False
         self._height_responsive = None
         self._width_responsive = None
@@ -889,12 +893,26 @@ def generate_panel_bokeh_map(root_model, panel_views):
     return map_hve_bk
 
 
-def find_links(root_view, root_model):
+def _linkable_panes(root_view, root_model, changed=None, old_models=None):
+    """
+    Returns all HoloViews panes in the tree if the change added any, since
+    a new plot may have to be linked to plots elsewhere in the tree, and
+    an empty list otherwise.
+    """
+    if not HoloViews._instantiated:
+        return []
+    subtrees = _added_subtrees(root_view, changed, root_model.ref['id'], old_models)
+    if subtrees == [root_view] or any(obj.select(HoloViews) for obj in subtrees):
+        return root_view.select(HoloViews)
+    return []
+
+
+def find_links(root_view, root_model, changed=None, old_models=None):
     """
     Traverses the supplied Viewable searching for Links between any
     HoloViews based panes.
     """
-    hv_views = root_view.select(HoloViews)
+    hv_views = _linkable_panes(root_view, root_model, changed, old_models)
     root_plots = [plot for view in hv_views for plot, _ in view._plots.values()
                   if getattr(plot, 'root', None) is root_model]
 
@@ -943,12 +961,12 @@ def find_links(root_view, root_model):
     return callbacks
 
 
-def link_axes(root_view, root_model):
+def link_axes(root_view, root_model, changed=None, old_models=None):
     """
     Pre-processing hook to allow linking axes across HoloViews bokeh
     plots.
     """
-    panes = root_view.select(HoloViews)
+    panes = _linkable_panes(root_view, root_model, changed, old_models)
 
     if not panes:
         return

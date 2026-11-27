@@ -73,6 +73,7 @@ OAuth providers require the redirect URI to match the registered one exactly. If
 
 ### Smaller changes
 
+- `pn.state.as_cached` now forwards the third positional argument to the cached function. Pass the cache lifetime by keyword, for example `ttl=60`.
 - The `high_dpi` option of the `Matplotlib` pane, which is enabled by default, works again for PNG output: figures are rendered at twice their `dpi` and displayed at the same size as before, so they look sharp on high-resolution screens. The images are about two to three times larger; set `high_dpi=False` to restore the previous output. This also applies to Matplotlib plots rendered by the `HoloViews` pane.
 - When an async function or async generator is rendered with `pn.panel` (or `pn.param.ParamFunction` and `ParamMethod`) and `loading_indicator=True`, the loading indicator now stays visible until it has finished, instead of disappearing as soon as it started.
 - `pn.config.admin_endpoint` and the `PANEL_ADMIN_ENDPOINT` environment variable are now honored by `panel serve --admin` and `pn.serve(admin=True)`. If you set one of them before, the admin panel moves from `/admin` to the configured endpoint. `--admin-endpoint` still takes precedence.

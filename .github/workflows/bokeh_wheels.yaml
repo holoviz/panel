@@ -1,0 +1,40 @@
+name: bokeh_wheels
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Only report the missing wheels"
+        type: boolean
+        default: false
+  schedule:
+    - cron: "0 3 * * *"
+
+permissions: {}
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: ${{ !github.event.repository.fork }}
+    name: Upload missing Bokeh wheels to the CDN
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: "1"
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: python -m pip install packaging
+      - name: Sync Bokeh wheels
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: "us-east-1"
+          DRY_RUN: ${{ inputs.dry_run && '--dry-run' || '' }}
+        run: python scripts/sync_bokeh_cdn_wheels.py $DRY_RUN

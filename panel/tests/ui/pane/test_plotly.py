@@ -7,11 +7,14 @@ pytest.importorskip("playwright")
 pytest.importorskip("plotly")
 
 import numpy as np
+import param
 import plotly.graph_objs as go
 import plotly.io as pio
 
 from playwright.sync_api import expect
 
+from panel.custom import Child, ReactComponent
+from panel.layout import Column
 from panel.pane import Plotly
 from panel.tests.util import serve_component, wait_until
 
@@ -518,3 +521,184 @@ def test_plotly_data_update_keeps_frames(page):
     new_frames = frames + [go.Frame(name='second', data=[go.Scatter(y=[7, 8])])]
     pane.object = go.Figure(data=[go.Scatter(x=[0, 1], y=[5, 6])], frames=new_frames)
     wait_until(lambda: gd.evaluate("gd => gd._transitionData._frames.length") == 2, page)
+
+
+class PlotlyToggle(ReactComponent):
+    """Renders its child only once `mounted` is set."""
+
+    child = Child()
+
+    mounted = param.Boolean(default=False)
+
+    text = param.String()
+
+    _esm = """
+    export function render({ model }) {
+      const [mounted] = model.useState("mounted")
+      const [text] = model.useState("text")
+      const child = model.get_child("child")
+      return <div><h2>{text}</h2>{mounted ? child : null}</div>
+    }
+    """
+
+
+U = '_undefined_'
+
+RESTYLES = {
+    'traces_0_then_01_then_1': [
+        ({'marker.color': ['red']}, [0]),
+        ({'marker.color': ['blue', 'green']}, [0, 1]),
+        ({'marker.color': ['orange']}, [1]),
+    ],
+    'merge_past_other_key_same_traces': [
+        ({'marker.color': ['a1', 'b1']}, [0, 1]),
+        ({'opacity': [0.5]}, [1]),
+        ({'marker.color': ['red', 'blue']}, [0, 1]),
+    ],
+    'null_mixed_with_specific': [
+        ({'opacity': 0.2}, None),
+        ({'opacity': [0.7]}, [1]),
+        ({'marker.color': 'red'}, None),
+        ({'opacity': [0.9]}, [0]),
+        ({'marker.color': ['blue']}, [2]),
+        ({'opacity': 0.4}, None),
+        ({'marker.color': ['green']}, [1]),
+    ],
+    'same_key_overlapping_sets_between': [
+        ({'marker.color': ['red', 'red']}, [0, 1]),
+        ({'marker.color': ['blue', 'blue']}, [1, 2]),
+        ({'marker.color': ['green', 'green']}, [0, 1]),
+        ({'marker.color': ['black']}, [2]),
+        ({'marker.color': ['white', 'white']}, [1, 2]),
+    ],
+    'overlap_then_same_merge': [
+        ({'marker.color': ['red'], 'opacity': [0.3]}, [0]),
+        ({'opacity': [0.6, 0.6]}, [0, 1]),
+        ({'marker.color': ['blue']}, [0]),
+        ({'opacity': [0.8]}, [0]),
+    ],
+    'nested_parent_child_keys': [
+        ({'marker.color': ['red', 'blue']}, [0, 1]),
+        ({'marker': [{'color': 'green', 'size': 20}]}, [1]),
+        ({'marker.color': ['black', 'white']}, [0, 1]),
+    ],
+    'undefined_slots': [
+        ({'marker.color': ['red', 'blue']}, [0, 1]),
+        ({'marker.color': [U, 'green']}, [0, 1]),
+    ],
+    'undefined_slots_cover': [
+        ({'marker.color': ['red']}, [0]),
+        ({'marker.color': [U, 'green', 'blue']}, [0, 1, 2]),
+    ],
+    'negative_trace_index': [
+        ({'marker.color': ['red']}, [-1]),
+        ({'marker.color': ['blue']}, [2]),
+        ({'opacity': [0.4]}, [-1]),
+    ],
+}
+
+RELAYOUTS = {
+    'leaf_then_parent': [{'xaxis.range': [0, 5]}, {'xaxis': {'title': {'text': 'X'}}}],
+    'parent_then_leaf': [{'xaxis': {'title': {'text': 'X'}, 'range': [0, 2]}}, {'xaxis.range': [0, 5]}],
+    'leaf_parent_leaf': [{'xaxis.range': [0, 5]}, {'xaxis': {'title': {'text': 'X'}}}, {'xaxis.range': [1, 3]}],
+    'title_text_then_title': [{'title.text': 'A'}, {'title': {'text': 'B', 'x': 0.2}}, {'title.text': 'C'}],
+    'range_then_autorange': [{'xaxis.range': [0, 5]}, {'xaxis.autorange': True}],
+    'autorange_then_range': [{'xaxis.autorange': True}, {'xaxis.range': [0, 5]}],
+    'annotation_insert': [
+        {'annotations[0].text': 'x0'},
+        {'annotations[1].text': 'x1'},
+        {'annotations[0]': {'x': 0, 'y': 0, 'text': 'new0'}},
+        {'annotations[0].text': 'y0'},
+        {'annotations[1].x': 2},
+    ],
+    'annotation_remove': [
+        {'annotations[1].text': 'x1'},
+        {'annotations[0]': None},
+        {'annotations[0].text': 'y0'},
+    ],
+    'annotations_then_item': [
+        {'annotations[0].text': 'x0'},
+        {'annotations': [{'x': 0, 'y': 0, 'text': 'w0'}]},
+        {'annotations[0].text': 'z0'},
+    ],
+}
+
+READ_TRACES = "gd => gd.data.map(t => [t.marker?.color ?? null, t.marker?.size ?? null, t.opacity ?? null])"
+
+READ_LAYOUT = """gd => [
+  gd.layout.xaxis?.range ?? null, gd.layout.xaxis?.title?.text ?? null, gd.layout.title?.text ?? null,
+  gd.layout.title?.x ?? null, gd.layout.xaxis?.autorange ?? null,
+  (gd.layout.annotations ?? []).map(a => [a.text, a.x])
+]"""
+
+
+def _serve_mounted_and_unmounted(page):
+    figures = [
+        go.Figure(
+            [go.Scatter(x=[0, 1], y=[i, i + 1], mode='markers') for i in range(3)],
+            layout={'annotations': [{'x': 0, 'y': 0, 'text': 'a0'}, {'x': 1, 'y': 1, 'text': 'a1'}]}
+        )
+        for _ in range(2)
+    ]
+    mounted, unmounted = Plotly(figures[0]), Plotly(figures[1])
+    toggle = PlotlyToggle(child=unmounted, text='Unmounted')
+    layout = Column(PlotlyToggle(child=mounted, text='Mounted', mounted=True), toggle)
+    serve_component(page, layout)
+    gd = page.locator('.js-plotly-plot')
+    expect(gd).to_have_count(1)
+    models = [next(iter(pane._models.values()))[0] for pane in (mounted, unmounted)]
+    return gd, toggle, next(iter(layout._documents)), models, unmounted
+
+
+def _send(page, doc, models, prop, value):
+    def send():
+        for model in models:
+            setattr(model, prop, value)
+    doc.add_next_tick_callback(send)
+    wait_until(lambda: all(getattr(model, prop) is None for model in models), page)
+
+
+@pytest.mark.parametrize('name', list(RESTYLES))
+def test_plotly_restyles_before_render_match_mounted_plot(page, name):
+    gd, toggle, doc, models, _ = _serve_mounted_and_unmounted(page)
+
+    for data, traces in RESTYLES[name]:
+        _send(page, doc, models, 'restyle', {'data': data, 'traces': traces})
+
+    toggle.mounted = True
+    expect(gd).to_have_count(2)
+    wait_until(lambda: gd.nth(1).evaluate(READ_TRACES) == gd.nth(0).evaluate(READ_TRACES), page)
+
+
+@pytest.mark.parametrize('name', list(RELAYOUTS))
+def test_plotly_relayouts_before_render_match_mounted_plot(page, name):
+    gd, toggle, doc, models, _ = _serve_mounted_and_unmounted(page)
+
+    for relayout in RELAYOUTS[name]:
+        _send(page, doc, models, 'relayout', relayout)
+
+    toggle.mounted = True
+    expect(gd).to_have_count(2)
+    wait_until(lambda: gd.nth(1).evaluate(READ_LAYOUT) == gd.nth(0).evaluate(READ_LAYOUT), page)
+
+
+def test_plotly_updates_before_render_stay_bounded(page):
+    gd, toggle, doc, models, _ = _serve_mounted_and_unmounted(page)
+    model = models[1]
+
+    def send():
+        for i in range(200):
+            model.restyle = {'data': {'y': [list(range(i, i+1000))]}, 'traces': [0]}
+            model.relayout = {'title.text': f'Title {i}'}
+        toggle.text = 'Sent'
+    doc.add_next_tick_callback(send)
+
+    # The text arrives in the same patch, after all the updates
+    expect(page.locator('h2').nth(1)).to_have_text('Sent')
+    pending = page.evaluate(f"() => Bokeh.index.find_one_by_id('{model.id}')._pending_updates.length")
+    assert pending == 2
+
+    toggle.mounted = True
+    expect(gd).to_have_count(2)
+    wait_until(lambda: gd.nth(1).evaluate("gd => [gd.data[0].y[0], gd.data[0].y.length]") == [199, 1000], page)
+    expect(gd.nth(1).locator('.gtitle')).to_have_text('Title 199')

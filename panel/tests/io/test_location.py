@@ -36,6 +36,22 @@ def test_location_update_query(location):
     location.update_query(b='c')
     assert location.search == "?a=1&b=c"
 
+@pytest.mark.parametrize('search', ['?zip=02134', '?debug=true', '?x=1e3', '?price=1.50'])
+def test_location_update_query_preserves_other_params(location, search):
+    location.search = search
+    location.update_query(page='2')
+    assert location.search == f"{search}&page=2"
+
+def test_location_sync_unsync_preserves_other_params(location):
+    location.search = "?zip=02134"
+    p = SyncParameterized(integer=1)
+    location.sync(p, ['integer'])
+    assert location.search == "?zip=02134&integer=1"
+    p.integer = 2
+    assert location.search == "?zip=02134&integer=2"
+    location.unsync(p)
+    assert location.search == "?zip=02134"
+
 def test_location_sync_query_init(location):
     p = SyncParameterized(integer=1, string='abc')
     location.sync(p)

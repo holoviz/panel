@@ -18,6 +18,7 @@ import sys
 import traceback
 import typing as t
 import uuid
+import weakref
 
 from html import escape
 
@@ -67,6 +68,68 @@ if t.TYPE_CHECKING:
 
 
 _tasks: set[asyncio.Task] = set()
+
+_hook_arities: weakref.WeakKeyDictionary[Callable, int] = weakref.WeakKeyDictionary()
+
+# Shares the added subtrees between the hooks of a single _preprocess call
+_subtrees_cache: dict[tuple[int, str, int], tuple[Viewable, list[Model], list[Viewable]]] = {}
+
+
+def _hook_arity(hook: Callable) -> int:
+    try:
+        return _hook_arities[hook]
+    except (KeyError, TypeError):
+        pass
+    arity = len(inspect.signature(hook).parameters)
+    try:
+        _hook_arities[hook] = arity
+    except TypeError:
+        pass
+    return arity
+
+
+def _added_subtrees(
+    root_view: Viewable, changed: Viewable | None = None, ref: str | None = None,
+    old_models: list[Model] | None = None
+) -> list[Viewable]:
+    """
+    Returns the roots of the Viewable subtrees a preprocessing pass has
+    to inspect, i.e. the children of the changed component whose models
+    were not reused. Falls back to the changed component (or the root)
+    when the new children cannot be determined cheaply.
+    """
+    if changed is None:
+        return [root_view]
+    if old_models is None or ref is None:
+        return [changed]
+    key = (id(changed), ref, id(old_models))
+    cached = _subtrees_cache.get(key)
+    if cached is not None and cached[0] is changed and cached[1] is old_models:
+        return cached[2]
+    from .custom import ReactiveESM
+    from .layout.base import Panel
+    select = type(changed).select
+    children: list[Viewable]
+    if select is Panel.select and isinstance(getattr(changed, 'objects', None), list):
+        children = changed.objects  # type: ignore[attr-defined]
+    elif select is ReactiveESM.select:
+        children = []
+        for p, pobj in changed.param.objects(instance='existing').items():
+            if isinstance(pobj, Children):
+                children.extend(getattr(changed, p, None) or [])
+            elif isinstance(pobj, Child):
+                child = getattr(changed, p, None)
+                if child is not None:
+                    children.append(child)
+    else:
+        return [changed]
+    old = {id(model) for model in old_models}
+    subtrees = [
+        child for child in children
+        if id(child._models.get(ref, (None,))[0]) not in old
+    ]
+    _subtrees_cache[key] = (changed, old_models, subtrees)
+    return subtrees
 
 
 class Layoutable(param.Parameterized):
@@ -752,11 +815,14 @@ class Renderable(param.Parameterized, MimeRenderMixin):
 
         changed = self if changed is None else changed
         hooks = self._preprocessing_hooks+self._hooks
-        for hook in hooks:
-            if len(inspect.signature(hook).parameters) >= 4:
-                hook(self, root, changed, old_models)
-            else:
-                hook(self, root)
+        try:
+            for hook in hooks:
+                if _hook_arity(hook) >= 4:
+                    hook(self, root, changed, old_models)
+                else:
+                    hook(self, root)
+        finally:
+            _subtrees_cache.clear()
 
     def _render_model(self, doc: Document | None = None, comm: Comm | None = None) -> Model:
         if doc is None:

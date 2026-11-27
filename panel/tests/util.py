@@ -5,6 +5,7 @@ import base64
 import contextlib
 import http.server
 import json
+import mimetypes
 import os
 import platform
 import re
@@ -18,7 +19,7 @@ import uuid
 from functools import partial
 from queue import Empty, Queue
 from threading import Event, Thread
-from urllib.parse import urlencode, urlparse
+from urllib.parse import unquote, urlencode, urlparse
 
 import numpy as np
 import param
@@ -34,6 +35,7 @@ from tornado.websocket import WebSocketHandler, websocket_connect
 
 import panel as pn
 
+from panel.io.resources import CDN_DIST, DIST_DIR
 from panel.io.server import serve
 from panel.io.state import state
 
@@ -434,6 +436,49 @@ def serve_component(page, app, suffix='', wait=True, **kwargs):
 
 def is_remote(url):
     return urlparse(url).hostname not in (None, 'localhost', '127.0.0.1')
+
+
+# Patterns rather than predicates, so Playwright only intercepts these
+# requests instead of holding every request until the test next makes a
+# Playwright call.
+CDN_DIST_PATTERN = re.compile('^' + re.escape(CDN_DIST))
+REMOTE_PATTERN = re.compile(rf'^(?!{re.escape(CDN_DIST)})https?://(?!(localhost|127\.0\.0\.1)[:/])')
+
+
+def local_dist_file(url):
+    """
+    Returns the file in the local panel/dist that a URL on Panel's CDN
+    refers to, or None if it is not there.
+    """
+    path = DIST_DIR / unquote(urlparse(url).path).removeprefix(urlparse(CDN_DIST).path)
+    return path if path.is_file() else None
+
+
+def _local_dist_response(route):
+    path = local_dist_file(route.request.url)
+    if path is None:
+        return None
+    # Bundled files such as vega@6.1.2 have no extension to guess from
+    content_type = mimetypes.guess_type(path.name)[0] or 'text/javascript'
+    return {'status': 200, 'path': path, 'content_type': content_type}
+
+
+def serve_local_dist(route):
+    """
+    Answers requests to Panel's CDN with the local panel/dist, since a
+    release commit points the CDN at a version that is not published yet.
+    """
+    if (response := _local_dist_response(route)) is None:
+        route.fallback()
+    else:
+        route.fulfill(**response)
+
+
+async def serve_local_dist_async(route):
+    if (response := _local_dist_response(route)) is None:
+        await route.fallback()
+    else:
+        await route.fulfill(**response)
 
 
 class RemoteRequests:

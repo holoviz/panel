@@ -1002,6 +1002,15 @@ def test_hash_enum_members_as_enum(member):
     assert _generate_hash(member) == f'enum:{_get_fqn(member)}.{member.name}'.encode()
     assert not hashes_equal(member, member.value)
 
+def test_hash_time_and_timedelta_by_value():
+    assert hashes_equal(dt.time(12, 30), dt.time(12, 30))
+    assert not hashes_equal(dt.time(12, 30), dt.time(12, 31))
+    assert not hashes_equal(dt.time(12), dt.time(12, tzinfo=dt.timezone.utc))
+    assert hashes_equal(dt.timedelta(days=1), dt.timedelta(hours=24))
+    assert not hashes_equal(dt.timedelta(days=1), dt.timedelta(days=2))
+    assert not hashes_equal(pd.Timedelta(1, 'ns'), pd.Timedelta(2, 'ns'))
+    assert not hashes_equal(dt.time(1), dt.timedelta(hours=1))
+
 def test_hash_identity_types_by_identity():
     a, b = object(), object()
     assert not hashes_equal(a, b)
@@ -1020,3 +1029,5 @@ def test_cache_temporary_value_arguments():
     assert double(decimal.Decimal('1.5')) == decimal.Decimal('3.0')
     assert double(decimal.Decimal('7')) == decimal.Decimal('14')
     assert [as_str(uuid.UUID(int=i))[-1] for i in range(1, 6)] == ['1', '2', '3', '4', '5']
+    assert [as_str(dt.timedelta(days=i)) for i in range(1, 4)] == ['1 day, 0:00:00', '2 days, 0:00:00', '3 days, 0:00:00']
+    assert [as_str(dt.time(i)) for i in range(1, 4)] == ['01:00:00', '02:00:00', '03:00:00']

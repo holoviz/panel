@@ -4,6 +4,7 @@ import os
 import sys
 
 from io import BytesIO
+from unittest import mock
 from zipfile import ZipFile
 
 import numpy as np
@@ -126,6 +127,68 @@ def test_get_vtkjs_pane_type_from_url():
 def test_get_vtkjs_pane_type_from_file():
     file = r'StanfordDragon.vtkjs'
     assert PaneBase.get_pane_type(file) is VTKJS
+
+
+def test_vtkjs_applies_ignores_query_and_fragment():
+    assert VTKJS.applies('https://example.com/a.vtkjs?x=1')
+    assert VTKJS.applies('https://example.com/a.vtkjs#frag')
+    assert not VTKJS.applies('https://example.com#a.vtkjs')
+    assert not VTKJS.applies('https://example.com/a.txt?f=a.vtkjs')
+    assert not VTKJS.applies('file:///etc/passwd#a.vtkjs')
+    assert not VTKJS.applies('ftp://example.com/a.vtkjs')
+
+
+@pytest.mark.parametrize('obj', [
+    'file:///etc/passwd#a.vtkjs',
+    'file:///etc/passwd?a.vtkjs',
+    'ftp://example.com/a.vtkjs',
+    'data://text/plain;base64,AAAA#a.vtkjs',
+    'https://example.com#a.vtkjs',
+    'https://example.com/a.txt?f=a.vtkjs',
+])
+def test_vtkjs_rejects_unsupported_urls(obj):
+    pane = VTKJS(obj)
+    with mock.patch('panel.pane.vtk.vtk.urlopen') as urlopen:
+        with pytest.raises(ValueError):
+            pane._get_vtkjs()
+    urlopen.assert_not_called()
+
+
+@pytest.mark.parametrize('url', [
+    'https://example.com/a.vtkjs',
+    'http://example.com/a.vtkjs',
+    'https://example.com/a.vtkjs?x=1',
+])
+def test_vtkjs_fetches_http_urls(url):
+    pane = VTKJS(url)
+    with mock.patch('panel.pane.vtk.vtk.urlopen') as urlopen:
+        urlopen.return_value.read.return_value = b'data'
+        data_url, vtkjs = pane._get_vtkjs()
+    urlopen.assert_called_once_with(url)
+    assert data_url == url
+    assert vtkjs == b'data'
+
+
+def test_vtkjs_no_fetch_returns_url():
+    url = 'https://example.com/a.vtkjs'
+    pane = VTKJS(url)
+    with mock.patch('panel.pane.vtk.vtk.urlopen') as urlopen:
+        assert pane._get_vtkjs(fetch=False) == (url, None)
+    urlopen.assert_not_called()
+
+
+def test_vtkjs_reads_local_file(tmp_path):
+    path = tmp_path / 'scene.vtkjs'
+    path.write_bytes(b'local')
+    pane = VTKJS(str(path))
+    with mock.patch('panel.pane.vtk.vtk.urlopen') as urlopen:
+        assert pane._get_vtkjs() == (None, b'local')
+    urlopen.assert_not_called()
+
+
+def test_vtkjs_reads_file_like_object():
+    pane = VTKJS(BytesIO(b'stream'))
+    assert pane._get_vtkjs() == (None, b'stream')
 
 
 @vtk_available

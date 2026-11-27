@@ -11,6 +11,7 @@ import pathlib
 import re
 import shutil
 import tarfile
+import warnings
 import zipfile
 
 from concurrent.futures import ThreadPoolExecutor
@@ -20,6 +21,8 @@ from urllib.parse import urljoin
 import requests
 
 from bokeh.model import Model
+from requests.adapters import HTTPAdapter
+from urllib3.util import Retry
 
 from .config import config, panel_extension
 from .io.resources import CDN_DIST, RESOURCE_URLS
@@ -56,6 +59,14 @@ _LICENSE_SOURCES: dict[str, set[str]] = {}
 
 @cache
 def _session():
+    session = requests.Session()
+    # A build downloads hundreds of files, so a single DNS or CDN hiccup
+    # would otherwise fail it.
+    retry = Retry(
+        total=3, backoff_factor=1, status_forcelist=(429, 500, 502, 503, 504),
+        raise_on_status=False
+    )
+    session.mount('https://', HTTPAdapter(max_retries=retry))
     try:
         import platformdirs
 
@@ -63,20 +74,44 @@ def _session():
         from cachecontrol.caches import SeparateBodyFileCache
         cache_dir = platformdirs.user_cache_path() / 'holoviz' / 'panel.compiler'
 
-        return CacheControl(requests.Session(), cache=SeparateBodyFileCache(cache_dir))
+        return CacheControl(session, cache=SeparateBodyFileCache(cache_dir))
     except ImportError:
-        return requests.Session()
+        return session
+
+
+def _insecure_downloads():
+    return os.environ.get('PANEL_BUNDLE_INSECURE', '').strip().lower() in ('1', 'true', 'yes')
 
 
 def _download(url):
+    """
+    Fetches a url, returning a (response, error) pair.
+
+    Certificate verification is only disabled when PANEL_BUNDLE_INSECURE is
+    set, for builds behind a TLS-inspecting proxy that cannot be given a CA
+    bundle via REQUESTS_CA_BUNDLE or SSL_CERT_FILE.
+    """
+    kwargs = {}
+    if _insecure_downloads():
+        kwargs['verify'] = False
+        warnings.warn(
+            'PANEL_BUNDLE_INSECURE is set, TLS certificate verification is '
+            f'disabled for the download of {url}.', stacklevel=2
+        )
     try:
-        response, error = _session().get(url, timeout=10), None
-    except Exception:
-        try:
-            response, error = _session().get(url, verify=False, timeout=10), None
-        except Exception as e:
-            response, error = None, e
-    return response, error
+        return _session().get(url, timeout=10, **kwargs), None
+    except Exception as e:
+        return None, e
+
+
+def _ssl_hint(error):
+    if isinstance(error, requests.exceptions.SSLError):
+        return (
+            ' Certificate verification failed; point REQUESTS_CA_BUNDLE or '
+            'SSL_CERT_FILE at a CA bundle that trusts your proxy, or set '
+            'PANEL_BUNDLE_INSECURE=1 to disable verification.'
+        )
+    return ''
 
 
 # Regex to search and replace the sourceMappingURL
@@ -198,7 +233,7 @@ def _write_license(spec, index):
     response, error = _download(f'{npm_cdn}/{spec}/package.json')
     if error or not response.ok:
         msg = f'Failed to fetch package metadata for {spec}, cannot determine its license.'
-        raise ConnectionError(msg) from error
+        raise ConnectionError(msg + _ssl_hint(error)) from error
     meta = json.loads(response.content)
     name, version = meta.get('name', spec), meta.get('version', '')
     spdx = meta.get('license')
@@ -270,7 +305,7 @@ def _write_bundled_files(name, files, explicit_dir=None, ext=None):
 
         response, error = _download(bundle_file)
         if error:
-            msg =  f"Failed to fetch {name} dependency: {bundle_file}. Errored with {error}."
+            msg = f"Failed to fetch {name} dependency: {bundle_file}. Errored with {error}.{_ssl_hint(error)}"
             raise ConnectionError(msg) from error
         if not response.ok:
             # A CDN answers a missing file with an error document and a 4xx

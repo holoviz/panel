@@ -4,6 +4,7 @@ Django integrations as well as ``panel serve --server asgi``.
 """
 import json
 import pathlib
+import sys
 
 from contextlib import contextmanager
 
@@ -199,6 +200,15 @@ def test_asgi_component_resource_not_found(asgi_client):
     with asgi_client() as client:
         assert client.get(f'/{COMPONENT_PATH}not.a.module/Nope/_css/x.css').status_code == 404
         assert client.get(f'/{COMPONENT_PATH}malformed').status_code == 400
+
+
+def test_asgi_component_resource_does_not_import_module(asgi_client, tmp_path, monkeypatch):
+    (tmp_path / 'panel_unimported_mod.py').write_text('raise SystemExit(1)\n')
+    monkeypatch.syspath_prepend(str(tmp_path))
+    with asgi_client() as client:
+        r = client.get(f'/{COMPONENT_PATH}panel_unimported_mod/x/_css/y.css')
+    assert r.status_code == 404
+    assert 'panel_unimported_mod' not in sys.modules
 
 
 def test_asgi_liveness_endpoint(asgi_client):
@@ -735,3 +745,68 @@ def test_asgi_authorize_callback_declared_in_session(asgi_client):
         r = client.get('/app')
     assert r.status_code == 403
     assert 'Authorization Error' in r.text
+
+
+def _allow_only(*allowed):
+    def authorize(user_info, path):
+        return path in allowed
+    return authorize
+
+
+def test_asgi_authorize_callback_denies_autoload(asgi_client, authorize_callback):
+    paths = []
+    authorize_callback(lambda user_info, path: paths.append(path) or False)
+    with asgi_client() as client:
+        r = client.get('/app/autoload.js', params={'bokeh-autoload-element': 'x'})
+    assert r.status_code == 403
+    assert paths == ['/app']
+
+
+def test_asgi_authorize_callback_grants_autoload(asgi_client, authorize_callback):
+    authorize_callback(_allow_only('/app'))
+    with asgi_client() as client:
+        r = client.get('/app/autoload.js', params={'bokeh-autoload-element': 'x'})
+    assert r.status_code == 200
+
+
+def test_asgi_authorize_callback_denies_websocket_with_token_of_other_app(asgi_client, authorize_callback):
+    from starlette.websockets import WebSocketDisconnect
+
+    authorize_callback(_allow_only('/user'))
+    apps = {'/user': markdown_app, '/admin': markdown_app}
+    with asgi_client(apps) as client:
+        token = _token(client, '/user')
+        with pytest.raises(WebSocketDisconnect) as excinfo:
+            with client.websocket_connect('/admin/ws', subprotocols=['bokeh', token]):
+                pass
+    assert excinfo.value.code == 1008
+
+
+def test_asgi_authorize_callback_grants_websocket(asgi_client, authorize_callback):
+    authorize_callback(_allow_only('/app'))
+    with asgi_client() as client:
+        token = _token(client)
+        with client.websocket_connect('/app/ws', subprotocols=['bokeh', token]) as ws:
+            assert _receive(ws)[0] == 'ACK'
+
+
+def _session_denied_admin():
+    config.authorize_callback = lambda user_info: False
+    return Markdown('# Admin')
+
+
+def test_asgi_session_authorize_callback_denies_autoload(asgi_client):
+    with asgi_client({'/admin': _session_denied_admin}) as client:
+        r = client.get('/admin/autoload.js', params={'bokeh-autoload-element': 'x'})
+    assert r.status_code == 403
+
+
+def test_asgi_session_authorize_callback_denies_websocket(asgi_client):
+    from starlette.websockets import WebSocketDisconnect
+
+    with asgi_client({'/user': markdown_app, '/admin': _session_denied_admin}) as client:
+        token = _token(client, '/user')
+        with pytest.raises(WebSocketDisconnect) as excinfo:
+            with client.websocket_connect('/admin/ws', subprotocols=['bokeh', token]):
+                pass
+    assert excinfo.value.code == 1008

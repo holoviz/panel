@@ -10,6 +10,7 @@ import typing as t
 import zipfile
 
 from abc import abstractmethod
+from urllib.parse import urlparse
 from urllib.request import urlopen
 
 import numpy as np
@@ -804,6 +805,34 @@ class VTKVolume(AbstractVTK):
         return sub_array
 
 
+def _vtkjs_source(obj: t.Any) -> tuple[str | None, str | None]:
+    """
+    Classifies a string as a local path or an http(s) URL pointing to
+    a .vtkjs file, returning a (path, url) tuple (at most one is set).
+
+    The extension is checked on the parsed path so that query strings
+    and fragments cannot be used to satisfy it. Strings that look like
+    URLs with any other scheme raise a ValueError.
+    """
+    if not isinstance(obj, str):
+        return None, None
+    # Existing files take precedence, which also covers Windows paths
+    # such as C:/x/a.vtkjs that urlparse reads as having scheme 'c'.
+    if isfile(obj):
+        return (obj, None) if obj.endswith('.vtkjs') else (None, None)
+    if '://' not in obj:
+        return (obj, None) if obj.endswith('.vtkjs') else (None, None)
+    parsed = urlparse(obj)
+    if parsed.scheme.lower() not in ('http', 'https'):
+        raise ValueError(
+            f'VTKJS only supports http and https URLs or local file paths, '
+            f'got URL with scheme {parsed.scheme!r}.'
+        )
+    if parsed.path.endswith('.vtkjs'):
+        return None, obj
+    return None, None
+
+
 class VTKJS(AbstractVTK):
     """
     The VTKJS pane allow rendering a vtk scene stored in a vtkjs.
@@ -837,9 +866,11 @@ class VTKJS(AbstractVTK):
 
     @classmethod
     def applies(cls, object: t.Any) -> float | bool | None:
-        if isinstance(object, str) and object.endswith('.vtkjs'):
-            return True
-        return None
+        try:
+            path, url = _vtkjs_source(object)
+        except ValueError:
+            return None
+        return True if (path or url) else None
 
     def _get_model(
         self, doc: Document, root: Model | None = None,
@@ -858,17 +889,15 @@ class VTKJS(AbstractVTK):
         return model
 
     def _get_vtkjs(self, fetch=True):
-        data_path, data_url = None, None
-        if isinstance(self.object, str) and self.object.endswith('.vtkjs'):
-            data_path = data_path
-            if not isfile(self.object):
-                data_url = self.object
+        data_path, data_url = _vtkjs_source(self.object)
+        if isinstance(self.object, str) and not (data_path or data_url):
+            raise ValueError(f'VTKJS expects a path or http(s) URL ending in .vtkjs, got {self.object!r}.')
         if self._vtkjs is None and self.object is not None:
             vtkjs = None
             if data_url and fetch:
-                vtkjs = urlopen(data_url).read() if fetch else data_url
+                vtkjs = urlopen(data_url).read()
             elif data_path:
-                with open(self.object, 'rb') as f:
+                with open(data_path, 'rb') as f:
                     vtkjs = f.read()
             elif hasattr(self.object, 'read'):
                 vtkjs = self.object.read()

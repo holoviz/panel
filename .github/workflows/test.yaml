@@ -224,6 +224,17 @@ jobs:
         if: "!github.event.pull_request.head.repo.fork"
         run: |
           echo "PANEL_TEST_AUTH=1" >> $GITHUB_ENV
+      - name: Get the ISO week
+        id: week
+        shell: bash
+        run: echo "week=$(date -u +%G-%V)" >> $GITHUB_OUTPUT
+      # Remote responses the UI tests cached (esm.sh, Pyodide), so an outage of
+      # those hosts only affects tests loading a URL no earlier run loaded
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .pytest_cache/d/remote-requests
+          key: ui-remote-requests-${{ runner.os }}-${{ steps.week.outputs.week }}
+          restore-keys: ui-remote-requests-${{ runner.os }}-
       - name: Test UI
         run: |
           FAIL="--screenshot only-on-failure --full-page-screenshot --output ui_screenshots --tracing retain-on-failure"

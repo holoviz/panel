@@ -198,6 +198,23 @@ def test_file_selector_cannot_select_up(test_dir):
     assert not selector._selector._lists[True].options
     assert not selector.value
 
+
+def test_file_selector_cannot_escape_root_directory(test_dir):
+    selector = FileSelector(test_dir)
+    assert selector.root_directory == test_dir
+    sibling = os.path.join(os.path.dirname(test_dir), 'test_dir_sibling')
+    os.makedirs(sibling, exist_ok=True)
+    selector._directory.value = sibling
+    assert selector.directory == test_dir
+
+
+def test_file_selector_filesystem_root_directory(test_dir):
+    root = Path(test_dir).anchor
+    selector = FileSelector(root, root_directory=root)
+    selector._directory.value = test_dir
+    assert selector.directory == test_dir
+
+
 def test_file_selector_multiple_across_dirs(test_dir):
     selector = FileSelector(test_dir)
 
