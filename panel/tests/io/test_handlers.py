@@ -2,8 +2,12 @@ from io import StringIO
 
 import pytest
 
+from bokeh.core.json_encoder import serialize_json
+
+from panel.config import config
 from panel.io.handlers import (
-    _create_copy_button, capture_code_cell, extract_code, parse_notebook,
+    FunctionHandler, _create_copy_button, capture_code_cell, extract_code,
+    parse_notebook,
 )
 from panel.widgets import ButtonIcon
 
@@ -228,3 +232,30 @@ def test_create_copy_button():
     # Test the styling
     styles = copy_button.styles
     assert styles['position'] == 'absolute'
+
+
+@pytest.mark.parametrize('autoreload', [False, True], ids=['production', 'development'])
+def test_function_app_startup_error(server_document, caplog, autoreload):
+    detail = 'Private startup details'
+
+    def app(doc):
+        raise RuntimeError(detail)
+
+    with config.set(autoreload=autoreload):
+        FunctionHandler(app).modify_document(server_document)
+
+    document_json = serialize_json(server_document.to_json())
+    traceback = 'Traceback (most recent call last):'
+    if autoreload:
+        assert traceback in document_json
+        assert f'RuntimeError: {detail}' in document_json
+        assert 'test_handlers.py' in document_json
+    else:
+        assert traceback not in document_json
+        assert detail not in document_json
+        assert 'test_handlers.py' not in document_json
+        assert 'An error occurred while loading the application.' in document_json
+
+    assert traceback in caplog.text
+    assert f'RuntimeError: {detail}' in caplog.text
+    assert 'test_handlers.py' in caplog.text

@@ -76,3 +76,5 @@ The ``pn.serve`` accepts a number of arguments:
     kwargs: dict
       Additional keyword arguments to pass to Server instance
 ```
+
+If an app factory passed to `pn.serve` raises an exception during startup, the browser shows a generic error message and the server logs the full traceback. During development, set `pn.config.autoreload = True` to also see the traceback in the browser.

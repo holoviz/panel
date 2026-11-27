@@ -367,10 +367,13 @@ def run_app(handler, module, doc: Document, post_run=None, allow_empty: bool = F
                 try:
                     handler._func(doc)
                 except Exception as e:
-                    error_message = ''.join(traceback.format_exception(None, e, e.__traceback__))
-                    print(error_message)  # noqa
+                    log.exception('Error loading the application')
+                    message = 'An error occurred while loading the application.'
+                    if config.autoreload:
+                        detail = html.escape(traceback.format_exc())
+                        message = f'<b>{type(e).__name__}</b>\n<pre style="overflow-y: auto">{detail}</pre>'
                     Alert(
-                        f'<b>{type(e).__name__}</b>\n<pre style="overflow-y: auto">{str(error_message)}</pre>',
+                        message,
                         alert_type='danger', margin=5, sizing_mode='stretch_width'
                     ).servable()
             elif runner is None or runner.error:
