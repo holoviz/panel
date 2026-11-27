@@ -3,6 +3,7 @@ Tests for authentication on ASGI transports, i.e. Panel's Tornado auth
 handlers run headlessly by panel.io.auth.PanelAuthPolicy.
 """
 import datetime as dt
+import os
 
 from urllib.parse import parse_qs, urlparse
 
@@ -13,6 +14,7 @@ pytest.importorskip("httpx")
 import requests
 
 from starlette.testclient import TestClient
+from starlette.websockets import WebSocketDisconnect
 from tornado.web import create_signed_value, decode_signed_value
 
 from panel.auth import (
@@ -640,3 +642,44 @@ def test_oauth_websocket_adopts_tokens_refreshed_over_http(oauth_client, refresh
             'refresh_token': 'refreshed-refresh-token',
             'expiry': state._oauth_user_overrides[OAUTH_USER]['expiry'],
         }
+
+
+def test_oauth_cancels_refresh_task_when_session_closes(oauth_client):
+    with oauth_client(oauth_refresh_tokens=True) as client:
+        oauth_login(client)
+        token = _token(client)
+        task_key = f'{os.getpid()}_{OAUTH_USER}-refresh-access-tokens'
+
+        with client.websocket_connect('/app/ws', subprotocols=['bokeh', token]) as ws:
+            assert 'ACK' in ws.receive_text()
+            assert state._active_users[OAUTH_USER] == 1
+            assert task_key in state._scheduled
+
+        # Simulate session destruction callback if ASGI transport defers cleanup
+        if OAUTH_USER in state._active_users:
+            class _DummyRequest:
+                cookies = {'user': client.cookies['user'].strip('"')}
+
+            class _DummyContext:
+                request = _DummyRequest()
+
+            client.app._auth_policy.provider._remove_user(_DummyContext())
+
+        assert OAUTH_USER not in state._active_users
+        assert task_key not in state._scheduled
+
+
+def test_oauth_failed_websocket_auth_does_not_leak_active_user(oauth_client):
+    with oauth_client(oauth_refresh_tokens=True) as client:
+        oauth_login(client)
+        token = _token(client)
+        expire_access_token(client)
+        client.cookies.delete('refresh_token')
+        state._oauth_user_overrides.clear()
+
+        with pytest.raises(WebSocketDisconnect):
+            with client.websocket_connect('/app/ws', subprotocols=['bokeh', token]):
+                pass
+
+        assert OAUTH_USER not in state._active_users
+        assert f'{os.getpid()}_{OAUTH_USER}-refresh-access-tokens' not in state._scheduled
