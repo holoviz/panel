@@ -7,8 +7,8 @@ on:
       - "v[0-9]+.[0-9]+.[0-9]+b[0-9]+"
       - "v[0-9]+.[0-9]+.[0-9]+rc[0-9]+"
   workflow_dispatch:
-  schedule:
-    - cron: "0 19 * * SUN"
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
 
 permissions: {}
 
@@ -22,6 +22,33 @@ env:
   PYTHON_VERSION: "3.12"
 
 jobs:
+  setup:
+    name: setup:build
+    runs-on: ubuntu-latest
+    permissions:
+      checks: read
+    outputs:
+      run: ${{ steps.check.outputs.run }}
+    steps:
+      - name: check if packages should be built
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          HAS_LABEL: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'run-build-ci') }}
+          OTHER_LABEL: ${{ github.event.action == 'labeled' && github.event.label.name != 'run-build-ci' }}
+        run: |
+          run=$HAS_LABEL
+          if [ "$run" = true ] && [ "$OTHER_LABEL" = true ]; then
+            # This run hides the earlier run's checks, so only skip if the packages already built for this commit
+            built=$(gh api "repos/$GH_REPO/commits/$HEAD_SHA/check-runs?per_page=100" \
+              --jq '[.check_runs[] | select(.name == "build:conda" or .name == "install:pip" or .name == "build:npm" or .name == "build:cdn") | select(.conclusion != "skipped")]
+                | group_by(.name) | map(max_by(.started_at).conclusion) == ["success", "success", "success", "success"]')
+            [ "$built" = true ] && run=false
+          fi
+          echo "run=$run" >> "$GITHUB_OUTPUT"
+
   waiting_room:
     name: Waiting Room
     runs-on: ubuntu-latest
@@ -32,18 +59,13 @@ jobs:
     steps:
       - run: echo "All builds have finished, have been approved, and ready to publish"
 
-  pixi_lock:
-    name: Pixi lock
-    runs-on: ubuntu-latest
-    steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-lock@11eb638302f76ec64217e2eeddfb11df1f788b54 # v1.0.2
-
   conda_build:
-    name: Build Conda
-    needs: [pixi_lock]
+    name: build:conda
     runs-on: "ubuntu-latest"
+    needs: [setup]
+    if: needs.setup.outputs.run == 'true'
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@11eb638302f76ec64217e2eeddfb11df1f788b54 # v1.0.2
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@17107a157b32cc1bd2a09c71fbdbc74603efdb40 # v1.0.15
         with:
           environments: "build"
           install: false
@@ -60,7 +82,7 @@ jobs:
         run: python scripts/verify_build_size.py conda
 
   conda_publish:
-    name: Publish Conda
+    name: publish:conda
     runs-on: ubuntu-latest
     needs: [conda_build, waiting_room]
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
@@ -77,11 +99,12 @@ jobs:
           labels: ${{ (contains(github.ref_name, 'a') || contains(github.ref_name, 'b') || contains(github.ref_name, 'rc')) && 'dev' || 'main,dev' }}
 
   pip_build:
-    name: Build PyPI
-    needs: [pixi_lock]
+    name: build:pip
     runs-on: "ubuntu-latest"
+    needs: [setup]
+    if: needs.setup.outputs.run == 'true'
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@11eb638302f76ec64217e2eeddfb11df1f788b54 # v1.0.2
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@17107a157b32cc1bd2a09c71fbdbc74603efdb40 # v1.0.15
         with:
           environments: "build"
           install: false
@@ -101,7 +124,7 @@ jobs:
           python scripts/verify_build_size.py ui
 
   pip_install:
-    name: Install PyPI
+    name: install:pip
     runs-on: "ubuntu-latest"
     needs: [pip_build]
     steps:
@@ -118,7 +141,7 @@ jobs:
         run: python -c "import $PACKAGE; print($PACKAGE._version.__version__)"
 
   pip_publish:
-    name: Publish PyPI
+    name: publish:pip
     runs-on: ubuntu-latest
     needs: [pip_build, waiting_room]
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
@@ -133,14 +156,19 @@ jobs:
         uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 # v1.14.3
 
   npm_build:
-    name: Build NPM
-    needs: [pixi_lock]
+    name: build:npm
     runs-on: "ubuntu-latest"
+    needs: [setup]
+    if: needs.setup.outputs.run == 'true'
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@11eb638302f76ec64217e2eeddfb11df1f788b54 # v1.0.2
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@17107a157b32cc1bd2a09c71fbdbc74603efdb40 # v1.0.15
         with:
           environments: "build"
+          install: false
           download-data: false
+      # The npm package ships the models and resources the build hook writes to panel/dist
+      - name: build panel/dist
+        run: pixi run -e build build-pip
       - name: npm build
         run: |
           TARBALL=$(pixi run build-npm)
@@ -155,7 +183,7 @@ jobs:
         run: python scripts/verify_build_size.py npm
 
   npm_publish:
-    name: Publish NPM
+    name: publish:npm
     runs-on: "ubuntu-latest"
     needs: [npm_build, waiting_room]
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
@@ -181,11 +209,12 @@ jobs:
           npm publish --tag latest *.tgz
 
   cdn_build:
-    name: Build CDN
-    needs: [pixi_lock]
+    name: build:cdn
     runs-on: "ubuntu-latest"
+    needs: [setup]
+    if: needs.setup.outputs.run == 'true'
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@11eb638302f76ec64217e2eeddfb11df1f788b54 # v1.0.2
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@17107a157b32cc1bd2a09c71fbdbc74603efdb40 # v1.0.15
         with:
           environments: "build"
           install: false
@@ -206,7 +235,7 @@ jobs:
             ./panel/package.json
 
   cdn_publish:
-    name: Publish CDN
+    name: publish:cdn
     runs-on: "ubuntu-latest"
     needs: [cdn_build, waiting_room]
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
@@ -227,7 +256,7 @@ jobs:
         run: python scripts/cdn_upload.py
 
   announce:
-    name: Announce GitHub
+    name: announce:github
     runs-on: ubuntu-latest
     needs: [waiting_room]
     permissions:
@@ -261,3 +290,26 @@ jobs:
             --notes-file RELEASE_BODY.md \
             --draft \
             artifacts/*
+
+  result_build:
+    name: result:build
+    needs:
+      [
+        setup,
+        conda_build,
+        conda_publish,
+        pip_build,
+        pip_install,
+        pip_publish,
+        npm_build,
+        npm_publish,
+        cdn_build,
+        cdn_publish,
+        announce,
+      ]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: check for failures
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: echo job failed && exit 1

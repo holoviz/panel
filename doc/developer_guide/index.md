@@ -86,51 +86,55 @@ git push --tags
 
 ## Start developing
 
-To start developing, run the following command, this will create an environment called `default` (in `.pixi/envs`), install Panel in [editable mode](https://pip.pypa.io/en/stable/topics/local-project-installs/#editable-installs), and install `pre-commit` git hooks:
+Running `pixi run <task>` or `pixi shell` will automatically create the `default` environment and install Panel in [editable mode](https://pip.pypa.io/en/stable/topics/local-project-installs/#editable-installs).
+
+For example, to run the unit tests, run:
+
+```bash
+pixi run test-unit
+```
+
+:::{admonition} Advanced usage
+:class: tip
+
+To use a different environment, e.g. `test-core`, add `--environment` / `-e` to the command:
+
+```bash
+pixi run -e test-core test-unit
+```
+
+:::
+
+All available tasks can be found by running `pixi task list`, the following sections will give a brief introduction to the most common tasks.
+
+For setting up a complete development you can run:
 
 ```bash
 pixi run setup-dev
 ```
 
-:::{admonition} Note
-:class: info
-
-The first time you run it, it will create a `pixi.lock` file with information for all available environments.
-This command will take a minute or so to run.
-:::
-
-All available tasks can be found by running `pixi task list`, the following sections will give a brief introduction to the most common tasks.
+This will install the `pre-commit` git hooks, among other tasks deemed necessary for a development environment.
 
 :::{admonition} Note
 :class: info
 
-If a pixi command fails to lock or install an environment, you can try to limit the number of [concurrent solves](https://pixi.sh/latest/reference/cli/pixi/install/#arg---concurrent-solves) and/or [concurrent downloads](https://pixi.sh/latest/reference/cli/pixi/install/#arg---concurrent-downloads), An example of this is:
+You may want to update Pixi occasionally, especially when troubleshooting, to get the latest fixes and improvements:
 
 ```bash
-pixi install --concurrent-solves 4 --concurrent-downloads 4
+pixi self-update
 ```
+
 :::
 
-### Editable install
+### Rebuilding the editable install
 
-It can be advantageous to install Panel in [editable mode](https://pip.pypa.io/en/stable/topics/local-project-installs/#editable-installs):
-
-```bash
-pixi run install
-```
-
-:::{admonition} Note
-:class: info
-
-Currently, this needs to be run for each environment. So, if you want to install in the `test-ui` environment, you can add `--environment` / `-e` to the command:
+The custom models and bundled resources are built when Panel is installed. To rebuild them, reinstall Panel in the environment:
 
 ```bash
-pixi run -e test-ui install
+pixi reinstall panel
 ```
 
-You can find the list of environments in the **pixi.toml** file or via the command `pixi info`.
-
-:::
+See [Developing custom models](custom_models.md) for when this is needed.
 
 ### Syncing Git tags with upstream repository
 
@@ -146,7 +150,7 @@ pixi run sync-git-tags
 
 The `default` environment is meant to provide all the tools needed to develop Panel.
 
-This environment is created by running `pixi run setup-dev`. Run `pixi shell` to activate it; this is equivalent to `source venv/bin/activate` in a Python virtual environment or `conda activate` in a conda environment.
+This environment is created automatically the first time you run a Pixi command (e.g. `pixi shell` or `pixi run <task>`), which sets up the environment and makes an editable install of Panel. Run `pixi shell` to activate it; this is equivalent to `source venv/bin/activate` in a Python virtual environment or `conda activate` in a conda environment.
 
 If you need to run a command directly instead of via `pixi`, activate the environment and run the command (e.g. `pixi shell` and `pytest panel/tests/<somefile.py>`).
 

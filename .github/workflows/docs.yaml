@@ -18,8 +18,8 @@ on:
           - dryrun
         required: true
         default: dryrun
-  schedule:
-    - cron: "0 19 * * SUN"
+  pull_request:
+    types: [opened, synchronize, reopened, labeled]
 
 defaults:
   run:
@@ -37,19 +37,40 @@ env:
   DEV_DEPLOY: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.target == 'dev') || (github.event_name == 'push' && (contains(github.ref_name, 'a') || contains(github.ref_name, 'b') || contains(github.ref_name, 'rc'))) }}
 
 jobs:
-  pixi_lock:
-    name: Pixi lock
+  setup:
+    name: setup:docs
     runs-on: ubuntu-latest
+    permissions:
+      checks: read
+    outputs:
+      run: ${{ steps.check.outputs.run }}
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-lock@11eb638302f76ec64217e2eeddfb11df1f788b54 # v1.0.2
+      - name: check if docs should be built
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          HAS_LABEL: ${{ github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'run-docs-ci') }}
+          OTHER_LABEL: ${{ github.event.action == 'labeled' && github.event.label.name != 'run-docs-ci' }}
+        run: |
+          run=$HAS_LABEL
+          if [ "$run" = true ] && [ "$OTHER_LABEL" = true ]; then
+            # This run hides the earlier run's checks, so only skip if the docs already built for this commit
+            built=$(gh api "repos/$GH_REPO/commits/$HEAD_SHA/check-runs?check_name=build:docs" \
+              --jq '[.check_runs[] | select(.conclusion != "skipped")] | max_by(.started_at).conclusion == "success"')
+            [ "$built" = true ] && run=false
+          fi
+          echo "run=$run" >> "$GITHUB_OUTPUT"
 
   docs_build:
-    name: Build Documentation
-    needs: [pixi_lock]
+    name: build:docs
     runs-on: "macos-latest"
+    needs: [setup]
+    if: needs.setup.outputs.run == 'true'
     timeout-minutes: 180
     steps:
-      - uses: holoviz-dev/holoviz_tasks/pixi-install@11eb638302f76ec64217e2eeddfb11df1f788b54 # v1.0.2
+      - uses: holoviz-dev/holoviz_tasks/pixi-install@17107a157b32cc1bd2a09c71fbdbc74603efdb40 # v1.0.15
         with:
           environments: docs
           opengl: true
@@ -74,9 +95,8 @@ jobs:
           path: builtdocs
 
   docs_publish:
-    name: Publish Documentation
-    # The weekly scheduled build only checks that the docs still build.
-    if: github.event_name != 'schedule'
+    name: publish:docs
+    if: github.event_name != 'pull_request'
     runs-on: "ubuntu-latest"
     needs: [docs_build]
     env:
@@ -125,3 +145,13 @@ jobs:
           s3-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           s3-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           version: ${{ env.DOCS_VERSION }}
+
+  result_docs_build:
+    name: result:docs
+    needs: [setup, docs_build, docs_publish]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: check for failures
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: echo job failed && exit 1
