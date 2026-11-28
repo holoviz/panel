@@ -41,6 +41,37 @@ pn.ui.Column(slider, interactive_star_creator)
 
 Internally the layout will create a so called `ParamFunction` component to wrap the interactive function. This wrapper component will re-evaluate and update the output whenever the inputs to the function change.
 
+## Bind a widget and a fixed argument
+
+Use `pn.bind` when a function takes both a widget value and an argument that stays fixed:
+
+```python
+import panel as pn
+
+slider = pn.ui.IntSlider(value=1, start=1, end=5)
+
+def add(a, b):
+    return a + b
+
+total = pn.bind(add, a=slider, b=1)
+assert total() == 2
+
+slider.value = 3
+assert total() == 4
+```
+
+The `@pn.depends` decorator takes dependencies such as `slider.param.value`.
+Passing `b=1` to the decorator raises a `ValueError`. To use the decorator
+with the same function, supply the fixed argument inside the decorated function:
+
+```python
+@pn.depends(a=slider.param.value)
+def total_with_depends(a):
+    return add(a, b=1)
+
+pn.ui.Column(slider, total_with_depends)
+```
+
 ## Related Resources
 
 - Learn [how to use reactive functions to update components](bind_component)
